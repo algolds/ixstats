@@ -243,10 +243,10 @@ export function ComparisonCharts({
         component: (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-            <XAxis dataKey="name" tick={{ fontSize: 12, fill: chartTheme.text }} />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: chartTheme.text }} angle={-20} textAnchor="end" height={60} />
             <YAxis
-              tick={{ fontSize: 12, fill: chartTheme.text }}
-              label={{ value: "Population (M)", angle: -90 }}
+              tick={{ fontSize: 10, fill: chartTheme.text }}
+              label={{ value: "Population (M)", angle: -90, style: { fontSize: 10 } }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="value">
@@ -263,21 +263,21 @@ export function ComparisonCharts({
         component: (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-            <XAxis dataKey="name" tick={{ fontSize: 12, fill: chartTheme.text }} />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: chartTheme.text }} angle={-20} textAnchor="end" height={60} />
             <YAxis
               yAxisId="left"
               orientation="left"
-              tick={{ fontSize: 12, fill: chartTheme.text }}
-              label={{ value: "GDP per Capita ($K)", angle: -90 }}
+              tick={{ fontSize: 10, fill: chartTheme.text }}
+              label={{ value: "GDP/Cap ($K)", angle: -90, style: { fontSize: 9 } }}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
-              tick={{ fontSize: 12, fill: chartTheme.text }}
-              label={{ value: "Total GDP ($B)", angle: 90 }}
+              tick={{ fontSize: 10, fill: chartTheme.text }}
+              label={{ value: "Total GDP ($B)", angle: 90, style: { fontSize: 9 } }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: "11px" }} />
             <Bar yAxisId="left" dataKey="gdpPerCapita" name="GDP per Capita" fill="#06b6d4" />
             <Bar yAxisId="right" dataKey="totalGdp" name="Total GDP" fill="#84cc16" />
           </BarChart>
@@ -289,14 +289,14 @@ export function ComparisonCharts({
         component: (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-            <XAxis dataKey="name" tick={{ fontSize: 12, fill: chartTheme.text }} />
+            <XAxis dataKey="name" tick={{ fontSize: 10, fill: chartTheme.text }} angle={-20} textAnchor="end" height={60} />
             <YAxis
-              tick={{ fontSize: 12, fill: chartTheme.text }}
-              label={{ value: "Growth Rate (%)", angle: -90 }}
+              tick={{ fontSize: 10, fill: chartTheme.text }}
+              label={{ value: "Growth Rate (%)", angle: -90, style: { fontSize: 10 } }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Bar dataKey="populationGrowth" name="Population Growth" fill="#8b5cf6" />
+            <Legend wrapperStyle={{ fontSize: "11px" }} />
+            <Bar dataKey="populationGrowth" name="Pop. Growth" fill="#8b5cf6" />
             <Bar dataKey="gdpGrowth" name="GDP Growth" fill="#06b6d4" />
           </BarChart>
         ),
@@ -330,10 +330,10 @@ export function ComparisonCharts({
         title: "Multi-Metric Radar",
         description: "Comprehensive comparison across multiple metrics",
         component: (
-          <RadarChart data={chartData} margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+          <RadarChart data={chartData} margin={{ top: 20, right: 60, bottom: 20, left: 60 }}>
             <PolarGrid />
-            <PolarAngleAxis dataKey="name" tick={{ fontSize: 10, fill: chartTheme.text }} />
-            <PolarRadiusAxis tick={{ fontSize: 8, fill: chartTheme.text }} />
+            <PolarAngleAxis dataKey="name" tick={{ fontSize: 8, fill: chartTheme.text }} />
+            <PolarRadiusAxis tick={{ fontSize: 7, fill: chartTheme.text }} />
             <Tooltip content={<CustomTooltip />} />
             <Radar
               name="Population"
@@ -350,7 +350,7 @@ export function ComparisonCharts({
               fillOpacity={0.1}
             />
             <Radar
-              name="Population Growth"
+              name="Pop. Growth"
               dataKey="popGrowth"
               stroke="#84cc16"
               fill="#84cc16"
@@ -493,7 +493,7 @@ export function ComparisonCharts({
             </div>
           </div>
         ) : (
-          <div className="h-96 w-full">
+          <div className="h-[300px] sm:h-[350px] lg:h-96 w-full">
             <ResponsiveContainer width="100%" height="100%">
               {currentConfig.component}
             </ResponsiveContainer>

@@ -64,7 +64,7 @@ export const TimeSeriesChart = React.memo(function TimeSeriesChart({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-80">
+        <div className="h-64 sm:h-72 lg:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -74,18 +74,20 @@ export const TimeSeriesChart = React.memo(function TimeSeriesChart({
                   const gameYear = value.split("-")[0];
                   return `${gameYear}`;
                 }}
+                tick={{ fontSize: 10 }}
               />
-              <YAxis tickFormatter={formatMetricValue} />
+              <YAxis tickFormatter={formatMetricValue} tick={{ fontSize: 10 }} />
               <RechartsTooltip
                 labelFormatter={(value) => `Year ${value}`}
                 formatter={(value: number) => [formatMetricValue(value), metricLabel]}
+                contentStyle={{ fontSize: "12px" }}
               />
               <Line
                 type="monotone"
                 dataKey={dataKey}
                 stroke={getMetricColor()}
                 strokeWidth={2}
-                dot={{ fill: getMetricColor(), strokeWidth: 2 }}
+                dot={{ fill: getMetricColor(), strokeWidth: 2, r: 3 }}
               />
               <Bar dataKey="eventsCount" fill="rgba(239, 68, 68, 0.3)" yAxisId="right" />
 

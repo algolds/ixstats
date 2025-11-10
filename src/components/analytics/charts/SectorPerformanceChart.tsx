@@ -52,15 +52,15 @@ export const SectorPerformanceChart = React.memo<SectorPerformanceChartProps>(
           <CardDescription>GDP contribution by economic sector</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={280} className="sm:h-[320px] lg:h-[350px]">
             <BarChart data={data} layout="horizontal">
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-              <XAxis type="number" tick={{ fill: "#6b7280", fontSize: 12 }} />
+              <XAxis type="number" tick={{ fill: "#6b7280", fontSize: 10 }} />
               <YAxis
                 type="category"
                 dataKey="sector"
-                tick={{ fill: "#6b7280", fontSize: 12 }}
-                width={100}
+                tick={{ fill: "#6b7280", fontSize: 9 }}
+                width={80}
               />
               <Tooltip content={<GlassTooltip />} />
               <Bar dataKey="performance" radius={[0, 4, 4, 0]}>

@@ -38,7 +38,7 @@ export const EmbassyNetworkChart = React.memo<EmbassyNetworkChartProps>(
           <CardDescription>Expansion of diplomatic presence</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={220} className="sm:h-[250px] lg:h-[280px]">
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="embassyGradient" x1="0" y1="0" x2="0" y2="1">
@@ -47,8 +47,8 @@ export const EmbassyNetworkChart = React.memo<EmbassyNetworkChartProps>(
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 12 }} />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} />
+              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} />
               <Tooltip content={<GlassTooltip />} />
               <Area
                 type="monotone"

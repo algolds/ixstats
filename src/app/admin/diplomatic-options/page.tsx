@@ -441,14 +441,14 @@ export default function DiplomaticOptionsPage() {
         </div>
 
         {/* Table */}
-        <div className="glass-card-child border-border/50 rounded-xl border p-6">
+        <div className="glass-card-child border-border/50 rounded-xl border overflow-hidden">
           {isLoading ? (
-            <div className="py-12 text-center">
+            <div className="py-12 text-center px-6">
               <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
               <p className="text-muted-foreground">Loading diplomatic options...</p>
             </div>
           ) : filteredOptions.length === 0 ? (
-            <div className="py-12 text-center">
+            <div className="py-12 text-center px-6">
               <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
               <p className="text-muted-foreground">No diplomatic options found</p>
               <Button className="mt-4" onClick={() => setIsAddDialogOpen(true)}>

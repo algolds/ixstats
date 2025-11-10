@@ -86,19 +86,63 @@ app.prepare().then(async () => {
     }
   });
 
-  // Initialize WebSocket server (dynamic import to avoid build issues)
+  // Initialize WebSocket servers (dynamic import to avoid build issues)
   try {
-    // For development, skip WebSocket initialization to avoid TypeScript import issues
+    // Intelligence WebSocket (existing)
     if (dev) {
-      console.log('[Server] ⚠ WebSocket server disabled in development mode');
+      console.log('[Server] ⚠ Intelligence WebSocket disabled in development mode');
     } else {
       const { initializeWebSocketServer } = await import('./src/server/websocket-server.js');
       await initializeWebSocketServer(httpServer);
-      console.log('[Server] ✓ WebSocket server initialized');
+      console.log('[Server] ✓ Intelligence WebSocket initialized');
     }
   } catch (error) {
-    console.error('[Server] ✗ WebSocket initialization failed:', error.message);
-    console.warn('[Server] Continuing without WebSocket support');
+    console.error('[Server] ✗ Intelligence WebSocket initialization failed:', error.message);
+    console.warn('[Server] Continuing without Intelligence WebSocket support');
+  }
+
+  // Market WebSocket for IxCards (always enabled)
+  try {
+    const { initializeMarketWebSocket } = await import('./src/lib/market-websocket-server.js');
+    initializeMarketWebSocket(httpServer, '/api/market-ws');
+    console.log('[Server] ✓ Market WebSocket initialized at /api/market-ws');
+  } catch (error) {
+    console.error('[Server] ✗ Market WebSocket initialization failed:', error.message);
+    console.warn('[Server] Continuing without Market WebSocket support');
+  }
+
+  // Initialize cron jobs (production only)
+  if (!dev) {
+    try {
+      const cron = await import('node-cron');
+
+      // Auction completion cron (every minute)
+      cron.default.schedule('* * * * *', async () => {
+        try {
+          const { processExpiredAuctions } = await import('./src/lib/auction-completion-cron.js');
+          await processExpiredAuctions();
+        } catch (error) {
+          console.error('[Cron] Auction completion failed:', error);
+        }
+      }, { timezone: 'UTC' });
+      console.log('[Cron] ✓ Auction completion job scheduled (every minute)');
+
+      // Passive income cron (daily at midnight UTC)
+      cron.default.schedule('0 0 * * *', async () => {
+        try {
+          const { distributePassiveIncome } = await import('./src/lib/passive-income-cron.js');
+          await distributePassiveIncome();
+        } catch (error) {
+          console.error('[Cron] Passive income failed:', error);
+        }
+      }, { timezone: 'UTC' });
+      console.log('[Cron] ✓ Passive income job scheduled (daily at 00:00 UTC)');
+    } catch (error) {
+      console.error('[Cron] Failed to initialize cron jobs:', error.message);
+      console.warn('[Cron] Continuing without scheduled jobs');
+    }
+  } else {
+    console.log('[Cron] ⚠ Cron jobs disabled in development mode');
   }
 
   // Start listening

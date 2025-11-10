@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import { MediaSearchModal } from "~/components/MediaSearchModal";
 import {
   Flag,
@@ -23,6 +23,7 @@ import {
   IdentityAutocomplete,
 } from "./national-identity";
 import { useNationalIdentityState } from "./national-identity/useNationalIdentityState";
+import { useBuilderContext } from "./context/BuilderStateContext";
 
 /**
  * Props for the NationalIdentitySection component
@@ -84,6 +85,9 @@ export function NationalIdentitySection({
   referenceCountry,
   countryId,
 }: NationalIdentitySectionProps) {
+  // Get builder context for autosync registration
+  const { registerAutoSync, unregisterAutoSync } = useBuilderContext();
+
   // Guard against null inputs
   if (!inputs) {
     return (
@@ -131,6 +135,18 @@ export function NationalIdentitySection({
     autoSync,
   } = useNationalIdentityState(inputs, onInputsChange, referenceCountry, countryId);
 
+  // Register autosync function with the builder context
+  useEffect(() => {
+    if (countryId && autoSync.syncNow) {
+      registerAutoSync("nationalIdentity", autoSync.syncNow);
+
+      // Cleanup on unmount
+      return () => {
+        unregisterAutoSync("nationalIdentity");
+      };
+    }
+  }, [countryId, autoSync.syncNow, registerAutoSync, unregisterAutoSync]);
+
   // Helper function to render autosave status
   const renderAutosaveStatus = () => {
     if (!countryId) return null; // Only show in edit mode
@@ -175,6 +191,24 @@ export function NationalIdentitySection({
 
     return null;
   };
+
+  // Memoize callbacks to prevent unnecessary re-renders
+  const handleGovernmentTypeChange = useCallback((value: string) => {
+    setSelectedGovernmentType(value);
+    handleIdentityChange("governmentType", value);
+  }, [setSelectedGovernmentType, handleIdentityChange]);
+
+  const handleCustomOfficialNameFocus = useCallback(() => {
+    setIsEditingCustomName(true);
+  }, [setIsEditingCustomName]);
+
+  const handleCustomOfficialNameBlur = useCallback((value: string) => {
+    setIsEditingCustomName(false);
+    handleIdentityChange("officialName", value);
+    if (value.trim()) {
+      upsertCustomGovernmentType.mutate({ customTypeName: value.trim() });
+    }
+  }, [setIsEditingCustomName, handleIdentityChange, upsertCustomGovernmentType]);
 
   return (
     <>
@@ -240,24 +274,13 @@ export function NationalIdentitySection({
                 selectedGovernmentType={selectedGovernmentType}
                 customOfficialName={customOfficialName}
                 isEditingCustomName={isEditingCustomName}
-                onGovernmentTypeChange={(value) => {
-                  setSelectedGovernmentType(value);
-                  handleIdentityChange("governmentType", value);
-                }}
+                onGovernmentTypeChange={handleGovernmentTypeChange}
                 onCustomOfficialNameChange={setCustomOfficialName}
-                onCustomOfficialNameFocus={() => setIsEditingCustomName(true)}
-                onCustomOfficialNameBlur={(value) => {
-                  setIsEditingCustomName(false);
-                  handleIdentityChange("officialName", value);
-                  if (value.trim()) {
-                    upsertCustomGovernmentType.mutate({ customTypeName: value.trim() });
-                  }
-                }}
+                onCustomOfficialNameFocus={handleCustomOfficialNameFocus}
+                onCustomOfficialNameBlur={handleCustomOfficialNameBlur}
                 setShouldFetchCustomTypes={setShouldFetchCustomTypes}
                 customGovernmentTypes={customGovernmentTypes}
-                IdentityAutocomplete={(props) => (
-                  <IdentityAutocomplete {...props} onSave={handleFieldValueSave} />
-                )}
+                onFieldSave={handleFieldValueSave}
               />
             </CollapsibleContent>
           </div>
@@ -284,9 +307,7 @@ export function NationalIdentitySection({
               <CultureForm
                 identity={identity}
                 onIdentityChange={handleIdentityChange as any}
-                IdentityAutocomplete={(props) => (
-                  <IdentityAutocomplete {...props} onSave={handleFieldValueSave} />
-                )}
+                onFieldSave={handleFieldValueSave}
               />
             </CollapsibleContent>
           </div>

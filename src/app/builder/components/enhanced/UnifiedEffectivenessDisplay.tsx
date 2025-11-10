@@ -227,7 +227,7 @@ export function UnifiedEffectivenessDisplay({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {/* Economy Score */}
             <div className="text-center">
               <div className="mb-2 flex items-center justify-center space-x-2">
@@ -276,7 +276,7 @@ export function UnifiedEffectivenessDisplay({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center space-x-1">
                 <TrendingUp className="h-3 w-3 text-green-600 dark:text-green-400" />
@@ -327,7 +327,7 @@ export function UnifiedEffectivenessDisplay({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="text-center">
                 <div className="mb-1 text-sm text-gray-600 dark:text-gray-400">
                   Base Effectiveness

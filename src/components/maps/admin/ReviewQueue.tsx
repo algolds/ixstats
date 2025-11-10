@@ -173,8 +173,9 @@ export function ReviewQueue({
       </div>
 
       {/* Table */}
-      <div className="glass-panel rounded-lg border border-slate-700/50 overflow-hidden">
-        <Table>
+      <div className="glass-panel rounded-lg overflow-hidden">
+        <div className="overflow-x-auto -mx-2 sm:mx-0">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-12">
@@ -261,6 +262,7 @@ export function ReviewQueue({
             })}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* Summary */}

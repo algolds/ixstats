@@ -20,11 +20,11 @@ interface ModalTabsProps {
 export function ModalTabs({ activeTab }: ModalTabsProps) {
   return (
     <div className="border-b bg-white/50 px-6 py-3 backdrop-blur-sm dark:bg-slate-800/50">
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 sm:gap-0">
         {TAB_CONFIG.map((tab) => {
           const Icon = tab.icon;
           return (
-            <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
+            <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
               <Icon className="h-4 w-4" />
               <span className="hidden sm:inline">{tab.label}</span>
             </TabsTrigger>

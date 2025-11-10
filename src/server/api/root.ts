@@ -56,7 +56,11 @@ import { systemRouter } from "./routers/system";
 import { cardPacksRouter } from "./routers/card-packs";
 import { vaultRouter } from "./routers/vault";
 import { cardsRouter } from "./routers/cards";
-import { nsIntegrationRouter } from "./routers/ns-integration";
+// import { nsIntegrationRouter } from "./routers/ns-integration"; // DISABLED: Missing dependencies, replaced by nsImport
+import { nsImportRouter } from "./routers/ns-import";
+import { cardMarketRouter } from "./routers/card-market";
+import { autosaveHistoryRouter } from "./routers/autosaveHistory";
+import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
 
 /**
  * This is the primary router for your server.
@@ -119,7 +123,11 @@ export const appRouter = createTRPCRouter({
   cardPacks: cardPacksRouter, // IxCards pack purchase and opening system (Phase 1 - Card Packs)
   vault: vaultRouter, // MyVault IxCredits economy system (Phase 1 - MyVault)
   cards: cardsRouter, // IxCards trading card system (Phase 1 - Card Service & Router)
-  nsIntegration: nsIntegrationRouter, // NationStates API integration for card import and sync (Phase 1 - NS Integration)
+  // nsIntegration: nsIntegrationRouter, // DISABLED: Missing dependencies, replaced by nsImport
+  nsImport: nsImportRouter, // NationStates deck import for IxCards (Phase 2 - NS Deck Import)
+  cardMarket: cardMarketRouter, // Card marketplace and auction system (Phase 2 - Auction Logic & Market Services)
+  autosaveHistory: autosaveHistoryRouter, // Autosave history for country builders (read-only)
+  autosaveMonitoring: autosaveMonitoringRouter, // Autosave system monitoring and analytics (admin-only)
 });
 
 // export type definition of API

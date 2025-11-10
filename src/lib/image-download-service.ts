@@ -1,8 +1,8 @@
-// Service for downloading external images and converting to base64 data URLs
+// Service for downloading external images and saving to server filesystem
 // Used when users select images from wiki/Unsplash repositories
 
 export interface DownloadedImage {
-  dataUrl: string;
+  url: string;
   originalUrl: string;
   fileName: string;
   fileSize: number;
@@ -11,8 +11,9 @@ export interface DownloadedImage {
 }
 
 /**
- * Downloads an external image and converts it to a base64 data URL
+ * Downloads an external image and saves it to the server filesystem
  * Supports CORS-enabled images from wikis and Unsplash
+ * Returns a local URL to the saved image
  */
 export async function downloadAndConvertImage(imageUrl: string): Promise<DownloadedImage> {
   console.log(`[ImageDownloadService] Starting download: ${imageUrl}`);
@@ -27,23 +28,66 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
       body: JSON.stringify({ imageUrl }),
     });
 
+    console.log(`[ImageDownloadService] API response status: ${response.status}, Content-Type: ${response.headers.get("content-type")}`);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to download image");
+      // Try to parse error response
+      const contentType = response.headers.get("content-type");
+      let errorMessage = `Failed to download image (HTTP ${response.status})`;
+      let errorCode = "DOWNLOAD_ERROR";
+
+      try {
+        // Check if response is HTML (Cloudflare or server error page)
+        if (contentType?.includes("text/html")) {
+          const htmlText = await response.text();
+          console.error(`[ImageDownloadService] Received HTML error page: ${htmlText.substring(0, 500)}`);
+
+          if (htmlText.toLowerCase().includes("cloudflare")) {
+            errorMessage = "The image source is protected by Cloudflare and cannot be downloaded. Please try a different image or source.";
+            errorCode = "CLOUDFLARE_BLOCKED";
+          } else {
+            errorMessage = "Server returned an error page instead of downloading the image. Please try again or use a different image.";
+            errorCode = "SERVER_ERROR";
+          }
+        } else if (contentType?.includes("application/json")) {
+          // Try to parse JSON error
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          errorCode = errorData.code || errorCode;
+          console.error(`[ImageDownloadService] API error response:`, errorData);
+        } else {
+          // Unknown content type
+          const errorText = await response.text();
+          console.error(`[ImageDownloadService] Unexpected response: ${errorText.substring(0, 500)}`);
+          errorMessage = `Unexpected response from download service: ${errorText.substring(0, 100)}`;
+        }
+      } catch (parseError) {
+        console.error("[ImageDownloadService] Failed to parse error response:", parseError);
+      }
+
+      const error = new Error(errorMessage);
+      (error as any).code = errorCode;
+      (error as any).statusCode = response.status;
+      (error as any).originalUrl = imageUrl;
+      throw error;
     }
 
     const result = await response.json();
+    console.log(`[ImageDownloadService] API response:`, result);
 
-    if (!result.success || !result.dataUrl) {
-      throw new Error("Invalid response from download service");
+    if (!result.success || !result.url) {
+      const error = new Error("Invalid response from download service - missing success flag or URL");
+      (error as any).code = "INVALID_RESPONSE";
+      (error as any).originalUrl = imageUrl;
+      throw error;
     }
 
     console.log(
-      `[ImageDownloadService] Successfully downloaded: ${result.fileName} (${result.fileSize} bytes)`
+      `[ImageDownloadService] Successfully downloaded: ${result.fileName} (${result.fileSize} bytes) to ${result.url}`
     );
 
     return {
-      dataUrl: result.dataUrl,
+      url: result.url,
       originalUrl: imageUrl,
       fileName: result.fileName,
       fileSize: result.fileSize,
@@ -52,7 +96,26 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
     };
   } catch (error) {
     console.error("[ImageDownloadService] Download failed:", error);
-    throw error;
+
+    // Re-throw errors with codes
+    if (error instanceof Error && (error as any).code) {
+      throw error;
+    }
+
+    // Wrap unknown errors
+    if (error instanceof Error) {
+      const wrappedError = new Error(`Failed to download image: ${error.message}`);
+      (wrappedError as any).code = "DOWNLOAD_ERROR";
+      (wrappedError as any).originalUrl = imageUrl;
+      (wrappedError as any).originalError = error;
+      throw wrappedError;
+    }
+
+    // Unknown error type
+    const unknownError = new Error("Failed to download image: Unknown error");
+    (unknownError as any).code = "UNKNOWN_ERROR";
+    (unknownError as any).originalUrl = imageUrl;
+    throw unknownError;
   }
 }
 
@@ -93,7 +156,7 @@ export async function processImageSelection(
 
       options?.onProgress?.("Image downloaded successfully");
 
-      return downloaded.dataUrl;
+      return downloaded.url;
     } else {
       // Already a data URL or relative path - use as-is
       return imageUrl;

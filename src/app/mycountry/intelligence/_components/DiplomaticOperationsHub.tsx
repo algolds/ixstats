@@ -616,7 +616,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
                 onChange={operations.handleExchangeDescriptionChange}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="start-date">Start Date</Label>
                 <Input
@@ -744,7 +744,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className="rounded-md bg-white/60 p-3 dark:bg-black/40">
                       <p className="text-muted-foreground text-xs">Cost</p>
                       <p className="font-semibold">
@@ -776,7 +776,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="rounded-md border border-dashed border-green-300/60 p-3 text-green-700 dark:border-green-700/60 dark:text-green-300">
                       {operations.selectedUpgrade.canAfford
                         ? "Budget available"

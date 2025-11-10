@@ -173,7 +173,7 @@ export function CrossBuilderSynergyDisplay({
                     </div>
 
                     {/* Impact Metrics */}
-                    <div className="mb-3 grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       <div className="text-center">
                         <div className="flex items-center justify-center space-x-1">
                           <Target className="h-3 w-3" />
@@ -283,7 +283,7 @@ export function CrossBuilderSynergyDisplay({
                     </div>
 
                     {/* Impact Metrics */}
-                    <div className="mb-3 grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       <div className="text-center">
                         <div className="flex items-center justify-center space-x-1">
                           <Target className="h-3 w-3" />

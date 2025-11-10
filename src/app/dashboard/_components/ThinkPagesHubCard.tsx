@@ -113,7 +113,7 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
               </Badge>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               <div className="glass-hierarchy-child rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
                 <div className="mb-1 flex items-center gap-2">
                   <Crown className="h-3 w-3 text-amber-400" />

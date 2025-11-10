@@ -195,7 +195,7 @@ export function SectorEditor({
       )}
 
       {/* Core Metrics */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <EnhancedSlider
           label="GDP Contribution"
           value={sector.gdpContribution}
@@ -233,7 +233,7 @@ export function SectorEditor({
           exit={{ opacity: 0, height: 0 }}
           className="mt-4 space-y-4 border-t pt-4"
         >
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <EnhancedSlider
               label="Productivity"
               value={sector.productivity}
@@ -261,7 +261,7 @@ export function SectorEditor({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <EnhancedSlider
               label="Export Ratio"
               value={sector.exports}

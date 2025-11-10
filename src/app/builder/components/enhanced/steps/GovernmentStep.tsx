@@ -79,7 +79,7 @@ function EnhancedTabsList({
   return (
     <TabsList
       className={cn(
-        "bg-muted/50 border-border/50 grid w-full rounded-xl border p-1 backdrop-blur-sm",
+        "bg-muted/50 border-border/50 grid w-full grid-cols-2 gap-2 rounded-xl border p-1 backdrop-blur-sm sm:grid-cols-4 sm:gap-0",
         className
       )}
       {...props}
@@ -170,7 +170,7 @@ export function GovernmentStep({
 
       <Tabs value={activeGovernmentTab} onValueChange={onTabChange} className="space-y-6">
         <div className="flex items-center justify-between">
-          <EnhancedTabsList className="grid-cols-4">
+          <EnhancedTabsList>
             <EnhancedTabsTrigger
               value="components"
               icon={Settings}

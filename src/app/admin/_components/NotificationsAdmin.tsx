@@ -393,7 +393,7 @@ export function NotificationsAdmin() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="admin" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <TabsTrigger value="admin">Admin Panel</TabsTrigger>
           <TabsTrigger value="test">Test System</TabsTrigger>
           <TabsTrigger value="stats">Live Stats</TabsTrigger>

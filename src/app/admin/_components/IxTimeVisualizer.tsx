@@ -250,7 +250,7 @@ export function IxTimeVisualizer() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="accuracy">Accuracy</TabsTrigger>
           <TabsTrigger value="synchronization">Sync Status</TabsTrigger>

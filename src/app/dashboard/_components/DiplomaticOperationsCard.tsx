@@ -300,7 +300,7 @@ export function DiplomaticOperationsCard({
             </div>
 
             <div className="glass-hierarchy-child rounded-lg p-3">
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-lg font-bold text-green-400">
                     {embassyNetworks.filter((e) => e.status === "active").length}
@@ -323,7 +323,7 @@ export function DiplomaticOperationsCard({
 
           {/* Quick Actions */}
           <div className="border-t border-white/10 pt-2">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Link href={createUrl("/mycountry/new?tab=diplomatic")}>
                 <Button variant="outline" size="sm" className="w-full">
                   <MessageSquare className="mr-2 h-4 w-4" />

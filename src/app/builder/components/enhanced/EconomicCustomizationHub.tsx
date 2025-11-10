@@ -170,7 +170,7 @@ export function EconomicCustomizationHub({
         </CardHeader>
         <CardContent>
           <Tabs value={activeSection} onValueChange={handleSectionChange}>
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+            <TabsList className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-8 sm:gap-0">
               {sections.map((section) => {
                 const Icon = getSectionIcon(section.id);
                 return (

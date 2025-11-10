@@ -23,9 +23,9 @@ export function ExpandedView({
   }
 
   return (
-    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] max-w-4xl -translate-x-1/2 transform">
+    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] sm:w-[90vw] md:w-[600px] lg:max-w-4xl -translate-x-1/2 transform">
       <div
-        className="command-palette-dropdown border-border relative mx-auto w-full min-w-[480px] overflow-hidden rounded-xl shadow-2xl dark:border-white/10"
+        className="command-palette-dropdown border-border relative mx-auto w-full overflow-hidden rounded-xl shadow-2xl dark:border-white/10"
         style={{
           background:
             "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",

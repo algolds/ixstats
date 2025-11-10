@@ -576,7 +576,7 @@ export function FiscalSystemComponent({
                   </>
                 ) : (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <div className="text-muted-foreground text-sm">Total Tax Revenue</div>
                         <div className="text-lg font-semibold">
@@ -611,7 +611,7 @@ export function FiscalSystemComponent({
                     {/* Tax Rates Display */}
                     <div className="border-t pt-4">
                       <h4 className="mb-3 text-sm font-semibold">Tax Rates by Category</h4>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Sales Tax:</span>
                           <span className="font-medium">
@@ -655,7 +655,7 @@ export function FiscalSystemComponent({
               <CardContent className="space-y-4">
                 {!isReadOnly ? (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label>Internal Debt (% of GDP)</Label>
                         <Input
@@ -728,7 +728,7 @@ export function FiscalSystemComponent({
                   </>
                 ) : (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-muted/50 rounded-lg p-4">
                         <div className="text-muted-foreground mb-1 text-sm">Internal Debt</div>
                         <div className="text-xl font-bold">

@@ -414,7 +414,7 @@ export function IntegrationTestingDisplay({
 
       {integrationReport && (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-0">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="suites">Test Suites</TabsTrigger>
             <TabsTrigger value="performance">Performance</TabsTrigger>
@@ -502,7 +502,7 @@ export function IntegrationTestingDisplay({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm font-medium">Economy-Government</span>
@@ -583,7 +583,7 @@ export function IntegrationTestingDisplay({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-blue-600">
                         {formatDuration(integrationReport.performanceMetrics.averageTestTime)}

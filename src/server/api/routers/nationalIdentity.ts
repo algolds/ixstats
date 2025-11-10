@@ -85,6 +85,20 @@ export const nationalIdentityRouter = createTRPCRouter({
           },
         });
 
+        // Log autosave to audit trail
+        await ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth.userId,
+            action: "autosave:nationalIdentity",
+            target: input.countryId,
+            details: JSON.stringify({
+              fields: Object.keys(filteredData),
+              timestamp: new Date().toISOString(),
+            }),
+            success: true,
+          },
+        });
+
         return {
           success: true,
           data: result,
@@ -92,6 +106,18 @@ export const nationalIdentityRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("[NationalIdentity API] Autosave failed:", error);
+
+        // Log autosave failure to audit trail
+        await ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth.userId,
+            action: "autosave:nationalIdentity",
+            target: input.countryId,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+
         throw new Error(
           `Failed to autosave national identity: ${error instanceof Error ? error.message : "Unknown error"}`
         );

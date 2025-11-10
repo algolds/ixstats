@@ -8,6 +8,7 @@ import {
   publicProcedure,
   protectedProcedure,
   rateLimitedPublicProcedure,
+  adminProcedure,
 } from "~/server/api/trpc";
 import { CardType, CardRarity } from "@prisma/client";
 import {
@@ -28,9 +29,9 @@ import {
 export const cardsRouter = createTRPCRouter({
   /**
    * Get cards with filters and pagination
-   * Public endpoint with rate limiting (30 req/min)
+   * Admin-only endpoint
    */
-  getCards: rateLimitedPublicProcedure
+  getCards: adminProcedure
     .input(
       z.object({
         season: z.number().int().min(1).optional(),
@@ -67,9 +68,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Get card by ID with full details
-   * Public endpoint (no auth required)
+   * Admin-only endpoint
    */
-  getCardById: publicProcedure
+  getCardById: adminProcedure
     .input(
       z.object({
         cardId: z.string().min(1),
@@ -93,9 +94,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Get authenticated user's card inventory
-   * Protected endpoint (requires authentication)
+   * Admin-only endpoint
    */
-  getMyCards: protectedProcedure
+  getMyCards: adminProcedure
     .input(
       z.object({
         sortBy: z.enum(["rarity", "acquired", "value"]).optional().default("acquired"),
@@ -133,9 +134,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Get card statistics (supply, market value, recent trades)
-   * Public endpoint
+   * Admin-only endpoint
    */
-  getCardStats: publicProcedure
+  getCardStats: adminProcedure
     .input(
       z.object({
         cardId: z.string().min(1),
@@ -172,9 +173,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Get all cards for a specific country
-   * Public endpoint
+   * Admin-only endpoint
    */
-  getCardsByCountry: publicProcedure
+  getCardsByCountry: adminProcedure
     .input(
       z.object({
         countryId: z.string().min(1),
@@ -249,9 +250,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Get featured cards (high rarity, special editions, trending)
-   * Public endpoint with rate limiting
+   * Admin-only endpoint
    */
-  getFeaturedCards: rateLimitedPublicProcedure
+  getFeaturedCards: adminProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(50).optional().default(10),
@@ -299,9 +300,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Update card stats from nation data
-   * Protected endpoint (admin or card owner)
+   * Admin-only endpoint
    */
-  updateCardStats: protectedProcedure
+  updateCardStats: adminProcedure
     .input(
       z.object({
         cardId: z.string().min(1),
@@ -325,9 +326,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Transfer card to another user
-   * Protected endpoint (requires authentication)
+   * Admin-only endpoint
    */
-  transferCard: protectedProcedure
+  transferCard: adminProcedure
     .input(
       z.object({
         cardId: z.string().min(1),
@@ -365,9 +366,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Calculate card rarity
-   * Public utility endpoint for testing/preview
+   * Admin-only endpoint for testing/preview
    */
-  calculateRarity: publicProcedure
+  calculateRarity: adminProcedure
     .input(
       z.object({
         type: z.nativeEnum(CardType),
@@ -409,9 +410,9 @@ export const cardsRouter = createTRPCRouter({
 
   /**
    * Get card market value
-   * Public endpoint
+   * Admin-only endpoint
    */
-  getMarketValue: publicProcedure
+  getMarketValue: adminProcedure
     .input(
       z.object({
         cardId: z.string().min(1),

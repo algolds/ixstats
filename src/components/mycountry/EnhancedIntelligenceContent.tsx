@@ -213,7 +213,7 @@ export function EnhancedIntelligenceContent({
   };
 
   return (
-    <div className="container mx-auto space-y-6 px-4 py-8">
+    <div className="container mx-auto space-y-4 sm:space-y-6 px-4 py-4 sm:py-6 md:py-8">
       {/* Intelligence Header with MyCountry Branding */}
       <div id="overview">
         <div className="mb-2 flex items-center gap-2">
@@ -247,8 +247,8 @@ export function EnhancedIntelligenceContent({
         <Alert className="border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50">
           <Shield className="h-4 w-4" />
           <AlertDescription>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="text-sm sm:text-base">
                 <strong>Enhanced Intelligence Operations:</strong> {existingComponents.length}{" "}
                 atomic government components provide{" "}
                 {(
@@ -257,7 +257,7 @@ export function EnhancedIntelligenceContent({
                 ).toFixed(0)}
                 % coordination effectiveness.
               </div>
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary" className="sm:ml-2 w-fit">
                 <Activity className="mr-1 h-3 w-3" />
                 Active Integration
               </Badge>
@@ -271,12 +271,12 @@ export function EnhancedIntelligenceContent({
         <Alert className="border-red-200 bg-gradient-to-r from-red-50 to-orange-50">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="text-sm sm:text-base">
                 <strong>Critical Intelligence Alerts:</strong> {intelligenceMetrics.criticalAlerts}{" "}
                 high-priority alerts require immediate attention.
               </div>
-              <Badge variant="destructive" className="ml-2">
+              <Badge variant="destructive" className="sm:ml-2 w-fit">
                 Urgent Action Required
               </Badge>
             </div>
@@ -285,11 +285,11 @@ export function EnhancedIntelligenceContent({
       )}
 
       {/* Main Layout */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-4">
         {/* Left Sidebar - Intelligence Vitality Index */}
         {variant === "unified" && (
-          <div className="xl:col-span-1" id="vitality">
-            <Card className="glass-hierarchy-parent sticky top-6 overflow-hidden border-blue-200 dark:border-blue-700/40 dark:shadow-blue-900/10">
+          <div className="lg:col-span-1" id="vitality">
+            <Card className="glass-hierarchy-parent lg:sticky lg:top-6 overflow-hidden border-blue-200 dark:border-blue-700/40 dark:shadow-blue-900/10">
               {/* Flag Background with Subtle Depth */}
               <div className="absolute inset-0">
                 {flagUrl ? (
@@ -357,7 +357,7 @@ export function EnhancedIntelligenceContent({
         )}
 
         {/* Main Content Area */}
-        <div className={variant === "unified" ? "xl:col-span-3" : "col-span-full"}>
+        <div className={variant === "unified" ? "lg:col-span-3 space-y-4 sm:space-y-6" : "col-span-full space-y-4 sm:space-y-6"}>
           {/* Metrics Grid for non-unified variants */}
           {variant !== "unified" && (
             <CountryMetricsGrid

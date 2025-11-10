@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Coins } from "lucide-react";
 import { CurrencySelector, CurrencyInput } from "~/components/ui/currency-selector";
 import { api } from "~/trpc/react";
@@ -16,7 +16,7 @@ interface CurrencyAutocompleteProps {
   allowCustom?: boolean;
 }
 
-export function CurrencyAutocomplete({
+export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
   fieldName,
   value,
   onChange,
@@ -33,18 +33,18 @@ export function CurrencyAutocomplete({
     { enabled: isOpen }
   );
 
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     if (value.trim() && onSave) {
       onSave(fieldName, value.trim());
     }
-  };
+  }, [value, onSave, fieldName]);
 
-  const handleValueChange = (newValue: string) => {
+  const handleValueChange = useCallback((newValue: string) => {
     onChange(newValue);
     if (onSave && newValue.trim()) {
       onSave(fieldName, newValue.trim());
     }
-  };
+  }, [onChange, onSave, fieldName]);
 
   const availableCurrencies = getAvailableCurrencies();
   const currencyInfo = getCurrencyInfo(value);
@@ -175,4 +175,4 @@ export function CurrencyAutocomplete({
       </div>
     </div>
   );
-}
+});

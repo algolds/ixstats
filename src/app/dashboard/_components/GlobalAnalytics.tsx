@@ -396,20 +396,20 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
             </Select>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250} className="sm:h-[280px] lg:h-[300px]">
               <BarChart
                 data={topCountriesData}
                 layout="vertical"
                 margin={{ top: 8, right: 8, bottom: 48, left: 64 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={theme.gridColor} opacity={0.3} />
-                <XAxis type="number" tick={{ fill: theme.textColor }} stroke={theme.axisColor} />
+                <XAxis type="number" tick={{ fill: theme.textColor, fontSize: 10 }} stroke={theme.axisColor} />
                 <YAxis
                   dataKey="name"
                   type="category"
-                  tick={{ fill: theme.textColor }}
+                  tick={{ fill: theme.textColor, fontSize: 9 }}
                   stroke={theme.axisColor}
-                  width={80}
+                  width={70}
                   interval={0}
                 />
                 <RechartsTooltip

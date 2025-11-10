@@ -436,7 +436,7 @@ export function PolicyCreator({
             {/* Priority Selection */}
             <div className="space-y-3">
               <Label className="text-base font-semibold">Priority Level *</Label>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {(["critical", "high", "medium", "low"] as PolicyPriority[]).map((level) => (
                   <Button
                     key={level}
@@ -598,7 +598,7 @@ export function PolicyCreator({
                 {/* Financial Summary */}
                 <div className="bg-muted space-y-2 rounded-lg p-4">
                   <h5 className="mb-2 font-semibold">Financial Summary</h5>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Implementation Cost</p>
                       <p className="font-semibold">
@@ -631,7 +631,7 @@ export function PolicyCreator({
                 {(policy.formData.effectiveDate || policy.formData.expiryDate) && (
                   <div className="bg-muted space-y-2 rounded-lg p-4">
                     <h5 className="mb-2 font-semibold">Timeline</h5>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                       {policy.formData.effectiveDate && (
                         <div>
                           <p className="text-muted-foreground">Effective Date</p>

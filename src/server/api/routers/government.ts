@@ -746,6 +746,106 @@ export const governmentRouter = createTRPCRouter({
       return governmentStructure.departments.map(buildHierarchy);
     }),
 
+  // Autosave government structure (partial updates)
+  autosave: protectedProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        data: z.object({
+          governmentName: z.string().optional(),
+          governmentType: z.string().optional(),
+          headOfState: z.string().optional(),
+          headOfGovernment: z.string().optional(),
+          legislatureName: z.string().optional(),
+          executiveName: z.string().optional(),
+          judicialName: z.string().optional(),
+          totalBudget: z.number().optional(),
+          fiscalYear: z.string().optional(),
+          budgetCurrency: z.string().optional(),
+        }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { countryId, data } = input;
+
+      // Verify user owns the country
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+      });
+
+      if (!userProfile || userProfile.countryId !== countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to edit this country.",
+        });
+      }
+
+      try {
+        // Upsert government structure with partial data
+        const governmentStructure = await ctx.db.governmentStructure.upsert({
+          where: { countryId },
+          create: {
+            countryId,
+            governmentName: data.governmentName || "National Government",
+            governmentType: data.governmentType || "Federal Republic",
+            headOfState: data.headOfState,
+            headOfGovernment: data.headOfGovernment,
+            legislatureName: data.legislatureName,
+            executiveName: data.executiveName,
+            judicialName: data.judicialName,
+            totalBudget: data.totalBudget || 0,
+            fiscalYear: data.fiscalYear || "Calendar Year",
+            budgetCurrency: data.budgetCurrency || "USD",
+          },
+          update: {
+            ...(data.governmentName && { governmentName: data.governmentName }),
+            ...(data.governmentType && { governmentType: data.governmentType }),
+            ...(data.headOfState !== undefined && { headOfState: data.headOfState }),
+            ...(data.headOfGovernment !== undefined && { headOfGovernment: data.headOfGovernment }),
+            ...(data.legislatureName !== undefined && { legislatureName: data.legislatureName }),
+            ...(data.executiveName !== undefined && { executiveName: data.executiveName }),
+            ...(data.judicialName !== undefined && { judicialName: data.judicialName }),
+            ...(data.totalBudget !== undefined && { totalBudget: data.totalBudget }),
+            ...(data.fiscalYear && { fiscalYear: data.fiscalYear }),
+            ...(data.budgetCurrency && { budgetCurrency: data.budgetCurrency }),
+          },
+        });
+
+        // Log autosave to audit trail
+        await ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth.userId,
+            action: "autosave:government",
+            target: countryId,
+            details: JSON.stringify({
+              fields: Object.keys(data),
+              timestamp: new Date().toISOString(),
+            }),
+            success: true,
+          },
+        });
+
+        return {
+          success: true,
+          data: governmentStructure,
+          message: "Government structure autosaved successfully",
+        };
+      } catch (error) {
+        // Log autosave failure to audit trail
+        await ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth.userId,
+            action: "autosave:government",
+            target: countryId,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+
+        throw error;
+      }
+    }),
+
   // Get atomic government components for a country
   getComponents: publicProcedure
     .input(z.object({ countryId: z.string() }))

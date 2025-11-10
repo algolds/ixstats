@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Command, CommandGroup, CommandItem, CommandList } from "~/components/ui/command";
@@ -28,7 +28,7 @@ interface AutocompleteProps {
   allowCustom?: boolean;
 }
 
-export function Autocomplete({
+export const Autocomplete = React.memo(function Autocomplete({
   fieldName,
   value,
   onChange,
@@ -47,7 +47,7 @@ export function Autocomplete({
   const preventBlurRef = useRef(false);
 
   // Notify parent when open state changes
-  const handleOpenChange = (newOpen: boolean) => {
+  const handleOpenChange = useCallback((newOpen: boolean) => {
     setOpen(newOpen);
     if (onOpenChange) {
       onOpenChange(newOpen);
@@ -55,17 +55,24 @@ export function Autocomplete({
     if (!newOpen && onBlur) {
       onBlur();
     }
-  };
+  }, [onOpenChange, onBlur]);
 
-  // Filter suggestions based on current value
-  const filteredGlobal = globalSuggestions.filter((s) =>
-    s.value.toLowerCase().includes(value.toLowerCase())
-  );
-  const filteredUser = userSuggestions.filter((s) =>
-    s.value.toLowerCase().includes(value.toLowerCase())
+  // Filter suggestions based on current value - memoize to avoid recalculation
+  const filteredGlobal = useMemo(() =>
+    globalSuggestions.filter((s) =>
+      s.value.toLowerCase().includes(value.toLowerCase())
+    ),
+    [globalSuggestions, value]
   );
 
-  const handleSelect = (selectedValue: string) => {
+  const filteredUser = useMemo(() =>
+    userSuggestions.filter((s) =>
+      s.value.toLowerCase().includes(value.toLowerCase())
+    ),
+    [userSuggestions, value]
+  );
+
+  const handleSelect = useCallback((selectedValue: string) => {
     preventBlurRef.current = true;
     onChange(selectedValue);
     handleOpenChange(false);
@@ -74,7 +81,28 @@ export function Autocomplete({
       inputRef.current?.focus();
       preventBlurRef.current = false;
     }, 0);
-  };
+  }, [onChange, handleOpenChange]);
+
+  // Memoize input event handlers to prevent re-renders
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+    if (!open) handleOpenChange(true);
+  }, [onChange, open, handleOpenChange]);
+
+  const handleInputFocus = useCallback(() => {
+    handleOpenChange(true);
+  }, [handleOpenChange]);
+
+  const handleInputBlur = useCallback(() => {
+    // Don't blur if we're selecting from dropdown
+    if (preventBlurRef.current) {
+      return;
+    }
+    // Delay closing to allow clicking on suggestions
+    setTimeout(() => {
+      handleOpenChange(false);
+    }, 200);
+  }, [handleOpenChange]);
 
   return (
     <div className="relative">
@@ -82,21 +110,9 @@ export function Autocomplete({
         ref={inputRef}
         type="text"
         value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          if (!open) handleOpenChange(true);
-        }}
-        onFocus={() => handleOpenChange(true)}
-        onBlur={() => {
-          // Don't blur if we're selecting from dropdown
-          if (preventBlurRef.current) {
-            return;
-          }
-          // Delay closing to allow clicking on suggestions
-          setTimeout(() => {
-            handleOpenChange(false);
-          }, 200);
-        }}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
         disabled={disabled}
         placeholder={placeholder}
         className={cn(
@@ -129,60 +145,70 @@ export function Autocomplete({
                   {/* User's Custom Values */}
                   {filteredUser.length > 0 && (
                     <CommandGroup heading="Your Custom Values">
-                      {filteredUser.map((suggestion) => (
-                        <CommandItem
-                          key={suggestion.id}
-                          value={suggestion.value}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            handleSelect(suggestion.value);
-                          }}
-                          onSelect={() => handleSelect(suggestion.value)}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              value === suggestion.value ? "opacity-100" : "opacity-0"
+                      {filteredUser.map((suggestion) => {
+                        const handleMouseDown = (e: React.MouseEvent) => {
+                          e.preventDefault();
+                          handleSelect(suggestion.value);
+                        };
+                        const handleSelectItem = () => handleSelect(suggestion.value);
+
+                        return (
+                          <CommandItem
+                            key={suggestion.id}
+                            value={suggestion.value}
+                            onMouseDown={handleMouseDown}
+                            onSelect={handleSelectItem}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                value === suggestion.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <span className="flex-1">{suggestion.value}</span>
+                            {suggestion.usageCount && suggestion.usageCount > 1 && (
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                {suggestion.usageCount}x
+                              </Badge>
                             )}
-                          />
-                          <span className="flex-1">{suggestion.value}</span>
-                          {suggestion.usageCount && suggestion.usageCount > 1 && (
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              {suggestion.usageCount}x
-                            </Badge>
-                          )}
-                        </CommandItem>
-                      ))}
+                          </CommandItem>
+                        );
+                      })}
                     </CommandGroup>
                   )}
 
                   {/* Global/Common Values */}
                   {filteredGlobal.length > 0 && (
                     <CommandGroup heading="Common Values">
-                      {filteredGlobal.map((suggestion) => (
-                        <CommandItem
-                          key={suggestion.id}
-                          value={suggestion.value}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            handleSelect(suggestion.value);
-                          }}
-                          onSelect={() => handleSelect(suggestion.value)}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              value === suggestion.value ? "opacity-100" : "opacity-0"
+                      {filteredGlobal.map((suggestion) => {
+                        const handleMouseDown = (e: React.MouseEvent) => {
+                          e.preventDefault();
+                          handleSelect(suggestion.value);
+                        };
+                        const handleSelectItem = () => handleSelect(suggestion.value);
+
+                        return (
+                          <CommandItem
+                            key={suggestion.id}
+                            value={suggestion.value}
+                            onMouseDown={handleMouseDown}
+                            onSelect={handleSelectItem}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                value === suggestion.value ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <span className="flex-1">{suggestion.value}</span>
+                            {suggestion.usageCount && suggestion.usageCount > 1 && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {suggestion.usageCount}x
+                              </Badge>
                             )}
-                          />
-                          <span className="flex-1">{suggestion.value}</span>
-                          {suggestion.usageCount && suggestion.usageCount > 1 && (
-                            <Badge variant="outline" className="ml-2 text-xs">
-                              {suggestion.usageCount}x
-                            </Badge>
-                          )}
-                        </CommandItem>
-                      ))}
+                          </CommandItem>
+                        );
+                      })}
                     </CommandGroup>
                   )}
                 </>
@@ -193,4 +219,4 @@ export function Autocomplete({
       )}
     </div>
   );
-}
+});

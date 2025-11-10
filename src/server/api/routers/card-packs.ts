@@ -7,6 +7,7 @@ import {
   createTRPCRouter,
   publicProcedure,
   protectedProcedure,
+  adminProcedure,
 } from "~/server/api/trpc";
 import { PackType, CardType } from "@prisma/client";
 import {
@@ -29,8 +30,9 @@ export const cardPacksRouter = createTRPCRouter({
 
   /**
    * Get all available packs for purchase
+   * Admin-only endpoint
    */
-  getAvailablePacks: publicProcedure.query(async ({ ctx }) => {
+  getAvailablePacks: adminProcedure.query(async ({ ctx }) => {
     try {
       const packs = await getAvailablePacks(ctx.db);
 
@@ -49,8 +51,9 @@ export const cardPacksRouter = createTRPCRouter({
 
   /**
    * Get pack details by ID
+   * Admin-only endpoint
    */
-  getPackById: publicProcedure
+  getPackById: adminProcedure
     .input(
       z.object({
         packId: z.string().cuid(),
@@ -104,8 +107,9 @@ export const cardPacksRouter = createTRPCRouter({
 
   /**
    * Get user's packs (unopened by default)
+   * Admin-only endpoint
    */
-  getMyPacks: protectedProcedure
+  getMyPacks: adminProcedure
     .input(
       z
         .object({
@@ -145,8 +149,9 @@ export const cardPacksRouter = createTRPCRouter({
 
   /**
    * Purchase pack with IxCredits
+   * Admin-only endpoint
    */
-  purchasePack: protectedProcedure
+  purchasePack: adminProcedure
     .input(
       z.object({
         packId: z.string().cuid(),
@@ -202,8 +207,9 @@ export const cardPacksRouter = createTRPCRouter({
 
   /**
    * Open pack and reveal cards
+   * Admin-only endpoint
    */
-  openPack: protectedProcedure
+  openPack: adminProcedure
     .input(
       z.object({
         userPackId: z.string().cuid(),
@@ -263,9 +269,10 @@ export const cardPacksRouter = createTRPCRouter({
   // ============================================================
 
   /**
-   * Create new pack configuration (admin only)
+   * Create new pack configuration
+   * Admin-only endpoint
    */
-  createPack: protectedProcedure
+  createPack: adminProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -299,14 +306,6 @@ export const cardPacksRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Check admin role
-        if (!ctx.user || ctx.user.role?.name !== "ADMIN") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Unauthorized: Admin access required",
-          });
-        }
-
         // Validate odds before creating
         const odds = {
           commonOdds: input.commonOdds,
@@ -346,9 +345,10 @@ export const cardPacksRouter = createTRPCRouter({
     }),
 
   /**
-   * Update pack configuration (admin only)
+   * Update pack configuration
+   * Admin-only endpoint
    */
-  updatePack: protectedProcedure
+  updatePack: adminProcedure
     .input(
       z.object({
         packId: z.string().cuid(),
@@ -382,14 +382,6 @@ export const cardPacksRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Check admin role
-        if (!ctx.user || ctx.user.role?.name !== "ADMIN") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Unauthorized: Admin access required",
-          });
-        }
-
         // If updating odds, validate the final sum
         if (
           input.updates.commonOdds !== undefined ||
@@ -453,9 +445,10 @@ export const cardPacksRouter = createTRPCRouter({
     }),
 
   /**
-   * Deactivate pack (admin only)
+   * Deactivate pack
+   * Admin-only endpoint
    */
-  deactivatePack: protectedProcedure
+  deactivatePack: adminProcedure
     .input(
       z.object({
         packId: z.string().cuid(),
@@ -463,14 +456,6 @@ export const cardPacksRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Check admin role
-        if (!ctx.user || ctx.user.role?.name !== "ADMIN") {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Unauthorized: Admin access required",
-          });
-        }
-
         const pack = await ctx.db.cardPack.update({
           where: { id: input.packId },
           data: {

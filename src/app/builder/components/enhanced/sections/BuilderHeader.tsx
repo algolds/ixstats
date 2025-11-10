@@ -1,17 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Settings, AlertTriangle, Zap } from "lucide-react";
+import { ArrowLeft, Settings, AlertTriangle, Zap, Save, Loader2, History } from "lucide-react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { useBuilderContext } from "../context/BuilderStateContext";
+import { AutosaveHistoryPanel } from "~/components/builder/AutosaveHistoryPanel";
 
 interface BuilderHeaderProps {
   onBackToIntro?: () => void;
   onClearDraft?: () => void;
   mode?: "create" | "edit";
+  onManualSave?: () => Promise<void>;
+  isSaving?: boolean;
+  countryId?: string;
 }
 
 /**
@@ -21,6 +25,7 @@ interface BuilderHeaderProps {
  * - MyCountry logo
  * - Mode badge (Builder/Editor)
  * - Auto-save indicator
+ * - Manual save progress button
  * - Clear draft button
  * - Advanced mode toggle
  * - Back button
@@ -29,9 +34,13 @@ export function BuilderHeader({
   onBackToIntro,
   onClearDraft,
   mode = "create",
+  onManualSave,
+  isSaving = false,
+  countryId,
 }: BuilderHeaderProps) {
   const { builderState, setBuilderState, lastSaved, isAutoSaving } = useBuilderContext();
   const isEditMode = mode === "edit";
+  const [showHistory, setShowHistory] = useState(false);
 
   return (
     <motion.div
@@ -66,6 +75,42 @@ export function BuilderHeader({
                   {isAutoSaving ? "Saving..." : `Saved ${lastSaved.toLocaleTimeString()}`}
                 </span>
               </div>
+            )}
+
+            {/* Manual save button */}
+            {onManualSave && (
+              <Button
+                onClick={onManualSave}
+                disabled={isSaving}
+                variant="outline"
+                size="sm"
+                className="hidden md:flex"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Progress
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Autosave History button - only show in edit mode */}
+            {isEditMode && countryId && (
+              <Button
+                onClick={() => setShowHistory(true)}
+                variant="outline"
+                size="sm"
+                className="hidden md:flex"
+              >
+                <History className="mr-2 h-4 w-4" />
+                History
+              </Button>
             )}
 
             {/* Clear draft button - only show if there's saved data */}
@@ -104,6 +149,15 @@ export function BuilderHeader({
           </div>
         </div>
       </div>
+
+      {/* Autosave History Panel */}
+      {isEditMode && countryId && (
+        <AutosaveHistoryPanel
+          countryId={countryId}
+          isOpen={showHistory}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </motion.div>
   );
 }

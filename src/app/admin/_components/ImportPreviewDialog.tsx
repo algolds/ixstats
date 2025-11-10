@@ -243,7 +243,7 @@ export function ImportPreviewDialog({
                         {change.changes && change.changes.length > 0 ? (
                           <div className="space-y-2 text-xs">
                             {change.changes.map((fieldChange, fieldIndex) => (
-                              <div key={fieldIndex} className="grid grid-cols-3 items-center gap-2">
+                              <div key={fieldIndex} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-center gap-2">
                                 <span
                                   className="truncate text-gray-500 dark:text-gray-400"
                                   title={fieldChange.fieldLabel}

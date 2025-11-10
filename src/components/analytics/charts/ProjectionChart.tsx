@@ -73,13 +73,13 @@ export const ProjectionChart = React.memo<ProjectionChartProps>(
           <CardDescription>Projected growth over {timeframeLabel}</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={280} className="sm:h-[320px] lg:h-[350px]">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 12 }} />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} tickFormatter={formatCurrency} />
+              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickFormatter={formatCurrency} />
               <Tooltip content={<GlassTooltip formatter={formatCurrency} />} />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: "11px" }} />
               {selectedScenarios.includes("optimistic") && (
                 <Line
                   type="monotone"
@@ -88,6 +88,7 @@ export const ProjectionChart = React.memo<ProjectionChartProps>(
                   strokeWidth={2}
                   name="Optimistic"
                   strokeDasharray="5 5"
+                  dot={{ r: 2 }}
                 />
               )}
               {selectedScenarios.includes("realistic") && (
@@ -95,8 +96,9 @@ export const ProjectionChart = React.memo<ProjectionChartProps>(
                   type="monotone"
                   dataKey="realistic"
                   stroke={DEFAULT_CHART_COLORS[0]}
-                  strokeWidth={3}
+                  strokeWidth={2.5}
                   name="Realistic"
+                  dot={{ r: 2 }}
                 />
               )}
               {selectedScenarios.includes("pessimistic") && (
@@ -107,6 +109,7 @@ export const ProjectionChart = React.memo<ProjectionChartProps>(
                   strokeWidth={2}
                   name="Pessimistic"
                   strokeDasharray="5 5"
+                  dot={{ r: 2 }}
                 />
               )}
             </LineChart>

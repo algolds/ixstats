@@ -16,6 +16,7 @@ import {
   publicProcedure,
   protectedProcedure,
   rateLimitedPublicProcedure,
+  adminProcedure,
 } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault-service";
 import { type VaultTransactionType } from "@prisma/client";
@@ -39,9 +40,9 @@ const vaultTransactionTypeEnum = z.enum([
 export const vaultRouter = createTRPCRouter({
   /**
    * Get vault balance and stats for a user
-   * Public endpoint with rate limiting
+   * Admin-only endpoint
    */
-  getBalance: rateLimitedPublicProcedure
+  getBalance: adminProcedure
     .input(
       z.object({
         userId: z.string().min(1, "User ID is required"),
@@ -59,9 +60,9 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get transaction history with pagination
-   * Protected endpoint - requires authentication
+   * Admin-only endpoint
    */
-  getTransactions: protectedProcedure
+  getTransactions: adminProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).optional().default(50),
@@ -96,9 +97,9 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Claim daily login bonus
-   * Protected endpoint - requires authentication
+   * Admin-only endpoint
    */
-  claimDailyBonus: protectedProcedure.mutation(async ({ ctx }) => {
+  claimDailyBonus: adminProcedure.mutation(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new Error("User ID not found in authentication context");
@@ -127,9 +128,9 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Claim streak bonus (updates login streak)
-   * Protected endpoint - requires authentication
+   * Admin-only endpoint
    */
-  claimStreakBonus: protectedProcedure.mutation(async ({ ctx }) => {
+  claimStreakBonus: adminProcedure.mutation(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new Error("User ID not found in authentication context");
@@ -150,9 +151,9 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Spend IxCredits
-   * Protected endpoint - requires authentication
+   * Admin-only endpoint
    */
-  spendCredits: protectedProcedure
+  spendCredits: adminProcedure
     .input(
       z.object({
         amount: z.number().min(0.01, "Amount must be positive"),
@@ -202,9 +203,9 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get vault level
-   * Public endpoint - no authentication required
+   * Admin-only endpoint
    */
-  getVaultLevel: publicProcedure
+  getVaultLevel: adminProcedure
     .input(
       z.object({
         userId: z.string().min(1, "User ID is required"),
@@ -228,9 +229,9 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get today's earnings summary
-   * Protected endpoint - requires authentication
+   * Admin-only endpoint
    */
-  getEarningsSummary: protectedProcedure.query(async ({ ctx }) => {
+  getEarningsSummary: adminProcedure.query(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new Error("User ID not found in authentication context");
@@ -246,10 +247,51 @@ export const vaultRouter = createTRPCRouter({
   }),
 
   /**
-   * Calculate passive income for a country
-   * Protected endpoint - requires authentication
+   * Get today's earnings breakdown by source
+   * Admin-only endpoint
    */
-  calculatePassiveIncome: protectedProcedure
+  getTodayEarnings: adminProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.auth?.userId) {
+        throw new Error("User ID not found in authentication context");
+      }
+
+      const summary = await vaultService.getEarningsSummary(ctx.auth.userId, ctx.db);
+
+      // Format source labels for display
+      const formatSourceLabel = (source: string): string => {
+        const labels: Record<string, string> = {
+          EARN_PASSIVE: "Passive Income",
+          EARN_ACTIVE: "Active Gameplay",
+          EARN_CARDS: "Card Activities",
+          EARN_SOCIAL: "Social Engagement",
+          DAILY_LOGIN: "Daily Bonus",
+        };
+        return labels[source] || source.replace(/_/g, " ");
+      };
+
+      const sources = Object.entries(summary.breakdown).map(([type, amount]) => ({
+        type,
+        label: formatSourceLabel(type),
+        amount,
+      }));
+
+      return {
+        total: summary.total,
+        sources,
+        transactionCount: summary.transactionCount,
+      };
+    } catch (error) {
+      console.error("[Vault Router] Error getting today's earnings:", error);
+      throw new Error("Failed to retrieve today's earnings");
+    }
+  }),
+
+  /**
+   * Calculate passive income for a country
+   * Admin-only endpoint
+   */
+  calculatePassiveIncome: adminProcedure
     .input(
       z.object({
         countryId: z.string().min(1, "Country ID is required"),
@@ -273,9 +315,9 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Check daily earning cap
-   * Protected endpoint - requires authentication
+   * Admin-only endpoint
    */
-  checkDailyCap: protectedProcedure
+  checkDailyCap: adminProcedure
     .input(
       z.object({
         earnType: z.enum(["EARN_ACTIVE", "EARN_SOCIAL"]),
@@ -302,9 +344,9 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Earn IxCredits (internal use by other systems)
-   * Protected endpoint - requires authentication
+   * Admin-only endpoint
    */
-  earnCredits: protectedProcedure
+  earnCredits: adminProcedure
     .input(
       z.object({
         amount: z.number().min(0.01, "Amount must be positive"),
@@ -351,4 +393,26 @@ export const vaultRouter = createTRPCRouter({
         throw new Error("Failed to earn credits");
       }
     }),
+
+  /**
+   * Get user stats (totalCards, deckValue)
+   * Admin-only endpoint
+   */
+  getUserStats: adminProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.user?.id) {
+        throw new Error("User not found in authentication context");
+      }
+
+      return {
+        totalCards: ctx.user.totalCards ?? 0,
+        deckValue: ctx.user.deckValue ?? 0,
+        collectorLevel: ctx.user.collectorLevel ?? 1,
+        collectorXp: ctx.user.collectorXp ?? 0,
+      };
+    } catch (error) {
+      console.error("[Vault Router] Error getting user stats:", error);
+      throw new Error("Failed to retrieve user stats");
+    }
+  }),
 });

@@ -23,21 +23,36 @@ import { type VaultTransactionType } from "@prisma/client";
 export class VaultService {
   /**
    * Get or create a vault for a user
-   * @param userId Clerk user ID
+   * @param userIdOrClerkId Database User.id or Clerk user ID
    * @param db Prisma database client
    * @returns MyVault record
    */
-  private async getOrCreateVault(userId: string, db: PrismaClient) {
+  private async getOrCreateVault(userIdOrClerkId: string, db: PrismaClient) {
     try {
+      // First, try to find the User record (handles both database id and clerkUserId)
+      let user = await db.user.findFirst({
+        where: {
+          OR: [
+            { id: userIdOrClerkId },
+            { clerkUserId: userIdOrClerkId },
+          ],
+        },
+      });
+
+      if (!user) {
+        throw new Error(`User not found: ${userIdOrClerkId}`);
+      }
+
+      // Now find or create vault using the database User.id
       let vault = await db.myVault.findUnique({
-        where: { userId },
+        where: { userId: user.id },
       });
 
       if (!vault) {
         // Create new vault with default values
         vault = await db.myVault.create({
           data: {
-            userId,
+            userId: user.id,
             credits: 0,
             lifetimeEarned: 0,
             lifetimeSpent: 0,
@@ -48,12 +63,12 @@ export class VaultService {
             vaultXp: 0,
           },
         });
-        console.log(`[Vault Service] Created new vault for user ${userId}`);
+        console.log(`[Vault Service] Created new vault for user ${user.id} (Clerk: ${user.clerkUserId})`);
       }
 
       return vault;
     } catch (error) {
-      console.error(`[Vault Service] Failed to get/create vault for ${userId}:`, error);
+      console.error(`[Vault Service] Failed to get/create vault for ${userIdOrClerkId}:`, error);
       throw new Error("Failed to access vault");
     }
   }
@@ -317,6 +332,15 @@ export class VaultService {
         });
       }
 
+      // Check if daily bonus can be claimed
+      const lastLoginDate = vault.lastLoginDate ? new Date(vault.lastLoginDate) : null;
+      const now = new Date();
+      const canClaimDailyBonus = !lastLoginDate || (
+        lastLoginDate.getUTCFullYear() !== now.getUTCFullYear() ||
+        lastLoginDate.getUTCMonth() !== now.getUTCMonth() ||
+        lastLoginDate.getUTCDate() !== now.getUTCDate()
+      );
+
       return {
         credits: vault.credits,
         lifetimeEarned: vault.lifetimeEarned,
@@ -325,6 +349,7 @@ export class VaultService {
         vaultLevel: calculatedLevel,
         vaultXp: vault.vaultXp,
         loginStreak: vault.loginStreak,
+        canClaimDailyBonus,
         premiumMultiplier: 1.0, // TODO: Implement premium system
         isPremium: false, // TODO: Implement premium system
       };
@@ -338,6 +363,7 @@ export class VaultService {
         vaultLevel: 1,
         vaultXp: 0,
         loginStreak: 0,
+        canClaimDailyBonus: true,
         premiumMultiplier: 1.0,
         isPremium: false,
       };
@@ -375,12 +401,13 @@ export class VaultService {
 
       return transactions.map((tx) => ({
         id: tx.id,
+        amount: tx.credits, // Map to 'amount' for useRecentActivity hook
         credits: tx.credits,
         balanceAfter: tx.balanceAfter,
         type: tx.type,
         source: tx.source,
-        metadata: tx.metadata ? JSON.parse(tx.metadata as string) : null,
-        createdAt: tx.createdAt.toISOString(),
+        metadata: tx.metadata as Record<string, any> | null,
+        createdAt: new Date(tx.createdAt),
       }));
     } catch (error) {
       console.error(`[Vault Service] Failed to get transaction history for ${userId}:`, error);

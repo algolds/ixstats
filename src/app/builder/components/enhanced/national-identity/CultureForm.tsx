@@ -1,21 +1,72 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { Languages, Heart } from "lucide-react";
 import { EnhancedNumberInput } from "../../../primitives/enhanced";
+import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 
 interface CultureFormProps {
   identity: NationalIdentityData;
   onIdentityChange: (field: keyof NationalIdentityData, value: any) => void;
-  IdentityAutocomplete: React.ComponentType<any>;
+  onFieldSave: (fieldName: string, value: string) => void;
 }
 
-export function CultureForm({
+export const CultureForm = React.memo(function CultureForm({
   identity,
   onIdentityChange,
-  IdentityAutocomplete,
+  onFieldSave,
 }: CultureFormProps) {
+  // Memoize all change handlers with empty deps since parent callback is stable
+  const handleMottoChange = useCallback(
+    (value: any) => {
+      onIdentityChange("motto", String(value));
+    },
+    []
+  );
+
+  const handleMottoNativeChange = useCallback(
+    (value: any) => {
+      onIdentityChange("mottoNative", String(value));
+    },
+    []
+  );
+
+  const handleOfficialLanguagesChange = useCallback(
+    (value: string) => {
+      onIdentityChange("officialLanguages", value);
+    },
+    []
+  );
+
+  const handleNationalLanguageChange = useCallback(
+    (value: string) => {
+      onIdentityChange("nationalLanguage", value);
+    },
+    []
+  );
+
+  const handleNationalAnthemChange = useCallback(
+    (value: any) => {
+      onIdentityChange("nationalAnthem", String(value));
+    },
+    []
+  );
+
+  const handleNationalReligionChange = useCallback(
+    (value: any) => {
+      onIdentityChange("nationalReligion", String(value));
+    },
+    []
+  );
+
+  const handleNationalDayChange = useCallback(
+    (value: any) => {
+      onIdentityChange("nationalDay", String(value));
+    },
+    []
+  );
+
   return (
     <>
       {/* Mottos Section */}
@@ -25,7 +76,7 @@ export function CultureForm({
           <EnhancedNumberInput
             label="National Motto (English)"
             value={String(identity.motto || "")}
-            onChange={(value) => onIdentityChange("motto", String(value))}
+            onChange={handleMottoChange}
             sectionId="symbols"
             showButtons={false}
             placeholder="E pluribus unum, Liberty, Equality, Fraternity..."
@@ -35,7 +86,7 @@ export function CultureForm({
           <EnhancedNumberInput
             label="National Motto (Native Language)"
             value={String(identity.mottoNative || "")}
-            onChange={(value) => onIdentityChange("mottoNative", String(value))}
+            onChange={handleMottoNativeChange}
             sectionId="symbols"
             showButtons={false}
             placeholder="Original language version"
@@ -51,23 +102,25 @@ export function CultureForm({
           <IdentityAutocomplete
             fieldName="officialLanguages"
             value={String(identity.officialLanguages || "")}
-            onChange={(value: string) => onIdentityChange("officialLanguages", value)}
+            onChange={handleOfficialLanguagesChange}
             placeholder="English, Spanish, French..."
             icon={Languages}
+            onSave={onFieldSave}
           />
 
           <IdentityAutocomplete
             fieldName="nationalLanguage"
             value={String(identity.nationalLanguage || "")}
-            onChange={(value: string) => onIdentityChange("nationalLanguage", value)}
+            onChange={handleNationalLanguageChange}
             placeholder="Primary language"
             icon={Languages}
+            onSave={onFieldSave}
           />
 
           <EnhancedNumberInput
             label="National Anthem"
             value={String(identity.nationalAnthem || "")}
-            onChange={(value) => onIdentityChange("nationalAnthem", String(value))}
+            onChange={handleNationalAnthemChange}
             sectionId="symbols"
             showButtons={false}
             placeholder="Name of national anthem"
@@ -78,7 +131,7 @@ export function CultureForm({
             label="National Religion"
             description="Primary or state religion (if applicable)"
             value={String(identity.nationalReligion || "")}
-            onChange={(value) => onIdentityChange("nationalReligion", String(value))}
+            onChange={handleNationalReligionChange}
             sectionId="symbols"
             icon={Heart}
             showButtons={false}
@@ -90,7 +143,7 @@ export function CultureForm({
             label="National Day"
             description="Independence or national celebration day"
             value={String(identity.nationalDay || "")}
-            onChange={(value) => onIdentityChange("nationalDay", String(value))}
+            onChange={handleNationalDayChange}
             sectionId="symbols"
             showButtons={false}
             placeholder="July 4th, December 1st..."
@@ -100,4 +153,15 @@ export function CultureForm({
       </div>
     </>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent re-renders
+  return (
+    prevProps.identity.motto === nextProps.identity.motto &&
+    prevProps.identity.mottoNative === nextProps.identity.mottoNative &&
+    prevProps.identity.officialLanguages === nextProps.identity.officialLanguages &&
+    prevProps.identity.nationalLanguage === nextProps.identity.nationalLanguage &&
+    prevProps.identity.nationalAnthem === nextProps.identity.nationalAnthem &&
+    prevProps.identity.nationalReligion === nextProps.identity.nationalReligion &&
+    prevProps.identity.nationalDay === nextProps.identity.nationalDay
+  );
+});

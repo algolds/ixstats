@@ -166,8 +166,8 @@ export function CountrySymbolsUploader({
 
       const result = await response.json();
 
-      if (result.success && result.dataUrl) {
-        onFlagUrlChange?.(result.dataUrl);
+      if (result.success && result.url) {
+        onFlagUrlChange?.(result.url);
         toast.success("Flag uploaded successfully!");
       } else {
         throw new Error(result.error || "Upload failed");
@@ -223,8 +223,8 @@ export function CountrySymbolsUploader({
 
       const result = await response.json();
 
-      if (result.success && result.dataUrl) {
-        onCoatOfArmsUrlChange?.(result.dataUrl);
+      if (result.success && result.url) {
+        onCoatOfArmsUrlChange?.(result.url);
         toast.success("Coat of arms uploaded successfully!");
       } else {
         throw new Error(result.error || "Upload failed");

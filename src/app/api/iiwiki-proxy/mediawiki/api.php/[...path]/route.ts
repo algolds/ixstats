@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// WARNING: This proxy is BLOCKED by iiwiki's Cloudflare protection
+// This endpoint exists for debugging purposes only
+// ALL iiwiki API calls should use DIRECT access instead
+// See: /src/lib/mediawiki-config.ts for proper iiwiki configuration
+
 async function getServerIP(): Promise<string> {
   try {
     const response = await fetch("https://api.ipify.org?format=json", {
@@ -15,6 +20,11 @@ async function getServerIP(): Promise<string> {
 export async function GET(request: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
   const timestamp = new Date().toISOString();
+
+  console.warn(
+    "\n⚠️  WARNING: iiwiki proxy is blocked by Cloudflare. Use direct access instead."
+  );
+  console.warn("   See /src/lib/mediawiki-config.ts for proper iiwiki configuration\n");
 
   try {
     const url = new URL(request.url);

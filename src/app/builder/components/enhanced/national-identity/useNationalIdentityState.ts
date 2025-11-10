@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useBuilderTheming } from "~/hooks/useBuilderTheming";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
@@ -14,6 +14,18 @@ export function useNationalIdentityState(
   referenceCountry: RealCountryData | null | undefined,
   countryId?: string
 ) {
+  // Use refs to avoid recreating callbacks when inputs/identity change
+  const inputsRef = useRef(inputs);
+  const onInputsChangeRef = useRef(onInputsChange);
+
+  // Keep refs updated
+  useEffect(() => {
+    inputsRef.current = inputs;
+  }, [inputs]);
+
+  useEffect(() => {
+    onInputsChangeRef.current = onInputsChange;
+  }, [onInputsChange]);
   // State management
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
   const [showCoatOfArmsImageModal, setShowCoatOfArmsImageModal] = useState(false);
@@ -44,8 +56,8 @@ export function useNationalIdentityState(
   const upsertCustomGovernmentType = api.customTypes.upsertCustomGovernmentType.useMutation();
   const upsertFieldValue = api.customTypes.upsertFieldValue.useMutation();
 
-  // Initialize identity data
-  const identity = inputs.nationalIdentity || {
+  // Initialize identity data - memoize to prevent unnecessary re-renders
+  const identity = useMemo(() => inputs.nationalIdentity || {
     countryName: String(inputs.countryName || ""),
     officialName: "",
     governmentType: "republic",
@@ -72,7 +84,7 @@ export function useNationalIdentityState(
     postalCodeFormat: "",
     nationalSport: "",
     weekStartDay: "monday",
-  };
+  }, [inputs.nationalIdentity, inputs.countryName]);
 
   // Auto-sync for national identity (edit mode only)
   const autoSync = useNationalIdentityAutoSync(countryId, identity, {
@@ -122,9 +134,11 @@ export function useNationalIdentityState(
     }
   }, [flag?.flagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl]);
 
-  // Event handlers
-  const handleIdentityChange = (field: string | number | symbol, value: any) => {
-    const newIdentity = { ...identity, [field]: value };
+  // Event handlers - use refs to prevent recreation when inputs change
+  const handleIdentityChange = useCallback((field: string | number | symbol, value: any) => {
+    const currentInputs = inputsRef.current;
+    const currentIdentity = currentInputs.nationalIdentity || identity;
+    const newIdentity = { ...currentIdentity, [field]: value };
 
     if (field === "countryName" && value && !newIdentity.demonym) {
       let demonym = value.toString();
@@ -134,24 +148,26 @@ export function useNationalIdentityState(
       newIdentity.demonym = demonym;
     }
 
-    onInputsChange({
-      ...inputs,
+    onInputsChangeRef.current({
+      ...currentInputs,
       nationalIdentity: newIdentity,
-      countryName: field === "countryName" ? value : inputs.countryName,
+      countryName: field === "countryName" ? value : currentInputs.countryName,
     });
-  };
+  }, []); // No dependencies - uses refs
 
-  const handleFlagUrlChange = (url: string) => {
-    onInputsChange({ ...inputs, flagUrl: url, coatOfArmsUrl: inputs.coatOfArmsUrl ?? "" });
-  };
+  const handleFlagUrlChange = useCallback((url: string) => {
+    const currentInputs = inputsRef.current;
+    onInputsChangeRef.current({ ...currentInputs, flagUrl: url, coatOfArmsUrl: currentInputs.coatOfArmsUrl ?? "" });
+  }, []); // No dependencies - uses refs
 
-  const handleCoatOfArmsUrlChange = (url: string) => {
-    onInputsChange({ ...inputs, flagUrl: inputs.flagUrl ?? "", coatOfArmsUrl: url });
-  };
+  const handleCoatOfArmsUrlChange = useCallback((url: string) => {
+    const currentInputs = inputsRef.current;
+    onInputsChangeRef.current({ ...currentInputs, flagUrl: currentInputs.flagUrl ?? "", coatOfArmsUrl: url });
+  }, []); // No dependencies - uses refs
 
-  const handleFieldValueSave = (fieldName: string, value: string) => {
+  const handleFieldValueSave = useCallback((fieldName: string, value: string) => {
     upsertFieldValue.mutate({ fieldName, value });
-  };
+  }, [upsertFieldValue]);
 
   return {
     // State

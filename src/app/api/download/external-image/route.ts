@@ -1,7 +1,11 @@
-// API endpoint for downloading external images and converting to base64
-// Handles CORS issues and validates downloaded images
+// API endpoint for downloading external images and saving to server filesystem
+// Handles CORS issues, validates downloaded images, and caches them locally
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { writeFile, mkdir } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
+import crypto from "crypto";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = [
@@ -11,7 +15,14 @@ const ALLOWED_TYPES = [
   "image/gif",
   "image/webp",
   "image/svg+xml",
+  "image/svg", // Support browsers/CDNs that send image/svg for SVG files
 ];
+
+// SVG files may be served with these content-types
+const SVG_CONTENT_TYPES = ["image/svg+xml", "image/svg", "text/xml", "application/xml"];
+
+// Get base path for production deployments (e.g., /projects/ixstats)
+const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 // Trusted domains for image downloads
 const TRUSTED_DOMAINS = [
@@ -51,8 +62,23 @@ function getFileExtensionFromType(contentType: string): string {
     "image/gif": "gif",
     "image/webp": "webp",
     "image/svg+xml": "svg",
+    "image/svg": "svg",
+    "text/xml": "svg", // SVG files sometimes served as text/xml
+    "application/xml": "svg", // SVG files sometimes served as application/xml
   };
   return typeMap[contentType] || "png";
+}
+
+function isSvgByUrl(url: string): boolean {
+  return url.toLowerCase().endsWith(".svg");
+}
+
+function generateSafeFileName(originalUrl: string, contentType: string): string {
+  // Create a hash of the URL to ensure uniqueness
+  const hash = crypto.createHash("md5").update(originalUrl).digest("hex");
+  const extension = getFileExtensionFromType(contentType);
+  const timestamp = Date.now();
+  return `downloaded_${timestamp}_${hash}.${extension}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -86,9 +112,10 @@ export async function POST(request: NextRequest) {
     console.log(`[ExternalImageDownload] Downloading: ${imageUrl}`);
 
     // Download the image with proper headers
+    // CRITICAL: Must use "IxStats-Builder" user agent for IIWiki compatibility
     const imageResponse = await fetch(imageUrl, {
       headers: {
-        "User-Agent": "IxStats/1.0 (Country Builder)",
+        "User-Agent": "IxStats-Builder",
         Accept: "image/*",
       },
       // Timeout after 10 seconds
@@ -100,14 +127,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Get content type
-    const contentType = imageResponse.headers.get("content-type") || "image/png";
+    let contentType = imageResponse.headers.get("content-type") || "image/png";
+
+    // Handle SVG files that may have ambiguous content-types
+    // If URL ends in .svg and content-type is XML-based, treat as SVG
+    const isSvgFile = isSvgByUrl(imageUrl);
+    if (isSvgFile && SVG_CONTENT_TYPES.includes(contentType)) {
+      contentType = "image/svg+xml"; // Normalize to standard SVG MIME type
+    }
 
     // Validate content type
-    if (!ALLOWED_TYPES.includes(contentType)) {
+    if (!ALLOWED_TYPES.includes(contentType) && !(isSvgFile && SVG_CONTENT_TYPES.includes(contentType))) {
       return NextResponse.json(
         {
           success: false,
-          error: `Invalid file type: ${contentType}. Allowed types: PNG, JPG, GIF, WEBP, SVG`,
+          error: `Invalid file type: ${contentType}. Allowed types: PNG, JPG, GIF, WEBP, SVG. URL: ${imageUrl}`,
         },
         { status: 400 }
       );
@@ -127,25 +161,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert to base64
-    const buffer = Buffer.from(imageBuffer);
-    const base64 = buffer.toString("base64");
-    const dataUrl = `data:${contentType};base64,${base64}`;
+    // Generate safe file name
+    const fileName = generateSafeFileName(imageUrl, contentType);
 
-    // Generate file name
-    const originalFileName = getFileNameFromUrl(imageUrl);
-    const extension = getFileExtensionFromType(contentType);
-    const fileName = originalFileName.includes(".")
-      ? originalFileName
-      : `${originalFileName}.${extension}`;
+    // Ensure images directory exists
+    const imagesDir = path.join(process.cwd(), "public", "images", "downloaded");
+    if (!existsSync(imagesDir)) {
+      await mkdir(imagesDir, { recursive: true });
+      console.log(`[ExternalImageDownload] Created directory: ${imagesDir}`);
+    }
+
+    // Save the file to disk
+    const filePath = path.join(imagesDir, fileName);
+    const buffer = Buffer.from(imageBuffer);
+    await writeFile(filePath, buffer);
+
+    // Generate public URL with base path for production
+    const publicUrl = BASE_PATH ? `${BASE_PATH}/images/downloaded/${fileName}` : `/images/downloaded/${fileName}`;
 
     console.log(
-      `[ExternalImageDownload] Successfully downloaded: ${fileName} (${imageBuffer.byteLength} bytes)`
+      `[ExternalImageDownload] Successfully saved: ${fileName} (${imageBuffer.byteLength} bytes) to ${publicUrl}`
     );
 
     return NextResponse.json({
       success: true,
-      dataUrl,
+      url: publicUrl,
       originalUrl: imageUrl,
       fileName,
       fileSize: imageBuffer.byteLength,
@@ -154,6 +194,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[ExternalImageDownload] Error:", error);
+    console.error("[ExternalImageDownload] Error details:", {
+      imageUrl,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     if (error instanceof Error) {
       if (error.name === "AbortError") {

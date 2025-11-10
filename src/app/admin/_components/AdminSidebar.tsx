@@ -1,6 +1,7 @@
 // src/app/admin/_components/AdminSidebar.tsx
 // Admin panel navigation sidebar
 
+import { useState } from "react";
 import {
   Shield,
   Settings,
@@ -22,9 +23,14 @@ import {
   UserCog,
   MapPin,
   Activity,
+  CreditCard,
+  Menu,
+  X,
 } from "lucide-react";
 import { Users as UsersIcon } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
+import { Button } from "~/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 
 interface AdminSidebarProps {
   selectedSection: string;
@@ -32,63 +38,70 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ selectedSection, onSectionChange }: AdminSidebarProps) {
-  return (
-    <div className="bg-card/50 border-border/50 flex min-h-screen w-72 flex-col border-r backdrop-blur-sm">
-      {/* Header */}
-      <div className="border-border/50 border-b p-6">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/10 border-primary/20 rounded-xl border p-2">
-            <Shield className="text-primary h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-foreground text-xl font-bold">Admin Console</h1>
-            <p className="text-muted-foreground text-sm">System Management</p>
-          </div>
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleSectionChange = (section: string) => {
+    onSectionChange(section);
+    setIsOpen(false); // Close mobile menu after selection
+  };
+
+  const sidebarContent = (
+    <div className="flex min-h-full flex-col">{/* Sidebar content will go here */}
+    {/* Header */}
+    <div className="border-border/50 border-b p-6">
+      <div className="flex items-center gap-3">
+        <div className="bg-primary/10 border-primary/20 rounded-xl border p-2">
+          <Shield className="text-primary h-6 w-6" />
+        </div>
+        <div>
+          <h1 className="text-foreground text-xl font-bold">Admin Console</h1>
+          <p className="text-muted-foreground text-sm">System Management</p>
         </div>
       </div>
+    </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <nav className="space-y-6">
-          {/* Overview */}
-          <div>
-            <button
-              onClick={() => onSectionChange("overview")}
-              className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 transition-all duration-200 ${
-                selectedSection === "overview"
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Settings className="h-5 w-5" />
-              <span className="font-medium">Dashboard</span>
-            </button>
-          </div>
+    {/* Navigation */}
+    <div className="flex-1 overflow-y-auto p-4">
+      <nav className="space-y-6">
+        {/* Overview */}
+        <div>
+          <button
+            onClick={() => handleSectionChange("overview")}
+            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 transition-all duration-200 ${
+              selectedSection === "overview"
+                ? "bg-primary text-primary-foreground shadow-lg"
+                : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Settings className="h-5 w-5" />
+            <span className="font-medium">Dashboard</span>
+          </button>
+        </div>
 
-          {/* Main Functions */}
-          <div>
-            <h3 className="text-muted-foreground mb-3 px-4 text-xs font-semibold tracking-wider uppercase">
-              Core Functions
-            </h3>
-            <div className="space-y-1">
-              {[
-                { value: "system", icon: <Monitor className="h-5 w-5" />, label: "System Monitor" },
-                { value: "formulas", icon: <Code className="h-5 w-5" />, label: "Formula Editor" },
-                {
-                  value: "storyteller",
-                  icon: <Gamepad2 className="h-5 w-5" />,
-                  label: "Storyteller (God Mode)",
-                },
-                { value: "time", icon: <Clock className="h-5 w-5" />, label: "Time Controls" },
-                {
-                  value: "navigation",
-                  icon: <Settings className="h-5 w-5" />,
-                  label: "Navigation Settings",
-                },
-              ].map((item) => (
-                <button
-                  key={item.value}
-                  onClick={() => onSectionChange(item.value)}
+        {/* Main Functions */}
+        <div>
+          <h3 className="text-muted-foreground mb-3 px-4 text-xs font-semibold tracking-wider uppercase">
+            Core Functions
+          </h3>
+          <div className="space-y-1">
+            {[
+              { value: "system", icon: <Monitor className="h-5 w-5" />, label: "System Monitor" },
+              { value: "formulas", icon: <Code className="h-5 w-5" />, label: "Formula Editor" },
+              {
+                value: "storyteller",
+                icon: <Gamepad2 className="h-5 w-5" />,
+                label: "Storyteller (God Mode)",
+              },
+              { value: "time", icon: <Clock className="h-5 w-5" />, label: "Time Controls" },
+              {
+                value: "navigation",
+                icon: <Settings className="h-5 w-5" />,
+                label: "Navigation Settings",
+              },
+            ].map((item) => (
+              <button
+                key={item.value}
+                onClick={() => handleSectionChange(item.value)}
                   className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200 ${
                     selectedSection === item.value
                       ? "bg-primary/10 text-primary border-primary/20 border"
@@ -118,47 +131,47 @@ export function AdminSidebar({ selectedSection, onSectionChange }: AdminSidebarP
                 },
               ].map((item) => (
                 <button
-                  key={item.value}
-                  onClick={() => onSectionChange(item.value)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200 ${
-                    selectedSection === item.value
-                      ? "bg-primary/10 text-primary border-primary/20 border"
-                      : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {item.icon}
-                  <span className="text-sm font-medium">{item.label}</span>
-                </button>
-              ))}
-            </div>
+                key={item.value}
+                onClick={() => handleSectionChange(item.value)}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200 ${
+                  selectedSection === item.value
+                    ? "bg-primary/10 text-primary border-primary/20 border"
+                    : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {item.icon}
+                <span className="text-sm font-medium">{item.label}</span>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* User Management */}
-          <div>
-            <h3 className="text-muted-foreground mb-3 px-4 text-xs font-semibold tracking-wider uppercase">
-              User Management
-            </h3>
-            <div className="space-y-1">
-              {[
-                {
-                  value: "user-management",
-                  icon: <Users className="h-5 w-5" />,
-                  label: "Users & Roles",
-                },
-                {
-                  value: "country-admin",
-                  icon: <UsersIcon className="h-5 w-5" />,
-                  label: "Country Admin",
-                },
-                {
-                  value: "notifications",
-                  icon: <Bell className="h-5 w-5" />,
-                  label: "Notifications",
-                },
-              ].map((item) => (
-                <button
-                  key={item.value}
-                  onClick={() => onSectionChange(item.value)}
+        {/* User Management */}
+        <div>
+          <h3 className="text-muted-foreground mb-3 px-4 text-xs font-semibold tracking-wider uppercase">
+            User Management
+          </h3>
+          <div className="space-y-1">
+            {[
+              {
+                value: "user-management",
+                icon: <Users className="h-5 w-5" />,
+                label: "Users & Roles",
+              },
+              {
+                value: "country-admin",
+                icon: <UsersIcon className="h-5 w-5" />,
+                label: "Country Admin",
+              },
+              {
+                value: "notifications",
+                icon: <Bell className="h-5 w-5" />,
+                label: "Notifications",
+              },
+            ].map((item) => (
+              <button
+                key={item.value}
+                onClick={() => handleSectionChange(item.value)}
                   className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200 ${
                     selectedSection === item.value
                       ? "bg-primary/10 text-primary border-primary/20 border"
@@ -227,48 +240,89 @@ export function AdminSidebar({ selectedSection, onSectionChange }: AdminSidebarP
                 <UserCog className="h-5 w-5" />
                 <span className="text-sm font-medium">NPC Personalities</span>
               </a>
+              <a
+                href={withBasePath("/vault")}
+                className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
+              >
+                <CreditCard className="h-5 w-5" />
+                <span className="text-sm font-medium">IxCards / MyVault</span>
+              </a>
             </div>
           </div>
 
-          {/* Monitoring */}
-          <div>
-            <h3 className="text-muted-foreground mb-3 px-4 text-xs font-semibold tracking-wider uppercase">
-              Monitoring
-            </h3>
-            <div className="space-y-1">
-              {[
-                { value: "logs", icon: <List className="h-5 w-5" />, label: "System Logs" },
-                {
-                  value: "economic",
-                  icon: <TrendingUp className="h-5 w-5" />,
-                  label: "Economic Monitor",
-                },
-              ].map((item) => (
-                <button
-                  key={item.value}
-                  onClick={() => onSectionChange(item.value)}
-                  className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200 ${
-                    selectedSection === item.value
-                      ? "bg-primary/10 text-primary border-primary/20 border"
-                      : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {item.icon}
-                  <span className="text-sm font-medium">{item.label}</span>
-                </button>
-              ))}
-            </div>
+        {/* Monitoring */}
+        <div>
+          <h3 className="text-muted-foreground mb-3 px-4 text-xs font-semibold tracking-wider uppercase">
+            Monitoring
+          </h3>
+          <div className="space-y-1">
+            {[
+              { value: "logs", icon: <List className="h-5 w-5" />, label: "System Logs" },
+              {
+                value: "economic",
+                icon: <TrendingUp className="h-5 w-5" />,
+                label: "Economic Monitor",
+              },
+            ].map((item) => (
+              <button
+                key={item.value}
+                onClick={() => handleSectionChange(item.value)}
+                className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200 ${
+                  selectedSection === item.value
+                    ? "bg-primary/10 text-primary border-primary/20 border"
+                    : "hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {item.icon}
+                <span className="text-sm font-medium">{item.label}</span>
+              </button>
+            ))}
+            <a
+              href={withBasePath("/admin/autosave-monitor")}
+              className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
+            >
+              <Activity className="h-5 w-5" />
+              <span className="text-sm font-medium">Autosave Monitor</span>
+            </a>
           </div>
-        </nav>
-      </div>
-
-      {/* Footer */}
-      <div className="border-border/50 border-t p-4">
-        <div className="text-muted-foreground flex items-center gap-2 text-xs">
-          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-          <span>System Online</span>
         </div>
+      </nav>
+    </div>
+
+    {/* Footer */}
+    <div className="border-border/50 border-t p-4">
+      <div className="text-muted-foreground flex items-center gap-2 text-xs">
+        <div className="h-2 w-2 rounded-full bg-green-500"></div>
+        <span>System Online</span>
       </div>
     </div>
+  </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      <div className="fixed left-4 top-4 z-50 lg:hidden">
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="h-10 w-10">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 p-0">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Admin Navigation</SheetTitle>
+            </SheetHeader>
+            {sidebarContent}
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <div className="bg-card/50 border-border/50 hidden min-h-screen w-72 flex-col border-r backdrop-blur-sm lg:flex">
+        {sidebarContent}
+      </div>
+    </>
   );
 }

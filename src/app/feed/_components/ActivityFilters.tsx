@@ -39,11 +39,11 @@ export function ActivityFilters({
   onCategoryChange,
 }: ActivityFiltersProps) {
   return (
-    <div className="glass-hierarchy-child space-y-4 rounded-lg p-4">
+    <div className="glass-hierarchy-child space-y-4 rounded-lg p-3 sm:p-4">
       {/* Activity Type Filters */}
       <div>
-        <h3 className="text-foreground mb-3 text-sm font-semibold">Activity Type</h3>
-        <div className="flex flex-wrap gap-2">
+        <h3 className="text-foreground mb-2 sm:mb-3 text-xs sm:text-sm font-semibold">Activity Type</h3>
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {filterOptions.map((option) => {
             const Icon = option.icon;
             const isActive = filter === option.value;
@@ -54,10 +54,11 @@ export function ActivityFilters({
                 variant={isActive ? "default" : "outline"}
                 size="sm"
                 onClick={() => onFilterChange(option.value)}
-                className={`${!isActive && `hover:${option.color}`}`}
+                className={`text-xs sm:text-sm ${!isActive && `hover:${option.color}`}`}
               >
-                <Icon className="mr-2 h-4 w-4" />
-                {option.label}
+                <Icon className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">{option.label}</span>
+                <span className="sm:hidden">{option.label.substring(0, 4)}</span>
               </Button>
             );
           })}
@@ -66,8 +67,8 @@ export function ActivityFilters({
 
       {/* Category Filters */}
       <div>
-        <h3 className="text-foreground mb-3 text-sm font-semibold">Source</h3>
-        <div className="flex flex-wrap gap-2">
+        <h3 className="text-foreground mb-2 sm:mb-3 text-xs sm:text-sm font-semibold">Source</h3>
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {categoryOptions.map((option) => {
             const isActive = category === option.value;
 
@@ -77,6 +78,7 @@ export function ActivityFilters({
                 variant={isActive ? "default" : "outline"}
                 size="sm"
                 onClick={() => onCategoryChange(option.value)}
+                className="text-xs sm:text-sm"
               >
                 {option.label}
               </Button>

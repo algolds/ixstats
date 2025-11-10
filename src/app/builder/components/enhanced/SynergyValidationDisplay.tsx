@@ -132,7 +132,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
         <p className="text-sm text-gray-600">{result.description}</p>
 
         {isSynergyResult && (
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
               <span className="font-medium">Expected Synergy:</span>
               <span
@@ -165,7 +165,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
         )}
 
         {!isSynergyResult && (
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
               <span className="font-medium">Expected Conflict:</span>
               <span
@@ -220,7 +220,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 grid grid-cols-3 gap-4">
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
               {suite.testCases.length + suite.conflictCases.length}

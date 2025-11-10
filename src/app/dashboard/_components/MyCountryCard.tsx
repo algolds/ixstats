@@ -406,20 +406,20 @@ export function MyCountryCard({
             {countryData && activityRingsData && (
               <ThemedTabContent theme="executive" className="tab-content-enter mb-5">
                 <div className="space-y-4">
-                  <h4 className="text-foreground mb-3 flex items-center gap-2 text-lg font-semibold">
-                    <BarChart3 className="h-5 w-5 text-green-400" />
+                  <h4 className="text-foreground mb-3 flex items-center gap-2 text-base sm:text-lg font-semibold">
+                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                     National Vitality Index
                   </h4>
 
-                  <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-4">
                     {/* Economic Health Ring */}
-                    <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
                             <HealthRing
                               value={activityRingsData.economicVitality}
-                              size={80}
+                              size={60}
                               color="#22c55e"
                               label="Economic Health"
                             />
@@ -446,25 +446,25 @@ export function MyCountryCard({
                           </div>
                         </TooltipContent>
                       </Tooltip>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center gap-2">
-                          <DollarSign className="h-4 w-4" style={{ color: "#22c55e" }} />
-                          <span className="text-sm font-medium">Economic Health</span>
+                      <div className="space-y-0.5 sm:space-y-1">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
+                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: "#22c55e" }} />
+                          <span className="text-xs sm:text-sm font-medium">Economic</span>
                         </div>
-                        <div className="text-muted-foreground text-xs">
-                          {Math.round(activityRingsData.economicVitality)}% vitality
+                        <div className="text-muted-foreground text-[10px] sm:text-xs">
+                          {Math.round(activityRingsData.economicVitality)}%
                         </div>
                       </div>
                     </div>
 
                     {/* Population Wellbeing Ring */}
-                    <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
                             <HealthRing
                               value={activityRingsData.populationWellbeing}
-                              size={80}
+                              size={60}
                               color="#3b82f6"
                               label="Population Wellbeing"
                             />
@@ -491,25 +491,25 @@ export function MyCountryCard({
                           </div>
                         </TooltipContent>
                       </Tooltip>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center gap-2">
-                          <Users className="h-4 w-4" style={{ color: "#3b82f6" }} />
-                          <span className="text-sm font-medium">Population Wellbeing</span>
+                      <div className="space-y-0.5 sm:space-y-1">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
+                          <Users className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: "#3b82f6" }} />
+                          <span className="text-xs sm:text-sm font-medium">Population</span>
                         </div>
-                        <div className="text-muted-foreground text-xs">
-                          {Math.round(activityRingsData.populationWellbeing)}% vitality
+                        <div className="text-muted-foreground text-[10px] sm:text-xs">
+                          {Math.round(activityRingsData.populationWellbeing)}%
                         </div>
                       </div>
                     </div>
 
                     {/* Diplomatic Standing Ring */}
-                    <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
                             <HealthRing
                               value={activityRingsData.diplomaticStanding}
-                              size={80}
+                              size={60}
                               color="#a855f7"
                               label="Diplomatic Standing"
                             />
@@ -536,25 +536,25 @@ export function MyCountryCard({
                           </div>
                         </TooltipContent>
                       </Tooltip>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center gap-2">
-                          <Shield className="h-4 w-4" style={{ color: "#a855f7" }} />
-                          <span className="text-sm font-medium">Diplomatic Standing</span>
+                      <div className="space-y-0.5 sm:space-y-1">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
+                          <Shield className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: "#a855f7" }} />
+                          <span className="text-xs sm:text-sm font-medium">Diplomatic</span>
                         </div>
-                        <div className="text-muted-foreground text-xs">
-                          {Math.round(activityRingsData.diplomaticStanding)}% vitality
+                        <div className="text-muted-foreground text-[10px] sm:text-xs">
+                          {Math.round(activityRingsData.diplomaticStanding)}%
                         </div>
                       </div>
                     </div>
 
                     {/* Government Efficiency Ring */}
-                    <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
                             <HealthRing
                               value={activityRingsData.governmentalEfficiency}
-                              size={80}
+                              size={60}
                               color="#f97316"
                               label="Government Efficiency"
                             />
@@ -581,13 +581,13 @@ export function MyCountryCard({
                           </div>
                         </TooltipContent>
                       </Tooltip>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center gap-2">
-                          <Building className="h-4 w-4" style={{ color: "#f97316" }} />
-                          <span className="text-sm font-medium">Government Efficiency</span>
+                      <div className="space-y-0.5 sm:space-y-1">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2">
+                          <Building className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: "#f97316" }} />
+                          <span className="text-xs sm:text-sm font-medium">Government</span>
                         </div>
-                        <div className="text-muted-foreground text-xs">
-                          {Math.round(activityRingsData.governmentalEfficiency)}% vitality
+                        <div className="text-muted-foreground text-[10px] sm:text-xs">
+                          {Math.round(activityRingsData.governmentalEfficiency)}%
                         </div>
                       </div>
                     </div>
@@ -598,22 +598,22 @@ export function MyCountryCard({
 
             {/* Key Metrics Grid - Always visible */}
             {countryData && (
-              <div className="mb-6 grid grid-cols-3 gap-3">
-                <div className="glass-hierarchy-child rounded-lg p-2.5 text-center">
-                  <div className="text-muted-foreground mb-1 text-xs">Population</div>
-                  <div className="text-sm font-bold text-blue-400">
+              <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                <div className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center">
+                  <div className="text-muted-foreground mb-0.5 sm:mb-1 text-[10px] sm:text-xs">Population</div>
+                  <div className="text-xs sm:text-sm font-bold text-blue-400">
                     {formatPopulation(countryData.currentPopulation || 0)}
                   </div>
                 </div>
-                <div className="glass-hierarchy-child rounded-lg p-2.5 text-center">
-                  <div className="text-muted-foreground mb-1 text-xs">GDP per Capita</div>
-                  <div className="text-sm font-bold text-green-400">
+                <div className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center">
+                  <div className="text-muted-foreground mb-0.5 sm:mb-1 text-[10px] sm:text-xs">GDP/Capita</div>
+                  <div className="text-xs sm:text-sm font-bold text-green-400">
                     {formatCurrency(countryData.currentGdpPerCapita || 0)}
                   </div>
                 </div>
-                <div className="glass-hierarchy-child rounded-lg p-2.5 text-center">
-                  <div className="text-muted-foreground mb-1 text-xs">Total GDP</div>
-                  <div className="text-sm font-bold text-yellow-400">
+                <div className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center">
+                  <div className="text-muted-foreground mb-0.5 sm:mb-1 text-[10px] sm:text-xs">Total GDP</div>
+                  <div className="text-xs sm:text-sm font-bold text-yellow-400">
                     {formatCurrency(countryData.currentTotalGdp || 0)}
                   </div>
                 </div>
@@ -637,7 +637,7 @@ export function MyCountryCard({
                         <Globe className="h-5 w-5 text-blue-400" />
                         Country Profile
                       </h4>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {/* Location */}
                         <div className="glass-hierarchy-child rounded-lg p-2.5">
                           <div className="mb-2 flex items-center gap-2">
@@ -826,7 +826,7 @@ export function MyCountryCard({
                 </div>
 
                 {/* Icons - Always visible at bottom */}
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry">

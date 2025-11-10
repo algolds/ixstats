@@ -1120,21 +1120,50 @@ const economicsRouter = createTRPCRouter({
         });
       }
 
-      // Update country with changes
-      const updated = await ctx.db.country.update({
-        where: { id: countryId },
-        data: {
-          ...changes,
-          updatedAt: new Date(),
-        },
-      });
+      try {
+        // Update country with changes
+        const updated = await ctx.db.country.update({
+          where: { id: countryId },
+          data: {
+            ...changes,
+            updatedAt: new Date(),
+          },
+        });
 
-      return {
-        success: true,
-        countryId,
-        message: "Auto-save completed",
-        timestamp: new Date(),
-      };
+        // Log autosave to audit trail
+        await ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth.userId,
+            action: "autosave:economy",
+            target: countryId,
+            details: JSON.stringify({
+              fields: Object.keys(changes),
+              timestamp: new Date().toISOString(),
+            }),
+            success: true,
+          },
+        });
+
+        return {
+          success: true,
+          countryId,
+          message: "Auto-save completed",
+          timestamp: new Date(),
+        };
+      } catch (error) {
+        // Log autosave failure to audit trail
+        await ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth.userId,
+            action: "autosave:economy",
+            target: countryId,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+
+        throw error;
+      }
     }),
 
   // Sync economy with government components

@@ -17,9 +17,9 @@ model Post {
 }
 
 model Country {
-  id                          String                          @id @default(cuid())
-  name                        String                          @unique
-  slug                        String?                         @unique
+  id                          String                    @id @default(cuid())
+  name                        String                    @unique
+  slug                        String?                   @unique
   continent                   String?
   region                      String?
   governmentType              String?
@@ -41,10 +41,10 @@ model Country {
   gdpDensity                  Float?
   economicTier                String
   populationTier              String
-  projected2040Population     Float                           @default(0)
-  projected2040Gdp            Float                           @default(0)
-  projected2040GdpPerCapita   Float                           @default(0)
-  actualGdpGrowth             Float                           @default(0)
+  projected2040Population     Float                     @default(0)
+  projected2040Gdp            Float                     @default(0)
+  projected2040GdpPerCapita   Float                     @default(0)
+  actualGdpGrowth             Float                     @default(0)
   nominalGDP                  Float?
   realGDPGrowthRate           Float?
   inflationRate               Float?
@@ -77,80 +77,75 @@ model Country {
   urbanPopulationPercent      Float?
   ruralPopulationPercent      Float?
   literacyRate                Float?
-  localGrowthFactor           Float                           @default(1.0)
-  economicVitality            Float                           @default(0)
-  populationWellbeing         Float                           @default(0)
-  diplomaticStanding          Float                           @default(0)
-  governmentalEfficiency      Float                           @default(0)
-  overallNationalHealth       Float                           @default(0)
-  activeAlliances             Int                             @default(0)
-  activeTreaties              Int                             @default(0)
-  diplomaticReputation        String                          @default("Neutral")
-  publicApproval              Float                           @default(50)
-  governmentEfficiency        String                          @default("Moderate")
-  politicalStability          String                          @default("Stable")
-  tradeBalance                Float                           @default(0)
-  infrastructureRating        Float                           @default(50)
+  localGrowthFactor           Float                     @default(1.0)
+  economicVitality            Float                     @default(0)
+  populationWellbeing         Float                     @default(0)
+  diplomaticStanding          Float                     @default(0)
+  governmentalEfficiency      Float                     @default(0)
+  overallNationalHealth       Float                     @default(0)
+  activeAlliances             Int                       @default(0)
+  activeTreaties              Int                       @default(0)
+  diplomaticReputation        String                    @default("Neutral")
+  publicApproval              Float                     @default(50)
+  governmentEfficiency        String                    @default("Moderate")
+  politicalStability          String                    @default("Stable")
+  tradeBalance                Float                     @default(0)
+  infrastructureRating        Float                     @default(50)
   geometry                    Json?
   centroid                    Json?
   boundingBox                 Json?
   coastlineKm                 Float?
-  usesAtomicGovernment        Boolean                         @default(true)
-  hideDiplomaticOps           Boolean                         @default(false)
-  hideStratcommIntel          Boolean                         @default(false)
-  lastCalculated              DateTime                        @default(now())
-  baselineDate                DateTime                        @default(now())
-  createdAt                   DateTime                        @default(now())
-  updatedAt                   DateTime                        @updatedAt
+  usesAtomicGovernment        Boolean                   @default(true)
+  hideDiplomaticOps           Boolean                   @default(false)
+  hideStratcommIntel          Boolean                   @default(false)
+  lastCalculated              DateTime                  @default(now())
+  baselineDate                DateTime                  @default(now())
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
   geom_postgis                Unsupported("geometry")?
-  atomicEconomicImpacts       AtomicEconomicImpact[]          @relation("AtomicEconomicImpacts")
+  atomicEconomicImpacts       AtomicEconomicImpact[]    @relation("AtomicEconomicImpacts")
   atomicEffectiveness         AtomicEffectiveness?
-  borderSecurity              BorderSecurity?                 @relation("CountryBorderSecurity")
-  budgetScenarios             BudgetScenario[]                @relation("CountryBudgetScenarios")
-  componentChanges            ComponentChangeLog[]            @relation("CountryComponentChanges")
-  componentSynergies          ComponentSynergy[]              @relation("CountrySynergies")
-  archetypeMatches            CountryArchetypeMatch[]         @relation("CountryArchetypes")
-  followers                   CountryFollow[]                 @relation("CountryFollowing")
-  following                   CountryFollow[]                 @relation("CountryFollowers")
+  borderSecurity              BorderSecurity?           @relation("CountryBorderSecurity")
+  budgetScenarios             BudgetScenario[]          @relation("CountryBudgetScenarios")
+  componentChanges            ComponentChangeLog[]      @relation("CountryComponentChanges")
+  componentSynergies          ComponentSynergy[]        @relation("CountrySynergies")
+  archetypeMatches            CountryArchetypeMatch[]   @relation("CountryArchetypes")
+  followers                   CountryFollow[]           @relation("CountryFollowing")
+  following                   CountryFollow[]           @relation("CountryFollowers")
   moodMetrics                 CountryMoodMetric[]
-  crossBuilderSynergies       CrossBuilderSynergy[]           @relation("CountryCrossBuilderSynergies")
-  defenseBudget               DefenseBudget?                  @relation("CountryDefenseBudget")
+  crossBuilderSynergies       CrossBuilderSynergy[]     @relation("CountryCrossBuilderSynergies")
+  defenseBudget               DefenseBudget?            @relation("CountryDefenseBudget")
   demographics                Demographics?
   dmInputs                    DmInputs[]
-  economicComponents          EconomicComponent[]             @relation("CountryEconomicComponents")
+  economicComponents          EconomicComponent[]       @relation("CountryEconomicComponents")
   economicModel               EconomicModel?
   economicProfile             EconomicProfile?
-  embassiesGuest              Embassy[]                       @relation("GuestCountryEmbassies")
-  embassiesHosting            Embassy[]                       @relation("HostCountryEmbassies")
-  fiscalPolicies              FiscalPolicy[]                  @relation("CountryFiscalPolicies")
+  embassiesGuest              Embassy[]                 @relation("GuestCountryEmbassies")
+  embassiesHosting            Embassy[]                 @relation("HostCountryEmbassies")
+  fiscalPolicies              FiscalPolicy[]            @relation("CountryFiscalPolicies")
   fiscalSystem                FiscalSystem?
   governmentBudget            GovernmentBudget?
-  governmentComponents        GovernmentComponent[]           @relation("CountryComponents")
+  governmentComponents        GovernmentComponent[]     @relation("CountryComponents")
   governmentStructure         GovernmentStructure?
   historicalData              HistoricalDataPoint[]
-  vitalityHistory             VitalityHistory[]               @relation("CountryVitalityHistory")
-  componentHistory            ComponentEffectivenessHistory[] @relation("CountryComponentHistory")
-  relationshipHistory1        DiplomaticRelationshipHistory[] @relation("Country1RelationshipHistory")
-  relationshipHistory2        DiplomaticRelationshipHistory[] @relation("Country2RelationshipHistory")
   incomeDistribution          IncomeDistribution?
-  stabilityMetrics            InternalStabilityMetrics?       @relation("CountryStabilityMetrics")
+  stabilityMetrics            InternalStabilityMetrics? @relation("CountryStabilityMetrics")
   laborMarket                 LaborMarket?
-  militaryBranches            MilitaryBranch[]                @relation("CountryMilitaryBranches")
+  militaryBranches            MilitaryBranch[]          @relation("CountryMilitaryBranches")
   personalityAssignment       NPCPersonalityAssignment?
   nationalIdentity            NationalIdentity?
-  securityAssessment          SecurityAssessment?             @relation("CountrySecurityAssessment")
-  securityEvents              SecurityEvent[]                 @relation("CountrySecurityEvents")
-  securityThreats             SecurityThreat[]                @relation("CountrySecurityThreats")
-  taxComponents               TaxComponent[]                  @relation("CountryTaxComponents")
+  securityAssessment          SecurityAssessment?       @relation("CountrySecurityAssessment")
+  securityEvents              SecurityEvent[]           @relation("CountrySecurityEvents")
+  securityThreats             SecurityThreat[]          @relation("CountrySecurityThreats")
+  taxComponents               TaxComponent[]            @relation("CountryTaxComponents")
   taxSystem                   TaxSystem?
-  thinkpagesAccounts          ThinkpagesAccount[]             @relation("ThinkpagesAccounts")
-  users                       User[]                          @relation("UserCountry")
+  thinkpagesAccounts          ThinkpagesAccount[]       @relation("ThinkpagesAccounts")
+  users                       User[]                    @relation("UserCountry")
   borderHistory               BorderHistory[]
+  cities                      City[]                    @relation("CountryCities")
+  pointsOfInterest            PointOfInterest[]         @relation("CountryPOIs")
+  subdivisions                Subdivision[]             @relation("CountrySubdivisions")
   territories                 Territory[]
-  subdivisions                Subdivision[]                   @relation("CountrySubdivisions")
-  cities                      City[]                          @relation("CountryCities")
-  pointsOfInterest            PointOfInterest[]               @relation("CountryPOIs")
-  cards                       Card[] // IxCards: Nation cards for this country
 
   @@index([name])
   @@index([economicTier])
@@ -158,6 +153,7 @@ model Country {
   @@index([continent])
   @@index([region])
   @@index([geom_postgis], map: "idx_country_geom", type: Gist)
+  @@index([name], map: "idx_country_name")
 }
 
 model Territory {
@@ -320,7 +316,6 @@ model VitalityHistory {
   governmentalEfficiency Float
   overallHealth          Float
   timestamp              DateTime @default(now())
-  country                Country  @relation("CountryVitalityHistory", fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId, timestamp])
   @@index([timestamp])
@@ -333,11 +328,10 @@ model ComponentEffectivenessHistory {
   componentType      String
   effectivenessScore Float
   timestamp          DateTime @default(now())
-  country            Country  @relation("CountryComponentHistory", fields: [countryId], references: [id], onDelete: Cascade)
 
-  @@index([countryId, componentType, timestamp])
   @@index([componentId])
   @@index([timestamp])
+  @@index([countryId, componentType, timestamp], map: "ComponentEffectivenessHistory_countryId_componentType_idx")
 }
 
 model DiplomaticRelationshipHistory {
@@ -350,11 +344,9 @@ model DiplomaticRelationshipHistory {
   tradeVolume      Float    @default(0)
   culturalExchange String   @default("Medium")
   timestamp        DateTime @default(now())
-  country1         Country  @relation("Country1RelationshipHistory", fields: [country1Id], references: [id], onDelete: Cascade)
-  country2         Country  @relation("Country2RelationshipHistory", fields: [country2Id], references: [id], onDelete: Cascade)
 
-  @@index([country1Id, country2Id, timestamp])
   @@index([timestamp])
+  @@index([country1Id, country2Id, timestamp], map: "DiplomaticRelationshipHistory_country1Id_country2Id_idx")
 }
 
 model DmInputs {
@@ -429,28 +421,20 @@ model User {
   isActive            Boolean                  @default(true)
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt
+  totalCards          Int                      @default(0)
+  deckValue           Float                    @default(0)
+  collectorLevel      Int                      @default(1)
+  collectorXp         Int                      @default(0)
+  AuctionBid          AuctionBid[]
+  CardAuction         CardAuction[]
+  CardCollection      CardCollection[]
+  CardOwnership       CardOwnership[]
   scheduledChanges    ScheduledChange[]        @relation("UserScheduledChanges")
   country             Country?                 @relation("UserCountry", fields: [countryId], references: [id])
   role                Role?                    @relation(fields: [roleId], references: [id])
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
-
-  // MyVault & Cards Relations (IxCards System)
-  vault           MyVault?
-  cardOwnerships  CardOwnership[]
-  packs           UserPack[]
-  collections     CardCollection[]
-  auctionsSelling CardAuction[]    @relation("SellerAuctions")
-  auctionsBidding CardAuction[]    @relation("BidderAuctions")
-  auctionsWon     CardAuction[]    @relation("WonAuctions")
-  tradesSent      CardTrade[]      @relation("SentTrades")
-  tradesReceived  CardTrade[]      @relation("ReceivedTrades")
-  auctionBids     AuctionBid[]
-
-  // Card Stats (cached for performance)
-  totalCards     Int   @default(0)
-  deckValue      Float @default(0)
-  collectorLevel Int   @default(1)
-  collectorXp    Int   @default(0)
+  vault               MyVault?
+  nsVerifications     NSVerification[]
 
   @@index([clerkUserId])
   @@index([countryId])
@@ -1297,14 +1281,13 @@ model ThinkshareConversation {
   lastActivity             DateTime                  @default(now())
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
+  conversationType         String?
+  diplomaticClassification String?
+  priority                 String?
+  encrypted                Boolean                   @default(false)
+  channelType              String?
   participants             ConversationParticipant[]
   messages                 ThinkshareMessage[]
-  // Diplomatic messaging extensions
-  conversationType         String? // personal, diplomatic, official
-  diplomaticClassification String? // PUBLIC, RESTRICTED, CONFIDENTIAL, SECRET, TOP_SECRET
-  priority                 String? // LOW, NORMAL, HIGH, URGENT, CRITICAL
-  encrypted                Boolean                   @default(false)
-  channelType              String? // BILATERAL, MULTILATERAL, EMERGENCY (for diplomatic channels)
 
   @@index([type])
   @@index([lastActivity])
@@ -1344,17 +1327,16 @@ model ThinkshareMessage {
   attachments      String?
   isSystem         Boolean                @default(false)
   ixTimeTimestamp  DateTime               @default(now())
+  classification   String?
+  priority         String?
+  subject          String?
+  signature        String?
+  encryptedContent String?
+  status           String?
   readReceipts     MessageReadReceipt[]
   conversation     ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   replyTo          ThinkshareMessage?     @relation("ThinkshareReplies", fields: [replyToId], references: [id])
   replies          ThinkshareMessage[]    @relation("ThinkshareReplies")
-  // Diplomatic messaging extensions
-  classification   String? // PUBLIC, RESTRICTED, CONFIDENTIAL, SECRET, TOP_SECRET
-  priority         String? // LOW, NORMAL, HIGH, URGENT, CRITICAL
-  subject          String? // Message subject for formal diplomatic communications
-  signature        String? // Digital signature for message verification
-  encryptedContent String? // Encrypted payload storage
-  status           String? // SENT, DELIVERED, READ, ARCHIVED
 
   @@index([conversationId])
   @@index([userId])
@@ -1371,9 +1353,9 @@ model MessageReadReceipt {
   userId              String
   readAt              DateTime           @default(now())
   messageType         String
-  thinktankMessage    ThinktankMessage   @relation(fields: [messageId], references: [id], onDelete: Cascade, map: "MessageReadReceipt_thinktankMessageId_fkey")
-  ThinkshareMessage   ThinkshareMessage? @relation(fields: [thinkshareMessageId], references: [id])
   thinkshareMessageId String?
+  ThinkshareMessage   ThinkshareMessage? @relation(fields: [thinkshareMessageId], references: [id])
+  thinktankMessage    ThinktankMessage   @relation(fields: [messageId], references: [id], onDelete: Cascade, map: "MessageReadReceipt_thinktankMessageId_fkey")
 
   @@unique([messageId, userId])
   @@index([messageId])
@@ -3362,24 +3344,15 @@ model DefenseManufacturer {
   @@index([isActive])
 }
 
-// ===========================
-// SMALL ARMS & EQUIPMENT CATALOG
-// ===========================
-// Comprehensive database for personal weapons, support weapons, and tactical equipment
-// Replaces hardcoded data in src/lib/small-arms-equipment.ts (238 items)
-// Phase 9 Migration - October 2025
-
 model SmallArmsManufacturer {
-  id        String   @id @default(cuid())
-  key       String   @unique // Constant key (e.g., "COLT", "HECKLER_KOCH")
-  name      String // Display name (e.g., "Colt Defense", "Heckler & Koch")
-  country   String // Country of origin (e.g., "USA", "Germany", "USA/Belgium")
-  specialty String // JSON array of specialties (e.g., ["rifles", "pistols"])
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  id        String               @id @default(cuid())
+  key       String               @unique
+  name      String
+  country   String
+  specialty String
+  isActive  Boolean              @default(true)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
   equipment SmallArmsEquipment[]
 
   @@index([country])
@@ -3387,65 +3360,46 @@ model SmallArmsManufacturer {
 }
 
 model WeaponEra {
-  id          String   @id @default(cuid())
-  key         String   @unique // Constant key (e.g., "WWII", "COLD_WAR", "MODERN", "CONTEMPORARY")
-  label       String // Display label (e.g., "World War II Era (1939-1945)")
-  years       String // Year range (e.g., "1939-1945")
-  reliability Int // Base reliability percentage (e.g., 70, 80, 90, 95)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  equipment SmallArmsEquipment[]
+  id          String               @id @default(cuid())
+  key         String               @unique
+  label       String
+  years       String
+  reliability Int
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  equipment   SmallArmsEquipment[]
 
   @@index([isActive])
 }
 
 model SmallArmsEquipment {
-  id  String @id @default(cuid())
-  key String @unique // Constant key (e.g., "M9_BERETTA", "M4_CARBINE")
+  id              String                @id @default(cuid())
+  key             String                @unique
+  name            String
+  manufacturerKey String
+  category        String
+  equipmentType   String
+  eraKey          String
+  weight          Float
+  unitCost        Float
+  maintenanceCost Float
+  imageUrl        String?
+  caliber         String?
+  capacity        Int?
+  effectiveRange  Int?
+  fireRate        Int?
+  protectionLevel String?
+  range           Int?
+  altitude        Int?
+  description     String?
+  isActive        Boolean               @default(true)
+  usageCount      Int                   @default(0)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  era             WeaponEra             @relation(fields: [eraKey], references: [key])
+  manufacturer    SmallArmsManufacturer @relation(fields: [manufacturerKey], references: [key])
 
-  // Basic Information
-  name            String // Display name (e.g., "Beretta M9", "M4 Carbine")
-  manufacturerKey String // Foreign key to SmallArmsManufacturer.key
-  category        String // Subcategory (e.g., "Service Pistol", "Carbine", "Body Armor")
-  equipmentType   String // Main type: pistols, assault_rifles, battle_rifles, sniper_rifles,
-  // submachine_guns, machine_guns, grenade_launchers, shotguns,
-  // tactical_equipment, anti_tank_weapons, manpads
-  eraKey          String // Foreign key to WeaponEra.key
-
-  // Common Physical Specifications
-  weight          Float // Weight in kilograms
-  unitCost        Float // Acquisition cost in USD
-  maintenanceCost Float // Annual maintenance cost in USD
-  imageUrl        String? // URL to equipment image
-
-  // Weapon-Specific Fields (nullable for non-weapons like tactical equipment)
-  caliber        String? // Ammunition caliber (e.g., "9x19mm Parabellum", "5.56x45mm NATO")
-  capacity       Int? // Magazine/belt capacity (rounds)
-  effectiveRange Int? // Effective range in meters
-  fireRate       Int? // Rate of fire in rounds per minute (0 = semi-automatic)
-
-  // Tactical Equipment-Specific Fields
-  protectionLevel String? // Armor protection level (e.g., "Level IV", "Level IIIA+")
-
-  // Missile/Anti-Aircraft-Specific Fields
-  range    Int? // Maximum range in meters (for missiles/rockets)
-  altitude Int? // Maximum altitude in meters (for MANPADS)
-
-  // Metadata
-  description String? // Optional detailed description
-  isActive    Boolean  @default(true)
-  usageCount  Int      @default(0) // Track usage in unit equipment assignments
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  manufacturer SmallArmsManufacturer @relation(fields: [manufacturerKey], references: [key])
-  era          WeaponEra             @relation(fields: [eraKey], references: [key])
-
-  // Indexes for efficient querying
   @@index([equipmentType, eraKey])
   @@index([manufacturerKey])
   @@index([category])
@@ -3637,14 +3591,298 @@ model spatial_ref_sys {
   proj4text String? @db.VarChar(2048)
 }
 
-model temp_political_import {
-  ogc_fid        Int                      @id @default(autoincrement())
-  id             String?                  @db.VarChar
-  ixmap_subgroup String?                  @db.VarChar
-  fill           String?                  @db.VarChar
-  wkb_geometry   Unsupported("geometry")?
+model Subdivision {
+  id              String                   @id @default(cuid())
+  countryId       String
+  name            String
+  type            String
+  geometry        Json
+  level           Int
+  population      Float?
+  capital         String?
+  areaSqKm        Float?
+  status          String                   @default("pending")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  geom_postgis    Unsupported("geometry")?
+  cities          City[]                   @relation("SubdivisionCities")
+  pois            PointOfInterest[]        @relation("SubdivisionPOIs")
+  country         Country                  @relation("CountrySubdivisions", fields: [countryId], references: [id], onDelete: Cascade)
 
-  @@index([wkb_geometry], map: "temp_political_import_wkb_geometry_geom_idx", type: Gist)
+  @@index([countryId, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_subdivision_geom", type: Gist)
+  @@map("subdivisions")
+}
+
+model City {
+  id                   String                   @id @default(cuid())
+  countryId            String
+  subdivisionId        String?
+  name                 String
+  type                 String
+  coordinates          Json
+  population           Float?
+  isNationalCapital    Boolean                  @default(false)
+  isSubdivisionCapital Boolean                  @default(false)
+  elevation            Float?
+  foundedYear          Int?
+  status               String                   @default("pending")
+  submittedBy          String
+  reviewedBy           String?
+  reviewedAt           DateTime?
+  rejectionReason      String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  geom_postgis         Unsupported("geometry")?
+  country              Country                  @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision          Subdivision?             @relation("SubdivisionCities", fields: [subdivisionId], references: [id])
+
+  @@index([countryId, status])
+  @@index([type, isNationalCapital])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_city_geom", type: Gist)
+  @@map("cities")
+}
+
+model PointOfInterest {
+  id              String                   @id @default(cuid())
+  countryId       String
+  subdivisionId   String?
+  name            String
+  category        String
+  icon            String?
+  coordinates     Json
+  description     String?
+  images          Json?
+  metadata        Json?
+  status          String                   @default("pending")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  geom_postgis    Unsupported("geometry")?
+  country         Country                  @relation("CountryPOIs", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision     Subdivision?             @relation("SubdivisionPOIs", fields: [subdivisionId], references: [id])
+
+  @@index([countryId, status, category])
+  @@index([category, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_poi_geom", type: Gist)
+  @@map("points_of_interest")
+}
+
+/// *
+///  * MyVault - Personal vault system for IxCredits currency and card collectibles
+///  * Replaces legacy IxBank system with enhanced features
+model MyVault {
+  id             String             @id(map: "MyVault_pkey") @default(cuid())
+  userId         String             @unique(map: "MyVault_userId_key")
+  credits        Float              @default(0)
+  lifetimeEarned Float              @default(0)
+  lifetimeSpent  Float              @default(0)
+  vaultLevel     Int                @default(1)
+  vaultXp        Int                @default(0)
+  loginStreak    Int                @default(0)
+  lastLoginDate  DateTime?
+  todayEarned    Float              @default(0)
+  lastDailyReset DateTime           @default(now())
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @default(now()) @updatedAt
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade, map: "MyVault_userId_fkey")
+  transactions   VaultTransaction[]
+
+  @@index([userId], map: "MyVault_userId_idx")
+  @@map("my_vault")
+}
+
+/// *
+///  * VaultTransaction - Transaction history for IxCredits
+///  * Tracks all earning and spending activities
+model VaultTransaction {
+  id           String   @id @default(cuid())
+  vaultId      String
+  credits      Float
+  balanceAfter Float
+  type         String
+  source       String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  vault        MyVault  @relation(fields: [vaultId], references: [id], onDelete: Cascade, map: "VaultTransaction_vaultId_fkey")
+
+  @@index([vaultId, createdAt])
+  @@index([type, createdAt])
+  @@map("vault_transactions")
+}
+
+/// *
+///  * Card - Core card model with IxStats, NationStates, and Wiki integration
+///  * Supports multiple card types and rarity tiers
+model Card {
+  id               String          @id(map: "Card_pkey") @default(cuid())
+  title            String
+  description      String?
+  artwork          String?
+  rarity           String
+  season           Int             @default(1)
+  cardType         String
+  attributes       Json?
+  marketValue      Float           @default(0.0)
+  totalSupply      Int?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+  nsCardId         Int?
+  nsSeason         Int?
+  wikiSource       String?
+  wikiArticleTitle String?
+  countryId        String?
+  stats            Json?
+  level            Int?            @default(1)
+  enhancements     Json?
+  artworkVariants  Json?
+  CardOwnership    CardOwnership[]
+
+  @@unique([nsCardId, nsSeason])
+  @@index([cardType, rarity, season])
+  @@index([marketValue])
+  @@index([countryId])
+  @@index([rarity], map: "Card_rarity_idx")
+  @@index([season], map: "Card_season_idx")
+  @@map("cards")
+}
+
+/// *
+///  * NSVerification - NationStates nation ownership verification
+///  * Tracks verification attempts for NS deck imports
+model NSVerification {
+  id               String    @id
+  userId           String
+  nationName       String
+  verificationCode String
+  verified         Boolean   @default(false)
+  verifiedAt       DateTime?
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "NSVerification_userId_fkey")
+
+  @@map("ns_verifications")
+}
+
+model AuctionBid {
+  id          String      @id
+  auctionId   String
+  bidderId    String
+  amount      Int
+  createdAt   DateTime    @default(now())
+  CardAuction CardAuction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  User        User        @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@index([auctionId])
+  @@index([bidderId])
+}
+
+model CardAuction {
+  id              String        @id
+  cardInstanceId  String
+  sellerId        String
+  startingPrice   Int
+  currentBid      Int
+  buyoutPrice     Int?
+  currentBidderId String?
+  winnerId        String?
+  finalPrice      Int?
+  bidCount        Int           @default(0)
+  status          String        @default("ACTIVE")
+  isFeatured      Boolean       @default(false)
+  endTime         DateTime
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now())
+  AuctionBid      AuctionBid[]
+  CardOwnership   CardOwnership @relation(fields: [cardInstanceId], references: [id], onDelete: Cascade)
+  User            User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([endTime])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model CardCollection {
+  id          String   @id
+  userId      String
+  name        String
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CardOwnership {
+  id            String        @id
+  cardId        String
+  userId        String
+  ownerId       String
+  serialNumber  Int
+  level         Int           @default(1)
+  experience    Int           @default(0)
+  isLocked      Boolean       @default(false)
+  lastSalePrice Int?
+  lastSaleDate  DateTime?
+  acquiredAt    DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now())
+  CardAuction   CardAuction[]
+  cards         Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  User          User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([ownerId])
+  @@index([userId])
+}
+
+model CardPack {
+  id               String   @id
+  name             String
+  description      String?
+  packType         String
+  priceCredits     Int
+  cardCount        Int
+  guaranteedRarity String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now())
+}
+
+model CardTrade {
+  id          String    @id
+  fromUserId  String
+  toUserId    String
+  status      String    @default("PENDING")
+  expiresAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+}
+
+model map_layer_rivers {
+  ogc_fid           Int                      @id @default(autoincrement())
+  id                String?                  @db.VarChar
+  ixmap_subgroup    String?                  @db.VarChar
+  fill              String?                  @db.VarChar
+  country_id        String?                  @db.VarChar
+  geometry          Unsupported("geometry")?
+  geometry_buffered Unsupported("geometry")?
+
+  @@index([geometry_buffered], map: "idx_map_layer_rivers_buffered", type: Gist)
+  @@index([geometry], map: "map_layer_rivers_geometry_geom_idx", type: Gist)
 }
 
 enum Priority {
@@ -3978,509 +4216,18 @@ enum ThreatStatus {
   resolved
 }
 
-// Map Editor Models - User-generated geographic content
-
-model Subdivision {
-  id              String                   @id @default(cuid())
-  countryId       String
-  name            String
-  type            String // "state", "province", "region", "territory"
-  geometry        Json // GeoJSON polygon
-  level           Int // Administrative level (1=state, 2=county, 3=district)
-  population      Float?
-  capital         String?
-  areaSqKm        Float?
-  status          String                   @default("pending") // "pending", "approved", "rejected"
-  submittedBy     String // Clerk user ID
-  reviewedBy      String? // Admin who reviewed
-  reviewedAt      DateTime?
-  rejectionReason String?
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
-  geom_postgis    Unsupported("geometry")?
-
-  country Country           @relation("CountrySubdivisions", fields: [countryId], references: [id], onDelete: Cascade)
-  cities  City[]            @relation("SubdivisionCities")
-  pois    PointOfInterest[] @relation("SubdivisionPOIs")
-
-  @@index([countryId, status])
-  @@index([status, createdAt])
-  @@index([geom_postgis], map: "idx_subdivision_geom", type: Gist)
-  @@map("subdivisions")
-}
-
-model City {
-  id                   String                   @id @default(cuid())
-  countryId            String
-  subdivisionId        String?
-  name                 String
-  type                 String // "capital", "city", "town", "village"
-  coordinates          Json // GeoJSON Point [lng, lat]
-  population           Float?
-  isNationalCapital    Boolean                  @default(false)
-  isSubdivisionCapital Boolean                  @default(false)
-  elevation            Float?
-  foundedYear          Int?
-  status               String                   @default("pending")
-  submittedBy          String
-  reviewedBy           String?
-  reviewedAt           DateTime?
-  rejectionReason      String?
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
-  geom_postgis         Unsupported("geometry")?
-
-  country     Country      @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
-  subdivision Subdivision? @relation("SubdivisionCities", fields: [subdivisionId], references: [id], onDelete: SetNull)
-
-  @@index([countryId, status])
-  @@index([type, isNationalCapital])
-  @@index([status, createdAt])
-  @@index([geom_postgis], map: "idx_city_geom", type: Gist)
-  @@map("cities")
-}
-
-model PointOfInterest {
-  id              String                   @id @default(cuid())
-  countryId       String
-  subdivisionId   String?
-  name            String
-  category        String // "monument", "landmark", "military", "cultural", "natural", "religious", "government"
-  icon            String? // Icon identifier for rendering
-  coordinates     Json // GeoJSON Point [lng, lat]
-  description     String?
-  images          Json? // Array of image URLs
-  metadata        Json? // Additional category-specific data
-  status          String                   @default("pending")
-  submittedBy     String
-  reviewedBy      String?
-  reviewedAt      DateTime?
-  rejectionReason String?
-  createdAt       DateTime                 @default(now())
-  updatedAt       DateTime                 @updatedAt
-  geom_postgis    Unsupported("geometry")?
-
-  country     Country      @relation("CountryPOIs", fields: [countryId], references: [id], onDelete: Cascade)
-  subdivision Subdivision? @relation("SubdivisionPOIs", fields: [subdivisionId], references: [id], onDelete: SetNull)
-
-  @@index([countryId, status, category])
-  @@index([category, status])
-  @@index([status, createdAt])
-  @@index([geom_postgis], map: "idx_poi_geom", type: Gist)
-  @@map("points_of_interest")
-}
-
-model MapEditLog {
-  id         String   @id @default(cuid())
-  entityType String // "subdivision", "city", "poi", "border"
-  entityId   String
-  action     String // "create", "update", "delete", "approve", "reject", "modify"
-  userId     String // Who performed the action
-  changes    Json? // Old/new values for auditing
-  reason     String? // Reason for rejection or major change
-  metadata   Json? // Additional context
-  createdAt  DateTime @default(now())
-
-  @@index([entityType, entityId])
-  @@index([userId, createdAt])
-  @@index([action, createdAt])
-  @@map("map_edit_logs")
-}
-
-// ============================================================================
-// IxCards System - MyVault + Cards (November 2025)
-// ============================================================================
-
-/**
- * MyVault - Personal vault system for IxCredits currency and card collectibles
- * Replaces legacy IxBank system with enhanced features
- */
-model MyVault {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Currency (IxCredits)
-  credits        Float @default(0) // Main balance
-  lifetimeEarned Float @default(0) // Total earned
-  lifetimeSpent  Float @default(0) // Total spent
-
-  // Progression
-  vaultLevel Int @default(1)
-  vaultXp    Int @default(0)
-
-  // Engagement tracking
-  loginStreak   Int       @default(0)
-  lastLoginDate DateTime?
-
-  // Daily caps tracking
-  todayEarned    Float    @default(0)
-  lastDailyReset DateTime @default(now())
-
-  // Relations
-  transactions VaultTransaction[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([credits])
-  @@index([vaultLevel])
-  @@map("my_vault")
-}
-
-/**
- * VaultTransaction - Transaction history for IxCredits
- * Tracks all earning and spending activities
- */
-model VaultTransaction {
-  id      String  @id @default(cuid())
-  vaultId String
-  vault   MyVault @relation(fields: [vaultId], references: [id], onDelete: Cascade)
-
-  credits      Float // Amount (+ or -)
-  balanceAfter Float // Balance after transaction
-  type         VaultTransactionType
-  source       String // Specific source description
-  metadata     Json? // Additional context
-
-  createdAt DateTime @default(now())
-
-  @@index([vaultId, createdAt])
-  @@index([type, createdAt])
-  @@map("vault_transactions")
-}
-
-/**
- * Card - Core card model with IxStats, NationStates, and Wiki integration
- * Supports multiple card types and rarity tiers
- */
-model Card {
-  id              String  @id @default(cuid())
-  title           String
-  description     String?
-  artwork         String
-  artworkVariants Json?
-
-  // Card classification
-  cardType CardType
-  rarity   CardRarity
-  season   Int
-
-  // Integrations
-  nsCardId         Int?     @unique // NationStates card ID
-  nsSeason         Int? // NationStates season
-  wikiSource       String? // IxWiki article URL
-  wikiArticleTitle String? // IxWiki article title
-  countryId        String?
-  country          Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
-
-  // Stats & metadata
-  stats       Json // Card-specific stats
-  marketValue Float @default(0)
-  totalSupply Int   @default(0)
-
-  // Enhancement
-  level        Int   @default(1)
-  enhancements Json?
-
-  // Relations
-  owners          CardOwnership[]
-  auctions        CardAuction[]
-  trades          CardTrade[]      @relation("TradeCards")
-  craftingInputs  CraftingRecipe[] @relation("InputCards")
-  craftingOutputs CraftingRecipe[] @relation("OutputCard")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([cardType, rarity, season])
-  @@index([marketValue])
-  @@index([countryId])
-  @@index([nsCardId])
-  @@map("cards")
-}
-
-/**
- * CardOwnership - User's card inventory
- * Tracks ownership, quantity, and customizations
- */
-model CardOwnership {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cardId String
-  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
-
-  quantity       Int           @default(1)
-  acquiredDate   DateTime      @default(now())
-  acquiredMethod AcquireMethod
-
-  // Enhancements
-  isLeveledUp     Boolean @default(false)
-  hasAlternateArt Boolean @default(false)
-  customizations  Json?
-
-  // Protection
-  isLocked Boolean @default(false)
-
-  @@unique([userId, cardId])
-  @@index([userId, acquiredDate])
-  @@index([cardId])
-  @@map("card_ownership")
-}
-
-/**
- * CardPack - Purchasable card packs
- * Defines pack contents, pricing, and rarity distribution
- */
-model CardPack {
-  id          String  @id @default(cuid())
-  name        String // "Basic Pack", "Season 3 Elite Pack"
-  description String?
-  artwork     String
-
-  // Configuration
-  cardCount    Int      @default(5)
-  packType     PackType
-  priceCredits Float // Price in IxCredits
-
-  // Rarity distribution (percentages)
-  commonOdds    Float @default(65)
-  uncommonOdds  Float @default(25)
-  rareOdds      Float @default(7)
-  ultraRareOdds Float @default(2)
-  epicOdds      Float @default(0.9)
-  legendaryOdds Float @default(0.1)
-
-  // Constraints
-  season      Int?
-  cardType    CardType?
-  themeFilter Json?
-
-  // Availability
-  isAvailable     Boolean   @default(true)
-  limitedQuantity Int?
-  purchaseLimit   Int? // Per user
-  expiresAt       DateTime?
-
-  owners UserPack[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([isAvailable, expiresAt])
-  @@index([packType, season])
-  @@map("card_packs")
-}
-
-/**
- * UserPack - User's unopened packs
- * Tracks pack ownership and opening status
- */
-model UserPack {
-  id     String   @id @default(cuid())
-  userId String
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  packId String
-  pack   CardPack @relation(fields: [packId], references: [id], onDelete: Cascade)
-
-  isOpened Boolean   @default(false)
-  openedAt DateTime?
-
-  acquiredDate   DateTime @default(now())
-  acquiredMethod String // "PURCHASE", "REWARD", "EVENT"
-
-  @@index([userId, isOpened])
-  @@index([packId])
-  @@map("user_packs")
-}
-
-/**
- * CardCollection - User's custom card collections
- * Supports public sharing and social features
- */
-model CardCollection {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name        String // "Season 1 Complete", "Tier 1 Nations"
-  description String?
-  slug        String  @unique
-
-  // Display
-  isPublic  Boolean @default(false)
-  theme     String?
-  sortOrder String  @default("rarity_desc")
-
-  // Content
-  cardIds Json // Array of card IDs
-
-  // Cached stats
-  cardCount       Int   @default(0)
-  deckValue       Float @default(0)
-  rarityBreakdown Json?
-
-  // Social
-  views Int @default(0)
-  likes Int @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId, isPublic])
-  @@index([slug])
-  @@map("card_collections")
-}
-
-/**
- * CardAuction - Card marketplace auctions
- * Supports bidding, buyout, and timed auctions
- */
-model CardAuction {
-  id       String @id @default(cuid())
-  cardId   String
-  card     Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  sellerId String
-  seller   User   @relation("SellerAuctions", fields: [sellerId], references: [id], onDelete: Cascade)
-
-  // Pricing (in IxCredits)
-  askPrice        Float
-  currentBid      Float?
-  currentBidderId String?
-  currentBidder   User?   @relation("BidderAuctions", fields: [currentBidderId], references: [id], onDelete: SetNull)
-  buyoutPrice     Float?
-
-  // Timing
-  startsAt DateTime      @default(now())
-  endsAt   DateTime
-  status   AuctionStatus @default(ACTIVE)
-
-  // Features
-  isFeatured Boolean @default(false)
-  isExpress  Boolean @default(false)
-
-  // Results
-  finalPrice Float?
-  winnerId   String?
-  winner     User?   @relation("WonAuctions", fields: [winnerId], references: [id], onDelete: SetNull)
-
-  bids AuctionBid[]
-
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
-
-  @@index([status, endsAt])
-  @@index([cardId, status])
-  @@index([sellerId])
-  @@map("card_auctions")
-}
-
-/**
- * AuctionBid - Bid history for auctions
- * Tracks all bids placed on card auctions
- */
-model AuctionBid {
-  id        String      @id @default(cuid())
-  auctionId String
-  auction   CardAuction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
-  bidderId  String
-  bidder    User        @relation(fields: [bidderId], references: [id], onDelete: Cascade)
-
-  amount    Float // In IxCredits
-  timestamp DateTime @default(now())
-  wasSnipe  Boolean  @default(false)
-
-  @@index([auctionId, timestamp])
-  @@index([bidderId])
-  @@map("auction_bids")
-}
-
-/**
- * CardTrade - Player-to-player card trades
- * Supports card and credit exchanges
- */
-model CardTrade {
-  id         String @id @default(cuid())
-  senderId   String
-  sender     User   @relation("SentTrades", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId String
-  receiver   User   @relation("ReceivedTrades", fields: [receiverId], references: [id], onDelete: Cascade)
-
-  offeredCards   Json // [{ cardId, quantity }]
-  requestedCards Json // [{ cardId, quantity }]
-  creditsOffer   Float? // IxCredits sweetener
-
-  status  TradeStatus @default(PENDING)
-  message String?
-
-  createdAt   DateTime  @default(now())
-  respondedAt DateTime?
-  expiresAt   DateTime
-
-  // Relations for cards involved in trade
-  cards Card[] @relation("TradeCards")
-
-  @@index([senderId, status])
-  @@index([receiverId, status])
-  @@index([status, expiresAt])
-  @@map("card_trades")
-}
-
-/**
- * CraftingRecipe - Card crafting system
- * Allows combining cards to create new ones
- */
-model CraftingRecipe {
-  id          String  @id @default(cuid())
-  name        String // "Common Fusion", "Rare Evolution"
-  description String?
-
-  // Inputs
-  inputCards  Card[] @relation("InputCards")
-  inputRules  Json // { rarity: "COMMON", quantity: 3 }
-  creditsCost Float  @default(0) // IxCredits cost
-
-  // Output
-  outputCardId String
-  outputCard   Card   @relation("OutputCard", fields: [outputCardId], references: [id], onDelete: Cascade)
-
-  // Mechanics
-  successRate  Float   @default(1.0)
-  isRepeatable Boolean @default(true)
-
-  // Discovery
-  isDiscovered  Boolean @default(false)
-  requiredLevel Int     @default(1)
-
-  craftedCount Int @default(0)
-
-  createdAt DateTime @default(now())
-
-  @@index([isDiscovered, requiredLevel])
-  @@index([outputCardId])
-  @@map("crafting_recipes")
-}
-
-// ============================================================================
-// IxCards Enums
-// ============================================================================
-
-/**
- * CardType - Classification of card types
- */
+/// *
+///  * CardType - Classification of card types
 enum CardType {
-  NATION // Nation-based cards (tied to IxStats countries)
-  LORE // Historical/lore cards from IxWiki
-  NS_IMPORT // Imported from NationStates
-  SPECIAL // Special edition/event cards
-  COMMUNITY // User-designed/community cards
+  NATION
+  LORE
+  NS_IMPORT
+  SPECIAL
+  COMMUNITY
 }
 
-/**
- * CardRarity - Rarity tiers for cards
- */
+/// *
+///  * CardRarity - Rarity tiers for cards
 enum CardRarity {
   COMMON
   UNCOMMON
@@ -4490,69 +4237,59 @@ enum CardRarity {
   LEGENDARY
 }
 
-/**
- * PackType - Types of card packs
- */
+/// *
+///  * PackType - Types of card packs
 enum PackType {
-  BASIC // Standard pack
-  PREMIUM // Better odds
-  ELITE // Best odds
-  THEMED // Theme-specific
-  SEASONAL // Season-specific
-  EVENT // Limited-time event
+  BASIC
+  PREMIUM
+  ELITE
+  THEMED
+  SEASONAL
+  EVENT
 }
 
-/**
- * AcquireMethod - How a card was acquired
- */
+/// *
+///  * AcquireMethod - How a card was acquired
 enum AcquireMethod {
-  PACK // Opened from pack
-  TRADE // Player trade
-  AUCTION // Won at auction
-  CRAFT // Crafted from recipe
-  GIFT // Gifted by another player
-  NS_IMPORT // Imported from NationStates
-  ACHIEVEMENT // Achievement reward
-  EVENT // Event reward
+  PACK
+  TRADE
+  AUCTION
+  CRAFT
+  GIFT
+  NS_IMPORT
+  ACHIEVEMENT
+  EVENT
 }
 
-/**
- * AuctionStatus - Auction lifecycle status
- */
+/// *
+///  * AuctionStatus - Auction lifecycle status
 enum AuctionStatus {
-  ACTIVE // Currently active
-  COMPLETED // Successfully completed
-  CANCELLED // Cancelled by seller
+  ACTIVE
+  COMPLETED
+  CANCELLED
 }
 
-/**
- * TradeStatus - Trade lifecycle status
- */
+/// *
+///  * TradeStatus - Trade lifecycle status
 enum TradeStatus {
-  PENDING // Awaiting response
-  ACCEPTED // Trade accepted
-  REJECTED // Trade rejected
-  CANCELLED // Trade cancelled
-  EXPIRED // Trade expired
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
 }
 
-/**
- * VaultTransactionType - Types of IxCredits transactions
- */
+/// *
+///  * VaultTransactionType - Types of IxCredits transactions
 enum VaultTransactionType {
-  // Earning
-  EARN_PASSIVE // Earned from nation dividends
-  EARN_ACTIVE // Earned from mission completion
-  EARN_CARDS // Earned from card pack bonus
-  EARN_SOCIAL // Earned from ThinkPages activity
-
-  // Spending
-  SPEND_PACKS // Spent on card pack
-  SPEND_MARKET // Spent on market listing
-  SPEND_CRAFT // Spent on card crafting
-  SPEND_BOOST // Spent on mission boost
-  SPEND_COSMETIC // Spent on customization
-
-  // Administrative
-  ADMIN_ADJUSTMENT // Manual admin adjustment
+  EARN_PASSIVE
+  EARN_ACTIVE
+  EARN_CARDS
+  EARN_SOCIAL
+  SPEND_PACKS
+  SPEND_MARKET
+  SPEND_CRAFT
+  SPEND_BOOST
+  SPEND_COSMETIC
+  ADMIN_ADJUSTMENT
 }

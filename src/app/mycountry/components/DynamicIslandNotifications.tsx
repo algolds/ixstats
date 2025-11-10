@@ -143,7 +143,7 @@ export function DynamicIslandNotifications({
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-50 ${className}`}>
+    <div className={`fixed top-2 right-2 sm:top-4 sm:right-4 z-50 ${className}`}>
       <AnimatePresence>
         {!isExpanded ? (
           // Collapsed Dynamic Island
@@ -207,7 +207,7 @@ export function DynamicIslandNotifications({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: -20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-96"
+            className="w-[95vw] sm:w-96 max-w-md"
           >
             <Card className="glass-hierarchy-parent border-white/10 bg-black/90 text-white shadow-2xl backdrop-blur-xl">
               <CardContent className="p-0">
@@ -295,7 +295,7 @@ export function DynamicIslandNotifications({
                 </div>
 
                 {/* Notifications List */}
-                <div className="max-h-96 overflow-y-auto">
+                <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
                   {filteredNotifications.length > 0 ? (
                     <div className="space-y-1 p-2">
                       {filteredNotifications.map((notification, index) => (

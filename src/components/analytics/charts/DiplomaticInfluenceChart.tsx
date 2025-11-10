@@ -51,18 +51,18 @@ export const DiplomaticInfluenceChart = React.memo<DiplomaticInfluenceChartProps
           <CardDescription>Global standing and relationship strength</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[280px] lg:h-[300px]">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 12 }} />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} domain={[0, 100]} />
+              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} domain={[0, 100]} />
               <Tooltip content={<GlassTooltip />} />
               <Line
                 type="monotone"
                 dataKey="influence"
                 stroke={DEFAULT_CHART_COLORS[0]}
                 strokeWidth={2}
-                dot={{ fill: DEFAULT_CHART_COLORS[0], r: 4 }}
+                dot={{ fill: DEFAULT_CHART_COLORS[0], r: 3 }}
               />
             </LineChart>
           </ResponsiveContainer>

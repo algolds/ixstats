@@ -215,9 +215,9 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
   return (
     <div className="space-y-6">
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
         <Card className="glass-hierarchy-child">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Active Relationships</p>
@@ -271,25 +271,25 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
 
       {/* Main Analytics Tabs */}
       <Tabs defaultValue="trends" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
-          <TabsTrigger value="trends" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+          <TabsTrigger value="trends" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Trends</span>
           </TabsTrigger>
-          <TabsTrigger value="growth" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
+          <TabsTrigger value="growth" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+            <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Growth</span>
           </TabsTrigger>
-          <TabsTrigger value="network" className="flex items-center gap-2">
-            <Network className="h-4 w-4" />
+          <TabsTrigger value="network" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+            <Network className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Network</span>
           </TabsTrigger>
-          <TabsTrigger value="distribution" className="flex items-center gap-2">
-            <PieChartIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Distribution</span>
+          <TabsTrigger value="distribution" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+            <PieChartIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Distrib</span>
           </TabsTrigger>
-          <TabsTrigger value="timeline" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+          <TabsTrigger value="timeline" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Timeline</span>
           </TabsTrigger>
         </TabsList>
@@ -307,19 +307,20 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
+              <ResponsiveContainer width="100%" height={300} className="sm:h-[350px] lg:h-[400px]">
                 <LineChart data={relationshipTrends.data}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis domain={[0, 100]} className="text-xs" />
+                  <XAxis dataKey="date" className="text-xs" tick={{ fontSize: 10 }} />
+                  <YAxis domain={[0, 100]} className="text-xs" tick={{ fontSize: 10 }} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "rgba(255, 255, 255, 0.95)",
                       border: "1px solid #e5e7eb",
                       borderRadius: "8px",
+                      fontSize: "12px",
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: "12px" }} />
                   {relationshipTrends.countries.map((country, idx) => (
                     <Line
                       key={country}
@@ -350,7 +351,7 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
+              <ResponsiveContainer width="100%" height={300} className="sm:h-[350px] lg:h-[400px]">
                 <AreaChart data={networkGrowth}>
                   <defs>
                     <linearGradient id="colorEmbassies" x1="0" y1="0" x2="0" y2="1">
@@ -367,16 +368,17 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
+                  <XAxis dataKey="date" className="text-xs" tick={{ fontSize: 10 }} />
+                  <YAxis className="text-xs" tick={{ fontSize: 10 }} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "rgba(255, 255, 255, 0.95)",
                       border: "1px solid #e5e7eb",
                       borderRadius: "8px",
+                      fontSize: "12px",
                     }}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: "12px" }} />
                   <Area
                     type="monotone"
                     dataKey="embassies"
@@ -451,7 +453,7 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ResponsiveContainer width="100%" height={350}>
+                <ResponsiveContainer width="100%" height={250} className="sm:h-[300px] lg:h-[350px]">
                   <PieChart>
                     <Pie
                       data={influenceDistribution}
@@ -459,9 +461,10 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
                       cy="50%"
                       labelLine={false}
                       label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
-                      outerRadius={120}
+                      outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
+                      className="sm:outerRadius-[100px] lg:outerRadius-[120px]"
                     >
                       {influenceDistribution.map((entry: any, index) => (
                         <Cell
@@ -475,6 +478,7 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
                         backgroundColor: "rgba(255, 255, 255, 0.95)",
                         border: "1px solid #e5e7eb",
                         borderRadius: "8px",
+                        fontSize: "12px",
                       }}
                     />
                   </PieChart>

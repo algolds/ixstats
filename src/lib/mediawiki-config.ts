@@ -27,7 +27,7 @@ export interface MediaWikiConfig {
 export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
   baseUrl: env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com",
   apiEndpoint: "/api.php",
-  userAgent: "IxStats-Builder/1.0 (https://ixstats.com; contact@ixstats.com)",
+  userAgent: "IxStats-Builder", // Simplified User-Agent that works with iiwiki
   timeout: 20000, // 20 seconds
 
   rateLimit: {
@@ -51,6 +51,7 @@ export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
 };
 
 // Multi-wiki support configuration
+// IMPORTANT: iiwiki MUST use direct access (not proxy) with exact User-Agent "IxStats-Builder"
 export const WIKI_SOURCES = {
   ixwiki: {
     name: "IxWiki",
@@ -58,14 +59,15 @@ export const WIKI_SOURCES = {
     apiEndpoint: "/api.php",
     description:
       "The bespoke two-decades old geopolitical worldbuilding community & fictional encyclopedia",
-    userAgent: "IxStats-Builder/1.0 (https://ixstats.com; contact@ixstats.com)",
+    userAgent: "IxStats-Builder",
   },
   iiwiki: {
     name: "IIWiki",
-    baseUrl: "https://iiwiki.us",
+    baseUrl: "https://iiwiki.com", // CORRECT: iiwiki.com, NOT iiwiki.us
     apiEndpoint: "/mediawiki/api.php",
     description: "SimFic and Alt-History Encyclopedia",
-    userAgent: "IxStats-Builder/1.0 (https://ixstats.com; contact@ixstats.com)",
+    userAgent: "IxStats-Builder", // REQUIRED: Must be exactly "IxStats-Builder" for iiwiki
+    // NOTE: iiwiki MUST be accessed directly, NOT through proxy (Cloudflare blocks proxy)
   },
 } as const;
 
@@ -73,11 +75,17 @@ export type WikiSource = keyof typeof WIKI_SOURCES;
 
 /**
  * Get the appropriate MediaWiki API URL based on context and wiki source
- * - Client-side: Use proxy route for same-server optimization (IxWiki only)
- * - Server-side: Use direct URL or local path if available
+ * - iiwiki: ALWAYS use direct URL (Cloudflare blocks proxy)
+ * - ixwiki Client-side: Use proxy route for same-server optimization
+ * - ixwiki Server-side: Use direct URL or local path if available
  */
 export function getMediaWikiApiUrl(source: WikiSource = "ixwiki"): string {
   const wikiConfig = WIKI_SOURCES[source];
+
+  // CRITICAL: iiwiki MUST use direct access (Cloudflare blocks proxy)
+  if (source === "iiwiki") {
+    return `${wikiConfig.baseUrl}${wikiConfig.apiEndpoint}`;
+  }
 
   // Client-side: use proxy route for IxWiki only (same server optimization)
   if (typeof window !== "undefined" && source === "ixwiki") {

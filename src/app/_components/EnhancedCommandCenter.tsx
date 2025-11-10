@@ -286,7 +286,7 @@ function SmartDashboardContent({
       <CardHeader>
         <div className="flex items-center justify-between">
           {/* Content Mode Selector */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {contentModes.map((mode) => {
               const Icon = mode.icon;
               const isActive = contentMode === mode.id;
@@ -299,17 +299,18 @@ function SmartDashboardContent({
                   onClick={() =>
                     handleTabChange(mode.id as "discover" | "mycountry" | "activity" | "admin")
                   }
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
                 >
-                  <Icon className="h-4 w-4" />
-                  {mode.label}
+                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">{mode.label}</span>
+                  <span className="sm:hidden">{mode.label.substring(0, 4)}</span>
                 </Button>
               );
             })}
           </div>
 
           {/* Mode Description */}
-          <div className="text-muted-foreground text-sm">
+          <div className="text-muted-foreground text-xs sm:text-sm hidden sm:block">
             {contentModes.find((m) => m.id === contentMode)?.description}
           </div>
         </div>
@@ -339,33 +340,33 @@ function SmartDashboardContent({
                   />
                 </h3>
 
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                  <div className="glass-hierarchy-child rounded-lg p-4 text-center">
-                    <div className="text-foreground mb-1 text-2xl font-bold">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                  <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 text-center">
+                    <div className="text-foreground mb-1 text-xl sm:text-2xl font-bold">
                       {adaptedGlobalStats?.totalCountries || 0}
                     </div>
-                    <div className="text-muted-foreground text-sm">Nations</div>
+                    <div className="text-muted-foreground text-xs sm:text-sm">Nations</div>
                   </div>
-                  <div className="glass-hierarchy-child rounded-lg p-4 text-center">
-                    <div className="text-foreground mb-1 text-2xl font-bold">
+                  <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 text-center">
+                    <div className="text-foreground mb-1 text-xl sm:text-2xl font-bold">
                       {formatPopulation(adaptedGlobalStats?.totalPopulation || 0)}
                     </div>
-                    <div className="text-muted-foreground text-sm">Total Population</div>
+                    <div className="text-muted-foreground text-xs sm:text-sm">Total Population</div>
                   </div>
-                  <div className="glass-hierarchy-child rounded-lg p-4 text-center">
-                    <div className="text-foreground mb-1 text-2xl font-bold">
+                  <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 text-center">
+                    <div className="text-foreground mb-1 text-xl sm:text-2xl font-bold">
                       {formatCurrency(adaptedGlobalStats?.totalGdp || 0)}
                     </div>
-                    <div className="text-muted-foreground text-sm">World GDP</div>
+                    <div className="text-muted-foreground text-xs sm:text-sm">World GDP</div>
                   </div>
-                  <div className="glass-hierarchy-child rounded-lg p-4 text-center">
-                    <div className="mb-1 text-2xl font-bold text-green-500">
+                  <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 text-center">
+                    <div className="mb-1 text-xl sm:text-2xl font-bold text-green-500">
                       {adaptedGlobalStats?.globalGrowthRate
                         ? (adaptedGlobalStats.globalGrowthRate * 100).toFixed(3)
                         : "0.000"}
                       %
                     </div>
-                    <div className="text-muted-foreground text-sm">Global Growth</div>
+                    <div className="text-muted-foreground text-xs sm:text-sm">Global Growth</div>
                   </div>
                 </div>
               </div>
@@ -532,15 +533,15 @@ function SmartDashboardContent({
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="hidden space-y-4 md:block">
-                    <h3 className="text-foreground flex items-center gap-3 text-xl font-bold">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
-                        <Zap className="h-4 w-4 text-white" />
+                  <div className="space-y-4">
+                    <h3 className="text-foreground flex items-center gap-2 sm:gap-3 text-lg sm:text-xl font-bold">
+                      <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+                        <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                       </div>
                       Quick Actions
                     </h3>
 
-                    <div className="grid grid-cols-2 gap-6 lg:grid-cols-5">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-5">
                       <button
                         onClick={() => setMyCountryTab("diplomacy")}
                         className="glass-hierarchy-child hover:glass-hierarchy-interactive group flex h-32 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl p-6 transition-all duration-200 hover:scale-[1.02]"
@@ -606,7 +607,7 @@ function SmartDashboardContent({
                     </div>
 
                     {/* Quick Diplomatic Stats */}
-                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                       <Card className="glass-hierarchy-child">
                         <CardContent className="p-4 text-center">
                           <div className="mb-1 text-2xl font-bold text-blue-500">
@@ -654,11 +655,11 @@ function SmartDashboardContent({
 
                     {/* Diplomatic Actions */}
                     <div className="space-y-4">
-                      <h4 className="text-foreground flex items-center gap-2 text-lg font-semibold">
-                        <Users className="h-5 w-5 text-purple-400" />
+                      <h4 className="text-foreground flex items-center gap-2 text-base sm:text-lg font-semibold">
+                        <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
                         Diplomatic Actions
                       </h4>
-                      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                         <Link href="/sdi/diplomatic#embassies">
                           <Card className="glass-hierarchy-interactive cursor-pointer transition-all hover:scale-[1.02]">
                             <CardContent className="flex items-center gap-3 p-4">
@@ -836,7 +837,7 @@ function SmartDashboardContent({
                     )}
 
                     {/* Executive Summary Cards */}
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
                       {/* Scheduler & Meetings */}
                       <Card className="glass-hierarchy-child">
                         <CardHeader>
@@ -1128,7 +1129,7 @@ function SmartDashboardContent({
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
                           <Link href="/mycountry/meetings">
                             <Button
                               variant="outline"
@@ -1339,7 +1340,7 @@ export function EnhancedCommandCenter() {
           {/* Left Sticky Sidebar - User Profile & Context - Only show when user is logged in */}
           {user && (
             <motion.div
-              className="space-y-6 lg:sticky lg:top-24 lg:self-start"
+              className="hidden lg:block space-y-6 lg:sticky lg:top-24 lg:self-start"
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}

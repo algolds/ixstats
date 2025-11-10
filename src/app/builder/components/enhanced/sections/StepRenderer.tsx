@@ -92,7 +92,7 @@ function HelpModal({ text, title }: { text: string; title: string }) {
                 <Settings className="h-4 w-4 text-purple-500" />
                 Core Foundation Components
               </h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                   <h4 className="mb-3 flex items-center gap-2 font-medium text-blue-800">
                     <Flag className="h-4 w-4" />
@@ -142,7 +142,7 @@ function HelpModal({ text, title }: { text: string; title: string }) {
                 <Eye className="h-4 w-4 text-amber-500" />
                 How to Configure Core Foundation
               </h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
@@ -200,7 +200,7 @@ function HelpModal({ text, title }: { text: string; title: string }) {
                 <HelpCircle className="h-4 w-4 text-purple-500" />
                 Tips & Best Practices
               </h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
                 <div className="rounded-lg border border-green-200 bg-green-50 p-3">
                   <h4 className="flex items-center gap-2 font-medium text-green-800">
                     <CheckCircle className="h-4 w-4" />
@@ -308,7 +308,7 @@ function HelpModal({ text, title }: { text: string; title: string }) {
               <Eye className="h-4 w-4 text-purple-500" />
               Tips & Best Practices
             </h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
               <div className="rounded-lg border border-green-200 bg-green-50 p-3">
                 <h4 className="flex items-center gap-2 font-medium text-green-800">
                   <CheckCircle className="h-4 w-4" />
@@ -380,8 +380,8 @@ export const StepRenderer = memo(function StepRenderer({
   onGovernmentStructureChange,
   onGovernmentStructureSave,
 }: StepRendererProps) {
-  const { builderState, setBuilderState, updateStep, countryId } = useBuilderContext();
-  const { handleTabChange } = useBuilderActions({ builderState, setBuilderState });
+  const { builderState, setBuilderState, updateStep, countryId, mode } = useBuilderContext();
+  const { handleTabChange } = useBuilderActions({ builderState, setBuilderState, mode });
 
   const handleFoundationComplete = useCallback(
     (country: RealCountryData) => {
@@ -408,8 +408,8 @@ export const StepRenderer = memo(function StepRenderer({
     updateStep("foundation", scratchCountry);
   }, [updateStep]);
 
-  // Foundation Step
-  if (builderState.step === "foundation") {
+  // Foundation Step (only in create mode)
+  if (builderState.step === "foundation" && mode !== "edit") {
     if (isLoadingCountries) {
       return (
         <div className="flex items-center justify-center py-24">
@@ -506,7 +506,7 @@ export const StepRenderer = memo(function StepRenderer({
           onValueChange={(tab) => handleTabChange("core", tab)}
           className="space-y-6"
         >
-          <EnhancedTabsList className="grid-cols-2">
+          <EnhancedTabsList className="grid grid-cols-1 sm:grid-cols-2">
             <EnhancedTabsTrigger value="identity" icon={Flag}>
               National Identity
             </EnhancedTabsTrigger>
@@ -582,7 +582,7 @@ export const StepRenderer = memo(function StepRenderer({
           onValueChange={(tab) => handleTabChange("government", tab)}
           className="space-y-6"
         >
-          <EnhancedTabsList className="grid-cols-4">
+          <EnhancedTabsList className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-0">
             <EnhancedTabsTrigger
               value="components"
               icon={Settings}

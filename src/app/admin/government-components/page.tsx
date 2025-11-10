@@ -427,8 +427,8 @@ export default function GovernmentComponentsPage() {
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-4 md:p-6">
+          <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
                 <Button variant="ghost" size="sm">
@@ -450,19 +450,22 @@ export default function GovernmentComponentsPage() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
                 className="bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
+                size="sm"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add Component
+                <span className="hidden sm:inline">Add Component</span>
+                <span className="sm:hidden">Add</span>
               </Button>
-              <Button variant="outline" onClick={() => setIsSynergyMatrixOpen(true)}>
+              <Button variant="outline" onClick={() => setIsSynergyMatrixOpen(true)} size="sm">
                 <Network className="mr-2 h-4 w-4" />
-                Synergy Matrix
+                <span className="hidden lg:inline">Synergy Matrix</span>
+                <span className="lg:hidden">Synergy</span>
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" size="sm" className="hidden md:flex">
                 <BarChart3 className="mr-2 h-4 w-4" />
                 Analytics
               </Button>
@@ -471,7 +474,7 @@ export default function GovernmentComponentsPage() {
 
           {/* Category Tabs */}
           <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="mb-4">
-            <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2">
+            <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2 scrollbar-hide">
               <TabsTrigger value="all">All</TabsTrigger>
               {Object.keys(COMPONENT_CATEGORIES).map((category) => (
                 <TabsTrigger key={category} value={category}>
@@ -482,8 +485,8 @@ export default function GovernmentComponentsPage() {
           </Tabs>
 
           {/* Filter Bar */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div className="relative md:col-span-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+            <div className="relative sm:col-span-2 md:col-span-2">
               <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 placeholder="Search components..."
@@ -522,7 +525,7 @@ export default function GovernmentComponentsPage() {
 
         {/* Statistics */}
         {stats && (
-          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-4">
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Components</p>
               <p className="text-foreground mt-2 text-3xl font-bold">{stats.summary.total}</p>
@@ -559,7 +562,7 @@ export default function GovernmentComponentsPage() {
             <p className="text-[--intel-silver]">No components found matching your filters</p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredComponents.map((component) => (
               <ComponentCard
                 key={component.id}
@@ -1051,7 +1054,7 @@ function AppearanceTab({
     <div className="space-y-4">
       <div>
         <label className="text-foreground mb-2 block text-sm font-medium">Color Theme</label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {COLOR_OPTIONS.map((color) => (
             <button
               key={color}

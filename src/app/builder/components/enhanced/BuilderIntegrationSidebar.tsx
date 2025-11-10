@@ -334,7 +334,7 @@ export function BuilderIntegrationSidebar({
                 <Building2 className="h-3 w-3" />
                 <span className="font-medium">Tax Recommendations</span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 <div className="bg-muted/50 rounded p-1.5 text-center">
                   <div className="text-muted-foreground text-[10px]">Corp</div>
                   <div className="font-medium">{metrics.taxImpact.corporateRate.toFixed(0)}%</div>

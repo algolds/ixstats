@@ -72,35 +72,35 @@ export function AccountSettingsModal({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative mx-4 flex max-h-[90vh] w-full max-w-lg flex-col"
+            className="relative mx-2 sm:mx-4 flex max-h-[90vh] w-full max-w-[95vw] sm:max-w-md md:max-w-lg flex-col"
           >
             <div className="flex flex-col rounded-xl border border-white/10 bg-neutral-900/50 shadow-lg backdrop-blur-xl">
-              <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-                <h3 className="text-lg font-bold text-white">Account Settings</h3>
+              <div className="flex items-center justify-between border-b border-white/10 px-4 sm:px-6 py-3 sm:py-4">
+                <h3 className="text-base sm:text-lg font-bold text-white">Account Settings</h3>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-white/10"
+                  className="rounded-full p-1.5 sm:p-2 text-neutral-400 transition-colors hover:bg-white/10"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="space-y-6 p-6">
+              <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <label htmlFor="verified-switch" className="flex items-center gap-2">
-                    <Verified className="h-5 w-5 text-blue-500" />
-                    <span className="font-medium text-white">Verified</span>
+                    <Verified className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                    <span className="text-sm sm:text-base font-medium text-white">Verified</span>
                   </label>
                   <Switch id="verified-switch" checked={verified} onCheckedChange={setVerified} />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-neutral-300">
+                  <label className="mb-2 block text-xs sm:text-sm font-medium text-neutral-300">
                     Posting Frequency
                   </label>
                   <select
                     value={postingFrequency}
                     onChange={(e) => setPostingFrequency(e.target.value as any)}
-                    className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                    className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white focus:border-blue-500 focus:ring-blue-500"
                   >
                     <option value="low">Low</option>
                     <option value="moderate">Moderate</option>
@@ -108,13 +108,13 @@ export function AccountSettingsModal({
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-neutral-300">
+                  <label className="mb-2 block text-xs sm:text-sm font-medium text-neutral-300">
                     Political Lean
                   </label>
                   <select
                     value={politicalLean}
                     onChange={(e) => setPoliticalLean(e.target.value as any)}
-                    className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                    className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white focus:border-blue-500 focus:ring-blue-500"
                   >
                     <option value="left">Left</option>
                     <option value="center">Center</option>
@@ -122,13 +122,13 @@ export function AccountSettingsModal({
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-neutral-300">
+                  <label className="mb-2 block text-xs sm:text-sm font-medium text-neutral-300">
                     Personality
                   </label>
                   <select
                     value={personality}
                     onChange={(e) => setPersonality(e.target.value as any)}
-                    className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-4 py-3 text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                    className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white focus:border-blue-500 focus:ring-blue-500"
                   >
                     <option value="serious">Serious</option>
                     <option value="casual">Casual</option>
@@ -136,12 +136,12 @@ export function AccountSettingsModal({
                   </select>
                 </div>
               </div>
-              <div className="flex items-center justify-end border-t border-white/10 px-6 py-4">
-                <div className="flex gap-x-2">
-                  <Button variant="outline" onClick={onClose}>
+              <div className="flex items-center justify-end border-t border-white/10 px-4 sm:px-6 py-3 sm:py-4">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button variant="outline" onClick={onClose} className="text-xs sm:text-sm">
                     Cancel
                   </Button>
-                  <Button onClick={handleSave} disabled={updateAccountMutation.isPending}>
+                  <Button onClick={handleSave} disabled={updateAccountMutation.isPending} className="text-xs sm:text-sm">
                     {updateAccountMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}

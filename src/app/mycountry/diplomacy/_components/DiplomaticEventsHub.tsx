@@ -176,7 +176,7 @@ function EventCountdown({ expiresAt }: { expiresAt: string | Date }) {
 // Impact preview component
 function ImpactPreview({ impact }: { impact: { relationship?: number; economic?: number; cultural?: number } }) {
   return (
-    <div className="grid grid-cols-3 gap-3 mt-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
       {impact.relationship !== undefined && (
         <div className="text-center p-3 rounded-lg bg-muted/50">
           <div className="flex items-center justify-center gap-1 mb-1">

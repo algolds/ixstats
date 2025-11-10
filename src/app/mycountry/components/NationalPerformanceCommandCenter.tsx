@@ -202,7 +202,7 @@ function PerformanceTile({
 
         <CardContent className="space-y-4">
           {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {vitality.keyMetrics.slice(0, compact ? 2 : 4).map((metric, metricIndex) => (
               <motion.div
                 key={`${vitality.area}-metric-${metricIndex}`}
@@ -238,7 +238,7 @@ function PerformanceTile({
                 <BarChart3 className="text-muted-foreground h-4 w-4" />
                 <span className="text-sm font-medium">Forecasts</span>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
                   <div className="text-muted-foreground text-xs">3 Months</div>
                   <div className="font-medium">
@@ -339,7 +339,7 @@ export function NationalPerformanceCommandCenter({
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
             <div className="bg-muted h-6 w-3/4 rounded"></div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="bg-muted h-32 rounded"></div>
               ))}

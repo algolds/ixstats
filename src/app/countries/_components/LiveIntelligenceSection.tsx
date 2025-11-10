@@ -439,7 +439,7 @@ export function LiveIntelligenceSection({ countryId, country }: LiveIntelligence
                           className="border-t border-amber-500/20 bg-amber-500/5 dark:border-amber-400/20 dark:bg-amber-400/5"
                         >
                           <div className="space-y-4 p-4">
-                            <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                               <div className="bg-muted/50 rounded-lg p-3">
                                 <div className="text-muted-foreground text-xs">Total GDP</div>
                                 <div className="text-foreground font-semibold">
@@ -542,7 +542,7 @@ export function LiveIntelligenceSection({ countryId, country }: LiveIntelligence
                           className="border-t border-blue-500/20 bg-blue-500/5 dark:border-blue-400/20 dark:bg-blue-400/5"
                         >
                           <div className="space-y-4 p-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                               <div className="bg-muted/50 rounded-lg p-3">
                                 <div className="text-muted-foreground text-xs">Life Expectancy</div>
                                 <div className="text-foreground font-semibold">
@@ -642,7 +642,7 @@ export function LiveIntelligenceSection({ countryId, country }: LiveIntelligence
                           className="border-t border-purple-500/20 bg-purple-500/5 dark:border-purple-400/20 dark:bg-purple-400/5"
                         >
                           <div className="space-y-4 p-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                               <div className="bg-muted/50 rounded-lg p-3">
                                 <div className="text-muted-foreground text-xs">
                                   Development Index

@@ -34,7 +34,7 @@ export function MyCountryExpandedView({
   onClose,
 }: MyCountryExpandedViewProps) {
   return (
-    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] max-w-2xl -translate-x-1/2 transform">
+    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] sm:w-[90vw] md:w-[600px] lg:max-w-2xl -translate-x-1/2 transform">
       <div
         className="command-palette-dropdown border-border relative mx-auto w-full overflow-hidden rounded-xl shadow-2xl dark:border-white/10"
         style={{
@@ -52,7 +52,7 @@ export function MyCountryExpandedView({
           <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-amber-400/20 to-transparent" />
         </div>
 
-        <div className="relative z-10 p-6">
+        <div className="relative z-10 p-4 sm:p-5 lg:p-6">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export function MyCountryExpandedView({
           {/* Navigation Tabs */}
           <div className="mb-4">
             <Tabs value={section} className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
                 <TabsTrigger
                   value="overview"
                   onClick={() => (window.location.href = createAbsoluteUrl("/mycountry"))}
@@ -123,7 +123,7 @@ export function MyCountryExpandedView({
           {/* Quick Actions */}
           <div className="mb-4">
             <div className="mb-2 text-xs font-medium text-muted-foreground">Quick Actions</div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2">
               {quickActions.map((action, index) => {
                 const ActionIcon = action.icon;
                 return (
@@ -141,7 +141,7 @@ export function MyCountryExpandedView({
                     className="flex flex-col items-center gap-1 p-3 hover:bg-amber-500/10"
                   >
                     <ActionIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                    <span className="text-[11px] text-center">{action.label}</span>
+                    <span className="text-[10px] sm:text-[11px] text-center">{action.label}</span>
                   </Button>
                 );
               })}
@@ -151,7 +151,7 @@ export function MyCountryExpandedView({
           {/* All Vitals Display */}
           <div>
             <div className="mb-2 text-xs font-medium text-muted-foreground">Country Vitals</div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               {vitals.map((vital, index) => {
                 const VIcon = vital.icon;
                 return (

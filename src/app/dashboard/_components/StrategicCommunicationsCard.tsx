@@ -238,7 +238,7 @@ export function StrategicCommunicationsCard({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <div className="text-muted-foreground mb-1 text-xs">Engagement</div>
                       <Progress value={campaign.engagement} className="h-2" />
@@ -255,7 +255,7 @@ export function StrategicCommunicationsCard({
                       animate={{ opacity: 1, height: "auto" }}
                       className="mt-3 border-t border-white/10 pt-3"
                     >
-                      <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
                         <div>
                           <div className="text-sm font-bold">{formatNumber(campaign.reach)}</div>
                           <div className="text-muted-foreground text-xs">Total Reach</div>
@@ -283,7 +283,7 @@ export function StrategicCommunicationsCard({
               <h4 className="text-sm font-semibold">Public Opinion Metrics</h4>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="glass-hierarchy-child rounded-lg p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm">Overall Approval</span>
@@ -398,7 +398,7 @@ export function StrategicCommunicationsCard({
               </div>
 
               <div className="glass-hierarchy-child rounded-lg p-3">
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
                   <div>
                     <div className="text-sm font-bold text-green-400">
                       {trendingTopics.filter((topic: any) => topic.sentiment === "positive").length}
@@ -424,7 +424,7 @@ export function StrategicCommunicationsCard({
 
           {/* Quick Actions */}
           <div className="border-t border-white/10 pt-2">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Link href={createUrl("/thinkpages?view=campaigns")}>
                 <Button variant="outline" size="sm" className="w-full">
                   <Target className="mr-2 h-4 w-4" />

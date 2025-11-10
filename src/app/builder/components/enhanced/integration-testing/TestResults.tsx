@@ -66,7 +66,7 @@ export function TestResultCard({
           {Object.keys(result.metrics).length > 0 && (
             <div>
               <h4 className="mb-2 text-sm font-medium">Test Metrics</h4>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {Object.entries(result.metrics).map(([key, value]) => (
                   <div key={key} className="text-center">
                     <div className="text-lg font-bold">

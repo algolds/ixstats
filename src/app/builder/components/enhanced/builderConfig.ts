@@ -143,3 +143,14 @@ export const stepOrder: BuilderStep[] = [
   "economics",
   "preview",
 ];
+
+/**
+ * Get the appropriate step order based on builder mode
+ * In edit mode, foundation step is excluded since you're editing an existing country
+ */
+export function getStepsForMode(mode: BuilderMode): BuilderStep[] {
+  if (mode === "edit") {
+    return ["core", "government", "economics", "preview"];
+  }
+  return stepOrder;
+}

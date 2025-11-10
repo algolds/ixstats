@@ -106,7 +106,7 @@ export function SystemOverview() {
       </div>
 
       <Tabs defaultValue="metrics" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           <TabsTrigger value="metrics">System Metrics</TabsTrigger>
           <TabsTrigger value="formulas">Internal Formulas</TabsTrigger>
           <TabsTrigger value="database">Database Explorer</TabsTrigger>

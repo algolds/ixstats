@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Autocomplete } from "~/components/ui/autocomplete";
 import { api } from "~/trpc/react";
 
@@ -13,7 +13,7 @@ interface IdentityAutocompleteProps {
   onSave?: (fieldName: string, value: string) => void;
 }
 
-export function IdentityAutocomplete({
+export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
   fieldName,
   value,
   onChange,
@@ -28,11 +28,11 @@ export function IdentityAutocomplete({
     { enabled: isOpen }
   );
 
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     if (value.trim() && onSave) {
       onSave(fieldName, value.trim());
     }
-  };
+  }, [value, onSave, fieldName]);
 
   return (
     <div className="space-y-2">
@@ -68,4 +68,4 @@ export function IdentityAutocomplete({
       />
     </div>
   );
-}
+});

@@ -84,7 +84,7 @@ function AtomicBuilderPageInner({
 }: AtomicBuilderPageProps) {
   const { user } = useUser();
   const router = useRouter();
-  const { builderState, setBuilderState, clearDraft, mode: contextMode } = useBuilderContext();
+  const { builderState, setBuilderState, clearDraft, mode: contextMode, syncAllNow } = useBuilderContext();
   const isEditMode = mode === "edit";
 
   // Get navigation handlers from useBuilderActions
@@ -111,6 +111,9 @@ function AtomicBuilderPageInner({
   // Submission lock to prevent double-submits
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionLockRef = useRef(false);
+
+  // Manual save state
+  const [isManualSaving, setIsManualSaving] = useState(false);
 
   // Government structure handlers
   const handleGovernmentStructureChange = useCallback(
@@ -314,6 +317,79 @@ function AtomicBuilderPageInner({
     isLoading: false,
   };
 
+  // Manual save handler - saves to localStorage AND triggers database sync (edit mode)
+  const handleManualSave = useCallback(async () => {
+    if (isManualSaving) {
+      console.warn("[Builder] Manual save already in progress");
+      return;
+    }
+
+    setIsManualSaving(true);
+
+    try {
+      // Step 1: Save to localStorage (always)
+      const stateKey = mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
+      const savedKey = mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
+      const now = new Date();
+
+      try {
+        localStorage.setItem(stateKey, JSON.stringify(builderState));
+        localStorage.setItem(savedKey, now.toISOString());
+        console.log("[Builder] Manual save to localStorage successful");
+      } catch (storageError) {
+        // Try sessionStorage as fallback
+        try {
+          sessionStorage.setItem(stateKey, JSON.stringify(builderState));
+          sessionStorage.setItem(savedKey, now.toISOString());
+          console.log("[Builder] Manual save to sessionStorage successful (fallback)");
+        } catch (sessionError) {
+          throw new Error("Failed to save to both local and session storage");
+        }
+      }
+
+      // Step 2: Trigger database sync for all sections (edit mode only)
+      if (mode === "edit" && countryId) {
+        console.log("[Builder] Triggering database sync for all sections...");
+        const syncResults = await syncAllNow();
+
+        if (syncResults.failed > 0) {
+          console.warn("[Builder] Some sections failed to sync:", syncResults.errors);
+          toast.warning("Partially Saved", {
+            description: `${syncResults.success} section(s) saved. ${syncResults.failed} section(s) failed to sync to database.`,
+            duration: 4000,
+          });
+        } else if (syncResults.success > 0) {
+          toast.success("All Changes Saved!", {
+            description: `Successfully saved ${syncResults.success} section(s) to database.`,
+            duration: 2000,
+          });
+        } else {
+          // No sections registered for sync (likely in create mode or no changes)
+          toast.success("Progress Saved!", {
+            description: "All builder data has been saved locally.",
+            duration: 2000,
+          });
+        }
+      } else {
+        // Create mode - only localStorage
+        toast.success("Progress Saved!", {
+          description: "All builder data has been saved locally.",
+          duration: 2000,
+        });
+      }
+
+      console.log("[Builder] Manual save completed successfully");
+    } catch (error) {
+      console.error("[Builder] Manual save failed:", error);
+      toast.error("Save Failed", {
+        description: "Failed to save builder data. Please try again.",
+        duration: 3000,
+      });
+    } finally {
+      setIsManualSaving(false);
+    }
+  }, [builderState, isManualSaving, mode, countryId, syncAllNow]);
+
   const handleCreateCountry = useCallback(async () => {
     // Prevent double-submit with ref-based lock
     if (submissionLockRef.current || isSubmitting) {
@@ -472,7 +548,14 @@ function AtomicBuilderPageInner({
   return (
     <div className="from-background via-background min-h-screen bg-gradient-to-br to-amber-50/10">
       {/* Header */}
-      <BuilderHeader onBackToIntro={onBackToIntro} onClearDraft={clearDraft} mode={mode} />
+      <BuilderHeader
+        onBackToIntro={onBackToIntro}
+        onClearDraft={clearDraft}
+        mode={mode}
+        onManualSave={handleManualSave}
+        isSaving={isManualSaving}
+        countryId={countryId}
+      />
 
       <div className="container mx-auto px-4 py-8">
         {/* Step Progress Indicator */}
@@ -484,8 +567,8 @@ function AtomicBuilderPageInner({
         />
 
         {/* Main Content Area with Animations */}
-        {builderState.step === "foundation" ? (
-          // Foundation step is rendered without StepContent wrapper
+        {builderState.step === "foundation" && !isEditMode ? (
+          // Foundation step is rendered without StepContent wrapper (only in create mode)
           <motion.div
             key="foundation"
             initial={{ opacity: 0, x: 20 }}

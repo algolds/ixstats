@@ -15,6 +15,7 @@ import { notificationHooks } from "~/lib/notification-hooks";
 import { getThinkPagesServer } from "~/server/websocket-server";
 import { notificationAPI } from "~/lib/notification-api";
 import { validateNoXSS } from "~/lib/sanitize-html";
+import { vaultService } from "~/lib/vault-service";
 import fs from "fs/promises";
 import path from "path";
 
@@ -780,7 +781,48 @@ export const thinkpagesRouter = createTRPCRouter({
       }
     }
 
-    return post;
+    // 💰 Award IxCredits for social post (if within daily cap)
+    let creditsEarned = 0;
+    try {
+      // Check daily post count
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const postsToday = await db.thinkpagesPost.count({
+        where: {
+          accountId: input.accountId,
+          createdAt: { gte: today },
+        },
+      });
+
+      // Only award for first 5 posts per day (1 IxC each)
+      if (postsToday <= 5) {
+        const earnResult = await vaultService.earnCredits(
+          clerkUserId,
+          1,
+          "EARN_SOCIAL",
+          "SOCIAL_POST",
+          db,
+          {
+            postId: post.id,
+            postType,
+            accountId: input.accountId,
+          }
+        );
+
+        if (earnResult.success) {
+          creditsEarned = 1;
+        }
+      }
+    } catch (error) {
+      // Don't block post creation if earning fails
+      console.error("[ThinkPages] Failed to award post credits:", error);
+    }
+
+    return {
+      ...post,
+      creditsEarned,
+    };
   }),
 
   // Update post content (edit post)

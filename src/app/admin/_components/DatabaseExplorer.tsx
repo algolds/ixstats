@@ -460,7 +460,7 @@ export function DatabaseExplorer() {
         {/* Table Details & Query Interface */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="structure" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               <TabsTrigger value="structure">Structure</TabsTrigger>
               <TabsTrigger value="data">Data</TabsTrigger>
               <TabsTrigger value="query">SQL Query</TabsTrigger>

@@ -967,7 +967,7 @@ export function ExecutiveCommandCenter({
                   </div>
 
                   {/* Quick Action Buttons */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1075,7 +1075,7 @@ export function ExecutiveCommandCenter({
               </Button>
 
               {viewMode === "overview" && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Button
                     variant="outline"
                     size="sm"

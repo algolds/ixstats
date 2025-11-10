@@ -88,13 +88,13 @@ export function EnhancedDiplomacyContent({
           </Badge>
         </div>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 p-2">
-              <Globe className="h-8 w-8 text-white" />
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 p-2 flex-shrink-0">
+              <Globe className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{country.name}</h1>
-              <p className="text-muted-foreground">Diplomatic Operations & International Relations</p>
+              <h1 className="text-2xl sm:text-3xl font-bold">{country.name}</h1>
+              <p className="text-muted-foreground text-sm sm:text-base">Diplomatic Operations & International Relations</p>
             </div>
           </div>
         </div>
@@ -111,14 +111,14 @@ export function EnhancedDiplomacyContent({
       >
         {/* Tab Navigation */}
         <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-5 min-w-fit">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 min-w-fit gap-1">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="data-[state=active]:bg-background data-[state=active]:text-foreground flex items-center gap-1 text-xs lg:text-sm"
+                className="data-[state=active]:bg-background data-[state=active]:text-foreground flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3"
               >
-                <tab.icon className="h-3 w-3 lg:h-4 lg:w-4" />
+                <tab.icon className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
                 <span className="sm:hidden">{tab.shortLabel}</span>
               </TabsTrigger>

@@ -119,6 +119,7 @@ export function MediaSearchModal({
     isLoading: isLoadingWiki,
     isFetching: isFetchingNextWikiPage,
     refetch: refetchWiki,
+    error: wikiSearchError,
   } = api.thinkpages.searchWiki.useQuery(
     {
       query:
@@ -224,7 +225,59 @@ export function MediaSearchModal({
       onClose();
     } catch (error) {
       console.error("[MediaSearchModal] Failed to process image:", error);
-      toast.error("Failed to download image. Please try again.");
+
+      // Display specific error messages based on error code
+      if (error instanceof Error) {
+        const errorCode = (error as any).code;
+        const errorSite = (error as any).site;
+
+        switch (errorCode) {
+          case "CLOUDFLARE_BLOCKED":
+            toast.error(
+              `Unable to download image: ${errorSite || "This source"} is protected by Cloudflare. Please try a different wiki source or use the Repository/Wiki Commons tabs.`,
+              { duration: 6000 }
+            );
+            break;
+
+          case "NETWORK_ERROR":
+            toast.error(
+              `Network error: Failed to connect to ${errorSite || "the image source"}. Please check your connection and try again.`,
+              { duration: 5000 }
+            );
+            break;
+
+          case "SERVER_ERROR":
+            toast.error(
+              "Server error while downloading image. Please try again or use a different image.",
+              { duration: 5000 }
+            );
+            break;
+
+          case "INVALID_RESPONSE":
+            toast.error(
+              "Received invalid response from download service. Please try again.",
+              { duration: 5000 }
+            );
+            break;
+
+          case "SEARCH_ERROR":
+            toast.error(
+              `Search failed: ${error.message}. Please try a different search term.`,
+              { duration: 5000 }
+            );
+            break;
+
+          default:
+            // Generic error message with details if available
+            const message = error.message || "Failed to download image";
+            toast.error(
+              message.length > 100 ? message.substring(0, 100) + "..." : message,
+              { duration: 5000 }
+            );
+        }
+      } else {
+        toast.error("Failed to download image. Please try again.");
+      }
     } finally {
       setIsDownloading(false);
     }
@@ -264,15 +317,15 @@ export function MediaSearchModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative mx-4 flex max-h-[90vh] w-full max-w-4xl flex-col rounded-xl border border-white/10 bg-neutral-900/50 shadow-lg backdrop-blur-xl"
+            className="relative mx-2 sm:mx-4 flex max-h-[90vh] w-[98vw] sm:w-[95vw] md:w-[90vw] lg:max-w-4xl flex-col rounded-xl border border-white/10 bg-neutral-900/50 shadow-lg backdrop-blur-xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-              <h3 className="text-lg font-bold text-white">Search Image Repository</h3>
+            <div className="flex items-center justify-between border-b border-white/10 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-white">Search Image Repository</h3>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-white/10"
+                className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-white/10 min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -285,28 +338,28 @@ export function MediaSearchModal({
               }
               className="flex min-h-0 flex-1 flex-col"
             >
-              <TabsList className="grid w-full grid-cols-4 rounded-none border-b border-white/10 bg-transparent p-0">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 rounded-none border-b border-white/10 bg-transparent p-0">
                 <TabsTrigger
                   value="repository"
-                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
+                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none text-xs sm:text-sm"
                 >
                   Repository
                 </TabsTrigger>
                 <TabsTrigger
                   value="wiki-commons"
-                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
+                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none text-xs sm:text-sm"
                 >
                   Wiki Commons
                 </TabsTrigger>
                 <TabsTrigger
                   value="wiki"
-                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
+                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none text-xs sm:text-sm"
                 >
                   Wiki
                 </TabsTrigger>
                 <TabsTrigger
                   value="upload"
-                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
+                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none text-xs sm:text-sm"
                 >
                   Upload
                 </TabsTrigger>
@@ -330,7 +383,7 @@ export function MediaSearchModal({
                 <div className="max-h-[60vh] flex-1 overflow-y-auto p-4">
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                     {isLoadingRepo && images.length === 0 ? (
-                      <div className="col-span-2 flex h-48 items-center justify-center md:col-span-3">
+                      <div className="col-span-1 xs:col-span-2 flex h-48 items-center justify-center md:col-span-3">
                         <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
                       </div>
                     ) : images.length > 0 ? (
@@ -349,7 +402,7 @@ export function MediaSearchModal({
                             <img
                               src={image.url}
                               alt={image.description ?? "Unsplash Image"}
-                              className="h-32 w-full object-cover"
+                              className="h-24 sm:h-28 md:h-32 w-full object-cover"
                               loading="lazy"
                               decoding="async"
                             />
@@ -365,7 +418,7 @@ export function MediaSearchModal({
                         ))}
                       </>
                     ) : (
-                      <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
+                      <div className="text-muted-foreground col-span-1 xs:col-span-2 p-4 sm:p-6 md:p-8 text-center md:col-span-3 text-sm">
                         No images found. Try a different search query.
                       </div>
                     )}
@@ -577,6 +630,27 @@ export function MediaSearchModal({
                       <div className="col-span-2 flex h-48 items-center justify-center md:col-span-3">
                         <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
                       </div>
+                    ) : wikiSearchError ? (
+                      <div className="col-span-2 md:col-span-3 p-8 text-center">
+                        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-6">
+                          <p className="mb-2 text-lg font-semibold text-red-400">Search Failed</p>
+                          <p className="text-sm text-red-300">
+                            {wikiSearchError.message?.includes("CLOUDFLARE")
+                              ? `${wikiSource} is protected by Cloudflare and cannot be accessed. Please try the other wiki source or use Repository/Wiki Commons tabs.`
+                              : wikiSearchError.message?.includes("NETWORK")
+                                ? `Network error connecting to ${wikiSource}. Please check your connection and try again.`
+                                : `Failed to search ${wikiSource}: ${wikiSearchError.message}`}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => refetchWiki()}
+                          >
+                            Try Again
+                          </Button>
+                        </div>
+                      </div>
                     ) : wikiImages.length > 0 ? (
                       <>
                         {wikiImages.map((image: WikiImageResult, index: number) => (
@@ -705,7 +779,7 @@ export function MediaSearchModal({
                             const result = await response.json();
 
                             if (result.success) {
-                              onImageSelect(result.dataUrl);
+                              onImageSelect(result.url);
                               onClose();
                               toast.success("Image uploaded successfully");
                             } else {

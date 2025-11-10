@@ -2419,4 +2419,517 @@ This documentation covers the complete IxStats tRPC API with 304+ endpoints acro
 
 ---
 
+## Autosave System
+
+The autosave system provides automatic persistence of builder data during editing sessions. All autosave mutations use a 15-second client-side debounce to batch changes and reduce database load.
+
+### National Identity Autosave
+
+**Endpoint**: `nationalIdentity.autosave`
+**Type**: Mutation (Protected)
+**Debounce**: 15 seconds (client-side)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  data: {
+    countryName?: string,
+    officialName?: string,
+    governmentType?: string,
+    motto?: string,
+    mottoNative?: string,
+    capitalCity?: string,
+    largestCity?: string,
+    anthem?: string,
+    continent?: string,
+    region?: string,
+    landArea?: number,
+    areaSqMi?: number,
+    population?: number,
+    gdpPerCapita?: number,
+    ethnicGroups?: string,
+    languages?: string,
+    religions?: string,
+    currency?: string,
+    currencyCode?: string
+  }
+}
+```
+
+**Output**:
+```typescript
+{
+  success: boolean,
+  data: NationalIdentity,
+  message: string
+}
+```
+
+**Usage**:
+- Automatically triggered during builder editing
+- Manual trigger via `syncNow()` in `useNationalIdentityAutoSync` hook
+- Upserts data (creates if doesn't exist, updates if exists)
+
+**Error Handling**:
+- Returns TRPCError with code "FORBIDDEN" if user doesn't own country
+- Logs failures to AuditLog table with type "AUTOSAVE_FAILED"
+
+---
+
+### Government Autosave
+
+**Endpoint**: `government.autosave`
+**Type**: Mutation (Protected)
+**Debounce**: 15 seconds (client-side)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  data: {
+    governmentName?: string,
+    governmentType?: string,
+    headOfState?: string,
+    headOfGovernment?: string,
+    legislatureName?: string,
+    executiveName?: string,
+    judicialName?: string,
+    totalBudget?: number,
+    fiscalYear?: string,
+    budgetCurrency?: string
+  }
+}
+```
+
+**Output**:
+```typescript
+{
+  success: boolean,
+  data: GovernmentStructure,
+  message: string
+}
+```
+
+**Usage**:
+- Triggered automatically via `useGovernmentAutoSync` hook
+- Manual save via `syncNow()` method
+- Validates ownership before saving
+
+**Error Handling**:
+- Returns "FORBIDDEN" if user doesn't own country
+- Logs all save attempts (success/failure) to audit log
+
+---
+
+### Tax System Autosave
+
+**Endpoint**: `taxSystem.autosave`
+**Type**: Mutation (Protected)
+**Debounce**: 15 seconds (client-side)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  data: {
+    personalIncomeTaxRates?: string,      // JSON
+    corporateTaxRates?: string,           // JSON
+    salesTaxRate?: number,
+    propertyTaxRate?: number,
+    payrollTaxRate?: number,
+    exciseTaxRates?: string,              // JSON
+    wealthTaxRate?: number,
+    fiscalBalanceGDPPercent?: number,
+    primaryBalanceGDPPercent?: number,
+    taxEfficiency?: number
+  }
+}
+```
+
+**Output**:
+```typescript
+{
+  success: boolean,
+  data: FiscalSystem,
+  message: string
+}
+```
+
+**Usage**:
+- Triggered via `useTaxSystemAutoSync` hook
+- Automatic debouncing prevents excessive database writes
+- JSON fields validated before persistence
+
+**Error Handling**:
+- Ownership validation before save
+- JSON parsing errors logged to audit system
+
+---
+
+### Economy Builder Autosave
+
+**Endpoint**: `economics.autoSaveEconomyBuilder`
+**Type**: Mutation (Protected)
+**Debounce**: 15 seconds (client-side)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  data: {
+    // Demographics & Population
+    baselinePopulation?: number,
+    populationGrowthRate?: number,
+    urbanizationRate?: number,
+    medianAge?: number,
+
+    // Economic Indicators
+    nominalGDP?: number,
+    realGDPGrowthRate?: number,
+    inflationRate?: number,
+    unemploymentRate?: number,
+
+    // Sectors
+    sectorBreakdown?: string,             // JSON
+    laborForce?: number,
+    employmentBySector?: string,          // JSON
+
+    // Trade
+    exportsGDPPercent?: number,
+    importsGDPPercent?: number,
+    tradeBalance?: number,
+
+    // Advanced metrics (50+ optional fields)
+  }
+}
+```
+
+**Output**:
+```typescript
+{
+  success: boolean,
+  data: {
+    economicProfile: EconomicProfile,
+    demographics: Demographics,
+    laborMarket: LaborMarket
+  },
+  message: string
+}
+```
+
+**Usage**:
+- Comprehensive economy data persistence
+- Handles multiple related tables (EconomicProfile, Demographics, LaborMarket)
+- Triggered via `useEconomyBuilderAutoSync` hook
+
+**Error Handling**:
+- Validates country ownership
+- Transactional saves (all-or-nothing)
+- Detailed audit logging
+
+---
+
+### Autosave History
+
+**Router**: `autosaveHistory`
+
+#### Get Autosave History
+**Endpoint**: `autosaveHistory.getAutosaveHistory`
+**Type**: Query (Protected)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  limit?: number,       // Default: 20
+  offset?: number       // Default: 0
+}
+```
+
+**Output**:
+```typescript
+{
+  autosaves: Array<{
+    id: string,
+    userId: string,
+    action: string,
+    target: string,
+    details: string,
+    timestamp: Date,
+    success: boolean,
+    error?: string
+  }>,
+  total: number,
+  hasMore: boolean
+}
+```
+
+**Usage**:
+```typescript
+const { data: history } = api.autosaveHistory.getAutosaveHistory.useQuery({
+  countryId: "clxxx",
+  limit: 50
+});
+```
+
+---
+
+#### Get Autosave Stats
+**Endpoint**: `autosaveHistory.getAutosaveStats`
+**Type**: Query (Protected)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  timeRange?: 'day' | 'week' | 'month' | 'all'  // Default: 'week'
+}
+```
+
+**Output**:
+```typescript
+{
+  totalSaves: number,
+  successfulSaves: number,
+  failedSaves: number,
+  successRate: number,              // Percentage
+  lastSaveTime: Date | null,
+  averageSavesPerDay: number,
+  byBuilder: {
+    nationalIdentity: number,
+    government: number,
+    taxSystem: number,
+    economy: number
+  }
+}
+```
+
+---
+
+#### Get Recent Autosaves
+**Endpoint**: `autosaveHistory.getRecentAutosaves`
+**Type**: Query (Protected)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  limit?: number        // Default: 10
+}
+```
+
+**Output**:
+```typescript
+Array<{
+  id: string,
+  action: string,
+  target: string,
+  timestamp: Date,
+  success: boolean
+}>
+```
+
+---
+
+#### Get Failed Autosaves
+**Endpoint**: `autosaveHistory.getFailedAutosaves`
+**Type**: Query (Protected)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  limit?: number        // Default: 20
+}
+```
+
+**Output**:
+```typescript
+Array<{
+  id: string,
+  action: string,
+  target: string,
+  details: string,
+  error: string,
+  timestamp: Date
+}>
+```
+
+---
+
+#### Get Autosave Timeline
+**Endpoint**: `autosaveHistory.getAutosaveTimeline`
+**Type**: Query (Protected)
+
+**Input**:
+```typescript
+{
+  countryId: string,
+  startDate?: Date,
+  endDate?: Date
+}
+```
+
+**Output**:
+```typescript
+Array<{
+  date: string,           // YYYY-MM-DD
+  totalSaves: number,
+  successfulSaves: number,
+  failedSaves: number,
+  byBuilder: {
+    nationalIdentity: number,
+    government: number,
+    taxSystem: number,
+    economy: number
+  }
+}>
+```
+
+---
+
+### Autosave Monitoring (Admin Only)
+
+**Router**: `autosaveMonitoring`
+
+#### Get Autosave Stats (Global)
+**Endpoint**: `autosaveMonitoring.getAutosaveStats`
+**Type**: Query (Admin)
+
+**Output**:
+```typescript
+{
+  totalSaves: number,
+  successfulSaves: number,
+  failedSaves: number,
+  successRate: number,
+  lastHourSaves: number,
+  lastDaySaves: number,
+  averageSaveTimeMs: number
+}
+```
+
+---
+
+#### Get Autosave Time Series
+**Endpoint**: `autosaveMonitoring.getAutosaveTimeSeries`
+**Type**: Query (Admin)
+
+**Input**:
+```typescript
+{
+  timeRange: 'hour' | 'day' | 'week' | 'month',
+  granularity: 'minute' | 'hour' | 'day'
+}
+```
+
+**Output**:
+```typescript
+Array<{
+  timestamp: Date,
+  totalSaves: number,
+  successfulSaves: number,
+  failedSaves: number
+}>
+```
+
+---
+
+#### Get Failure Analysis
+**Endpoint**: `autosaveMonitoring.getFailureAnalysis`
+**Type**: Query (Admin)
+
+**Output**:
+```typescript
+{
+  topErrors: Array<{
+    errorType: string,
+    count: number,
+    lastOccurrence: Date
+  }>,
+  failuresByBuilder: {
+    nationalIdentity: number,
+    government: number,
+    taxSystem: number,
+    economy: number
+  },
+  recentFailures: Array<{
+    userId: string,
+    countryId: string,
+    action: string,
+    error: string,
+    timestamp: Date
+  }>
+}
+```
+
+---
+
+#### Get Active Users
+**Endpoint**: `autosaveMonitoring.getActiveUsers`
+**Type**: Query (Admin)
+
+**Input**:
+```typescript
+{
+  timeRange: 'hour' | 'day' | 'week'  // Default: 'hour'
+}
+```
+
+**Output**:
+```typescript
+Array<{
+  userId: string,
+  countryId: string,
+  saveCount: number,
+  lastSaveTime: Date,
+  activeBuilders: string[]
+}>
+```
+
+---
+
+#### Get System Health
+**Endpoint**: `autosaveMonitoring.getSystemHealth`
+**Type**: Query (Admin)
+
+**Output**:
+```typescript
+{
+  status: 'healthy' | 'degraded' | 'unhealthy',
+  metrics: {
+    successRate: number,           // Last hour
+    averageResponseTime: number,   // ms
+    errorRate: number,             // percentage
+    activeUsers: number
+  },
+  alerts: Array<{
+    severity: 'info' | 'warning' | 'critical',
+    message: string,
+    timestamp: Date
+  }>
+}
+```
+
+---
+
+### Best Practices
+
+1. **Debouncing**: Autosave mutations are debounced on the client. Avoid calling them directly; use the provided hooks (`useNationalIdentityAutoSync`, `useGovernmentAutoSync`, `useTaxSystemAutoSync`, `useEconomyBuilderAutoSync`).
+
+2. **Error Handling**: All autosave failures are logged to the AuditLog table for debugging. Users see subtle error indicators, not intrusive alerts.
+
+3. **Performance**: Autosave uses upsert operations to minimize database load. The 15-second debounce prevents write storms.
+
+4. **Security**: All mutations verify user ownership before allowing modifications. Unauthorized attempts are logged.
+
+5. **Manual Saves**: Use the "Save Progress" button in the builder header to trigger immediate saves via `syncNow()`.
+
+6. **Monitoring**: Admins can use the `autosaveMonitoring` router to track system health and identify issues.
+
+7. **Audit Trail**: Every autosave attempt is logged with timestamp, user, country, and success/failure status.
+
+---
+
 *Last Updated: October 26, 2025 | Version 1.1.3*

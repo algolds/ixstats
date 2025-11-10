@@ -79,8 +79,8 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
 
       const result = await response.json();
 
-      if (result.success && result.dataUrl) {
-        setUploadedFlagUrl(result.dataUrl);
+      if (result.success && result.url) {
+        setUploadedFlagUrl(result.url);
         toast.success('Image uploaded! Click "Save Flag" to apply.');
       } else {
         throw new Error(result.error || "Upload failed");

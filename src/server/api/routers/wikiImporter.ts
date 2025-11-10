@@ -42,7 +42,7 @@ async function fetchFromWikiSource(pageName: string, source: WikiSource) {
     `${wikiConfig.apiUrl}?action=query&titles=${encodeURIComponent(pageName)}&prop=revisions&rvprop=content&format=json`,
     {
       headers: {
-        "User-Agent": "IxStats-WikiImporter/1.0",
+        "User-Agent": "IxStats-Builder", // CRITICAL: Must be exactly "IxStats-Builder" for iiwiki compatibility
         Accept: "application/json",
       },
     }
@@ -590,7 +590,7 @@ export const wikiImporterRouter = createTRPCRouter({
             `${wikiConfig.apiUrl}?action=opensearch&search=${encodeURIComponent(input.searchTerm)}&limit=5&format=json`,
             {
               headers: {
-                "User-Agent": "IxStats-WikiImporter/1.0",
+                "User-Agent": "IxStats-Builder", // CRITICAL: Must be exactly "IxStats-Builder" for iiwiki compatibility
               },
             }
           );

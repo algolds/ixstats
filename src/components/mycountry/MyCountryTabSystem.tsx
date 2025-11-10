@@ -148,12 +148,12 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
 
     return (
       <div className="overflow-x-auto">
-        <TabsList className={`grid w-full grid-cols-4 lg:grid-cols-${colCount} min-w-fit`}>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 min-w-fit gap-1">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className={`data-[state=active]:bg-background data-[state=active]:text-foreground flex items-center gap-1 text-xs lg:text-sm ${
+              className={`data-[state=active]:bg-background data-[state=active]:text-foreground flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 ${
                 [
                   "economy",
                   "labor",
@@ -164,7 +164,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
                   : ""
               }`}
             >
-              <tab.icon className="tab-icon h-3 w-3 lg:h-4 lg:w-4" />
+              <tab.icon className="tab-icon h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">{tab.label}</span>
               <span className="sm:hidden">{tab.shortLabel}</span>
             </TabsTrigger>
@@ -377,7 +377,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
             <CardContent>
               {/* Economic Sub-Tabs */}
               <Tabs defaultValue="sectors" className="space-y-4">
-                <TabsList className="bg-muted/50 grid w-full grid-cols-2 lg:grid-cols-5">
+                <TabsList className="bg-muted/50 grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
                   <TabsTrigger
                     value="sectors"
                     className="data-[state=active]:bg-background flex items-center gap-2"
@@ -424,7 +424,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
                 <TabsContent value="sectors" className="space-y-6">
                   <div className="animate-in slide-in-from-bottom-4 duration-700">
                     {/* Economic Structure Cards */}
-                    <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
                       <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-4 text-center dark:border-green-700/40 dark:from-green-900/20 dark:to-emerald-900/20">
                         <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                           {((economyData?.core.nominalGDP ?? 0) * 0.05).toLocaleString("en-US", {
@@ -554,7 +554,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
                 {/* Trade & International Tab */}
                 <TabsContent value="trade" className="space-y-6">
                   <div className="animate-in slide-in-from-bottom-4 duration-700">
-                    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="mb-6 grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3">
                       <Card className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 dark:from-green-900/20 dark:to-emerald-900/20">
                         <div className="text-muted-foreground mb-2 text-sm">Total Exports</div>
                         <div className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -646,7 +646,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
                 {/* Productivity Tab */}
                 <TabsContent value="productivity" className="space-y-6">
                   <div className="animate-in slide-in-from-bottom-4 duration-700">
-                    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
                       <Card className="p-4">
                         <div className="text-muted-foreground mb-2 text-sm">Labor Productivity</div>
                         <div className="text-2xl font-bold">125.0</div>
@@ -720,7 +720,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
                 {/* Income & Wealth Tab */}
                 <TabsContent value="income" className="space-y-6">
                   <div className="animate-in slide-in-from-bottom-4 duration-700">
-                    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="mb-6 grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3">
                       <Card className="p-4">
                         <div className="text-muted-foreground mb-2 text-sm">Median Income</div>
                         <div className="text-2xl font-bold">
@@ -806,7 +806,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
                 {/* Business Climate Tab */}
                 <TabsContent value="business" className="space-y-6">
                   <div className="animate-in slide-in-from-bottom-4 duration-700">
-                    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
                       <Card className="p-4">
                         <div className="text-muted-foreground mb-2 text-sm">
                           Ease of Doing Business
@@ -999,7 +999,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
             <CardContent>
               {/* Government Sub-Tabs */}
               <Tabs defaultValue="structure" className="space-y-4">
-                <TabsList className="bg-muted/50 grid w-full grid-cols-2 lg:grid-cols-3">
+                <TabsList className="bg-muted/50 grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1">
                   <TabsTrigger
                     value="structure"
                     className="data-[state=active]:bg-background flex items-center gap-2"
@@ -1153,7 +1153,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
                       <div className="space-y-6">
                         <div>
                           <h4 className="mb-3 text-sm font-medium">GDP Growth Over Time</h4>
-                          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                          <div className="mb-4 grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3">
                             <div className="rounded-lg border p-3 text-center">
                               <div className="text-2xl font-bold text-blue-600">
                                 {historicalData.length}
@@ -1365,7 +1365,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       <div className="rounded-lg border bg-gradient-to-br from-amber-50 to-orange-50 p-4 dark:from-amber-950/20 dark:to-orange-950/20">
                         <div className="mb-2 flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-amber-600" />

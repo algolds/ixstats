@@ -844,7 +844,7 @@ export function IncomeWealthDistribution({
                     </div>
 
                     {/* Mobility Factors */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="rounded-lg border p-3">
                         <h5 className="mb-2 text-sm font-medium">Contributing Factors</h5>
                         <div className="space-y-2">
@@ -948,7 +948,7 @@ export function IncomeWealthDistribution({
                           </div>
 
                           {editMode ? (
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                               <div>
                                 <Label className="text-xs">Population %</Label>
                                 <Input

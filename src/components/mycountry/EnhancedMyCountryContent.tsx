@@ -15,6 +15,7 @@ import { TaxBuilder } from "~/components/tax-system/TaxBuilder";
 import { GovernmentBuilder } from "~/components/government/GovernmentBuilder";
 import { api } from "~/trpc/react";
 import { MyCountryCompactHeader } from "./MyCountryCompactHeader";
+import { VaultWidget } from "./VaultWidget";
 
 interface EnhancedMyCountryContentProps {
   variant?: "unified" | "standard" | "premium";
@@ -182,13 +183,13 @@ export function EnhancedMyCountryContent({
         currentPage="overview"
       />
 
-      <div className="container mx-auto space-y-6 px-4 py-8">
+      <div className="container mx-auto space-y-6 px-4 py-4 sm:py-6 md:py-8">
         {/* Main Layout */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-4 xl:gap-6">
         {/* Left Sidebar - National Vitality Index */}
         {variant === "unified" && (
-          <div className="xl:col-span-1" id="vitality">
-            <Card className="glass-hierarchy-parent sticky top-6 overflow-hidden border-indigo-200 dark:border-indigo-700/40 dark:shadow-indigo-900/10">
+          <div className="lg:col-span-1" id="vitality">
+            <Card className="glass-hierarchy-parent lg:sticky lg:top-6 overflow-hidden border-indigo-200 dark:border-indigo-700/40 dark:shadow-indigo-900/10">
               {/* Flag Background with Subtle Depth */}
               <div className="absolute inset-0">
                 {flagUrl ? (
@@ -242,18 +243,23 @@ export function EnhancedMyCountryContent({
                 </CardContent>
               </div>
             </Card>
+
+            {/* VaultWidget - IxCards Integration */}
+            <div className="mt-4 sm:mt-6">
+              <VaultWidget />
+            </div>
           </div>
         )}
 
         {/* Main Content Area */}
-        <div className={variant === "unified" ? "xl:col-span-3 space-y-6" : "col-span-full space-y-6"}>
+        <div className={variant === "unified" ? "lg:col-span-3 space-y-4 sm:space-y-6" : "col-span-full space-y-4 sm:space-y-6"}>
           {/* Atomic Government Integration Alert */}
           {existingComponents && existingComponents.length > 0 && (
-            <Alert className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-              <Settings className="h-4 w-4" />
+            <Alert className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-3 sm:p-4">
+              <Settings className="h-4 w-4 flex-shrink-0" />
               <AlertDescription>
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                  <div className="text-xs sm:text-sm">
                     <strong>Atomic Government System Active:</strong> {existingComponents.length}{" "}
                     components deployed with{" "}
                     {(
@@ -262,9 +268,9 @@ export function EnhancedMyCountryContent({
                     ).toFixed(0)}
                     % average effectiveness.
                   </div>
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge variant="secondary" className="sm:ml-2 w-fit flex-shrink-0">
                     <Zap className="mr-1 h-3 w-3" />
-                    Enhanced Analytics
+                    <span className="text-xs">Enhanced Analytics</span>
                   </Badge>
                 </div>
               </AlertDescription>

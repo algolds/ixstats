@@ -50,7 +50,8 @@ function getWikiConfigs(): Record<string, WikiConfig> {
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     iiwiki: {
-      baseUrl: `${baseUrl}/api/iiwiki-proxy`,
+      // Access iiwiki directly - proxy gets blocked by Cloudflare
+      baseUrl: "https://iiwiki.com/mediawiki",
       apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },
@@ -1405,28 +1406,27 @@ async function getImageUrl(
     });
 
     const url = `${config.baseUrl}${config.apiEndpoint}?${params.toString()}`;
-    console.log(`[WikiImageSearch] Getting image URL from: ${url}`);
+    console.log(`[WikiImageSearch] Getting image URL for ${filename} from: ${url}`);
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent":
-          "IxStats-Builder/1.0 (https://ixwiki.com/wiki/IxStats; stats@ixwiki.com) MediaWiki-API/1.0",
-        Accept: "application/json, text/plain, */*",
+        "User-Agent": "IxStats-Builder",
+        Accept: "application/json",
         "Accept-Language": "en-US,en;q=0.9",
-        "Cache-Control": "no-cache",
-        Referer: site === "ixwiki" ? "https://ixwiki.com/" : "https://iiwiki.com/",
         Connection: "keep-alive",
       },
     });
 
+    console.log(`[WikiImageSearch] Image URL response status for ${filename}: ${response.status}`);
+
     if (!response.ok) {
       if (response.status === 403) {
         console.warn(
-          `[WikiSearch] 403 Forbidden when getting image URL for ${filename} from ${site}`
+          `[WikiSearch] 403 Forbidden when getting image URL for ${filename} from ${site} - possible Cloudflare block`
         );
       } else {
         console.warn(
-          `[WikiSearch] Failed to get image URL: ${response.status} ${response.statusText}`
+          `[WikiSearch] Failed to get image URL for ${filename}: ${response.status} ${response.statusText}`
         );
       }
       return null;
@@ -1466,7 +1466,7 @@ async function getImageUrl(
     console.log(`[WikiImageSearch] Found image URL for ${filename}: ${imageUrl}`);
     return imageUrl;
   } catch (error) {
-    console.error(`[WikiImageSearch] Failed to get image URL for ${filename} on ${site}:`, error);
+    console.error(`[WikiImageSearch] Exception getting image URL for ${filename} on ${site}:`, error);
     return null;
   }
 }
@@ -1543,16 +1543,10 @@ export async function searchWikiImagesWithPagination(
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent":
-          "IxStats-Builder/1.0 (https://ixwiki.com/wiki/IxStats; stats@ixwiki.com) MediaWiki-API/1.0",
-        Accept: "application/json, text/plain, */*",
+        "User-Agent": "IxStats-Builder",
+        Accept: "application/json",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-        Referer: site === "ixwiki" ? "https://ixwiki.com/" : "https://iiwiki.com/",
-        Origin: site === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com",
-        DNT: "1",
         Connection: "keep-alive",
         "Sec-Fetch-Dest": "empty",
         "Sec-Fetch-Mode": "cors",
@@ -1560,30 +1554,42 @@ export async function searchWikiImagesWithPagination(
       },
     });
 
-    console.log(`[WikiImageSearch] Response status: ${response.status}`);
+    console.log(`[WikiImageSearch] Response status: ${response.status}, Content-Type: ${response.headers.get("content-type")}`);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[WikiImageSearch] Error response: ${errorText.substring(0, 200)}`);
+      console.error(`[WikiImageSearch] Error response (${response.status}): ${errorText.substring(0, 500)}`);
 
       // Cloudflare protection or other blocking
       if (response.status === 403 || response.status === 503 || errorText.includes("cloudflare")) {
-        console.warn(
-          `[WikiSearch] ${site} blocked request (possibly Cloudflare). Returning empty results.`
+        const error = new Error(
+          `CLOUDFLARE_BLOCKED: ${site} blocked the request (status ${response.status}). This wiki may have Cloudflare protection enabled that prevents automated access. Please try a different wiki source.`
         );
-        return { images: [], hasMore: false };
+        (error as any).code = "CLOUDFLARE_BLOCKED";
+        (error as any).site = site;
+        (error as any).statusCode = response.status;
+        console.error(`[WikiSearch] ${error.message}`);
+        throw error;
       }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+      const error = new Error(`NETWORK_ERROR: Failed to fetch images from ${site} (HTTP ${response.status}: ${response.statusText})`);
+      (error as any).code = "NETWORK_ERROR";
+      (error as any).site = site;
+      (error as any).statusCode = response.status;
+      throw error;
     }
 
     const contentType = response.headers.get("content-type");
 
     // Check if we got HTML instead of JSON (Cloudflare challenge page)
     if (contentType?.includes("text/html")) {
-      console.warn(
-        `[WikiSearch] ${site} returned HTML (Cloudflare challenge). Returning empty results.`
+      const error = new Error(
+        `CLOUDFLARE_BLOCKED: ${site} returned an HTML page instead of JSON data. This typically means a Cloudflare challenge page was served. Please try a different wiki source.`
       );
-      return { images: [], hasMore: false };
+      (error as any).code = "CLOUDFLARE_BLOCKED";
+      (error as any).site = site;
+      console.error(`[WikiSearch] ${error.message}`);
+      throw error;
     }
 
     const data = await response.json();
@@ -1685,16 +1691,26 @@ export async function searchWikiImagesWithPagination(
     };
   } catch (error) {
     console.error(`[WikiImageSearch] Search failed for ${site}:`, error);
-    if (
-      error instanceof Error &&
-      (error.message.includes("403") || error.message.includes("Forbidden"))
-    ) {
-      console.warn(`[WikiSearch] Returning empty results for ${site} due to access restrictions`);
-      return { images: [], hasMore: false };
+
+    // Re-throw errors with codes (CLOUDFLARE_BLOCKED, NETWORK_ERROR) without modification
+    if (error instanceof Error && (error as any).code) {
+      throw error;
     }
-    throw new Error(
-      `Failed to search ${site} images: ${error instanceof Error ? error.message : "Unknown error"}`
-    );
+
+    // Handle other errors
+    if (error instanceof Error) {
+      const wrappedError = new Error(`SEARCH_ERROR: Failed to search ${site} images: ${error.message}`);
+      (wrappedError as any).code = "SEARCH_ERROR";
+      (wrappedError as any).site = site;
+      (wrappedError as any).originalError = error;
+      throw wrappedError;
+    }
+
+    // Unknown error type
+    const unknownError = new Error(`SEARCH_ERROR: Failed to search ${site} images: Unknown error`);
+    (unknownError as any).code = "SEARCH_ERROR";
+    (unknownError as any).site = site;
+    throw unknownError;
   }
 }
 

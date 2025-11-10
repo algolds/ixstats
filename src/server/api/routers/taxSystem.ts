@@ -697,6 +697,118 @@ export const taxSystemRouter = createTRPCRouter({
       return { success: true };
     }),
 
+  // Autosave tax system (partial updates)
+  autosave: protectedProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        data: z.object({
+          taxSystemName: z.string().optional(),
+          taxAuthority: z.string().optional(),
+          fiscalYear: z.string().optional(),
+          taxCode: z.string().optional(),
+          baseRate: z.number().optional(),
+          progressiveTax: z.boolean().optional(),
+          flatTaxRate: z.number().optional(),
+          alternativeMinTax: z.boolean().optional(),
+          alternativeMinRate: z.number().optional(),
+          complianceRate: z.number().optional(),
+          collectionEfficiency: z.number().optional(),
+        }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { countryId, data } = input;
+
+      // Verify user owns the country
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+      });
+
+      if (!userProfile || userProfile.countryId !== countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to edit this country.",
+        });
+      }
+
+      try {
+        // Upsert tax system with partial data
+        const taxSystem = await ctx.db.taxSystem.upsert({
+          where: { countryId },
+          create: {
+            countryId,
+            taxSystemName: data.taxSystemName || "National Tax System",
+            taxAuthority: data.taxAuthority,
+            fiscalYear: data.fiscalYear || "calendar",
+            taxCode: data.taxCode,
+            baseRate: data.baseRate,
+            progressiveTax: data.progressiveTax ?? true,
+            flatTaxRate: data.flatTaxRate,
+            alternativeMinTax: data.alternativeMinTax ?? false,
+            alternativeMinRate: data.alternativeMinRate,
+            complianceRate: data.complianceRate,
+            collectionEfficiency: data.collectionEfficiency,
+          },
+          update: {
+            ...(data.taxSystemName && { taxSystemName: data.taxSystemName }),
+            ...(data.taxAuthority !== undefined && { taxAuthority: data.taxAuthority }),
+            ...(data.fiscalYear && { fiscalYear: data.fiscalYear }),
+            ...(data.taxCode !== undefined && { taxCode: data.taxCode }),
+            ...(data.baseRate !== undefined && { baseRate: data.baseRate }),
+            ...(data.progressiveTax !== undefined && { progressiveTax: data.progressiveTax }),
+            ...(data.flatTaxRate !== undefined && { flatTaxRate: data.flatTaxRate }),
+            ...(data.alternativeMinTax !== undefined && { alternativeMinTax: data.alternativeMinTax }),
+            ...(data.alternativeMinRate !== undefined && { alternativeMinRate: data.alternativeMinRate }),
+            ...(data.complianceRate !== undefined && { complianceRate: data.complianceRate }),
+            ...(data.collectionEfficiency !== undefined && { collectionEfficiency: data.collectionEfficiency }),
+          },
+          include: {
+            taxCategories: {
+              include: {
+                taxBrackets: true,
+                taxExemptions: true,
+                taxDeductions: true,
+              },
+            },
+          },
+        });
+
+        // Log autosave to audit trail
+        await ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth.userId,
+            action: "autosave:taxSystem",
+            target: countryId,
+            details: JSON.stringify({
+              fields: Object.keys(data),
+              timestamp: new Date().toISOString(),
+            }),
+            success: true,
+          },
+        });
+
+        return {
+          success: true,
+          data: taxSystem,
+          message: "Tax system autosaved successfully",
+        };
+      } catch (error) {
+        // Log autosave failure to audit trail
+        await ctx.db.auditLog.create({
+          data: {
+            userId: ctx.auth.userId,
+            action: "autosave:taxSystem",
+            target: countryId,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+
+        throw error;
+      }
+    }),
+
   // Parse economic data for tax system with advanced intelligence
   parseEconomicData: protectedProcedure
     .input(

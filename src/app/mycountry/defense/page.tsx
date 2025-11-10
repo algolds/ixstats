@@ -129,7 +129,7 @@ export default function MyCountryDefenseDashboard() {
   };
 
   return (
-    <div className="container mx-auto space-y-6 px-4 py-6">
+    <div className="container mx-auto space-y-4 sm:space-y-6 px-4 py-4 sm:py-6">
       {/* Header with MyCountry Branding */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -281,7 +281,7 @@ export default function MyCountryDefenseDashboard() {
             </div>
 
             {/* Component Scores Grid */}
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, y: 20 }}
@@ -404,7 +404,7 @@ export default function MyCountryDefenseDashboard() {
             </div>
 
             {/* Threat Summary */}
-            <div className="grid grid-cols-2 gap-4 border-t pt-4 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-4">
               <motion.div
                 className="bg-muted/30 rounded-lg p-4 text-center"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -476,28 +476,35 @@ export default function MyCountryDefenseDashboard() {
         transition={{ delay: 0.2 }}
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="forces" className="flex items-center gap-2">
-              <Sword className="h-4 w-4" />
-              Forces
-            </TabsTrigger>
-            <TabsTrigger value="stability" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Stability
-            </TabsTrigger>
-            <TabsTrigger value="borders" className="flex items-center gap-2">
-              <Globe2 className="h-4 w-4" />
-              Borders
-            </TabsTrigger>
-            <TabsTrigger value="threats" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Threats
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="grid w-full grid-cols-5 min-w-fit">
+              <TabsTrigger value="overview" className="flex items-center gap-1 text-xs lg:text-sm">
+                <Activity className="h-3 w-3 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline">Overview</span>
+                <span className="sm:hidden">Over</span>
+              </TabsTrigger>
+              <TabsTrigger value="forces" className="flex items-center gap-1 text-xs lg:text-sm">
+                <Sword className="h-3 w-3 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline">Forces</span>
+                <span className="sm:hidden">Force</span>
+              </TabsTrigger>
+              <TabsTrigger value="stability" className="flex items-center gap-1 text-xs lg:text-sm">
+                <Users className="h-3 w-3 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline">Stability</span>
+                <span className="sm:hidden">Stab</span>
+              </TabsTrigger>
+              <TabsTrigger value="borders" className="flex items-center gap-1 text-xs lg:text-sm">
+                <Globe2 className="h-3 w-3 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline">Borders</span>
+                <span className="sm:hidden">Bord</span>
+              </TabsTrigger>
+              <TabsTrigger value="threats" className="flex items-center gap-1 text-xs lg:text-sm">
+                <AlertTriangle className="h-3 w-3 lg:h-4 lg:w-4" />
+                <span className="hidden sm:inline">Threats</span>
+                <span className="sm:hidden">Thr</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Overview Tab - Merged with Command */}
           <TabsContent value="overview" className="space-y-6">

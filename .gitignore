@@ -97,6 +97,15 @@ cypress/videos/
 *.claude.md
 # clerk configuration (can include secrets)
 /.clerk/
+
+# --------------------------------------------------------------------------------
+# User Uploaded Content
+# --------------------------------------------------------------------------------
+# Ignore uploaded and downloaded images but keep the directories
+public/images/uploads/*
+!public/images/uploads/.gitkeep
+public/images/downloaded/*
+!public/images/downloaded/.gitkeep
 prisma/backups/prod.db.backup.20251012_185935
 prisma/backups/prod.db.backup.20251012_181159
 scripts/audit/reports/consolidated-2025-10-13T21-58-00-601Z.json

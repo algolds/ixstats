@@ -42,14 +42,14 @@ export const RelationshipDistributionChart = React.memo<RelationshipDistribution
           <CardDescription>Quality of diplomatic relationships</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[280px] lg:h-[300px]">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={90}
+                innerRadius={50}
+                outerRadius={75}
                 paddingAngle={5}
                 dataKey="value"
               >
@@ -58,7 +58,7 @@ export const RelationshipDistributionChart = React.memo<RelationshipDistribution
                 ))}
               </Pie>
               <Tooltip content={<GlassTooltip />} />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: "11px" }} />
             </PieChart>
           </ResponsiveContainer>
         </CardContent>

@@ -663,9 +663,11 @@ export function Navigation() {
     },
     {
       name: "Cards",
-      href: "/cards",
+      href: "/vault",
       icon: GiCardRandom,
       requiresAuth: true,
+      adminOnly: true,
+      description: "IxCards trading card system (Admin Only)",
     },
     {
       name: "Labs",
@@ -802,10 +804,10 @@ export function Navigation() {
       <nav className="navigation-bar from-background/95 via-secondary/95 to-background/95 border-border relative z-[10005] border-b bg-gradient-to-r shadow-2xl backdrop-blur-xl">
         <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
 
-        <div className="mx-auto max-w-none px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="relative hidden h-16 w-full items-center justify-between lg:flex">
             {/* Left Side Navigation */}
-            <div className="z-[9995] flex flex-1 items-center justify-start gap-3">
+            <div className="z-[9995] flex flex-1 items-center justify-start gap-2 xl:gap-3">
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   {leftNavItems.map((item) => {
@@ -1027,7 +1029,7 @@ export function Navigation() {
                                 aria-hidden="true"
                               />
                             </div>
-                            <span className="relative hidden overflow-hidden lg:block">
+                            <span className="relative hidden overflow-hidden lg:block text-sm xl:text-base whitespace-nowrap">
                               <span className="transition-opacity duration-300 group-hover:opacity-0">
                                 {item.name}
                               </span>
@@ -1045,13 +1047,13 @@ export function Navigation() {
             </div>
 
             {/* Desktop Command Palette */}
-            <div className="absolute top-1/2 left-1/2 z-[10010] -translate-x-1/2 -translate-y-1/2 transform">
+            <div className="absolute top-1/2 left-1/2 z-[10010] -translate-x-1/2 -translate-y-1/2 transform max-w-[min(400px,calc(100%-320px))]">
               <div className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 opacity-60 blur-3xl" />
               {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
             </div>
 
             {/* Right Side Navigation */}
-            <div className="z-[9995] flex flex-1 items-center justify-end gap-3">
+            <div className="z-[9995] flex flex-1 items-center justify-end gap-2 xl:gap-3">
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   {rightNavItems.map((item) => {
@@ -1273,7 +1275,7 @@ export function Navigation() {
                                 aria-hidden="true"
                               />
                             </div>
-                            <span className="relative hidden overflow-hidden lg:block">
+                            <span className="relative hidden overflow-hidden lg:block text-sm xl:text-base whitespace-nowrap">
                               <span className="transition-opacity duration-300 group-hover:opacity-0">
                                 {item.name}
                               </span>
@@ -1293,17 +1295,17 @@ export function Navigation() {
 
           {/* Mobile Title Bar */}
           <div className="flex h-14 w-full items-center justify-between py-2 lg:hidden">
-            <div className="flex flex-col">
-              <span className="text-muted-foreground/80 text-[11px] tracking-wide uppercase">
+            <div className="flex flex-col min-w-0 flex-1 pr-3">
+              <span className="text-muted-foreground/80 text-[10px] sm:text-[11px] tracking-wide uppercase">
                 IxStats
               </span>
-              <span className="text-foreground line-clamp-1 text-base font-semibold">
+              <span className="text-foreground line-clamp-1 text-sm sm:text-base font-semibold">
                 {contextMenu.title}
               </span>
             </div>
             <button
               type="button"
-              className="border-border/60 bg-background/80 text-foreground inline-flex items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur"
+              className="border-border/60 bg-background/80 text-foreground inline-flex items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur flex-shrink-0 min-h-[44px] min-w-[44px]"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-expanded={mobileMenuOpen}
               aria-controls="ixstats-mobile-navigation"
@@ -1334,27 +1336,27 @@ export function Navigation() {
               id="ixstats-mobile-navigation"
               role="dialog"
               aria-modal="true"
-              className="border-border/40 bg-background/98 absolute top-0 left-0 h-full w-[min(88vw,360px)] max-w-[360px] overflow-y-auto border-r px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-2xl backdrop-blur-xl"
+              className="border-border/40 bg-background/98 absolute top-0 left-0 h-full w-[min(90vw,360px)] max-w-full overflow-y-auto border-r px-4 sm:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-2xl backdrop-blur-xl"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "tween", duration: 0.28 }}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="text-muted-foreground/80 text-[11px] tracking-wide uppercase">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1 min-w-0 flex-1">
+                  <p className="text-muted-foreground/80 text-[10px] sm:text-[11px] tracking-wide uppercase">
                     Currently viewing
                   </p>
-                  <h2 className="text-foreground text-lg font-semibold">{contextMenu.title}</h2>
+                  <h2 className="text-foreground text-base sm:text-lg font-semibold break-words">{contextMenu.title}</h2>
                   {contextMenu.description && (
-                    <p className="text-muted-foreground text-sm leading-snug">
+                    <p className="text-muted-foreground text-xs sm:text-sm leading-snug break-words">
                       {contextMenu.description}
                     </p>
                   )}
                 </div>
                 <button
                   type="button"
-                  className="border-border/50 text-muted-foreground hover:border-foreground/40 hover:text-foreground rounded-full border p-2 transition-colors"
+                  className="border-border/50 text-muted-foreground hover:border-foreground/40 hover:text-foreground rounded-full border p-2 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px]"
                   onClick={() => setMobileMenuOpen(false)}
                   aria-label="Close navigation menu"
                 >
@@ -1379,12 +1381,12 @@ export function Navigation() {
                             className="border-border/50 bg-card/60 rounded-2xl border px-3 py-3 shadow-sm"
                           >
                             <div className="flex items-center gap-3">
-                              <span className="bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-xl">
+                              <span className="bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0">
                                 <Icon className="h-5 w-5" />
                               </span>
-                              <div className="flex-1">
-                                <p className="text-foreground text-sm font-semibold">{item.name}</p>
-                                <p className="text-muted-foreground text-xs">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-foreground text-sm font-semibold break-words">{item.name}</p>
+                                <p className="text-muted-foreground text-xs break-words">
                                   Select a lab to jump in.
                                 </p>
                               </div>
@@ -1396,13 +1398,13 @@ export function Navigation() {
                                   <Link
                                     key={subItem.name}
                                     href={subItem.href}
-                                    className="text-muted-foreground hover:border-border/60 hover:text-foreground flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm transition-colors"
+                                    className="text-muted-foreground hover:border-border/60 hover:text-foreground flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm transition-colors min-h-[44px]"
                                     onClick={() => setMobileMenuOpen(false)}
                                   >
-                                    <span className="bg-muted/50 flex h-8 w-8 items-center justify-center rounded-lg">
+                                    <span className="bg-muted/50 flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0">
                                       <SubIcon className="h-4 w-4" />
                                     </span>
-                                    <span className="flex-1">{subItem.name}</span>
+                                    <span className="flex-1 break-words">{subItem.name}</span>
                                   </Link>
                                 );
                               })}
@@ -1416,14 +1418,14 @@ export function Navigation() {
                           key={item.name}
                           href={withBasePath(item.href)}
                           onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors ${
+                          className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[60px] ${
                             current
                               ? "border-primary/40 bg-primary/10 text-foreground shadow-sm"
                               : "border-border/40 text-muted-foreground hover:border-border hover:bg-accent/10 hover:text-foreground"
                           }`}
                         >
                           <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                            className={`flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0 ${
                               current
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted/60 text-foreground"
@@ -1432,15 +1434,15 @@ export function Navigation() {
                             <Icon className="h-5 w-5" />
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm leading-snug font-semibold">{item.name}</p>
+                            <p className="text-sm leading-snug font-semibold break-words">{item.name}</p>
                             {item.description && (
-                              <p className="text-muted-foreground text-xs leading-tight">
+                              <p className="text-muted-foreground text-xs leading-tight break-words">
                                 {item.description}
                               </p>
                             )}
                           </div>
                           {current && (
-                            <span className="text-primary text-[11px] font-semibold tracking-wide uppercase">
+                            <span className="text-primary text-[10px] sm:text-[11px] font-semibold tracking-wide uppercase flex-shrink-0">
                               Active
                             </span>
                           )}
@@ -1468,23 +1470,23 @@ export function Navigation() {
                             key={item.name}
                             href={withBasePath(item.href)}
                             onClick={() => setMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors ${
+                            className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[56px] ${
                               active
                                 ? "border-primary/40 bg-primary/10 text-foreground shadow-sm"
                                 : "border-border/40 text-muted-foreground hover:border-border hover:bg-accent/10 hover:text-foreground"
                             }`}
                           >
                             <span
-                              className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                              className={`flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 ${
                                 active ? "bg-primary text-primary-foreground" : "bg-muted/60"
                               }`}
                             >
                               <Icon className="h-4 w-4" />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm leading-snug font-medium">{item.name}</p>
+                              <p className="text-sm leading-snug font-medium break-words">{item.name}</p>
                               {item.description && (
-                                <p className="text-muted-foreground text-xs leading-tight">
+                                <p className="text-muted-foreground text-xs leading-tight break-words">
                                   {item.description}
                                 </p>
                               )}

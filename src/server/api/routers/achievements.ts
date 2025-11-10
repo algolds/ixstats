@@ -8,6 +8,7 @@ import {
 import { IxTime } from "~/lib/ixtime";
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationHooks } from "~/lib/notification-hooks";
+import { vaultService } from "~/lib/vault-service";
 
 export const achievementsRouter = createTRPCRouter({
   // Get recent achievements for a country
@@ -231,6 +232,43 @@ export const achievementsRouter = createTRPCRouter({
         console.error("[Achievements] Failed to send achievement notification:", error);
       }
 
-      return achievement;
+      // 💰 Award IxCredits for achievement unlock
+      let creditsEarned = 0;
+      try {
+        // Calculate reward based on rarity
+        const rarityRewards: Record<string, number> = {
+          Common: 10,
+          Uncommon: 15,
+          Rare: 25,
+          Epic: 50,
+          Legendary: 100,
+        };
+        const creditReward = rarityRewards[input.rarity || "Common"] || 10;
+
+        const earnResult = await vaultService.earnCredits(
+          input.userId,
+          creditReward,
+          "EARN_ACTIVE",
+          "ACHIEVEMENT_UNLOCK",
+          ctx.db,
+          {
+            achievementId: input.achievementId,
+            achievementTitle: input.title,
+            achievementRarity: input.rarity,
+          }
+        );
+
+        if (earnResult.success) {
+          creditsEarned = creditReward;
+        }
+      } catch (error) {
+        // Don't block achievement unlock if earning fails
+        console.error("[Achievements] Failed to award achievement credits:", error);
+      }
+
+      return {
+        ...achievement,
+        creditsEarned,
+      };
     }),
 });

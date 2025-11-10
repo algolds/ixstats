@@ -181,7 +181,7 @@ export function GlobalIntelligenceCard({
                 ) : (
                   <>
                     {/* Active Crises and Intel Items */}
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="glass-hierarchy-child rounded p-3 text-center">
                         <div className="text-lg font-bold text-red-400">
                           {activeCrises?.length || 0}

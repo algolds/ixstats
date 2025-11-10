@@ -52,7 +52,7 @@ export const EconomicOverviewChart = React.memo<EconomicOverviewChartProps>(
           <CardDescription>Last {data.length} data points</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[280px] lg:h-[300px]">
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="gdpGradient" x1="0" y1="0" x2="0" y2="1">
@@ -61,8 +61,8 @@ export const EconomicOverviewChart = React.memo<EconomicOverviewChartProps>(
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 12 }} />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} tickFormatter={formatCurrency} />
+              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} />
+              <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickFormatter={formatCurrency} />
               <Tooltip content={<GlassTooltip formatter={formatCurrency} />} />
               <Area
                 type="monotone"

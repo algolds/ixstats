@@ -43,7 +43,7 @@ export const PolicyDistributionChart = React.memo<PolicyDistributionChartProps>(
           <CardDescription>Active policies by category</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250} className="sm:h-[280px] lg:h-[300px]">
             <PieChart>
               <Pie
                 data={data}
@@ -51,7 +51,7 @@ export const PolicyDistributionChart = React.memo<PolicyDistributionChartProps>(
                 cy="50%"
                 labelLine={false}
                 label={(entry) => `${entry.name}: ${entry.value}%`}
-                outerRadius={100}
+                outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >

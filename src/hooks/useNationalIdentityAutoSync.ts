@@ -19,6 +19,7 @@ interface AutoSyncState {
   pendingChanges: boolean;
   conflictWarnings: string[];
   syncError: string | null;
+  optimistic?: boolean; // Flag for optimistic state (unconfirmed by server)
 }
 
 /**
@@ -51,9 +52,26 @@ export function useNationalIdentityAutoSync(
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const previousDataRef = useRef<NationalIdentityData>(nationalIdentity);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   // API mutations
   const autosaveMutation = api.nationalIdentity.autosave.useMutation({
+    // Optimistic update - show "Saved" immediately before server confirmation
+    onMutate: async (newData) => {
+      setSyncState((prev) => ({
+        ...prev,
+        isSyncing: false,
+        lastSyncTime: new Date(),
+        pendingChanges: false,
+        syncError: null,
+        optimistic: true, // Flag as optimistic (unconfirmed)
+      }));
+
+      // Return context for potential rollback
+      return { previousState: { ...syncState } };
+    },
+
+    // Server confirmation - mark as confirmed
     onSuccess: () => {
       setSyncState((prev) => ({
         ...prev,
@@ -61,14 +79,21 @@ export function useNationalIdentityAutoSync(
         lastSyncTime: new Date(),
         pendingChanges: false,
         syncError: null,
+        optimistic: false, // Confirmed by server
       }));
+      setShowSuccessAnimation(true);
+      setTimeout(() => setShowSuccessAnimation(false), 2000); // 2 second checkmark
       onSyncSuccess?.();
     },
+
+    // Error - rollback optimistic state
     onError: (error) => {
       setSyncState((prev) => ({
         ...prev,
         isSyncing: false,
+        pendingChanges: true, // Mark as having unsaved changes
         syncError: error.message,
+        optimistic: false,
       }));
       onSyncError?.(error.message);
     },
@@ -102,6 +127,7 @@ export function useNationalIdentityAutoSync(
         clearTimeout(debounceTimerRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nationalIdentity, enabled, countryId, debounceMs]);
 
   // Auto-sync handler
@@ -119,7 +145,7 @@ export function useNationalIdentityAutoSync(
       // Error handling is done in the mutation's onError callback
       console.warn("National identity autosave failed:", error);
     }
-  }, [countryId, enabled, nationalIdentity, autosaveMutation]);
+  }, [countryId, enabled, nationalIdentity]);
 
   // Manual sync function
   const syncNow = useCallback(async () => {
@@ -164,5 +190,6 @@ export function useNationalIdentityAutoSync(
     clearConflicts,
     resetSyncState,
     isEnabled: enabled,
+    showSuccessAnimation,
   };
 }

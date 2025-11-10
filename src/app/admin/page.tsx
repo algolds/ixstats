@@ -233,13 +233,13 @@ export default function AdminPage() {
         <div className="bg-background text-foreground flex min-h-screen">
           {/* Admin Sidebar - extracted component */}
           <AdminSidebar selectedSection={selectedSection} onSectionChange={setSelectedSection} />
-          <main className="min-h-screen flex-1 px-2 py-6 md:px-8">
+          <main className="min-h-screen flex-1 px-4 py-6 md:px-8 lg:ml-0">
             <div className="mx-auto max-w-[1400px]">
               {selectedSection === "overview" && (
                 <>
                   <div className="space-y-8">
                     {/* Enhanced Header Section */}
-                    <div className="glass-card-parent border-primary/20 from-primary/5 to-primary/10 rounded-xl border-2 bg-gradient-to-br via-transparent p-6">
+                    <div className="glass-card-parent border-primary/20 from-primary/5 to-primary/10 rounded-xl border-2 bg-gradient-to-br via-transparent p-4 md:p-6">
                       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                         {/* Left: Title and description */}
                         <div className="flex-1">
@@ -277,7 +277,7 @@ export default function AdminPage() {
                             <h4 className="text-foreground mb-3 text-sm font-semibold">
                               Quick Actions
                             </h4>
-                            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                               {[
                                 {
                                   icon: Monitor,
@@ -388,7 +388,7 @@ export default function AdminPage() {
                     </div>
 
                     {/* Enhanced control panels grid */}
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2 xl:grid-cols-3">
                       {[
                         {
                           id: "temporal",

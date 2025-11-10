@@ -345,14 +345,14 @@ export function TaxBuilder({
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-foreground text-3xl font-bold">Tax System Builder</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-foreground text-2xl font-bold sm:text-3xl">Tax System Builder</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Design and configure your country's taxation system
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {enableAutoSync && countryId && (
             <SyncStatusIndicator
               isSyncing={syncState.isSyncing}
@@ -367,11 +367,12 @@ export function TaxBuilder({
               Manual mode
             </UIBadge>
           )}
-          <Button variant="outline" onClick={() => setShowTemplates(true)} disabled={isReadOnly}>
+          <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} disabled={isReadOnly}>
             Use Template
           </Button>
           <Button
             variant="outline"
+            size="sm"
             onClick={handlePreview}
             disabled={builderState.categories.length === 0}
           >
@@ -382,38 +383,40 @@ export function TaxBuilder({
       </div>
 
       {/* Step Navigation */}
-      <div className="bg-muted/50 border-border flex items-center justify-between rounded-lg border p-4">
-        {steps.map((step, index) => {
-          const isActive = step.id === currentStep;
-          const isCompleted = index < currentStepIndex;
-          const stepHasErrors = hasStepErrors(step.id, validation.errors);
+      <div className="bg-muted/50 border-border rounded-lg border p-3 sm:p-4">
+        <div className="hide-scrollbar flex items-center gap-2 overflow-x-auto sm:justify-between">
+          {steps.map((step, index) => {
+            const isActive = step.id === currentStep;
+            const isCompleted = index < currentStepIndex;
+            const stepHasErrors = hasStepErrors(step.id, validation.errors);
 
-          return (
-            <div key={step.id} className="flex items-center">
-              <button
-                onClick={() => setCurrentStep(step.id as any)}
-                disabled={isReadOnly}
-                className={`relative flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : isCompleted && !stepHasErrors
-                      ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
-                      : stepHasErrors
-                        ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
-                        : "hover:bg-muted text-muted-foreground"
-                }`}
-              >
-                <span className="text-lg">{step.icon}</span>
-                <span className="text-sm font-medium">{step.label}</span>
-                {isCompleted && !stepHasErrors && <CheckCircle className="h-4 w-4" />}
-                {stepHasErrors && <AlertTriangle className="h-4 w-4" />}
-              </button>
-              {index < steps.length - 1 && (
-                <ArrowRight className="text-muted-foreground mx-2 h-4 w-4" />
-              )}
-            </div>
-          );
-        })}
+            return (
+              <div key={step.id} className="flex shrink-0 items-center">
+                <button
+                  onClick={() => setCurrentStep(step.id as any)}
+                  disabled={isReadOnly}
+                  className={`relative flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs transition-colors sm:gap-2 sm:px-3 sm:text-sm ${
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : isCompleted && !stepHasErrors
+                        ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                        : stepHasErrors
+                          ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                          : "hover:bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <span className="text-base sm:text-lg">{step.icon}</span>
+                  <span className="hidden font-medium sm:inline">{step.label}</span>
+                  {isCompleted && !stepHasErrors && <CheckCircle className="hidden h-4 w-4 sm:block" />}
+                  {stepHasErrors && <AlertTriangle className="hidden h-4 w-4 sm:block" />}
+                </button>
+                {index < steps.length - 1 && (
+                  <ArrowRight className="text-muted-foreground mx-1 h-3 w-3 shrink-0 sm:mx-2 sm:h-4 sm:w-4" />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Validation Panel */}

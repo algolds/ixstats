@@ -565,7 +565,7 @@ const RecommendationCard = React.memo(
               className="overflow-hidden"
             >
               <div className="space-y-3 border-t px-4 pt-2 pb-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground mb-1 text-xs font-medium">Estimated Cost</p>
                     <p className="font-semibold">{formatCurrency(recommendation.estimatedCost)}</p>
@@ -687,7 +687,7 @@ const TrendCard = React.memo(
               <div className="space-y-3 border-t px-4 pt-2 pb-4">
                 <div>
                   <p className="text-muted-foreground mb-2 text-xs font-medium">Forecast</p>
-                  <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                     <div className="bg-muted/50 rounded p-2 text-center">
                       <p className="text-muted-foreground mb-1 text-xs">Next Week</p>
                       <p className="font-semibold">{trend.forecast.nextWeek}</p>

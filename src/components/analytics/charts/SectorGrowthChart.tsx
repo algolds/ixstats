@@ -44,17 +44,17 @@ export const SectorGrowthChart = React.memo<SectorGrowthChartProps>(
           <CardDescription>Annual growth percentage by sector</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={280} className="sm:h-[320px] lg:h-[350px]">
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
               <XAxis
                 dataKey="sector"
-                tick={{ fill: "#6b7280", fontSize: 12 }}
+                tick={{ fill: "#6b7280", fontSize: 9 }}
                 angle={-45}
                 textAnchor="end"
-                height={100}
+                height={80}
               />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 12 }} tickFormatter={formatPercent} />
+              <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickFormatter={formatPercent} />
               <Tooltip content={<GlassTooltip formatter={formatPercent} />} />
               <Bar dataKey="growth" fill={DEFAULT_CHART_COLORS[1]} radius={[4, 4, 0, 0]} />
             </BarChart>

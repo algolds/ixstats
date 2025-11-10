@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import { stepConfig, type BuilderStep } from "./builderConfig";
+import { stepConfig, type BuilderStep, getStepsForMode } from "./builderConfig";
 
 interface StepIndicatorProps {
   currentStep: BuilderStep;
@@ -26,10 +26,12 @@ export const StepIndicator = React.memo(function StepIndicator({
   const [isMinimized, setIsMinimized] = useState(false);
 
   // Memoize steps and currentIndex to prevent unnecessary recalculations
-  const steps = useMemo(
-    () => Object.entries(stepConfig) as [BuilderStep, (typeof stepConfig)[BuilderStep]][],
-    []
-  );
+  // In edit mode, foundation step is excluded
+  const steps = useMemo(() => {
+    const availableSteps = getStepsForMode(mode);
+    return availableSteps.map(step => [step, stepConfig[step]] as [BuilderStep, (typeof stepConfig)[BuilderStep]]);
+  }, [mode]);
+
   const currentIndex = useMemo(
     () => steps.findIndex(([step]) => step === currentStep),
     [steps, currentStep]
@@ -98,11 +100,8 @@ export const StepIndicator = React.memo(function StepIndicator({
           {steps.map(([step, config], index) => {
             const isCompleted = completedSteps.includes(step);
             const isCurrent = currentStep === step;
-            // In edit mode, can navigate to any step except foundation
-            const isAccessible =
-              mode === "edit"
-                ? step !== "foundation"
-                : index <= currentIndex || completedSteps.includes(step);
+            // In edit mode, can navigate to any step
+            const isAccessible = mode === "edit" || index <= currentIndex || completedSteps.includes(step);
             const Icon = config.icon;
 
             return (

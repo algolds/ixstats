@@ -198,7 +198,7 @@ export function UnifiedValidationDisplay({
             ) && (
               <div>
                 <h4 className="mb-2 text-sm font-medium">Impact Scores</h4>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   {Object.entries(result.impact).map(([system, score]) => {
                     if (score === undefined || score === 0) return null;
                     return (
@@ -385,7 +385,7 @@ export function UnifiedValidationDisplay({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-medium">Economy</span>

@@ -79,7 +79,10 @@ Comprehensive reference for all 52 tRPC routers with 580+ procedures across the 
 | cards | 5 | 1 | 6 | Card browsing, ownership, stats |
 | cardPacks | 4 | 3 | 7 | Pack purchase, opening, management |
 | nsIntegration | 2 | 1 | 3 | NationStates card import and sync |
-| **TOTAL** | **304** | **299** | **603** | |
+| **AUTOSAVE SYSTEM** | | | | |
+| autosaveHistory | 5 | 0 | 5 | Autosave history, stats, timeline |
+| autosaveMonitoring | 5 | 0 | 5 | Global autosave monitoring (admin) |
+| **TOTAL** | **314** | **299** | **613** | |
 
 **Legend:** Q = Queries, M = Mutations
 
@@ -1084,6 +1087,186 @@ const mutation = api.countries.update.useMutation({
   }
 });
 ```
+
+---
+
+## Autosave System
+
+### autosaveHistory Router (5 procedures)
+
+**User Autosave History:**
+```typescript
+// Get autosave history for country
+api.autosaveHistory.getAutosaveHistory.useQuery({
+  countryId: string,
+  limit?: number,    // Default: 20
+  offset?: number    // Default: 0
+})
+
+// Get autosave statistics
+api.autosaveHistory.getAutosaveStats.useQuery({
+  countryId: string,
+  timeRange?: 'day' | 'week' | 'month' | 'all'  // Default: 'week'
+})
+
+// Get recent autosaves
+api.autosaveHistory.getRecentAutosaves.useQuery({
+  countryId: string,
+  limit?: number     // Default: 10
+})
+
+// Get failed autosaves
+api.autosaveHistory.getFailedAutosaves.useQuery({
+  countryId: string,
+  limit?: number     // Default: 20
+})
+
+// Get autosave timeline
+api.autosaveHistory.getAutosaveTimeline.useQuery({
+  countryId: string,
+  startDate?: Date,
+  endDate?: Date
+})
+```
+
+**Example Response (getAutosaveStats):**
+```typescript
+{
+  totalSaves: 147,
+  successfulSaves: 145,
+  failedSaves: 2,
+  successRate: 98.6,
+  lastSaveTime: Date,
+  averageSavesPerDay: 21,
+  byBuilder: {
+    nationalIdentity: 42,
+    government: 38,
+    taxSystem: 35,
+    economy: 32
+  }
+}
+```
+
+---
+
+### autosaveMonitoring Router (5 procedures, Admin Only)
+
+**Global Autosave Monitoring:**
+```typescript
+// Get global autosave statistics
+api.autosaveMonitoring.getAutosaveStats.useQuery()
+// Returns: { totalSaves, successfulSaves, failedSaves, successRate, lastHourSaves, lastDaySaves, averageSaveTimeMs }
+
+// Get autosave time series
+api.autosaveMonitoring.getAutosaveTimeSeries.useQuery({
+  timeRange: 'hour' | 'day' | 'week' | 'month',
+  granularity: 'minute' | 'hour' | 'day'
+})
+
+// Get failure analysis
+api.autosaveMonitoring.getFailureAnalysis.useQuery()
+// Returns: { topErrors, failuresByBuilder, recentFailures }
+
+// Get active users
+api.autosaveMonitoring.getActiveUsers.useQuery({
+  timeRange: 'hour' | 'day' | 'week'  // Default: 'hour'
+})
+
+// Get system health
+api.autosaveMonitoring.getSystemHealth.useQuery()
+// Returns: { status, metrics, alerts }
+```
+
+**Example Response (getSystemHealth):**
+```typescript
+{
+  status: 'healthy',
+  metrics: {
+    successRate: 99.2,
+    averageResponseTime: 87,  // ms
+    errorRate: 0.8,           // percentage
+    activeUsers: 14
+  },
+  alerts: [
+    {
+      severity: 'info',
+      message: 'System operating normally',
+      timestamp: Date
+    }
+  ]
+}
+```
+
+---
+
+### Autosave Mutations
+
+All builder routers include autosave mutations:
+
+**National Identity:**
+```typescript
+api.nationalIdentity.autosave.useMutation()
+// Input: { countryId, data: { countryName?, officialName?, motto?, ... } }
+// Output: { success, data: NationalIdentity, message }
+```
+
+**Government:**
+```typescript
+api.government.autosave.useMutation()
+// Input: { countryId, data: { governmentName?, governmentType?, totalBudget?, ... } }
+// Output: { success, data: GovernmentStructure, message }
+```
+
+**Tax System:**
+```typescript
+api.taxSystem.autosave.useMutation()
+// Input: { countryId, data: { personalIncomeTaxRates?, corporateTaxRates?, ... } }
+// Output: { success, data: FiscalSystem, message }
+```
+
+**Economy Builder:**
+```typescript
+api.economics.autoSaveEconomyBuilder.useMutation()
+// Input: { countryId, data: { baselinePopulation?, nominalGDP?, sectorBreakdown?, ... } }
+// Output: { success, data: { economicProfile, demographics, laborMarket }, message }
+```
+
+**Client-Side Hooks:**
+```typescript
+// National Identity autosave hook
+import { useNationalIdentityAutoSync } from '~/hooks/useNationalIdentityAutoSync';
+
+const { syncNow, lastSyncTime, isSyncing, syncError } = useNationalIdentityAutoSync({
+  countryId,
+  formData,
+  enabled: true
+});
+
+// Manual trigger
+syncNow();
+
+// Government autosave hook
+import { useGovernmentAutoSync } from '~/hooks/useGovernmentAutoSync';
+
+// Tax system autosave hook
+import { useTaxSystemAutoSync } from '~/hooks/useTaxSystemAutoSync';
+
+// Economy autosave hook
+import { useEconomyBuilderAutoSync } from '~/hooks/useEconomyBuilderAutoSync';
+```
+
+**Debounce Configuration:**
+All autosave hooks use a 15-second debounce to batch changes and prevent excessive database writes.
+
+**Error Handling:**
+- All autosave failures are logged to `AuditLog` table
+- Users see subtle error indicators, not intrusive alerts
+- Admins can monitor failures via `autosaveMonitoring` router
+
+**Security:**
+- All mutations verify user ownership before saving
+- Unauthorized attempts are logged to audit system
+- Rate limiting applied to prevent abuse
 
 ---
 

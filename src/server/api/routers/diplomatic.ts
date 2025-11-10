@@ -27,6 +27,7 @@ import {
   PARTNERSHIP_GOALS,
   KEY_ACHIEVEMENTS,
 } from "~/lib/diplomatic-profile-options";
+import { vaultService } from "~/lib/vault-service";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 
@@ -1801,6 +1802,42 @@ export const diplomaticRouter = createTRPCRouter({
         console.error("[Diplomatic] Failed to send mission completion notification:", error);
       }
 
+      // 💰 Award IxCredits for mission completion (if successful and user authenticated)
+      let creditsEarned = 0;
+      if (success && ctx.auth?.userId) {
+        try {
+          // Calculate reward based on difficulty
+          const difficultyRewards: Record<string, number> = {
+            easy: 3,
+            medium: 5,
+            hard: 10,
+            extreme: 15,
+          };
+          const creditReward = difficultyRewards[mission.difficulty.toLowerCase()] || 5;
+
+          const earnResult = await vaultService.earnCredits(
+            ctx.auth.userId,
+            creditReward,
+            "EARN_ACTIVE",
+            "MISSION_COMPLETE",
+            ctx.db,
+            {
+              missionId: mission.id,
+              missionType: mission.type,
+              missionDifficulty: mission.difficulty,
+              embassyId: mission.embassyId,
+            }
+          );
+
+          if (earnResult.success) {
+            creditsEarned = creditReward;
+          }
+        } catch (error) {
+          // Don't block mission completion if earning fails
+          console.error("[Diplomatic] Failed to award mission credits:", error);
+        }
+      }
+
       return {
         success,
         mission,
@@ -1809,6 +1846,7 @@ export const diplomaticRouter = createTRPCRouter({
           influence: influenceGained,
           reputation: reputationGained,
           economic: economicGained,
+          credits: creditsEarned,
         },
         culturalExchangeBoost,
       };

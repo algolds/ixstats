@@ -885,7 +885,7 @@ export function CalculationEditor() {
         <div className="lg:col-span-3">
           {selectedModule ? (
             <Tabs defaultValue="formula" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                 <TabsTrigger value="formula">Formula</TabsTrigger>
                 <TabsTrigger value="variables">Variables</TabsTrigger>
                 <TabsTrigger value="tests">Tests</TabsTrigger>

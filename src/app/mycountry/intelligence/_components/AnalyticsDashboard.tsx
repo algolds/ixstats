@@ -110,12 +110,12 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
         onValueChange={analytics.handleSectionChange}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="economic">Economic</TabsTrigger>
-          <TabsTrigger value="policy">Policy</TabsTrigger>
-          <TabsTrigger value="diplomatic">Diplomatic</TabsTrigger>
-          <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+          <TabsTrigger value="economic" className="text-xs sm:text-sm">Economic</TabsTrigger>
+          <TabsTrigger value="policy" className="text-xs sm:text-sm">Policy</TabsTrigger>
+          <TabsTrigger value="diplomatic" className="text-xs sm:text-sm">Diplomatic</TabsTrigger>
+          <TabsTrigger value="forecasting" className="text-xs sm:text-sm">Forecast</TabsTrigger>
         </TabsList>
 
         {/* Overview Section */}
@@ -171,7 +171,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
                 {analytics.diplomaticNetworkStats.map((stat, idx) => (
                   <motion.div
                     key={stat.label}
@@ -355,7 +355,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
           />
 
           {/* Confidence Intervals */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
             {analytics.predictiveModels?.scenarios?.map((scenario: any, index: number) => {
               const scenarioName = scenario.scenario as "optimistic" | "realistic" | "pessimistic";
               if (!analytics.selectedScenarios.includes(scenarioName)) return null;
@@ -417,7 +417,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                       "Compound growth model with historical variance analysis"}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3">
                   <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
                     <p className="text-muted-foreground mb-1 text-xs">Data Points Used</p>
                     <p className="text-xl font-bold text-blue-600">

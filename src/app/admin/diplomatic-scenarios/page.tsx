@@ -645,8 +645,8 @@ export default function DiplomaticScenariosPage() {
     <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent mb-6 rounded-xl border-2 border-red-500/20 bg-gradient-to-br from-red-500/5 via-transparent to-red-500/10 p-6">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="glass-card-parent mb-6 rounded-xl border-2 border-red-500/20 bg-gradient-to-br from-red-500/5 via-transparent to-red-500/10 p-4 md:p-6">
+          <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
                 <Button variant="ghost" size="sm">
@@ -671,16 +671,18 @@ export default function DiplomaticScenariosPage() {
             <Button
               onClick={() => setIsAddDialogOpen(true)}
               className="bg-red-500/20 text-red-500 hover:bg-red-500/30"
+              size="sm"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Scenario
+              <span className="hidden sm:inline">Add Scenario</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
 
           {/* Filters */}
-          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
             {/* Search */}
-            <div className="relative md:col-span-1">
+            <div className="relative sm:col-span-2 md:col-span-1">
               <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 placeholder="Search scenarios..."
@@ -719,7 +721,7 @@ export default function DiplomaticScenariosPage() {
           </div>
 
           {/* Advanced Filters */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Relationship Level Filter */}
             <div>
               <label className="text-foreground mb-2 block text-sm font-medium">
@@ -835,7 +837,7 @@ export default function DiplomaticScenariosPage() {
         </div>
 
         {/* Stats Bar */}
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-4">
           <Card className="glass-card-child p-4">
             <p className="text-muted-foreground text-sm">Total Scenarios</p>
             <p className="text-foreground mt-2 text-3xl font-bold">{scenarios?.length || 0}</p>
@@ -887,7 +889,7 @@ export default function DiplomaticScenariosPage() {
               </label>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredScenarios.map((scenario) => (
                 <ScenarioCard
                   key={scenario.id}
@@ -1488,7 +1490,7 @@ function GeneralTab({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
           <label className="text-foreground mb-2 block text-sm font-medium">Difficulty</label>
           <Select
@@ -1700,7 +1702,7 @@ function ChoicesTab({
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div>
                 <label className="text-foreground mb-2 block text-sm font-medium">
                   Skill Required
@@ -1823,7 +1825,7 @@ function MetadataTab({
 }) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div>
           <label className="text-foreground mb-2 block text-sm font-medium">
             Cultural Impact: {formData.culturalImpact}

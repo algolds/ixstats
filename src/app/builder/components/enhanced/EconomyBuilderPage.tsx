@@ -99,6 +99,12 @@ import { formatCurrency, formatPercent } from "~/lib/format-utils";
 // Government types
 import type { RevenueSource } from "~/types/government";
 
+// Autosave hook
+import { useEconomyBuilderAutoSync } from "~/hooks/useEconomyBuilderAutoSync";
+
+// Builder context
+import { useBuilderContext } from "./context/BuilderStateContext";
+
 /**
  * Props for the EconomyBuilderPage component
  *
@@ -343,6 +349,67 @@ export function EconomyBuilderPage({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
+
+  // Try to get builder context (may not be available if used standalone)
+  let builderContext: ReturnType<typeof useBuilderContext> | null = null;
+  try {
+    builderContext = useBuilderContext();
+  } catch {
+    // Component is being used standalone, not within BuilderStateProvider
+  }
+
+  // Prepare economy data for autosave
+  const economyDataForSync = useMemo(() => {
+    return {
+      // Core economic indicators
+      gdp: economyBuilder.structure.totalGDP,
+      gdpPerCapita:
+        economyBuilder.structure.totalGDP && economyBuilder.demographics.totalPopulation
+          ? economyBuilder.structure.totalGDP / economyBuilder.demographics.totalPopulation
+          : economicInputs.coreIndicators?.gdpPerCapita,
+      population: economyBuilder.demographics.totalPopulation,
+      unemploymentRate: economyBuilder.laborMarket.unemploymentRate,
+      inflationRate: economicInputs.coreIndicators?.inflationRate,
+
+      // Labor market
+      laborForceParticipation: economyBuilder.laborMarket.laborForceParticipationRate,
+      averageWorkingHours: economyBuilder.laborMarket.averageWorkweekHours,
+      minimumWage: economyBuilder.laborMarket.minimumWageHourly,
+
+      // Demographics
+      literacyRate: economyBuilder.demographics.literacyRate,
+      lifeExpectancy: economyBuilder.demographics.lifeExpectancy,
+    };
+  }, [economyBuilder, economicInputs]);
+
+  // Autosave hook integration
+  const { syncState: autoSyncState, syncNow, showSuccessAnimation } = useEconomyBuilderAutoSync(
+    countryId,
+    economyDataForSync,
+    {
+      enabled: !!countryId, // Only enable in edit mode
+      onSyncSuccess: () => {
+        console.log("[EconomyBuilder] Autosave successful");
+        setLastSaved(new Date());
+      },
+      onSyncError: (error) => {
+        console.error("[EconomyBuilder] Autosave failed:", error);
+        toast.error("Failed to autosave economy data");
+      },
+    }
+  );
+
+  // Register autosync with BuilderContext (if available)
+  useEffect(() => {
+    if (builderContext && countryId) {
+      builderContext.registerAutoSync("economy", syncNow);
+      console.log("[EconomyBuilder] Registered autosync with BuilderContext");
+      return () => {
+        builderContext.unregisterAutoSync("economy");
+        console.log("[EconomyBuilder] Unregistered autosync from BuilderContext");
+      };
+    }
+  }, [countryId, syncNow, builderContext]);
 
   // Government Revenue Integration State
   const [revenueIntegration, setRevenueIntegration] = useState<{
@@ -965,6 +1032,21 @@ export function EconomyBuilderPage({
                 </div>
               )}
 
+              {/* Autosave Status */}
+              {countryId && autoSyncState.isSyncing && (
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Saving economy data...</span>
+                </div>
+              )}
+
+              {countryId && showSuccessAnimation && (
+                <div className="flex items-center gap-2 text-sm text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Autosaved!</span>
+                </div>
+              )}
+
               {/* Last Saved */}
               {lastSaved && (
                 <div className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -1299,7 +1381,7 @@ export function EconomyBuilderPage({
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {/* Total Government Revenue */}
                       <div className="space-y-2">
                         <Label className="text-muted-foreground text-sm">

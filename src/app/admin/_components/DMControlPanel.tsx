@@ -1039,7 +1039,7 @@ export function DMControlPanel() {
       )}
 
       <Tabs defaultValue="active" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <TabsTrigger value="active">Active Inputs</TabsTrigger>
           <TabsTrigger value="presets">Quick Presets</TabsTrigger>
           <TabsTrigger value="calculator">Impact Calculator</TabsTrigger>

@@ -338,7 +338,7 @@ export function DemographicsPopulationTab({
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Total Population"
           value={derivedMetrics.workingAge + derivedMetrics.youthPop + derivedMetrics.elderlyPop}
@@ -392,7 +392,7 @@ export function DemographicsPopulationTab({
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>

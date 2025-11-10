@@ -182,8 +182,8 @@ export function GovernmentBuilder({
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {enableAutoSync && countryId && (
             <SyncStatusIndicator
               isSyncing={syncState.isSyncing}
@@ -193,7 +193,7 @@ export function GovernmentBuilder({
               errorMessage={syncState.syncError?.message}
             />
           )}
-          <Button variant="outline" onClick={() => setShowTemplates(true)} disabled={isReadOnly}>
+          <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} disabled={isReadOnly}>
             Use Template
           </Button>
         </div>

@@ -197,13 +197,19 @@ export function useBuilderState(
   const { data: existingGovernment, isLoading: governmentLoading } =
     api.government.getByCountryId.useQuery(
       { countryId: countryId || "" },
-      { enabled: mode === "edit" && !!countryId }
+      {
+        enabled: mode === "edit" && !!countryId,
+        staleTime: 5 * 60 * 1000, // 5 minute cache
+      }
     );
 
   const { data: existingTaxSystem, isLoading: taxSystemLoading } =
     api.taxSystem.getByCountryId.useQuery(
       { countryId: countryId || "" },
-      { enabled: mode === "edit" && !!countryId }
+      {
+        enabled: mode === "edit" && !!countryId,
+        staleTime: 5 * 60 * 1000, // 5 minute cache
+      }
     );
 
   const isLoadingCountry =
@@ -401,143 +407,197 @@ export function useBuilderState(
     }
   }, [mode, existingCountry, existingGovernment, existingTaxSystem, isLoadingCountry]);
 
-  // Load saved state on mount (create mode only)
+  // Load saved state on mount - runs AFTER initial database load
   useEffect(() => {
-    // Skip localStorage in edit mode
-    if (mode === "edit") return;
-
-    try {
-      const quickStartSection = safeGetItemSync("builder_quick_start_section");
-
-      if (quickStartSection === "core" && !quickStartProcessed.current) {
-        quickStartProcessed.current = true;
-
-        setBuilderState((prev) => ({
-          ...prev,
-          step: "core",
-          selectedCountry: null,
-          economicInputs: createDefaultEconomicInputs(),
-          completedSteps: [...new Set([...prev.completedSteps, "foundation" as BuilderStep])],
-        }));
-        safeRemoveItemSync("builder_quick_start_section");
-        return;
-      }
-
-      // Check for wiki import data
-      const importedData = safeGetItemSync("builder_imported_data");
-      if (importedData && !quickStartProcessed.current) {
-        quickStartProcessed.current = true;
-
+    // Skip quick-start and wiki import in edit mode, but still load saved edits
+    if (mode === "edit" && editModeInitialized.current && !isLoadingCountry) {
+      // Wait a tick to ensure database initialization has fully completed
+      const timeoutId = setTimeout(() => {
         try {
-          const wikiData = JSON.parse(importedData);
+          const stateKey = `builder_state_${countryId}`;
+          const savedKey = `builder_last_saved_${countryId}`;
 
-          // Create default inputs and populate with wiki data
-          const inputs = createDefaultEconomicInputs();
+          const savedState = safeGetItemSync(stateKey);
+          const savedLastSaved = safeGetItemSync(savedKey);
 
-          // Map wiki data to economic inputs
-          if (wikiData.name) inputs.countryName = wikiData.name;
+          if (savedState) {
+            const parsedState = JSON.parse(savedState);
+            // Only restore if there's actual data and it's not just the initial empty state
+            if (parsedState.economicInputs && parsedState.economicInputs.countryName) {
+              setBuilderState((prev) => {
+                // Deep merge economicInputs to preserve database-loaded data
+                const mergedInputs = prev.economicInputs ? {
+                  ...prev.economicInputs,
+                  ...parsedState.economicInputs,
+                  // Ensure nationalIdentity is merged, not replaced
+                  nationalIdentity: {
+                    ...prev.economicInputs.nationalIdentity,
+                    ...parsedState.economicInputs.nationalIdentity,
+                  },
+                } : parsedState.economicInputs;
 
-          // Core indicators
-          if (wikiData.population) {
-            inputs.coreIndicators.totalPopulation = Number(wikiData.population) || 10000000;
-          }
-          if (wikiData.gdpPerCapita) {
-            inputs.coreIndicators.gdpPerCapita = Number(wikiData.gdpPerCapita) || 25000;
-          }
-
-          // National identity (ensure object exists)
-          if (!inputs.nationalIdentity) {
-            inputs.nationalIdentity = {
-              countryName: "",
-              officialName: "",
-              governmentType: "republic",
-              motto: "",
-              mottoNative: "",
-              capitalCity: "",
-              largestCity: "",
-              demonym: "",
-              currency: "",
-              officialLanguages: "",
-              nationalLanguage: "",
-              nationalAnthem: "",
-              nationalDay: "",
-              callingCode: "",
-              internetTLD: "",
-              drivingSide: "right",
-            };
-          }
-
-          if (wikiData.capital) {
-            inputs.nationalIdentity.capitalCity = wikiData.capital;
-          }
-          if (wikiData.currency) {
-            inputs.nationalIdentity.currency = wikiData.currency;
-          }
-          if (wikiData.languages) {
-            inputs.nationalIdentity.officialLanguages = wikiData.languages;
-          }
-          if (wikiData.name) {
-            inputs.nationalIdentity.countryName = wikiData.name;
+                return {
+                  ...prev,
+                  economicInputs: mergedInputs,
+                  governmentStructure: parsedState.governmentStructure || prev.governmentStructure,
+                  taxSystemData: parsedState.taxSystemData || prev.taxSystemData,
+                  governmentComponents: parsedState.governmentComponents || prev.governmentComponents,
+                  economyBuilderState: parsedState.economyBuilderState || prev.economyBuilderState,
+                  activeCoreTab: parsedState.activeCoreTab || prev.activeCoreTab,
+                  activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
+                  activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
+                };
+              });
+              console.log("[useBuilderState] Restored saved edits from localStorage");
+            }
           }
 
-          // Flag URL
-          if (wikiData.flagUrl) {
-            inputs.flagUrl = wikiData.flagUrl;
+          if (savedLastSaved) {
+            setLastSaved(new Date(savedLastSaved));
           }
+        } catch (error) {
+          console.warn("[useBuilderState] Failed to restore saved edits:", error);
+        }
+      }, 100); // Small delay to ensure initialization completes
 
-          // Set builder state with imported data
+      return () => clearTimeout(timeoutId);
+    }
+
+    // Create mode: handle quick-start, wiki import, and saved state
+    if (mode === "create") {
+      try {
+        const quickStartSection = safeGetItemSync("builder_quick_start_section");
+
+        if (quickStartSection === "core" && !quickStartProcessed.current) {
+          quickStartProcessed.current = true;
+
           setBuilderState((prev) => ({
             ...prev,
             step: "core",
-            economicInputs: inputs,
-            completedSteps: ["foundation"],
+            selectedCountry: null,
+            economicInputs: createDefaultEconomicInputs(),
+            completedSteps: [...new Set([...prev.completedSteps, "foundation" as BuilderStep])],
           }));
-
-          // Clean up imported data
-          safeRemoveItemSync("builder_imported_data");
-
-          console.log("[useBuilderState] Wiki import data loaded:", wikiData.name);
+          safeRemoveItemSync("builder_quick_start_section");
           return;
-        } catch (parseError) {
-          console.error("[useBuilderState] Failed to parse wiki import data:", parseError);
-          // Continue to normal state loading
         }
-      }
 
-      if (!quickStartProcessed.current) {
-        let savedState = safeGetItemSync("builder_state");
-        let savedLastSaved = safeGetItemSync("builder_last_saved");
+        // Check for wiki import data
+        const importedData = safeGetItemSync("builder_imported_data");
+        if (importedData && !quickStartProcessed.current) {
+          quickStartProcessed.current = true;
 
-        // Fallback to sessionStorage if localStorage fails
-        if (!savedState) {
           try {
-            savedState = sessionStorage.getItem("builder_state");
-            savedLastSaved = sessionStorage.getItem("builder_last_saved");
-            if (savedState) {
-              console.log("[BuilderState] Recovered state from sessionStorage");
+            const wikiData = JSON.parse(importedData);
+
+            // Create default inputs and populate with wiki data
+            const inputs = createDefaultEconomicInputs();
+
+            // Map wiki data to economic inputs
+            if (wikiData.name) inputs.countryName = wikiData.name;
+
+            // Core indicators
+            if (wikiData.population) {
+              inputs.coreIndicators.totalPopulation = Number(wikiData.population) || 10000000;
             }
-          } catch (error) {
-            console.warn("[BuilderState] Failed to access sessionStorage:", error);
+            if (wikiData.gdpPerCapita) {
+              inputs.coreIndicators.gdpPerCapita = Number(wikiData.gdpPerCapita) || 25000;
+            }
+
+            // National identity (ensure object exists)
+            if (!inputs.nationalIdentity) {
+              inputs.nationalIdentity = {
+                countryName: "",
+                officialName: "",
+                governmentType: "republic",
+                motto: "",
+                mottoNative: "",
+                capitalCity: "",
+                largestCity: "",
+                demonym: "",
+                currency: "",
+                officialLanguages: "",
+                nationalLanguage: "",
+                nationalAnthem: "",
+                nationalDay: "",
+                callingCode: "",
+                internetTLD: "",
+                drivingSide: "right",
+              };
+            }
+
+            if (wikiData.capital) {
+              inputs.nationalIdentity.capitalCity = wikiData.capital;
+            }
+            if (wikiData.currency) {
+              inputs.nationalIdentity.currency = wikiData.currency;
+            }
+            if (wikiData.languages) {
+              inputs.nationalIdentity.officialLanguages = wikiData.languages;
+            }
+            if (wikiData.name) {
+              inputs.nationalIdentity.countryName = wikiData.name;
+            }
+
+            // Flag URL
+            if (wikiData.flagUrl) {
+              inputs.flagUrl = wikiData.flagUrl;
+            }
+
+            // Set builder state with imported data
+            setBuilderState((prev) => ({
+              ...prev,
+              step: "core",
+              economicInputs: inputs,
+              completedSteps: ["foundation"],
+            }));
+
+            // Clean up imported data
+            safeRemoveItemSync("builder_imported_data");
+
+            console.log("[useBuilderState] Wiki import data loaded:", wikiData.name);
+            return;
+          } catch (parseError) {
+            console.error("[useBuilderState] Failed to parse wiki import data:", parseError);
+            // Continue to normal state loading
           }
         }
 
-        if (savedState) {
-          const parsedState = JSON.parse(savedState);
-          setBuilderState((prev) => ({
-            ...prev,
-            ...parsedState,
-            economyBuilderState: parsedState.economyBuilderState ?? null,
-          }));
-        }
+        if (!quickStartProcessed.current) {
+          let savedState = safeGetItemSync("builder_state");
+          let savedLastSaved = safeGetItemSync("builder_last_saved");
 
-        if (savedLastSaved) {
-          setLastSaved(new Date(savedLastSaved));
+          // Fallback to sessionStorage if localStorage fails
+          if (!savedState) {
+            try {
+              savedState = sessionStorage.getItem("builder_state");
+              savedLastSaved = sessionStorage.getItem("builder_last_saved");
+              if (savedState) {
+                console.log("[BuilderState] Recovered state from sessionStorage");
+              }
+            } catch (error) {
+              console.warn("[BuilderState] Failed to access sessionStorage:", error);
+            }
+          }
+
+          if (savedState) {
+            const parsedState = JSON.parse(savedState);
+            setBuilderState((prev) => ({
+              ...prev,
+              ...parsedState,
+              economyBuilderState: parsedState.economyBuilderState ?? null,
+            }));
+          }
+
+          if (savedLastSaved) {
+            setLastSaved(new Date(savedLastSaved));
+          }
         }
+      } catch (error) {
+        // Failed to load saved state, continue with default
       }
-    } catch (error) {
-      // Failed to load saved state, continue with default
     }
-  }, [mode]);
+  }, [mode, countryId, isLoadingCountry]);
 
   // Autosave state to localStorage with ref to prevent infinite loops
   const builderStateRef = useRef(builderState);

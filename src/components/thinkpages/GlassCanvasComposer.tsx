@@ -285,7 +285,7 @@ export function GlassCanvasComposer({
       const result = await response.json();
 
       if (result.success) {
-        setSelectedImages((prev) => [...prev, result.dataUrl]);
+        setSelectedImages((prev) => [...prev, result.url]);
         toast.success("Image uploaded successfully");
       } else {
         toast.error(result.error || "Failed to upload image");

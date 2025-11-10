@@ -20,6 +20,7 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { vaultService } from "~/lib/vault-service";
 
 // Zod schemas for crisis events
 const CrisisEventSchema = z.object({
@@ -346,7 +347,39 @@ export const crisisEventsRouter = createTRPCRouter({
         },
       });
 
-      return updatedEvent;
+      // 💰 Award IxCredits for crisis response (if user authenticated)
+      // Only award when transitioning from pending to in_progress (taking action)
+      let creditsEarned = 0;
+      if (ctx.auth?.userId && event.responseStatus === "pending" && input.responseStatus === "in_progress") {
+        try {
+          const creditReward = 5; // 5 IxC per crisis response
+
+          const earnResult = await vaultService.earnCredits(
+            ctx.auth.userId,
+            creditReward,
+            "EARN_ACTIVE",
+            "CRISIS_RESPONSE",
+            ctx.db,
+            {
+              crisisId: event.id,
+              crisisType: event.type,
+              crisisSeverity: event.severity,
+            }
+          );
+
+          if (earnResult.success) {
+            creditsEarned = creditReward;
+          }
+        } catch (error) {
+          // Don't block crisis response if earning fails
+          console.error("[Crisis Events] Failed to award crisis response credits:", error);
+        }
+      }
+
+      return {
+        ...updatedEvent,
+        creditsEarned,
+      };
     }),
 
   /**

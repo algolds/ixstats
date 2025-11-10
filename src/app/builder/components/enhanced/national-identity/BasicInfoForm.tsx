@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { Globe, Crown, Building, MapPin, Users, Coins } from "lucide-react";
 import { CurrencySymbolPicker } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
 import { Autocomplete } from "~/components/ui/autocomplete";
 import { CurrencyAutocomplete } from "./CurrencyAutocomplete";
+import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 
 interface BasicInfoFormProps {
@@ -20,7 +21,7 @@ interface BasicInfoFormProps {
   onCustomOfficialNameBlur: (value: string) => void;
   setShouldFetchCustomTypes: (should: boolean) => void;
   customGovernmentTypes?: Array<{ id: string; customTypeName: string }>;
-  IdentityAutocomplete: React.ComponentType<any>;
+  onFieldSave: (fieldName: string, value: string) => void;
 }
 
 const GOVERNMENT_TYPES = [
@@ -59,7 +60,7 @@ const GOVERNMENT_TYPES = [
   { value: "custom", label: "Custom", prefix: "" },
 ];
 
-export function BasicInfoForm({
+export const BasicInfoForm = React.memo(function BasicInfoForm({
   identity,
   onIdentityChange,
   selectedGovernmentType,
@@ -71,10 +72,60 @@ export function BasicInfoForm({
   onCustomOfficialNameBlur,
   setShouldFetchCustomTypes,
   customGovernmentTypes,
-  IdentityAutocomplete,
+  onFieldSave,
 }: BasicInfoFormProps) {
+  // Memoize input change handlers with empty deps since parent callback is stable
+  const handleCountryNameChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onIdentityChange("countryName", event.target.value);
+    },
+    [] // Empty - parent onIdentityChange is stable via refs
+  );
+
+  const handleOfficialNameChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onIdentityChange("officialName", event.target.value);
+    },
+    []
+  );
+
+  const handleCapitalCityChange = useCallback(
+    (value: string) => {
+      onIdentityChange("capitalCity", value);
+    },
+    []
+  );
+
+  const handleLargestCityChange = useCallback(
+    (value: string) => {
+      onIdentityChange("largestCity", value);
+    },
+    []
+  );
+
+  const handleDemonymChange = useCallback(
+    (value: string) => {
+      onIdentityChange("demonym", value);
+    },
+    []
+  );
+
+  const handleCurrencyChange = useCallback(
+    (value: string) => {
+      onIdentityChange("currency", value);
+    },
+    []
+  );
+
+  const handleCurrencySymbolChange = useCallback(
+    (symbol: string) => {
+      onIdentityChange("currencySymbol", symbol);
+    },
+    []
+  );
+
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
       <div className="space-y-2">
         <label className="text-foreground flex items-center gap-2 text-sm font-medium">
           <Globe className="h-4 w-4" />
@@ -82,7 +133,7 @@ export function BasicInfoForm({
         </label>
         <Input
           value={identity.countryName ?? ""}
-          onChange={(event) => onIdentityChange("countryName", event.target.value)}
+          onChange={handleCountryNameChange}
           placeholder="Enter country name"
         />
       </div>
@@ -139,7 +190,7 @@ export function BasicInfoForm({
         <p className="text-muted-foreground text-xs">Full ceremonial name of the country</p>
         <Input
           value={identity.officialName ?? ""}
-          onChange={(event) => onIdentityChange("officialName", event.target.value)}
+          onChange={handleOfficialNameChange}
           placeholder="The Republic of..."
         />
       </div>
@@ -147,32 +198,35 @@ export function BasicInfoForm({
       <IdentityAutocomplete
         fieldName="capitalCity"
         value={String(identity.capitalCity || "")}
-        onChange={(value: string) => onIdentityChange("capitalCity", value)}
+        onChange={handleCapitalCityChange}
         placeholder="Capital city name"
         icon={Building}
+        onSave={onFieldSave}
       />
 
       <IdentityAutocomplete
         fieldName="largestCity"
         value={String(identity.largestCity || "")}
-        onChange={(value: string) => onIdentityChange("largestCity", value)}
+        onChange={handleLargestCityChange}
         placeholder="Largest city name"
         icon={MapPin}
+        onSave={onFieldSave}
       />
 
       <IdentityAutocomplete
         fieldName="demonym"
         value={String(identity.demonym || "")}
-        onChange={(value: string) => onIdentityChange("demonym", value)}
+        onChange={handleDemonymChange}
         placeholder="Demonym (e.g., American, French)"
         icon={Users}
+        onSave={onFieldSave}
       />
 
       <div className="space-y-4">
         <CurrencyAutocomplete
           fieldName="currency"
           value={String(identity.currency || "")}
-          onChange={(value: string) => onIdentityChange("currency", value)}
+          onChange={handleCurrencyChange}
           placeholder="Select or enter currency"
         />
         <div className="space-y-2">
@@ -182,11 +236,26 @@ export function BasicInfoForm({
           </label>
           <CurrencySymbolPicker
             value={identity.currencySymbol || "$"}
-            onSymbolSelect={(symbol) => onIdentityChange("currencySymbol", symbol)}
+            onSymbolSelect={handleCurrencySymbolChange}
             sectionId="symbols"
           />
         </div>
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent re-renders
+  // Only re-render if the actual identity values we display have changed
+  return (
+    prevProps.identity.countryName === nextProps.identity.countryName &&
+    prevProps.identity.officialName === nextProps.identity.officialName &&
+    prevProps.identity.capitalCity === nextProps.identity.capitalCity &&
+    prevProps.identity.largestCity === nextProps.identity.largestCity &&
+    prevProps.identity.demonym === nextProps.identity.demonym &&
+    prevProps.identity.currency === nextProps.identity.currency &&
+    prevProps.identity.currencySymbol === nextProps.identity.currencySymbol &&
+    prevProps.selectedGovernmentType === nextProps.selectedGovernmentType &&
+    prevProps.customOfficialName === nextProps.customOfficialName &&
+    prevProps.isEditingCustomName === nextProps.isEditingCustomName
+  );
+});

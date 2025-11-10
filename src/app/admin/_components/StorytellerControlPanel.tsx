@@ -980,7 +980,7 @@ export function StorytellerControlPanel() {
           {editingCountry && (
             <div className="space-y-4 py-4">
               <Tabs defaultValue="economy" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                   <TabsTrigger value="economy">Economy</TabsTrigger>
                   <TabsTrigger value="population">Population</TabsTrigger>
                   <TabsTrigger value="geography">Geography</TabsTrigger>
