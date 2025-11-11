@@ -70,7 +70,7 @@ jobs:
 
       - name: Upload validation report
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: image-validation-report
           path: |
