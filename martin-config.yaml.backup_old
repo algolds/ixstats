@@ -1,0 +1,99 @@
+# Martin Tile Server Configuration
+# High-performance PostGIS vector tile server
+
+# PostgreSQL connection string
+postgres:
+  connection_string: "postgresql://postgres:postgres@localhost:5433/ixstats"
+  pool_size: 30
+  
+  # Explicitly define tables and geometry columns to prevent auto-discovery
+  # of duplicate geometry_buffered columns (which are empty)
+  tables:
+    # Base map layers - explicitly specify geometry column
+    map_layer_political:
+      schema: public
+      table: map_layer_political
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      
+    map_layer_climate:
+      schema: public
+      table: map_layer_climate
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      
+    map_layer_rivers:
+      schema: public
+      table: map_layer_rivers
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      
+    map_layer_lakes:
+      schema: public
+      table: map_layer_lakes
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      
+    map_layer_icecaps:
+      schema: public
+      table: map_layer_icecaps
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      
+    map_layer_altitudes:
+      schema: public
+      table: map_layer_altitudes
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      
+    # User-created content layers
+    subdivisions:
+      schema: public
+      table: subdivisions
+      srid: 4326
+      geometry_column: geom_postgis
+      id_column: id
+      minzoom: 6
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      
+    cities:
+      schema: public
+      table: cities
+      srid: 4326
+      geometry_column: geom_postgis
+      id_column: id
+      minzoom: 4
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      
+    points_of_interest:
+      schema: public
+      table: points_of_interest
+      srid: 4326
+      geometry_column: geom_postgis
+      id_column: id
+      minzoom: 8
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+
+# Server settings
+listen_addresses: "0.0.0.0:3800"
+worker_processes: 4
+
+# Keep-alive to maintain connections
+keep_alive: 60
+
+# Cache settings for better performance
+cache:
+  ttl: 3600
+  size_mb: 512

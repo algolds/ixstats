@@ -185,8 +185,9 @@ export const createGoogleMapsStyle = (
       source: 'altitudes',
       ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_altitudes' }),
       paint: {
-        'fill-color': ['get', 'fill'],
-        'fill-opacity': 1, // Always show terrain colors
+        'fill-color': ['coalesce', ['get', 'fill'], '#ececec'],
+        'fill-opacity': (mapType === 'terrain' || mapType === 'climate') ? 1 : 0, // Visible in terrain/climate modes
+        'fill-outline-color': 'transparent', // Hide polygon edges to prevent seam artifacts
       },
     },
     // Ice caps (imprinted on globe with terrain)
@@ -196,8 +197,8 @@ export const createGoogleMapsStyle = (
       source: 'icecaps',
       ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_icecaps' }),
       paint: {
-        'fill-color': ['get', 'fill'], // Use color from data
-        'fill-opacity': 0.9,
+        'fill-color': ['coalesce', ['get', 'fill'], '#ffffff'],
+        'fill-opacity': (mapType === 'terrain' || mapType === 'climate') ? 0.9 : 0, // Visible in terrain/climate modes only
         'fill-outline-color': 'transparent', // Hide polygon edges (removes circular artifacts on globe)
       },
     },
@@ -208,7 +209,7 @@ export const createGoogleMapsStyle = (
       source: 'climate',
       ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_climate' }),
       paint: {
-        'fill-color': ['get', 'fill'],
+        'fill-color': ['coalesce', ['get', 'fill'], '#ececec'],
         'fill-opacity': mapType === 'climate' ? 0.7 : 0, // 70% opacity when climate mode for visibility
       },
     },
@@ -217,15 +218,16 @@ export const createGoogleMapsStyle = (
       id: 'countries',
       type: 'fill',
       source: 'political',
-      ...(useGeoJSON ? {} : { 'source-layer': 'Country' }),
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_political' }),
       paint: {
-        'fill-color': ['get', 'fill'], // Use color from GeoJSON data
+        'fill-color': ['coalesce', ['get', 'fill'], '#ececec'],
         'fill-opacity': [
           'case',
           ['boolean', ['feature-state', 'hover'], false],
-          (mapType === 'terrain' || mapType === 'climate') ? 0.3 : 0.8, // Hover - subtle in terrain/climate, slightly transparent in map
-          (mapType === 'terrain' || mapType === 'climate') ? 0.01 : 1, // Default - nearly invisible in terrain/climate, full opacity in map
+          (mapType === 'terrain' || mapType === 'climate') ? 0.3 : 0.8, // Hover - visible in all modes
+          mapType === 'map' ? 1 : 0, // Full opacity in map mode, INVISIBLE in terrain/climate modes
         ],
+        'fill-outline-color': 'transparent', // Hide polygon edges to prevent seam artifacts from multi-part geometries
       },
     },
     // Country borders (ALWAYS visible, adaptive width at all zoom levels)
@@ -233,7 +235,7 @@ export const createGoogleMapsStyle = (
       id: 'country-borders',
       type: 'line',
       source: 'political',
-      ...(useGeoJSON ? {} : { 'source-layer': 'Country' }),
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_political' }),
       paint: {
         'line-color': [
           'case',

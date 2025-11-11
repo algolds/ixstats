@@ -3953,6 +3953,71 @@ model map_layer_rivers {
   @@index([geometry], map: "map_layer_rivers_geometry_geom_idx", type: Gist)
 }
 
+model map_layer_political {
+  ogc_fid           Int                      @id @default(autoincrement())
+  id                String?                  @db.VarChar
+  ixmap_subgroup    String?                  @db.VarChar
+  fill              String?                  @db.VarChar
+  country_id        String?                  @db.VarChar
+  geometry          Unsupported("geometry")?
+  geometry_buffered Unsupported("geometry")?
+
+  @@index([geometry_buffered], map: "idx_map_layer_political_buffered", type: Gist)
+  @@index([geometry], map: "idx_map_layer_political_geom", type: Gist)
+}
+
+model map_layer_climate {
+  ogc_fid           Int                      @id @default(autoincrement())
+  id                String?                  @db.VarChar
+  ixmap_subgroup    String?                  @db.VarChar
+  fill              String?                  @db.VarChar
+  country_id        String?                  @db.VarChar
+  geometry          Unsupported("geometry")?
+  geometry_buffered Unsupported("geometry")?
+
+  @@index([geometry_buffered], map: "idx_map_layer_climate_buffered", type: Gist)
+  @@index([geometry], map: "idx_map_layer_climate_geom", type: Gist)
+}
+
+model map_layer_altitudes {
+  ogc_fid           Int                      @id @default(autoincrement())
+  id                String?                  @db.VarChar
+  ixmap_subgroup    String?                  @db.VarChar
+  fill              String?                  @db.VarChar
+  country_id        String?                  @db.VarChar
+  geometry          Unsupported("geometry")?
+  geometry_buffered Unsupported("geometry")?
+
+  @@index([geometry_buffered], map: "idx_map_layer_altitudes_buffered", type: Gist)
+  @@index([geometry], map: "idx_map_layer_altitudes_geom", type: Gist)
+}
+
+model map_layer_lakes {
+  ogc_fid           Int                      @id @default(autoincrement())
+  id                String?                  @db.VarChar
+  ixmap_subgroup    String?                  @db.VarChar
+  fill              String?                  @db.VarChar
+  country_id        String?                  @db.VarChar
+  geometry          Unsupported("geometry")?
+  geometry_buffered Unsupported("geometry")?
+
+  @@index([geometry_buffered], map: "idx_map_layer_lakes_buffered", type: Gist)
+  @@index([geometry], map: "idx_map_layer_lakes_geom", type: Gist)
+}
+
+model map_layer_icecaps {
+  ogc_fid           Int                      @id @default(autoincrement())
+  id                String?                  @db.VarChar
+  ixmap_subgroup    String?                  @db.VarChar
+  fill              String?                  @db.VarChar
+  country_id        String?                  @db.VarChar
+  geometry          Unsupported("geometry")?
+  geometry_buffered Unsupported("geometry")?
+
+  @@index([geometry_buffered], map: "idx_map_layer_icecaps_buffered", type: Gist)
+  @@index([geometry], map: "idx_map_layer_icecaps_geom", type: Gist)
+}
+
 enum Priority {
   CRITICAL
   HIGH

@@ -1,5 +1,9 @@
-// API endpoint for river polygon GeoJSON
-// Serves buffered polygon geometries for high-zoom river rendering
+/**
+ * Rivers Polygons GeoJSON API
+ * 
+ * Serves buffered river geometries as polygons for visualization.
+ * Dynamically buffers river linestrings to create polygon representations.
+ */
 
 import { NextResponse } from 'next/server';
 import { db } from '~/server/db';
@@ -9,7 +13,7 @@ export const revalidate = 3600; // Cache for 1 hour
 
 export async function GET() {
   try {
-    // Query the materialized view for river polygons
+    // Fetch rivers and dynamically buffer the geometry to create polygons
     const rivers = await db.$queryRaw<Array<{
       ogc_fid: number;
       id: string;
@@ -24,12 +28,15 @@ export async function GET() {
         ixmap_subgroup,
         fill,
         country_id,
-        ST_AsGeoJSON(geometry)::json as geometry
-      FROM map_layer_rivers_polygons
+        ST_AsGeoJSON(
+          ST_Buffer(geometry::geography, 5000)::geometry
+        )::json as geometry
+      FROM map_layer_rivers
+      WHERE ST_GeometryType(geometry) NOT IN ('ST_Polygon', 'ST_MultiPolygon')
       ORDER BY ogc_fid
     `;
 
-    // Convert to GeoJSON FeatureCollection
+    // Transform to GeoJSON FeatureCollection
     const geojson = {
       type: 'FeatureCollection',
       features: rivers.map((river) => ({
@@ -47,15 +54,16 @@ export async function GET() {
 
     return NextResponse.json(geojson, {
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/geo+json',
         'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       },
     });
   } catch (error) {
-    console.error('[API] Error fetching river polygons:', error);
+    console.error('[API] Error fetching rivers polygons:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch river polygons' },
+      { error: 'Failed to fetch rivers polygons' },
       { status: 500 }
     );
   }
 }
+

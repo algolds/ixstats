@@ -61,30 +61,30 @@ export async function GET(
     }
 
     // Fetch centroids and area from PostGIS
-    // Use Country table for political layer since map_layer_political doesn't exist
-    const tableName = layer === "political" ? "Country" : `map_layer_${layer}`;
-    const geometryColumn = layer === "political" ? "geom_postgis" : "geometry";
-    const nameColumn = layer === "political" ? "name" : "id";
+    // All layers now use map_layer_* tables with geometry column
+    const tableName = `map_layer_${layer}`;
+    const geometryColumn = "geometry";
+    const nameColumn = "id";
 
     const results = await db.$queryRawUnsafe<
       Array<{
         ogc_fid: number;
         name: string | null;
         fill: string | null;
-        country_id: string | null;
+        ixmap_subgroup: string | null;
         area_km2: number;
         centroid: any;
       }>
     >(`
       SELECT
-        ${layer === "political" ? "ROW_NUMBER() OVER ()::integer as ogc_fid" : "ogc_fid"},
+        ogc_fid::integer as ogc_fid,
         ${nameColumn} as name,
-        ${layer === "political" ? "NULL" : "fill"} as fill,
-        ${layer === "political" ? "id" : "country_id"} as country_id,
+        fill,
+        ixmap_subgroup,
         -- Calculate area in square kilometers using spherical geometry
-        ST_Area(geography(ST_Transform(${geometryColumn}, 4326))) / 1000000 as area_km2,
-        ST_AsGeoJSON(ST_Centroid(ST_Transform(${geometryColumn}, 4326)))::json as centroid
-      FROM "${tableName}"
+        CAST(ST_Area(geography(${geometryColumn})) / 1000000 AS NUMERIC(12, 2)) as area_km2,
+        ST_AsGeoJSON(ST_Centroid(${geometryColumn}))::json as centroid
+      FROM ${tableName}
       WHERE ${geometryColumn} IS NOT NULL
     `);
 
@@ -96,7 +96,7 @@ export async function GET(
         ogc_fid: row.ogc_fid,
         name: row.name,
         fill: row.fill,
-        country_id: row.country_id,
+        ixmap_subgroup: row.ixmap_subgroup,
         area_km2: row.area_km2,
       },
       geometry: row.centroid,

@@ -8,9 +8,10 @@
     "*.css"
   ],
   "scripts": {
-    "build": "./scripts/with-base-path.sh next build",
-    "build:no-check": "./scripts/with-base-path.sh next build --no-lint",
-    "build:fast": "SKIP_ENV_VALIDATION=true ./scripts/with-base-path.sh next build --no-lint",
+    "build": "./scripts/with-base-path.sh next build && npm run postbuild",
+    "build:no-check": "./scripts/with-base-path.sh next build --no-lint && npm run postbuild",
+    "build:fast": "SKIP_ENV_VALIDATION=true ./scripts/with-base-path.sh next build --no-lint && npm run postbuild",
+    "postbuild": "./scripts/post-build.sh",
     "check": "npm run typecheck && echo '✓ Type checking complete. Run npm run build for full validation.'",
     "dev": "./start-development.sh",
     "tiles:pregenerate": "npx tsx scripts/pregenerate-tiles.ts",
