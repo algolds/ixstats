@@ -19,6 +19,8 @@ import { AnalyticsDashboard } from "~/app/mycountry/intelligence/_components/Ana
 import { AlertThresholdSettings } from "~/app/mycountry/intelligence/_components/AlertThresholdSettings";
 import { DiplomaticAnalytics } from "~/app/mycountry/intelligence/_components/DiplomaticAnalytics";
 import { PolicyAnalytics } from "~/app/mycountry/intelligence/_components/PolicyAnalytics";
+import { CardEconomyAnalytics } from "~/app/mycountry/intelligence/_components/CardEconomyAnalytics";
+import { useHasRoleLevel } from "~/hooks/usePermissions";
 import type { IntelligenceTab } from "~/hooks/useUnifiedIntelligence";
 
 interface IntelligenceTabSystemProps {
@@ -33,6 +35,7 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
   } = useMyCountryUnifiedData();
 
   const { activeTab, setActiveTab, wsConnected } = unifiedIntelligence;
+  const isAdmin = useHasRoleLevel(10); // Admin level or higher
 
   if (!country) return null;
 
@@ -94,20 +97,30 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
 
         <TabsContent value="economic" id="economic">
           <ThemedTabContent theme="intelligence" className="tab-content-enter">
-            <Card className="glass-hierarchy-child border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  Economic Analytics
-                </CardTitle>
-                <CardDescription>
-                  Comprehensive economic analysis, projections, and sector performance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AnalyticsDashboard userId={user?.id || ""} countryId={country.id} />
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card className="glass-hierarchy-child border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    Economic Analytics
+                  </CardTitle>
+                  <CardDescription>
+                    Comprehensive economic analysis, projections, and sector performance
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AnalyticsDashboard userId={user?.id || ""} countryId={country.id} />
+                </CardContent>
+              </Card>
+
+              {/* IxCards Economy Analytics - Admin Only */}
+              {isAdmin && (
+                <CardEconomyAnalytics
+                  countryId={country.id}
+                  userId={user?.id || ""}
+                />
+              )}
+            </div>
           </ThemedTabContent>
         </TabsContent>
 

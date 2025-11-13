@@ -237,13 +237,13 @@ export const achievementsRouter = createTRPCRouter({
       try {
         // Calculate reward based on rarity
         const rarityRewards: Record<string, number> = {
-          Common: 10,
-          Uncommon: 15,
+          Common: 5,
+          Uncommon: 10,
           Rare: 25,
           Epic: 50,
           Legendary: 100,
         };
-        const creditReward = rarityRewards[input.rarity || "Common"] || 10;
+        const creditReward = rarityRewards[input.rarity || "Common"] || 5;
 
         const earnResult = await vaultService.earnCredits(
           input.userId,

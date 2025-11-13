@@ -8,16 +8,16 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { CardRarity } from "@prisma/client";
 import { cn } from "~/lib/utils";
-import { getRarityConfig, getShimmerEffect } from "~/lib/card-display-utils";
+import { getRarityConfig, getShimmerEffect, CARD_RARITIES } from "~/lib/card-display-utils";
+import { CardRarity } from "@prisma/client";
 
 /**
  * RarityBadge component props
  */
 export interface RarityBadgeProps {
   /** Card rarity tier */
-  rarity: CardRarity;
+  rarity: string;
   /** Badge size variant */
   size?: "small" | "medium" | "large";
   /** Enable shimmer animation for rare+ cards */
@@ -43,7 +43,7 @@ export interface RarityBadgeProps {
 export const RarityBadge = React.memo<RarityBadgeProps>(
   ({ rarity, size = "medium", animated = true, className }) => {
     const config = getRarityConfig(rarity);
-    const shimmer = getShimmerEffect(rarity, animated);
+    const shimmer = getShimmerEffect(rarity as CardRarity, animated);
 
     // Size-specific classes
     const sizeClasses = {
@@ -77,7 +77,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
           transition: { duration: 0.2 },
         }}
         animate={
-          animated && rarity === CardRarity.LEGENDARY
+          animated && rarity === CARD_RARITIES.LEGENDARY
             ? {
                 // Rainbow pulse for legendary
                 boxShadow: [
@@ -89,7 +89,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
             : undefined
         }
         transition={
-          animated && rarity === CardRarity.LEGENDARY
+          animated && rarity === CARD_RARITIES.LEGENDARY
             ? {
                 duration: 2,
                 repeat: Infinity,
@@ -102,7 +102,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
         <span className="relative z-10">{config.label}</span>
 
         {/* Background shimmer gradient for legendary */}
-        {animated && rarity === CardRarity.LEGENDARY && (
+        {animated && rarity === CARD_RARITIES.LEGENDARY && (
           <motion.div
             className="absolute inset-0 rounded-full opacity-50"
             style={{

@@ -32,6 +32,28 @@ export function VaultWidget() {
     enabled: !!userId && isAdmin,
   });
 
+  // Get user's country to calculate passive income
+  const { data: userData } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!userId && isAdmin,
+  });
+
+  const { data: passiveIncomeData } = api.vault.calculatePassiveIncome.useQuery(
+    { countryId: userData?.countryId ?? "" },
+    {
+      enabled: !!userData?.countryId && isAdmin,
+      refetchInterval: 300000, // Refresh every 5 minutes
+    }
+  );
+
+  // Get budget multiplier data
+  const { data: budgetMultiplierData } = api.vault.getBudgetMultiplier.useQuery(
+    { countryId: userData?.countryId ?? "" },
+    {
+      enabled: !!userData?.countryId && isAdmin,
+      refetchInterval: 300000, // Refresh every 5 minutes
+    }
+  );
+
   // Hide widget for non-admins
   if (!userId || !isAdmin) {
     return null;
@@ -70,6 +92,60 @@ export function VaultWidget() {
                 <span className="text-yellow-500">+{todayEarnings.total}</span>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Passive Income Projection */}
+        {passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
+          <div className="rounded-md border border-blue-500/30 bg-blue-900/20 p-3">
+            <p className="mb-2 flex items-center gap-1 text-sm font-medium text-blue-300">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Nation Passive Income
+            </p>
+            <div className="space-y-1 text-sm text-gray-300">
+              <div className="flex justify-between">
+                <span>Daily Dividend</span>
+                <span className="font-semibold text-blue-400">+{passiveIncomeData.dailyDividend.toFixed(2)} IxC</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Weekly Projection</span>
+                <span className="text-gray-400">~{passiveIncomeData.weeklyDividend.toFixed(2)} IxC</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Monthly Projection</span>
+                <span className="text-gray-400">~{passiveIncomeData.monthlyDividend.toFixed(2)} IxC</span>
+              </div>
+            </div>
+
+            {/* Budget Multiplier Bonus */}
+            {budgetMultiplierData && (
+              <div className="mt-2 rounded border border-yellow-500/30 bg-yellow-900/20 p-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1 text-yellow-300">
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Budget Bonus
+                  </span>
+                  <span className={`font-semibold ${
+                    budgetMultiplierData.percentChange > 0 ? "text-green-400" :
+                    budgetMultiplierData.percentChange < 0 ? "text-red-400" :
+                    "text-gray-400"
+                  }`}>
+                    {budgetMultiplierData.percentChange > 0 ? "+" : ""}{budgetMultiplierData.percentChange}%
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-gray-400" title={budgetMultiplierData.description}>
+                  {budgetMultiplierData.multiplier.toFixed(2)}x from budget allocation
+                </p>
+              </div>
+            )}
+
+            <p className="mt-2 text-xs text-gray-400">
+              Based on your nation&apos;s economic performance {budgetMultiplierData ? "and budget allocation" : ""}
+            </p>
           </div>
         )}
 

@@ -130,13 +130,35 @@ app.prepare().then(async () => {
       // Passive income cron (daily at midnight UTC)
       cron.default.schedule('0 0 * * *', async () => {
         try {
-          const { distributePassiveIncome } = await import('./src/lib/passive-income-cron.js');
+          const { distributePassiveIncome } = await import('./src/lib/passive-income-distribution-cron.js');
           await distributePassiveIncome();
         } catch (error) {
-          console.error('[Cron] Passive income failed:', error);
+          console.error('[Cron] Passive income distribution failed:', error);
         }
       }, { timezone: 'UTC' });
-      console.log('[Cron] ✓ Passive income job scheduled (daily at 00:00 UTC)');
+      console.log('[Cron] ✓ Passive income distribution scheduled (daily at 00:00 UTC)');
+
+      // Card value tracking cron (every 6 hours)
+      cron.default.schedule('0 */6 * * *', async () => {
+        try {
+          const { updateCardValues } = await import('./src/lib/nation-card-value-update-cron.js');
+          await updateCardValues();
+        } catch (error) {
+          console.error('[Cron] Card value update failed:', error);
+        }
+      }, { timezone: 'UTC' });
+      console.log('[Cron] ✓ Card value tracking scheduled (every 6 hours)');
+
+      // Lore card generation cron (daily at 2:00 AM UTC)
+      cron.default.schedule('0 2 * * *', async () => {
+        try {
+          const { generateDailyLoreCards } = await import('./src/lib/lore-card-generation-cron.js');
+          await generateDailyLoreCards();
+        } catch (error) {
+          console.error('[Cron] Lore card generation failed:', error);
+        }
+      }, { timezone: 'UTC' });
+      console.log('[Cron] ✓ Lore card generation scheduled (daily at 02:00 UTC)');
     } catch (error) {
       console.error('[Cron] Failed to initialize cron jobs:', error.message);
       console.warn('[Cron] Continuing without scheduled jobs');

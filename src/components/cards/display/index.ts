@@ -7,6 +7,12 @@
 export { CardDisplay } from "./CardDisplay";
 export type { CardDisplayProps } from "./CardDisplay";
 
+export { CardBack } from "./CardBack";
+export type { CardBackProps } from "./CardBack";
+
+export { Card3DViewer } from "./Card3DViewer";
+export type { Card3DViewerProps } from "./Card3DViewer";
+
 export { CardGrid } from "./CardGrid";
 export type { CardGridProps } from "./CardGrid";
 
@@ -21,3 +27,6 @@ export type { CardContainer3DProps } from "./CardContainer3D";
 
 export { RarityBadge } from "./RarityBadge";
 export type { RarityBadgeProps } from "./RarityBadge";
+
+export { HolographicOverlay } from "./HolographicOverlay";
+export type { HolographicOverlayProps } from "./HolographicOverlay";

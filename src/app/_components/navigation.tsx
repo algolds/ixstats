@@ -768,6 +768,7 @@ export function Navigation() {
         if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
         if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
         if (item.name === "Labs" && !navigationSettings.showLabsTab) return false;
+        if (item.name === "Maps" && !navigationSettings.showMapsTab) return false;
       }
 
       return true;

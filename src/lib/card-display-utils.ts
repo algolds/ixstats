@@ -8,45 +8,59 @@ import { CardRarity } from "@prisma/client";
 import type { CardInstance, FormattedStats, RarityConfig, CardDisplaySize } from "~/types/cards-display";
 
 /**
+ * Rarity constants (matching database string values)
+ */
+export const CARD_RARITIES = {
+  COMMON: "COMMON",
+  UNCOMMON: "UNCOMMON",
+  RARE: "RARE",
+  ULTRA_RARE: "ULTRA_RARE",
+  EPIC: "EPIC",
+  LEGENDARY: "LEGENDARY",
+} as const;
+
+export type CardRarityType = typeof CARD_RARITIES[keyof typeof CARD_RARITIES];
+
+/**
  * Rarity color mappings with Tailwind classes
  */
-const RARITY_COLORS: Record<CardRarity, RarityConfig> = {
-  [CardRarity.COMMON]: {
+const RARITY_COLORS: Record<string, RarityConfig> = {
+  [CARD_RARITIES.COMMON]: {
     color: "text-gray-400",
     glowColor: "shadow-gray-500/50",
     glowIntensity: "shadow-md",
     borderColor: "border-gray-500/20",
     label: "Common",
   },
-  [CardRarity.UNCOMMON]: {
+  [CARD_RARITIES.UNCOMMON]: {
     color: "text-green-400",
     glowColor: "shadow-green-500/50",
     glowIntensity: "shadow-lg",
     borderColor: "border-green-500/20",
     label: "Uncommon",
   },
-  [CardRarity.RARE]: {
+  [CARD_RARITIES.RARE]: {
     color: "text-blue-400",
     glowColor: "shadow-blue-500/50",
     glowIntensity: "shadow-lg",
     borderColor: "border-blue-500/20",
     label: "Rare",
   },
-  [CardRarity.ULTRA_RARE]: {
+  [CARD_RARITIES.ULTRA_RARE]: {
     color: "text-purple-400",
     glowColor: "shadow-purple-500/50",
     glowIntensity: "shadow-xl",
     borderColor: "border-purple-500/20",
     label: "Ultra Rare",
   },
-  [CardRarity.EPIC]: {
+  [CARD_RARITIES.EPIC]: {
     color: "text-violet-400",
     glowColor: "shadow-violet-500/50",
     glowIntensity: "shadow-xl",
     borderColor: "border-violet-500/20",
     label: "Epic",
   },
-  [CardRarity.LEGENDARY]: {
+  [CARD_RARITIES.LEGENDARY]: {
     color: "text-amber-400",
     glowColor: "shadow-amber-500/50",
     glowIntensity: "shadow-2xl",
@@ -60,8 +74,8 @@ const RARITY_COLORS: Record<CardRarity, RarityConfig> = {
  * @param rarity - Card rarity tier
  * @returns Tailwind color class string
  */
-export function getRarityColor(rarity: CardRarity): string {
-  return RARITY_COLORS[rarity]?.color ?? RARITY_COLORS[CardRarity.COMMON].color;
+export function getRarityColor(rarity: string): string {
+  return RARITY_COLORS[rarity]?.color ?? RARITY_COLORS[CARD_RARITIES.COMMON]!.color;
 }
 
 /**
@@ -70,8 +84,8 @@ export function getRarityColor(rarity: CardRarity): string {
  * @param rarity - Card rarity tier
  * @returns Tailwind shadow class string
  */
-export function getRarityGlow(rarity: CardRarity): string {
-  const config = RARITY_COLORS[rarity] ?? RARITY_COLORS[CardRarity.COMMON];
+export function getRarityGlow(rarity: string): string {
+  const config = RARITY_COLORS[rarity] ?? RARITY_COLORS[CARD_RARITIES.COMMON]!;
   return `${config.glowIntensity} ${config.glowColor}`;
 }
 
@@ -80,8 +94,8 @@ export function getRarityGlow(rarity: CardRarity): string {
  * @param rarity - Card rarity tier
  * @returns Complete rarity configuration object
  */
-export function getRarityConfig(rarity: CardRarity): RarityConfig {
-  return RARITY_COLORS[rarity] ?? RARITY_COLORS[CardRarity.COMMON];
+export function getRarityConfig(rarity: string): RarityConfig {
+  return RARITY_COLORS[rarity] ?? RARITY_COLORS[CARD_RARITIES.COMMON]!;
 }
 
 /**
@@ -226,12 +240,12 @@ export function getRarityPercentage(rarity: CardRarity): number {
  * @param owners - Array of card ownerships
  * @returns Formatted owner count
  */
-export function getOwnerCount(owners?: Array<{ userId: string; ownerId: string }>): string {
+export function getOwnerCount(owners?: Array<{ userId: string; quantity: number; acquiredDate: Date; acquiredMethod: string }>): string {
   if (!owners || owners.length === 0) return "No owners";
 
   // Each CardOwnership record represents one unique card instance
-  const uniqueOwners = new Set(owners.map((o) => o.ownerId)).size;
-  const totalCards = owners.length;
+  const uniqueOwners = owners.length;
+  const totalCards = owners.reduce((sum, o) => sum + o.quantity, 0);
 
   if (uniqueOwners === 1) return "1 owner";
   return `${uniqueOwners} owners (${totalCards} total)`;

@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import { vaultService } from "~/lib/vault-service";
 
 /**
  * Diplomatic Scenarios Router
@@ -609,6 +610,58 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           `[DIPLOMATIC_SCENARIOS] Recorded choice ${input.choiceId} for scenario ${input.scenarioId} by country ${input.countryId}`
         );
 
+        // 💰 Award IxCredits for diplomatic scenario participation
+        let creditsEarned = 0;
+        if (ctx.auth?.userId) {
+          try {
+            // Base reward: 10 IxC for participating
+            let creditReward = 10;
+
+            // Bonus for high-stakes scenarios (high cultural impact or diplomatic risk)
+            const isHighStakes = scenario.culturalImpact > 70 || scenario.diplomaticRisk > 70;
+            if (isHighStakes) {
+              creditReward += 5; // +5 IxC bonus for high-stakes events
+            }
+
+            // Bonus for risky choices
+            const choiceRisk = selectedChoice.riskLevel || "medium";
+            const riskBonus = {
+              low: 0,
+              medium: 2,
+              high: 5,
+              extreme: 8,
+            };
+            creditReward += riskBonus[choiceRisk as keyof typeof riskBonus] || 0;
+
+            const earnResult = await vaultService.earnCredits(
+              ctx.auth.userId,
+              creditReward,
+              "EARN_ACTIVE",
+              "diplomatic_scenario",
+              ctx.db,
+              {
+                scenarioId: input.scenarioId,
+                scenarioType: scenario.type,
+                choiceId: input.choiceId,
+                choiceLabel: input.choiceLabel,
+                culturalImpact: scenario.culturalImpact,
+                diplomaticRisk: scenario.diplomaticRisk,
+                highStakes: isHighStakes,
+                riskLevel: choiceRisk,
+              }
+            );
+
+            if (earnResult.success) {
+              creditsEarned = creditReward;
+              console.log(
+                `[DIPLOMATIC_SCENARIOS] Awarded ${creditReward} IxC to ${ctx.auth.userId} for scenario participation`
+              );
+            }
+          } catch (error) {
+            console.error("[DIPLOMATIC_SCENARIOS] Failed to award scenario credits:", error);
+          }
+        }
+
         return {
           success: true,
           scenario: {
@@ -617,6 +670,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             tags: updatedScenario.tags ? JSON.parse(updatedScenario.tags) : [],
           },
           effects: selectedChoice.effects,
+          creditsEarned,
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;

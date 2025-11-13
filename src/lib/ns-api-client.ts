@@ -19,6 +19,11 @@ export interface NSCard {
   trophies?: string;
   slogan?: string;
   motto?: string;
+  govt?: string;
+  type?: string;
+  description?: string;
+  cardcategory?: string;
+  quantity?: number; // Number of copies owned
 }
 
 interface NSDeckResponse {
@@ -100,8 +105,8 @@ export class NSApiClient {
     try {
       const cards: NSCard[] = [];
 
-      // Extract DECK section
-      const deckMatch = xml.match(/<DECK>(.*?)<\/DECK>/);
+      // Extract DECK section (using 's' flag to match newlines)
+      const deckMatch = xml.match(/<DECK>(.*?)<\/DECK>/s);
       if (!deckMatch) {
         console.log("[NS API] No DECK section found in XML");
         console.log("[NS API] XML preview:", xml.substring(0, 500));
@@ -111,8 +116,8 @@ export class NSApiClient {
       const deckXml = deckMatch[1];
       console.log("[NS API] Found DECK section, length:", deckXml.length);
 
-      // Extract all CARD elements
-      const cardMatches = Array.from(deckXml.matchAll(/<CARD>(.*?)<\/CARD>/g));
+      // Extract all CARD elements (using 'gs' flags to match newlines globally)
+      const cardMatches = Array.from(deckXml.matchAll(/<CARD>(.*?)<\/CARD>/gs));
       console.log("[NS API] Found", cardMatches.length, "CARD elements");
 
       for (const match of cardMatches) {
@@ -185,7 +190,7 @@ export class NSApiClient {
    * Extract value from XML tag
    */
   private extractTag(xml: string, tagName: string): string | null {
-    const regex = new RegExp(`<${tagName}>(.*?)<\/${tagName}>`, "i");
+    const regex = new RegExp(`<${tagName}>(.*?)<\/${tagName}>`, "is");
     const match = xml.match(regex);
     return match ? match[1].trim() : null;
   }
@@ -284,8 +289,9 @@ export class NSApiClient {
       }
 
       const xml = await response.text();
+      console.log(`[NS API] Fetched card info XML for ${cardId} S${season} - Length:`, xml.length);
 
-      // Extract card details
+      // Extract card details - comprehensive field extraction
       const name = this.extractTag(xml, "NAME");
       const flag = this.extractTag(xml, "FLAG");
       const region = this.extractTag(xml, "REGION");
@@ -293,18 +299,48 @@ export class NSApiClient {
       const slogan = this.extractTag(xml, "SLOGAN");
       const motto = this.extractTag(xml, "MOTTO");
       const govt = this.extractTag(xml, "GOVT");
+      const cardcategory = this.extractTag(xml, "CARDCATEGORY");
+      const badge = this.extractTag(xml, "BADGE");
+      const trophies = this.extractTag(xml, "TROPHIES");
+      const description = this.extractTag(xml, "DESCRIPTION");
 
-      // Convert flag path to full URL
-      const flagUrl = flag ? `https://www.nationstates.net/${flag}` : undefined;
+      // Construct card image URL using season-specific path
+      // Cards use /images/cards/s{season}/uploads/ not /images/flags/
+      let flagUrl: string | undefined = undefined;
+      if (flag) {
+        if (flag.startsWith('http')) {
+          flagUrl = flag;
+        } else {
+          // Card images are stored in season-specific directories
+          // e.g., /images/cards/s3/uploads/heku__147541.jpg
+          flagUrl = `https://www.nationstates.net/images/cards/s${season}/${flag}`;
+        }
+        console.log(`[NS API] Constructed card image URL: ${flagUrl}`);
+      }
 
-      return {
+      const result = {
         name: name || undefined,
         flag: flagUrl,
         region: region || undefined,
         category: category || govt || undefined,
         slogan: slogan || undefined,
         motto: motto || undefined,
+        govt: govt || undefined,
+        type: category || undefined,
+        cardcategory: cardcategory || undefined,
+        badge: badge || undefined,
+        trophies: trophies || undefined,
+        description: description || undefined,
       };
+
+      console.log(`[NS API] Parsed card info for ${cardId} S${season}:`, {
+        name: result.name,
+        hasFlag: !!result.flag,
+        region: result.region,
+        category: result.category,
+      });
+
+      return result;
     } catch (error) {
       console.error(`[NS API] Failed to fetch card info for ${cardId} S${season}:`, error);
       return null;
@@ -312,10 +348,236 @@ export class NSApiClient {
   }
 
   /**
+   * Fetch a nation's current flag URL
+   * Returns the current flag for active nations, null for ceased nations
+   *
+   * NOTE: This is NOT used for card images. Cards have their own snapshot images
+   * stored in /images/cards/s{season}/ directories.
+   */
+  async fetchNationFlag(nationName: string): Promise<string | null> {
+    try {
+      await this.rateLimit(); // Respect rate limits
+
+      const response = await fetch(
+        `${this.baseUrl}?nation=${encodeURIComponent(nationName)}&q=flag`,
+        {
+          headers: {
+            "User-Agent": this.userAgent,
+          },
+        }
+      );
+
+      // If nation doesn't exist (404) or other error, return null
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log(`[NS API] Nation ${nationName} does not exist (404)`);
+        } else if (response.status === 429) {
+          console.log(`[NS API] Rate limited when fetching ${nationName} flag`);
+        }
+        return null;
+      }
+
+      const xml = await response.text();
+
+      // Check if nation ceased to exist
+      if (xml.includes("Unknown nation")) {
+        console.log(`[NS API] Nation ${nationName} has ceased to exist`);
+        return null;
+      }
+
+      const flagPath = this.extractTag(xml, "FLAG");
+
+      if (!flagPath) {
+        return null;
+      }
+
+      // NS returns full URLs for nation flags
+      const fullUrl = flagPath.startsWith('http') ? flagPath : `https://www.nationstates.net/${flagPath}`;
+      console.log(`[NS API] Successfully fetched current flag for ${nationName}: ${fullUrl}`);
+      return fullUrl;
+    } catch (error) {
+      console.error(`[NS API] Failed to fetch nation flag for ${nationName}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * Rate limit helper (NS API rate limit: 50 requests per 30 seconds)
+   * Using 800ms delay to be more conservative and avoid 429 errors
    */
   private async rateLimit() {
-    await new Promise((resolve) => setTimeout(resolve, 600)); // 600ms between requests
+    await new Promise((resolve) => setTimeout(resolve, 800)); // 800ms between requests
+  }
+
+  /**
+   * Fetch card dump XML for a specific season
+   * Downloads gzipped XML dump from NationStates
+   *
+   * @param season - Season number (1, 2, 3, etc.)
+   * @returns Decompressed XML string
+   */
+  async fetchCardDump(season: number): Promise<string> {
+    const dumpUrl = `https://www.nationstates.net/pages/cardlist_S${season}.xml.gz`;
+    const maxRetries = 3;
+    const timeoutMs = 60000; // 60 second timeout per attempt
+
+    console.log(`[NS API] Fetching card dump for season ${season} from ${dumpUrl}`);
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[NS API] Download attempt ${attempt}/${maxRetries} for season ${season}`);
+
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        const response = await fetch(dumpUrl, {
+          headers: {
+            "User-Agent": this.userAgent,
+            "Accept-Encoding": "gzip",
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const contentLength = response.headers.get("content-length");
+        const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+        console.log(`[NS API] Downloading ${totalBytes ? (totalBytes / 1024 / 1024).toFixed(2) + " MB" : "unknown size"}`);
+
+        // Read response as ArrayBuffer for gzip decompression
+        const arrayBuffer = await response.arrayBuffer();
+        const compressedBytes = new Uint8Array(arrayBuffer);
+
+        console.log(`[NS API] Downloaded ${(compressedBytes.length / 1024 / 1024).toFixed(2)} MB (compressed)`);
+
+        // Decompress gzip using Node.js zlib (requires 'zlib' import)
+        const zlib = await import("zlib");
+        const { promisify } = await import("util");
+        const gunzip = promisify(zlib.gunzip);
+
+        console.log(`[NS API] Decompressing gzip data...`);
+        const decompressed = await gunzip(Buffer.from(compressedBytes));
+        const xmlString = decompressed.toString("utf-8");
+
+        console.log(`[NS API] ✓ Successfully downloaded and decompressed season ${season} card dump (${(xmlString.length / 1024 / 1024).toFixed(2)} MB uncompressed)`);
+        return xmlString;
+
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`[NS API] Attempt ${attempt}/${maxRetries} failed for season ${season}:`, errorMsg);
+
+        if (attempt === maxRetries) {
+          throw new Error(`Failed to fetch card dump for season ${season} after ${maxRetries} attempts: ${errorMsg}`);
+        }
+
+        // Exponential backoff: 2^attempt seconds
+        const delaySeconds = Math.pow(2, attempt);
+        console.log(`[NS API] Retrying in ${delaySeconds} seconds...`);
+        await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000));
+      }
+    }
+
+    throw new Error(`Failed to fetch card dump for season ${season}`);
+  }
+
+  /**
+   * Parse NS card dump XML into array of NSCard objects
+   * Uses streaming approach to handle large XML files (100K+ cards)
+   *
+   * @param xmlData - Raw XML string from card dump
+   * @returns Array of NSCard objects
+   */
+  async parseNSDump(xmlData: string): Promise<NSCard[]> {
+    const cards: NSCard[] = [];
+    let parseErrors = 0;
+
+    console.log(`[NS API] Parsing card dump XML (${(xmlData.length / 1024 / 1024).toFixed(2)} MB)`);
+
+    try {
+      // Extract all CARD elements using regex
+      // Note: This is memory-intensive but faster than stream parsing for our use case
+      const cardMatches = Array.from(xmlData.matchAll(/<CARD>(.*?)<\/CARD>/gs));
+      const totalCards = cardMatches.length;
+
+      console.log(`[NS API] Found ${totalCards} cards in dump`);
+
+      let lastLogPercent = 0;
+
+      for (let i = 0; i < cardMatches.length; i++) {
+        const match = cardMatches[i];
+        const cardXml = match ? match[1] : null;
+
+        if (!cardXml) {
+          parseErrors++;
+          continue;
+        }
+
+        try {
+          // Extract card fields
+          const id = this.extractTag(cardXml, "CARDID");
+          const season = this.extractTag(cardXml, "SEASON");
+          const name = this.extractTag(cardXml, "NAME");
+          const rarity = this.extractTag(cardXml, "CATEGORY");
+          const region = this.extractTag(cardXml, "REGION");
+          const marketValue = this.extractTag(cardXml, "MARKET_VALUE");
+          const flag = this.extractTag(cardXml, "FLAG");
+          const badge = this.extractTag(cardXml, "BADGE");
+          const trophies = this.extractTag(cardXml, "TROPHIES");
+          const slogan = this.extractTag(cardXml, "SLOGAN");
+          const cardCategory = this.extractTag(cardXml, "TYPE");
+
+          // Validate required fields
+          if (!id || !season || !rarity) {
+            parseErrors++;
+            continue;
+          }
+
+          cards.push({
+            id,
+            season: season || "1",
+            name: name || undefined,
+            rarity: this.normalizeRarity(rarity),
+            region: region || undefined,
+            market_value: marketValue || "0.00",
+            flag: flag || undefined,
+            badge: badge || undefined,
+            trophies: trophies || undefined,
+            slogan: slogan || undefined,
+            cardcategory: cardCategory || undefined,
+          });
+
+        } catch (error) {
+          parseErrors++;
+          if (parseErrors <= 10) {
+            console.error(`[NS API] Error parsing card at index ${i}:`, error);
+          }
+        }
+
+        // Progress logging every 10%
+        const currentPercent = Math.floor((i / totalCards) * 100);
+        if (currentPercent >= lastLogPercent + 10) {
+          console.log(`[NS API] Parsing progress: ${currentPercent}% (${i}/${totalCards} cards)`);
+          lastLogPercent = currentPercent;
+        }
+      }
+
+      console.log(`[NS API] ✓ Successfully parsed ${cards.length} cards (${parseErrors} errors skipped)`);
+
+      if (parseErrors > 0) {
+        console.warn(`[NS API] ⚠ Encountered ${parseErrors} parse errors (${((parseErrors / totalCards) * 100).toFixed(2)}% error rate)`);
+      }
+
+      return cards;
+
+    } catch (error) {
+      console.error(`[NS API] Fatal error parsing card dump:`, error);
+      throw new Error(`Failed to parse card dump: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }
 

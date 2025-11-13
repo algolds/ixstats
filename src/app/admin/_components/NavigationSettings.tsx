@@ -15,6 +15,7 @@ export function NavigationSettings() {
     showCardsTab: true,
     showLabsTab: true,
     showIntelligenceTab: false,
+    showMapsTab: true,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -65,7 +66,8 @@ export function NavigationSettings() {
     (navigationSettings.showWikiTab !== localSettings.showWikiTab ||
       navigationSettings.showCardsTab !== localSettings.showCardsTab ||
       navigationSettings.showLabsTab !== localSettings.showLabsTab ||
-      navigationSettings.showIntelligenceTab !== localSettings.showIntelligenceTab);
+      navigationSettings.showIntelligenceTab !== localSettings.showIntelligenceTab ||
+      navigationSettings.showMapsTab !== localSettings.showMapsTab);
 
   if (isLoading) {
     return (
@@ -199,6 +201,30 @@ export function NavigationSettings() {
             id="intelligence-tab"
             checked={localSettings.showIntelligenceTab}
             onCheckedChange={(checked) => handleToggle("showIntelligenceTab", checked)}
+          />
+        </div>
+
+        {/* Maps Tab Setting */}
+        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg border border-orange-500/20 bg-orange-500/10 p-2">
+              {localSettings.showMapsTab ? (
+                <Eye className="h-4 w-4 text-orange-500" />
+              ) : (
+                <EyeOff className="text-muted-foreground h-4 w-4" />
+              )}
+            </div>
+            <div>
+              <Label htmlFor="maps-tab" className="text-sm font-medium">
+                Maps Tab
+              </Label>
+              <p className="text-muted-foreground text-xs">Show/hide the Maps navigation tab</p>
+            </div>
+          </div>
+          <Switch
+            id="maps-tab"
+            checked={localSettings.showMapsTab}
+            onCheckedChange={(checked) => handleToggle("showMapsTab", checked)}
           />
         </div>
 

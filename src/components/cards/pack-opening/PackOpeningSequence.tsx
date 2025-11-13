@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { PackType } from "@prisma/client";
+import type { PackType, CardRarity, CardType } from "@prisma/client";
 import type {
   PackOpeningStage,
   CardInstance,
@@ -57,9 +57,9 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
             id: card.id,
             name: card.name,
             title: card.name,
-            rarity: card.rarity,
-            cardType: card.cardType,
-            artwork: card.artwork,
+            rarity: card.rarity as CardRarity,
+            cardType: card.cardType as CardType,
+            artwork: card.artwork ?? '/default-card-artwork.png',
             season: card.season,
           }));
 

@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  Grid3x3,
   Layers,
   TrendingUp,
   CheckSquare,
@@ -25,46 +24,59 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
-
-// TODO: This will use CardGrid from Agent 1
-function CardGrid({ cards, selectable, onSelectionChange }: {
-  cards: any[];
-  selectable?: boolean;
-  onSelectionChange?: (selected: string[]) => void;
-}) {
-  return (
-    <Card className="glass-hierarchy-child">
-      <CardContent className="flex flex-col items-center justify-center py-12">
-        <Grid3x3 className="mb-4 h-16 w-16 text-muted-foreground" />
-        <p className="mb-2 text-lg font-semibold">CardGrid Component</p>
-        <p className="text-sm text-muted-foreground">
-          This will be the card grid from Agent 1
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Cards: {cards.length}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Selectable: {selectable ? "Yes" : "No"}
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
+import { api } from "~/trpc/react";
+import { CardGrid, CardDetailsModal } from "~/components/cards/display";
+import type { CardInstance } from "~/types/cards-display";
 
 export default function InventoryPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<string>("date");
+  const [sortBy, setSortBy] = useState<string>("acquired");
   const [filterRarity, setFilterRarity] = useState<string>("all");
   const [filterSeason, setFilterSeason] = useState<string>("all");
   const [filterCollection, setFilterCollection] = useState<string>("all");
+  const [selectedCard, setSelectedCard] = useState<CardInstance | null>(null);
 
-  // TODO: Replace with actual API data
-  const totalCards = 0;
-  const totalValue = 0;
-  const duplicateCount = 0;
-  const cards: any[] = [];
+  // Fetch user's cards
+  const { data: ownerships, isLoading } = api.cards.getMyCards.useQuery({
+    sortBy: sortBy as any,
+    filterRarity: filterRarity !== "all" ? (filterRarity as any) : undefined,
+  });
+
+  // Transform ownership data to CardInstance format
+  const cards: CardInstance[] = ownerships?.map((ownership: any) => ({
+    id: ownership.cards.id,
+    title: ownership.cards.title,
+    description: ownership.cards.description || "",
+    artwork: ownership.cards.artwork || "/images/cards/placeholder-nation.png",
+    artworkVariants: ownership.cards.artworkVariants || null,
+    cardType: ownership.cards.cardType,
+    rarity: ownership.cards.rarity,
+    season: ownership.cards.season,
+    nsCardId: ownership.cards.nsCardId || null,
+    nsSeason: ownership.cards.nsSeason || null,
+    nsData: ownership.cards.nsData || null,
+    wikiSource: ownership.cards.wikiSource || null,
+    wikiArticleTitle: ownership.cards.wikiArticleTitle || null,
+    wikiUrl: ownership.cards.wikiUrl || null,
+    countryId: ownership.cards.countryId,
+    stats: ownership.cards.stats || {},
+    marketValue: ownership.cards.marketValue || 0,
+    totalSupply: ownership.cards.totalSupply || 0,
+    level: ownership.cards.level || 1,
+    evolutionStage: ownership.cards.evolutionStage || 0,
+    enhancements: ownership.cards.enhancements || null,
+    createdAt: ownership.cards.createdAt,
+    updatedAt: ownership.cards.updatedAt,
+    lastTrade: ownership.cards.lastTrade || null,
+    country: ownership.cards.country,
+    owners: [], // Not needed for inventory view
+  })) || [];
+
+  const totalCards = cards.length;
+  const totalValue = cards.reduce((sum, card) => sum + card.marketValue, 0);
+  const duplicateCount = 0; // TODO: Calculate actual duplicates
 
   const handleBulkAddToCollection = () => {
     if (selectedCards.length === 0) {
@@ -152,8 +164,18 @@ export default function InventoryPage() {
         </Card>
       </div>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-3">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-400 mx-auto"></div>
+            <p className="text-sm text-muted-foreground">Loading your cards...</p>
+          </div>
+        </div>
+      )}
+
       {/* Bulk actions toolbar */}
-      {selectMode && (
+      {!isLoading && selectMode && (
         <Card className="glass-hierarchy-child">
           <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-4">
             <div className="flex items-center gap-2">
@@ -259,10 +281,9 @@ export default function InventoryPage() {
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent className="glass-hierarchy-interactive">
-                  <SelectItem value="date">Acquisition Date</SelectItem>
+                  <SelectItem value="acquired">Acquisition Date</SelectItem>
                   <SelectItem value="rarity">Rarity</SelectItem>
                   <SelectItem value="value">Market Value</SelectItem>
-                  <SelectItem value="name">Card Name</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -317,10 +338,21 @@ export default function InventoryPage() {
       </Card>
 
       {/* Card grid */}
-      <CardGrid
-        cards={cards}
-        selectable={selectMode}
-        onSelectionChange={setSelectedCards}
+      {!isLoading && (
+        <CardGrid
+          cards={cards}
+          loading={false}
+          onCardClick={(card) => setSelectedCard(card)}
+          cardSize="medium"
+          emptyMessage="No cards in your inventory yet. Import some NS cards or open a pack to get started!"
+        />
+      )}
+
+      {/* Card Details Modal */}
+      <CardDetailsModal
+        card={selectedCard}
+        open={!!selectedCard}
+        onClose={() => setSelectedCard(null)}
       />
     </div>
   );

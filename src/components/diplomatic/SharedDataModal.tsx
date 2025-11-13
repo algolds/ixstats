@@ -24,7 +24,9 @@ import {
   Info,
   Database,
   ArrowRight,
+  CreditCard,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
@@ -548,15 +550,31 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                 findings, cultural programs, and policy documents from the host
                                 nation.
                               </div>
-                              <Button
-                                onClick={() => setActiveTab("all")}
-                                className="w-full"
-                                variant="outline"
-                              >
-                                <Database className="mr-2 h-4 w-4" />
-                                View Shared Data
-                                <ArrowRight className="ml-auto h-4 w-4" />
-                              </Button>
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                  onClick={() => setActiveTab("all")}
+                                  className="w-full"
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <Database className="mr-2 h-4 w-4" />
+                                  View Data
+                                </Button>
+                                {isOwner && (
+                                  <Link
+                                    href={`/vault/market?nation=${encodeURIComponent(embassy.hostCountryId || "")}`}
+                                  >
+                                    <Button
+                                      className="w-full"
+                                      variant="outline"
+                                      size="sm"
+                                    >
+                                      <CreditCard className="mr-2 h-4 w-4" />
+                                      Trade Cards
+                                    </Button>
+                                  </Link>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2 text-xs">
                                 <Lock className="h-3 w-3 text-green-500" />
                                 <span className="text-muted-foreground">
@@ -583,15 +601,31 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                 findings, cultural programs, and policy documents from the guest
                                 nation.
                               </div>
-                              <Button
-                                onClick={() => setActiveTab("all")}
-                                className="w-full"
-                                variant="outline"
-                              >
-                                <Database className="mr-2 h-4 w-4" />
-                                View Shared Data
-                                <ArrowRight className="ml-auto h-4 w-4" />
-                              </Button>
+                              <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                  onClick={() => setActiveTab("all")}
+                                  className="w-full"
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  <Database className="mr-2 h-4 w-4" />
+                                  View Data
+                                </Button>
+                                {!isOwner && (
+                                  <Link
+                                    href={`/vault/market?nation=${encodeURIComponent(embassy.guestCountryId || "")}`}
+                                  >
+                                    <Button
+                                      className="w-full"
+                                      variant="outline"
+                                      size="sm"
+                                    >
+                                      <CreditCard className="mr-2 h-4 w-4" />
+                                      Trade Cards
+                                    </Button>
+                                  </Link>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2 text-xs">
                                 <Lock className="h-3 w-3 text-green-500" />
                                 <span className="text-muted-foreground">

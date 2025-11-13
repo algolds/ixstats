@@ -348,27 +348,54 @@ export const crisisEventsRouter = createTRPCRouter({
       });
 
       // 💰 Award IxCredits for crisis response (if user authenticated)
-      // Only award when transitioning from pending to in_progress (taking action)
       let creditsEarned = 0;
-      if (ctx.auth?.userId && event.responseStatus === "pending" && input.responseStatus === "in_progress") {
+      if (ctx.auth?.userId) {
         try {
-          const creditReward = 5; // 5 IxC per crisis response
+          let creditReward = 0;
+          let rewardSource = "";
 
-          const earnResult = await vaultService.earnCredits(
-            ctx.auth.userId,
-            creditReward,
-            "EARN_ACTIVE",
-            "CRISIS_RESPONSE",
-            ctx.db,
-            {
-              crisisId: event.id,
-              crisisType: event.type,
-              crisisSeverity: event.severity,
+          // Award credits based on status transitions
+          if (event.responseStatus === "pending" && input.responseStatus === "in_progress") {
+            // Taking action: 5 IxC base
+            creditReward = 5;
+            rewardSource = "crisis_response_action";
+          } else if (event.responseStatus === "in_progress" && input.responseStatus === "resolved") {
+            // Successful resolution: 10-20 IxC based on severity
+            const severityBonus = {
+              low: 10,
+              medium: 15,
+              high: 20,
+              critical: 25,
+            };
+            creditReward = severityBonus[event.severity as keyof typeof severityBonus] || 10;
+            rewardSource = "crisis_response_success";
+          } else if (event.responseStatus === "in_progress" && input.responseStatus === "monitoring") {
+            // Contained/mitigated: 8 IxC neutral response
+            creditReward = 8;
+            rewardSource = "crisis_response_contained";
+          }
+
+          if (creditReward > 0) {
+            const earnResult = await vaultService.earnCredits(
+              ctx.auth.userId,
+              creditReward,
+              "EARN_ACTIVE",
+              rewardSource,
+              ctx.db,
+              {
+                crisisId: event.id,
+                crisisType: event.type,
+                crisisSeverity: event.severity,
+                statusTransition: `${event.responseStatus} -> ${input.responseStatus}`,
+              }
+            );
+
+            if (earnResult.success) {
+              creditsEarned = creditReward;
+              console.log(
+                `[Crisis Events] Awarded ${creditReward} IxC to ${ctx.auth.userId} for ${rewardSource}`
+              );
             }
-          );
-
-          if (earnResult.success) {
-            creditsEarned = creditReward;
           }
         } catch (error) {
           // Don't block crisis response if earning fails

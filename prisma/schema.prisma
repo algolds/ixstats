@@ -435,6 +435,9 @@ model User {
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
   vault               MyVault?
   nsVerifications     NSVerification[]
+  craftingHistory     CraftingHistory[]
+  tradesInitiated     TradeOffer[]             @relation("TradeInitiator")
+  tradesReceived      TradeOffer[]             @relation("TradeRecipient")
 
   @@index([clerkUserId])
   @@index([countryId])
@@ -4425,4 +4428,80 @@ enum VaultTransactionType {
   SPEND_BOOST
   SPEND_COSMETIC
   ADMIN_ADJUSTMENT
+}
+
+// ============================================================================
+// IxCards Phase 3: Crafting & Trading System Models
+// ============================================================================
+
+/// Crafting Recipe Model
+/// Defines card crafting/fusion/evolution recipes
+model CraftingRecipe {
+  id              String            @id @default(cuid())
+  name            String
+  description     String?
+  recipeType      String            // "FUSION" | "EVOLUTION"
+  requiredCardIds Json              // Array of card IDs or criteria
+  requiredCount   Int               @default(1)
+  resultCardId    String?           // Specific result card (null = random by rarity)
+  resultRarity    String?           // If random result, rarity constraint
+  ixCreditsCost   Int               @default(0)
+  successRate     Float             @default(1.0) // 0.0-1.0 (1.0 = 100%)
+  minLevel        Int               @default(1)
+  collectorXPGain Int               @default(0)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  craftingHistory CraftingHistory[]
+
+  @@index([recipeType])
+  @@index([resultRarity])
+  @@index([isActive])
+}
+
+/// Crafting History Model
+/// Tracks user crafting attempts and results
+model CraftingHistory {
+  id              String         @id @default(cuid())
+  userId          String
+  recipeId        String
+  materialsUsed   Json           // Array of CardOwnership IDs consumed
+  success         Boolean
+  resultCardId    String?        // CardOwnership ID created (if successful)
+  ixCreditsSpent  Int
+  collectorXPGain Int
+  craftedAt       DateTime       @default(now())
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe          CraftingRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([userId, craftedAt])
+  @@index([recipeId])
+  @@index([success])
+}
+
+/// Trade Offer Model
+/// P2P card trading system
+model TradeOffer {
+  id                 String    @id @default(cuid())
+  initiatorId        String
+  recipientId        String
+  initiatorCardIds   Json      // Array of CardOwnership IDs
+  recipientCardIds   Json      // Array of CardOwnership IDs
+  initiatorCredits   Int       @default(0)
+  recipientCredits   Int       @default(0)
+  status             String    // "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED" | "EXPIRED" | "COUNTERED"
+  message            String?
+  counterOfferFromId String?   // Previous offer ID if this is a counter
+  expiresAt          DateTime
+  respondedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  initiator          User      @relation("TradeInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  recipient          User      @relation("TradeRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([initiatorId])
+  @@index([recipientId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([createdAt])
 }

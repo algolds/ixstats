@@ -186,7 +186,11 @@ export class AuctionService {
       include: {
         CardOwnership: {
           include: {
-            cards: true,
+            cards: {
+              include: {
+                country: true,
+              },
+            },
           },
         },
       },
@@ -353,7 +357,11 @@ export class AuctionService {
       include: {
         CardOwnership: {
           include: {
-            cards: true,
+            cards: {
+              include: {
+                country: true,
+              },
+            },
           },
         },
       },
@@ -449,6 +457,39 @@ export class AuctionService {
           }
         );
 
+        // 2.5. Award nation card royalties (2% of sale price to nation owner)
+        if (auction.CardOwnership?.cards?.cardType === "NATION" && auction.CardOwnership?.cards?.countryId) {
+          const royaltyAmount = Math.round(buyoutPrice * 0.02 * 100) / 100; // 2% royalty
+
+          // Find the nation owner
+          const nationOwner = await (tx as PrismaClient).user.findFirst({
+            where: { countryId: auction.CardOwnership.cards.countryId },
+          });
+
+          if (nationOwner && nationOwner.clerkUserId !== auction.sellerId && nationOwner.clerkUserId !== params.userId) {
+            // Award royalty to nation owner (only if they're not the buyer or seller)
+            await vaultService.earnCredits(
+              nationOwner.clerkUserId,
+              royaltyAmount,
+              "EARN_PASSIVE",
+              "nation_card_royalty",
+              tx as PrismaClient,
+              {
+                auctionId: params.auctionId,
+                cardId: auction.CardOwnership.cards.id,
+                countryId: auction.CardOwnership.cards.countryId,
+                salePrice: buyoutPrice,
+                royaltyRate: 0.02,
+              }
+            );
+
+            console.log(
+              `[Auction Service] Awarded ${royaltyAmount} IxC royalty to nation owner ${nationOwner.clerkUserId} ` +
+              `for ${auction.CardOwnership.cards.country?.name || 'nation'} card sale`
+            );
+          }
+        }
+
         // 3. Transfer card ownership - change ownerId
         await tx.cardOwnership.update({
           where: {
@@ -516,7 +557,11 @@ export class AuctionService {
       include: {
         CardOwnership: {
           include: {
-            cards: true,
+            cards: {
+              include: {
+                country: true,
+              },
+            },
           },
         },
       },
@@ -554,6 +599,39 @@ export class AuctionService {
               grossSale: finalPrice,
             }
           );
+
+          // Award nation card royalties (2% of sale price to nation owner)
+          if (auction.CardOwnership?.cards?.cardType === "NATION" && auction.CardOwnership?.cards?.countryId) {
+            const royaltyAmount = Math.round(finalPrice * 0.02 * 100) / 100; // 2% royalty
+
+            // Find the nation owner
+            const nationOwner = await (tx as PrismaClient).user.findFirst({
+              where: { countryId: auction.CardOwnership.cards.countryId },
+            });
+
+            if (nationOwner && nationOwner.clerkUserId !== auction.sellerId && nationOwner.clerkUserId !== auction.currentBidderId) {
+              // Award royalty to nation owner (only if they're not the buyer or seller)
+              await vaultService.earnCredits(
+                nationOwner.clerkUserId,
+                royaltyAmount,
+                "EARN_PASSIVE",
+                "nation_card_royalty",
+                tx as PrismaClient,
+                {
+                  auctionId,
+                  cardId: auction.CardOwnership.cards.id,
+                  countryId: auction.CardOwnership.cards.countryId,
+                  salePrice: finalPrice,
+                  royaltyRate: 0.02,
+                }
+              );
+
+              console.log(
+                `[Auction Service] Awarded ${royaltyAmount} IxC royalty to nation owner ${nationOwner.clerkUserId} ` +
+                `for ${auction.CardOwnership.cards.country?.name || 'nation'} card sale`
+              );
+            }
+          }
 
           // Transfer card ownership - change ownerId
           await tx.cardOwnership.update({

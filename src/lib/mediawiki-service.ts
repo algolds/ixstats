@@ -1852,6 +1852,144 @@ export class IxnayWikiService {
   }
 
   /**
+   * Bulk fetch article data for multiple titles (efficient for lore card generation)
+   * Fetches extracts, pageimages, categories, links, and revisions for multiple articles in one API call
+   */
+  async fetchArticlesDataBulk(
+    titles: string[]
+  ): Promise<Map<string, {
+    title: string;
+    extract: string;
+    text: string;
+    image?: string;
+    categories: Array<{ title: string }>;
+    links: Array<{ title: string }>;
+    inboundLinks: number;
+    lastModified: Date;
+    url: string;
+  } | null>> {
+    const results = new Map<string, any>();
+
+    if (titles.length === 0) return results;
+
+    try {
+      console.log(`[MediaWiki] Bulk fetching data for ${titles.length} articles from ${this.wikiSource}`);
+
+      // MediaWiki API supports up to 50 titles per request
+      const BATCH_SIZE = 50;
+      const batches: string[][] = [];
+
+      for (let i = 0; i < titles.length; i += BATCH_SIZE) {
+        batches.push(titles.slice(i, i + BATCH_SIZE));
+      }
+
+      for (const batch of batches) {
+        // Fetch article content with infobox and metadata
+        const url = new URL(this.API_BASE_URL);
+        url.searchParams.set("action", "query");
+        url.searchParams.set("format", "json");
+        url.searchParams.set("titles", batch.join("|"));
+        url.searchParams.set("prop", "extracts|pageimages|info|categories|links|revisions");
+        url.searchParams.set("exintro", "1"); // Get intro only for summary
+        url.searchParams.set("explaintext", "1"); // Plain text
+        url.searchParams.set("piprop", "original"); // Get original image
+        url.searchParams.set("inprop", "url");
+        url.searchParams.set("cllimit", "50"); // Get up to 50 categories
+        url.searchParams.set("pllimit", "500"); // Get up to 500 links
+        url.searchParams.set("rvprop", "content|timestamp"); // Get full wikitext and timestamp
+
+        const response = await throttledRequest(async () => {
+          return await fetch(url.toString(), {
+            headers: { "User-Agent": this.USER_AGENT },
+            cache: "no-store",
+          });
+        });
+
+        if (!response.ok) {
+          console.error(`[MediaWiki] Bulk fetch API error: ${response.status}`);
+          // Mark all articles in this batch as failed
+          for (const title of batch) {
+            results.set(title, null);
+          }
+          continue;
+        }
+
+        const data = await response.json();
+        const pages = data.query?.pages;
+        if (!pages) {
+          console.error(`[MediaWiki] No pages in bulk fetch response`);
+          for (const title of batch) {
+            results.set(title, null);
+          }
+          continue;
+        }
+
+        // Process each page in the response
+        for (const pageId in pages) {
+          const page = pages[pageId];
+          if (!page || page.missing) {
+            console.warn(`[MediaWiki] Page missing: ${page?.title ?? "unknown"}`);
+            if (page?.title) {
+              results.set(page.title, null);
+            }
+            continue;
+          }
+
+          // Get backlinks count (inbound links) - fetch individually for each page
+          let inboundLinks = 0;
+          try {
+            const backlinksUrl = new URL(this.API_BASE_URL);
+            backlinksUrl.searchParams.set("action", "query");
+            backlinksUrl.searchParams.set("format", "json");
+            backlinksUrl.searchParams.set("list", "backlinks");
+            backlinksUrl.searchParams.set("bltitle", page.title);
+            backlinksUrl.searchParams.set("bllimit", "500");
+
+            const backlinksResponse = await throttledRequest(async () => {
+              return await fetch(backlinksUrl.toString(), {
+                headers: { "User-Agent": this.USER_AGENT },
+                cache: "no-store",
+              });
+            });
+
+            if (backlinksResponse.ok) {
+              const backlinksData = await backlinksResponse.json();
+              inboundLinks = backlinksData.query?.backlinks?.length || 0;
+            }
+          } catch (error) {
+            console.error(`[MediaWiki] Error fetching backlinks for ${page.title}:`, error);
+            // Continue with inboundLinks = 0
+          }
+
+          const articleData = {
+            title: page.title,
+            extract: page.extract || "",
+            text: page.revisions?.[0]?.["*"] || "",
+            image: page.original?.source,
+            categories: page.categories || [],
+            links: page.links || [],
+            inboundLinks,
+            lastModified: page.revisions?.[0]?.timestamp
+              ? new Date(page.revisions[0].timestamp)
+              : new Date(),
+            url: page.fullurl || `https://${this.wikiSource === "ixwiki" ? "ixwiki.com" : "iiwiki.us"}/wiki/${encodeURIComponent(page.title)}`,
+          };
+
+          results.set(page.title, articleData);
+          console.log(`[MediaWiki] ✓ Bulk fetched: ${page.title} (${articleData.text.length} chars, ${inboundLinks} inbound links)`);
+        }
+      }
+
+      console.log(`[MediaWiki] Bulk fetch complete: ${results.size} articles processed`);
+      return results;
+    } catch (error) {
+      console.error(`[MediaWiki] Error in bulk article fetch:`, error);
+      // Return partial results
+      return results;
+    }
+  }
+
+  /**
    * Get country wiki URL
    */
   getCountryWikiUrl(countryName: string): string {

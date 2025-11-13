@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"id": "rect1", "ixmap-subgroup": null, "fill": "#d5ffff"}, "geometry": {"type": "Polygon", "coordinates": [[[-153.91, 85], [-153.91, -85]]]}}]}

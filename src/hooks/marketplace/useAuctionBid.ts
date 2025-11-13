@@ -45,9 +45,23 @@ export function useAuctionBid(): UseAuctionBidReturn {
 
       setLastBid(optimisticBid);
 
-      // TODO: Replace with actual tRPC mutation when Agent 6 implements
-      // const result = await api.auctions.placeBid.mutate(input);
-      // setLastBid(result);
+      // TODO: Wire up tRPC mutation
+      // const result = await api.cardMarket.placeBid.mutate({
+      //   auctionId: input.auctionId,
+      //   amount: input.amount,
+      // });
+
+      // Transform result to Bid format
+      // const bid: Bid = {
+      //   id: result.bidId,
+      //   auctionId: input.auctionId,
+      //   bidderId: result.bidderId,
+      //   bidderName: result.bidderName,
+      //   amount: input.amount,
+      //   timestamp: result.timestamp,
+      //   isAutoBid: false,
+      // };
+      // setLastBid(bid);
 
       // Mock success for now
       await new Promise((resolve) => setTimeout(resolve, 500));

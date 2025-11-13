@@ -154,7 +154,7 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
     return (
       <Dialog open={open} onOpenChange={onClose}>
         <DialogOverlay />
-        <DialogContent className="max-w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-2xl w-[98vw] sm:w-[95vw] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="glass-modal z-[100] max-w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-2xl w-[98vw] sm:w-[95vw] max-h-[90vh] overflow-y-auto">
           <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
             {/* Header */}
             <div>

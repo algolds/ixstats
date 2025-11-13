@@ -56,11 +56,15 @@ import { systemRouter } from "./routers/system";
 import { cardPacksRouter } from "./routers/card-packs";
 import { vaultRouter } from "./routers/vault";
 import { cardsRouter } from "./routers/cards";
+import { loreCardsRouter } from "./routers/lore-cards";
 // import { nsIntegrationRouter } from "./routers/ns-integration"; // DISABLED: Missing dependencies, replaced by nsImport
 import { nsImportRouter } from "./routers/ns-import";
 import { cardMarketRouter } from "./routers/card-market";
+import { cardAnalyticsRouter } from "./routers/card-analytics";
 import { autosaveHistoryRouter } from "./routers/autosaveHistory";
 import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
+import { craftingRouter } from "./routers/crafting";
+import { tradingRouter } from "./routers/trading";
 
 /**
  * This is the primary router for your server.
@@ -123,11 +127,15 @@ export const appRouter = createTRPCRouter({
   cardPacks: cardPacksRouter, // IxCards pack purchase and opening system (Phase 1 - Card Packs)
   vault: vaultRouter, // MyVault IxCredits economy system (Phase 1 - MyVault)
   cards: cardsRouter, // IxCards trading card system (Phase 1 - Card Service & Router)
+  loreCards: loreCardsRouter, // Wiki lore card generation and user request system (Phase 4 - Advanced Features)
   // nsIntegration: nsIntegrationRouter, // DISABLED: Missing dependencies, replaced by nsImport
   nsImport: nsImportRouter, // NationStates deck import for IxCards (Phase 2 - NS Deck Import)
   cardMarket: cardMarketRouter, // Card marketplace and auction system (Phase 2 - Auction Logic & Market Services)
+  cardAnalytics: cardAnalyticsRouter, // Card economy analytics for Intelligence dashboard (Phase 5-6 - Analytics Integration)
   autosaveHistory: autosaveHistoryRouter, // Autosave history for country builders (read-only)
   autosaveMonitoring: autosaveMonitoringRouter, // Autosave system monitoring and analytics (admin-only)
+  crafting: craftingRouter, // Card crafting/fusion/evolution system (Phase 3 - Crafting System)
+  trading: tradingRouter, // P2P card trading system (Phase 3 - Trading System)
 });
 
 // export type definition of API

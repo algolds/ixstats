@@ -172,6 +172,69 @@ export const cardsRouter = createTRPCRouter({
     }),
 
   /**
+   * Get another user's card inventory (for trading/viewing collections)
+   * Protected endpoint - requires authentication
+   */
+  getUserCards: protectedProcedure
+    .input(
+      z.object({
+        userId: z.string().min(1),
+        sortBy: z.enum(["rarity", "acquired", "value"]).optional().default("acquired"),
+        filterRarity: z.string().optional(),
+        limit: z.number().int().min(1).max(100).optional().default(50),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        // Validate and cast filterRarity enum if provided
+        let filterRarity: CardRarity | undefined;
+        if (input.filterRarity) {
+          if (Object.values(CardRarity).includes(input.filterRarity as CardRarity)) {
+            filterRarity = input.filterRarity as CardRarity;
+          } else {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Invalid rarity filter: ${input.filterRarity}`,
+            });
+          }
+        }
+
+        // Get user's cards (respecting limit)
+        const ownerships = await ctx.db.cardOwnership.findMany({
+          where: {
+            ownerId: input.userId,
+            ...(filterRarity && {
+              cards: {
+                rarity: filterRarity,
+              },
+            }),
+          },
+          include: {
+            cards: true,
+          },
+          orderBy:
+            input.sortBy === "rarity"
+              ? { cards: { rarity: "desc" } }
+              : input.sortBy === "value"
+              ? { cards: { marketValue: "desc" } }
+              : { acquiredAt: "desc" },
+          take: input.limit,
+        });
+
+        return ownerships;
+      } catch (error) {
+        console.error("[CARDS_ROUTER] Error in getUserCards:", error);
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch user cards",
+        });
+      }
+    }),
+
+  /**
    * Get card statistics (supply, market value, recent trades)
    * Admin-only endpoint
    */

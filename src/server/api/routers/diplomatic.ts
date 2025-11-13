@@ -605,10 +605,44 @@ export const diplomaticRouter = createTRPCRouter({
         // Don't fail the embassy creation if notifications fail
       }
 
+      // 💰 Award IxCredits for embassy establishment
+      let creditsEarned = 0;
+      if (ctx.auth?.userId) {
+        try {
+          const creditReward = 15; // 15 IxC for establishing an embassy
+
+          const earnResult = await vaultService.earnCredits(
+            ctx.auth.userId,
+            creditReward,
+            "EARN_ACTIVE",
+            "embassy_established",
+            ctx.db,
+            {
+              embassyId: embassy.id,
+              embassyName: input.name,
+              hostCountryId: input.hostCountryId,
+              guestCountryId: input.guestCountryId,
+              hostCountryName,
+              guestCountryName,
+            }
+          );
+
+          if (earnResult.success) {
+            creditsEarned = creditReward;
+            console.log(
+              `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for embassy establishment`
+            );
+          }
+        } catch (error) {
+          console.error("[Diplomatic] Failed to award embassy establishment credits:", error);
+        }
+      }
+
       return {
         ...embassy,
         hostCountryName,
         guestCountryName,
+        creditsEarned,
       };
     }),
 
@@ -1135,7 +1169,39 @@ export const diplomaticRouter = createTRPCRouter({
         }
       }
 
-      return exchange;
+      // 💰 Award IxCredits for cultural exchange creation
+      let creditsEarned = 0;
+      if (ctx.auth?.userId) {
+        try {
+          const creditReward = 12; // 12 IxC for organizing cultural exchange
+
+          const earnResult = await vaultService.earnCredits(
+            ctx.auth.userId,
+            creditReward,
+            "EARN_ACTIVE",
+            "cultural_exchange_created",
+            ctx.db,
+            {
+              exchangeId: exchange.id,
+              exchangeTitle: input.title,
+              exchangeType: input.type,
+              hostCountryId: input.hostCountryId,
+              participantCountryId: input.participantCountryId,
+            }
+          );
+
+          if (earnResult.success) {
+            creditsEarned = creditReward;
+            console.log(
+              `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for cultural exchange creation`
+            );
+          }
+        } catch (error) {
+          console.error("[Diplomatic] Failed to award cultural exchange credits:", error);
+        }
+      }
+
+      return { ...exchange, creditsEarned };
     }),
 
   joinCulturalExchange: protectedProcedure
@@ -1731,6 +1797,45 @@ export const diplomaticRouter = createTRPCRouter({
         },
       });
 
+      // Award IxCredits based on mission type (only if successful)
+      let creditsEarned = 0;
+      if (success && ctx.user?.id) {
+        // Determine credits based on mission type
+        const creditRewards: Record<string, number> = {
+          cultural_outreach: 5,
+          trade_negotiation: 8,
+          security_cooperation: 10,
+          intelligence_gathering: 10,
+          research_collaboration: 15,
+        };
+
+        creditsEarned = creditRewards[mission.type] || 5;
+
+        // Award credits to user
+        const creditResult = await vaultService.earnCredits(
+          ctx.user.id,
+          creditsEarned,
+          "EARN_ACTIVE",
+          "diplomatic_mission",
+          ctx.db,
+          {
+            missionId: mission.id,
+            missionType: mission.type,
+            missionName: mission.name,
+            embassyId: mission.embassyId,
+            partnerCountry: mission.embassy.hostCountryId,
+            duration: mission.duration,
+            difficulty: mission.difficulty,
+          }
+        );
+
+        if (!creditResult.success) {
+          console.warn(`[Diplomatic] Failed to award credits for mission ${mission.id}:`, creditResult.message);
+        } else {
+          console.log(`[Diplomatic] Awarded ${creditsEarned} IxC to user ${ctx.user.id} for completing mission ${mission.id}`);
+        }
+      }
+
       // Boost linked cultural exchange if mission successful and cultural_outreach type
       let culturalExchangeBoost = null;
       if (success && mission.type === "cultural_outreach" && mission.culturalExchange) {
@@ -1783,8 +1888,9 @@ export const diplomaticRouter = createTRPCRouter({
 
       // 🔔 Notify country about mission completion
       try {
+        const creditsMessage = creditsEarned > 0 ? `, +${creditsEarned} IxC` : "";
         const notificationMessage = success
-          ? `${mission.name} at ${mission.embassy.name} has completed successfully. Rewards: +${experienceGained} XP, +${influenceGained.toFixed(0)} influence${culturalExchangeBoost ? `. Cultural exchange "${culturalExchangeBoost.exchangeTitle}" boosted by +${culturalExchangeBoost.culturalImpactBoost} cultural impact!` : ""}`
+          ? `${mission.name} at ${mission.embassy.name} has completed successfully. Rewards: +${experienceGained} XP, +${influenceGained.toFixed(0)} influence${creditsMessage}${culturalExchangeBoost ? `. Cultural exchange "${culturalExchangeBoost.exchangeTitle}" boosted by +${culturalExchangeBoost.culturalImpactBoost} cultural impact!` : ""}`
           : `${mission.name} at ${mission.embassy.name} has failed. Better luck next time!`;
 
         await notificationAPI.create({
@@ -1801,48 +1907,16 @@ export const diplomaticRouter = createTRPCRouter({
             missionId: mission.id,
             embassyId: mission.embassyId,
             success,
-            rewards: { experience: experienceGained, influence: influenceGained },
+            rewards: {
+              experience: experienceGained,
+              influence: influenceGained,
+              credits: creditsEarned,
+            },
             culturalExchangeBoost,
           },
         });
       } catch (error) {
         console.error("[Diplomatic] Failed to send mission completion notification:", error);
-      }
-
-      // 💰 Award IxCredits for mission completion (if successful and user authenticated)
-      let creditsEarned = 0;
-      if (success && ctx.auth?.userId) {
-        try {
-          // Calculate reward based on difficulty
-          const difficultyRewards: Record<string, number> = {
-            easy: 3,
-            medium: 5,
-            hard: 10,
-            extreme: 15,
-          };
-          const creditReward = difficultyRewards[mission.difficulty.toLowerCase()] || 5;
-
-          const earnResult = await vaultService.earnCredits(
-            ctx.auth.userId,
-            creditReward,
-            "EARN_ACTIVE",
-            "MISSION_COMPLETE",
-            ctx.db,
-            {
-              missionId: mission.id,
-              missionType: mission.type,
-              missionDifficulty: mission.difficulty,
-              embassyId: mission.embassyId,
-            }
-          );
-
-          if (earnResult.success) {
-            creditsEarned = creditReward;
-          }
-        } catch (error) {
-          // Don't block mission completion if earning fails
-          console.error("[Diplomatic] Failed to award mission credits:", error);
-        }
       }
 
       return {

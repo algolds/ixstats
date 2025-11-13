@@ -1038,7 +1038,7 @@ export const adminRouter = createTRPCRouter({
       const settings = await ctx.db.systemConfig.findMany({
         where: {
           key: {
-            in: ["showWikiTab", "showCardsTab", "showLabsTab", "showIntelligenceTab"],
+            in: ["showWikiTab", "showCardsTab", "showLabsTab", "showIntelligenceTab", "showMapsTab"],
           },
         },
       });
@@ -1056,6 +1056,7 @@ export const adminRouter = createTRPCRouter({
         showCardsTab: settingsMap.showCardsTab ?? true, // Default to true
         showLabsTab: settingsMap.showLabsTab ?? true, // Default to true
         showIntelligenceTab: settingsMap.showIntelligenceTab ?? false, // Default to hidden
+        showMapsTab: settingsMap.showMapsTab ?? true, // Default to true
       };
     } catch (error) {
       console.error("Failed to get navigation settings:", error);
@@ -1065,6 +1066,7 @@ export const adminRouter = createTRPCRouter({
         showCardsTab: true,
         showLabsTab: true,
         showIntelligenceTab: false,
+        showMapsTab: true,
       };
     }
   }),
@@ -1077,6 +1079,7 @@ export const adminRouter = createTRPCRouter({
         showCardsTab: z.boolean(),
         showLabsTab: z.boolean(),
         showIntelligenceTab: z.boolean(),
+        showMapsTab: z.boolean(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1086,6 +1089,7 @@ export const adminRouter = createTRPCRouter({
           { key: "showCardsTab", value: input.showCardsTab.toString() },
           { key: "showLabsTab", value: input.showLabsTab.toString() },
           { key: "showIntelligenceTab", value: input.showIntelligenceTab.toString() },
+          { key: "showMapsTab", value: input.showMapsTab.toString() },
         ];
 
         for (const config of configUpdates) {

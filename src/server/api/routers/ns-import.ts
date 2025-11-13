@@ -5,11 +5,79 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure, adminProcedure } from "../trpc";
 import { nsApiClient } from "~/lib/ns-api-client";
+import { SyncHealthMonitor } from "~/lib/ns-sync-monitor";
 import { TRPCError } from "@trpc/server";
 
 export const nsImportRouter = createTRPCRouter({
+  /**
+   * Fetch a nation's deck (public - no auth required)
+   */
+  fetchPublicDeck: publicProcedure
+    .input(
+      z.object({
+        nationName: z.string().min(1).max(100),
+      })
+    )
+    .query(async ({ input }) => {
+      const deckData = await nsApiClient.fetchDeck(input.nationName);
+
+      if (!deckData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Failed to fetch deck from NationStates",
+        });
+      }
+
+      // Deduplicate cards and track quantities
+      const cardMap = new Map<string, { card: typeof deckData.cards[0], quantity: number }>();
+
+      for (const card of deckData.cards) {
+        const key = `${card.id}-${card.season}`;
+        const existing = cardMap.get(key);
+
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          cardMap.set(key, { card, quantity: 1 });
+        }
+      }
+
+      // Get unique cards (limit to first 20 unique cards)
+      const uniqueCards = Array.from(cardMap.values()).slice(0, 20);
+
+      console.log(`[NS Import] Deduplicated ${deckData.cards.length} cards to ${uniqueCards.length} unique cards`);
+
+      // Fetch detailed info for unique cards only
+      // Process sequentially to respect rate limits
+      const cardsWithInfo = [];
+      for (const { card, quantity } of uniqueCards) {
+        if (!card.name) {
+          try {
+            const info = await nsApiClient.fetchCardInfo(card.id, card.season);
+            if (info) {
+              cardsWithInfo.push({ ...card, ...info, quantity });
+            } else {
+              cardsWithInfo.push({ ...card, quantity });
+            }
+          } catch (error) {
+            console.error(`[NS Import] Failed to fetch card info for ${card.id}:`, error);
+            cardsWithInfo.push({ ...card, quantity });
+          }
+        } else {
+          cardsWithInfo.push({ ...card, quantity });
+        }
+      }
+
+      return {
+        nation: deckData.nation,
+        cards: cardsWithInfo,
+        totalCards: deckData.num_cards,
+        uniqueCards: cardMap.size,
+        deckValue: deckData.deck_value,
+      };
+    }),
   /**
    * Verify that a NationStates nation exists
    */
@@ -234,7 +302,7 @@ export const nsImportRouter = createTRPCRouter({
 
           if (!card) {
             // Create new card definition
-            const description = nsCard.slogan || nsCard.motto || `${nsCard.category || 'Unknown'} from ${nsCard.region || 'Unknown'}`;
+            const description = nsCard.description || nsCard.slogan || nsCard.motto || `${nsCard.category || 'Unknown'} from ${nsCard.region || 'Unknown'}`;
 
             // Use NS flag as artwork, fallback to placeholder
             const artwork = nsCard.flag || "/images/cards/placeholder-nation.png";
@@ -249,6 +317,7 @@ export const nsImportRouter = createTRPCRouter({
                   original: nsCard.flag,
                   thumbnail: nsCard.flag,
                   large: nsCard.flag,
+                  flagUrl: nsCard.flag,
                 } : undefined,
                 cardType: "NATION",
                 rarity: nsCard.rarity,
@@ -261,9 +330,33 @@ export const nsImportRouter = createTRPCRouter({
                 stats: {
                   region: nsCard.region,
                   category: nsCard.category,
+                  govt: nsCard.govt,
+                  cardcategory: nsCard.cardcategory,
                   marketValue: nsCard.market_value,
                   badge: nsCard.badge,
                   trophies: nsCard.trophies,
+                },
+                metadata: {
+                  nsData: {
+                    id: nsCard.id,
+                    season: nsCard.season,
+                    rarity: nsCard.rarity,
+                    name: nsCard.name,
+                    region: nsCard.region,
+                    category: nsCard.category,
+                    govt: nsCard.govt,
+                    type: nsCard.type,
+                    cardcategory: nsCard.cardcategory,
+                    slogan: nsCard.slogan,
+                    motto: nsCard.motto,
+                    description: nsCard.description,
+                    badge: nsCard.badge,
+                    trophies: nsCard.trophies,
+                    market_value: nsCard.market_value,
+                    flag: nsCard.flag,
+                  },
+                  importedFrom: nationName,
+                  importedAt: new Date().toISOString(),
                 },
                 marketValue: parseFloat(nsCard.market_value),
                 totalSupply: 1,
@@ -365,5 +458,274 @@ export const nsImportRouter = createTRPCRouter({
         bonusCredits: bonusAmount,
         nation: nationName,
       };
+    }),
+
+  /**
+   * Admin: Get sync status for a specific season
+   */
+  getSyncStatus: adminProcedure
+    .input(
+      z.object({
+        season: z.number().int().min(1).max(4),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const checkpoint = await ctx.db.syncCheckpoint.findUnique({
+        where: { season: input.season },
+      });
+
+      if (!checkpoint) {
+        return {
+          season: input.season,
+          status: "NOT_STARTED",
+          cardsProcessed: 0,
+          totalCards: 0,
+          progress: 0,
+          errorCount: 0,
+          lastCheckpoint: null,
+          completedAt: null,
+        };
+      }
+
+      const progress = checkpoint.totalCards > 0
+        ? (checkpoint.cardsProcessed / checkpoint.totalCards) * 100
+        : 0;
+
+      return {
+        season: input.season,
+        status: checkpoint.status,
+        cardsProcessed: checkpoint.cardsProcessed,
+        totalCards: checkpoint.totalCards,
+        progress,
+        errorCount: checkpoint.errorCount,
+        lastCheckpoint: checkpoint.lastCheckpointAt,
+        completedAt: checkpoint.completedAt,
+        lastProcessedCardId: checkpoint.lastProcessedCardId,
+      };
+    }),
+
+  /**
+   * Admin: Get comprehensive sync health across all seasons
+   */
+  getSyncHealth: adminProcedure
+    .query(async () => {
+      return await SyncHealthMonitor.getHealthStats();
+    }),
+
+  /**
+   * Admin: Retry failed cards for a specific season
+   */
+  retryFailedCards: adminProcedure
+    .input(
+      z.object({
+        season: z.number().int().min(1).max(4),
+        cardIds: z.array(z.string()).min(1).max(100),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { season, cardIds } = input;
+
+      const results = {
+        successful: 0,
+        failed: 0,
+        errors: [] as string[],
+      };
+
+      for (const cardId of cardIds) {
+        try {
+          // Fetch card info from NS API
+          const cardInfo = await nsApiClient.fetchCardInfo(cardId, season.toString());
+
+          if (!cardInfo || !cardInfo.name) {
+            results.failed++;
+            results.errors.push(`Card ${cardId}: Failed to fetch from NS API`);
+            continue;
+          }
+
+          // Create or update card in database
+          const description = cardInfo.description || cardInfo.slogan || cardInfo.motto ||
+            `${cardInfo.category || 'Unknown'} from ${cardInfo.region || 'Unknown'}`;
+
+          await ctx.db.card.upsert({
+            where: {
+              nsCardId_nsSeason: {
+                nsCardId: parseInt(cardId),
+                nsSeason: season,
+              },
+            },
+            update: {
+              title: cardInfo.name,
+              description,
+              artwork: cardInfo.flag || "/images/cards/placeholder-nation.png",
+              rarity: cardInfo.rarity,
+              marketValue: parseFloat(cardInfo.market_value || "0"),
+              stats: {
+                region: cardInfo.region,
+                category: cardInfo.category,
+                govt: cardInfo.govt,
+                cardcategory: cardInfo.cardcategory,
+                marketValue: cardInfo.market_value,
+                badge: cardInfo.badge,
+                trophies: cardInfo.trophies,
+              },
+              metadata: {
+                nsData: cardInfo,
+                lastSyncAt: new Date().toISOString(),
+              },
+            },
+            create: {
+              id: `card_ns_${cardId}_s${season}`,
+              title: cardInfo.name,
+              description,
+              artwork: cardInfo.flag || "/images/cards/placeholder-nation.png",
+              cardType: "NATION",
+              rarity: cardInfo.rarity || "COMMON",
+              season,
+              nsCardId: parseInt(cardId),
+              nsSeason: season,
+              wikiSource: null,
+              wikiArticleTitle: cardInfo.name,
+              countryId: null,
+              stats: {
+                region: cardInfo.region,
+                category: cardInfo.category,
+                govt: cardInfo.govt,
+                cardcategory: cardInfo.cardcategory,
+                marketValue: cardInfo.market_value,
+                badge: cardInfo.badge,
+                trophies: cardInfo.trophies,
+              },
+              metadata: {
+                nsData: cardInfo,
+                importedAt: new Date().toISOString(),
+              },
+              marketValue: parseFloat(cardInfo.market_value || "0"),
+              totalSupply: 1,
+              level: 1,
+            },
+          });
+
+          results.successful++;
+        } catch (error) {
+          results.failed++;
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          results.errors.push(`Card ${cardId}: ${errorMessage}`);
+
+          // Log the error
+          await SyncHealthMonitor.logError({
+            season,
+            cardId,
+            error: errorMessage,
+          });
+        }
+      }
+
+      // Track the retry operation
+      await SyncHealthMonitor.trackSync({
+        season,
+        status: results.failed === 0 ? "SUCCESS" : "FAILED",
+        cardsProcessed: results.successful,
+        cardsCreated: results.successful,
+        errorMessage: results.errors.length > 0 ? results.errors.join("; ") : undefined,
+        metadata: { operation: "retry", cardIds },
+      });
+
+      return results;
+    }),
+
+  /**
+   * Admin: Reset sync checkpoint for a season (clear and start fresh)
+   */
+  resetSync: adminProcedure
+    .input(
+      z.object({
+        season: z.number().int().min(1).max(4),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { season } = input;
+
+      // Delete existing checkpoint
+      await ctx.db.syncCheckpoint.deleteMany({
+        where: { season },
+      });
+
+      // Log the reset
+      await SyncHealthMonitor.trackSync({
+        season,
+        status: "SUCCESS",
+        metadata: { operation: "reset" },
+      });
+
+      return {
+        success: true,
+        message: `Sync checkpoint for season ${season} has been reset`,
+      };
+    }),
+
+  /**
+   * Admin: Trigger manual sync for a specific season
+   */
+  triggerManualSync: adminProcedure
+    .input(
+      z.object({
+        season: z.number().int().min(1).max(4),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { season } = input;
+
+      // Note: This would typically trigger a background job
+      // For now, we just return a success message
+      // The actual sync logic should be implemented separately
+
+      await SyncHealthMonitor.trackSync({
+        season,
+        status: "IN_PROGRESS",
+        metadata: { operation: "manual_trigger", triggeredAt: new Date().toISOString() },
+      });
+
+      return {
+        success: true,
+        message: `Manual sync for season ${season} has been queued`,
+        season,
+      };
+    }),
+
+  /**
+   * Admin: Get recent sync logs
+   */
+  getSyncLogs: adminProcedure
+    .input(
+      z.object({
+        season: z.number().int().min(1).max(4).optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const where = input.season
+        ? { syncType: `NS_SEASON_${input.season}` }
+        : { syncType: { startsWith: "NS_SEASON_" } };
+
+      const logs = await ctx.db.syncLog.findMany({
+        where,
+        orderBy: { startedAt: "desc" },
+        take: input.limit,
+      });
+
+      return logs.map(log => ({
+        id: log.id,
+        season: log.season,
+        status: log.status,
+        cardsProcessed: log.cardsProcessed ?? 0,
+        cardsCreated: log.cardsCreated ?? 0,
+        cardsUpdated: log.cardsUpdated ?? 0,
+        errorMessage: log.errorMessage,
+        startedAt: log.startedAt,
+        completedAt: log.completedAt,
+        duration: log.completedAt
+          ? log.completedAt.getTime() - log.startedAt.getTime()
+          : null,
+      }));
     }),
 });

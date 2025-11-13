@@ -3,10 +3,12 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-import { Building2, Sparkles, ChevronRight } from "lucide-react";
+import { Building2, Sparkles, ChevronRight, CreditCard } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import Link from "next/link";
 
 /**
  * Embassy data with calculated synergies
@@ -184,13 +186,29 @@ export const EmbassyCard = React.memo(function EmbassyCard({
           </div>
         </div>
 
-        {/* Click to view hint (owners only) */}
+        {/* Quick Actions (owners only) */}
         {isOwner && (
-          <div className="text-muted-foreground border-t py-2 text-center text-xs">
-            <span className="flex items-center justify-center gap-1">
-              Click to view embassy details
-              <ChevronRight className="h-3 w-3" />
-            </span>
+          <div className="border-t pt-3 space-y-2">
+            <Link
+              href={`/vault/market?nation=${encodeURIComponent(embassy.hostCountry)}`}
+              onClick={(e) => e.stopPropagation()}
+              className="block"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                <CreditCard className="mr-2 h-3.5 w-3.5" />
+                Trade Cards with {embassy.hostCountry}
+              </Button>
+            </Link>
+            <div className="text-muted-foreground text-center text-xs">
+              <span className="flex items-center justify-center gap-1">
+                Click card for embassy details
+                <ChevronRight className="h-3 w-3" />
+              </span>
+            </div>
           </div>
         )}
       </CardContent>

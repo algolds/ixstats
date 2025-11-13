@@ -1,0 +1,80 @@
+# Martin Tile Server Configuration
+# Explicit table definitions for stable production operation
+
+postgres:
+  connection_string: "postgresql://postgres:postgres@localhost:5433/ixstats"
+  
+  # Explicitly define each table to avoid auto-discovery issues
+  tables:
+    map_layer_political:
+      schema: public
+      table: map_layer_political
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      buffer: 64          # Add buffer to reduce tile boundary artifacts
+      extent: 4096        # Tile extent (default)
+      properties:
+        fill: String
+        id: String
+        ixmap_subgroup: String
+
+    map_layer_climate:
+      schema: public
+      table: map_layer_climate
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      buffer: 64          # Add buffer to reduce tile boundary artifacts
+      extent: 4096        # Tile extent (default)
+      properties:
+        fill: String
+        id: String
+        ixmap_subgroup: String
+
+    map_layer_rivers:
+      schema: public
+      table: map_layer_rivers
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      buffer: 64          # Add buffer to reduce tile boundary artifacts
+      extent: 4096        # Tile extent (default)
+      minzoom: 3
+
+    map_layer_lakes:
+      schema: public
+      table: map_layer_lakes
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      buffer: 64          # Add buffer to reduce tile boundary artifacts
+      extent: 4096        # Tile extent (default)
+
+    map_layer_icecaps:
+      schema: public
+      table: map_layer_icecaps
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      buffer: 64          # Add buffer to reduce tile boundary artifacts
+      extent: 4096        # Tile extent (default)
+
+    map_layer_altitudes:
+      schema: public
+      table: map_layer_altitudes
+      srid: 4326
+      geometry_column: geometry
+      id_column: ogc_fid
+      bounds: [-180.0, -90.0, 180.0, 90.0]
+      buffer: 64          # Add buffer to reduce tile boundary artifacts
+      extent: 4096        # Tile extent (default)
+      properties:
+        fill: String
+        id: String
+        ixmap_subgroup: String

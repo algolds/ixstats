@@ -16,12 +16,30 @@ import {
   getAchievementById,
   type ExtendedAchievementData,
 } from "./achievement-definitions";
+import { vaultService } from "./vault-service";
+import { getCardRewardForAchievement, hasCardReward } from "./achievement-card-rewards";
+import { awardAchievementCard } from "./card-service";
 
 /**
  * Achievement Service
  * Handles auto-unlocking of achievements based on country data
  */
 export class AchievementService {
+  /**
+   * Calculate IxCredits reward based on achievement rarity
+   * @param rarity Achievement rarity tier
+   * @returns IxCredits amount to award
+   */
+  private getCreditsForRarity(rarity: string): number {
+    const rarityRewards: Record<string, number> = {
+      Common: 5,
+      Uncommon: 10,
+      Rare: 25,
+      Epic: 50,
+      Legendary: 100,
+    };
+    return rarityRewards[rarity] || 5;
+  }
   /**
    * Check and auto-unlock achievements for a user/country
    * @param userId Clerk user ID
@@ -203,6 +221,66 @@ export class AchievementService {
 
           unlocked.push(achievementId);
           console.log(`[Achievement Service] Unlocked: ${definition.title} for user ${userId}`);
+
+          // 💰 Award IxCredits for achievement unlock
+          try {
+            const creditReward = this.getCreditsForRarity(definition.rarity);
+            const earnResult = await vaultService.earnCredits(
+              userId,
+              creditReward,
+              "EARN_ACTIVE",
+              "achievement_unlock",
+              db,
+              {
+                achievementId: definition.id,
+                achievementName: definition.title,
+                achievementTier: definition.rarity,
+                achievementCategory: definition.category,
+              }
+            );
+
+            if (earnResult.success) {
+              console.log(
+                `[Achievement Service] Awarded ${creditReward} IxC for "${definition.title}" ` +
+                `(${definition.rarity}) - New balance: ${earnResult.newBalance}`
+              );
+            } else {
+              console.warn(
+                `[Achievement Service] Failed to award IxCredits for "${definition.title}": ${earnResult.message}`
+              );
+            }
+          } catch (creditError) {
+            // Don't block achievement unlock if credits fail
+            console.error(
+              `[Achievement Service] Error awarding IxCredits for "${definition.title}":`,
+              creditError
+            );
+          }
+
+          // 🎴 Award commemorative card if achievement has card reward
+          if (hasCardReward(achievementId)) {
+            try {
+              const cardId = getCardRewardForAchievement(achievementId);
+              if (cardId) {
+                await awardAchievementCard(
+                  db,
+                  userId,
+                  cardId,
+                  achievementId,
+                  definition.title
+                );
+                console.log(
+                  `[Achievement Service] Awarded commemorative card "${cardId}" for "${definition.title}"`
+                );
+              }
+            } catch (cardError) {
+              // Don't block achievement unlock if card award fails
+              console.error(
+                `[Achievement Service] Error awarding card for "${definition.title}":`,
+                cardError
+              );
+            }
+          }
         } catch (error) {
           // Silently handle duplicates (user may have unlocked via manual trigger)
           if (error instanceof Error && error.message.includes("Unique constraint")) {
@@ -289,6 +367,68 @@ export class AchievementService {
       console.log(
         `[Achievement Service] Manually unlocked: ${definition.title} for user ${userId}`
       );
+
+      // 💰 Award IxCredits for manual unlock
+      try {
+        const creditReward = this.getCreditsForRarity(definition.rarity);
+        const earnResult = await vaultService.earnCredits(
+          userId,
+          creditReward,
+          "EARN_ACTIVE",
+          "achievement_unlock",
+          db,
+          {
+            achievementId: definition.id,
+            achievementName: definition.title,
+            achievementTier: definition.rarity,
+            achievementCategory: definition.category,
+            manualUnlock: true,
+          }
+        );
+
+        if (earnResult.success) {
+          console.log(
+            `[Achievement Service] Awarded ${creditReward} IxC for manual unlock of "${definition.title}" ` +
+            `(${definition.rarity}) - New balance: ${earnResult.newBalance}`
+          );
+        } else {
+          console.warn(
+            `[Achievement Service] Failed to award IxCredits for manual unlock: ${earnResult.message}`
+          );
+        }
+      } catch (creditError) {
+        // Don't block achievement unlock if credits fail
+        console.error(
+          `[Achievement Service] Error awarding IxCredits for manual unlock:`,
+          creditError
+        );
+      }
+
+      // 🎴 Award commemorative card if achievement has card reward
+      if (hasCardReward(achievementId)) {
+        try {
+          const cardId = getCardRewardForAchievement(achievementId);
+          if (cardId) {
+            await awardAchievementCard(
+              db,
+              userId,
+              cardId,
+              achievementId,
+              definition.title
+            );
+            console.log(
+              `[Achievement Service] Awarded commemorative card "${cardId}" for manual unlock of "${definition.title}"`
+            );
+          }
+        } catch (cardError) {
+          // Don't block achievement unlock if card award fails
+          console.error(
+            `[Achievement Service] Error awarding card for manual unlock:`,
+            cardError
+          );
+        }
+      }
+
       return true;
     } catch (error) {
       console.error(`[Achievement Service] Failed to manually unlock ${achievementId}:`, error);

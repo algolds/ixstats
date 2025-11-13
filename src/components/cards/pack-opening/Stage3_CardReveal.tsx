@@ -3,10 +3,12 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CardInstance } from "~/types/pack-opening";
 import { getPackOpeningService } from "~/lib/pack-opening-service";
+import { GlassSplashEffect } from "./GlassSplashEffect";
+import { getParticleConfig } from "~/lib/holographic-effects";
 
 interface Stage3_CardRevealProps {
   cards: CardInstance[];
@@ -14,27 +16,34 @@ interface Stage3_CardRevealProps {
 }
 
 /**
- * Stage3_CardReveal - Sequential card flip animation
+ * Stage3_CardReveal - Sequential card flip animation with premium glass effects
  *
  * Features:
  * - Sequential reveals with 800ms stagger
- * - 3D flip animation (600ms per card)
+ * - Dramatic 3D flip animation (full 180° with enhanced perspective)
  * - Rarity-based sound effects
- * - Color flash on reveal (rarity glow)
+ * - GlassSplashEffect on each card reveal
+ * - Holographic shimmer burst
+ * - Rarity-specific particle effects (10-30+ particles)
+ * - Glass refraction during flip
+ * - Final "all revealed" celebration effect
  * - Automatic progression when complete
  */
 export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
   ({ cards, onRevealComplete }) => {
     const [revealedIndex, setRevealedIndex] = useState(-1);
+    const [allRevealed, setAllRevealed] = useState(false);
     const service = getPackOpeningService();
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
     // Sequential reveal logic
     useEffect(() => {
       if (revealedIndex >= cards.length - 1) {
-        // All cards revealed, wait 1s then complete
+        // All cards revealed, trigger celebration then complete
+        setAllRevealed(true);
         const timer = setTimeout(() => {
           onRevealComplete();
-        }, 1000);
+        }, 1500); // Extended to show celebration effect
         return () => clearTimeout(timer);
       }
 
@@ -80,6 +89,7 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
                 index={index}
                 isRevealed={index <= revealedIndex}
                 service={service}
+                isMobile={isMobile}
               />
             ))}
           </AnimatePresence>
@@ -105,6 +115,55 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
             ))}
           </div>
         </div>
+
+        {/* Final celebration effect when all cards revealed */}
+        {allRevealed && (
+          <>
+            {/* Radial burst */}
+            <motion.div
+              className="pointer-events-none absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-yellow-400/30 via-orange-400/30 to-red-400/30"
+              initial={{ scale: 0, opacity: 1 }}
+              animate={{ scale: [0, 2, 3], opacity: [1, 0.5, 0] }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+            />
+            {/* Celebration particles */}
+            {Array.from({ length: isMobile ? 15 : 30 }).map((_, i) => {
+              const angle = (Math.PI * 2 * i) / (isMobile ? 15 : 30);
+              const distance = isMobile ? 150 : 250;
+              const x = Math.cos(angle) * distance;
+              const y = Math.sin(angle) * distance;
+              const size = 4 + Math.random() * 8;
+              const colors = ["#fbbf24", "#f97316", "#ef4444", "#ec4899", "#a855f7"];
+              const color = colors[Math.floor(Math.random() * colors.length)];
+
+              return (
+                <motion.div
+                  key={`celebration-${i}`}
+                  className="pointer-events-none absolute left-1/2 top-1/2 rounded-full"
+                  style={{
+                    width: `${size}px`,
+                    height: `${size}px`,
+                    backgroundColor: color,
+                    boxShadow: `0 0 ${size * 2}px ${color}`,
+                  }}
+                  initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                  animate={{
+                    x,
+                    y,
+                    scale: [0, 1.5, 0],
+                    opacity: [1, 0.8, 0],
+                    rotate: [0, 360],
+                  }}
+                  transition={{
+                    duration: 1 + Math.random() * 0.5,
+                    delay: i * 0.02,
+                    ease: "easeOut",
+                  }}
+                />
+              );
+            })}
+          </>
+        )}
       </div>
     );
   }
@@ -113,33 +172,51 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
 Stage3_CardReveal.displayName = "Stage3_CardReveal";
 
 /**
- * Individual card reveal item with flip animation
+ * Individual card reveal item with enhanced 3D flip animation and glass effects
  */
 interface CardRevealItemProps {
   card: CardInstance;
   index: number;
   isRevealed: boolean;
   service: ReturnType<typeof getPackOpeningService>;
+  isMobile: boolean;
 }
 
 const CardRevealItem = React.memo<CardRevealItemProps>(
-  ({ card, index, isRevealed, service }) => {
+  ({ card, index, isRevealed, service, isMobile }) => {
     const [isFlipped, setIsFlipped] = useState(false);
+    const [showSplash, setShowSplash] = useState(false);
+    const [cardCenterX, setCardCenterX] = useState(0);
+    const [cardCenterY, setCardCenterY] = useState(0);
+    const cardRef = React.useRef<HTMLDivElement>(null);
+
+    // Calculate card center position for splash effect
+    useEffect(() => {
+      if (isRevealed && cardRef.current) {
+        const rect = cardRef.current.getBoundingClientRect();
+        setCardCenterX(rect.width / 2);
+        setCardCenterY(rect.height / 2);
+      }
+    }, [isRevealed]);
 
     useEffect(() => {
       if (isRevealed && !isFlipped) {
         // Small delay before flip starts
         const timer = setTimeout(() => {
           setIsFlipped(true);
+          // Trigger glass splash effect slightly after flip starts
+          setTimeout(() => setShowSplash(true), 300);
         }, 100);
         return () => clearTimeout(timer);
       }
     }, [isRevealed, isFlipped]);
 
     const rarityColor = service.getRarityColor(card.rarity);
+    const particleConfig = getParticleConfig(card.rarity);
 
     return (
       <motion.div
+        ref={cardRef}
         initial={{ scale: 0, opacity: 0, y: 50 }}
         animate={{
           scale: isRevealed ? 1 : 0,
@@ -152,24 +229,35 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
           damping: 25,
         }}
         style={{
-          perspective: "1000px",
+          perspective: "1500px", // Enhanced perspective for more dramatic 3D effect
         }}
       >
-        {/* 3D flip container */}
+        {/* 3D flip container with enhanced animation */}
         <motion.div
           className="relative h-96 w-72"
           animate={{
             rotateY: isFlipped ? 180 : 0,
+            scale: isFlipped ? [1, 1.05, 1] : 1, // Slight scale pulse on flip
           }}
           transition={{
-            duration: 0.6,
-            ease: "easeInOut",
+            duration: 0.8, // Slightly longer for more dramatic reveal
+            ease: [0.43, 0.13, 0.23, 0.96], // Custom cubic-bezier for smooth animation
           }}
           style={{
             transformStyle: "preserve-3d",
             willChange: "transform",
           }}
         >
+          {/* Glass splash effect on reveal */}
+          {showSplash && (
+            <GlassSplashEffect
+              rarity={card.rarity}
+              x={cardCenterX}
+              y={cardCenterY}
+              trigger={showSplash}
+              isMobile={isMobile}
+            />
+          )}
           {/* Card back */}
           <div
             className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/30 to-violet-500/30 backdrop-blur-sm"
@@ -177,6 +265,18 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
               backfaceVisibility: "hidden",
             }}
           >
+            {/* Glass refraction shimmer effect during flip */}
+            {isFlipped && (
+              <motion.div
+                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 via-transparent to-white/20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.6, 0] }}
+                transition={{ duration: 0.4 }}
+                style={{
+                  backdropFilter: "blur(8px)",
+                }}
+              />
+            )}
             <div className="flex h-full items-center justify-center">
               <div className="text-6xl font-bold text-white/40">?</div>
             </div>
@@ -190,20 +290,87 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
               transform: "rotateY(180deg)",
             }}
           >
-            {/* Rarity glow */}
+            {/* Enhanced rarity glow with pulsing effect */}
             <motion.div
               className="absolute -inset-2 rounded-2xl blur-xl"
               style={{
                 backgroundColor: rarityColor,
               }}
               animate={{
-                opacity: isFlipped ? [0, 0.8, 0.5] : 0,
+                opacity: isFlipped ? [0, 0.9, 0.6, 0.8] : 0,
+                scale: isFlipped ? [1, 1.1, 1.05, 1.08] : 1,
               }}
               transition={{
-                duration: 1,
-                times: [0, 0.3, 1],
+                duration: 1.5,
+                times: [0, 0.2, 0.6, 1],
+                repeat: Infinity,
+                repeatDelay: 2,
               }}
             />
+
+            {/* Holographic shimmer burst for rare+ cards */}
+            {isFlipped && ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY", "MYTHIC"].includes(card.rarity) && (
+              <>
+                {/* Primary shimmer burst */}
+                <motion.div
+                  className="pointer-events-none absolute inset-0 rounded-2xl"
+                  style={{
+                    background: `radial-gradient(circle at center, ${rarityColor}40 0%, transparent 70%)`,
+                  }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{
+                    opacity: [0, 0.8, 0.4, 0.6],
+                    scale: [0.8, 1.2, 1, 1.1],
+                    rotate: [0, 45, 90],
+                  }}
+                  transition={{
+                    duration: 2,
+                    times: [0, 0.3, 0.6, 1],
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                  }}
+                />
+
+                {/* Particle shimmer ring for legendary+ */}
+                {["LEGENDARY", "MYTHIC"].includes(card.rarity) && (
+                  <motion.div
+                    className="pointer-events-none absolute -inset-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    {Array.from({ length: isMobile ? 8 : 12 }).map((_, i) => {
+                      const angle = (Math.PI * 2 * i) / (isMobile ? 8 : 12);
+                      const radius = 140;
+                      const x = Math.cos(angle) * radius;
+                      const y = Math.sin(angle) * radius;
+
+                      return (
+                        <motion.div
+                          key={`shimmer-${i}`}
+                          className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full"
+                          style={{
+                            backgroundColor: particleConfig.colors[i % particleConfig.colors.length],
+                            boxShadow: `0 0 10px ${particleConfig.colors[i % particleConfig.colors.length]}`,
+                          }}
+                          animate={{
+                            x: [0, x, x * 1.2, x],
+                            y: [0, y, y * 1.2, y],
+                            scale: [0, 1, 1.5, 1],
+                            opacity: [0, 1, 0.5, 0.8],
+                          }}
+                          transition={{
+                            duration: 2,
+                            delay: i * 0.05,
+                            repeat: Infinity,
+                            repeatDelay: 1,
+                          }}
+                        />
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </>
+            )}
 
             {/* Card content */}
             <div className="relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 p-1">

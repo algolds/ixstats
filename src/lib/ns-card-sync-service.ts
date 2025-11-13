@@ -19,9 +19,8 @@
 
 import { db } from "~/server/db";
 import type { NSCard } from "./ns-api-client";
-
-// TODO: Implement these functions in ns-api-client.ts
-// import { fetchCardDump, parseNSDump } from "./ns-api-client";
+import { nsApiClient } from "./ns-api-client";
+import { checkpointManager } from "./ns-sync-checkpoint";
 
 /**
  * Sync status for monitoring
@@ -74,25 +73,37 @@ export async function performSync(season: number): Promise<SyncStatus> {
   console.log(`[NS Card Sync] Starting sync for season ${season}`);
 
   try {
-    // TODO: Implement fetchCardDump and parseNSDump in ns-api-client.ts
-    // const xmlData = await fetchCardDump(season);
-    // const nsCards = parseNSDump(xmlData);
+    // Check for existing checkpoint
+    let resumeFromCheckpoint = false;
+    let startIndex = 0;
+    const existingCheckpoint = await checkpointManager.loadCheckpoint(season);
 
-    status.errors.push("NS card dump sync functions (fetchCardDump, parseNSDump) not yet implemented");
-    status.status = "failed";
-    status.endTime = new Date();
-    await logSyncStatus(status);
-    return status;
+    if (existingCheckpoint) {
+      console.log(
+        `[NS Card Sync] Resuming from checkpoint: ${existingCheckpoint.cardsProcessed}/${existingCheckpoint.totalCards} cards already processed`
+      );
+      resumeFromCheckpoint = true;
+      startIndex = existingCheckpoint.cardsProcessed;
+      status.cardsProcessed = existingCheckpoint.cardsProcessed;
+      status.errors = existingCheckpoint.metadata?.errors || [];
+    }
 
-    /* IMPLEMENTATION PLACEHOLDER
-    const nsCards: NSCard[] = []; // Replace with actual implementation
+    // Fetch and parse card dump
+    const xmlData = await nsApiClient.fetchCardDump(season);
+    const nsCards = await nsApiClient.parseNSDump(xmlData);
 
-    console.log(`[NS Card Sync] Processing ${nsCards.length} cards for season ${season}`);
+    console.log(`[NS Card Sync] Processing ${nsCards.length} cards for season ${season}` +
+      (resumeFromCheckpoint ? ` (resuming from card ${startIndex})` : ""));
+
+    // Create initial checkpoint if not resuming
+    if (!resumeFromCheckpoint) {
+      await checkpointManager.createInitialCheckpoint(season, nsCards.length);
+    }
 
     // Process cards in batches for better performance
     const batchSize = 100;
-    for (let i = 0; i < nsCards.length; i += batchSize) {
-      const batch = nsCards.slice(i, i + batchSize);
+    for (let i = startIndex; i < nsCards.length; i += batchSize) {
+      const batch = nsCards.slice(i, Math.min(i + batchSize, nsCards.length));
 
       try {
         // Process batch within transaction for consistency
@@ -102,54 +113,59 @@ export async function performSync(season: number): Promise<SyncStatus> {
               status.cardsProcessed++;
 
               // Check if card exists in database
-              // Note: Actual Card model needs to be defined in Prisma schema
-              // This is placeholder logic showing the sync pattern
-              const existingCard = await tx.card?.findUnique({
+              const existingCard = await tx.card.findFirst({
                 where: {
-                  nsCardId_season: {
-                    nsCardId: nsCard.id,
-                    season: nsCard.season,
-                  },
+                  nsCardId: parseInt(nsCard.id),
+                  nsSeason: parseInt(nsCard.season),
                 },
               });
 
               if (!existingCard) {
                 // Create new card
-                await tx.card?.create({
+                await tx.card.create({
                   data: {
-                    nsCardId: nsCard.id,
-                    season: nsCard.season,
-                    title: nsCard.nation,
-                    rarity: nsCard.rarity,
-                    artwork: nsCard.flag,
+                    title: nsCard.name || `NS Card ${nsCard.id}`,
+                    description: nsCard.slogan || `NationStates trading card from season ${nsCard.season}`,
+                    artwork: nsCard.flag || "",
                     cardType: "NS_IMPORT",
-                    metadata: JSON.stringify({
+                    rarity: nsCard.rarity as any, // Cast to Prisma CardRarity enum
+                    season: parseInt(nsCard.season),
+                    nsCardId: parseInt(nsCard.id),
+                    nsSeason: parseInt(nsCard.season),
+                    metadata: {
                       region: nsCard.region,
-                      cardCategory: nsCard.cardCategory,
+                      cardCategory: nsCard.cardcategory,
                       badge: nsCard.badge,
+                      trophies: nsCard.trophies,
+                      marketValue: nsCard.market_value,
                       syncedAt: new Date().toISOString(),
-                    }),
+                    },
+                    totalSupply: 0,
+                    marketValue: parseFloat(nsCard.market_value || "0"),
                   },
                 });
                 status.cardsCreated++;
               } else {
                 // Update existing card if it's an NS_IMPORT type
-                const conflict = await resolveConflicts(nsCard, existingCard);
+                const conflict = resolveConflicts(nsCard, existingCard);
 
                 if (conflict.shouldUpdate) {
-                  await tx.card?.update({
+                  await tx.card.update({
                     where: { id: existingCard.id },
                     data: {
-                      title: nsCard.nation,
-                      rarity: nsCard.rarity,
-                      artwork: nsCard.flag,
-                      metadata: JSON.stringify({
-                        ...JSON.parse(existingCard.metadata || "{}"),
+                      title: nsCard.name || existingCard.title,
+                      rarity: nsCard.rarity as any,
+                      artwork: nsCard.flag || existingCard.artwork,
+                      marketValue: parseFloat(nsCard.market_value || "0"),
+                      metadata: {
+                        ...(existingCard.metadata as any),
                         region: nsCard.region,
-                        cardCategory: nsCard.cardCategory,
+                        cardCategory: nsCard.cardcategory,
                         badge: nsCard.badge,
+                        trophies: nsCard.trophies,
+                        marketValue: nsCard.market_value,
                         syncedAt: new Date().toISOString(),
-                      }),
+                      },
                     },
                   });
                   status.cardsUpdated++;
@@ -167,12 +183,29 @@ export async function performSync(season: number): Promise<SyncStatus> {
           }
         });
 
-        // Log progress every batch
-        if ((i + batchSize) % 1000 === 0) {
+        // Log progress every 1000 cards
+        if ((i + batchSize) % 1000 === 0 || i + batchSize >= nsCards.length) {
           console.log(
             `[NS Card Sync] Progress: ${status.cardsProcessed}/${nsCards.length} ` +
-            `(${status.cardsCreated} created, ${status.cardsUpdated} updated)`
+            `(${status.cardsCreated} created, ${status.cardsUpdated} updated, ${status.errors.length} errors)`
           );
+        }
+
+        // Save checkpoint every 500 cards
+        if (checkpointManager.shouldSaveCheckpoint(status.cardsProcessed)) {
+          const lastCard = batch[batch.length - 1];
+          await checkpointManager.saveCheckpoint({
+            season,
+            status: "IN_PROGRESS",
+            cardsProcessed: status.cardsProcessed,
+            totalCards: nsCards.length,
+            lastProcessedCardId: lastCard?.id || null,
+            errorCount: status.errors.length,
+            startedAt: status.startTime,
+            lastCheckpointAt: new Date(),
+            completedAt: null,
+            metadata: { errors: status.errors },
+          });
         }
       } catch (error) {
         const errorMsg = `Batch processing error at index ${i}: ${error}`;
@@ -182,9 +215,20 @@ export async function performSync(season: number): Promise<SyncStatus> {
     }
 
     status.endTime = new Date();
-    status.status = status.errors.length > 0 ? "failed" : "completed";
+    status.status = status.errors.length > 0 && status.cardsProcessed === 0 ? "failed" : "completed";
 
-    logSyncStatus(status);
+    // Mark checkpoint as completed or clear it
+    if (status.status === "completed") {
+      await checkpointManager.markCompleted(season);
+      // Clear checkpoint after successful completion
+      await checkpointManager.clearCheckpoint(season);
+      console.log(`[NS Card Sync] ✓ Sync completed successfully, checkpoint cleared`);
+    } else {
+      await checkpointManager.markFailed(season, status.errors.join("; "));
+      console.warn(`[NS Card Sync] ⚠ Sync completed with errors, checkpoint marked as failed`);
+    }
+
+    await logSyncStatus(status);
     return status;
   } catch (error) {
     const errorMsg = `Fatal sync error: ${error}`;
@@ -193,15 +237,12 @@ export async function performSync(season: number): Promise<SyncStatus> {
     status.endTime = new Date();
     status.status = "failed";
 
-    logSyncStatus(status);
-    return status;
-    */
-  } catch (error) {
-    const errorMsg = `Fatal sync error: ${error}`;
-    console.error(`[NS Card Sync] ${errorMsg}`);
-    status.errors.push(errorMsg);
-    status.endTime = new Date();
-    status.status = "failed";
+    // Mark checkpoint as failed
+    try {
+      await checkpointManager.markFailed(season, errorMsg);
+    } catch (checkpointError) {
+      console.error(`[NS Card Sync] Failed to mark checkpoint as failed:`, checkpointError);
+    }
 
     await logSyncStatus(status);
     return status;
@@ -260,7 +301,7 @@ export function resolveConflicts(
  *
  * @param status - Sync status to log
  */
-export function logSyncStatus(status: SyncStatus): void {
+export async function logSyncStatus(status: SyncStatus): Promise<void> {
   const duration = status.endTime
     ? (status.endTime.getTime() - status.startTime.getTime()) / 1000
     : 0;
@@ -285,27 +326,26 @@ export function logSyncStatus(status: SyncStatus): void {
   }
 
   // Log to database for historical tracking
-  // Note: Actual SyncLog model needs to be defined in Prisma schema
   try {
-    db.syncLog?.create({
+    await db.syncLog.create({
       data: {
         syncType: "ns-card-sync",
-        season: status.season ?? null,
         status: status.status,
-        cardsProcessed: status.cardsProcessed ?? null,
-        cardsCreated: status.cardsCreated ?? null,
-        cardsUpdated: status.cardsUpdated ?? null,
-        itemsProcessed: status.cardsProcessed ?? 0,
+        itemsProcessed: status.cardsProcessed,
         itemsFailed: status.errors.length,
         errorMessage: status.errors.length > 0 ? JSON.stringify(status.errors) : null,
         startedAt: status.startTime,
         completedAt: status.endTime || null,
+        metadata: JSON.stringify({
+          season: status.season,
+          cardsCreated: status.cardsCreated,
+          cardsUpdated: status.cardsUpdated,
+          conflictsResolved: status.conflictsResolved,
+        }),
       },
-    }).catch((error) => {
-      console.error(`[NS Card Sync] Failed to log sync status to database:`, error);
     });
   } catch (error) {
-    console.error(`[NS Card Sync] Failed to log sync status:`, error);
+    console.error(`[NS Card Sync] Failed to log sync status to database:`, error);
   }
 }
 
@@ -317,11 +357,9 @@ export function logSyncStatus(status: SyncStatus): void {
  */
 export async function getLatestSyncStatus(season: number): Promise<SyncStatus | null> {
   try {
-    // Note: Actual SyncLog model needs to be defined in Prisma schema
-    const latestLog = await db.syncLog?.findFirst({
+    const latestLog = await db.syncLog.findFirst({
       where: {
         syncType: "ns-card-sync",
-        season,
       },
       orderBy: {
         startedAt: "desc",
@@ -332,14 +370,16 @@ export async function getLatestSyncStatus(season: number): Promise<SyncStatus | 
       return null;
     }
 
+    const metadata = latestLog.metadata ? JSON.parse(latestLog.metadata as string) : {};
+
     return {
-      season: latestLog.season ?? season,
+      season: metadata.season ?? season,
       startTime: latestLog.startedAt,
       endTime: latestLog.completedAt || undefined,
-      cardsProcessed: latestLog.cardsProcessed ?? 0,
-      cardsCreated: latestLog.cardsCreated ?? 0,
-      cardsUpdated: latestLog.cardsUpdated ?? 0,
-      conflictsResolved: 0, // Not stored in basic log
+      cardsProcessed: latestLog.itemsProcessed,
+      cardsCreated: metadata.cardsCreated ?? 0,
+      cardsUpdated: metadata.cardsUpdated ?? 0,
+      conflictsResolved: metadata.conflictsResolved ?? 0,
       errors: latestLog.errorMessage ? JSON.parse(latestLog.errorMessage) : [],
       status: latestLog.status as "running" | "completed" | "failed",
     };
@@ -400,4 +440,109 @@ export async function validateSyncHealth(): Promise<{
     healthy,
     seasons: results,
   };
+}
+
+/**
+ * Batch Import Interface
+ * Enhanced user-facing import for NationStates deck imports
+ */
+export interface BatchImportProgress {
+  total: number;
+  processed: number;
+  created: number;
+  duplicates: number;
+  errors: string[];
+  status: "pending" | "processing" | "completed" | "failed";
+  currentCard?: string;
+}
+
+/**
+ * Perform batch import of NationStates cards from user deck
+ * User-friendly wrapper for card imports with progress tracking
+ *
+ * @param nsCards - Array of NS cards from fetchDeck
+ * @param userId - User ID to assign ownership
+ * @param onProgress - Optional progress callback
+ * @returns Import results
+ */
+export async function batchImportUserDeck(
+  nsCards: NSCard[],
+  userId: string,
+  onProgress?: (progress: BatchImportProgress) => void
+): Promise<BatchImportProgress> {
+  const progress: BatchImportProgress = {
+    total: nsCards.length,
+    processed: 0,
+    created: 0,
+    duplicates: 0,
+    errors: [],
+    status: "processing",
+  };
+
+  // Notify initial status
+  onProgress?.(progress);
+
+  for (const nsCard of nsCards) {
+    try {
+      progress.currentCard = nsCard.name || `Card ${nsCard.id}`;
+      onProgress?.(progress);
+
+      // Check if card already exists
+      const existing = await db.card.findFirst({
+        where: {
+          nsCardId: parseInt(nsCard.id),
+          nsSeason: parseInt(nsCard.season),
+        },
+      });
+
+      if (existing) {
+        // Card already imported - mark as duplicate
+        progress.duplicates++;
+      } else {
+        // Import new card
+        await db.card.create({
+          data: {
+            title: nsCard.name || `NS Card ${nsCard.id}`,
+            description: nsCard.slogan || `NationStates trading card from season ${nsCard.season}`,
+            artwork: nsCard.flag || "",
+            cardType: "NS_IMPORT",
+            rarity: nsCard.rarity as any,
+            season: parseInt(nsCard.season),
+            nsCardId: parseInt(nsCard.id),
+            nsSeason: parseInt(nsCard.season),
+            metadata: {
+              region: nsCard.region,
+              cardCategory: nsCard.cardcategory,
+              badge: nsCard.badge,
+              trophies: nsCard.trophies,
+              marketValue: nsCard.market_value,
+              importedAt: new Date().toISOString(),
+              importedBy: userId,
+            },
+            totalSupply: 0,
+            marketValue: parseFloat(nsCard.market_value || "0"),
+          },
+        });
+        progress.created++;
+      }
+
+      progress.processed++;
+      onProgress?.(progress);
+    } catch (error) {
+      const errorMsg = `Card ${nsCard.id}: ${error instanceof Error ? error.message : String(error)}`;
+      progress.errors.push(errorMsg);
+      console.error(`[Batch Import] ${errorMsg}`);
+    }
+  }
+
+  progress.status = progress.errors.length === 0 ? "completed" : "failed";
+  progress.currentCard = undefined;
+  onProgress?.(progress);
+
+  console.log(
+    `[Batch Import] Completed for user ${userId}: ` +
+    `${progress.created} created, ${progress.duplicates} duplicates, ${progress.errors.length} errors`
+  );
+
+  return progress;
 }

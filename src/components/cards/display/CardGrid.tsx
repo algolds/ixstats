@@ -126,7 +126,9 @@ export const CardGrid = React.memo<CardGridProps>(
      */
     const gridCols = {
       small: "grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
+      sm: "grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
       medium: "grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+      md: "grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       large: "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
     };
 
@@ -136,7 +138,9 @@ export const CardGrid = React.memo<CardGridProps>(
      */
     const gapClass = {
       small: "gap-2 sm:gap-3 md:gap-4",
+      sm: "gap-2 sm:gap-3 md:gap-4",
       medium: "gap-3 sm:gap-4 md:gap-6",
+      md: "gap-3 sm:gap-4 md:gap-6",
       large: "gap-4 sm:gap-6 md:gap-8",
     };
 

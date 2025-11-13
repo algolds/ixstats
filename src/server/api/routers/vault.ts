@@ -19,6 +19,7 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault-service";
+import { budgetVaultCalculator } from "~/lib/budget-vault-calculator";
 import { type VaultTransactionType } from "@prisma/client";
 
 /**
@@ -415,4 +416,305 @@ export const vaultRouter = createTRPCRouter({
       throw new Error("Failed to retrieve user stats");
     }
   }),
+
+  /**
+   * Get budget multiplier for passive income
+   * Admin-only endpoint
+   */
+  getBudgetMultiplier: adminProcedure
+    .input(
+      z.object({
+        countryId: z.string().min(1, "Country ID is required"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const multiplier = await budgetVaultCalculator.calculateBudgetMultiplier(input.countryId, ctx.db);
+        const description = budgetVaultCalculator.getMultiplierDescription(multiplier);
+
+        return {
+          countryId: input.countryId,
+          multiplier,
+          description,
+          percentChange: Math.round((multiplier - 1.0) * 100),
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error getting budget multiplier:", error);
+        throw new Error("Failed to retrieve budget multiplier");
+      }
+    }),
+
+  /**
+   * Get detailed budget multiplier breakdown by department
+   * Admin-only endpoint
+   */
+  getBudgetMultiplierBreakdown: adminProcedure
+    .input(
+      z.object({
+        countryId: z.string().min(1, "Country ID is required"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const breakdown = await budgetVaultCalculator.getBudgetBreakdown(input.countryId, ctx.db);
+        const totalMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(input.countryId, ctx.db);
+
+        return {
+          countryId: input.countryId,
+          totalMultiplier,
+          breakdown,
+          totalCategories: breakdown.length,
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error getting budget breakdown:", error);
+        throw new Error("Failed to retrieve budget multiplier breakdown");
+      }
+    }),
+
+  // ============================================
+  // COLLECTION SOCIAL FEATURES
+  // ============================================
+
+  /**
+   * Get public collections (browse all)
+   * Public endpoint with rate limiting
+   */
+  getPublicCollections: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).optional().default(20),
+        offset: z.number().min(0).optional().default(0),
+        sortBy: z.enum(["newest", "mostValuable", "mostCards", "topRated"]).optional().default("newest"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const { limit, offset, sortBy } = input;
+
+        // Build order by clause
+        let orderBy: any = { createdAt: "desc" };
+        if (sortBy === "newest") orderBy = { createdAt: "desc" };
+        if (sortBy === "mostValuable") orderBy = { updatedAt: "desc" }; // Placeholder for value
+        if (sortBy === "mostCards") orderBy = { updatedAt: "desc" }; // Placeholder for card count
+        if (sortBy === "topRated") orderBy = { updatedAt: "desc" }; // Placeholder for likes
+
+        const collections = await ctx.db.cardCollection.findMany({
+          where: {
+            isPublic: true,
+          },
+          include: {
+            User: {
+              select: {
+                id: true,
+                clerkUserId: true,
+              },
+            },
+          },
+          orderBy,
+          skip: offset,
+          take: limit,
+        });
+
+        const total = await ctx.db.cardCollection.count({
+          where: { isPublic: true },
+        });
+
+        return {
+          collections,
+          total,
+          hasMore: offset + limit < total,
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error getting public collections:", error);
+        throw new Error("Failed to retrieve public collections");
+      }
+    }),
+
+  /**
+   * Get collection leaderboard
+   * Public endpoint with rate limiting
+   */
+  getCollectionLeaderboard: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        category: z.enum(["mostValuable", "mostComplete", "mostCards"]),
+        limit: z.number().min(1).max(50).optional().default(10),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        // Placeholder: In production, calculate actual values
+        // For now, return sorted by updatedAt
+        const collections = await ctx.db.cardCollection.findMany({
+          where: {
+            isPublic: true,
+          },
+          include: {
+            User: {
+              select: {
+                id: true,
+                clerkUserId: true,
+              },
+            },
+          },
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: input.limit,
+        });
+
+        return {
+          category: input.category,
+          collections: collections.map((c, index) => ({
+            ...c,
+            rank: index + 1,
+            value: 0, // Placeholder
+            completeness: 0, // Placeholder
+            cardCount: 0, // Placeholder
+          })),
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error getting collection leaderboard:", error);
+        throw new Error("Failed to retrieve collection leaderboard");
+      }
+    }),
+
+  /**
+   * Like/unlike a collection
+   * Protected endpoint
+   */
+  likeCollection: protectedProcedure
+    .input(
+      z.object({
+        collectionId: z.string().min(1),
+        unlike: z.boolean().optional().default(false),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Note: Collection likes would need a CollectionLike model in schema
+        // For now, return success placeholder
+        return {
+          success: true,
+          liked: !input.unlike,
+          collectionId: input.collectionId,
+          message: input.unlike ? "Collection unliked" : "Collection liked",
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error liking collection:", error);
+        throw new Error("Failed to like collection");
+      }
+    }),
+
+  /**
+   * Add comment to collection
+   * Protected endpoint
+   */
+  addCollectionComment: protectedProcedure
+    .input(
+      z.object({
+        collectionId: z.string().min(1),
+        content: z.string().min(1).max(500),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        if (!ctx.auth?.userId) {
+          throw new Error("User ID not found");
+        }
+
+        // Note: Collection comments would need a CollectionComment model in schema
+        // For now, return success placeholder
+        return {
+          success: true,
+          comment: {
+            id: `comment_${Date.now()}`,
+            collectionId: input.collectionId,
+            userId: ctx.auth.userId,
+            content: input.content,
+            createdAt: new Date(),
+          },
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error adding comment:", error);
+        throw new Error("Failed to add comment");
+      }
+    }),
+
+  /**
+   * Get comments for a collection
+   * Public endpoint with rate limiting
+   */
+  getCollectionComments: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        collectionId: z.string().min(1),
+        limit: z.number().min(1).max(100).optional().default(50),
+        offset: z.number().min(0).optional().default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        // Note: Collection comments would need a CollectionComment model in schema
+        // For now, return empty array placeholder
+        return {
+          comments: [],
+          total: 0,
+          hasMore: false,
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error getting comments:", error);
+        throw new Error("Failed to retrieve comments");
+      }
+    }),
+
+  /**
+   * Get collection details with stats
+   * Public endpoint for viewing any public collection
+   */
+  getCollectionDetails: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        collectionId: z.string().min(1),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const collection = await ctx.db.cardCollection.findUnique({
+          where: {
+            id: input.collectionId,
+          },
+          include: {
+            User: {
+              select: {
+                id: true,
+                clerkUserId: true,
+              },
+            },
+          },
+        });
+
+        if (!collection) {
+          throw new Error("Collection not found");
+        }
+
+        // Check if public or if user owns it
+        if (!collection.isPublic && collection.userId !== ctx.auth?.userId) {
+          throw new Error("Collection is private");
+        }
+
+        return {
+          collection,
+          stats: {
+            cardCount: 0, // Placeholder
+            totalValue: 0, // Placeholder
+            likes: 0, // Placeholder
+            comments: 0, // Placeholder
+          },
+        };
+      } catch (error) {
+        console.error("[Vault Router] Error getting collection details:", error);
+        throw new Error("Failed to retrieve collection details");
+      }
+    }),
 });

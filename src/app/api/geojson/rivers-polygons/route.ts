@@ -19,7 +19,6 @@ export async function GET() {
       id: string;
       ixmap_subgroup: string | null;
       fill: string | null;
-      country_id: string | null;
       geometry: any; // PostGIS geometry object
     }>>`
       SELECT
@@ -27,7 +26,6 @@ export async function GET() {
         id,
         ixmap_subgroup,
         fill,
-        country_id,
         ST_AsGeoJSON(
           ST_Buffer(geometry::geography, 5000)::geometry
         )::json as geometry
@@ -47,7 +45,6 @@ export async function GET() {
           id: river.id,
           ixmap_subgroup: river.ixmap_subgroup,
           fill: river.fill,
-          country_id: river.country_id,
         },
       })),
     };

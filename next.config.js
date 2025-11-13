@@ -193,15 +193,46 @@ const config = {
 
   // It's good practice to keep your image domains defined.
   images: {
-    domains: [
-      "localhost",
-      "lh3.googleusercontent.com",
-      "upload.wikimedia.org",
-      "images.unsplash.com",
-      "ixwiki.com",
-      "iiwiki.com",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "localhost",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "ixwiki.com",
+      },
+      {
+        protocol: "https",
+        hostname: "iiwiki.com",
+      },
+      // Note: NationStates images are now proxied through /api/proxy-ns-image
+      // to bypass hotlinking restrictions, so no NS domains needed here
+    ],
+    // Allow local API routes with query strings (for NS image proxy)
+    localPatterns: [
+      {
+        pathname: "/api/proxy-ns-image",
+        search: "**",
+      },
     ],
     formats: ["image/avif", "image/webp"],
+    // Handle external image errors gracefully
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
   async rewrites() {
@@ -217,6 +248,41 @@ const config = {
       {
         source: "/api/althistory-wiki-proxy/:path*",
         destination: "https://althistory.fandom.com/:path*",
+      },
+    ];
+  },
+
+  async headers() {
+    return [
+      {
+        source: "/manifest.json",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/manifest+json",
+          },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400", // Cache for 1 day
+          },
+        ],
+      },
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/javascript",
+          },
+          {
+            key: "Service-Worker-Allowed",
+            value: "/",
+          },
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+        ],
       },
     ];
   },

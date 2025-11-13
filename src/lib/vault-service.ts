@@ -15,6 +15,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { type VaultTransactionType } from "@prisma/client";
+import { budgetVaultCalculator } from "./budget-vault-calculator";
 
 /**
  * Vault Service
@@ -542,7 +543,7 @@ export class VaultService {
 
   /**
    * Calculate passive income based on nation performance
-   * Formula: (GDP Per Capita / 10000) * Economic Tier Multiplier + Population Bonus + Growth Bonus
+   * Formula: ((GDP Per Capita / 10000) * Economic Tier Multiplier + Population Bonus + Growth Bonus) * Budget Multiplier
    * @param countryId Country ID
    * @param db Prisma database client
    * @returns Daily dividend amount
@@ -577,11 +578,18 @@ export class VaultService {
       // Growth bonus: +10% if GDP growth > 3% this quarter
       const growthBonus = (country.adjustedGdpGrowth || 0) > 3 ? baseRate * 0.1 : 0;
 
-      const totalDividend = baseRate + populationBonus + growthBonus;
+      const baseIncome = baseRate + populationBonus + growthBonus;
+
+      // Budget multiplier: Allocate budget wisely for better passive income
+      const budgetMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(countryId, db);
+
+      // Apply budget multiplier to final income
+      const totalDividend = baseIncome * budgetMultiplier;
 
       console.log(
         `[Vault Service] Calculated passive income for ${countryId}: ${totalDividend.toFixed(2)} IxC ` +
-        `(base: ${baseRate.toFixed(2)}, pop: ${populationBonus.toFixed(2)}, growth: ${growthBonus.toFixed(2)})`
+        `(base: ${baseRate.toFixed(2)}, pop: ${populationBonus.toFixed(2)}, growth: ${growthBonus.toFixed(2)}, ` +
+        `budget: ${budgetMultiplier.toFixed(3)}x)`
       );
 
       return Math.round(totalDividend * 100) / 100; // Round to 2 decimals

@@ -37,6 +37,8 @@ export const env = createEnv({
     CACHE_TTL_SECONDS: z.string().optional().default("3600"),
     // IxWiki Local Path (for same-server optimization)
     IXWIKI_LOCAL_PATH: z.string().optional(),
+    // Admin contact email (used in API User-Agents for external services)
+    ADMIN_EMAIL: z.string().email().optional(),
   },
 
   /**
@@ -89,6 +91,8 @@ export const env = createEnv({
     CACHE_TTL_SECONDS: process.env.CACHE_TTL_SECONDS,
     // IxWiki Local Path
     IXWIKI_LOCAL_PATH: process.env.IXWIKI_LOCAL_PATH,
+    // Admin Email
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

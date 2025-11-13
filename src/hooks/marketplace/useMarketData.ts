@@ -85,15 +85,36 @@ export function useMarketData(
       setError(null);
 
       try {
-        // TODO: Replace with actual tRPC call when Agent 6 implements auction endpoints
-        // const result = await api.auctions.getAuctions.query({
-        //   filters,
-        //   sort,
+        // TODO: Integrate with tRPC api.cardMarket.getActiveAuctions
+        // For now, return empty state until tRPC client is wired
+        // const result = await api.cardMarket.getActiveAuctions.query({
         //   limit: pageSize,
         //   offset: append ? offset : 0,
+        //   // Apply filters when backend supports them
+        //   cardId: filters.searchQuery, // Map to cardId filter
+        //   isFeatured: filters.showFeaturedOnly,
         // });
 
-        // Mock data for now (Agent 6 will provide real implementation)
+        // Transform result to AuctionListing format
+        // const auctions: AuctionListing[] = result.auctions.map((auction) => ({
+        //   id: auction.id,
+        //   cardInstanceId: auction.cardInstanceId,
+        //   sellerId: auction.sellerId,
+        //   sellerName: auction.User?.clerkUserId || "Unknown",
+        //   startingPrice: auction.startingPrice,
+        //   currentBid: auction.currentBid ?? auction.startingPrice,
+        //   buyoutPrice: auction.buyoutPrice,
+        //   endTime: new Date(auction.endTime).getTime(),
+        //   bidCount: auction.bidCount,
+        //   isExpired: new Date(auction.endTime) < new Date(),
+        //   isFeatured: auction.isFeatured,
+        //   isExpress: new Date(auction.endTime).getTime() - new Date(auction.createdAt).getTime() <= 30 * 60 * 1000,
+        //   cardInstance: auction.CardOwnership?.cards as CardInstance,
+        //   createdAt: auction.createdAt,
+        //   updatedAt: auction.updatedAt,
+        // }));
+
+        // Placeholder until tRPC is wired
         const mockResult: PaginatedAuctions = {
           auctions: [],
           total: 0,
