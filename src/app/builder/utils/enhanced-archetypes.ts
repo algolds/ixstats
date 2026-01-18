@@ -2,42 +2,25 @@ import {
   // Economic Icons
   DollarSign,
   TrendingUp,
-  BarChart3,
   Crown,
   Factory,
   Coins,
 
   // Political Icons
   Building2,
-  Shield,
-  Users,
-  Scale,
   Vote,
-  Gavel,
 
   // Cultural Icons
   Globe2,
   Heart,
-  BookOpen,
-  Music,
-  Palette,
-  Languages,
 
   // Geographic Icons
   Mountain,
-  MapPin,
   Waves,
   Sun,
-  Snowflake,
-  TreePine,
 
   // Development Icons
   Zap,
-  Wifi,
-  Stethoscope,
-  GraduationCap,
-  Truck,
-  Home,
 } from "lucide-react";
 import type { RealCountryData } from "../lib/economy-data-service";
 

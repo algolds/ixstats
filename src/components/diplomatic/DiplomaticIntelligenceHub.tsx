@@ -6,34 +6,25 @@ import {
   Building2,
   Globe,
   Target,
-  TrendingUp,
-  TrendingDown,
   Users,
   Heart,
   Zap,
   AlertTriangle,
   CheckCircle,
-  Star,
   Activity,
   ArrowUpRight,
-  Shield,
   Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,

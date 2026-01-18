@@ -7,7 +7,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Clock,
   Activity,
@@ -17,8 +17,6 @@ import {
   RefreshCw,
   Play,
   Pause,
-  TrendingUp,
-  TrendingDown,
   Zap,
   Target,
   Settings,

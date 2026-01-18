@@ -6,12 +6,10 @@ import { motion } from "framer-motion";
 import {
   Shield,
   Globe,
-  Users,
   MessageSquare,
   AlertTriangle,
   CheckCircle,
   Clock,
-  TrendingUp,
   ArrowRight,
   Building2,
   Handshake,

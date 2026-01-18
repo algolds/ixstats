@@ -22,8 +22,6 @@ import {
   MessageSquare,
   Building,
   Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";

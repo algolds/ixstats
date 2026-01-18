@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   Target,
   Download,
-  Share2,
   Clock,
   Award,
   Network,

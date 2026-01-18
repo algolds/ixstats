@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { calculateChangeImpact, type ChangeImpact } from "~/lib/change-impact-calculator";
 import type { Country } from "@prisma/client";
 

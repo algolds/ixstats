@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -13,7 +12,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
-import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Autocomplete } from "~/components/ui/autocomplete";
@@ -28,7 +26,6 @@ import {
   Info,
 } from "lucide-react";
 import type { TaxSystemInput } from "~/types/tax-system";
-import { FISCAL_YEARS } from "~/types/tax-system";
 import { api } from "~/trpc/react";
 
 interface TaxSystemFormProps {

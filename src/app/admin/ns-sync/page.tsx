@@ -7,9 +7,8 @@ import { api } from '~/trpc/react';
 export default function NSSyncMonitoringPage() {
   const [refreshInterval, setRefreshInterval] = useState<number | null>(10000); // Default 10s refresh
   const [showResetConfirm, setShowResetConfirm] = useState<number | null>(null);
-  const [selectedSeason, setSelectedSeason] = useState<number>(1);
 
-  const seasons = [1, 2, 3, 4];
+  const seasons = [1, 2, 3, 4] as const;
 
   // Queries
   const { data: healthStats, isLoading: loadingHealth, refetch: refetchHealth } =
@@ -17,15 +16,31 @@ export default function NSSyncMonitoringPage() {
       refetchInterval: refreshInterval ?? false,
     });
 
-  // Fetch all season statuses individually
-  const seasonStatuses = seasons.map((season) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { data } = api.nsImport.getSyncStatus.useQuery(
-      { season },
-      { refetchInterval: refreshInterval ?? false }
-    );
-    return data;
-  });
+  // Fetch all season statuses - hooks must be called unconditionally at top level (Rules of Hooks)
+  const season1Query = api.nsImport.getSyncStatus.useQuery(
+    { season: 1 },
+    { refetchInterval: refreshInterval ?? false }
+  );
+  const season2Query = api.nsImport.getSyncStatus.useQuery(
+    { season: 2 },
+    { refetchInterval: refreshInterval ?? false }
+  );
+  const season3Query = api.nsImport.getSyncStatus.useQuery(
+    { season: 3 },
+    { refetchInterval: refreshInterval ?? false }
+  );
+  const season4Query = api.nsImport.getSyncStatus.useQuery(
+    { season: 4 },
+    { refetchInterval: refreshInterval ?? false }
+  );
+
+  // Combine into array for iteration in render
+  const seasonStatuses = [
+    season1Query.data,
+    season2Query.data,
+    season3Query.data,
+    season4Query.data,
+  ];
 
   const { data: syncLogs, refetch: refetchLogs } = api.nsImport.getSyncLogs.useQuery(
     { season: undefined, limit: 50 },

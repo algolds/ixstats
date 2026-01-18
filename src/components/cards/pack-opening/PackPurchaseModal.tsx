@@ -3,7 +3,7 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { PackType } from "@prisma/client";
 import { api } from "~/trpc/react";

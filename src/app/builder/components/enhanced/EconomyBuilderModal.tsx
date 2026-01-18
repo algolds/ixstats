@@ -1,37 +1,22 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Progress } from "~/components/ui/progress";
 import {
   Building2,
   Factory,
   Users,
-  TrendingUp,
   Target,
   Settings,
   AlertTriangle,
-  CheckCircle,
-  Info,
   Save,
   X,
-  ArrowLeft,
-  ArrowRight,
   Zap,
   BarChart3,
-  Globe,
-  Brain,
-  Leaf,
-  DollarSign,
-  PieChart,
-  Gauge,
-  Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,7 +34,6 @@ import type {
   EconomyBuilderState,
   EconomyBuilderTab,
   EconomicHealthMetrics,
-  CrossBuilderIntegration,
 } from "~/types/economy-builder";
 import type { EconomicInputs } from "../../lib/economy-data-service";
 import { economyIntegrationService } from "../../services/EconomyIntegrationService";

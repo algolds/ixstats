@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { X, Plus, Minus, BarChart3, TrendingUp, Users, DollarSign } from "lucide-react";
+import { X, Plus, BarChart3 } from "lucide-react";
 import { ComparisonCharts } from "./charts/ComparisonCharts";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Input } from "~/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import {
   Command,
@@ -17,9 +16,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { IxTime } from "~/lib/ixtime";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
-import { api } from "~/trpc/react";
 import { toast } from "sonner";
-import type { CountryWithEconomicData, CalculatedStats } from "~/types/ixstats";
+import type { CountryWithEconomicData } from "~/types/ixstats";
 
 // Define the type for countries that can be compared
 export interface ComparisonCountry {

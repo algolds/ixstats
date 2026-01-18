@@ -20,9 +20,6 @@ import type {
   UserNotificationPreferences,
   NotificationEngagement,
   NotificationAnalytics,
-  NotificationCategory,
-  NotificationPriority,
-  DeliveryMethod,
 } from "~/types/unified-notifications";
 import { DEFAULT_USER_PREFERENCES } from "~/types/unified-notifications";
 

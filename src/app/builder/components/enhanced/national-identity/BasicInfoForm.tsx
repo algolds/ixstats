@@ -4,7 +4,6 @@ import React, { useCallback } from "react";
 import { Globe, Crown, Building, MapPin, Users, Coins } from "lucide-react";
 import { CurrencySymbolPicker } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
-import { Autocomplete } from "~/components/ui/autocomplete";
 import { CurrencyAutocomplete } from "./CurrencyAutocomplete";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";

@@ -13,7 +13,7 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
 import type {
   IntelligenceItem,
   CrisisEvent,
@@ -21,7 +21,6 @@ import type {
   Treaty,
   EconomicIndicator,
 } from "~/types/sdi";
-import { generateAndPostCrisisEvent } from "~/lib/auto-post-service";
 import { notificationAPI } from "~/lib/notification-api";
 
 export const sdiRouter = createTRPCRouter({

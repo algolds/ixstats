@@ -34,7 +34,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/comp
 import {
   formatPopulation,
   formatCurrency,
-  formatGrowthRateFromDecimal,
   displayGrowthRate,
   getGrowthIcon,
   getGrowthColor,

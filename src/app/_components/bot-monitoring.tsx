@@ -31,7 +31,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import type { AdminPageBotStatusView } from "~/types/ixstats"; // Import the main type
+// Import the main type
 
 // Interface for simulated metrics
 interface BotMetrics {

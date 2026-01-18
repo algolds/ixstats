@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Progress } from "~/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import {
   Flag,
@@ -25,22 +24,13 @@ import {
   Crown,
   Landmark,
   Target,
-  MapPin,
   Calendar,
   Phone,
   Languages,
-  Music,
-  Heart,
-  GraduationCap,
   Factory,
-  Wrench,
-  Home,
-  Car,
-  UtensilsCrossed,
 } from "lucide-react";
 import { useBuilderContext } from "../context/BuilderStateContext";
 import { formatCurrency } from "~/lib/format-utils";
-import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import {
   Dialog,

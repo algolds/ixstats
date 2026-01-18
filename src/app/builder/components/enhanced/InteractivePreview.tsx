@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Play,
   Pause,
@@ -14,26 +14,21 @@ import {
   TrendingDown,
   Users,
   DollarSign,
-  Building2,
   Zap,
-  Globe,
   Flag,
   Crown,
   Heart,
   Shield,
   Activity,
   CheckCircle,
-  AlertTriangle,
   Clock,
   Target,
   Rocket,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent, GlassCardHeader } from "../glass/GlassCard";
-import { GlassTooltip } from "../glass/GlassTooltip";
 import { Button } from "~/components/ui/button";
 import { BuilderVitalityRings } from "../BuilderVitalityRings";
-import { useBuilderTheming } from "~/hooks/useBuilderTheming";
 import { withBasePath } from "~/lib/base-path";
 import type { EconomicInputs, RealCountryData } from "../../lib/economy-data-service";
 import type { ExtractedColors } from "~/lib/image-color-extractor";

@@ -276,6 +276,11 @@ export function useAtomicState(): AtomicStateContextValue {
   return context;
 }
 
+// Optional version that returns null when not in provider (safe to call anywhere)
+export function useAtomicStateOptional(): AtomicStateContextValue | null {
+  return useContext(AtomicStateContext);
+}
+
 // Utility hooks for specific parts of the atomic state
 
 export function useAtomicComponents() {
@@ -307,6 +312,17 @@ export function useAtomicGovernment() {
     traditionalStructure: state.traditionalStructure,
     realTimeMetrics: state.realTimeMetrics,
     effectivenessScore: state.effectivenessScore,
+  };
+}
+
+// Optional version that returns null when not in provider (safe to call anywhere)
+export function useAtomicGovernmentOptional() {
+  const context = useAtomicStateOptional();
+  if (!context) return null;
+  return {
+    traditionalStructure: context.state.traditionalStructure,
+    realTimeMetrics: context.state.realTimeMetrics,
+    effectivenessScore: context.state.effectivenessScore,
   };
 }
 

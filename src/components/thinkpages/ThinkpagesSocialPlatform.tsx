@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { AnimatePresence } from "framer-motion";
 import { VariableSizeList, type VariableSizeListHandle } from "~/lib/react-window-compat";
 import {
   Users,
@@ -9,14 +8,11 @@ import {
   Search,
   RefreshCw,
   Loader2,
-  ChevronDown,
-  ChevronUp,
   Rss,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { ThinkpagesPost } from "./ThinkpagesPost";
 import { LiveEventsFeed } from "./LiveEventsFeed";
 import { ThinkPagesGuide } from "./ThinkPagesGuide";
@@ -25,7 +21,6 @@ import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { BlurFade } from "~/components/magicui/blur-fade";
 import { AccountManagerModal } from "./AccountManagerModal";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { RepostModal } from "./RepostModal";
 

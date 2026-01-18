@@ -285,16 +285,20 @@ export function MobileOptimized({
   enableTouchGestures = true,
   className = "",
 }: MobileOptimizedProps) {
-  const touchState = enableTouchGestures ? useTouchGestures() : null;
+  // All hooks must be called unconditionally (Rules of Hooks)
+  const touchState = useTouchGestures();
   const performance = useMobilePerformance();
+
+  // Apply touch state only if enabled
+  const effectiveTouchState = enableTouchGestures ? touchState : null;
 
   return (
     <>
       <MobileOptimizationStyles />
       <div
         className={`mobile-optimized ${className} ${performance.reducedMotion ? "reduce-motion" : ""}`}
-        data-touch-enabled={touchState?.isTouch}
-        data-swipe-direction={touchState?.swipeDirection}
+        data-touch-enabled={effectiveTouchState?.isTouch}
+        data-swipe-direction={effectiveTouchState?.swipeDirection}
       >
         {children}
       </div>

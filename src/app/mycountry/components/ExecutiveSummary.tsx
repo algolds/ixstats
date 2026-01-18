@@ -47,7 +47,6 @@ const icons: Record<string, any> = {
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { Separator } from "~/components/ui/separator";
 
 // Use standardized CriticalAlert from unified interfaces
 import type { CriticalAlert } from "~/types/intelligence-unified";

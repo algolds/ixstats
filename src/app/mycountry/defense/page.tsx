@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useUser } from "~/context/auth-context";
 import { motion } from "framer-motion";
 import { api } from "~/trpc/react";
 import Link from "next/link";
@@ -12,9 +11,6 @@ import {
   Users,
   Target,
   Activity,
-  Plus,
-  Plane,
-  Ship,
   Radio,
   MapPin,
   Globe2,
@@ -23,21 +19,16 @@ import {
   Sword,
   HelpCircle,
   Info,
-  Crown,
-  Brain,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
-import { Progress } from "~/components/ui/progress";
 import { ColoredProgress } from "~/components/ui/colored-progress";
-import { Separator } from "~/components/ui/separator";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,

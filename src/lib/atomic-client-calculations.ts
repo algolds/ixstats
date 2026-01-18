@@ -1144,7 +1144,7 @@ export function calculateClientAtomicEconomicImpact(
     };
   }
 
-  let modifiers: ClientAtomicEconomicModifiers = {
+  const modifiers: ClientAtomicEconomicModifiers = {
     taxCollectionMultiplier: 1.0,
     gdpGrowthModifier: 1.0,
     stabilityBonus: 0,

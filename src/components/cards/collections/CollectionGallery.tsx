@@ -10,7 +10,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Grid3x3,
-  TrendingUp,
   Trophy,
   Heart,
   Eye,
@@ -18,7 +17,6 @@ import {
   Globe,
   Search,
   Filter,
-  ChevronDown,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";

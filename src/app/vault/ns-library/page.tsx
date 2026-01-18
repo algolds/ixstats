@@ -30,7 +30,6 @@ import {
   Tag,
   ChevronDown,
   X,
-  ArrowRight,
   Download,
   AlertCircle,
   Star,

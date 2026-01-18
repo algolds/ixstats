@@ -1,26 +1,20 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { BarChart3, TrendingUp, Users, DollarSign, Activity, Zap } from "lucide-react";
+import { BarChart3, TrendingUp, Users, DollarSign, Activity } from "lucide-react";
 import {
   EnhancedNumberInput,
-  EnhancedDial,
-  EnhancedBarChart,
   MetricCard,
   SliderWithDirectInput,
 } from "../primitives/enhanced";
 import { GlassBarChart } from "~/components/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { getBuilderEconomicMetrics } from "~/lib/enhanced-economic-service";
 import type { EconomicInputs, RealCountryData } from "../lib/economy-data-service";
 import { getEconomicTier } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
-import type { CountryStats } from "~/types/ixstats";
-import type { EconomyData } from "~/types/economics";
 
 // Help System
-import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
 import { EconomicsHelpContent } from "../components/help/EconomicsHelpContent";
 
 interface CoreIndicatorsSectionProps extends SectionContentProps {
@@ -48,25 +42,25 @@ export function CoreIndicatorsSection({
   const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
-  // Guard against null inputs
-  if (!inputs) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-          <p className="text-muted-foreground">Loading economic data...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Ensure coreIndicators exists with defaults and sanitize any NaN values
   const sanitizeNumber = (value: any, defaultValue: number): number => {
     const numValue = Number(value);
     return !isNaN(numValue) && isFinite(numValue) ? numValue : defaultValue;
   };
 
-  const coreIndicators = inputs.coreIndicators || {
+  // Use safe defaults when inputs is null
+  const safeInputs = inputs || {
+    coreIndicators: {
+      totalPopulation: 10000000,
+      nominalGDP: 250000000000,
+      gdpPerCapita: 25000,
+      realGDPGrowthRate: 3.0,
+      inflationRate: 2.0,
+      currencyExchangeRate: 1.0,
+    },
+  };
+
+  const coreIndicators = safeInputs.coreIndicators || {
     totalPopulation: 10000000,
     nominalGDP: 250000000000,
     gdpPerCapita: 25000,
@@ -109,7 +103,7 @@ export function CoreIndicatorsSection({
     sanitizedCoreIndicators.totalPopulation
   );
 
-  // Calculate derived metrics for overview cards
+  // Calculate derived metrics for overview cards - must be called before early return
   const metrics = useMemo(() => {
     const totalPopulation = sanitizedCoreIndicators.totalPopulation;
     const gdpPerCapita = sanitizedCoreIndicators.gdpPerCapita;
@@ -173,6 +167,18 @@ export function CoreIndicatorsSection({
       },
     ];
   }, [sanitizedCoreIndicators]);
+
+  // Guard against null inputs - after all hooks have been called
+  if (!inputs) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <p className="text-muted-foreground">Loading economic data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Generate 10-year economic projections
   const generateProjections = (currentGDP: number, growthRate: number, inflationRate: number) => {

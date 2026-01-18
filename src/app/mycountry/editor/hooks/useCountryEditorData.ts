@@ -6,9 +6,6 @@ import {
 } from "~/app/builder/lib/economy-data-service";
 import {
   type GovernmentBuilderState,
-  type DepartmentInput,
-  type BudgetAllocationInput,
-  type RevenueSourceInput,
   type GovernmentType,
 } from "~/types/government";
 import { useUserCountry } from "~/hooks/useUserCountry";

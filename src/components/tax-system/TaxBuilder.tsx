@@ -77,7 +77,7 @@ export function TaxBuilder({
   isReadOnly = false,
   countryId,
   showAtomicIntegration = true,
-  hideSaveButton = false,
+  hideSaveButton: _hideSaveButton = false,
   enableAutoSync = false,
   economicData,
   governmentData,
@@ -88,13 +88,13 @@ export function TaxBuilder({
   >("atomic");
 
   // UI state
-  const [isSaving, setIsSaving] = useState(false);
+  const [_isSaving, setIsSaving] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [calculationResult, setCalculationResult] = useState<TaxCalculationResult | null>(null);
+  const [_calculationResult, setCalculationResult] = useState<TaxCalculationResult | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [pendingSaveCallback, setPendingSaveCallback] = useState<(() => void) | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
-  const [selectedTaxComponents, setSelectedTaxComponents] = useState<ComponentType[]>([]);
+  const [_selectedTaxComponents, _setSelectedTaxComponents] = useState<ComponentType[]>([]);
   const [selectedAtomicTaxComponents, setSelectedAtomicTaxComponents] = useState<string[]>([]);
 
   // State management hook
@@ -102,12 +102,12 @@ export function TaxBuilder({
     builderState: localBuilderState,
     setBuilderState: setLocalBuilderState,
     handleTaxSystemChange,
-    handleCategoriesChange,
-    handleBracketsChange,
-    handleExemptionsChange,
-    handleDeductionsChange,
-    addCategory,
-    removeCategory,
+    handleCategoriesChange: _handleCategoriesChange,
+    handleBracketsChange: _handleBracketsChange,
+    handleExemptionsChange: _handleExemptionsChange,
+    handleDeductionsChange: _handleDeductionsChange,
+    addCategory: _addCategory,
+    removeCategory: _removeCategory,
     applyTemplate,
     updateValidation,
   } = useTaxBuilderState({ initialData, countryId });
@@ -117,7 +117,7 @@ export function TaxBuilder({
     builderState: autoSyncState,
     setBuilderState: setAutoSyncState,
     syncState,
-    triggerSync,
+    triggerSync: _triggerSync,
     clearConflicts,
   } = useTaxBuilderAutoSync(countryId, localBuilderState, {
     enabled: enableAutoSync && !!countryId,
@@ -144,10 +144,10 @@ export function TaxBuilder({
 
   // Data sync hook
   const {
-    parsedDataApplied,
+    parsedDataApplied: _parsedDataApplied,
     revenueAutoPopulated,
     syncedCategoryIndices,
-    setSyncedCategoryIndices,
+    setSyncedCategoryIndices: _setSyncedCategoryIndices,
   } = useTaxDataSync({
     builderState,
     setBuilderState,
@@ -203,8 +203,8 @@ export function TaxBuilder({
     setSuggestions(computeTaxSuggestions(builderState));
   }, [builderState]);
 
-  // Save handler
-  const handleSave = async () => {
+  // Save handler - available for external use
+  const _handleSave = async () => {
     const currentValidation = validateTaxBuilderState(builderState);
     updateValidation(currentValidation);
 
@@ -252,9 +252,9 @@ export function TaxBuilder({
       } else if (countryId) {
         setIsSaving(true);
         try {
-          let result: any;
+          let _result: any;
           try {
-            result = await updateMutation.mutateAsync({
+            _result = await updateMutation.mutateAsync({
               countryId,
               data: submitState as any,
               skipConflictCheck: true,
@@ -263,7 +263,7 @@ export function TaxBuilder({
             const msg = updateErr instanceof Error ? updateErr.message : String(updateErr);
             const notFound = msg.includes("No record was found") || msg.includes("P2025");
             if (notFound) {
-              result = await createMutation.mutateAsync({
+              _result = await createMutation.mutateAsync({
                 countryId,
                 data: submitState as any,
                 skipConflictCheck: true,

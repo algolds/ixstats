@@ -17,9 +17,7 @@ import {
   Wifi,
   Navigation,
   Info,
-  Loader2,
   AlertTriangle,
-  Flag,
   RefreshCw,
 } from "lucide-react";
 import { ixnayWiki } from "~/lib/mediawiki-service";

@@ -6,8 +6,6 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from "~/components/ui/chart";
 import {
   BarChart,
@@ -15,14 +13,11 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
   LineChart,
   Line,
-  Legend,
-  Tooltip,
 } from "recharts";
 import { api } from "~/trpc/react";
 import { Loader2, TrendingUp, TrendingDown, BarChart3, PieChartIcon, Activity } from "lucide-react";

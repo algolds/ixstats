@@ -11,7 +11,6 @@ import {
   ListOrdered,
   Quote,
   Code,
-  Image,
   Smile,
   Send,
   Paperclip,
@@ -25,13 +24,9 @@ import { Separator } from "~/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Emoji } from "react-apple-emojis";
 import { api } from "~/trpc/react";
-import {
-  CompactDiscordEmojiPicker,
-  formatDiscordEmoji,
-  formatUnicodeEmoji,
-} from "./primitives/DiscordEmojiPicker";
+
+
 
 interface RichTextEditorProps {
   placeholder?: string;

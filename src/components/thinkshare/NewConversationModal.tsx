@@ -3,7 +3,6 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
 import { Search, Send, UserPlus, Crown, Hash, Globe, Loader2 } from "lucide-react";
 
 interface Account {

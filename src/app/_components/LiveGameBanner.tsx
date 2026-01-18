@@ -4,13 +4,10 @@ import React, { useState, useEffect } from "react";
 import { IxTime } from "~/lib/ixtime";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
-import { Card, CardContent } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
   RefreshCw,
   Clock,
-  Globe,
   TrendingUp,
   Users,
   DollarSign,

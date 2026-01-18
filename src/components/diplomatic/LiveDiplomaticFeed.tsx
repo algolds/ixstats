@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { useCountryDiplomaticUpdates } from "~/hooks/useDiplomaticUpdates";
 import type { LiveIntelligenceUpdate, DiplomaticEvent } from "~/lib/diplomatic-websocket";
-import { IxTime } from "~/lib/ixtime";
 import {
   RiWifiLine,
   RiWifiOffLine,
@@ -16,11 +15,9 @@ import {
   RiAlarmWarningLine,
   RiFileTextLine,
   RiExchangeLine,
-  RiEyeLine,
   RiEyeOffLine,
   RiFilterLine,
   RiTimeLine,
-  RiMapPinLine,
   RiArrowRightLine,
 } from "react-icons/ri";
 

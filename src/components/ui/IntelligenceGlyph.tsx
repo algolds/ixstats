@@ -2,8 +2,6 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import {
   RiShieldLine,
-  RiEyeLine,
-  RiLockLine,
   RiGlobalLine,
   RiFileTextLine,
   RiBarChartLine,
@@ -15,7 +13,6 @@ import {
   RiChat3Line,
   RiUserAddLine,
   RiStarLine,
-  RiArrowRightLine,
   RiExternalLinkLine,
   RiRefreshLine,
   RiSearchLine,

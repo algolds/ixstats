@@ -147,7 +147,7 @@ export function apiMiddleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Rate limiting for API endpoints
-  let response = rateLimitMiddleware(request, {
+  const response = rateLimitMiddleware(request, {
     limit: 1000,
     window: 3600000,
     keyGenerator: (req) => {

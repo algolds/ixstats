@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Target, Plus, TrendingUp, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { StrategicPlanningModal } from "~/components/modals/StrategicPlanningModal";
 import { SectionHelpIcon } from "~/components/ui/help-icon";

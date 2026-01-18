@@ -10,7 +10,6 @@ import {
   EconomicCalculationGroups,
   type GroupedAnalysisResult,
 } from "./economic-calculation-groups";
-import { IxTime } from "./ixtime";
 import type { CountryStats, EconomicConfig, HistoricalDataPoint } from "../types/ixstats";
 import type { EconomyData } from "../types/economics";
 

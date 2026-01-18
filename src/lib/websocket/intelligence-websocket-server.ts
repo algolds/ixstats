@@ -8,9 +8,6 @@ import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
 import type {
   IntelligenceUpdate,
-  CountryIntelligenceChannel,
-  GlobalIntelligenceChannel,
-  WebSocketIntelligenceEvent,
 } from "./types";
 
 export class IntelligenceWebSocketServer {

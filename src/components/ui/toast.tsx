@@ -167,22 +167,22 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
   );
 }
 
-// Convenience functions
-export const toast = {
-  success: (title: string, description?: string, action?: Toast["action"]) => {
-    const context = useToast();
-    context.toast({ type: "success", title, description, action });
-  },
-  error: (title: string, description?: string, action?: Toast["action"]) => {
-    const context = useToast();
-    context.toast({ type: "error", title, description, action });
-  },
-  warning: (title: string, description?: string, action?: Toast["action"]) => {
-    const context = useToast();
-    context.toast({ type: "warning", title, description, action });
-  },
-  info: (title: string, description?: string, action?: Toast["action"]) => {
-    const context = useToast();
-    context.toast({ type: "info", title, description, action });
-  },
-};
+// Hook-based convenience helpers (must be used within components)
+// Usage: const { success, error, warning, info } = useToastHelpers();
+export function useToastHelpers() {
+  const { toast } = useToast();
+  return {
+    success: (title: string, description?: string, action?: Toast["action"]) => {
+      toast({ type: "success", title, description, action });
+    },
+    error: (title: string, description?: string, action?: Toast["action"]) => {
+      toast({ type: "error", title, description, action });
+    },
+    warning: (title: string, description?: string, action?: Toast["action"]) => {
+      toast({ type: "warning", title, description, action });
+    },
+    info: (title: string, description?: string, action?: Toast["action"]) => {
+      toast({ type: "info", title, description, action });
+    },
+  };
+}

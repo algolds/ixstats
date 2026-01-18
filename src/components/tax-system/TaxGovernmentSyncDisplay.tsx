@@ -1,33 +1,17 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Progress } from "~/components/ui/progress";
 import { Button } from "~/components/ui/button";
 import {
-  Building2,
-  TrendingUp,
-  TrendingDown,
-  Target,
   AlertTriangle,
-  CheckCircle,
   Info,
   RefreshCw,
-  DollarSign,
-  BarChart3,
-  PieChart,
-  Scale,
-  Zap,
   ArrowUpDown,
-  Lightbulb,
-  AlertCircle,
-  Shield,
 } from "lucide-react";
 
-import type { TaxCategory, TaxSystem } from "~/types/tax-system";
+import type { TaxSystem } from "~/types/tax-system";
 import type { GovernmentDepartment, BudgetAllocation } from "~/types/government";
 
 interface TaxGovernmentSyncProps {

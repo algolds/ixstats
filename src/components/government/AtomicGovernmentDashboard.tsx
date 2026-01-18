@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
@@ -21,24 +21,17 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import {
   Crown,
-  Users,
-  Scale,
   Building2,
   Zap,
-  Target,
   Shield,
   TrendingUp,
   Activity,
-  Settings,
-  ChevronRight,
   Plus,
   AlertTriangle,
   HelpCircle,
-  CheckCircle,
   Info,
 } from "lucide-react";
 

@@ -5,7 +5,6 @@
 
 import { ComponentType } from "@prisma/client";
 import { SYNERGY_RULES, CONFLICT_RULES } from "./atomic-builder-state";
-import type { SynergyRule, ConflictRule, AtomicEconomicModifiers } from "./atomic-builder-state";
 
 export interface SmartRecommendation {
   id: string;

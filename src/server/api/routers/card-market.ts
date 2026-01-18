@@ -13,9 +13,6 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
-  rateLimitedPublicProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
 import { auctionService } from "~/lib/auction-service";

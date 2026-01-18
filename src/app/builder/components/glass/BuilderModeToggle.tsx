@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Zap, Settings, Sparkles } from "lucide-react";
+import { Zap, Settings } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 interface BuilderModeToggleProps {

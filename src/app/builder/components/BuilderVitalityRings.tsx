@@ -14,7 +14,6 @@ import {
   Activity,
   Crown,
   Zap,
-  Flag,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { EconomicInputs } from "../lib/economy-data-service";

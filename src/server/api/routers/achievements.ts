@@ -1,11 +1,9 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationHooks } from "~/lib/notification-hooks";
 import { vaultService } from "~/lib/vault-service";

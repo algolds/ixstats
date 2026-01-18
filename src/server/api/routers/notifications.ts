@@ -7,7 +7,6 @@ import {
   publicProcedure,
   adminProcedure,
   lightMutationProcedure,
-  readOnlyProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { observable } from "@trpc/server/observable";

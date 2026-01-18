@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import Link from "next/link";
-import { createUrl } from "~/lib/url-utils";
 
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -20,20 +18,13 @@ import {
   Crown,
   Trophy,
   Users,
-  Eye,
   Star,
-  Zap,
-  Globe,
   MessageSquare,
-  MapPin,
   Calendar,
   TrendingUp,
   Award,
-  Target,
   Activity,
-  Heart,
   UserPlus,
-  Flag,
   Briefcase,
 } from "lucide-react";
 
@@ -41,7 +32,6 @@ import {
 import { PublicVitalityRings } from "~/components/countries/PublicVitalityRings";
 
 // Utils
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { usePermissions } from "~/hooks/usePermissions";

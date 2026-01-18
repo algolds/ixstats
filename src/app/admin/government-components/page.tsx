@@ -38,20 +38,14 @@ import {
   Trash2,
   Search,
   Network,
-  Eye,
   EyeOff,
   ArrowLeft,
   Settings,
   Building2,
-  Users,
-  Shield,
   DollarSign,
-  Activity,
   BarChart3,
-  Target,
   Award,
   Palette,
-  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { ComponentType } from "@prisma/client";

@@ -10,14 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+
+
 
 // Icons
 import {
@@ -28,10 +22,8 @@ import {
   BarChart3,
   FileText,
   Globe,
-  Zap,
   Star,
   Plus,
-  ExternalLink,
   Grid3X3,
   List,
   Crown,
@@ -46,7 +38,6 @@ import {
 
 import { AdminFavoriteButton } from "~/components/admin/AdminFavoriteButton";
 import { AdminControlEmbed } from "~/components/admin/AdminControlEmbeds";
-import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 
 // Define available admin panels

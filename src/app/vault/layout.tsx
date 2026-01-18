@@ -12,7 +12,6 @@ import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import {
   Sheet,
   SheetContent,
-  SheetTrigger,
 } from "~/components/ui/sheet";
 
 interface VaultLayoutProps {

@@ -1,7 +1,7 @@
 // IxStats Private Preview Configuration
 // Centralized configuration for preview mode, testing, and demo features
 
-import { UserRole, AccessControlManager } from "./access-control";
+import { UserRole } from "./access-control";
 import { seedPreviewDatabase } from "./preview-seeder";
 
 export interface PreviewConfig {

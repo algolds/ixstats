@@ -10,14 +10,12 @@ import {
   Building2,
   Activity,
   Zap,
-  Heart,
   Shield,
   AlertTriangle,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent } from "./GlassCard";
 import { BuilderVitalityRings } from "../BuilderVitalityRings";
-import { PolicyAdvisor } from "../../primitives/PolicyAdvisor";
 import { generatePolicyAdvisorTips } from "../../utils/policyAdvisorUtils";
 import type { EconomicInputs } from "../../lib/economy-data-service";
 import type { ExtractedColors } from "~/lib/image-color-extractor";

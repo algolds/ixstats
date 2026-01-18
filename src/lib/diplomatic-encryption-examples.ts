@@ -10,7 +10,6 @@ import type {
   ClassificationLevel,
   EncryptedMessage,
   DecryptedMessage,
-  EncryptionKeyModel,
 } from "./diplomatic-encryption";
 import type { UserLogContext } from "./user-logger";
 import { db } from "~/server/db";

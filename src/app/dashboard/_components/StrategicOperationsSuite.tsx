@@ -9,12 +9,9 @@ import {
   ChevronUp,
   Shield,
   MessageSquare,
-  Users,
   Target,
   Globe,
-  Zap,
   Activity,
-  Settings,
 } from "lucide-react";
 import { DiplomaticOperationsCard } from "./DiplomaticOperationsCard";
 import { StrategicCommunicationsCard } from "./StrategicCommunicationsCard";

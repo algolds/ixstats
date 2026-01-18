@@ -32,9 +32,6 @@ import {
   Grid3x3,
   Heart,
   MessageCircle,
-  TrendingUp,
-  Users,
-  Calendar,
   Send,
   Sparkles,
 } from "lucide-react";

@@ -17,27 +17,19 @@ import {
   Atom,
   Blocks,
   Zap,
-  CheckCircle,
   AlertTriangle,
-  BookOpen,
   Users,
   Scale,
   Heart,
   Globe,
   TrendingUp,
-  GraduationCap,
-  Sparkles,
-  Trees,
-  Target,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,

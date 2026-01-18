@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { Card } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
-import { ReplyPreview } from "./ReplyPreview";
 
 import type {
   ThinkShareConversation,

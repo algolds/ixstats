@@ -16,7 +16,7 @@ import { generateSlug } from "~/lib/slug-utils";
 import { notificationHooks } from "~/lib/notification-hooks";
 import { UserManagementService } from "~/lib/user-management-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
-import type { Country, CountryStats, BaseCountryData } from "~/types/ixstats";
+import type { BaseCountryData } from "~/types/ixstats";
 
 // Temporary storage for user-country mappings until we fix the User model
 

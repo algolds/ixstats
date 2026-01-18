@@ -1,9 +1,25 @@
 // src/app/api/admin/init-flags/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { api } from "~/trpc/server";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication for admin operations
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    // Only admins/owners can initialize flags
+    if (!isSystemOwner(session.userId)) {
+      const role = (session.sessionClaims?.metadata as any)?.role;
+      if (!["admin", "owner", "staff"].includes(role)) {
+        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      }
+    }
+
     console.log("[InitFlags] Starting flag cache initialization...");
 
     // Get all countries

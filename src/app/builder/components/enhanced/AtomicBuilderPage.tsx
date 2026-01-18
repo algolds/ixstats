@@ -16,8 +16,6 @@ import { cn } from "~/lib/utils";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { builderTutorialSteps, quickStartSteps } from "../../data/onboarding-tutorial";
 import { safeGetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
-import { unifiedBuilderService } from "../../services/UnifiedBuilderIntegrationService";
-import type { ComponentType as GovComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { ComponentType as PrismaComponentType } from "@prisma/client";
 import { toast } from "sonner";
 
@@ -26,8 +24,7 @@ import { BuilderStateProvider, useBuilderContext } from "./context/BuilderStateC
 import { BuilderHeader, StepContent, BuilderFooter } from "./sections";
 import { StepRenderer } from "./sections/StepRenderer";
 import { StepIndicator } from "./StepIndicator";
-import { SectionLoadingFallback } from "../LoadingFallback";
-import { GlobalBuilderLoading, BuilderStepLoading } from "../GlobalBuilderLoading";
+import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import { BUILDER_GOLD, BUILDER_GOLD_HOVER } from "./builderConfig";
 import type { BuilderStep } from "./builderConfig";
 import { useBuilderActions } from "../../hooks/useBuilderActions";

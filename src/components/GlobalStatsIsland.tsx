@@ -2,15 +2,12 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import {
   DynamicIsland,
   DynamicContainer,
   DynamicTitle,
-  DynamicDescription,
-  DynamicDiv,
   useDynamicIslandSize,
   SIZE_PRESETS,
   DynamicIslandProvider,
@@ -27,7 +24,6 @@ import {
   Users,
   DollarSign,
   Building2,
-  MapPin,
   Activity,
   Target,
   RefreshCw,
@@ -47,9 +43,6 @@ import {
   User,
   LogOut,
   BarChart3,
-  PieChart,
-  LineChart,
-  TrendingDown,
   Shield,
   Building,
 } from "lucide-react";

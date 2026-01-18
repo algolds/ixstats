@@ -2,10 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   XAxis,
@@ -27,13 +23,11 @@ import {
   Users,
   DollarSign,
   TrendingUp,
-  Globe,
   BarChart3,
   Target,
   Layers,
   Minus,
 } from "lucide-react";
-import { IxTime } from "~/lib/ixtime";
 import { useTheme } from "~/context/theme-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";

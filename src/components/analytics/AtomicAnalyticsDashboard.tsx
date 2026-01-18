@@ -27,24 +27,18 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  ScatterChart,
-  Scatter,
 } from "recharts";
 import {
   BarChart3,
   TrendingUp,
   Target,
-  Zap,
   Shield,
-  Settings,
   PieChart as PieChartIcon,
   Activity,
   Brain,
   AlertTriangle,
-  CheckCircle,
   Download,
   RefreshCw,
-  Filter,
 } from "lucide-react";
 
 import type { ComponentType } from "~/types/government";

@@ -9,13 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
 import { GlassCard } from "~/components/ui/enhanced-card";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -24,8 +20,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Switch } from "~/components/ui/switch";
-import { Slider } from "~/components/ui/slider";
 import {
   LineChart,
   Line,
@@ -39,45 +33,18 @@ import {
   BarChart,
   Bar,
   ComposedChart,
-  ScatterChart,
-  Scatter,
-  PieChart,
-  Pie,
-  Cell,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
   Legend,
 } from "recharts";
 import {
   BarChart3,
   TrendingUp,
-  TrendingDown,
   Activity,
   AlertTriangle,
   CheckCircle,
-  Clock,
-  Settings,
-  RefreshCw,
-  Download,
-  Filter,
-  Search,
-  Zap,
-  Target,
   Users,
-  DollarSign,
-  Globe,
-  Shield,
   Lightbulb,
-  Eye,
   BarChart4,
-  PieChart as PieChartIcon,
-  ScatterChart as ScatterChartIcon,
-  Radar as RadarChartIcon,
 } from "lucide-react";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
 interface AdvancedAnalyticsModalProps {
   isOpen: boolean;

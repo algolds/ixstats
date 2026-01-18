@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -19,7 +19,6 @@ import {
   Lightbulb,
   AlertCircle,
   CheckCircle2,
-  Plus,
   Minus,
   Building,
   Info,
@@ -45,7 +44,6 @@ import { ComponentType } from "@prisma/client";
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import {
   calculateUnifiedAtomicModifiers,
-  calculateClientAtomicEconomicImpact,
 } from "~/lib/atomic-client-calculations";
 import { api } from "~/trpc/react";
 

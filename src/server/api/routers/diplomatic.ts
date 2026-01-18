@@ -9,7 +9,6 @@ import {
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notification-api";
-import { notificationHooks } from "~/lib/notification-hooks";
 import { DiplomaticChoiceTracker } from "~/lib/diplomatic-choice-tracker";
 import {
   calculateCulturalCompatibility,
@@ -37,7 +36,7 @@ import { vaultService } from "~/lib/vault-service";
  * @param completedMissionCount - Number of completed cultural_outreach missions
  * @returns Object with cultural impact and diplomatic value bonus percentages
  */
-function calculateMissionCulturalBonus(completedMissionCount: number) {
+function _calculateMissionCulturalBonus(completedMissionCount: number) {
   // 20% cultural impact bonus per mission (max 60%)
   const culturalImpactBonus = Math.min(completedMissionCount * 20, 60);
 
@@ -60,7 +59,7 @@ function calculateMissionCulturalBonus(completedMissionCount: number) {
  * @param culturalImpact - Base cultural impact boost amount (default: 15)
  * @param diplomaticValue - Base diplomatic value boost amount (default: 10)
  */
-function getCulturalExchangeBoostValues(culturalImpact = 15, diplomaticValue = 10) {
+function _getCulturalExchangeBoostValues(culturalImpact = 15, diplomaticValue = 10) {
   return {
     culturalImpactBoost: culturalImpact,
     diplomaticValueBoost: diplomaticValue,
@@ -713,7 +712,7 @@ export const diplomaticRouter = createTRPCRouter({
             role: p.role,
           })),
         }));
-      } catch (error) {
+      } catch (_error) {
         return [];
       }
     }),
@@ -775,7 +774,7 @@ export const diplomaticRouter = createTRPCRouter({
           ixTimeTimestamp: msg.ixTimeTimestamp,
           timestamp: msg.createdAt.toISOString(),
         }));
-      } catch (error) {
+      } catch (_error) {
         return [];
       }
     }),
@@ -964,7 +963,7 @@ export const diplomaticRouter = createTRPCRouter({
             })),
           };
         });
-      } catch (error) {
+      } catch (_error) {
         return [];
       }
     }),
@@ -1452,7 +1451,7 @@ export const diplomaticRouter = createTRPCRouter({
       });
 
       // Base cost
-      let baseCost = 100000;
+      const baseCost = 100000;
 
       // Relationship strength modifier
       const relationshipStrength = relation?.strength || 25;
@@ -2091,7 +2090,7 @@ export const diplomaticRouter = createTRPCRouter({
         newRelationshipType = "neutral";
       }
 
-      const updated = await ctx.db.diplomaticRelation.update({
+      const _updated = await ctx.db.diplomaticRelation.update({
         where: { id: input.relationshipId },
         data: {
           strength: newStrength,
@@ -2401,7 +2400,7 @@ export const diplomaticRouter = createTRPCRouter({
               // Fallback to embassy-based calculation
               tradeGrowth = Math.floor(embassyLevel * 2.5 + embassyInfluence * 0.3);
             }
-          } catch (error) {
+          } catch (_error) {
             // Fallback calculation if historical data query fails
             tradeGrowth = Math.floor(embassyLevel * 2.5 + embassyInfluence * 0.3);
           }
@@ -2521,10 +2520,10 @@ export const diplomaticRouter = createTRPCRouter({
           const researchProjects = [];
 
           // Map completed/active research missions to research projects
-          const completedResearchCount = researchMissions.filter(
+          const _completedResearchCount = researchMissions.filter(
             (m) => m.status === "completed"
           ).length;
-          const activeResearchCount = researchMissions.filter((m) => m.status === "active").length;
+          const _activeResearchCount = researchMissions.filter((m) => m.status === "active").length;
 
           // Calculate aggregated metrics from real mission data
           const totalPublications = researchMissions.reduce((sum, mission) => {
@@ -2855,7 +2854,7 @@ export const diplomaticRouter = createTRPCRouter({
         sharedDataId: z.string(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input: _input }) => {
       if (!ctx.user?.countryId) {
         throw new Error("You must be associated with a country to revoke shared data.");
       }
@@ -4788,7 +4787,7 @@ function generateAvailableMissions(embassy: any) {
   );
 }
 
-function getMissionData(type: string, embassyLevel: number, priority: string) {
+function getMissionData(type: string, embassyLevel: number, _priority: string) {
   const baseData = {
     trade_negotiation: {
       name: "Trade Negotiation Mission",
@@ -4883,7 +4882,7 @@ function calculateSuccessChance(embassy: any, difficulty: string, staffAssigned:
 }
 
 // Influence and Relationship Mechanics
-function calculateInfluenceGain(
+function _calculateInfluenceGain(
   missionType: string,
   success: boolean,
   embassyLevel: number
@@ -4905,7 +4904,7 @@ function calculateInfluenceGain(
 
 function calculateRelationshipImpact(influenceChange: number, currentRelationship: string): number {
   // Relationship impact based on influence gain
-  let baseImpact = Math.floor(influenceChange / 10);
+  const baseImpact = Math.floor(influenceChange / 10);
 
   // Diminishing returns for already strong relationships
   const relationshipMultiplier =

@@ -9,7 +9,7 @@
 
 // src/app/economy/lib/economy-data-service.ts
 import * as XLSX from "xlsx";
-import type { SpendingCategory, GovernmentSpendingData } from "~/types/economics";
+import type { GovernmentSpendingData } from "~/types/economics";
 
 export type { GovernmentSpendingData };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Zap, TrendingUp, Award, Target, BarChart3, Activity, Gauge } from "lucide-react";
+import { Zap, Award, Target, BarChart3, Activity, Gauge } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";

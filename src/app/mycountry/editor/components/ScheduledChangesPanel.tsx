@@ -22,10 +22,8 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import {
-  getDelayDescription,
   getImpactColor,
   getImpactBgColor,
-  type ChangeType,
   type ImpactLevel,
 } from "~/lib/change-impact-calculator";
 import { formatDistanceToNow, format } from "date-fns";

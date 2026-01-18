@@ -5,7 +5,6 @@
 
 import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { api } from "~/trpc/react";
 import { SignInButton, useUser } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
@@ -39,12 +38,10 @@ import {
   AlertCircle,
   BookOpen,
   Globe,
-  Filter,
   Loader2,
   CheckCircle2,
   XCircle,
   Clock,
-  Star,
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";

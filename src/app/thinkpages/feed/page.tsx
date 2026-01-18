@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useUser } from "~/context/auth-context";
-import { ArrowLeft, Globe, Loader2 } from "lucide-react";
+import { ArrowLeft, Globe } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";

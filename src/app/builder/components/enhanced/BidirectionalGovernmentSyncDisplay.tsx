@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Progress } from "~/components/ui/progress";
 import { Button } from "~/components/ui/button";
 import {
   Building2,
@@ -19,7 +18,6 @@ import {
   Users,
   DollarSign,
   BarChart3,
-  PieChart,
   Clock,
   Shield,
   Zap,
@@ -28,13 +26,10 @@ import {
   AlertCircle,
   Crown,
   Scale,
-  Gavel,
 } from "lucide-react";
 
 import type {
   BidirectionalGovernmentSyncState,
-  GovernmentRecommendation,
-  EconomicImpactOfGovernment,
 } from "../../services/BidirectionalGovernmentSyncService";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { ATOMIC_COMPONENTS } from "~/components/government/atoms/AtomicGovernmentComponents";

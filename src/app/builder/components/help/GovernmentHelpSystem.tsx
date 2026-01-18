@@ -8,22 +8,18 @@ import {
   DollarSign,
   Building2,
   Users,
-  Shield,
   Target,
   AlertTriangle,
   CheckCircle,
   BookOpen,
   Calculator,
   BarChart3,
-  PieChart,
   Settings,
   Crown,
-  Coins,
   Globe,
   Zap,
   Heart,
   Scale,
-  GraduationCap,
   Sparkles,
   Trees,
   Eye,
@@ -38,7 +34,6 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { HelpIcon } from "~/components/ui/help-icon";

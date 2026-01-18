@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   Send,
-  Globe,
   Calendar,
   Users,
   FileText,

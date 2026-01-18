@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, type ElementType } from "react";
+import React, { useMemo, type ElementType } from "react";
 import {
   Briefcase,
   Users,
@@ -9,18 +9,15 @@ import {
   TrendingUp,
   TrendingDown,
   Shield,
-  AlertTriangle,
 } from "lucide-react";
 import {
-  EnhancedDial,
   EnhancedNumberInput,
   EnhancedToggle,
   EnhancedPieChart,
   EnhancedBarChart,
   SliderWithDirectInput,
 } from "../primitives/enhanced";
-import type { EconomicInputs, LaborEmploymentData } from "../lib/economy-data-service";
-import type { SectionContentProps } from "../types/builder";
+import type { LaborEmploymentData } from "../lib/economy-data-service";
 import {
   SectionBase,
   SectionLayout,
@@ -32,7 +29,6 @@ import { FormGrid } from "../components/glass/ProgressiveViews";
 
 // Help System
 import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
-import { EconomicsHelpContent } from "../components/help/EconomicsHelpContent";
 
 interface LaborEmploymentSectionProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;

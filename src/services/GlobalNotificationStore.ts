@@ -6,13 +6,10 @@
 import type {
   UnifiedNotification,
   NotificationContext,
-  NotificationEngagement,
-  NotificationAnalytics,
   NotificationCategory,
   NotificationPriority,
   NotificationStatus,
   DeliveryMethod,
-  UserNotificationPreferences,
 } from "~/types/unified-notifications";
 
 // Storage interfaces

@@ -1,7 +1,6 @@
 // Utility functions for Intelligence Briefing components
 // Extracted from EnhancedIntelligenceBriefing.tsx
 
-import React from "react";
 import { RiArrowUpLine, RiArrowDownLine, RiSubtractLine } from "react-icons/ri";
 import type { TrendDirection, StatusLevel, ClearanceLevel } from "./types";
 

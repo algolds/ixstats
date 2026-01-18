@@ -4,17 +4,12 @@
 import type {
   VitalityIntelligence,
   ExecutiveIntelligence,
-  IntelligenceMetric,
-  CriticalAlert,
-  ActionableRecommendation,
 } from "../types/intelligence";
 import type { StandardTrend } from "~/types/base";
 import {
   calculateTrend,
-  determinePriority,
   generateRecommendations,
   predictFuture,
-  compareToPercentile,
   generateCriticalAlerts,
   createExecutiveIntelligence,
 } from "./intelligence";

@@ -1,11 +1,9 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import {
   TrendingUp,
   Globe,
-  Users,
   Trophy,
   Activity,
   MessageSquare,
@@ -17,7 +15,6 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { SimpleFlag } from "~/components/SimpleFlag";
 import { formatDistanceToNow } from "date-fns";
 

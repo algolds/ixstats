@@ -21,7 +21,6 @@ import type { CulturalScenarioType } from "./cultural-scenario-generator";
 import {
   DiplomaticChoiceTracker,
   type DiplomaticChoice,
-  type CumulativeEffects,
 } from "./diplomatic-choice-tracker";
 
 // ============================================================================

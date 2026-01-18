@@ -14,8 +14,6 @@ import {
   X,
   Loader2,
   AlertCircle,
-  Eye,
-  EyeOff,
   Info,
   RefreshCw,
 } from "lucide-react";
@@ -23,7 +21,6 @@ import { GlassCard } from "~/components/ui/enhanced-card";
 import {
   CardHeader,
   CardContent,
-  CardFooter,
   CardTitle,
   CardDescription,
 } from "~/components/ui/card";
@@ -31,8 +28,6 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
-import { Switch } from "~/components/ui/switch";
-import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
 import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
 import { CoreEconomicIndicators } from "./CoreEconomicIndicators";
@@ -48,9 +43,7 @@ import type {
   EconomyData,
   CoreEconomicIndicatorsData,
   LaborEmploymentData,
-  FiscalSystemData,
   IncomeWealthDistributionData,
-  GovernmentSpendingData,
   DemographicsData,
 } from "~/types/economics";
 

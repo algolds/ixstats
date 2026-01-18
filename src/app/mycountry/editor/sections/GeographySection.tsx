@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Globe, MapPin, Plus } from "lucide-react";
+import { Globe, Plus } from "lucide-react";
 import { AddGeographyModal } from "../components/AddGeographyModal";
 import { api } from "~/trpc/react";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";

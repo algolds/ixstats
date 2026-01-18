@@ -4,7 +4,6 @@ import React, { useRef, useEffect, useCallback, useState, useMemo } from "react"
 import { motion } from "framer-motion";
 import { Globe, ChevronUp, ChevronDown } from "lucide-react";
 import { ScrollVelocityContainer } from "~/components/magicui/scroll-based-velocity";
-import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";
 import { CountriesFocusGridModularBuilder } from "../components/CountriesFocusGridModularBuilder";
 import type { RealCountryData } from "../lib/economy-data-service";
 import type { CountryCardData } from "../components/CountryFocusCardBuilder";

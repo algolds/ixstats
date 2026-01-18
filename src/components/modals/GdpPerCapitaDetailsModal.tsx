@@ -30,25 +30,21 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  ScatterChart,
-  Scatter,
   ComposedChart,
   Area,
-  AreaChart,
 } from "recharts";
 import {
   DollarSign,
   TrendingUp,
   Users,
   Globe,
-  Calendar,
   Activity,
   RefreshCw,
   ArrowUp,
   ArrowDown,
   Equal,
 } from "lucide-react";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { formatCurrency } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
 
 interface GdpPerCapitaDetailsModalProps {

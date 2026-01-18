@@ -182,7 +182,7 @@ export class WikiTextParser {
     const lines = text.split("\n");
     const result: string[] = [];
     let inList = false;
-    let listStack: string[] = [];
+    const listStack: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];

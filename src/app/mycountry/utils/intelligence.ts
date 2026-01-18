@@ -5,15 +5,11 @@ import { TrendingUp, BarChart3 } from "lucide-react";
 import type {
   TrendDirection,
   DataPriority,
-  IntelligenceMetric,
   VitalityIntelligence,
   ActionableRecommendation,
   CriticalAlert,
   TrendingInsight,
-  ForwardIntelligence,
   ExecutiveIntelligence,
-  ActionUrgency,
-  AlertSeverity,
 } from "../types/intelligence";
 
 // Efficient trend calculation with momentum consideration

@@ -18,7 +18,6 @@ import Image from "next/image";
 import { cn } from "~/lib/utils";
 import { CometCard } from "~/components/ui/comet-card";
 import { RarityBadge } from "../display/RarityBadge";
-import { SeasonBadge } from "../display/SeasonBadge";
 import { HolographicOverlay } from "../display/HolographicOverlay";
 import {
   getRarityGlow,

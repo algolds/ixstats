@@ -22,7 +22,7 @@ interface InlineDiplomaticActionsProps {
 
 export function InlineDiplomaticActions({
   viewerCountryId,
-  viewerCountryName,
+  viewerCountryName: _viewerCountryName,
   targetCountryId,
   targetCountryName,
   isOwner,

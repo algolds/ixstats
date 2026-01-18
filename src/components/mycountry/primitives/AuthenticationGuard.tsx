@@ -1,14 +1,10 @@
 "use client";
 
 import { useUser } from "~/context/auth-context";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Crown, Globe, Activity, AlertTriangle } from "lucide-react";
+import { Crown, Globe, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Skeleton } from "~/components/ui/skeleton";
-import { Alert, AlertDescription } from "~/components/ui/alert";
-import Link from "next/link";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 
 interface AuthenticationGuardProps {

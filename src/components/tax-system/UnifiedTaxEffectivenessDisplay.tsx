@@ -33,13 +33,12 @@ import {
   Scale,
 } from "lucide-react";
 
-import type { TaxSystem, TaxCategory } from "~/types/tax-system";
+import type { TaxSystem } from "~/types/tax-system";
 import type { ComponentType } from "~/types/government";
 import type { CoreEconomicIndicatorsData } from "~/types/economics";
 import {
   calculateAtomicTaxEffectiveness,
   getAtomicTaxRecommendations,
-  TAX_EFFECTIVENESS_MODIFIERS,
 } from "~/lib/atomic-tax-integration";
 
 interface TaxComponent {

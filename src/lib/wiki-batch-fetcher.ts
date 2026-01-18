@@ -28,13 +28,10 @@ import {
   type EligibilityResult,
   getEligibilityRules,
   checkArticleEligibility,
-  checkBatchEligibility,
 } from "~/lib/wiki-eligibility-rules";
 import {
-  parseWikiHtml,
   extractCardSummary,
   validateParsedText,
-  PARSE_PRESETS,
 } from "~/lib/wiki-rich-text-parser";
 
 /**

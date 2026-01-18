@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { HealthRing } from "./health-ring";
 import { Badge } from "./badge";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
-import { TrendingUp, Users, DollarSign, Shield, Target, Activity, Crown, Zap } from "lucide-react";
+import { TrendingUp, Users, DollarSign, Target, Activity, Crown, Zap } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 interface CountryData {

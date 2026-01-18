@@ -11,7 +11,6 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { CriticalAlert } from "~/types/intelligence-unified";
 import {
@@ -21,22 +20,16 @@ import {
   BarChart3,
   Users,
   DollarSign,
-  Globe,
-  Building2,
   Building,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Shield,
   Zap,
   Eye,
-  Calendar,
   ChevronDown,
 } from "lucide-react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { FocusCards, createDefaultFocusCards } from "~/app/mycountry/components/FocusCards";
-import { HealthRing } from "~/components/ui/health-ring";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
 interface LiveIntelligenceSectionProps {

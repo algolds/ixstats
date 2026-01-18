@@ -31,10 +31,7 @@ import {
   RiBookmarkLine,
   RiEyeLine,
   RiUserAddLine,
-  RiShakeHandsLine,
-  RiChat3Line,
 } from "react-icons/ri";
-import { createUrl } from "~/lib/url-utils";
 
 interface SocialCountryProfilePageProps {
   params: {

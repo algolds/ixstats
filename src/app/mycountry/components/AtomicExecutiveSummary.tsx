@@ -8,14 +8,9 @@ import {
   TrendingDown,
   Minus,
   AlertTriangle,
-  CheckCircle,
-  Clock,
   Target,
   Zap,
-  Calendar,
-  Globe2,
   BarChart3,
-  Users,
   DollarSign,
   Shield,
   Building2,
@@ -26,16 +21,10 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Progress } from "~/components/ui/progress";
-import { Separator } from "~/components/ui/separator";
 import { AtomicIntelligenceFeed } from "~/components/intelligence/AtomicIntelligenceFeed";
 
-import type { ComponentType } from "~/types/government";
-import {
-  ComponentType as PrismaComponentType,
-  EconomicComponentType,
-  TaxComponentType,
-} from "@prisma/client";
+
+
 import { api } from "~/trpc/react";
 
 // Enhanced types for atomic integration

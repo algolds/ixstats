@@ -4,7 +4,6 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import type { Country } from "@prisma/client";
 
 export interface PolicyImpact {
   gdpGrowthProjection?: number;

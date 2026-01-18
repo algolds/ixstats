@@ -40,7 +40,6 @@ import {
   Factory,
   Plus,
   Pencil,
-  Trash2,
   Search,
   Filter,
   ToggleLeft,
@@ -199,7 +198,7 @@ export default function ManufacturersPage() {
   const filteredManufacturers = useMemo<ManufacturerWithCount[]>(() => {
     if (normalizedManufacturers.length === 0) return [];
 
-    let filtered = normalizedManufacturers.filter((manufacturer) => {
+    const filtered = normalizedManufacturers.filter((manufacturer) => {
       // Country filter
       if (countryFilter !== "all" && manufacturer.country !== countryFilter) return false;
 

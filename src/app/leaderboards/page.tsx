@@ -5,17 +5,13 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Trophy,
   TrendingUp,
   Users,
   Globe,
-  Building2,
-  Heart,
   Crown,
   Medal,
-  Star,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";

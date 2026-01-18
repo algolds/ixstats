@@ -2,14 +2,9 @@
 "use client";
 
 import React from "react";
-import { useMemo } from "react";
-import { Users, Globe, TrendingUp, MapPin, Scaling, Layers, Calendar } from "lucide-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
-import { IxTime } from "~/lib/ixtime";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "~/components/ui/card";
-import { Skeleton } from "~/components/ui/skeleton";
-import { Separator } from "~/components/ui/separator";
-import { formatPopulation, formatCurrency, formatPercentage } from "~/lib/chart-utils";
+import { CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Badge } from "~/components/ui/badge";
 import { TierVisualization } from "../../_components/TierVisualization";
@@ -111,6 +106,11 @@ function ExecutiveSummaryImpl({
   economicTrends = [],
   isLoading = false,
 }: ExecutiveSummaryProps) {
+  // Get the names of the top countries - must be called before any early returns
+  const topCountryNames = topCountries.map((c) => c.name);
+  // Use the bulk flag cache hook - must be called unconditionally
+  const { flagUrls } = useBulkFlagCache(topCountryNames);
+
   if (isLoading) {
     return (
       <div className="mb-8">
@@ -123,10 +123,6 @@ function ExecutiveSummaryImpl({
       </div>
     );
   }
-  // Get the names of the top countries
-  const topCountryNames = topCountries.map((c) => c.name);
-  // Use the bulk flag cache hook
-  const { flagUrls } = useBulkFlagCache(topCountryNames);
   const countries: TierVisualizationCountry[] = topCountries.map((country) => ({
     id: country.id,
     name: country.name,

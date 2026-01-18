@@ -8,7 +8,6 @@ import type {
   NotificationContext,
   UnifiedNotification,
   DeliveryMethod,
-  NotificationPriority,
   NotificationCategory,
   UserNotificationPreferences,
   NotificationEngagement,

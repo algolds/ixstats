@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, ChevronLeft, TrendingUp, AlertTriangle, Eye } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
+import { Brain, ChevronLeft, TrendingUp } from "lucide-react";
 import { ExecutiveActivityRings } from "~/components/ui/executive-activity-rings";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";

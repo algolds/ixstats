@@ -21,11 +21,6 @@ import {
   Loader2,
   Target,
   Atom,
-  BarChart3,
-  Users,
-  TrendingUp,
-  DollarSign,
-  Gauge,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 

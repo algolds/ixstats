@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { BarChart3, LineChart, PieChart, Settings, Palette, Play } from "lucide-react";
+import { BarChart3, LineChart, PieChart, Settings, Palette } from "lucide-react";
 import {
-  GlassChart,
   GlassBarChart,
   GlassLineChart,
   GlassPieChart,
   GoogleLineChart,
-  GoogleBarChart,
-  GooglePieChart,
   GoogleGeoChart,
   GoogleGaugeChart,
   GoogleAreaChart,

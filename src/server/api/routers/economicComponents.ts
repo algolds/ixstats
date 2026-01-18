@@ -21,8 +21,6 @@ import { TRPCError } from "@trpc/server";
 import { EconomicComponentType } from "@prisma/client";
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
-  COMPONENT_CATEGORIES,
-  type AtomicEconomicComponent,
 } from "~/lib/atomic-economic-data";
 
 // ============================================================================

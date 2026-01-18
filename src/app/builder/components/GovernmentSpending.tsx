@@ -29,7 +29,6 @@ import {
   Legend,
 } from "recharts";
 import type {
-  SpendingCategory,
   GovernmentSpendingData,
   CoreEconomicIndicatorsData,
 } from "~/types/economics";

@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
@@ -17,12 +16,10 @@ import {
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import {
-  Building2,
   Factory,
   Users,
   TrendingUp,
   Target,
-  Settings,
   AlertTriangle,
   CheckCircle,
   Info,
@@ -32,13 +29,9 @@ import {
   Zap,
   BarChart3,
   Globe,
-  Brain,
-  Leaf,
   DollarSign,
-  PieChart,
   Gauge,
   Eye,
-  RefreshCw,
   HelpCircle,
   Atom,
   Sparkles,
@@ -49,19 +42,15 @@ import { cn } from "~/lib/utils";
 
 // Economy Builder Components
 import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
-import {
-  EconomicEffectiveness,
-  EconomicImpactPreview,
-} from "~/components/economy/atoms/AtomicEconomicUI";
+
+
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 // Types and Services
 import type {
   EconomyBuilderState,
-  EconomyBuilderTab,
   EconomicHealthMetrics,
-  CrossBuilderIntegration,
 } from "~/types/economy-builder";
 import type { EconomicInputs } from "../../lib/economy-data-service";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
@@ -75,20 +64,11 @@ import { getRegionColor } from "./tabs/utils/demographicsCalculations";
 import { TabLoadingFallback } from "../../components/LoadingFallback";
 
 // Step Components
-import { ComponentSelectionStep } from "./steps/ComponentSelectionStep";
 import { TaxSystemStep } from "./steps/TaxSystemStep";
 import { PreviewStep } from "./steps/PreviewStep";
 
 // Cross-Builder Integration Components
-import { BuilderIntegrationSidebar } from "./BuilderIntegrationSidebar";
-import { CrossBuilderSynergyDisplay } from "./CrossBuilderSynergyDisplay";
-import { BidirectionalTaxSyncDisplay } from "./BidirectionalTaxSyncDisplay";
-import { BidirectionalGovernmentSyncDisplay } from "./BidirectionalGovernmentSyncDisplay";
-import { UnifiedEffectivenessDisplay } from "./UnifiedEffectivenessDisplay";
-import { SynergyValidationDisplay } from "./SynergyValidationDisplay";
 import { EconomicArchetypeModal } from "./EconomicArchetypeModal";
-import { UnifiedValidationDisplay } from "./UnifiedValidationDisplay";
-import { IntegrationTestingDisplay } from "./IntegrationTestingDisplay";
 
 // tRPC API
 import { api } from "~/trpc/react";
@@ -103,7 +83,7 @@ import type { RevenueSource } from "~/types/government";
 import { useEconomyBuilderAutoSync } from "~/hooks/useEconomyBuilderAutoSync";
 
 // Builder context
-import { useBuilderContext } from "./context/BuilderStateContext";
+import { useBuilderContextOptional } from "./context/BuilderStateContext";
 
 /**
  * Props for the EconomyBuilderPage component
@@ -350,13 +330,8 @@ export function EconomyBuilderPage({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
 
-  // Try to get builder context (may not be available if used standalone)
-  let builderContext: ReturnType<typeof useBuilderContext> | null = null;
-  try {
-    builderContext = useBuilderContext();
-  } catch {
-    // Component is being used standalone, not within BuilderStateProvider
-  }
+  // Get builder context if available (returns null if used standalone, not within BuilderStateProvider)
+  const builderContext = useBuilderContextOptional();
 
   // Prepare economy data for autosave
   const economyDataForSync = useMemo(() => {

@@ -5,7 +5,6 @@ import type {
   StandardCategory,
   StandardTrend,
   StandardTimeframe,
-  IconReference,
 } from "./base";
 
 // Re-export types from other modules for unified access

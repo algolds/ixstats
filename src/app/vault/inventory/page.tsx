@@ -23,12 +23,6 @@ import {
   Maximize2,
   Search,
   X,
-  Star,
-  Heart,
-  Gift,
-  Lock,
-  Unlock,
-  Eye,
   ChevronDown,
   AlertCircle,
 } from "lucide-react";
@@ -39,7 +33,6 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
-import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Select,

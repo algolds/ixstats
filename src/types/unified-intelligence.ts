@@ -8,13 +8,10 @@
  * @module unified-intelligence
  */
 
-import type { LucideIcon } from "lucide-react";
 import type { ComponentType } from "@prisma/client";
 import type {
-  ClassificationLevel as DiplomaticClassificationLevel,
   EncryptedMessage,
   KeySecurityStatus,
-  EncryptionStatistics,
 } from "./diplomatic-encryption";
 
 // ============================================================================

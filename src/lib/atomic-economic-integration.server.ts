@@ -2,8 +2,6 @@
 // Server-side functions that require database access
 import {
   ComponentType,
-  type Country,
-  type GovernmentComponent,
   type AtomicEffectiveness,
 } from "@prisma/client";
 import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
@@ -22,7 +20,7 @@ export async function calculateAtomicEconomicImpactServer(
   const atomicService = getAtomicEffectivenessService(db);
   const componentBreakdown = atomicService.getComponentBreakdown(components);
 
-  let modifiers: AtomicEconomicModifiers = {
+  const modifiers: AtomicEconomicModifiers = {
     taxCollectionMultiplier: 1.0,
     gdpGrowthModifier: 1.0,
     stabilityBonus: 0,

@@ -20,7 +20,7 @@
  */
 
 import { db } from "~/server/db";
-import { wikiLoreCardGenerator, LORE_CATEGORIES } from "~/lib/wiki-lore-card-generator";
+import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
 import type { WikiSource } from "~/lib/mediawiki-config";
 
 /**

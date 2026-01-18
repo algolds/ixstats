@@ -2,7 +2,6 @@
 // Internal stability calculation formulas
 // Converts economic, demographic, and policy data into security metrics
 
-import type { Country } from "@prisma/client";
 
 // ====================================
 // TYPE DEFINITIONS

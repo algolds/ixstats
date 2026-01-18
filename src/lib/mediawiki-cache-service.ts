@@ -6,7 +6,6 @@
 
 import {
   externalApiCache,
-  type CacheOptions,
   type CacheMetadata,
   CACHE_TTL,
 } from "./external-api-cache";

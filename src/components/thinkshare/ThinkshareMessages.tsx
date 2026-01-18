@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { MessageSquare, Send, Loader2, Plus, Crown, Hash, Globe } from "lucide-react";
+import { MessageSquare, Plus, Crown, Hash, Globe } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -49,6 +49,15 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
 
+  // Use the global user ID directly - no longer need thinkpages accounts for ThinkShare
+  const currentUserId = userId;
+
+  // All hooks must be called unconditionally (Rules of Hooks)
+  // Fetch current user's profile to get proper display name
+  const { data: currentUserProfile } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!currentUserId,
+  });
+
   // Handle URL parameter for auto-selecting conversation
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -62,14 +71,6 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
       }
     }
   }, []);
-
-  // Use the global user ID directly - no longer need thinkpages accounts for ThinkShare
-  const currentUserId = userId;
-
-  // Fetch current user's profile to get proper display name
-  const { data: currentUserProfile } = api.users.getProfile.useQuery(undefined, {
-    enabled: !!currentUserId,
-  });
 
   // Create currentAccount object for ChatArea with proper user data
   const currentAccount =
@@ -91,26 +92,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
           }
         : undefined;
 
-  // Show error state if no user ID is provided
-  if (!currentUserId) {
-    return (
-      <div className="space-y-6">
-        <Card className="glass-hierarchy-parent">
-          <CardContent className="p-8 text-center">
-            <MessageSquare className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
-            <h3 className="mb-2 text-lg font-semibold">No ThinkPages Account</h3>
-            <p className="text-muted-foreground">
-              You need a ThinkPages account to use ThinkShare messaging.
-              <br />
-              Create one first in the ThinkPages section.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // API Queries with smart enabling for live functionality (moved above callbacks)
+  // API Queries with smart enabling for live functionality
   const shouldFetchConversations = currentUserId && currentUserId.trim() !== "";
 
   // Use unified API that works with global users
@@ -123,7 +105,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
       userId: currentUserId ?? "INVALID",
     },
     {
-      enabled: Boolean(shouldFetchConversations), // Enable when we have valid user
+      enabled: Boolean(shouldFetchConversations),
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 30000,
@@ -148,7 +130,6 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
       enabled: shouldFetchMessages,
       refetchOnWindowFocus: false,
       retry: false,
-      // Add staleTime to prevent unnecessary refetches
       staleTime: 5000,
     }
   );
@@ -185,7 +166,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
         ? ("connected" as const)
         : ("disconnected" as const),
       lastSyncTime: new Date(rawClientState.lastHeartbeat),
-      unreadCount: 0, // Track separately if needed
+      unreadCount: 0,
     }),
     [rawClientState]
   );
@@ -196,12 +177,11 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
       query: searchQuery ?? "INVALID",
     },
     {
-      enabled: Boolean(showNewConversationModal && searchQuery && searchQuery.length > 2), // Only when searching
-      retry: 1,
-      refetchOnWindowFocus: false,
+      enabled: Boolean(showNewConversationModal && searchQuery && searchQuery.length > 2),
     }
   );
 
+  // Subscribe to conversation when selected
   useEffect(() => {
     if (
       selectedConversation &&
@@ -213,7 +193,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
     }
   }, [selectedConversation, currentAccount?.id, subscribeToConversation]);
 
-  // Mutations
+  // Mutations - must be called unconditionally (Rules of Hooks)
   const createConversationMutation = api.thinkpages.createConversation.useMutation();
 
   const markMessagesAsReadMutation = api.thinkpages.markMessagesAsRead.useMutation({
@@ -221,6 +201,39 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
       // Conversations will be refetched automatically to update read status
     },
   });
+
+  // Memoize the icon function to prevent re-creation on every render
+  const getAccountTypeIcon = useCallback((accountType: string) => {
+    switch (accountType) {
+      case "government":
+        return <Crown className="h-3 w-3 text-amber-500" />;
+      case "media":
+        return <Hash className="h-3 w-3 text-blue-500" />;
+      case "citizen":
+        return <Globe className="h-3 w-3 text-green-500" />;
+      default:
+        return null;
+    }
+  }, []);
+
+  // Show error state if no user ID is provided (after all hooks)
+  if (!currentUserId) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-hierarchy-parent">
+          <CardContent className="p-8 text-center">
+            <MessageSquare className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+            <h3 className="mb-2 text-lg font-semibold">No ThinkPages Account</h3>
+            <p className="text-muted-foreground">
+              You need a ThinkPages account to use ThinkShare messaging.
+              <br />
+              Create one first in the ThinkPages section.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleCreateConversation = async (participantId: string) => {
     console.log("🔧 handleCreateConversation called with:", { participantId, currentUserId });
@@ -257,20 +270,6 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
   const selectedConv = conversations?.conversations.find(
     (c: ThinkshareConversation) => c.id === selectedConversation
   );
-
-  // Memoize the icon function to prevent re-creation on every render
-  const getAccountTypeIcon = useCallback((accountType: string) => {
-    switch (accountType) {
-      case "government":
-        return <Crown className="h-3 w-3 text-amber-500" />;
-      case "media":
-        return <Hash className="h-3 w-3 text-blue-500" />;
-      case "citizen":
-        return <Globe className="h-3 w-3 text-green-500" />;
-      default:
-        return null;
-    }
-  }, []);
 
   const handleAccountChange = (accountId: string) => {
     toast.info("Account switching is not implemented yet.");

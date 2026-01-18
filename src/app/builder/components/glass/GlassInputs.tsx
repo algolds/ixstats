@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { Info, ChevronDown, ChevronUp } from "lucide-react";

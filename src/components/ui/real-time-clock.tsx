@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Clock, Zap, Pause } from "lucide-react";
-import { IxTime } from "~/lib/ixtime";
 import { useIxTime } from "~/contexts/IxTimeContext";
 
 interface RealTimeClockProps {

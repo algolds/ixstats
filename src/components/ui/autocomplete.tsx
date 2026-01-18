@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Command, CommandGroup, CommandItem, CommandList } from "~/components/ui/command";

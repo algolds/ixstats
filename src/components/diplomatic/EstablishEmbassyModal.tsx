@@ -16,10 +16,8 @@ import {
   RiBuilding2Line,
   RiMapPinLine,
   RiUserLine,
-  RiCloseLine,
   RiLoader4Line,
 } from "react-icons/ri";
-import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 
 // Simple country selector for this modal
 function SimpleCountrySelector({

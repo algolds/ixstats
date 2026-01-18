@@ -13,7 +13,6 @@ import {
   Calendar,
   Phone,
   Mail,
-  Map,
   Clock,
   Car,
   Flag,

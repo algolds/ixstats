@@ -4,6 +4,15 @@ import { IxTime } from "~/lib/ixtime";
 
 export async function POST(request: Request) {
   try {
+    // Bot-to-server sync: Verify request is from trusted bot via shared secret
+    const authHeader = request.headers.get("authorization");
+    const botSecret = process.env.IXTIME_BOT_SECRET;
+    
+    // If bot secret is configured, require it for bot-to-server sync
+    if (botSecret && authHeader !== `Bearer ${botSecret}`) {
+      return NextResponse.json({ error: "Invalid bot authentication" }, { status: 401 });
+    }
+
     let botData;
 
     // Try to parse request body first (for auto-sync)

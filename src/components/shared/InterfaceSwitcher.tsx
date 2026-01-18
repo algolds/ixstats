@@ -5,7 +5,6 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { getUserInterfacePreferences } from "~/lib/interface-routing";
 import { navigateTo } from "~/lib/url-utils";
-import { createUserProfileQueryParams } from "~/lib/user-utils";
 
 // Check if Clerk is configured
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));

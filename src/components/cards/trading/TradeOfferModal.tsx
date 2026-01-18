@@ -21,7 +21,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { CardGrid } from "~/components/cards/display";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";

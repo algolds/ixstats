@@ -10,11 +10,10 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { BarChart3, DollarSign, TrendingUp, Users, Gauge } from "lucide-react";
+import { DollarSign, TrendingUp, Users, Gauge } from "lucide-react";
 import type { EconomicMetrics } from "~/lib/atomic-economic-utils";
 import {
   formatCurrency,
-  formatPercentage,
   getEffectivenessColor,
 } from "~/lib/atomic-economic-utils";
 

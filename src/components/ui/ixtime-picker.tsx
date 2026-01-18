@@ -1,7 +1,7 @@
 // src/components/ui/ixtime-picker.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { IxTime } from "~/lib/ixtime";
 import { Label } from "./label";
 import { Input } from "./input";

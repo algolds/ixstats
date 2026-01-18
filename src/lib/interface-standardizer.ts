@@ -5,7 +5,7 @@
 
 import type { CountryWithEconomicData } from "~/types/ixstats";
 import type { IntelligenceItem } from "~/types/intelligence-unified";
-import type { ExecutiveAction, QuickAction, NotificationAction } from "~/types/actions";
+import type { ExecutiveAction } from "~/types/actions";
 import type { StandardPriority, StandardCategory } from "~/types/base";
 import {
   safeString,

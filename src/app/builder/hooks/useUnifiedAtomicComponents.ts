@@ -8,7 +8,7 @@
  * - Real-time metrics and analytics
  */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { EconomicComponentType, TaxComponentType } from "@prisma/client";
 import { api } from "~/trpc/react";

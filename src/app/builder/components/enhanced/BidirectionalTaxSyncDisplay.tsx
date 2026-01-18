@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Progress } from "~/components/ui/progress";
 import { Button } from "~/components/ui/button";
 import {
   DollarSign,
@@ -14,24 +13,18 @@ import {
   Target,
   AlertTriangle,
   CheckCircle,
-  Info,
   RefreshCw,
   Building2,
   Users,
   BarChart3,
-  PieChart,
   Clock,
-  Shield,
   Zap,
   ArrowUpDown,
-  Lightbulb,
   AlertCircle,
 } from "lucide-react";
 
 import type {
   BidirectionalTaxSyncState,
-  TaxRecommendation,
-  EconomicImpactOfTax,
 } from "../../services/BidirectionalTaxSyncService";
 
 interface BidirectionalTaxSyncDisplayProps {

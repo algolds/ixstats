@@ -22,15 +22,15 @@
  */
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { motion } from "framer-motion";
+import { Card, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Separator } from "~/components/ui/separator";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -53,7 +53,6 @@ import { toast } from "sonner";
 import {
   Lock,
   Shield,
-  Key,
   Send,
   MessageCircle,
   Users,
@@ -62,10 +61,6 @@ import {
   Filter,
   AlertTriangle,
   CheckCircle2,
-  Clock,
-  Eye,
-  EyeOff,
-  Archive,
   MoreVertical,
   RefreshCw,
   CheckCheck,

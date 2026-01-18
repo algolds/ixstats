@@ -3,7 +3,7 @@
  * 3D grid system with independent flag rotations and proper X/Y/Z depth
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SimpleFlag } from "~/components/SimpleFlag";
 import { cn } from "~/lib/utils";

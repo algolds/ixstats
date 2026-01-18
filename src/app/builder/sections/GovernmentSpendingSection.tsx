@@ -9,7 +9,7 @@
 
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Settings, Eye, TrendingUp } from "lucide-react";
+import { Settings, TrendingUp } from "lucide-react";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
 import type { GovernmentBuilderState } from "~/types/government";
@@ -57,18 +57,7 @@ export function GovernmentSpendingSection({
   const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
-  // Guard against null inputs
-  if (!inputs) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-          <p className="text-muted-foreground">Loading government spending data...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // All hooks must be called unconditionally (Rules of Hooks)
   // State management via custom hook
   const {
     selectedPolicies,
@@ -85,7 +74,7 @@ export function GovernmentSpendingSection({
     applyPolicyPreset,
     handleAtomicComponentUpdate,
   } = useGovernmentSpending({
-    inputs,
+    inputs: inputs ?? {} as EconomicInputs,
     onInputsChange,
     selectedAtomicComponents,
     governmentBuilderData,
@@ -95,6 +84,18 @@ export function GovernmentSpendingSection({
   // Local UI state
   const [activeTab, setActiveTab] = useState("policies");
   const [showAtomicFeedback, setShowAtomicFeedback] = useState(true);
+
+  // Guard against null inputs (after all hooks)
+  if (!inputs) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <p className="text-muted-foreground">Loading government spending data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show error if no government builder data and no atomic components
   if (!validation.isValid && !selectedAtomicComponents.length) {

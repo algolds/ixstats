@@ -20,15 +20,11 @@ import type {
   AdminPageBotStatusView,
   ImportAnalysis,
   BaseCountryData,
-  CalculationLog,
-  EconomicConfig,
 } from "~/types/ixstats";
 import { generateSlug } from "~/lib/slug-utils";
 import {
   getEconomicTierFromGdpPerCapita,
   getPopulationTierFromPopulation,
-  EconomicTier,
-  PopulationTier,
 } from "~/types/ixstats";
 
 // Remove unused import - we use ctx.db instead

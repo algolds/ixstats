@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Link } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { ArrowRight, Link } from "lucide-react";
 import { IxStatsLogo } from "~/components/ui/ixstats-logo";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 

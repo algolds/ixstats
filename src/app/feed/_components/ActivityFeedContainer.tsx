@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { motion } from "framer-motion";
 import { Activity, TrendingUp, Zap, RefreshCw, Filter } from "lucide-react";

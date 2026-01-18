@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Zap, Gauge } from "lucide-react";
-import { MetricCard } from "../../../../primitives/enhanced";
 import type { EconomicHealthMetrics } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";

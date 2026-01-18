@@ -468,7 +468,7 @@ export class NetworkSynergyCalculator {
     treaties: TreatyData[]
   ): NetworkSynergyData["economicBloc"] {
     const members: string[] = [];
-    let totalGdp = 0;
+    const totalGdp = 0;
     let tradeVolume = 0;
 
     // Find strong economic partners

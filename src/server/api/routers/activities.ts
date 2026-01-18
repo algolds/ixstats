@@ -3,8 +3,6 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { IxTime } from "~/lib/ixtime";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
 // Input schemas
 const activityFilterSchema = z.object({

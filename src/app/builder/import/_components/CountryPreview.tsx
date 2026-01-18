@@ -15,7 +15,6 @@ import {
   GlassCardContent,
   GlassCardHeader,
 } from "~/app/builder/components/glass/GlassCard";
-import { cn } from "~/lib/utils";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 interface SearchResult {

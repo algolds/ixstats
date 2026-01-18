@@ -11,7 +11,6 @@ import {
   Grid3x3,
   Download,
   X,
-  Shield,
   Lock,
   TrendingUp,
   BookOpen,

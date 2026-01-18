@@ -10,7 +10,6 @@ import {
   Clock,
   Users,
   Zap,
-  Shield,
   Info,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -19,7 +18,6 @@ import {
   getThemeColorClasses,
   getComplexityColor,
   getComplexityBgColor,
-  getEffectivenessColor,
   getEffectivenessBgColor,
 } from "./themes";
 

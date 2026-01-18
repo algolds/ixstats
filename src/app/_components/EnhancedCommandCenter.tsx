@@ -10,7 +10,6 @@ import Link from "next/link";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { PlatformActivityFeed } from "./PlatformActivityFeed";
 import { SocialUserProfile } from "./SocialUserProfile";
-import { LeaderboardsSection } from "./LeaderboardsSection";
 import { TierVisualization } from "./TierVisualization";
 import { FeaturedArticle } from "./FeaturedArticle";
 import { MyCountryCard } from "~/app/dashboard/_components/MyCountryCard";
@@ -26,14 +25,12 @@ import { DiplomaticOperationsHub } from "~/app/mycountry/intelligence/_component
 type MyCountryUnifiedData = ReturnType<typeof useMyCountryUnifiedData>;
 
 // Dashboard Components - Only the essential ones for MyCountry
-import { StrategicOperationsSuite } from "~/app/dashboard/_components/StrategicOperationsSuite";
 
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Progress } from "~/components/ui/progress";
 
 // Icons
@@ -48,24 +45,14 @@ import {
   Star,
   Eye,
   Target,
-  MessageSquare,
-  UserPlus,
-  Settings,
-  Bell,
   Search,
-  Filter,
-  LayoutGrid,
-  List,
   Clock,
-  Bot,
   AlertCircle,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Home,
   BarChart3,
   Shield,
-  Map,
   FileText,
   Building2,
 } from "lucide-react";

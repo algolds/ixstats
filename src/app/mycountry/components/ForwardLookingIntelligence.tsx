@@ -1,29 +1,21 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp,
   TrendingDown,
   Sparkles,
-  Target,
   Radar,
   Brain,
-  Clock,
-  AlertTriangle,
-  CheckCircle,
-  ArrowRight,
-  BarChart3,
   Users,
   Globe,
   Building2,
   DollarSign,
-  Calendar,
   Zap,
   Eye,
   ChevronRight,
   Activity,
-  Award,
   Flag,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

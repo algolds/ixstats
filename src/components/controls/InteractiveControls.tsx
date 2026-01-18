@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
-import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion";
+import React, { useState, useRef, useMemo } from "react";
+import { motion, useMotionValue, type PanInfo } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { Minus, Plus, RotateCcw, Zap } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 
 interface NumberPickerProps {
   value: number;

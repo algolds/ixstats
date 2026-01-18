@@ -13,26 +13,13 @@ import {
   Plus,
   Users,
   FileText,
-  CheckCircle,
-  AlertCircle,
   Trash2,
-  Edit,
   ChevronRight,
-  ChevronDown,
   GripVertical,
   Target,
   Vote,
   ListChecks,
-  Building2,
   User,
-  Save,
-  X,
-  MoreHorizontal,
-  Flag,
-  AlertTriangle,
-  Info,
-  TrendingUp,
-  Activity,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -57,8 +44,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Progress } from "~/components/ui/progress";
-import { Separator } from "~/components/ui/separator";
 
 interface MeetingSchedulerProps {
   countryId: string;

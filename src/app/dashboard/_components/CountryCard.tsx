@@ -1,7 +1,7 @@
 // src/app/dashboard/_components/CountryCard.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { RefreshCw, Users, TrendingUp, MapPin, Scaling, Flag } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";

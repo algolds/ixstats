@@ -2,11 +2,8 @@
 
 import { useMemo, useState } from "react";
 import {
-  LineChart,
   Line,
-  AreaChart,
   Area,
-  BarChart,
   Bar,
   XAxis,
   YAxis,
@@ -17,8 +14,6 @@ import {
   ComposedChart,
   ReferenceLine,
   Brush,
-  ScatterChart,
-  Scatter,
 } from "recharts";
 import {
   TrendingUp,
@@ -27,8 +22,6 @@ import {
   Globe,
   Activity,
   BarChart3,
-  Calendar,
-  Settings2,
   Eye,
   EyeOff,
 } from "lucide-react";

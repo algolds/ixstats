@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, HelpCircle } from "lucide-react";
+import { AlertCircle, HelpCircle } from "lucide-react";
 
 export interface ValidationError {
   field: string;

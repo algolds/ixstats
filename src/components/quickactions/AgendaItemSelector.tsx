@@ -28,7 +28,6 @@ import {
   type AgendaItemTemplate,
   agendaTaxonomy,
   searchAgendaItems,
-  getAgendaItemById,
   getAgendaItemPath,
 } from "~/lib/agenda-taxonomy";
 import { cn } from "~/lib/utils";

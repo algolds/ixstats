@@ -16,8 +16,6 @@ import {
   getArchetypesByCategory,
   searchArchetypes,
   filterArchetypes,
-  getRecommendedArchetypes as getRecommendedArchetypesFromIndex,
-  compareArchetypes as compareArchetypesFromIndex,
 } from "../data/archetypes";
 import {
   calculateArchetypeFit,

@@ -7,17 +7,13 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
-import { generateAndPostCitizenReaction } from "~/lib/auto-post-service";
-import { analyzePostSentiment } from "~/lib/sentiment-analysis";
 import { unsplashService } from "~/lib/unsplash-service";
-import { searchWiki as wikiSearchService } from "~/lib/wiki-search-service"; // Import the wiki search service
+// Import the wiki search service
 import { notificationHooks } from "~/lib/notification-hooks";
 import { getThinkPagesServer } from "~/server/websocket-server";
 import { notificationAPI } from "~/lib/notification-api";
 import { validateNoXSS } from "~/lib/sanitize-html";
 import { vaultService } from "~/lib/vault-service";
-import fs from "fs/promises";
-import path from "path";
 
 const SearchUnsplashImagesSchema = z.object({
   query: z.string().min(1),
@@ -1196,7 +1192,7 @@ export const thinkpagesRouter = createTRPCRouter({
   getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
     const { db } = ctx;
 
-    let whereClause: any = {
+    const whereClause: any = {
       visibility: "public", // Only show public posts for now
     };
 
@@ -1684,7 +1680,7 @@ export const thinkpagesRouter = createTRPCRouter({
           return [];
         }
 
-        let whereClause: any = {
+        const whereClause: any = {
           isActive: true,
         };
 

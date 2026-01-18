@@ -19,7 +19,6 @@ import {
   RiBuildingLine,
   RiCalendarLine,
   RiAddLine,
-  RiStarLine,
   RiStarFill,
   RiTrophyLine,
   RiCoinLine,
@@ -28,10 +27,7 @@ import {
   RiPauseLine,
   RiRefreshLine,
   RiTimeLine,
-  RiUserLine,
-  RiTeamLine,
   RiLockLine,
-  RiSettings2Line,
   RiFireLine,
   RiBarChartLine,
 } from "react-icons/ri";
@@ -162,18 +158,18 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   viewerClearanceLevel = "PUBLIC",
 }) => {
   const [selectedRelation, setSelectedRelation] = useState<DiplomaticRelation | null>(null);
-  const [selectedEmbassy, setSelectedEmbassy] = useState<Embassy | null>(null);
+  const [_selectedEmbassy, setSelectedEmbassy] = useState<Embassy | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"network" | "list" | "game">("network");
   const [showEmbassyDetails, setShowEmbassyDetails] = useState(false);
   const [showEstablishEmbassy, setShowEstablishEmbassy] = useState(false);
-  const [showMissionsPanel, setShowMissionsPanel] = useState(false);
-  const [showUpgradesPanel, setShowUpgradesPanel] = useState(false);
+  const [_showMissionsPanel, _setShowMissionsPanel] = useState(false);
+  const [_showUpgradesPanel, _setShowUpgradesPanel] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "missions" | "upgrades" | "economics">(
     "overview"
   );
-  const networkContainerRef = useRef<HTMLDivElement>(null);
+  const _networkContainerRef = useRef<HTMLDivElement>(null);
   const [selectedHostCountryId, setSelectedHostCountryId] = useState<string>("");
   const [newEmbassyName, setNewEmbassyName] = useState<string>("");
   const [newEmbassyLocation, setNewEmbassyLocation] = useState<string>("");
@@ -393,7 +389,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   });
 
   const payMaintenanceMutation = api.diplomatic.payMaintenance.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       toast.success("Maintenance paid successfully!", {
         description: `Embassy maintenance paid successfully`,
       });
@@ -775,13 +771,13 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                             key={embassy.id}
                             embassy={embassy}
                             onSelect={setSelectedEmbassy}
-                            onStartMission={(missionId: string) => {
+                            onStartMission={(_missionId: string) => {
                               startMissionMutation.mutate({
                                 missionType: "trade_negotiation",
                                 staffAssigned: 1,
                               } as any);
                             }}
-                            onUpgrade={(upgradeId: string) => {
+                            onUpgrade={(_upgradeId: string) => {
                               upgradeEmbassyMutation.mutate({
                                 upgradeType: "staff_expansion",
                                 level: 1,
@@ -813,7 +809,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                 {activeTab === "missions" && (
                   <MissionsPanel
                     embassies={embassies}
-                    onStartMission={(embassyId: string, missionId: string) => {
+                    onStartMission={(_embassyId: string, _missionId: string) => {
                       startMissionMutation.mutate({
                         missionType: "trade_negotiation",
                         staffAssigned: 1,
@@ -828,7 +824,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                 {activeTab === "upgrades" && (
                   <UpgradesPanel
                     embassies={embassies}
-                    onUpgrade={(embassyId: string, upgradeId: string) => {
+                    onUpgrade={(_embassyId: string, _upgradeId: string) => {
                       upgradeEmbassyMutation.mutate({
                         upgradeType: "staff_expansion",
                         level: 1,
@@ -1442,7 +1438,7 @@ const EmbassyGameCard: React.FC<{
   onSelect: (embassy: Embassy) => void;
   onStartMission: (missionId: string) => void;
   onUpgrade: (upgradeId: string) => void;
-}> = ({ embassy, onSelect, onStartMission, onUpgrade }) => {
+}> = ({ embassy, onSelect, onStartMission: _onStartMission, onUpgrade: _onUpgrade }) => {
   const levelProgress = (embassy.experience % 1000) / 1000; // Each level = 1000 XP
   const statusColor = {
     ACTIVE: "text-green-400",

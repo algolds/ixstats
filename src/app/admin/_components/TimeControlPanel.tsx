@@ -1,8 +1,7 @@
 // src/app/admin/_components/TimeControlPanel.tsx
 "use client";
 
-import { Clock, Pause, Play, RotateCcw } from "lucide-react";
-import { IxTime } from "~/lib/ixtime";
+import { Pause, Play, RotateCcw } from "lucide-react";
 import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 interface TimeControlPanelProps {

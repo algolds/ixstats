@@ -9,7 +9,6 @@
 import { PrismaClient } from "@prisma/client";
 import {
   resolveEquipmentImage,
-  batchResolveImages,
 } from "~/server/services/wikimedia-equipment-image-resolver";
 
 const prisma = new PrismaClient();

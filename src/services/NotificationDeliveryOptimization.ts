@@ -10,7 +10,6 @@ import type {
   DeliveryMethod,
   NotificationPriority,
   NotificationCategory,
-  DeliveryContext,
 } from "~/types/unified-notifications";
 import type { BatchAnalysis } from "./NotificationGrouping";
 
@@ -129,7 +128,7 @@ export class NotificationDeliveryOptimization {
     notification: UnifiedNotification,
     context: NotificationContext,
     preferences: UserNotificationPreferences,
-    batch?: BatchAnalysis
+    _batch?: BatchAnalysis
   ): Promise<DeliveryOptimization> {
     // Analyze current user attention state
     const attentionState = await this.analyzeUserAttention(context);
@@ -485,7 +484,7 @@ export class NotificationDeliveryOptimization {
     context: NotificationContext,
     preferences: UserNotificationPreferences,
     attentionState: AttentionState,
-    behaviorPattern: UserBehaviorPattern
+    _behaviorPattern: UserBehaviorPattern
   ): Promise<DeliveryMethod> {
     // Check user preferences first
     const categoryPrefs = preferences.categories[notification.category];
@@ -564,8 +563,8 @@ export class NotificationDeliveryOptimization {
 
   private getMethodPros(
     method: DeliveryMethod,
-    notification: UnifiedNotification,
-    attentionState: AttentionState
+    _notification: UnifiedNotification,
+    _attentionState: AttentionState
   ): string[] {
     const pros: Record<DeliveryMethod, string[]> = {
       "dynamic-island": ["Highly visible", "Interactive", "Modern UX"],
@@ -582,8 +581,8 @@ export class NotificationDeliveryOptimization {
 
   private getMethodCons(
     method: DeliveryMethod,
-    notification: UnifiedNotification,
-    attentionState: AttentionState
+    _notification: UnifiedNotification,
+    _attentionState: AttentionState
   ): string[] {
     const cons: Record<DeliveryMethod, string[]> = {
       "dynamic-island": ["Requires modern browser", "Can be missed"],
@@ -701,8 +700,8 @@ export class NotificationDeliveryOptimization {
 
   private createFallbackStrategies(
     notification: UnifiedNotification,
-    context: NotificationContext,
-    deliveryMethod: DeliveryMethod
+    _context: NotificationContext,
+    _deliveryMethod: DeliveryMethod
   ): FallbackStrategy[] {
     const strategies: FallbackStrategy[] = [];
 
@@ -856,7 +855,7 @@ export class NotificationDeliveryOptimization {
     return endTime.getTime();
   }
 
-  private getLastDeliveryTime(userId: string): number {
+  private getLastDeliveryTime(_userId: string): number {
     // Stub - would query actual delivery history
     return Date.now() - 2 * 60 * 1000; // 2 minutes ago
   }
@@ -892,7 +891,7 @@ export class NotificationDeliveryOptimization {
     pattern: UserBehaviorPattern,
     notification: UnifiedNotification,
     outcome: DeliveryOutcome,
-    optimization: DeliveryOptimization
+    _optimization: DeliveryOptimization
   ): void {
     const hour = new Date(outcome.timestamp).getHours();
     const engagementByHour = pattern.patterns.engagementByTimeOfDay;

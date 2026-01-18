@@ -1,7 +1,5 @@
 import type {
   EconomyData,
-  CoreEconomicIndicatorsData,
-  LaborEmploymentData,
 } from "~/types/economics";
 import {
   formatCurrency as formatCurrencyUtil,

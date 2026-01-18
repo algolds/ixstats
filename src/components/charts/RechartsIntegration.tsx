@@ -17,12 +17,11 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  type TooltipProps,
 } from "recharts";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { GlassChart, chartTheme } from "./GlassChart";
-import { getChartColor, generateChartColors } from "~/lib/builder-theme-utils";
+import { generateChartColors } from "~/lib/builder-theme-utils";
 
 interface BaseChartProps {
   data: any[];

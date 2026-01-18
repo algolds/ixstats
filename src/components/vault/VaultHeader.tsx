@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Menu, Search, Coins, Bell, Sparkles, TrendingUp, X, ChevronDown } from "lucide-react";
+import { Menu, Search, Coins, Bell, TrendingUp, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { UserButton } from "@clerk/nextjs";

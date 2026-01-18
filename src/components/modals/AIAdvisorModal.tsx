@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 import {
   Dialog,
@@ -11,50 +11,24 @@ import {
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
-  MessageSquare,
   Send,
   Bot,
   User,
-  Lightbulb,
   TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Settings,
-  RefreshCw,
-  Download,
-  Share2,
-  Bookmark,
-  Star,
-  Target,
   Users,
-  DollarSign,
-  Globe,
-  Shield,
-  Zap,
   Brain,
   Sparkles,
-  ArrowRight,
   ChevronRight,
   Activity,
 } from "lucide-react";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 
 interface AIAdvisorModalProps {
   isOpen: boolean;

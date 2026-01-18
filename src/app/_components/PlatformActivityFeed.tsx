@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import Link from "next/link";
-import { createUrl } from "~/lib/url-utils";
 
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -13,7 +12,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 // Icons
 import {
@@ -22,26 +21,19 @@ import {
   Globe,
   TrendingUp,
   Trophy,
-  Star,
   Heart,
   MessageSquare,
   Repeat,
-  Bookmark,
-  Crown,
   Zap,
   Target,
   Eye,
-  UserPlus,
   Handshake,
-  Briefcase,
-  Award,
   Clock,
-  Filter,
   Search,
 } from "lucide-react";
 
 // Utils
-import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
+import { formatCurrency } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
 import type { RouterOutputs } from "~/trpc/react";

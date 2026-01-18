@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Command, Brain, Shield, Crown, Users, Map } from "lucide-react";
+import { Brain, Shield, Crown, Users, Map } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 

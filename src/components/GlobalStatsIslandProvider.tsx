@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { GlobalStatsIsland } from "./GlobalStatsIsland";
 
 interface GlobalStatsIslandContextType {
   isVisible: boolean;

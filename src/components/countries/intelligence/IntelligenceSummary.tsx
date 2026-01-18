@@ -8,11 +8,9 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import { cn } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
 import { ClassificationBadge } from "./StatusIndicators";
-import { CLASSIFICATION_STYLES } from "./constants";
 import type { IntelligenceAlert, CountryInformation, ClearanceLevel } from "./types";
 import { RiAlertLine, RiCheckboxCircleLine } from "react-icons/ri";
 

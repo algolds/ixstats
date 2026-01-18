@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { CountryFocusCardBuilder, type CountryCardData } from "./CountryFocusCardBuilder";
 import { RiGlobalLine } from "react-icons/ri";
 import { motion, useAnimation } from "framer-motion";

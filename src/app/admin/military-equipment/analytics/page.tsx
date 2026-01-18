@@ -22,7 +22,6 @@ import {
   Activity,
   Factory,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
 } from "lucide-react";
 
@@ -64,6 +63,16 @@ export default function MilitaryEquipmentAnalyticsPage() {
   const isLoading = loadingUsage || loadingManufacturers || loadingAll;
   const error = usageError || manufacturerError || allError;
 
+  // All hooks must be called unconditionally (Rules of Hooks)
+  // Move useMemo before early returns
+  const manufacturerLookup = useMemo(
+    () =>
+      manufacturerStats
+        ? new Map(manufacturerStats.manufacturers.map((m) => [m.name, m] as const))
+        : new Map(),
+    [manufacturerStats]
+  );
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -101,13 +110,6 @@ export default function MilitaryEquipmentAnalyticsPage() {
       ? allEquipment.reduce((sum, eq) => sum + (eq.technologyLevel ?? 0), 0) / totalEquipment
       : 0;
 
-  const manufacturerLookup = useMemo(
-    () =>
-      new Map(
-        manufacturerStats.manufacturers.map((m) => [m.name, m] as const)
-      ),
-    [manufacturerStats.manufacturers]
-  );
 
   // Prepare chart data
   const topEquipmentChartData = usageStats.topEquipment.map((eq) => ({

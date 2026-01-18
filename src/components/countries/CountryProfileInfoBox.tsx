@@ -16,7 +16,6 @@ import {
   Users,
   Crown,
   Globe,
-  Calendar,
   ExternalLink,
   Info,
   Flag,

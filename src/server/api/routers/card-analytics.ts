@@ -15,7 +15,6 @@ import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   protectedProcedure,
-  adminProcedure,
 } from "~/server/api/trpc";
 import type { PrismaClient } from "@prisma/client";
 

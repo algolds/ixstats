@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { generateImageThemeCSS, type ExtractedColors } from "~/lib/image-color-extractor";
-import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
+import { getFlagColors } from "~/lib/flag-color-extractor";
 
 interface ThemeState {
   colors: ExtractedColors | null;

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Crown, TrendingUp, Users, Activity } from "lucide-react";
+import { X, Crown } from "lucide-react";
 import { Button } from "../ui/button";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { createAbsoluteUrl } from "~/lib/url-utils";

@@ -31,7 +31,7 @@ export class VaultService {
   private async getOrCreateVault(userIdOrClerkId: string, db: PrismaClient) {
     try {
       // First, try to find the User record (handles both database id and clerkUserId)
-      let user = await db.user.findFirst({
+      const user = await db.user.findFirst({
         where: {
           OR: [
             { id: userIdOrClerkId },

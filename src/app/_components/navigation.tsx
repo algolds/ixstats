@@ -14,9 +14,7 @@ import {
   Compass,
   Crown,
   Database,
-  FileText,
   Globe,
-  Home,
   Layers,
   Menu,
   MessageSquare,
@@ -46,10 +44,8 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { createUserProfileQueryParams } from "~/lib/user-utils";
 import { useHasRoleLevel } from "~/hooks/usePermissions";
 import { usePremium } from "~/hooks/usePremium";
-import { ThinkPagesIcon } from "~/components/icons/ThinkPagesIcon";
 import { AnimatedShinyText } from "~/components/magicui/animated-shiny-text";
 import { ShineBorder } from "~/components/magicui/shine-border";
 import { FaLanguage, FaWikipediaW } from "react-icons/fa";

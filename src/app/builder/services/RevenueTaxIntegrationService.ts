@@ -6,7 +6,7 @@
  */
 
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
-import type { TaxCategoryInput, TaxBracketInput, CALCULATION_METHODS } from "~/types/tax-system";
+import type { TaxCategoryInput, TaxBracketInput } from "~/types/tax-system";
 
 export interface CollectionMethod {
   id: string;

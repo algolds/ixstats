@@ -6,7 +6,6 @@
  */
 
 import { db } from "~/server/db";
-import { UserLogger, type UserActivitySummary } from "./user-logger";
 import { ErrorLogger } from "./error-logger";
 
 export interface UserActivityMetrics {

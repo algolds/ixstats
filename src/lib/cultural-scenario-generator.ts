@@ -996,7 +996,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
     }
 
     // Select based on context factors
-    let weights = compatibleTemplates.map((template) => {
+    const weights = compatibleTemplates.map((template) => {
       let weight = 1.0;
 
       // Weight based on cultural openness

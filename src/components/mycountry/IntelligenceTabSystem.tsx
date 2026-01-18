@@ -37,10 +37,11 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
   const { activeTab, setActiveTab, wsConnected } = unifiedIntelligence;
   const isAdmin = useHasRoleLevel(10); // Admin level or higher
 
-  if (!country) return null;
+  // All hooks must be called unconditionally (Rules of Hooks)
+  // Resolve flag via UnifiedFlagService - use empty string if no country
+  const { flagUrl: resolvedFlagUrl } = useFlag(country?.name ?? "");
 
-  // Resolve flag via UnifiedFlagService
-  const { flagUrl: resolvedFlagUrl } = useFlag(country.name);
+  if (!country) return null;
 
   const renderTabsList = () => {
     const baseTabs = [

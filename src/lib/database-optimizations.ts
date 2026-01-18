@@ -409,7 +409,7 @@ export class OptimizedThinkPagesQueries {
     const { limit = 50, offset = 0, countryId, filter, hashtag } = options;
 
     try {
-      let whereClause: any = {
+      const whereClause: any = {
         visibility: "public",
       };
 

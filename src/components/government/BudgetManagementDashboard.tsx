@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -21,22 +20,12 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-  Area,
-  AreaChart,
 } from "recharts";
 import {
   DollarSign,
   TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  CheckCircle,
   BarChart3,
-  PieChart as PieChartIcon,
-  Calculator,
   Target,
-  Clock,
-  Users,
-  Building2,
 } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 import type {

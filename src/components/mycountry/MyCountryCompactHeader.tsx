@@ -6,7 +6,6 @@ import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { MyCountryNavCards } from "./MyCountryNavCards";
 import { Crown, Edit } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
 
 interface MyCountryCompactHeaderProps {
   country: {

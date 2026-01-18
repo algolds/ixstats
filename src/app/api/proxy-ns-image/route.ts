@@ -9,7 +9,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { env } from "~/env";
 
 // Cache successful image fetches for 24 hours
 const CACHE_DURATION = 24 * 60 * 60; // 24 hours in seconds

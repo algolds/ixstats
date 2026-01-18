@@ -16,7 +16,6 @@ import type { GovernmentBuilderState } from "~/types/government";
 import type { TaxSystem } from "~/types/tax-system";
 import { crossBuilderSynergyService } from "./CrossBuilderSynergyService";
 import { bidirectionalTaxSyncService } from "./BidirectionalTaxSyncService";
-import { bidirectionalGovernmentSyncService } from "./BidirectionalGovernmentSyncService";
 
 export interface UnifiedEffectivenessMetrics {
   overallScore: number; // 0-100

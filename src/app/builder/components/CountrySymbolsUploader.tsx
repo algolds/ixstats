@@ -12,7 +12,6 @@ import {
 import { cn } from "~/lib/utils";
 import {
   extractColorsFromImage,
-  generateImageThemeCSS,
   type ExtractedColors,
 } from "~/lib/image-color-extractor";
 import { getFlagColors } from "~/lib/flag-color-extractor";

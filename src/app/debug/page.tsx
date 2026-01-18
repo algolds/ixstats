@@ -3,7 +3,7 @@
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { usePermissions } from "~/hooks/usePermissions";
-import { SYSTEM_OWNER_IDS, isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 export default function DebugPage() {
   const { user, isLoaded } = useUser();

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import {
@@ -28,14 +28,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Slider } from "~/components/ui/slider";
 import { Progress } from "~/components/ui/progress";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   FileText,
   Sparkles,
   TrendingUp,
-  TrendingDown,
   Users,
   DollarSign,
   Target,

@@ -3,7 +3,6 @@
 
 import { db } from "~/server/db";
 import { formatCurrency, formatPopulation } from "./chart-utils";
-import { IxTime } from "./ixtime";
 
 export interface ActivityData {
   type: "achievement" | "diplomatic" | "economic" | "social" | "meta";

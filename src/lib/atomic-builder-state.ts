@@ -223,25 +223,25 @@ export class AtomicBuilderStateManager {
 
     // Base effectiveness (average of component effectiveness)
     const componentInfo = this.getComponentInfo();
-    let baseEffectiveness =
+    const baseEffectiveness =
       selectedComponents.reduce((sum, comp) => {
         return sum + (componentInfo[comp]?.effectiveness || 50);
       }, 0) / selectedComponents.length;
 
     // Apply synergy bonuses
     const synergies = this.detectSynergies();
-    let synergyBonus = synergies.reduce((sum, synergy) => {
+    const synergyBonus = synergies.reduce((sum, synergy) => {
       return sum + (synergy.modifier - 1) * 100;
     }, 0);
 
     // Apply conflict penalties
     const conflicts = this.detectConflicts();
-    let conflictPenalty = conflicts.reduce((sum, conflict) => {
+    const conflictPenalty = conflicts.reduce((sum, conflict) => {
       return sum + conflict.penalty * 100;
     }, 0);
 
     // Calculate final score (0-100 scale)
-    let finalScore = baseEffectiveness + synergyBonus - conflictPenalty;
+    const finalScore = baseEffectiveness + synergyBonus - conflictPenalty;
     return Math.max(0, Math.min(100, finalScore));
   }
 

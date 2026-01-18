@@ -14,19 +14,13 @@ import {
 import {
   Building2,
   Globe,
-  MessageSquare,
   Users,
-  TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  Clock,
   Calendar,
   Send,
   HelpCircle,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 interface DiplomacyOverviewProps {
   countryId: string;

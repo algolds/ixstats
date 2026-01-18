@@ -53,7 +53,7 @@ export function calculateAtomicEconomicImpact(
   baseGdpPerCapita: number,
   baseTaxRevenue: number = 0
 ): AtomicEconomicModifiers {
-  let modifiers: AtomicEconomicModifiers = {
+  const modifiers: AtomicEconomicModifiers = {
     taxCollectionMultiplier: 1.0,
     gdpGrowthModifier: 1.0,
     stabilityBonus: 0,
@@ -154,7 +154,7 @@ export function calculateAtomicEconomicEffectiveness(
   // Basic effectiveness calculation based on component synergies
   let overallScore = 50; // Base score
   let gdpGrowthRate = baseEconomicData.gdpGrowthRate || 2.0;
-  let inflationRate = baseEconomicData.inflationRate || 2.0;
+  const inflationRate = baseEconomicData.inflationRate || 2.0;
   let economicStability = 50;
   let policyEffectiveness = 50;
   let taxCollectionMultiplier = 1.0;

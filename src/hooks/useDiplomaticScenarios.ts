@@ -20,7 +20,6 @@ import { useMemo } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import {
   DiplomaticScenarioGenerator,
-  type DiplomaticScenario,
   type ScenarioType,
   type DifficultyLevel,
   type TimeFrame,

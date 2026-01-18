@@ -76,11 +76,11 @@ const config = {
     tsconfigPath: "./tsconfig.json",
   },
 
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Turbopack configuration (default in Next.js 16)
+  // Empty config acknowledges Turbopack usage while keeping webpack as fallback
+  turbopack: {},
 
-  // Webpack optimizations
+  // Webpack optimizations (used as fallback when --webpack flag is passed)
   webpack: (config, { dev, isServer, webpack }) => {
     // Fix for 'self is not defined' error - set globalObject to 'this'
     // This is the most reliable solution according to webpack documentation
@@ -221,11 +221,11 @@ const config = {
       // Note: NationStates images are now proxied through /api/proxy-ns-image
       // to bypass hotlinking restrictions, so no NS domains needed here
     ],
-    // Allow local API routes with query strings (for NS image proxy)
+    // Allow local API routes with query strings (for NS image proxy and placeholders)
     localPatterns: [
       {
-        pathname: "/api/proxy-ns-image",
-        search: "**",
+        pathname: "/api/**",
+        search: "",
       },
     ],
     formats: ["image/avif", "image/webp"],

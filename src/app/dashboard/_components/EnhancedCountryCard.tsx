@@ -3,9 +3,9 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { RefreshCw, Users, TrendingUp, MapPin, Scaling, Flag } from "lucide-react";
+import { RefreshCw, Users, TrendingUp, MapPin, Scaling } from "lucide-react";
 import { api } from "~/trpc/react";
 import { cn, getTierStyle } from "~/lib/theme-utils";
 import { formatPopulation, formatCurrency } from "~/lib/chart-utils";
@@ -24,7 +24,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import { Skeleton } from "~/components/ui/skeleton";
 
 interface EnhancedCountryCardProps {
   country: CountryStats;

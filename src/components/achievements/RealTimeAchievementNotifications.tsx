@@ -5,17 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { useAchievementUpdates } from "~/hooks/useDiplomaticUpdates";
 import type { LiveIntelligenceUpdate } from "~/lib/diplomatic-websocket";
-import { IxTime } from "~/lib/ixtime";
 import {
-  RiStarLine,
   RiTrophyLine,
   RiMedalLine,
   RiAwardLine,
   RiShieldLine,
   RiStarFill,
-  RiFlaskLine,
-  RiFireLine,
-  RiCheckLine,
   RiCloseLine,
 } from "react-icons/ri";
 import { useToast } from "~/components/ui/toast";

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { FixedSizeList as List, type FixedSizeListHandle } from "~/lib/react-window-compat";
 import {
   Globe,
@@ -10,36 +10,23 @@ import {
   Search,
   Crown,
   Shield,
-  Briefcase,
   MessageSquare,
-  TrendingUp,
   Lock,
   ChevronRight,
   Hash,
-  Calendar,
-  MapPin,
-  Send,
-  Smile,
-  Paperclip,
   MoreHorizontal,
   Check,
   CheckCheck,
-  Phone,
-  Video,
-  Settings,
-  UserPlus,
   X,
   ArrowLeft,
   File,
-  Edit3,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
@@ -48,7 +35,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "~/components/ui/dialog";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { Label } from "~/components/ui/label";
@@ -305,11 +291,15 @@ export function ThinktankGroups({
   // Use the global user ID instead of account-based system
   const currentUserId = userId;
 
-  // Real-time WebSocket functionality
+  // Validate required props - more defensive check
+  const hasValidProps = userId && userId.trim() !== "";
+  const shouldFetchGroups = hasValidProps && userId && userId.trim() !== "";
+
+  // Real-time WebSocket functionality - must be called unconditionally
   const { clientState, sendTypingIndicator, subscribeToGroup, markMessageAsRead } =
     useThinkPagesWebSocket({
       accountId: currentUserId ?? undefined, // Using userId instead of account ID
-      autoReconnect: true,
+      autoReconnect: hasValidProps, // Only auto-reconnect if we have valid props
       onMessageUpdate: (update) => {
         if (selectedGroup && update.groupId === selectedGroup.id) {
           refetchMessages();
@@ -323,26 +313,7 @@ export function ThinktankGroups({
       },
     });
 
-  // Validate required props - more defensive check
-  const hasValidProps = userId && userId.trim() !== "";
-
-  // Early return if required props are missing
-  if (!hasValidProps) {
-    return (
-      <div className="space-y-6">
-        <Card className="glass-hierarchy-parent">
-          <CardContent className="p-8 text-center">
-            <Globe className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <h3 className="mb-2 text-lg font-semibold">Loading...</h3>
-            <p className="text-muted-foreground">Setting up your ThinkTanks experience</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // API Queries with defensive input validation - USE CONDITIONAL QUERY
-  const shouldFetchGroups = hasValidProps && userId && userId.trim() !== "";
 
   const {
     data: groups,
@@ -360,13 +331,6 @@ export function ThinktankGroups({
       staleTime: 30000,
     }
   );
-
-  // Manual fetch only when conditions are met
-  React.useEffect(() => {
-    if (shouldFetchGroups && userId && userId.trim() !== "") {
-      refetchGroups();
-    }
-  }, [shouldFetchGroups, userId, activeTab, refetchGroups]);
 
   const {
     data: groupMessages,
@@ -404,6 +368,13 @@ export function ThinktankGroups({
 
   // Fetch user profiles for all participants
   const { userDisplayNames } = useUserProfiles(uniqueUserIds);
+
+  // Manual fetch for groups when conditions are met
+  React.useEffect(() => {
+    if (shouldFetchGroups && userId && userId.trim() !== "") {
+      refetchGroups();
+    }
+  }, [shouldFetchGroups, userId, activeTab, refetchGroups]);
 
   // Manual fetch for messages
   React.useEffect(() => {
@@ -490,6 +461,21 @@ export function ThinktankGroups({
     },
     [currentUserId, joinGroupMutation]
   );
+
+  // Early return if required props are missing - AFTER all hooks have been called
+  if (!hasValidProps) {
+    return (
+      <div className="space-y-6">
+        <Card className="glass-hierarchy-parent">
+          <CardContent className="p-8 text-center">
+            <Globe className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-semibold">Loading...</h3>
+            <p className="text-muted-foreground">Setting up your ThinkTanks experience</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getTypeIcon = (type: string) => {
     switch (type) {

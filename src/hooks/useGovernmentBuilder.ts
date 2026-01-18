@@ -14,7 +14,6 @@ import {
   validateGovernmentBuilderState,
   generateBudgetSummary,
   generateGovernmentSummary,
-  calculateTotalBudgetPercent,
   type ValidationResult,
   type BudgetSummary,
   type GovernmentSummary,

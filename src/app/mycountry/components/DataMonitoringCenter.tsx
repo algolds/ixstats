@@ -7,9 +7,6 @@ import {
   Database,
   TrendingUp,
   TrendingDown,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
   Globe,
   Users,
   DollarSign,
@@ -17,7 +14,6 @@ import {
   RefreshCw,
   Pause,
   Play,
-  Settings,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -27,11 +23,8 @@ import { useGlobalNotifications } from "./GlobalNotificationSystem";
 import { getDatabaseIntegrationService } from "../services/DatabaseIntegrationService";
 import { useDataSync } from "../hooks/useDataSync";
 import { useRealTimeIntelligence } from "~/hooks/useRealTimeIntelligence";
-import {
-  analyzeTrend,
-  calculateEconomicTrend,
-  formatTrendForIntelligence,
-} from "~/lib/historical-trends";
+
+
 
 interface DataMonitoringCenterProps {
   countryId: string;

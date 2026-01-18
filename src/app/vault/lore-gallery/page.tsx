@@ -24,7 +24,6 @@ import {
   AlertCircle,
   Globe,
   BookOpen,
-  ExternalLink,
   SortAsc,
   Sparkles,
   ChevronLeft,
@@ -35,7 +34,6 @@ import { api } from "~/trpc/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Select,

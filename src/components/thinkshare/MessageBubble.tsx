@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Heart, Reply, Edit, Trash2, Check, CheckCheck, Crown, Hash, Globe } from "lucide-react";
+import { Heart, Reply, Edit, Trash2, Check, CheckCheck } from "lucide-react";
 import { MessageTimestamp } from "./MessageTimestamp";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";

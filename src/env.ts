@@ -10,8 +10,12 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+    // Base path for deployment under subpath (e.g., /projects/ixstats)
+    BASE_PATH: z.string().optional().default(""),
     // Discord Bot IxTime API Configuration
     IXTIME_BOT_URL: z.string().url().optional().default("http://localhost:3001"),
+    // Secret for bot-to-server sync authentication
+    IXTIME_BOT_SECRET: z.string().optional(),
     // Optional: Discord Bot Configuration (if needed for direct bot integration)
     DISCORD_BOT_TOKEN: z.string().optional(),
     DISCORD_CLIENT_ID: z.string().optional(),
@@ -39,6 +43,16 @@ export const env = createEnv({
     IXWIKI_LOCAL_PATH: z.string().optional(),
     // Admin contact email (used in API User-Agents for external services)
     ADMIN_EMAIL: z.string().email().optional(),
+    // NationStates verification secret (required for NS nation verification)
+    NS_VERIFICATION_SECRET: z.string().optional(),
+    // Server port
+    PORT: z.string().optional().default("3550"),
+    // Vercel URL (auto-set by Vercel)
+    VERCEL_URL: z.string().optional(),
+    // App URL for self-referencing
+    APP_URL: z.string().url().optional(),
+    // Cron job secret for scheduled tasks
+    CRON_SECRET: z.string().optional(),
   },
 
   /**
@@ -47,7 +61,8 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    // Base path for client-side routing
+    NEXT_PUBLIC_BASE_PATH: z.string().optional().default(""),
     // If you need the bot URL on the client side for direct API calls:
     NEXT_PUBLIC_IXTIME_BOT_URL: z.string().url().optional().default("http://localhost:3001"),
     // MediaWiki API URL for country data and flags
@@ -57,6 +72,10 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string().min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required in production")
         : z.string().optional(),
+    // App URL for client-side self-referencing
+    NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+    // Enable intel suggestions feature flag
+    NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS: z.string().optional().default("false"),
   },
 
   /**
@@ -66,12 +85,17 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    BASE_PATH: process.env.BASE_PATH,
     IXTIME_BOT_URL: process.env.IXTIME_BOT_URL,
+    IXTIME_BOT_SECRET: process.env.IXTIME_BOT_SECRET,
     DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
     DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
     DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
+    NEXT_PUBLIC_BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH,
     NEXT_PUBLIC_IXTIME_BOT_URL: process.env.NEXT_PUBLIC_IXTIME_BOT_URL,
     NEXT_PUBLIC_MEDIAWIKI_URL: process.env.NEXT_PUBLIC_MEDIAWIKI_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS: process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS,
     // Clerk Authentication Configuration
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
@@ -93,7 +117,13 @@ export const env = createEnv({
     IXWIKI_LOCAL_PATH: process.env.IXWIKI_LOCAL_PATH,
     // Admin Email
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    // NationStates
+    NS_VERIFICATION_SECRET: process.env.NS_VERIFICATION_SECRET,
+    // Server
+    PORT: process.env.PORT,
+    VERCEL_URL: process.env.VERCEL_URL,
+    APP_URL: process.env.APP_URL,
+    CRON_SECRET: process.env.CRON_SECRET,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

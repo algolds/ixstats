@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -8,8 +8,6 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
   Users,
-  Globe,
-  TrendingUp,
   Edit3,
   Save,
   X,
@@ -17,7 +15,6 @@ import {
   AlertCircle,
   Search,
   RefreshCw,
-  Eye,
   EyeOff,
 } from "lucide-react";
 import { GlassCard } from "~/components/ui/enhanced-card";

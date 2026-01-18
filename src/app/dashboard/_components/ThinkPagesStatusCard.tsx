@@ -5,16 +5,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { api } from "~/trpc/react";
 import {
-  Users,
-  FileText,
-  TrendingUp,
-  Clock,
   ChevronRight,
   Zap,
   Brain,
-  BookOpen,
   Lightbulb,
 } from "lucide-react";
 

@@ -366,7 +366,7 @@ export class BidirectionalTaxSyncService {
   ): TaxRecommendation | null {
     let baseRate = 15; // Default VAT/consumption tax
     let rationale = "Standard consumption tax for revenue generation";
-    let priority: "high" | "medium" | "low" = "low";
+    const priority: "high" | "medium" | "low" = "low";
 
     // Adjust based on economic components
     components.forEach((compType) => {
@@ -400,7 +400,7 @@ export class BidirectionalTaxSyncService {
   ): TaxRecommendation | null {
     let baseRate = 1.2; // Default property tax rate
     let rationale = "Standard property tax for local revenue";
-    let priority: "high" | "medium" | "low" = "low";
+    const priority: "high" | "medium" | "low" = "low";
 
     // Adjust based on economic components
     components.forEach((compType) => {

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 
 // UI Components
@@ -32,11 +31,9 @@ import {
   ExternalLink,
   Plus,
   Search,
-  Filter,
   RefreshCw,
   Eye,
   Edit,
-  Trash2,
   Crown,
   CheckCircle,
   AlertTriangle,
@@ -45,9 +42,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
-import { cn } from "~/lib/utils";
 
 interface AdminControlEmbedProps {
   favorite: {

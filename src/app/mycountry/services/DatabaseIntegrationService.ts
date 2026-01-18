@@ -4,7 +4,6 @@
  */
 
 import { IxTime } from "~/lib/ixtime";
-import type { DataNotificationGenerators } from "../components/GlobalNotificationSystem";
 
 interface DatabaseConnectionConfig {
   endpoint: string;

@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
   RiTrophyLine,
-  RiMedalLine,
   RiStarLine,
   RiArrowUpLine,
   RiArrowDownLine,

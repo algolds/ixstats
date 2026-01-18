@@ -2,8 +2,6 @@
 import { type PrismaClient } from "@prisma/client";
 import {
   ComponentType,
-  type GovernmentComponent,
-  type ComponentSynergy,
   type AtomicEffectiveness,
 } from "@prisma/client";
 

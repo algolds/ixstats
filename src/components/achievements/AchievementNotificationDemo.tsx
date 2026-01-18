@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { RealTimeAchievementNotifications } from "./RealTimeAchievementNotifications";
 import {
@@ -10,7 +9,6 @@ import {
   RiSettings3Line,
   RiStarLine,
   RiTrophyLine,
-  RiFireLine,
 } from "react-icons/ri";
 
 interface AchievementNotificationDemoProps {

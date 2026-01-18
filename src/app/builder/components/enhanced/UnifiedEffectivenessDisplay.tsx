@@ -10,15 +10,12 @@ import { Button } from "~/components/ui/button";
 import {
   Target,
   TrendingUp,
-  TrendingDown,
   BarChart3,
   PieChart,
   Gauge,
   AlertTriangle,
   CheckCircle,
-  Info,
   RefreshCw,
-  Users,
   DollarSign,
   Building2,
   Shield,
@@ -27,17 +24,12 @@ import {
   AlertCircle,
   Clock,
   Star,
-  Activity,
   Globe,
-  Crown,
   Scale,
 } from "lucide-react";
 
 import type {
   UnifiedEffectivenessAnalysis,
-  UnifiedEffectivenessMetrics,
-  EffectivenessBreakdown,
-  OptimizationRecommendation,
 } from "../../services/UnifiedEffectivenessCalculator";
 
 interface UnifiedEffectivenessDisplayProps {

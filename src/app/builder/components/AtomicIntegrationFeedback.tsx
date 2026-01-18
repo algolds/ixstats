@@ -13,15 +13,9 @@ import {
   Info,
   XCircle,
   Zap,
-  TrendingUp,
-  TrendingDown,
   ArrowRight,
   Settings,
   Building2,
-  Users,
-  DollarSign,
-  Target,
-  Sparkles,
 } from "lucide-react";
 import type { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import type { AtomicIntegrationFeedback as FeedbackType } from "../utils/atomicGovernmentIntegration";

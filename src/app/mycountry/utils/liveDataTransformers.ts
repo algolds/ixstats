@@ -4,17 +4,12 @@
 import type {
   VitalityIntelligence,
   ExecutiveIntelligence,
-  IntelligenceMetric,
   CriticalAlert,
   ActionableRecommendation,
   TrendingInsight,
-  ForwardIntelligence,
 } from "../types/intelligence";
 import {
-  TrendingUp,
-  TrendingDown,
   Activity,
-  AlertTriangle,
   DollarSign,
   Users,
   Building,

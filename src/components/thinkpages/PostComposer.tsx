@@ -10,7 +10,6 @@ import {
   Hash,
   AtSign,
   Globe,
-  Users,
   Lock,
   X,
   AlertCircle,

@@ -27,13 +27,9 @@ import {
   CheckCircle,
   Zap,
   Globe,
-  Building,
-  Users,
-  FileText,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { cn } from "~/lib/utils";
 import { useAnalyticsDashboard } from "~/hooks/useAnalyticsDashboard";

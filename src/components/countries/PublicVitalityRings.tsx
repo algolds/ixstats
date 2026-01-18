@@ -6,11 +6,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import {
   TrendingUp,
   Users,
@@ -21,8 +18,6 @@ import {
   Zap,
   Target,
   Crown,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { getFlagColors } from "~/lib/flag-color-extractor";

@@ -16,7 +16,6 @@ import type {
   UniqueAchievement,
   MilestoneTarget,
 } from "~/types/social-profile";
-import type { CountryCardData } from "~/components/countries/CountryFocusCard";
 import { IxTime } from "~/lib/ixtime";
 
 // Updated to match tRPC country data structure

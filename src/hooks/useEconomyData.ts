@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
-import { useAtomicState } from "~/components/atomic/AtomicStateProvider";
+import { useAtomicStateOptional } from "~/components/atomic/AtomicStateProvider";
 import { createDefaultGovernmentSpendingData } from "~/lib/government-spending-defaults";
 import {
   calculateRealTimeAtomicEffects,
@@ -10,12 +10,6 @@ import {
 } from "~/lib/real-time-atomic-effects";
 import type {
   EconomyData,
-  CoreEconomicIndicatorsData,
-  LaborEmploymentData,
-  FiscalSystemData,
-  IncomeWealthDistributionData,
-  GovernmentSpendingData,
-  DemographicsData,
 } from "../types/economics";
 
 export function useEconomyData(countryId: string) {
@@ -27,26 +21,20 @@ export function useEconomyData(countryId: string) {
     }
   );
 
-  // Try to get atomic state for enhanced calculations
-  let atomicState = null;
-  try {
-    atomicState = useAtomicState();
-  } catch {
-    // AtomicStateProvider not available, use traditional calculations
-    atomicState = null;
-  }
+  // Get atomic state for enhanced calculations (returns null if not available)
+  const atomicState = useAtomicStateOptional();
+
+  // Get comprehensive atomic components data - must be called unconditionally at top level
+  const { data: allComponents } = api.unifiedAtomic.getAll.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
 
   const economy = useMemo<EconomyData | null>(() => {
     if (!data) return null;
 
     // Type assertion to access country properties
     const countryData = data as any;
-
-    // Get comprehensive atomic components data
-    const { data: allComponents } = api.unifiedAtomic.getAll.useQuery(
-      { countryId },
-      { enabled: !!countryId }
-    );
 
     // Base economic data
     const baseGdpGrowthRate = countryData.adjustedGdpGrowth || countryData.maxGdpGrowthRate || 0.03;

@@ -12,8 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Calendar, Plus, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, HelpCircle } from "lucide-react";
-import { api } from "~/trpc/react";
+import { Calendar, Plus, Clock, CheckCircle, XCircle, TrendingUp, HelpCircle } from "lucide-react";
 
 interface DiplomaticMissionsPanelProps {
   countryId: string;

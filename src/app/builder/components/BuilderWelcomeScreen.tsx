@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Carousel, Card, BlurImage } from "~/components/ui/apple-cards-carousel";
+import { Carousel, Card } from "~/components/ui/apple-cards-carousel";
 import { Button } from "~/components/ui/button";
 import { ArrowRight } from "lucide-react";
 

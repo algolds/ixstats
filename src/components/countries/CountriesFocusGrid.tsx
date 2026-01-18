@@ -4,14 +4,11 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CountryFocusCard, type CountryCardData } from "./CountryFocusCard";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
-import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
-import { CharacterBlurReveal } from "~/components/ui/character-blur-reveal";
 import { RainbowButton } from "~/components/magicui/rainbow-button";
 import { TextAnimate } from "~/components/magicui/text-animate";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import {
   RiSearchLine,
-  RiFilterLine,
   RiSortAsc,
   RiGlobalLine,
   RiBarChartLine,

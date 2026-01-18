@@ -20,11 +20,8 @@ import {
 } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
-import { standardize } from "~/lib/interface-standardizer";
-import {
-  unifyIntelligenceItem,
-  adaptExecutiveToQuick,
-} from "~/lib/transformers/interface-adapters";
+
+
 import { notificationAPI } from "~/lib/notification-api";
 import { notificationHooks } from "~/lib/notification-hooks";
 import type {
@@ -894,7 +891,7 @@ export const myCountryRouter = createTRPCRouter({
       const action = allowedActions[input.actionId as keyof typeof allowedActions];
 
       // Validate and sanitize parameters if provided
-      let sanitizedParameters: Record<string, any> = {};
+      const sanitizedParameters: Record<string, any> = {};
       if (input.parameters) {
         // Only allow specific parameter types and sanitize values
         const allowedParams = ["amount", "duration", "target", "scope", "priority"];

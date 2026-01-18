@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "~/lib/utils";
-import { X, Loader2, Check, Verified } from "lucide-react";
+import { X, Loader2, Verified } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";

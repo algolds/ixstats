@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { cn } from "~/lib/utils";
 import { PenSquare, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { SimpleFlag } from "~/components/SimpleFlag";
 
 interface CountryData {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useRef, useCallback } from "react";
 import { usePendingLocks } from "~/app/mycountry/editor/hooks/usePendingLocks";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -64,7 +64,7 @@ export function BudgetAllocationForm({
 
   const handleChange = useCallback(
     (field: keyof BudgetAllocationInput, value: any) => {
-      let updatedData = {
+      const updatedData = {
         ...dataRef.current,
         [field]: value,
       };

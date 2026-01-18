@@ -324,7 +324,7 @@ export function parseCoordinates(
     /(-?\d+\.?\d*)[°º]?\s*([NS])[,\s]+(-?\d+\.?\d*)[°º]?\s*([EW])/
   );
   if (decimalMatch) {
-    let [, lat, latDir, lon, lonDir] = decimalMatch;
+    const [, lat, latDir, lon, lonDir] = decimalMatch;
     let latitude = parseFloat(lat);
     let longitude = parseFloat(lon);
 

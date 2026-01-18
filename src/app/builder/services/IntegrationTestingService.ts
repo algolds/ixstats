@@ -5,11 +5,10 @@
  * including economy, government, tax systems, and their interactions.
  */
 
-import { EconomicComponentType } from "~/lib/atomic-economic-data";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import type { TaxSystem } from "~/types/tax-system";
 import type { EconomyBuilderState } from "~/types/economy-builder";
-import type { GovernmentStructure, GovernmentBuilderState } from "~/types/government";
+import type { GovernmentBuilderState } from "~/types/government";
 import { CrossBuilderSynergyService } from "~/app/builder/services/CrossBuilderSynergyService";
 import { BidirectionalTaxSyncService } from "~/app/builder/services/BidirectionalTaxSyncService";
 import { BidirectionalGovernmentSyncService } from "~/app/builder/services/BidirectionalGovernmentSyncService";

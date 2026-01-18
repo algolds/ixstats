@@ -2,13 +2,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
 import { api } from "~/trpc/react";
 import {
-  Command,
   DollarSign,
-  PieChart,
-  TrendingUp,
   Shield,
   Users,
   Wrench,
@@ -28,12 +24,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
 import { Separator } from "~/components/ui/separator";
-import { Slider } from "~/components/ui/slider";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,

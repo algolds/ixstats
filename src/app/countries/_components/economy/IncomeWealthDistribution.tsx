@@ -5,20 +5,12 @@ import React, { useState, useMemo } from "react";
 import {
   Scale,
   Users,
-  TrendingUp,
-  DollarSign,
-  BarChart3,
   Info,
-  AlertCircle,
   ArrowUpRight,
-  ArrowDownRight,
   Layers,
   Eye,
   Pencil,
   HelpCircle,
-  Activity,
-  Home,
-  Banknote,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
@@ -29,7 +21,6 @@ import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import {
   PieChart,
@@ -47,8 +38,6 @@ import {
   Line,
   Area,
   AreaChart,
-  ScatterChart,
-  Scatter,
 } from "recharts";
 import { formatCurrency, formatPercentage, formatPopulation } from "./utils";
 import type { IncomeWealthDistributionData } from "~/types/economics";

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useCallback } from "react";
 import { MediaSearchModal } from "~/components/MediaSearchModal";
 import {
   Flag,
@@ -20,7 +20,6 @@ import {
   SymbolsUpload,
   GeographyForm,
   CultureForm,
-  IdentityAutocomplete,
 } from "./national-identity";
 import { useNationalIdentityState } from "./national-identity/useNationalIdentityState";
 import { useBuilderContext } from "./context/BuilderStateContext";
@@ -88,18 +87,7 @@ export function NationalIdentitySection({
   // Get builder context for autosync registration
   const { registerAutoSync, unregisterAutoSync } = useBuilderContext();
 
-  // Guard against null inputs
-  if (!inputs) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-          <p className="text-muted-foreground">Loading national identity data...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // All hooks must be called unconditionally (Rules of Hooks)
   const {
     showFlagImageModal,
     setShowFlagImageModal,
@@ -209,6 +197,18 @@ export function NationalIdentitySection({
       upsertCustomGovernmentType.mutate({ customTypeName: value.trim() });
     }
   }, [setIsEditingCustomName, handleIdentityChange, upsertCustomGovernmentType]);
+
+  // Guard against null inputs (after all hooks)
+  if (!inputs) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <p className="text-muted-foreground">Loading national identity data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

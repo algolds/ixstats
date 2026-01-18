@@ -10,16 +10,12 @@ import {
   RiTimeLine,
   RiTrophyLine,
   RiGiftLine,
-  RiUserLine,
-  RiHeartLine,
   RiShareLine,
   RiEyeLine,
-  RiCalendarLine,
   RiArrowRightLine,
 } from "react-icons/ri";
 import type {
   DiplomaticAchievement,
-  AchievementProgress,
   AchievementRequirement,
   AchievementReward,
 } from "~/types/achievement-constellation";

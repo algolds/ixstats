@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { GlassCard, GlassCardContent, GlassCardHeader } from "../glass/GlassCard";
-import { Button } from "~/components/ui/button";
-import { Image as ImageIcon } from "lucide-react";
+import { GlassCard, GlassCardContent } from "../glass/GlassCard";
 import { MediaSearchModal } from "~/components/MediaSearchModal";
 import { CountrySymbolsUploader } from "../CountrySymbolsUploader";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";

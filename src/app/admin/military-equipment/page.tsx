@@ -68,13 +68,11 @@ import {
   Car,
   Rocket,
   Wrench,
-  Users,
   DollarSign,
   Settings,
   Image,
   FileText,
   Filter,
-  Eye,
   EyeOff,
   Factory,
   BarChart3,
@@ -87,10 +85,8 @@ import {
   Shield,
   Activity,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Target,
-  Upload,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -521,7 +517,7 @@ export default function MilitaryEquipmentPage() {
   const filteredManufacturers = useMemo<ManufacturerWithCount[]>(() => {
     if (normalizedManufacturers.length === 0) return [];
 
-    let filtered = normalizedManufacturers.filter((manufacturer) => {
+    const filtered = normalizedManufacturers.filter((manufacturer) => {
       // Country filter
       if (countryFilter !== "all" && manufacturer.country !== countryFilter) return false;
 
@@ -2190,6 +2186,15 @@ function AnalyticsContent({
   isLoading,
   error,
 }: AnalyticsContentProps) {
+  // useMemo must be called unconditionally before any early returns
+  const manufacturerLookup = useMemo(
+    () =>
+      new Map(
+        (manufacturerStats?.manufacturers ?? []).map((m) => [m.name, m] as const)
+      ),
+    [manufacturerStats?.manufacturers]
+  );
+
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -2226,14 +2231,6 @@ function AnalyticsContent({
     totalEquipment > 0
       ? allEquipment.reduce((sum, eq) => sum + (eq.technologyLevel ?? 0), 0) / totalEquipment
       : 0;
-
-  const manufacturerLookup = useMemo(
-    () =>
-      new Map(
-        manufacturerStats.manufacturers.map((m) => [m.name, m] as const)
-      ),
-    [manufacturerStats.manufacturers]
-  );
 
   // Prepare chart data
   const topEquipmentChartData = usageStats.topEquipment.map((eq) => ({

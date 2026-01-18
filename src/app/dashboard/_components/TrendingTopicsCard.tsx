@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { api } from "~/trpc/react";
 import { Hash } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import { cn } from "~/lib/utils";
 
 export function TrendingTopicsCard() {
   const {

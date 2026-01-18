@@ -7,7 +7,6 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Progress } from "~/components/ui/progress";
 import {
   Calendar,
   FileText,
@@ -15,13 +14,11 @@ import {
   Target,
   TrendingUp,
   Users,
-  ExternalLink,
   Activity,
   AlertTriangle,
   CheckCircle,
   Clock,
 } from "lucide-react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { CabinetMeetingModal } from "~/components/modals/CabinetMeetingModal";
 import { PolicyCreator } from "~/components/quickactions/PolicyCreator";
 import { DefenseModal } from "~/components/quickactions/DefenseModal";

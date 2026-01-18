@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -25,10 +25,8 @@ import {
   Shield,
   Building,
 } from "lucide-react";
-import { VitalityRings } from "~/components/mycountry/primitives/VitalityRings";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import {

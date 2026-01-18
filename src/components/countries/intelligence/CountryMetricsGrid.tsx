@@ -5,11 +5,9 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { MetricCard } from "~/components/shared/data-display/MetricCard";
 import { ClassificationBadge, TrendIndicator } from "./StatusIndicators";
 import { IMPORTANCE_STYLES } from "./constants";
 import type { CountryMetric, ClearanceLevel } from "./types";

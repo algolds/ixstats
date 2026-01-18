@@ -20,9 +20,7 @@ import {
   RiFlagLine,
   RiTrophyLine,
   RiFireLine,
-  RiThumbUpLine,
   RiEyeLine,
-  RiFilterLine,
   RiRefreshLine,
   RiBookmarkLine,
 } from "react-icons/ri";

@@ -12,31 +12,23 @@ import {
   Package,
   Gift,
   Sparkles,
-  Clock,
   ShoppingCart,
-  Trophy,
   Zap,
-  ChevronLeft,
-  ChevronRight,
-  Timer,
   Star,
-  TrendingUp,
   Info,
   Percent,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { PackOpeningSequence } from "~/components/cards/pack-opening/PackOpeningSequence";
-import { CardStack } from "~/components/vault/CardIcon";
 import { useSoundService } from "~/lib/sound-service";
 import { Badge } from "~/components/ui/badge";
 import { TiltCard } from "~/components/vault/3DTiltCard";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import type { PackType } from "@prisma/client";
 
 /**
  * Pack rarity configuration

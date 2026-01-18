@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
+import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { economyIntegrationService } from "~/app/builder/services/EconomyIntegrationService";

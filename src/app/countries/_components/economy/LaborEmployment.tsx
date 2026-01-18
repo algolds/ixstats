@@ -6,7 +6,6 @@ import {
   Users,
   Clock,
   BarChart2,
-  Info,
   Factory,
   Wheat,
   Building2,
@@ -14,8 +13,6 @@ import {
   GraduationCap,
   ShieldCheck,
   MapPin,
-  Heart,
-  Calendar,
   Eye,
   Pencil,
   AlertTriangle,
@@ -25,12 +22,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
-import { Slider } from "~/components/ui/slider";
 import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import {
   PieChart,

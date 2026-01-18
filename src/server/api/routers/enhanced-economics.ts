@@ -2,7 +2,7 @@
 // Provides advanced economic analysis and intelligence via API
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   analyzeCountryEconomics,
@@ -10,8 +10,6 @@ import {
   getBuilderEconomicMetrics,
   getIntelligenceEconomicData,
 } from "~/lib/enhanced-economic-service";
-import { IxStatsCalculator } from "~/lib/calculations";
-import { getDefaultEconomicConfig } from "~/lib/config-service";
 import type {
   CountryStats,
   HistoricalDataPoint,

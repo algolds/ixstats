@@ -13,7 +13,7 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import {
   Activity,
@@ -30,8 +30,6 @@ import {
   Line,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
   Cell,
   XAxis,
   YAxis,

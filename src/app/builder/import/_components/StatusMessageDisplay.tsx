@@ -3,7 +3,6 @@ import { GlassCard, GlassCardContent } from "~/app/builder/components/glass/Glas
 import { SearchingStatus } from "./status/SearchingStatus";
 import { NoResultsStatus } from "./status/NoResultsStatus";
 import { ErrorStatus } from "./status/ErrorStatus";
-import { LoadingStatus } from "./status/LoadingStatus";
 
 interface StatusMessageDisplayProps {
   type: "searching" | "no-results" | "error" | "loading";

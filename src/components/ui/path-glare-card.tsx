@@ -1,6 +1,5 @@
 import { cn } from "~/lib/utils";
 import { useRef, useEffect } from "react";
-import { motion } from "framer-motion";
 
 interface PathGlareCardProps {
   children: React.ReactNode;

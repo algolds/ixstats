@@ -118,31 +118,10 @@ export const TierVisualization = memo(function TierVisualization({
 }: TierVisualizationProps) {
   const [activeTab, setActiveTab] = useState<"economic" | "population">("economic");
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Tier Breakdown
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-3 w-16" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Move useMemo hooks before early return to follow Rules of Hooks
   const economicDistribution = useMemo(() => {
+    if (!countries || countries.length === 0) return {};
+    
     const distribution: Record<string, { count: number; percentage: number; countries: string[] }> =
       {};
 
@@ -166,6 +145,8 @@ export const TierVisualization = memo(function TierVisualization({
   }, [countries]);
 
   const populationDistribution = useMemo(() => {
+    if (!countries || countries.length === 0) return {};
+    
     const distribution: Record<string, { count: number; percentage: number; countries: string[] }> =
       {};
 
@@ -185,6 +166,30 @@ export const TierVisualization = memo(function TierVisualization({
 
     return distribution;
   }, [countries]);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Tier Breakdown
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const renderEconomicTiers = () => {
     const sortedTiers = Object.keys(tierConfig).filter((tier) => economicDistribution[tier]);

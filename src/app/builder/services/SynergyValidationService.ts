@@ -6,10 +6,6 @@
  */
 
 import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
-import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
-import type { TaxSystem, TaxCategory } from "~/types/tax-system";
-import type { EconomyBuilderState } from "~/types/economy-builder";
-import type { GovernmentStructure } from "~/types/government";
 
 export interface SynergyValidationResult {
   id: string;

@@ -6,7 +6,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { Flag, RefreshCw, Loader2 } from "lucide-react";
-import { flagService } from "~/lib/flag-service";
 
 interface FlagTestResult {
   country: string;

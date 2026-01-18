@@ -1,7 +1,7 @@
 // src/app/admin/_components/BotControlPanel.tsx
 "use client";
 
-import { Bot, Pause, Play, RotateCcw, AlertTriangle } from "lucide-react";
+import { Pause, Play, RotateCcw, AlertTriangle } from "lucide-react";
 import type { AdminPageBotStatusView } from "~/types/ixstats";
 
 interface BotControlPanelProps {

@@ -1,7 +1,6 @@
 // Intelligent Cache System - Phase 3 Performance Enhancement
 // Advanced caching with TTL, invalidation, and performance optimization
 
-import { IxTime } from "~/lib/ixtime";
 
 export type CacheType = "critical" | "standard" | "historical" | "static";
 

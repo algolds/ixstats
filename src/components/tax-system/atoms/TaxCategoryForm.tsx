@@ -25,7 +25,6 @@ import {
   Home,
   TrendingUp,
   Trash2,
-  Edit3,
   ChevronDown,
   ChevronRight,
   Plus,
@@ -41,12 +40,10 @@ import {
   AlertTriangle,
   Mountain,
   Link2,
-  ExternalLink,
-  RefreshCw,
   Sparkles,
 } from "lucide-react";
 import type { TaxCategoryInput, TaxBracketInput } from "~/types/tax-system";
-import { TAX_CATEGORIES, TAX_TYPES, CALCULATION_METHODS } from "~/types/tax-system";
+import { TAX_CATEGORIES, TAX_TYPES } from "~/types/tax-system";
 
 interface TaxCategoryFormProps {
   data: TaxCategoryInput;

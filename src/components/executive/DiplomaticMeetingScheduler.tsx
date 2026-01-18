@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
-import type { Country } from "~/types/ixstats";
 import {
   Dialog,
   DialogContent,
@@ -18,13 +16,8 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+
+
 import { IxTimePicker } from "~/components/ui/ixtime-picker";
 import { Globe, Calendar, MapPin, Users, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";

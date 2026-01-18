@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
-import { CountriesPageHeader, CountriesSearch, CountriesGrid } from "../countries/_components";
+import { CountriesPageHeader, CountriesGrid } from "../countries/_components";
 import type {
   SortField,
   SortDirection,
@@ -58,17 +58,6 @@ export default function ExplorePage() {
       staleTime: 30 * 1000,
     }
   );
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Error Loading Countries</h1>
-          <p className="text-muted-foreground mt-2">{error.message}</p>
-        </div>
-      </div>
-    );
-  }
 
   const raw = countriesResult?.countries || [];
   const processed: PageCountryData[] = raw.map((c: any) => ({
@@ -214,6 +203,18 @@ export default function ExplorePage() {
     sortField,
     sortDirection,
   ]);
+
+  // Early return for error - after all hooks have been called
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600">Error Loading Countries</h1>
+          <p className="text-muted-foreground mt-2">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
 
   const pageCount = Math.ceil(filtered.length / pageSize);
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);

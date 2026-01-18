@@ -19,16 +19,14 @@
  * - NumberFlow for animated price displays
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
-  TrendingUp,
   Clock,
   Flame,
   Star,
   Filter,
-  SlidersHorizontal,
   ChevronDown,
   Heart,
   Gavel,

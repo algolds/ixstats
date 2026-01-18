@@ -50,7 +50,7 @@ import { useAdminState } from "./_hooks/useAdminState";
 import { useAdminHandlers } from "./_hooks/useAdminHandlers";
 import { useBotSync } from "./_hooks/useBotSync";
 
-import { SYSTEM_OWNER_IDS, isSystemOwner } from "~/lib/system-owner-constants";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 export default function AdminPage() {
   // All hooks must be called unconditionally and at the top

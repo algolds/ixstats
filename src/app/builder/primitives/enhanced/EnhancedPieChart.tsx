@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, generateSectionChartColors, getGlassClasses } from "./theme-utils";

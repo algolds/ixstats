@@ -9,7 +9,7 @@
  */
 
 import { db } from "~/server/db";
-import { logger, LogLevel, LogCategory } from "./logger";
+import { logger, LogCategory } from "./logger";
 
 interface RetentionPolicy {
   logLevel: string;
@@ -107,7 +107,7 @@ class LogRetentionManager {
     errors: number;
   }> {
     const startTime = Date.now();
-    let archived = 0;
+    const archived = 0;
     let deleted = 0;
     let errors = 0;
 

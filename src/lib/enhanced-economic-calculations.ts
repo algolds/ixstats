@@ -2,10 +2,9 @@
 // Enhanced Economic Calculation Framework
 // Building on existing calculations with grouped methodologies and detailed analysis
 
-import { IxTime } from "./ixtime";
 import { IxStatsCalculator, EconomicTier, PopulationTier } from "./calculations";
-import type { CountryStats, EconomicConfig, HistoricalDataPoint, DmInputs } from "../types/ixstats";
-import type { EconomyData, CoreEconomicIndicatorsData } from "../types/economics";
+import type { CountryStats, EconomicConfig, HistoricalDataPoint } from "../types/ixstats";
+import type { EconomyData } from "../types/economics";
 
 // ===== ENHANCED CALCULATION GROUPS =====
 

@@ -6,19 +6,15 @@ import { motion } from "framer-motion";
 import {
   Megaphone,
   TrendingUp,
-  Users,
-  MessageSquare,
   BarChart3,
   Target,
   Zap,
-  Eye,
   ArrowRight,
   Hash,
   Activity,
   PieChart,
   ThumbsUp,
   ThumbsDown,
-  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";

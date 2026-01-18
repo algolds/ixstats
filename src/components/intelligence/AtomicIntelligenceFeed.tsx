@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import type { ComponentType } from "~/types/government";
 import {
   ComponentType as PrismaComponentType,
   EconomicComponentType,

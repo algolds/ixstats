@@ -3,7 +3,6 @@
 
 import { db } from "~/server/db";
 import { intelligenceCache, CacheUtils, type CacheType } from "~/lib/intelligence-cache";
-import type { Prisma } from "@prisma/client";
 
 // Performance monitoring stub - actual monitoring removed to avoid circular dependencies
 // Monitoring should be done at the API/caller level instead

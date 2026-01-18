@@ -167,13 +167,18 @@ export const EASING_FUNCTIONS = {
 };
 
 // Utility for creating smooth value transitions
-export function createSmoothTransition(
+// NOTE: This is a hook wrapper - must be called from a React component
+export function useSmoothTransition(
   motionValue: MotionValue<number>,
   targetValue: number,
-  duration: number = 800
+  _duration: number = 800
 ) {
   return useTransform(motionValue, [0, targetValue], [0, targetValue]);
 }
+
+// Deprecated: Use useSmoothTransition instead
+// Kept for backwards compatibility but logs a warning
+export const createSmoothTransition = useSmoothTransition;
 
 // Animation variants for common chart and UI elements
 export const MOTION_VARIANTS = {

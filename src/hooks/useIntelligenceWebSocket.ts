@@ -6,7 +6,6 @@ import { useUser } from "~/context/auth-context";
 import { IntelligenceWebSocketClient } from "~/lib/websocket/intelligence-websocket-client";
 import type {
   IntelligenceUpdate,
-  WebSocketClientState,
   IntelligenceWebSocketHookOptions,
 } from "~/lib/websocket/types";
 

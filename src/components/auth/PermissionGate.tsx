@@ -48,9 +48,12 @@ export function MultiPermissionGate({
   children,
   fallback = null,
 }: MultiplePermissionGateProps) {
-  const hasPermission = requireAll
-    ? useHasAllPermissions(permissions)
-    : useHasAnyPermission(permissions);
+  // Call both hooks unconditionally to follow Rules of Hooks
+  const hasAllPermissions = useHasAllPermissions(permissions);
+  const hasAnyPermission = useHasAnyPermission(permissions);
+  
+  // Select the appropriate result based on requireAll
+  const hasPermission = requireAll ? hasAllPermissions : hasAnyPermission;
 
   if (!hasPermission) {
     return <>{fallback}</>;

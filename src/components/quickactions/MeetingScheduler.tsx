@@ -1,8 +1,8 @@
 // src/components/quickactions/MeetingScheduler.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
@@ -20,7 +20,6 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -34,15 +33,12 @@ import {
   Users,
   Plus,
   X,
-  Clock,
   FileText,
   CheckCircle2,
   AlertCircle,
   Tag,
-  Layers,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 interface MeetingSchedulerProps {
   countryId: string;

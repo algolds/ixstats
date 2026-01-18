@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   Activity,
   BarChart3,
-  PieChart,
   Eye,
 } from "lucide-react";
 

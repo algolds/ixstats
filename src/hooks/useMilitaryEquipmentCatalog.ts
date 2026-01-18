@@ -23,11 +23,9 @@ import {
   MILITARY_VEHICLES,
   WEAPON_SYSTEMS,
   DEFENSE_MANUFACTURERS,
-  MILITARY_ERAS,
 } from "~/lib/military-equipment";
 import {
   EXPANDED_MILITARY_DATABASE,
-  getTotalEquipmentCount,
 } from "~/lib/military-equipment-extended";
 
 /**

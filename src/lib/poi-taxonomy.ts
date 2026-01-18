@@ -2,7 +2,6 @@
 // Point of Interest Category Taxonomy for IxStats Map Editor
 // Icons from lucide-react, colors from Tailwind CSS palette
 
-import type { LucideIcon } from "lucide-react";
 
 /**
  * Defines the structure for a main Point of Interest category.

@@ -69,7 +69,7 @@ export function PoliciesPanel({ countryId }: PoliciesPanelProps) {
     if (!priority) return null;
 
     const priorityLower = priority.toLowerCase();
-    let variant: "default" | "destructive" | "secondary" = "secondary";
+    const variant: "default" | "destructive" | "secondary" = "secondary";
     let colorClass = "";
 
     if (priorityLower === "critical" || priorityLower === "high") {

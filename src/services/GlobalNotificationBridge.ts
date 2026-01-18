@@ -7,7 +7,6 @@
 
 import { EventEmitter } from "events";
 import type {
-  UnifiedNotification,
   NotificationCategory,
   NotificationPriority,
   DeliveryMethod,

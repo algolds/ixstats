@@ -5,9 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Trophy,
   Star,
-  Medal,
-  Award,
-  Crown,
   Target,
   TrendingUp,
   Users,
@@ -15,7 +12,6 @@ import {
   Building2,
   ChevronRight,
   Sparkles,
-  MapPin,
   BarChart3,
   Calendar,
 } from "lucide-react";

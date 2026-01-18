@@ -13,7 +13,6 @@ import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   AlertTriangle,
@@ -30,7 +29,6 @@ import {
   X,
   Info,
   Zap,
-  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ActionableRecommendation } from "~/app/mycountry/types/intelligence";

@@ -43,10 +43,6 @@ import {
 import { calculateAtomicTaxEffectiveness } from "./atomic-tax-integration";
 import {
   calculateClientAtomicEconomicImpact,
-  getComponentBreakdown,
-  detectPotentialSynergies,
-  detectConflicts,
-  calculateOverallEffectiveness,
   type ClientAtomicEconomicModifiers,
 } from "./atomic-client-calculations";
 
@@ -471,7 +467,7 @@ export class UnifiedAtomicStateManager {
 
     // Base effectiveness calculation
     const componentInfo = this.getComponentEffectivenessData();
-    let baseEffectiveness =
+    const baseEffectiveness =
       selectedComponents.reduce((sum, comp) => {
         return sum + (componentInfo[comp]?.effectiveness || 50);
       }, 0) / selectedComponents.length;

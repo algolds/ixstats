@@ -22,7 +22,6 @@ import { FastAverageColor } from "fast-average-color";
 import { useRef } from "react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
-import { getCountryPath } from "~/lib/slug-utils";
 
 export interface CountryData {
   id: string;

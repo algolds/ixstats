@@ -9,18 +9,8 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Info,
   TrendingUp,
   TrendingDown,
-  Minus,
-  Zap,
-  Target,
-  DollarSign,
-  Users,
-  Building2,
-  Globe,
-  Lightbulb,
-  Leaf,
 } from "lucide-react";
 import { EconomicComponentType } from "./AtomicEconomicComponents";
 import type { AtomicEconomicComponent } from "~/lib/atomic-economic-data";

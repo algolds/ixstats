@@ -13,7 +13,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, ChevronLeft, TrendingUp, Badge } from "lucide-react";
+import { Brain, ChevronLeft, TrendingUp } from "lucide-react";
 import { ExecutiveActivityRings } from "~/components/ui/executive-activity-rings";
 import { RubiksCubeFlags } from "~/components/ui/rubiks-cube-flags";
 import { cn } from "~/lib/utils";

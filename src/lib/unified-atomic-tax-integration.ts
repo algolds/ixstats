@@ -807,8 +807,8 @@ export function getUnifiedTaxEffectiveness(
   }
 ): UnifiedTaxEffectiveness {
   const categories = taxSystem.taxCategories || [];
-  let totalCollectionEfficiency = taxSystem.collectionEfficiency || 70;
-  let totalComplianceRate = taxSystem.complianceRate || 65;
+  const totalCollectionEfficiency = taxSystem.collectionEfficiency || 70;
+  const totalComplianceRate = taxSystem.complianceRate || 65;
 
   // Track synergies
   const activeSynergies: TaxGovernmentSynergy[] = [];

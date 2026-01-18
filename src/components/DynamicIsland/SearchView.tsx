@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
 import { Command, Search, X, ChevronDown } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";

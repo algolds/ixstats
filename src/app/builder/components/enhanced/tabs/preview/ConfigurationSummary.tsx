@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Building2, DollarSign, TrendingUp } from "lucide-react";
+import { Building2 } from "lucide-react";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "../../../../lib/economy-data-service";
 

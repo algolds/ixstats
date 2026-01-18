@@ -5,21 +5,18 @@ import { useState, useEffect, useRef } from "react";
 import {
   Terminal,
   Download,
-  Filter,
   Search,
   RefreshCw,
   AlertTriangle,
   Info,
-  CheckCircle,
   XCircle,
-  Clock,
   Database,
   Server,
   Bot,
   Users,
   Zap,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
@@ -30,8 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Separator } from "~/components/ui/separator";
 import { formatDistanceToNow } from "date-fns";
 
 interface SystemLog {

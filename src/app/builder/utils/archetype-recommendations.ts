@@ -13,7 +13,6 @@
  */
 import type { EconomicArchetype } from "../data/archetype-types";
 import { EconomicArchetypeService } from "../services/EconomicArchetypeService";
-import type { EconomyBuilderState } from "~/types/economy-builder";
 import { EconomicComponentType } from "~/lib/atomic-economic-data";
 
 /**

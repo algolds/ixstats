@@ -6,9 +6,7 @@ import { IxTime } from "./ixtime";
 import type {
   BaseCountryData,
   CountryStats,
-  EconomicConfig,
   IxStatsConfig,
-  HistoricalDataPoint,
 } from "../types/ixstats";
 import { parseRosterFile as parseRosterFileFromParser } from "./data-parser";
 import { getDefaultEconomicConfig, getDefaultIxStatsConfig } from "./config-service";

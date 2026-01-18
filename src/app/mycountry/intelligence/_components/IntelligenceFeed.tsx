@@ -17,8 +17,6 @@ import {
   Search,
   Filter,
   Clock,
-  Eye,
-  EyeOff,
   Archive,
   CheckCircle2,
   ChevronDown,
@@ -32,7 +30,6 @@ import {
   Unlock,
   BarChart3,
   Play,
-  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";

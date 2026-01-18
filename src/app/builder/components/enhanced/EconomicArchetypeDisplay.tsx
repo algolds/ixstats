@@ -1,23 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Alert, AlertDescription } from "~/components/ui/alert";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+
+
 import {
   Globe,
   TrendingUp,
-  Shield,
   Lightbulb,
   Users,
   Building2,
@@ -25,15 +18,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Info,
-  BarChart3,
-  PieChart,
-  Zap,
-  Star,
   ArrowRight,
   RefreshCw,
-  Settings,
-  Download,
-  Upload,
   Cpu,
   Mountain,
   Factory,
@@ -41,13 +27,11 @@ import {
   Banknote,
   Crown,
   Ship,
-  Plane,
   Car,
   Wrench,
   Hammer,
   Gavel,
   BookOpen,
-  Heart,
   TreePine,
   Wheat,
   Pickaxe,

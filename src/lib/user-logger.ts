@@ -19,7 +19,7 @@
 import { db } from "~/server/db";
 import { logger, LogLevel, LogCategory } from "./logger";
 import { ErrorLogger } from "./error-logger";
-import { writeFileSync, appendFileSync, existsSync, mkdirSync } from "fs";
+import { appendFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
 export interface UserLogContext {

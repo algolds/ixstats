@@ -11,7 +11,6 @@ import {
   Medal,
   Crown,
   Sparkles,
-  Lock,
   TrendingUp,
   Wifi,
   WifiOff,

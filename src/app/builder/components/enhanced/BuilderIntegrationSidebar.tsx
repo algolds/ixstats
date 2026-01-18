@@ -1,24 +1,19 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Progress } from "~/components/ui/progress";
 import { HealthRing } from "~/components/ui/health-ring";
 import {
   Target,
   TrendingUp,
   TrendingDown,
-  CheckCircle,
-  AlertTriangle,
   Building2,
   DollarSign,
   Zap,
   Activity,
-  Info,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { TooltipProvider } from "~/components/ui/tooltip";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 import type { EconomicHealthMetrics } from "~/types/economy-builder";

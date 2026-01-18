@@ -5,7 +5,6 @@
  * with proper context and categorization.
  */
 
-import { TRPCError } from "@trpc/server";
 import { UserLogger, type UserLogContext, type UserAction } from "./user-logger";
 import { ErrorLogger } from "./error-logger";
 

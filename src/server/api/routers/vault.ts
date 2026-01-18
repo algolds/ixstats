@@ -13,7 +13,6 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
   rateLimitedPublicProcedure,
   adminProcedure,

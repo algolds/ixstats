@@ -9,24 +9,19 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   CheckCircle,
   Clock,
   Globe,
   Users,
   DollarSign,
-  Zap,
   Brain,
-  Shield,
   BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { useRealTimeIntelligence } from "~/hooks/useRealTimeIntelligence";
-import { formatTrendForIntelligence } from "~/lib/historical-trends";
 
 interface RealTimeIntelligenceDashboardProps {
   countryId: string;

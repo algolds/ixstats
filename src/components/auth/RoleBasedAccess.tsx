@@ -100,8 +100,13 @@ export function FeatureGate({
   children,
   fallback = null,
 }: FeatureGateProps) {
-  const hasPermission = requiredPermission ? useHasPermission(requiredPermission) : true;
-  const hasRoleLevel = requiredRoleLevel !== undefined ? useHasRoleLevel(requiredRoleLevel) : true;
+  // Call hooks unconditionally with safe defaults (Rules of Hooks)
+  const permissionCheck = useHasPermission(requiredPermission ?? "");
+  const roleLevelCheck = useHasRoleLevel(requiredRoleLevel ?? Infinity);
+  
+  // Apply the check only if the requirement was specified
+  const hasPermission = requiredPermission ? permissionCheck : true;
+  const hasRoleLevel = requiredRoleLevel !== undefined ? roleLevelCheck : true;
 
   // Feature can be controlled by environment variable or other feature flags
   const isFeatureEnabled =
@@ -122,8 +127,9 @@ export function useCanAccess(conditions: {
   requireAll?: boolean; // Default: false (OR logic), true (AND logic)
 }): boolean {
   const { permissions: userPermissions } = usePermissions();
-  const hasRoleLevel =
-    conditions.roleLevel !== undefined ? useHasRoleLevel(conditions.roleLevel) : true;
+  // Call hook unconditionally with safe default (Rules of Hooks)
+  const roleLevelCheck = useHasRoleLevel(conditions.roleLevel ?? Infinity);
+  const hasRoleLevel = conditions.roleLevel !== undefined ? roleLevelCheck : true;
 
   if (!hasRoleLevel) return false;
 

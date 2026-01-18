@@ -5,13 +5,10 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
-  publicProcedure,
   protectedProcedure,
-  rateLimitedPublicProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
 import {
-  createCard,
   getCard,
   getCards,
   getUserCards,

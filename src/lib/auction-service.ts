@@ -14,7 +14,6 @@
  * - Bid validation (5% minimum increment)
  */
 
-import { prisma } from "~/server/db";
 import { vaultService } from "./vault-service";
 import { IxTime } from "./ixtime";
 import { TRPCError } from "@trpc/server";

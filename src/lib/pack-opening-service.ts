@@ -2,7 +2,7 @@
 // Pack opening service with animation helpers
 
 import type { CardRarity } from "@prisma/client";
-import type { Particle, HapticPattern, CardInstance } from "~/types/pack-opening";
+import type { Particle, HapticPattern } from "~/types/pack-opening";
 
 /**
  * Rarity color mapping for particles and effects

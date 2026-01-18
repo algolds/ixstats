@@ -6,18 +6,12 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
   RiSearchLine,
-  RiFilterLine,
   RiCloseLine,
-  RiEqualLine,
-  RiArrowUpLine,
-  RiArrowDownLine,
   RiCalendarLine,
   RiMapPinLine,
   RiStarLine,
-  RiTrophyLine,
   RiGlobalLine,
   RiShakeHandsLine,
-  RiExchangeLine,
   RiUserLine,
   RiHistoryLine,
   RiBookmarkLine,

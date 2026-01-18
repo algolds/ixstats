@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { CometCard } from "~/components/ui/comet-card";
 import { CardDisplay } from "../display/CardDisplay";
-import type { CardInstance } from "~/types/cards-display";
 
 /**
  * CraftingAnimation props

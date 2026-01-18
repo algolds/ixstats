@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { ComponentType, EconomicComponentType, TaxComponentType } from "@prisma/client";
 
 export const unifiedAtomicRouter = createTRPCRouter({
   // Get all components (government, economic, tax) for a country

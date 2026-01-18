@@ -4,10 +4,8 @@
 import { useState, useEffect } from "react";
 import {
   Calculator,
-  Code,
   Save,
   Play,
-  RotateCcw,
   AlertTriangle,
   CheckCircle,
   TrendingUp,
@@ -15,7 +13,6 @@ import {
   Users,
   Globe,
   Edit3,
-  Eye,
   History,
   Shield,
   HandshakeIcon,
@@ -29,7 +26,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
-import { Separator } from "~/components/ui/separator";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { api } from "~/trpc/react";
 

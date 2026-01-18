@@ -50,7 +50,7 @@ import {
 import { formatCurrency, formatPercentage, formatPopulation } from "./utils";
 import type { Country, EconomicYearData, DMInputs, EconomicModel } from "~/server/db/schema";
 import { useEconomicModel, type UseEconomicModelReturn } from "~/hooks/useEconomicModel";
-import type { ModelParameters, SectorData, PolicyData } from "~/lib/economic-modeling-engine";
+import type { ModelParameters } from "~/lib/economic-modeling-engine";
 
 interface EconomicModelingEngineProps {
   country: Country & {

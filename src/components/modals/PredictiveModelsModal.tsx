@@ -9,12 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
 import { GlassCard } from "~/components/ui/enhanced-card";
-import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
   Select,
@@ -25,64 +23,25 @@ import {
 } from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Switch } from "~/components/ui/switch";
-import { Slider } from "~/components/ui/slider";
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  AreaChart,
   Area,
-  BarChart,
-  Bar,
   ComposedChart,
-  ScatterChart,
-  Scatter,
-  PieChart,
-  Pie,
-  Cell,
   Legend,
 } from "recharts";
 import {
-  TrendingUp,
-  TrendingDown,
-  Activity,
   AlertTriangle,
   CheckCircle,
-  Clock,
-  Settings,
-  RefreshCw,
-  Download,
-  Filter,
-  Search,
-  Zap,
   Target,
-  Users,
-  DollarSign,
-  Globe,
-  Shield,
-  Lightbulb,
-  Eye,
-  BarChart4,
-  PieChart as PieChartIcon,
-  ScatterChart as ScatterChartIcon,
   Brain,
-  Sparkles,
-  ArrowRight,
   ChevronRight,
-  Calendar,
-  BarChart3,
-  LineChart as LineChartIcon,
-  AreaChart as AreaChartIcon,
-  Gauge,
-  Target as TargetIcon,
-  AlertCircle,
   Info,
 } from "lucide-react";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
 
 interface PredictiveModelsModalProps {

@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import {
   calculateChangeImpact,
-  getDelayDescription,
   getImpactColor,
   getImpactBgColor,
   type ChangeImpact,

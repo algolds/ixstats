@@ -13,11 +13,8 @@ import {
   Truck,
   Radio,
   Target,
-  DollarSign,
-  Wrench,
   CheckCircle2,
   Search,
-  Filter,
   Image,
 } from "lucide-react";
 import {
@@ -46,10 +43,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { toast } from "sonner";
 import {
-  MILITARY_AIRCRAFT,
-  MILITARY_SHIPS,
-  MILITARY_VEHICLES,
-  WEAPON_SYSTEMS,
   DEFENSE_MANUFACTURERS,
   MILITARY_ERAS,
   EXPANDED_MILITARY_DATABASE,

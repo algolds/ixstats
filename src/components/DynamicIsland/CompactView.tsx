@@ -31,7 +31,7 @@ import { withBasePath } from "~/lib/base-path";
 import type { CompactViewProps } from "./types";
 import { HealthRing } from "../ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
-import { devLog, debugLog } from "~/lib/console-utils";
+import { debugLog } from "~/lib/console-utils";
 import { CrisisIndicator } from "./CrisisIndicator";
 import { MyCountryCompactView } from "./MyCountryCompactView";
 import { usePathname } from "next/navigation";

@@ -2,8 +2,6 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
-  type EnhancedArchetype,
-  type ArchetypeCategory,
   enhancedArchetypes,
   archetypeCategories,
   validateArchetypeSelection,

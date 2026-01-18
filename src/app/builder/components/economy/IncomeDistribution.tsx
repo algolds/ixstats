@@ -4,7 +4,6 @@ import React from "react";
 import {
   DollarSign,
   TrendingUp,
-  TrendingDown,
   Users,
   PieChart,
   BarChart3,
@@ -16,8 +15,6 @@ import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import type { IncomeData } from "../../types/economy";
 import { MetricCard } from "../../primitives/enhanced";
-import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
-import { SectionBase, sectionUtils, type ExtendedSectionProps } from "../glass/SectionBase";
 
 interface IncomeDistributionProps {
   data: IncomeData;

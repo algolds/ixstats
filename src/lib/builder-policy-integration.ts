@@ -13,7 +13,6 @@ import {
 } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { CrossBuilderSynergyService } from "~/app/builder/services/CrossBuilderSynergyService";
 import { UnifiedEffectivenessCalculator } from "~/app/builder/services/UnifiedEffectivenessCalculator";
-import { convertGovernmentStructureToSpending } from "~/lib/government-spending-bridge";
 import {
   calculateAtomicTaxEffectiveness,
   getAtomicTaxRecommendations,
@@ -21,8 +20,8 @@ import {
 import { getEconomicService } from "~/lib/enhanced-economic-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { GovernmentBuilderState, GovernmentStructure } from "~/types/government";
-import type { TaxSystem, TaxCategory } from "~/types/tax-system";
-import type { EconomyData, CoreEconomicIndicatorsData } from "~/types/economics";
+import type { TaxSystem } from "~/types/tax-system";
+import type { EconomyData } from "~/types/economics";
 
 // ===== TYPE DEFINITIONS =====
 

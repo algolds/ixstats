@@ -23,7 +23,6 @@ import {
   Target,
   CheckCircle,
 } from "lucide-react";
-import { toast } from "sonner";
 
 interface QuickActionIntegrationProps {
   className?: string;

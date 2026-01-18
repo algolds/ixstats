@@ -4,16 +4,10 @@
 import { useState, useMemo } from "react";
 import {
   BarChart3,
-  Globe,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Target,
   Filter,
   Download,
   RefreshCw,
   ChevronDown,
-  Info,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -48,15 +42,12 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  LineChart,
-  Line,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
   Cell,
-  LabelList,
 } from "recharts";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 

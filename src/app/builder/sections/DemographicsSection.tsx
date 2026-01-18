@@ -6,20 +6,15 @@ import {
   Heart,
   Building2,
   GraduationCap,
-  Globe,
-  Baby,
-  UserCheck,
   Home,
   MapPin,
 } from "lucide-react";
 import {
   EnhancedNumberInput,
-  EnhancedToggle,
   MetricCard,
   SliderWithDirectInput,
 } from "../primitives/enhanced";
-import type { EconomicInputs, DemographicData } from "../lib/economy-data-service";
-import type { SectionContentProps } from "../types/builder";
+import type { DemographicData } from "../lib/economy-data-service";
 import {
   SectionBase,
   SectionLayout,
@@ -28,7 +23,6 @@ import {
   type ExtendedSectionProps,
 } from "../components/glass/SectionBase";
 import { FormGrid } from "../components/glass/ProgressiveViews";
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
 interface DemographicsSectionProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;

@@ -1,5 +1,4 @@
 import type {
-  AchievementConstellation,
   DiplomaticAchievement,
   ConstellationLayout,
   ConstellationPosition,

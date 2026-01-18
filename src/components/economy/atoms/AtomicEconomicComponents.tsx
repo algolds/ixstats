@@ -30,8 +30,6 @@ import {
   ATOMIC_ECONOMIC_COMPONENTS,
   COMPONENT_CATEGORIES,
   type EconomicComponentType,
-  type EconomicCategory,
-  formatComponentName,
 } from "~/lib/atomic-economic-data";
 
 // Hook import for database integration

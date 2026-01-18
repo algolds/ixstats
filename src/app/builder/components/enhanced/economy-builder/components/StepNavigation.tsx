@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowLeft, ArrowRight, CheckCircle, type LucideIcon } from "lucide-react";
+import { ArrowRight, CheckCircle, type LucideIcon } from "lucide-react";
 
 interface Step {
   id: string;

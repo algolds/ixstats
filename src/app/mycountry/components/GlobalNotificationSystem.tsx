@@ -1,13 +1,11 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { createContext, useContext, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   CheckCircle,
   Info,
-  TrendingUp,
-  TrendingDown,
   Users,
   DollarSign,
   Globe,

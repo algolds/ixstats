@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
-import { CheckCircle, AlertCircle, Info, Plus, Minus, TrendingUp, Search } from "lucide-react";
+import { CheckCircle, Info, Minus, Search } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { UnifiedAtomicComponentSelectorProps } from "./types";
 import { UnifiedAtomicCard } from "./UnifiedAtomicCard";

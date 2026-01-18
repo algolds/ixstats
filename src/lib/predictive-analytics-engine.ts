@@ -1,7 +1,6 @@
 // Predictive Analytics Engine - Phase 4 Advanced Features
 // AI-driven economic forecasting and predictive intelligence generation
 
-import { IxTime } from "~/lib/ixtime";
 import { intelligenceCache, CacheUtils } from "~/lib/intelligence-cache";
 import { performanceMonitor } from "~/lib/performance-monitor";
 

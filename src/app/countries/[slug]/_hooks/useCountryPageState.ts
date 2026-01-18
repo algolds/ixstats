@@ -99,7 +99,7 @@ export function useCountryPageState(country: Country | undefined) {
           const beforeFirstHeading = contentAfterInfobox.split(/^==/m)[0] || contentAfterInfobox;
 
           // Clean wikitext
-          let cleanContent = beforeFirstHeading
+          const cleanContent = beforeFirstHeading
             .replace(/\{\{wp\|[^\|\}]+\|([^\}]+)\}\}/g, "$1")
             .replace(/\{\{wp\|([^\}]+)\}\}/g, "$1")
             .replace(/\{\{lang\|[^\|]+\|([^\}]+)\}\}/g, "$1")

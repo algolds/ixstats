@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, Globe, ExternalLink, Users, DollarSign, MapPin, Building } from "lucide-react";
+import { motion } from "framer-motion";
+import { Search } from "lucide-react";
 import {
   GlassCard,
   GlassCardContent,
   GlassCardHeader,
 } from "~/app/builder/components/glass/GlassCard";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
-import { cn } from "~/lib/utils";
 import { SearchResultItem } from "./SearchResultItem";
 import { CountryPreview } from "./CountryPreview";
 

@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
-import { chartColorPalette, getChartColor } from "~/lib/builder-theme-utils";
+import { chartColorPalette } from "~/lib/builder-theme-utils";
 
 interface GlassChartProps {
   children: React.ReactNode;

@@ -27,7 +27,7 @@
  * - Mobile-optimized with touch gestures
  */
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Folder,
@@ -39,16 +39,12 @@ import {
   Grid3x3,
   List,
   Search,
-  Share2,
   Edit,
   Trash2,
-  Download,
   Eye,
-  EyeOff,
   Sparkles,
   Package,
   Star,
-  ChevronDown,
   X,
   Image as ImageIcon,
 } from "lucide-react";

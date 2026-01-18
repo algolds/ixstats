@@ -18,7 +18,7 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { vaultService } from "~/lib/vault-service";
-import { type CardRarity, type CardType } from "@prisma/client";
+import { type CardType } from "@prisma/client";
 
 /**
  * Recipe type enum

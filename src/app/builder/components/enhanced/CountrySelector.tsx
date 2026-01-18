@@ -8,9 +8,8 @@ import { FoundationArchetypeSelector } from "../../primitives/FoundationArchetyp
 import { SearchFilter } from "../../primitives/SearchFilter";
 import { CountryGrid } from "../../primitives/CountryGrid";
 import { LivePreview } from "../../primitives/LivePreview";
-import { filterCountries, generateCountryPreview } from "../../utils/country-selector-utils";
+import { filterCountries } from "../../utils/country-selector-utils";
 import { archetypes } from "../../utils/country-archetypes";
-import type { CountryCardData } from "../CountryFocusCardBuilder";
 import type { RealCountryData } from "../../lib/economy-data-service";
 
 interface CountrySelectorProps {

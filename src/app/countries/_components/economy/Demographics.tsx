@@ -7,21 +7,13 @@ import {
   MapPin,
   GraduationCap,
   Heart,
-  Baby,
   UserCheck,
   Building2,
-  Home,
   Info,
   BarChart3,
-  Globe,
-  Layers,
   Eye,
   Pencil,
   HelpCircle,
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
@@ -32,7 +24,6 @@ import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import {
   PieChart,

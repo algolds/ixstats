@@ -1,7 +1,6 @@
 // Enhanced ixwiki.com API integration with complete template parsing
 import {
   MEDIAWIKI_CONFIG,
-  buildApiUrl,
   getMediaWikiApiUrl,
   getWikiUserAgent,
   type WikiSource,

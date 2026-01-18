@@ -1348,7 +1348,7 @@ async function extractEconomicData(
 function extractImageFile(value?: string): string | undefined {
   if (!value || typeof value !== "string") return undefined;
 
-  let cleaned = value.trim();
+  const cleaned = value.trim();
   let filename: string | undefined;
 
   // Try to extract filename from various formats
@@ -1658,7 +1658,7 @@ export async function searchWikiImagesWithPagination(
       if (uniqueByName.size >= limit) break;
     }
 
-    let finalResults = Array.from(uniqueByName.values());
+    const finalResults = Array.from(uniqueByName.values());
 
     // Fallback: if not enough, do fulltext search in File namespace and merge
     if (finalResults.length < limit) {
@@ -1726,7 +1726,7 @@ function parseNumber(str: string | Record<string, string>): number {
   }
 
   // Remove common formatting
-  let cleaned = str
+  const cleaned = str
     .replace(/[,\s]/g, "")
     .replace(/\$|€|£|¥|₹/g, "")
     .replace(/\([^)]*\)/g, "")

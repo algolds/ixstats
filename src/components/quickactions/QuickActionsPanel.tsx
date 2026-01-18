@@ -13,11 +13,9 @@ import {
   Zap,
   Calendar,
   FileText,
-  Users,
   TrendingUp,
   Clock,
   CheckCircle2,
-  AlertCircle,
   ChevronRight,
   Sparkles,
 } from "lucide-react";

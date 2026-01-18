@@ -1,9 +1,24 @@
 // src/app/api/ixtime/sync-bot/route.ts
 import { NextResponse } from "next/server";
-import { IxTime } from "~/lib/ixtime";
+import { auth } from "@clerk/nextjs/server";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 export async function POST() {
   try {
+    // Require authentication for time sync operations
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    // Only admins/owners can sync time
+    if (!isSystemOwner(session.userId)) {
+      const role = (session.sessionClaims?.metadata as any)?.role;
+      if (!["admin", "owner", "staff"].includes(role)) {
+        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+      }
+    }
+
     // Notify the Discord bot to sync with us
     const BOT_URL =
       process.env.IXTIME_BOT_URL ||

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import type { ReactElement } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { ConstellationBuilder } from "~/lib/constellation-builder";
 import {
@@ -14,12 +14,10 @@ import {
   RiRefreshLine,
   RiEyeLine,
   RiEyeOffLine,
-  RiSettings3Line,
 } from "react-icons/ri";
 import type {
   AchievementConstellation,
   DiplomaticAchievement,
-  ConstellationLayout,
   AchievementCategory,
   AchievementTier,
   ConstellationTheme,

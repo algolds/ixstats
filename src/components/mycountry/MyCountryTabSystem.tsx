@@ -15,19 +15,14 @@ import {
   DollarSign,
   Users,
   Globe,
-  Calendar,
   TrendingDown,
-  MapPin,
-  Heart,
   Crown,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { LiveIntelligenceSection } from "~/app/countries/_components/LiveIntelligenceSection";
 import { CountryAtGlance } from "~/app/countries/_components/detail";
-import { safeFormatCurrency } from "~/lib/format-utils";
 import {
   LaborEmployment,
   FiscalSystemComponent,
@@ -137,7 +132,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
       { value: "demographics", icon: PieChart, label: "Demographics", shortLabel: "Demo" },
     ];
 
-    let tabs = [...baseTabs];
+    const tabs = [...baseTabs];
 
     // Add analytics for premium and unified
     if (variant === "premium" || variant === "unified") {

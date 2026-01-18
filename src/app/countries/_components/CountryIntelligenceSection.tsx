@@ -11,7 +11,6 @@ import {
   Shield,
   AlertTriangle,
   Globe,
-  Users,
   TrendingUp,
   ExternalLink,
   Activity,

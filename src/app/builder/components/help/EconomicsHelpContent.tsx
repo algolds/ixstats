@@ -13,26 +13,12 @@ import {
   AlertTriangle,
   CheckCircle,
   Info,
-  Globe,
-  Zap,
-  Heart,
-  Shield,
   Trees,
-  GraduationCap,
   Factory,
-  Ship,
   Activity,
-  Gauge,
-  Clock,
-  Settings,
-  Play,
-  BookOpen,
   Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import { Separator } from "~/components/ui/separator";
-import { FieldHelpTooltip, SectionHelpTooltip } from "./GovernmentHelpSystem";
 
 /**
  * Comprehensive help content for Economics section

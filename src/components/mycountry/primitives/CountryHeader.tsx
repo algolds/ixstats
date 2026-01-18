@@ -1,7 +1,6 @@
 "use client";
 
-import { Crown, BarChart3, Edit, Sparkles } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
+import { Crown, BarChart3, Edit } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";

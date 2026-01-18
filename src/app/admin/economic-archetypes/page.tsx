@@ -39,7 +39,6 @@ import {
   Copy,
   Search,
   BarChart3,
-  Eye,
   EyeOff,
   ArrowLeft,
   Sparkles,

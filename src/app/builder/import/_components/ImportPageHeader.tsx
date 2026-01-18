@@ -1,8 +1,6 @@
 import React from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Sparkles } from "lucide-react";
-import { createUrl } from "~/lib/url-utils";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { cn } from "~/lib/utils";
 

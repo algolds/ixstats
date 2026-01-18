@@ -4,44 +4,27 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown,
-  TrendingUp,
-  Users,
   Globe,
-  Building2,
   Activity,
   ChevronDown,
-  ChevronUp,
-  Command,
-  Settings,
-  ExternalLink,
-  BarChart3,
-  Target,
-  Brain,
-  Briefcase,
-  Wifi,
   WifiOff,
   RefreshCw,
   AlertCircle,
-  CheckCircle,
   Menu,
   X,
   Smartphone,
-  Monitor,
 } from "lucide-react";
-import { SectionIcons, IconThemes, StandardIcon } from "./IconSystem";
+import { SectionIcons } from "./IconSystem";
 import {
   CONTENT_HIERARCHY,
   CONTENT_PRIORITIES,
-  shouldDisplaySection,
-  getDisplayOrder,
   type ContentSection,
 } from "./ContentHierarchy";
-import { TabThemeProvider, getTabTheme, applyTabTheme } from "./TabColorSystem";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { TabThemeProvider, applyTabTheme } from "./TabColorSystem";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 // Component imports removed - content is now handled by children
-import { MobileOptimized, useTouchGestures, useMobilePerformance } from "./MobileOptimizations";
+import { MobileOptimized } from "./MobileOptimizations";
 
 interface DataSyncState {
   isConnected: boolean;

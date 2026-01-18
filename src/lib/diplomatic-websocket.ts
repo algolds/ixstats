@@ -1,6 +1,5 @@
 // Real-time WebSocket infrastructure for diplomatic intelligence updates
 import React from "react";
-import { env } from "~/env";
 import { IxTime } from "~/lib/ixtime";
 
 export interface DiplomaticEvent {

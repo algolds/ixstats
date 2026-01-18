@@ -3,12 +3,11 @@
 
 "use client";
 
-import { useMemo, useState, memo, useEffect } from "react";
+import { useState, memo, useEffect } from "react";
 import type { FC } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Target,
   Brain,

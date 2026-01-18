@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { TaxBuilderState } from "./useTaxBuilderState";
-import type { TaxBracketInput, TaxDeductionInput } from "~/types/tax-system";
+import type { TaxBracketInput } from "~/types/tax-system";
 import type { SuggestionItem } from "~/components/builders/SuggestionsPanel";
 import { parseEconomicDataForTaxSystem } from "~/lib/tax-data-parser";
 import { revenueTaxIntegrationService } from "~/app/builder/services/RevenueTaxIntegrationService";
@@ -21,7 +21,7 @@ import type { TaxSystem } from "~/types/tax-system";
 // Dev-only logger to avoid noisy logs in production
 const devLog = (...args: any[]) => {
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
+     
     console.log(...args);
   }
 };

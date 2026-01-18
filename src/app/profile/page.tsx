@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
-import { useUser, SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
+import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import Link from "next/link";
 import {
   User,

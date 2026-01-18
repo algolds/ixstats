@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "~/lib/utils";
 import {
   RiStarFill,
   RiTrophyLine,
@@ -12,13 +11,9 @@ import {
   RiCheckLine,
   RiSparklingLine,
   RiFireLine,
-  RiHeartLine,
-  RiThumbUpLine,
 } from "react-icons/ri";
 import type {
   DiplomaticAchievement,
-  AchievementTier,
-  AchievementRarity,
 } from "~/types/achievement-constellation";
 import {
   ACHIEVEMENT_TIER_CONFIG,

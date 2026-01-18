@@ -5,7 +5,6 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
 import { Button } from "./button";
 import { Badge } from "./badge";
 import { Progress } from "./progress";
@@ -17,15 +16,10 @@ import {
   DollarSign,
   MapPin,
   BarChart3,
-  PieChart,
   Building,
-  Globe,
-  Settings,
   Eye,
-  Briefcase,
   Target,
   Activity,
-  Zap,
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";

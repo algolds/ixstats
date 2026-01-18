@@ -378,6 +378,36 @@ export function IntroDisclosure({
   const { isVisible, hideFeature } = useFeatureVisibility(featureId);
   const stepRef = React.useRef<HTMLButtonElement>(null!);
 
+  // Define handlers with useCallback before useSwipe hook (Rules of Hooks)
+  const handleNext = React.useCallback(() => {
+    setDirection(1);
+    setCompletedSteps((prev) => (prev.includes(currentStep) ? prev : [...prev, currentStep]));
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      setOpen(false);
+      onComplete?.();
+    }
+  }, [currentStep, steps.length, setOpen, onComplete]);
+
+  const handlePrevious = React.useCallback(() => {
+    setDirection(-1);
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep]);
+
+  const handleSwipe = React.useCallback((swipeDirection: "left" | "right") => {
+    if (swipeDirection === "left") {
+      handleNext();
+    } else {
+      handlePrevious();
+    }
+  }, [handleNext, handlePrevious]);
+
+  // Call useSwipe hook before any early returns (Rules of Hooks)
+  const { handleDragEnd } = useSwipe(handleSwipe);
+
   // Close the dialog if feature is hidden
   React.useEffect(() => {
     if (!isVisible) {
@@ -396,24 +426,6 @@ export function IntroDisclosure({
   if (!isVisible || !open) {
     return null;
   }
-
-  const handleNext = () => {
-    setDirection(1);
-    setCompletedSteps((prev) => (prev.includes(currentStep) ? prev : [...prev, currentStep]));
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      setOpen(false);
-      onComplete?.();
-    }
-  };
-
-  const handlePrevious = () => {
-    setDirection(-1);
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
 
   const handleSkip = () => {
     setOpen(false);
@@ -436,14 +448,6 @@ export function IntroDisclosure({
     setCurrentStep(index);
   };
 
-  const handleSwipe = (swipeDirection: "left" | "right") => {
-    if (swipeDirection === "left") {
-      handleNext();
-    } else {
-      handlePrevious();
-    }
-  };
-
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       handleNext();
@@ -451,8 +455,6 @@ export function IntroDisclosure({
       handlePrevious();
     }
   };
-
-  const { handleDragEnd } = useSwipe(handleSwipe);
 
   if (isDesktop) {
     return (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";

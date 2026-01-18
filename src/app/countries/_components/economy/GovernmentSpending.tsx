@@ -16,7 +16,6 @@ import {
   Info,
   AlertTriangle,
   MoreHorizontal,
-  DollarSign,
   Landmark,
   PieChart,
   BarChart4,

@@ -8,7 +8,7 @@
  * - Cross-builder synergy detection
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { EconomicComponentType } from "@prisma/client";
 import { api } from "~/trpc/react";
 

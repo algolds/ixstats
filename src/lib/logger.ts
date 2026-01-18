@@ -529,7 +529,7 @@ class Logger {
 
 // Export singleton instance
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __ixstatsLogger__: Logger | undefined;
 }
 

@@ -20,10 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -42,7 +40,6 @@ import {
   Users,
   TrendingUp,
   Globe,
-  Calendar,
   Activity,
   RefreshCw,
   ArrowUp,
@@ -51,7 +48,7 @@ import {
   MapPin,
   BarChart3,
 } from "lucide-react";
-import { formatPopulation, getGrowthColor } from "~/lib/chart-utils";
+import { formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
 
 interface PopulationDetailsModalProps {

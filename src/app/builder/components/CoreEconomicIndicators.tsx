@@ -1,20 +1,9 @@
 // src/app/builder/components/CoreEconomicIndicators.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { cn } from "~/lib/utils";
-import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import React from "react";
+
+
 import {
   DollarSign,
   Users,
@@ -22,15 +11,9 @@ import {
   BarChart3,
   Globe,
   Coins,
-  Info,
-  AlertCircle,
-  Search,
-  Loader2,
-  Check,
 } from "lucide-react";
 import type { CoreEconomicIndicators, RealCountryData } from "../lib/economy-data-service";
 // Import the original getEconomicTier with an alias if needed, or ensure the local one is distinct
-import { getEconomicTier as getEconomicTierFromService } from "../lib/economy-data-service";
 import { getTierStyle } from "~/lib/theme-utils";
 
 interface CoreEconomicIndicatorsProps {

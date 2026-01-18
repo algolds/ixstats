@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { cn } from "~/lib/utils";
-import { Heart, MessageCircle, Repeat2, Share, MoreHorizontal, Smile } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { Heart, MessageCircle, Repeat2, Share } from "lucide-react";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { ReactionPopup } from "../ReactionPopup";
@@ -145,7 +143,7 @@ export function PostActions({
                   (r: any) => r.accountId === variables.accountId
                 );
                 let newReactions = [...(post.reactions || [])];
-                let newReactionCounts = {
+                const newReactionCounts = {
                   ...(() => {
                     try {
                       return typeof post.reactionCounts === "string"
@@ -326,9 +324,9 @@ export function PostActions({
                   (r: any) => r.accountId === variables.accountId
                 );
                 if (existingReaction) {
-                  let newReactions =
+                  const newReactions =
                     post.reactions?.filter((r: any) => r.accountId !== variables.accountId) || [];
-                  let newReactionCounts = {
+                  const newReactionCounts = {
                     ...(() => {
                       try {
                         return typeof post.reactionCounts === "string"

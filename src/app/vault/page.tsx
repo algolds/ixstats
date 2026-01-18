@@ -2,7 +2,6 @@
 
 import { Package, ShoppingCart, ShoppingBag, Folder, Sparkles, Star, Trophy, Layers, TrendingUp, Zap, Gift, ArrowRight, Lock } from "lucide-react";
 import { VaultDashboard } from "~/components/vault/VaultDashboard";
-import { QuickActions } from "~/components/vault/QuickActions";
 import { TiltCard, TiltStatCard } from "~/components/vault/3DTiltCard";
 import { VaultStatusIndicator } from "~/components/vault/VaultStatusIndicator";
 import { useVaultStats } from "~/hooks/vault/useVaultStats";

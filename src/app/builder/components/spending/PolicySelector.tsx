@@ -9,14 +9,9 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import {
   CheckCircle,
-  AlertCircle,
   TrendingUp,
-  Clock,
-  Users,
   Zap,
-  Shield,
   Info,
-  DollarSign,
 } from "lucide-react";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import {

@@ -4,13 +4,12 @@ export const dynamic = "force-dynamic";
 import React, { useState, useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
-import { useUser, SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
+import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { navigateTo } from "~/lib/url-utils";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Globe,
   Plus,
   Link,
   ArrowRight,
@@ -20,18 +19,7 @@ import {
   CheckCircle,
   AlertCircle,
   Crown,
-  Shield,
-  Brain,
-  MessageSquare,
-  BarChart3,
-  Settings,
-  BookOpen,
-  Play,
-  SkipForward,
   ArrowLeft,
-  Sparkles,
-  Target,
-  Zap,
   Search,
   MapPin,
   Star,
@@ -39,7 +27,6 @@ import {
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { IxStatsLogo } from "~/components/ui/ixstats-logo";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";

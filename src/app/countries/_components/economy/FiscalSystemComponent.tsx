@@ -4,22 +4,17 @@
 import React from "react";
 import {
   Building,
-  PieChart,
-  Percent,
   CreditCard,
   TrendingDown,
   TrendingUp,
   Info,
   DollarSign,
-  Calculator,
   AlertTriangle,
   Shield,
   GraduationCap,
   Heart,
   Truck,
   Users2,
-  BarChart4,
-  ChartPie,
   HelpCircle,
   Eye,
   Pencil,
@@ -44,7 +39,6 @@ import {
   CartesianGrid,
   Legend,
   LabelList,
-  Label as RechartsLabel,
 } from "recharts";
 import { formatCurrency, formatPercentage } from "./utils";
 import type { FiscalSystemData } from "~/types/economics";

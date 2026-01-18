@@ -11,7 +11,7 @@ import {
   ChartTooltipContent,
 } from "~/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
-import type { MarketAnalytics, TrendingCard } from "~/types/marketplace";
+import type { MarketAnalytics } from "~/types/marketplace";
 import { CardRarity } from "~/lib/card-enums";
 
 interface MarketAnalyticsProps {

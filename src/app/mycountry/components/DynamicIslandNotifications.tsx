@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   X,
   AlertTriangle,
   CheckCircle,
-  Clock,
   Zap,
   Crown,
   Globe2,
@@ -15,17 +14,14 @@ import {
   Users,
   Building2,
   MessageSquare,
-  Calendar,
   Settings,
   Search,
   Filter,
-  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import { Separator } from "~/components/ui/separator";
 
 interface Notification {
   id: string;

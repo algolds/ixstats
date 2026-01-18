@@ -490,7 +490,7 @@ export class EconomicCalculationGroups {
 
   private calculateMonetaryStability(
     economyData: EconomyData,
-    historicalData: HistoricalDataPoint[]
+    _historicalData: HistoricalDataPoint[]
   ): number {
     let score = 50;
 
@@ -555,7 +555,7 @@ export class EconomicCalculationGroups {
   private analyzeGrowthInsights(
     countryStats: CountryStats,
     economyData: EconomyData,
-    historicalData: HistoricalDataPoint[]
+    _historicalData: HistoricalDataPoint[]
   ) {
     // Simplified insights generation
     const currentGrowth = countryStats.adjustedGdpGrowth;
@@ -575,7 +575,7 @@ export class EconomicCalculationGroups {
     };
   }
 
-  private projectGrowthTrends(countryStats: CountryStats, historicalData: HistoricalDataPoint[]) {
+  private projectGrowthTrends(countryStats: CountryStats, _historicalData: HistoricalDataPoint[]) {
     // Simplified projection
     const baseGrowth = countryStats.adjustedGdpGrowth;
 
@@ -634,7 +634,7 @@ export class EconomicCalculationGroups {
     return economyData.demographics.literacyRate;
   }
 
-  private calculateLivingStandards(countryStats: CountryStats, economyData: EconomyData): number {
+  private calculateLivingStandards(countryStats: CountryStats, _economyData: EconomyData): number {
     return Math.min(100, countryStats.currentGdpPerCapita / 1000 + 20);
   }
 
@@ -649,7 +649,7 @@ export class EconomicCalculationGroups {
     return "low";
   }
 
-  private analyzeDemographicDividend(countryStats: CountryStats, economyData: EconomyData) {
+  private analyzeDemographicDividend(countryStats: CountryStats, _economyData: EconomyData) {
     // Simplified analysis based on population growth
     const popGrowth = countryStats.populationGrowthRate;
 
@@ -672,7 +672,7 @@ export class EconomicCalculationGroups {
   }
 
   // Economic Structure methods (simplified implementations)
-  private calculateSectoralBalance(economyData: EconomyData): number {
+  private calculateSectoralBalance(_economyData: EconomyData): number {
     // Placeholder - would need sectoral GDP data
     return 65;
   }
@@ -696,7 +696,7 @@ export class EconomicCalculationGroups {
     return Math.min(100, 40 + infraSpending * 3);
   }
 
-  private analyzeStructuralProfile(economyData: EconomyData) {
+  private analyzeStructuralProfile(_economyData: EconomyData) {
     // Simplified sectoral breakdown
     return {
       primarySectorShare: 10,
@@ -706,7 +706,7 @@ export class EconomicCalculationGroups {
     };
   }
 
-  private estimateCompetitivenessRanking(countryStats: CountryStats, economyData: EconomyData) {
+  private estimateCompetitivenessRanking(countryStats: CountryStats, _economyData: EconomyData) {
     // Simplified ranking estimation
     const baseRank =
       countryStats.economicTier === "Very Strong"
@@ -724,7 +724,7 @@ export class EconomicCalculationGroups {
 
   private assessTransformationPotential(
     countryStats: CountryStats,
-    economyData: EconomyData
+    _economyData: EconomyData
   ): ExternalRelationsMetrics["integrationLevel"] {
     if (countryStats.adjustedGdpGrowth > 0.05) return "high";
     if (countryStats.adjustedGdpGrowth > 0.02) return "medium";
@@ -732,7 +732,7 @@ export class EconomicCalculationGroups {
   }
 
   // External Relations methods (simplified)
-  private calculateTradeIntegration(countryStats: CountryStats, economyData: EconomyData): number {
+  private calculateTradeIntegration(countryStats: CountryStats, _economyData: EconomyData): number {
     return Math.min(100, 40 + countryStats.currentGdpPerCapita / 2000);
   }
 
@@ -752,7 +752,7 @@ export class EconomicCalculationGroups {
         : 60;
   }
 
-  private analyzeTradeProfile(countryStats: CountryStats, economyData: EconomyData) {
+  private analyzeTradeProfile(_countryStats: CountryStats, _economyData: EconomyData) {
     return {
       exportConcentration: 0.4,
       importDependence: 0.3,

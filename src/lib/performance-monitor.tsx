@@ -2,7 +2,6 @@
 // Comprehensive query and application performance monitoring
 
 import React from "react";
-import { IxTime } from "~/lib/ixtime";
 
 interface QueryMetrics {
   queryKey: string;

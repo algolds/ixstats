@@ -2,7 +2,6 @@
 // Frontend client for live intelligence data with automatic reconnection
 
 import type {
-  IntelligenceUpdate,
   WebSocketClientState,
   WebSocketIntelligenceEvent,
   IntelligenceWebSocketHookOptions,

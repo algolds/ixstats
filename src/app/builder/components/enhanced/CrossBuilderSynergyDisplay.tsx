@@ -17,9 +17,6 @@ import {
   Shield,
   DollarSign,
   Building2,
-  Users,
-  BarChart3,
-  PieChart,
   Lightbulb,
   AlertCircle,
 } from "lucide-react";

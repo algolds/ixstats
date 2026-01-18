@@ -1,21 +1,16 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Marquee } from "~/components/ui/marquee";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   Activity,
-  TrendingUp,
   Users,
   Globe,
   Crown,
   Settings,
-  DollarSign,
-  ArrowUp,
-  Star,
-  Building2,
   Zap,
   Trophy,
   AlertTriangle,

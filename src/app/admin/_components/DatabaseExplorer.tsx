@@ -1,22 +1,17 @@
 // src/app/admin/_components/DatabaseExplorer.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import {
   Database,
   Table,
   Search,
-  Filter,
   Download,
   Edit3,
-  Trash2,
-  Plus,
   Eye,
   RefreshCw,
   AlertTriangle,
-  CheckCircle,
-  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -31,7 +26,6 @@ import {
 } from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Separator } from "~/components/ui/separator";
 
 interface DatabaseTable {
   name: string;

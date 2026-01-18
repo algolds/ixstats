@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { stepConfig } from "../builderConfig";
-import type { BuilderStep } from "../builderConfig";
 import { useBuilderContext } from "../context/BuilderStateContext";
 
 interface StepContentProps {

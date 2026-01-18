@@ -4,20 +4,17 @@ import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp,
-  TrendingDown,
   Minus,
   Target,
   ArrowUp,
   ArrowDown,
   Zap,
   AlertTriangle,
-  CheckCircle,
   Activity,
   BarChart3,
   Users,
   Globe,
   Building2,
-  DollarSign,
   ChevronRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

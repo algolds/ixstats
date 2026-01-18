@@ -43,8 +43,6 @@ import {
   Settings,
   Factory,
   Users,
-  Globe,
-  Lightbulb,
   Leaf,
   DollarSign,
   Activity,

@@ -16,9 +16,8 @@
  * - Provide unified data interface to child components
  */
 
-import React, { useState, useRef } from "react";
+import React, { useRef } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, Globe, Shield, Users } from "lucide-react";
 import { RealTimeDataService } from "./RealTimeDataService";
 import { useDataSync } from "../hooks/useDataSync";
 import { useUnifiedNotifications } from "~/hooks/useUnifiedNotifications";
@@ -31,9 +30,7 @@ import { useIntelligenceWebSocket } from "~/hooks/useIntelligenceWebSocket";
 // import { PublicMyCountryPage } from '../public-page';
 // import { ExecutiveDashboard } from '../executive-dashboard';
 import { api } from "~/trpc/react";
-import { standardize } from "~/lib/interface-standardizer";
 import { ensureCountryData } from "~/lib/type-guards";
-import { adaptExecutiveToQuick } from "~/lib/transformers/interface-adapters";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 
 // Executive actions now come from real API - no mock data needed
@@ -72,10 +69,10 @@ export function MyCountryDataWrapper({
   flagUrl,
   viewMode,
   onModeToggle,
-  onActionClick,
-  onFocusAreaClick,
-  onSettingsClick,
-  onPrivateAccess,
+  onActionClick: _onActionClick,
+  onFocusAreaClick: _onFocusAreaClick,
+  onSettingsClick: _onSettingsClick,
+  onPrivateAccess: _onPrivateAccess,
 }: MyCountryDataWrapperProps) {
   // Executive notifications integration
   const { setNotifications, setExecutiveMode } = useExecutiveNotifications();
@@ -85,12 +82,12 @@ export function MyCountryDataWrapper({
 
   // Real-time intelligence WebSocket integration
   const {
-    connected: wsConnected,
-    authenticated: wsAuthenticated,
-    latestUpdate,
-    latestAlert,
-    updateCount,
-    alertCount,
+    connected: _wsConnected,
+    authenticated: _wsAuthenticated,
+    latestUpdate: _latestUpdate,
+    latestAlert: _latestAlert,
+    updateCount: _updateCount,
+    alertCount: _alertCount,
   } = useIntelligenceWebSocket({
     countryId: country?.id,
     subscribeToGlobal: viewMode === "executive",
@@ -190,13 +187,13 @@ export function MyCountryDataWrapper({
   });
 
   // Real API call for executive actions
-  const { data: executiveActions = [] } = api.mycountry.getExecutiveActions.useQuery(
+  const { data: _executiveActions = [] } = api.mycountry.getExecutiveActions.useQuery(
     { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId && isOwner && viewMode === "executive" }
   );
 
   // Executive action execution mutation
-  const executeActionMutation = api.mycountry.executeAction.useMutation({
+  const _executeActionMutation = api.mycountry.executeAction.useMutation({
     onSuccess: (result) => {
       console.log("[Executive Action] Success:", result.message);
       // Add success notification
@@ -387,7 +384,7 @@ export function MyCountryDataWrapper({
   // Use synced data if available, fallback to original country data with type safety
   const rawCountryData = syncedCountryData || country;
   const enhancedCountryData = ensureCountryData(rawCountryData);
-  const isLoading = dataSyncLoading;
+  const _isLoading = dataSyncLoading;
 
   return (
     <>

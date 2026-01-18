@@ -1,5 +1,4 @@
 // Builder theme utilities for consistent light/dark mode support
-import { type ChartColors } from "~/types/chart-types";
 
 /**
  * Chart color palette that works with both light and dark themes

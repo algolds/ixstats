@@ -8,7 +8,6 @@ import {
   Brain,
   Globe,
   AlertTriangle,
-  Eye,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useRouter } from "next/navigation";

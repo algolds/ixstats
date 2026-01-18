@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
@@ -23,7 +23,6 @@ import {
   CheckCircle,
   Info,
   Database,
-  ArrowRight,
   CreditCard,
 } from "lucide-react";
 import Link from "next/link";

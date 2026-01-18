@@ -6,7 +6,7 @@ import { getCountryPath } from "~/lib/slug-utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { HealthRing } from "~/components/ui/health-ring";
-import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
+import { TextReveal } from "~/components/ui/text-reveal";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { IxTime } from "~/lib/ixtime";
 import {
@@ -29,8 +29,8 @@ import {
   RiUserAddLine,
   RiWifiLine,
 } from "react-icons/ri"; // Keep RiLockLine for clearance restriction display
-import { ClassificationBadge, CLASSIFICATION_LEVELS } from "~/components/ui/ClassificationBadge";
-import { INTELLIGENCE_GLYPHS, IntelligenceGlyph } from "~/components/ui/IntelligenceGlyph";
+import { CLASSIFICATION_LEVELS } from "~/components/ui/ClassificationBadge";
+import { INTELLIGENCE_GLYPHS } from "~/components/ui/IntelligenceGlyph";
 
 import type { EnhancedCountryProfileData, SocialActionType } from "~/types/social-profile";
 import { EmbassyNetworkVisualization } from "~/components/diplomatic/EmbassyNetworkVisualization";
@@ -41,7 +41,6 @@ import { AchievementUnlockModal } from "~/components/achievements/AchievementUnl
 import { LiveDiplomaticFeed } from "~/components/diplomatic/LiveDiplomaticFeed";
 import { DiplomaticLeaderboards } from "~/components/diplomatic/DiplomaticLeaderboards";
 import { SocialActivityFeed } from "~/components/diplomatic/SocialActivityFeed";
-import { AdvancedSearchDiscovery } from "~/components/diplomatic/AdvancedSearchDiscovery";
 import { RealTimeAchievementNotifications } from "~/components/achievements/RealTimeAchievementNotifications";
 import { EnhancedIntelligenceBriefing } from "~/components/countries/EnhancedIntelligenceBriefing";
 import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab";
@@ -55,7 +54,6 @@ import {
   SIZE_PRESETS,
 } from "~/components/ui/dynamic-island";
 import type {
-  AchievementConstellation as AchievementConstellationType,
   DiplomaticAchievement,
 } from "~/types/achievement-constellation";
 import { ACHIEVEMENT_TEMPLATES, calculatePrestigeScore } from "~/types/achievement-constellation";

@@ -2,7 +2,6 @@
 // EXPANDED MILITARY EQUIPMENT DATABASE - 250+ Items
 // Part 1: Aircraft (Fighters, Bombers, Attack, Transport, Helicopters)
 
-import { MILITARY_ERAS, DEFENSE_MANUFACTURERS } from "./military-equipment";
 
 // ===========================
 // FIGHTER AIRCRAFT (50+)

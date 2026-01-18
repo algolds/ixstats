@@ -21,7 +21,6 @@ import {
   publicProcedure,
   protectedProcedure,
   premiumProcedure,
-  executiveProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";

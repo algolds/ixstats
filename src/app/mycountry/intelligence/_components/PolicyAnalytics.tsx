@@ -37,7 +37,6 @@ import {
   Zap,
   Target,
   BarChart3,
-  PieChart as PieChartIcon,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { Progress } from "~/components/ui/progress";
@@ -55,8 +54,6 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  LineChart,
-  Line,
 } from "recharts";
 import { COMPONENT_CATEGORIES } from "~/lib/synergy-calculator";
 import { cn } from "~/lib/utils";

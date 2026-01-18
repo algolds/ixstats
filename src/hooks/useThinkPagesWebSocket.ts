@@ -11,60 +11,60 @@ import type {
 
 const isServer = typeof window === "undefined";
 
-// Dummy implementation for SSR
-const useThinkPagesWebSocketSSR = (options: ThinkPagesWebSocketHookOptions) => {
-  const [clientState] = useState<ThinkPagesClientState>({
-    connected: false,
-    authenticated: false,
-    accountId: options.accountId,
-    subscriptions: new Set(),
-    presenceStatus: "offline",
-    activeConversations: new Set(),
-    activeGroups: new Set(),
-    typingIndicators: new Map(),
-    lastHeartbeat: Date.now(),
-  });
-
-  const noOp = useCallback(() => {}, []);
-
-  return {
-    clientState,
-    connect: noOp,
-    disconnect: noOp,
-    updatePresence: noOp,
-    sendTypingIndicator: noOp,
-    subscribeToConversation: noOp,
-    unsubscribeFromConversation: noOp,
-    subscribeToGroup: noOp,
-    markMessageAsRead: noOp,
-  };
-};
+// Initial state factory
+const createInitialState = (accountId?: string): ThinkPagesClientState => ({
+  connected: false,
+  authenticated: false,
+  accountId: accountId,
+  subscriptions: new Set(),
+  presenceStatus: "offline",
+  activeConversations: new Set(),
+  activeGroups: new Set(),
+  typingIndicators: new Map(),
+  lastHeartbeat: Date.now(),
+});
 
 export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) {
-  if (isServer) {
-    return useThinkPagesWebSocketSSR(options);
-  }
-
-  const [clientState, setClientState] = useState<ThinkPagesClientState>({
-    connected: false,
-    authenticated: false,
-    accountId: options.accountId,
-    subscriptions: new Set(),
-    presenceStatus: "offline",
-    activeConversations: new Set(),
-    activeGroups: new Set(),
-    typingIndicators: new Map(),
-    lastHeartbeat: Date.now(),
-  });
+  // All hooks must be called unconditionally (Rules of Hooks)
+  const [clientState, setClientState] = useState<ThinkPagesClientState>(() => 
+    createInitialState(options.accountId)
+  );
 
   const ws = useRef<WebSocket | null>(null);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const typingTimeout = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const retryCount = useRef(0);
-  const maxRetries = 3; // Limit connection attempts
+  const maxRetries = 3;
+
+  // No-op function for SSR
+  const noOp = useCallback(() => {}, []);
+
+  const updatePresence = useCallback(
+    (status: "online" | "away" | "busy" | "offline") => {
+      // Skip on server
+      if (isServer) return;
+      
+      if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
+        ws.current.send(
+          JSON.stringify({
+            type: "presence:update",
+            accountId: options.accountId,
+            status,
+            timestamp: Date.now(),
+          })
+        );
+
+        setClientState((prev) => ({ ...prev, presenceStatus: status }));
+      }
+    },
+    [options.accountId]
+  );
 
   const connect = useCallback(() => {
+    // Skip on server
+    if (isServer) return;
+    
     if (ws.current?.readyState === WebSocket.OPEN) {
       return;
     }
@@ -75,7 +75,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       return;
     }
 
-    // Check if WebSocket server is available before attempting connection
     const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
 
     try {
@@ -87,11 +86,10 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
-        retryCount.current = 0; // Reset retry count on successful connection
+        retryCount.current = 0;
 
         setClientState((prev) => ({ ...prev, connected: true }));
 
-        // Authenticate with account ID
         if (options.accountId) {
           ws.current?.send(
             JSON.stringify({
@@ -101,10 +99,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
           );
         }
 
-        // Set presence to online
         updatePresence("online");
 
-        // Start heartbeat
         if (heartbeatInterval.current) {
           clearInterval(heartbeatInterval.current);
         }
@@ -135,7 +131,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
                 if (typingUpdate.isTyping) {
                   newTyping.set(key, typingUpdate);
 
-                  // Clear typing after 3 seconds
                   const timeout = setTimeout(() => {
                     setClientState((current) => {
                       const updatedTyping = new Map(current.typingIndicators);
@@ -195,7 +190,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
         options.onDisconnect?.();
 
-        // Auto-reconnect with exponential backoff
         if (options.autoReconnect !== false && retryCount.current < maxRetries) {
           retryCount.current++;
           const backoffDelay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
@@ -206,19 +200,20 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
         }
       };
 
-      ws.current.onerror = (error) => {
+      ws.current.onerror = () => {
         console.warn(
           "ThinkPages WebSocket connection failed - continuing without real-time features"
         );
-        // Don't call onError for connection failures - this is expected when no WebSocket server
       };
     } catch (error) {
       console.warn("WebSocket not available - continuing without real-time features");
-      // Graceful degradation - don't treat as error
     }
-  }, [options]);
+  }, [options, updatePresence]);
 
   const disconnect = useCallback(() => {
+    // Skip on server
+    if (isServer) return;
+    
     if (heartbeatInterval.current) {
       clearInterval(heartbeatInterval.current);
       heartbeatInterval.current = null;
@@ -229,7 +224,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       reconnectTimeout.current = null;
     }
 
-    // Clear all typing timeouts
     typingTimeout.current.forEach((timeout) => clearTimeout(timeout));
     typingTimeout.current.clear();
 
@@ -239,28 +233,12 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       ws.current.close();
       ws.current = null;
     }
-  }, []);
-
-  const updatePresence = useCallback(
-    (status: "online" | "away" | "busy" | "offline") => {
-      if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
-        ws.current.send(
-          JSON.stringify({
-            type: "presence:update",
-            accountId: options.accountId,
-            status,
-            timestamp: Date.now(),
-          })
-        );
-
-        setClientState((prev) => ({ ...prev, presenceStatus: status }));
-      }
-    },
-    [options.accountId]
-  );
+  }, [updatePresence]);
 
   const sendTypingIndicator = useCallback(
     (conversationId?: string, groupId?: string, isTyping: boolean = true) => {
+      if (isServer) return;
+      
       if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
         ws.current.send(
           JSON.stringify({
@@ -278,6 +256,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   );
 
   const subscribeToConversation = useCallback((conversationId: string) => {
+    if (isServer) return;
+    
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(
         JSON.stringify({
@@ -295,6 +275,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   }, []);
 
   const unsubscribeFromConversation = useCallback((conversationId: string) => {
+    if (isServer) return;
+    
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(
         JSON.stringify({
@@ -319,6 +301,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   }, []);
 
   const subscribeToGroup = useCallback((groupId: string) => {
+    if (isServer) return;
+    
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(
         JSON.stringify({
@@ -337,6 +321,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const markMessageAsRead = useCallback(
     (messageId: string, conversationId?: string, groupId?: string) => {
+      if (isServer) return;
+      
       if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
         ws.current.send(
           JSON.stringify({
@@ -353,8 +339,10 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     [options.accountId]
   );
 
-  // Initialize connection
+  // Initialize connection (only runs on client)
   useEffect(() => {
+    if (isServer) return;
+    
     if (options.accountId) {
       connect();
     }
@@ -364,11 +352,12 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     };
   }, [options.accountId, connect, disconnect]);
 
-  // Handle visibility change for presence
+  // Handle visibility change for presence (only on client)
   useEffect(() => {
-    if (typeof document === "undefined") {
+    if (isServer || typeof document === "undefined") {
       return;
     }
+    
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         updatePresence("away");
@@ -380,6 +369,21 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [updatePresence]);
+
+  // Return SSR-safe values on server
+  if (isServer) {
+    return {
+      clientState,
+      connect: noOp,
+      disconnect: noOp,
+      updatePresence: noOp,
+      sendTypingIndicator: noOp,
+      subscribeToConversation: noOp,
+      unsubscribeFromConversation: noOp,
+      subscribeToGroup: noOp,
+      markMessageAsRead: noOp,
+    };
+  }
 
   return {
     clientState,

@@ -7,10 +7,8 @@ import {
   Users,
   MessageCircle,
   Zap,
-  Globe,
   Crown,
   Newspaper,
-  ChevronDown,
   ChevronRight,
   Lightbulb,
   Heart,
@@ -18,7 +16,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 
 export function ThinkPagesGuide() {
   const [activeSection, setActiveSection] = useState<"about" | "features" | "tips" | null>("about");

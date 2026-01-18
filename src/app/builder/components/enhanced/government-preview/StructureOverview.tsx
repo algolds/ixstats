@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Crown, User, Building2, Users } from "lucide-react";
+import { Crown, User, Building2 } from "lucide-react";
 import type { GovernmentStructure } from "~/types/government";
 
 interface StructureOverviewProps {

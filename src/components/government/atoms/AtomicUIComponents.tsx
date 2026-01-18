@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import {
   TrendingUp,
@@ -9,16 +9,9 @@ import {
   Minus,
   AlertTriangle,
   CheckCircle,
-  Info,
   ChevronRight,
   Activity,
   Zap,
-  Target,
-  Shield,
-  Users,
-  Building2,
-  Scale,
-  Crown,
 } from "lucide-react";
 
 // ============================================

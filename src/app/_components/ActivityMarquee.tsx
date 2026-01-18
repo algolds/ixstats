@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, memo } from "react";
+import React, { useMemo, memo } from "react";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { Badge } from "~/components/ui/badge";
 import { Marquee } from "~/components/ui/marquee";
 import { Activity, TrendingUp, Star, Users, DollarSign, ArrowUp } from "lucide-react";
 import Link from "next/link";
-import { createUrl } from "~/lib/url-utils";
 
 interface Country {
   id: string;

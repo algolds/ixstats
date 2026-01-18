@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, SunDim } from "lucide-react";
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import { flushSync } from "react-dom";
 import { cn } from "~/lib/utils";
 import { useTheme } from "~/context/theme-context";

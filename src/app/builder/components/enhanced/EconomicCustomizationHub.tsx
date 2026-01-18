@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Settings,
@@ -21,7 +21,6 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { cn } from "~/lib/utils";
 import type { EconomicInputs, RealCountryData } from "../../lib/economy-data-service";
 
 // Import section components (using clean versions without glass)
@@ -38,7 +37,6 @@ import {
 
 // Import utilities
 import { sections } from "../../utils/sectionData";
-import type { Section } from "../../types/builder";
 
 interface EconomicCustomizationHubProps {
   inputs: EconomicInputs;

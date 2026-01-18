@@ -24,8 +24,6 @@ import {
   Package,
 } from "lucide-react";
 import { toast } from "sonner";
-import { VaultIcon } from "~/components/vault/VaultIcon";
-import { CardIcon } from "~/components/vault/CardIcon";
 import Link from "next/link";
 
 type WizardStep = "intro" | "verify" | "preview" | "importing" | "complete";

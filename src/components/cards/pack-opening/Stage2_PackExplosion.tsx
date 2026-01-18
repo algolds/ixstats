@@ -7,7 +7,7 @@ import React, { useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CardInstance } from "~/types/pack-opening";
 import type { CardRarity } from "@prisma/client";
-import { getPackOpeningService, getOptimalParticleCount } from "~/lib/pack-opening-service";
+import { getPackOpeningService } from "~/lib/pack-opening-service";
 import { getParticleConfig } from "~/lib/holographic-effects";
 
 interface Stage2_PackExplosionProps {

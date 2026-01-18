@@ -2,8 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import {
-  Coins,
-  TrendingUp,
   TrendingDown,
   DollarSign,
   Building,
@@ -11,23 +9,18 @@ import {
   CreditCard,
   Shield,
   PieChart,
-  AlertTriangle,
   Zap,
 } from "lucide-react";
 import { AtomicEconomicEffectivenessPanel } from "~/components/economics/AtomicEconomicEffectivenessPanel";
 import { api } from "~/trpc/react";
 import type { ComponentType } from "~/types/government";
 import {
-  EnhancedDial,
   EnhancedNumberInput,
-  EnhancedToggle,
   EnhancedBarChart,
   EnhancedPieChart,
   MetricCard,
   SliderWithDirectInput,
 } from "../primitives/enhanced";
-import type { EconomicInputs, FiscalSystemData } from "../lib/economy-data-service";
-import type { SectionContentProps } from "../types/builder";
 import {
   SectionBase,
   SectionLayout,
@@ -38,7 +31,6 @@ import {
 
 // Help System
 import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
-import { EconomicsHelpContent } from "../components/help/EconomicsHelpContent";
 
 // Note: Tax system building is now handled by the atomic tax builder component
 // integrated into the unified builder workflow via TaxSystemStep component
@@ -86,7 +78,23 @@ export function FiscalSystemSection({
   const activeComponents =
     atomicComponents?.filter((c) => c.isActive).map((c) => c.componentType as ComponentType) || [];
 
-  const fiscalSystem = inputs.fiscalSystem;
+  // Use fiscalSystem from inputs with safe fallback for hooks
+  const fiscalSystem = inputs.fiscalSystem ?? {
+    taxRevenueGDPPercent: 20,
+    governmentBudgetGDPPercent: 25,
+    totalDebtGDPRatio: 60,
+    budgetDeficitSurplus: 0,
+    debtServiceCosts: 0,
+    governmentRevenueTotal: 0,
+    internalDebtGDPPercent: 30,
+    externalDebtGDPPercent: 20,
+    taxRates: {
+      personalIncomeTaxRates: [],
+      corporateTaxRates: [],
+      salesTaxRate: 0,
+      propertyTaxRate: 0,
+    },
+  };
 
   // DEBUG: Check what we're receiving
   console.log("FiscalSystemSection - Received fiscalSystem:", fiscalSystem);
@@ -96,16 +104,6 @@ export function FiscalSystemSection({
     totalDebtGDPRatio: fiscalSystem?.totalDebtGDPRatio,
     budgetDeficitSurplus: fiscalSystem?.budgetDeficitSurplus,
   });
-
-  // Ensure all required fields exist with proper initialization
-  if (!fiscalSystem) {
-    console.error("FiscalSystemSection: No fiscal system data provided");
-    return (
-      <div className="p-4 text-red-600 dark:text-red-400">
-        Error: No fiscal system data available
-      </div>
-    );
-  }
 
   const handleFiscalChange = (key: string, value: any) => {
     const keys = key.split(".");
@@ -334,6 +332,16 @@ export function FiscalSystemSection({
       }))
       .filter((item) => !isNaN(item.value) && item.value > 0);
   }, [inputs.governmentSpending]);
+
+  // Ensure all required fields exist - guard after all hooks
+  if (!inputs.fiscalSystem) {
+    console.error("FiscalSystemSection: No fiscal system data provided");
+    return (
+      <div className="p-4 text-red-600 dark:text-red-400">
+        Error: No fiscal system data available
+      </div>
+    );
+  }
 
   // Main content with sub-tabs
   const basicContent = (

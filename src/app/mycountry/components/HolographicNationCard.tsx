@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   Flag,
   MapPin,
-  Calendar,
   Users,
   TrendingUp,
   Building2,

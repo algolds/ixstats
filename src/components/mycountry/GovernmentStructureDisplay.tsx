@@ -23,7 +23,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
-import { useAtomicGovernment, useAtomicState } from "~/components/atomic/AtomicStateProvider";
+import { useAtomicGovernmentOptional, useAtomicStateOptional } from "~/components/atomic/AtomicStateProvider";
 
 interface GovernmentStructureDisplayProps {
   countryId: string;
@@ -37,15 +37,9 @@ export function GovernmentStructureDisplay({
   const { user } = useUser();
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
-  // Try to use atomic state if available
-  let atomicState = null;
-  let atomicGovernment = null;
-  try {
-    atomicState = useAtomicState();
-    atomicGovernment = useAtomicGovernment();
-  } catch {
-    // Not in atomic context, fallback to traditional approach
-  }
+  // Try to use atomic state if available (using optional hooks that don't throw)
+  const atomicState = useAtomicStateOptional();
+  const atomicGovernment = useAtomicGovernmentOptional();
 
   // Use EXACT same pattern as other working queries
   const {

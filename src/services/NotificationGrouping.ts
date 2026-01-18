@@ -9,10 +9,6 @@ import type {
   NotificationCategory,
   NotificationPriority,
   UserNotificationPreferences,
-  GroupingPreferences,
-  NotificationGroup,
-  NotificationBatch,
-  DeliveryContext,
 } from "~/types/unified-notifications";
 import type { NotificationCluster } from "./EnhancedNotificationPriority";
 
@@ -440,8 +436,8 @@ export class NotificationGrouping {
 
   private async optimizeClusterComposition(
     clusters: NotificationCluster[],
-    context: NotificationContext,
-    preferences: UserNotificationPreferences
+    _context: NotificationContext,
+    _preferences: UserNotificationPreferences
   ): Promise<NotificationCluster[]> {
     return clusters.map((cluster) => {
       // Calculate cohesion score
@@ -641,7 +637,7 @@ export class NotificationGrouping {
   private async analyzeBatchComposition(
     cluster: NotificationCluster,
     userProfile: UserBehaviorProfile,
-    context: NotificationContext
+    _context: NotificationContext
   ): Promise<BatchAnalysis> {
     const cohesion = this.calculateClusterCohesion(cluster);
     const urgency = this.calculateBatchUrgency(cluster);
@@ -687,12 +683,12 @@ export class NotificationGrouping {
   }
 
   // Helper methods and stubs
-  private getCurrentNotificationLoad(userId: string): number {
+  private getCurrentNotificationLoad(_userId: string): number {
     // Would implement actual load calculation
     return 3;
   }
 
-  private async getUserBehaviorProfile(userId: string): Promise<UserBehaviorProfile> {
+  private async getUserBehaviorProfile(_userId: string): Promise<UserBehaviorProfile> {
     // Stub implementation
     return {
       categoryPreferences: new Map([
@@ -708,9 +704,9 @@ export class NotificationGrouping {
 
   private async calculateSmartDeliveryTime(
     batch: BatchAnalysis,
-    userProfile: UserBehaviorProfile,
-    context: NotificationContext,
-    preferences: UserNotificationPreferences
+    _userProfile: UserBehaviorProfile,
+    _context: NotificationContext,
+    _preferences: UserNotificationPreferences
   ): Promise<number> {
     // Simplified smart timing calculation
     return Math.max(batch.optimalDeliveryTime, Date.now() + 60000); // At least 1 minute
@@ -718,37 +714,37 @@ export class NotificationGrouping {
 
   private async predictUserEngagement(
     batch: BatchAnalysis,
-    userProfile: UserBehaviorProfile,
-    context: NotificationContext
+    _userProfile: UserBehaviorProfile,
+    _context: NotificationContext
   ): Promise<number> {
     // Simplified engagement prediction
     return batch.userRelevance * batch.urgency;
   }
 
-  private async getCurrentHourNotificationCount(userId: string): Promise<number> {
+  private async getCurrentHourNotificationCount(_userId: string): Promise<number> {
     // Stub - would query actual notification store
     return 2;
   }
 
   private calculateNextAvailableSlot(
     preferredTime: number,
-    preferences: UserNotificationPreferences
+    _preferences: UserNotificationPreferences
   ): number {
     // Simplified next slot calculation
     return preferredTime + 60 * 60 * 1000; // 1 hour later
   }
 
-  private adjustForQuietHours(time: number, quietHours: { start: string; end: string }): number {
+  private adjustForQuietHours(time: number, _quietHours: { start: string; end: string }): number {
     // Stub implementation
     return time;
   }
 
-  private adjustForUserBehavior(time: number, userProfile: UserBehaviorProfile): number {
+  private adjustForUserBehavior(time: number, _userProfile: UserBehaviorProfile): number {
     // Stub implementation
     return time;
   }
 
-  private adjustForMinimalInterruption(time: number, context: NotificationContext): number {
+  private adjustForMinimalInterruption(time: number, _context: NotificationContext): number {
     // Stub implementation
     return time;
   }

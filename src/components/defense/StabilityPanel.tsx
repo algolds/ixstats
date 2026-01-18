@@ -1,7 +1,7 @@
 // src/components/defense/StabilityPanel.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { api } from "~/trpc/react";
 import {
@@ -12,10 +12,7 @@ import {
   TrendingDown,
   Activity,
   Minus,
-  AlertCircle,
   CheckCircle,
-  RefreshCw,
-  Scale,
   Heart,
   Eye,
   HelpCircle,

@@ -20,7 +20,6 @@ import { IxTime } from "~/lib/ixtime";
 // Type imports
 import type {
   EnhancedIntelligenceBriefingProps,
-  WikiIntelligenceData,
 } from "~/types/intelligence-briefing";
 
 // Extracted components
@@ -31,7 +30,6 @@ import {
   MetricsGridDisplay,
   EconomicIntelligenceCard,
   DemographicsIntelligenceCard,
-  VitalityRingsDisplay,
 } from "./intelligence-briefing";
 
 // Custom hooks
@@ -42,7 +40,6 @@ import { useClearanceAccess } from "~/hooks/useClearanceAccess";
 
 // Icons
 import {
-  RiBarChartLine,
   RiSettings3Line,
   RiGlobalLine,
   RiMoneyDollarCircleLine,
@@ -54,7 +51,6 @@ import {
   RiMapLine,
 } from "react-icons/ri";
 
-import { formatCurrency } from "~/lib/chart-utils";
 
 export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefingProps> = ({
   country,

@@ -15,21 +15,17 @@ import {
   CheckCircle,
   Info,
   RefreshCw,
-  DollarSign,
-  BarChart3,
   Target,
   Scale,
-  Zap,
   Users,
   Building2,
   ShoppingCart,
   Lightbulb,
   AlertCircle,
-  ArrowUpDown,
   Activity,
 } from "lucide-react";
 
-import type { TaxSystem, TaxCategory, TaxBracket } from "~/types/tax-system";
+import type { TaxSystem } from "~/types/tax-system";
 import type { CoreEconomicIndicatorsData, LaborEmploymentData } from "~/types/economics";
 
 interface TaxEconomySyncProps {

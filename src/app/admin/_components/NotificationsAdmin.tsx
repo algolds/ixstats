@@ -29,7 +29,6 @@ import {
   Globe,
   Zap,
   Play,
-  Settings,
   Trophy,
   Shield,
   DollarSign,

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { api } from "~/trpc/react";
 import {
   Dialog,
@@ -17,7 +17,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
-import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Select,
@@ -26,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Checkbox } from "~/components/ui/checkbox";
 import { CheckCircle2, ListTodo, Gavel, Plus, AlertCircle, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 

@@ -20,7 +20,6 @@ import {
 } from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card } from "~/components/ui/card";
-import { Slider } from "~/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -48,10 +47,7 @@ import {
   Upload,
   Image,
   DollarSign,
-  Weight,
   Gauge,
-  Calendar,
-  Eye,
   EyeOff,
 } from "lucide-react";
 import Link from "next/link";

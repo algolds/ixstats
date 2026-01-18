@@ -50,7 +50,6 @@ import {
   ComposedChart,
   Tooltip,
   Legend,
-  ResponsiveContainer,
 } from "recharts";
 import { format, subMonths } from "date-fns";
 

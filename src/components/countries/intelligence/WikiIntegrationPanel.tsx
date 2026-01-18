@@ -17,7 +17,6 @@ import {
 } from "~/components/ui/dialog";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { parseWikiContent } from "./utils";
-import { ClassificationBadge } from "./StatusIndicators";
 import { LoadingState } from "~/components/shared/feedback/LoadingState";
 import { RiExternalLinkLine, RiEditLine, RiArrowUpLine, RiArrowDownLine } from "react-icons/ri";
 import { cn } from "~/lib/utils";

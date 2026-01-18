@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "~/types/government";
 import {
-  calculateAtomicEconomicImpact,
   calculateAtomicEconomicEffectiveness,
   getAtomicEconomicRecommendations,
 } from "~/lib/atomic-economic-integration";

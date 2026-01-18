@@ -1,7 +1,32 @@
 // src/app/api/flag-cache/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
 import { api } from "~/trpc/server";
+import { isSystemOwner } from "~/lib/system-owner-constants";
+
+// Helper to check admin access
+async function requireAdminAccess(): Promise<{ authorized: boolean; error?: NextResponse }> {
+  const session = await auth();
+  if (!session?.userId) {
+    return {
+      authorized: false,
+      error: NextResponse.json({ error: "Authentication required" }, { status: 401 }),
+    };
+  }
+
+  if (!isSystemOwner(session.userId)) {
+    const role = (session.sessionClaims?.metadata as any)?.role;
+    if (!["admin", "owner", "staff"].includes(role)) {
+      return {
+        authorized: false,
+        error: NextResponse.json({ error: "Admin access required" }, { status: 403 }),
+      };
+    }
+  }
+
+  return { authorized: true };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -114,6 +139,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Require admin access for cache modification
+    const authCheck = await requireAdminAccess();
+    if (!authCheck.authorized) {
+      return authCheck.error;
+    }
+
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
 
@@ -187,6 +218,12 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Require admin access for cache deletion
+    const authCheck = await requireAdminAccess();
+    if (!authCheck.authorized) {
+      return authCheck.error;
+    }
+
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
 

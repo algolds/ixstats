@@ -30,7 +30,6 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Textarea } from "~/components/ui/textarea";
 import { PostActions } from "./primitives/PostActions";
-import { AccountIndicator } from "./primitives/AccountIndicator";
 import { ReactionsDialog } from "./ReactionsDialog";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";

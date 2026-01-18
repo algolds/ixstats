@@ -15,14 +15,11 @@
 import {
   NPCPersonalitySystem,
   type NPCPersonality,
-  type ObservableData,
 } from "./diplomatic-npc-personality";
 import {
-  CulturalScenarioGenerator,
   type CulturalScenarioType,
   type CulturalScenario,
 } from "./cultural-scenario-generator";
-import { CulturalImpactCalculator, type CulturalExchangeData } from "./cultural-impact-calculator";
 
 // ============================================================================
 // TYPE DEFINITIONS

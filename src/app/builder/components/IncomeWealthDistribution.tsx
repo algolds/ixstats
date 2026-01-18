@@ -4,13 +4,9 @@
 import { useState } from "react";
 import {
   Users,
-  DollarSign,
-  TrendingUp,
-  BarChart3,
   Scale,
   ArrowUpRight,
   Info,
-  AlertCircle,
 } from "lucide-react";
 import {
   PieChart,

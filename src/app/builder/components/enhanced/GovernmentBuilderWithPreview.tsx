@@ -8,9 +8,6 @@ import { Badge } from "~/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import {
   Building2,
-  Users,
-  DollarSign,
-  Receipt,
   Eye,
   Save,
   CheckCircle,

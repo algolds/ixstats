@@ -1,6 +1,6 @@
 // src/lib/ixtime-economic-utils.ts
 import { IxTime } from "./ixtime";
-import type { CoreEconomicIndicatorsData, EconomyData } from "~/types/economics";
+import type { CoreEconomicIndicatorsData } from "~/types/economics";
 
 /**
  * Calculate economic growth over time using IxTime

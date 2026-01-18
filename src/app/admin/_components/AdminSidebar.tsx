@@ -18,14 +18,12 @@ import {
   TrendingUp,
   Flag,
   Rocket,
-  Factory,
   Drama,
   UserCog,
   MapPin,
   Activity,
   CreditCard,
   Menu,
-  X,
 } from "lucide-react";
 import { Users as UsersIcon } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";

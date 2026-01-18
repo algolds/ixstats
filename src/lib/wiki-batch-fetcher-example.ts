@@ -8,14 +8,12 @@
 import { WikiBatchFetcher } from "~/lib/wiki-batch-fetcher";
 import type { WikiSource } from "~/lib/mediawiki-config";
 import {
-  getEligibilityRules,
   ELIGIBILITY_PRESETS,
   getEligibilitySummary,
   type EligibilityPreset,
 } from "~/lib/wiki-eligibility-rules";
 import {
   extractCardSummary,
-  PARSE_PRESETS,
   validateParsedText,
 } from "~/lib/wiki-rich-text-parser";
 

@@ -27,7 +27,6 @@ import {
   Radio,
   Plane,
   Ship,
-  ArrowRight,
   Sword,
   Activity,
   ExternalLink,

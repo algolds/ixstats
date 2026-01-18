@@ -4,7 +4,6 @@ import React, { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
-import { useAnimatedPercentage, DEFAULT_ANIMATIONS } from "./animation-utils";
 import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/GovernmentHelpSystem";
 import { Edit3, Sliders } from "lucide-react";

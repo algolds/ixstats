@@ -8,8 +8,6 @@ import type {
   NotificationContext,
   NotificationCategory,
   NotificationPriority,
-  NotificationSeverity,
-  NotificationType,
 } from "~/types/unified-notifications";
 
 // Enhanced category definitions with sub-categories

@@ -14,8 +14,6 @@ import {
 } from "~/components/ui/select";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Switch } from "~/components/ui/switch";
-import { Slider } from "~/components/ui/slider";
 import {
   Plus,
   X,
@@ -24,9 +22,6 @@ import {
   Building2,
   FileText,
   MoreHorizontal,
-  TrendingUp,
-  TrendingDown,
-  Minus,
   Zap,
   Calculator,
   CreditCard,

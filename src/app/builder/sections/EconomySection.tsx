@@ -3,36 +3,26 @@
 import React, { useState, useMemo, type ElementType } from "react";
 import {
   TrendingUp,
-  Users,
   DollarSign,
-  Factory,
-  Ship,
-  Zap,
   BarChart3,
   Building2,
   Gauge,
-  Activity,
-  PieChart,
-  Globe,
   Target,
   AlertTriangle,
   CheckCircle,
   TrendingDown,
-  Clock,
   Settings,
   Play,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Card } from "~/components/ui/card";
 import { api } from "~/trpc/react";
 import { useBuilderContext } from "../components/enhanced/context/BuilderStateContext";
 
 // Enhanced Components
 import {
   EnhancedNumberInput,
-  EnhancedToggle,
   EnhancedBarChart,
   EnhancedPieChart,
   MetricCard,
@@ -40,21 +30,19 @@ import {
 } from "../primitives/enhanced";
 
 // Help System
-import { EconomicsHelpSystem, FieldHelpTooltip } from "../components/help/GovernmentHelpSystem";
+import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
 import { EconomicsHelpContent } from "../components/help/EconomicsHelpContent";
 
 // Glass Design System
 import {
   SectionBase,
   SectionLayout,
-  sectionConfigs,
   sectionUtils,
   type ExtendedSectionProps,
 } from "../components/glass/SectionBase";
-import { FormGrid } from "../components/glass/ProgressiveViews";
 
 // Types and Calculations
-import type { EconomySectionProps, ComprehensiveEconomyData } from "../types/economy";
+import type { ComprehensiveEconomyData } from "../types/economy";
 import {
   calculateComprehensiveEconomy,
   calculateEconomicHealth,
@@ -62,10 +50,8 @@ import {
 } from "../lib/economy-calculations";
 
 // Economy Builder Integration
-import type { EconomicInputs } from "../lib/economy-data-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import { EconomyBuilderModal } from "../components/enhanced/EconomyBuilderModal";
-import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 interface EconomySectionComponentProps extends ExtendedSectionProps {

@@ -8,10 +8,8 @@ import {
   Activity,
   TrendingUp,
   Crown,
-  Gauge,
   Eye,
   Target,
-  Command,
 } from "lucide-react";
 import {
   CommandDialog,

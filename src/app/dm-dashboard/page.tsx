@@ -17,7 +17,6 @@ import {
   Plus,
   Trash2,
   Edit3,
-  Globe,
   Zap,
   TrendingDown,
   TrendingUp,

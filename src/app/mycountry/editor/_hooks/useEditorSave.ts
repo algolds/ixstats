@@ -7,7 +7,6 @@ import {
   type ChangeType,
   type ImpactLevel,
 } from "~/lib/change-impact-calculator";
-import type { Country } from "@prisma/client";
 
 interface ChangeTrackingChange {
   fieldPath: string;

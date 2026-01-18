@@ -2,14 +2,11 @@ import {
   DollarSign,
   TrendingUp,
   BarChart3,
-  Crown,
-  LandPlot, // For geographical
+  Crown, // For geographical
   Building, // For government
   Globe, // For continents
   Users, // For population tiers
-  Banknote, // For economic tiers
-  Church, // For religion
-  MapPin, // For region
+  Banknote, // For region
   Scale, // For legal systems
   Shield, // For military/security
   Vote, // For democratic systems

@@ -11,10 +11,8 @@ import {
   Target,
   AlertTriangle,
   DollarSign,
-  TrendingUp,
   Zap,
   CheckCircle,
-  Clock,
   Network,
 } from "lucide-react";
 import { SPENDING_POLICIES } from "../../data/government-spending-policies";

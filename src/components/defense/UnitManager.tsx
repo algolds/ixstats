@@ -12,7 +12,6 @@ import {
   MapPin,
   Shield,
   Star,
-  Activity,
   CheckCircle2,
 } from "lucide-react";
 import {

@@ -5,9 +5,7 @@ import Link from "next/link";
 import {
   Book,
   Search,
-  BookOpen,
   Cpu,
-  Globe,
   Users,
   TrendingUp,
   Shield,
@@ -16,8 +14,6 @@ import {
   Lightbulb,
   Zap,
   Target,
-  Clock,
-  Database,
   Code,
   ChevronRight,
   FileText,

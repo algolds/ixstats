@@ -219,7 +219,12 @@ export class NSApiClient {
    * This ensures the verification code is only valid for IxStats
    */
   generateVerificationToken(nationName: string): string {
-    const secret = process.env.NS_VERIFICATION_SECRET || "ixstats-default-secret-change-in-production";
+    const secret = process.env.NS_VERIFICATION_SECRET;
+    if (!secret) {
+      throw new Error(
+        "NS_VERIFICATION_SECRET environment variable is required for nation verification"
+      );
+    }
     const hash = require("crypto")
       .createHash("md5")
       .update(`${nationName.toLowerCase()}-${secret}`)

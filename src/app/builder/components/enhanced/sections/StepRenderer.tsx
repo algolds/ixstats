@@ -13,10 +13,8 @@ import {
   Coins,
   Eye,
   HelpCircle,
-  Lock,
   CheckCircle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsContent } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
@@ -348,10 +346,8 @@ import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
 import { EconomyBuilderPage } from "../index"; // Lazy-loaded from index
 import { BuilderLoadingFallback } from "../../LoadingFallback";
 import { EnhancedTabsList, EnhancedTabsTrigger } from "../BuilderTabs";
-import { stepConfig } from "../builderConfig";
 import { BuilderPreviewStep } from "./BuilderPreviewStep";
 import type { RealCountryData, EconomicInputs } from "../../../lib/economy-data-service";
-import type { ComponentType as PrismaComponentType } from "@prisma/client";
 
 interface StepRendererProps {
   countries: RealCountryData[];

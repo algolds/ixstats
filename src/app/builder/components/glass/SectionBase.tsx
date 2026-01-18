@@ -2,7 +2,6 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { cn } from "~/lib/utils";
 import type { EconomicInputs, RealCountryData } from "../../lib/economy-data-service";
 import {
   SectionContainer,

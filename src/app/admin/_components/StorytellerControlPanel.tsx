@@ -16,11 +16,10 @@
  * - Comprehensive audit logging
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Wand2,
   Globe,
-  Database,
   Zap,
   AlertTriangle,
   TrendingUp,
@@ -34,8 +33,6 @@ import {
   Cpu,
   Wheat,
   Hospital,
-  Settings,
-  Eye,
   Play,
   Pause,
   Save,
@@ -46,40 +43,17 @@ import {
   Filter,
   BarChart3,
   Activity,
-  Clock,
-  Target,
-  Layers,
-  GitBranch,
   Calculator,
-  FileText,
-  Download,
-  Upload,
   RefreshCw,
-  XCircle,
-  Check,
-  Info,
-  ArrowRight,
   Gamepad2,
   Crown,
   Sparkles,
   Flame,
-  Snowflake,
   Wind,
-  Droplets,
   Zap as Lightning,
-  Microscope,
-  Telescope,
   Scale,
   BookOpen,
-  MessageSquare,
-  Send,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Copy,
-  ExternalLink,
   History,
-  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -98,22 +72,17 @@ import {
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Slider } from "~/components/ui/slider";
 import { Switch } from "~/components/ui/switch";
-import { Separator } from "~/components/ui/separator";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogDescription,
   DialogFooter,
 } from "~/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { api } from "~/trpc/react";
-import { IxTime } from "~/lib/ixtime";
 import { formatDistanceToNow } from "date-fns";
-import { cn } from "~/lib/utils";
 
 // ============================================================================
 // TYPES & INTERFACES

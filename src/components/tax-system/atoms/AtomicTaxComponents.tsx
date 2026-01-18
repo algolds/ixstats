@@ -16,7 +16,6 @@ import {
   DollarSign,
   FileText,
   Clock,
-  Calculator,
   Search,
   BookOpen,
   Landmark,

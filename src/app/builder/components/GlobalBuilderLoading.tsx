@@ -4,24 +4,13 @@ import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import {
-  TrendingUp,
   Building2,
   Users,
   DollarSign,
   Globe,
-  Settings,
-  BarChart3,
-  PieChart,
-  Gauge,
-  Zap,
-  Brain,
-  Leaf,
-  Target,
-  Factory,
   Heart,
   Shield,
   Crown,
-  Star,
   Sparkles,
 } from "lucide-react";
 

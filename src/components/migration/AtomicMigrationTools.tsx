@@ -7,41 +7,31 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Separator } from "~/components/ui/separator";
 import {
   ArrowRight,
   CheckCircle,
   AlertTriangle,
   Lightbulb,
   RefreshCw,
-  Download,
-  Upload,
   Settings,
   Target,
   BarChart3,
   TrendingUp,
   Zap,
   Shield,
-  Copy,
-  Save,
-  FileText,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 import type { ComponentType } from "~/types/government";
 import {
   calculateAtomicTaxEffectiveness,
-  getAtomicTaxRecommendations,
 } from "~/lib/atomic-tax-integration";
 import {
   calculateAtomicEconomicEffectiveness,
-  getAtomicEconomicRecommendations,
 } from "~/lib/atomic-economic-integration";
 import { calculateAtomicGovernmentStability } from "~/lib/atomic-intelligence-integration";
-import {
-  ATOMIC_COMPONENTS,
-  ComponentType as AtomicComponentEnum,
-} from "~/components/government/atoms/AtomicGovernmentComponents";
+
+
 
 interface MigrationScenario {
   id: string;

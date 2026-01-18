@@ -513,7 +513,7 @@ class UnifiedFlagService {
         for (const pattern of flagPatterns) {
           const flagMatch = content.match(pattern);
           if (flagMatch) {
-            let flagFilename = flagMatch[1]
+            const flagFilename = flagMatch[1]
               .trim()
               .replace(/^\[\[File:/, "")
               .replace(/\]\]$/, "")

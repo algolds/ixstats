@@ -12,14 +12,8 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Carousel, Card as CarouselCard } from "~/components/ui/apple-cards-carousel";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+
+
 
 // Icons
 import {
@@ -27,21 +21,16 @@ import {
   TrendingUp,
   Users,
   BarChart3,
-  Target,
-  Star,
   Crown,
   Activity,
-  FileText,
   MessageSquare,
   MessageCircle,
-  Zap,
   Shield,
   ArrowRight,
   Sparkles,
   Brain,
   Network,
   Building2,
-  Scale,
   Blocks,
 } from "lucide-react";
 
@@ -50,7 +39,6 @@ import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pa
 import { Marquee } from "~/components/magicui/marquee";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
-import { cn } from "~/lib/utils";
 import {
   ATOMIC_COMPONENTS,
   ComponentType,
@@ -306,7 +294,7 @@ export function IxStatsSplashPage() {
     return (
       <CarouselCard
         card={{
-          src: flagUrl || "/api/placeholder/800/1200",
+          src: flagUrl || "/images/placeholder-flag.svg",
           title: country.name.replace(/_/g, " "),
           category: `#${index + 1} Global Ranking`,
           content: <CountryShowcaseCard country={country} />,
@@ -330,6 +318,51 @@ export function IxStatsSplashPage() {
       ATOMIC_COMPONENTS[ComponentType.FEDERAL_SYSTEM],
       ATOMIC_COMPONENTS[ComponentType.INDEPENDENT_JUDICIARY],
     ].filter(Boolean);
+  }, []);
+
+  // Shuffled marquee components - memoized to prevent re-shuffling on each render
+  const shuffledMarqueeComponents = useMemo(() => {
+    const allComponents = [
+      // Government Components (Purple)
+      { type: ComponentType.DEMOCRATIC_PROCESS, color: "purple" },
+      { type: ComponentType.FEDERAL_SYSTEM, color: "purple" },
+      { type: ComponentType.INDEPENDENT_JUDICIARY, color: "purple" },
+      { type: ComponentType.RULE_OF_LAW, color: "purple" },
+      { type: ComponentType.PROFESSIONAL_BUREAUCRACY, color: "purple" },
+      { type: ComponentType.TECHNOCRATIC_PROCESS, color: "purple" },
+      { type: ComponentType.ELECTORAL_LEGITIMACY, color: "purple" },
+      { type: ComponentType.AUTOCRATIC_PROCESS, color: "purple" },
+
+      // Economy Components (Green)
+      { type: ComponentType.FREE_MARKET_SYSTEM, color: "green" },
+      { type: ComponentType.KNOWLEDGE_ECONOMY, color: "green" },
+      { type: ComponentType.INNOVATION_ECOSYSTEM, color: "green" },
+      { type: ComponentType.DIGITAL_GOVERNMENT, color: "green" },
+      { type: ComponentType.RESEARCH_AND_DEVELOPMENT, color: "green" },
+      { type: ComponentType.ENTREPRENEURSHIP_SUPPORT, color: "green" },
+      { type: ComponentType.MIXED_ECONOMY, color: "green" },
+      { type: ComponentType.SOCIAL_MARKET_ECONOMY, color: "green" },
+
+      // Administrative Components (Blue)
+      { type: ComponentType.MERIT_BASED_SYSTEM, color: "blue" },
+      { type: ComponentType.TRANSPARENCY_INITIATIVE, color: "blue" },
+      { type: ComponentType.ANTI_CORRUPTION, color: "blue" },
+      { type: ComponentType.E_GOVERNANCE, color: "blue" },
+      { type: ComponentType.PERFORMANCE_MANAGEMENT, color: "blue" },
+      { type: ComponentType.ACCOUNTABILITY_FRAMEWORK, color: "blue" },
+      { type: ComponentType.STRATEGIC_PLANNING, color: "blue" },
+      { type: ComponentType.QUALITY_ASSURANCE, color: "blue" },
+
+      // Social & International (Cyan)
+      { type: ComponentType.UNIVERSAL_HEALTHCARE, color: "cyan" },
+      { type: ComponentType.PUBLIC_EDUCATION, color: "cyan" },
+      { type: ComponentType.MULTILATERAL_DIPLOMACY, color: "cyan" },
+      { type: ComponentType.INTERNATIONAL_LAW, color: "cyan" },
+      { type: ComponentType.WELFARE_STATE, color: "cyan" },
+      { type: ComponentType.ENVIRONMENTAL_PROTECTION, color: "cyan" },
+    ];
+    // Shuffle the array
+    return [...allComponents].sort(() => Math.random() - 0.5);
   }, []);
 
   // Type guard for globalStats
@@ -721,50 +754,7 @@ export function IxStatsSplashPage() {
 
           <div className="relative overflow-hidden">
             <Marquee pauseOnHover className="[--duration:50s]">
-              {useMemo(() => {
-                const allComponents = [
-                  // Government Components (Purple)
-                  { type: ComponentType.DEMOCRATIC_PROCESS, color: "purple" },
-                  { type: ComponentType.FEDERAL_SYSTEM, color: "purple" },
-                  { type: ComponentType.INDEPENDENT_JUDICIARY, color: "purple" },
-                  { type: ComponentType.RULE_OF_LAW, color: "purple" },
-                  { type: ComponentType.PROFESSIONAL_BUREAUCRACY, color: "purple" },
-                  { type: ComponentType.TECHNOCRATIC_PROCESS, color: "purple" },
-                  { type: ComponentType.ELECTORAL_LEGITIMACY, color: "purple" },
-                  { type: ComponentType.AUTOCRATIC_PROCESS, color: "purple" },
-
-                  // Economy Components (Green)
-                  { type: ComponentType.FREE_MARKET_SYSTEM, color: "green" },
-                  { type: ComponentType.KNOWLEDGE_ECONOMY, color: "green" },
-                  { type: ComponentType.INNOVATION_ECOSYSTEM, color: "green" },
-                  { type: ComponentType.DIGITAL_GOVERNMENT, color: "green" },
-                  { type: ComponentType.RESEARCH_AND_DEVELOPMENT, color: "green" },
-                  { type: ComponentType.ENTREPRENEURSHIP_SUPPORT, color: "green" },
-                  { type: ComponentType.MIXED_ECONOMY, color: "green" },
-                  { type: ComponentType.SOCIAL_MARKET_ECONOMY, color: "green" },
-
-                  // Administrative Components (Blue)
-                  { type: ComponentType.MERIT_BASED_SYSTEM, color: "blue" },
-                  { type: ComponentType.TRANSPARENCY_INITIATIVE, color: "blue" },
-                  { type: ComponentType.ANTI_CORRUPTION, color: "blue" },
-                  { type: ComponentType.E_GOVERNANCE, color: "blue" },
-                  { type: ComponentType.PERFORMANCE_MANAGEMENT, color: "blue" },
-                  { type: ComponentType.ACCOUNTABILITY_FRAMEWORK, color: "blue" },
-                  { type: ComponentType.STRATEGIC_PLANNING, color: "blue" },
-                  { type: ComponentType.QUALITY_ASSURANCE, color: "blue" },
-
-                  // Social & International (Cyan)
-                  { type: ComponentType.UNIVERSAL_HEALTHCARE, color: "cyan" },
-                  { type: ComponentType.PUBLIC_EDUCATION, color: "cyan" },
-                  { type: ComponentType.MULTILATERAL_DIPLOMACY, color: "cyan" },
-                  { type: ComponentType.INTERNATIONAL_LAW, color: "cyan" },
-                  { type: ComponentType.WELFARE_STATE, color: "cyan" },
-                  { type: ComponentType.ENVIRONMENTAL_PROTECTION, color: "cyan" },
-                ];
-
-                // Shuffle the array
-                return allComponents.sort(() => Math.random() - 0.5);
-              }, []).map((item, idx) => {
+              {shuffledMarqueeComponents.map((item, idx) => {
                 const component = ATOMIC_COMPONENTS[item.type];
                 if (!component) return null;
 

@@ -3,10 +3,6 @@ import { GlassCard } from "./enhanced-card";
 import { cn } from "~/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Globe,
-  Shield,
-  User,
-  LogOut,
   Settings,
   Menu,
   ChevronLeft,

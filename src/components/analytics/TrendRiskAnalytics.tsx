@@ -2,20 +2,16 @@
 
 import React from "react";
 import { api } from "~/trpc/react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Progress } from "~/components/ui/progress";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from "~/components/ui/chart";
 import {
   TrendingUp,
@@ -25,11 +21,7 @@ import {
   BarChart3,
   LineChart,
   PieChart,
-  Target,
   Shield,
-  DollarSign,
-  Users,
-  Zap,
   Eye,
   RefreshCw,
 } from "lucide-react";
@@ -39,15 +31,10 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   PieChart as RechartsPieChart,
   Cell,
-  RadialBarChart,
-  RadialBar,
   Legend,
 } from "recharts";
 

@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { HealthRing } from "~/components/ui/health-ring";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { TextReveal, FadeIn, CountUp } from "~/components/ui/text-reveal";
+import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { Spotlight } from "~/components/ui/spotlight-new";
-import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
-import { createAbsoluteUrl } from "~/lib/url-utils";
+import { formatPopulation } from "~/lib/chart-utils";
 import { UsersIcon } from "~/components/ui/users";
 import { TrendingUpIcon } from "~/components/ui/trending-up";
 import { ActivityIcon } from "~/components/ui/activity";
