@@ -8,6 +8,7 @@
 
 import { db } from "~/server/db";
 import { env } from "~/env";
+import { Prisma } from "@prisma/client";
 
 interface SyncMetrics {
   totalSyncs: number;
@@ -75,7 +76,7 @@ export class SyncHealthMonitor {
           cardsCreated,
           cardsUpdated,
           errors: errorMessage,
-          metadata: metadata ? JSON.stringify(metadata) : null,
+          metadata: metadata ? metadata as Prisma.InputJsonValue : Prisma.JsonNull,
           startedAt: new Date(),
           completedAt: status !== "IN_PROGRESS" ? new Date() : null,
         },
@@ -127,7 +128,7 @@ export class SyncHealthMonitor {
         orderBy: { season: "desc" },
       });
 
-      const bySeason: SeasonHealth[] = checkpoints.map(checkpoint => {
+      const bySeason: SeasonHealth[] = checkpoints.map((checkpoint: any) => {
         const progress = checkpoint.totalCards > 0
           ? (checkpoint.cardsProcessed / checkpoint.totalCards) * 100
           : 0;
@@ -321,7 +322,7 @@ export class SyncHealthMonitor {
           itemsFailed: 1,
           errorMessage: `Card ${cardId}: ${error}`,
           season,
-          metadata: context ? JSON.stringify(context) : null,
+          metadata: context ? context as Prisma.InputJsonValue : Prisma.JsonNull,
           startedAt: new Date(),
           completedAt: new Date(),
         },

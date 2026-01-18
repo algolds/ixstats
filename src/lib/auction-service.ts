@@ -186,11 +186,7 @@ export class AuctionService {
       include: {
         CardOwnership: {
           include: {
-            cards: {
-              include: {
-                country: true,
-              },
-            },
+            cards: true,
           },
         },
       },
@@ -357,11 +353,7 @@ export class AuctionService {
       include: {
         CardOwnership: {
           include: {
-            cards: {
-              include: {
-                country: true,
-              },
-            },
+            cards: true,
           },
         },
       },
@@ -485,7 +477,7 @@ export class AuctionService {
 
             console.log(
               `[Auction Service] Awarded ${royaltyAmount} IxC royalty to nation owner ${nationOwner.clerkUserId} ` +
-              `for ${auction.CardOwnership.cards.country?.name || 'nation'} card sale`
+              `for nation card sale`
             );
           }
         }
@@ -557,11 +549,7 @@ export class AuctionService {
       include: {
         CardOwnership: {
           include: {
-            cards: {
-              include: {
-                country: true,
-              },
-            },
+            cards: true,
           },
         },
       },
@@ -628,7 +616,7 @@ export class AuctionService {
 
               console.log(
                 `[Auction Service] Awarded ${royaltyAmount} IxC royalty to nation owner ${nationOwner.clerkUserId} ` +
-                `for ${auction.CardOwnership.cards.country?.name || 'nation'} card sale`
+                `for nation card sale`
               );
             }
           }

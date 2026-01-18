@@ -15,7 +15,7 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { TradeStatus, AcquireMethod } from "@prisma/client";
+import { TradeStatus, type Prisma } from "@prisma/client";
 
 /**
  * Trade offer creation schema
@@ -43,13 +43,16 @@ const respondToTradeSchema = z.object({
   counterMessage: z.string().max(500).optional(),
 });
 
+type CreateTradeOfferInput = z.infer<typeof createtradeOfferSchema>;
+type RespondToTradeInput = z.infer<typeof respondToTradeSchema>;
+
 export const tradingRouter = createTRPCRouter({
   /**
    * Create a new trade offer
    */
   createtradeOffer: protectedProcedure
     .input(createtradeOfferSchema)
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }: { ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any }; input: CreateTradeOfferInput }) => {
       const userId = ctx.auth.userId;
 
       // Verify initiator owns the cards they're offering
@@ -106,10 +109,10 @@ export const tradingRouter = createTRPCRouter({
 
       // Calculate trade values
       const initiatorValue =
-        initiatorCards.reduce((sum, c) => sum + c.cards.marketValue, 0) +
+        initiatorCards.reduce((sum: number, c: { cards: { marketValue: number; }; }) => sum + c.cards.marketValue, 0) +
         input.initiatorCredits;
       const recipientValue =
-        recipientCards.reduce((sum, c) => sum + c.cards.marketValue, 0) +
+        recipientCards.reduce((sum: number, c: any) => sum + c.cards.marketValue, 0) +
         input.recipientCredits;
 
       // Create trade offer (expires in 24 hours)
@@ -164,7 +167,7 @@ export const tradingRouter = createTRPCRouter({
    */
   respondToTrade: protectedProcedure
     .input(respondToTradeSchema)
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }: { ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any }; input: RespondToTradeInput }) => {
       const userId = ctx.auth.userId;
 
       // Get the trade offer
@@ -286,7 +289,7 @@ export const tradingRouter = createTRPCRouter({
       }
 
       // ACCEPT - Execute the trade atomically
-      return await ctx.db.$transaction(async (tx) => {
+      return await ctx.db.$transaction(async (tx: Prisma.TransactionClient) => {
         // Cast Json card IDs to string arrays
         const initiatorCardIds = trade.initiatorCardIds as string[];
         const recipientCardIds = trade.recipientCardIds as string[];
@@ -374,7 +377,7 @@ export const tradingRouter = createTRPCRouter({
   /**
    * Get active trades (sent and received)
    */
-  getActiveTrades: protectedProcedure.query(async ({ ctx }) => {
+  getActiveTrades: protectedProcedure.query(async ({ ctx }: { ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any } }) => {
     const userId = ctx.auth.userId;
 
     const trades = await ctx.db.tradeOffer.findMany({
@@ -425,7 +428,7 @@ export const tradingRouter = createTRPCRouter({
         offset: z.number().min(0).default(0),
       })
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx, input }: { ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any }; input: { limit: number; offset: number } }) => {
       const userId = ctx.auth.userId;
 
       const trades = await ctx.db.tradeOffer.findMany({
@@ -487,7 +490,7 @@ export const tradingRouter = createTRPCRouter({
    */
   cancelTrade: protectedProcedure
     .input(z.object({ tradeId: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }: { ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any }; input: { tradeId: string } }) => {
       const userId = ctx.auth.userId;
 
       const trade = await ctx.db.tradeOffer.findUnique({
@@ -527,7 +530,7 @@ export const tradingRouter = createTRPCRouter({
    */
   getTradeById: protectedProcedure
     .input(z.object({ tradeId: z.string().min(1) }))
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx, input }: { ctx: { auth: { userId: string }; db: Prisma.TransactionClient | any }; input: { tradeId: string } }) => {
       const userId = ctx.auth.userId;
 
       const trade = await ctx.db.tradeOffer.findUnique({

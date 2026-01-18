@@ -14,7 +14,6 @@ import {
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
-import { IXMAPS_COORDINATE_SYSTEM } from "~/lib/ixearth-constants";
 import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
 import {
@@ -307,31 +306,29 @@ const countriesRouter = createTRPCRouter({
       const countries: CountryWithEconomicData[] = rawCountries.map((country: any) => {
         // Extract bounding box coordinates if available
         // boundingBox format: [minLat, minLng, maxLat, maxLng]
-        // IMPORTANT: Apply prime meridian offset to longitude values
         const boundingBox = country.boundingBox as any;
         const bounds = boundingBox && Array.isArray(boundingBox) && boundingBox.length === 4
           ? {
               minLat: boundingBox[0],
-              minLng: boundingBox[1] - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+              minLng: boundingBox[1],
               maxLat: boundingBox[2],
-              maxLng: boundingBox[3] - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+              maxLng: boundingBox[3],
             }
           : boundingBox?.minLng !== undefined
           ? {
               minLat: boundingBox.minLat,
-              minLng: boundingBox.minLng - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+              minLng: boundingBox.minLng,
               maxLat: boundingBox.maxLat,
-              maxLng: boundingBox.maxLng - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+              maxLng: boundingBox.maxLng,
             }
           : {};
 
-        // Extract centroid coordinates for map navigation
+        // Extract centroid coordinates
         // centroid format: { type: "Point", coordinates: [lng, lat] }
-        // IMPORTANT: Apply prime meridian offset (Country table uses offset coordinates)
         const centroid = country.centroid as any;
         const centerCoords = centroid?.coordinates && Array.isArray(centroid.coordinates) && centroid.coordinates.length === 2
           ? {
-              centerLng: centroid.coordinates[0] - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+              centerLng: centroid.coordinates[0],
               centerLat: centroid.coordinates[1],
             }
           : {};

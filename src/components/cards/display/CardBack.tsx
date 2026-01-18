@@ -104,47 +104,25 @@ export const CardBack = React.memo<CardBackProps>(
           <div className="absolute inset-0 bg-radial from-slate-800/40 to-transparent" />
         </div>
 
-        {/* Rarity accent gradient (subtle) */}
-        <motion.div
+        {/* Rarity accent gradient (subtle) - static */}
+        <div
           className={cn(
             "absolute inset-0 bg-gradient-to-br opacity-20",
             accentGradient
           )}
-          animate={
-            !performanceMode
-              ? {
-                  opacity: [0.15, 0.25, 0.15],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
         />
 
-        {/* Animated light rays */}
+        {/* Static light rays - no animation to reduce CPU usage */}
         {!performanceMode && (
           <div className="absolute inset-0">
-            {lightRays.map((ray, index) => (
-              <motion.div
+            {lightRays.slice(0, 4).map((ray, index) => (
+              <div
                 key={index}
-                className="absolute left-1/2 top-1/2 w-1 origin-left bg-gradient-to-r from-white/10 to-transparent"
+                className="absolute left-1/2 top-1/2 w-1 origin-left bg-gradient-to-r from-white/5 to-transparent"
                 style={{
                   height: `${ray.length}%`,
                   transform: `rotate(${ray.angle}deg)`,
-                }}
-                initial={{ opacity: 0, scaleX: 0 }}
-                animate={{
-                  opacity: [0, 0.4, 0],
-                  scaleX: [0, 1, 0],
-                }}
-                transition={{
-                  duration: 3,
-                  delay: ray.delay,
-                  repeat: Infinity,
-                  ease: "easeInOut",
+                  opacity: 0.3,
                 }}
               />
             ))}
@@ -197,23 +175,8 @@ export const CardBack = React.memo<CardBackProps>(
                   ease: "easeInOut",
                 }}
               >
-                {/* Logo glow effect */}
-                <motion.div
-                  className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl"
-                  animate={
-                    !performanceMode
-                      ? {
-                          opacity: [0.3, 0.6, 0.3],
-                          scale: [1, 1.2, 1],
-                        }
-                      : undefined
-                  }
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
+                {/* Logo glow effect - static for cards at rest */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl opacity-40" />
 
                 {/* IxStats logo text */}
                 <div className="relative z-10 flex flex-col items-center">

@@ -206,18 +206,31 @@ const craftingRecipes = [
 async function seedCraftingRecipes() {
   console.log("🔮 Seeding crafting recipes...");
 
+  let created = 0;
+  let skipped = 0;
+
   for (const recipe of craftingRecipes) {
-    await prisma.craftingRecipe.upsert({
-      where: {
-        // Use unique constraint on name if available, otherwise create
-        name: recipe.name,
-      },
-      update: recipe,
-      create: recipe,
+    // Check if recipe already exists by name
+    const existing = await prisma.craftingRecipe.findFirst({
+      where: { name: recipe.name },
     });
+
+    if (existing) {
+      console.log(`  ⏭️  Skipped: ${recipe.name} (already exists)`);
+      skipped++;
+    } else {
+      await prisma.craftingRecipe.create({
+        data: recipe,
+      });
+      console.log(`  ✨ Created: ${recipe.name}`);
+      created++;
+    }
   }
 
-  console.log(`✓ Seeded ${craftingRecipes.length} crafting recipes`);
+  console.log(`\n✓ Crafting recipes seeding completed:`);
+  console.log(`  Created: ${created}`);
+  console.log(`  Skipped: ${skipped}`);
+  console.log(`  Total:   ${craftingRecipes.length}`);
 }
 
 /**
@@ -233,8 +246,8 @@ async function main() {
   }
 }
 
-// Run if called directly
-if (require.main === module) {
+// Run if called directly (ES Module compatible)
+if (import.meta.url === `file://${process.argv[1]}`) {
   main()
     .then(async () => {
       await prisma.$disconnect();

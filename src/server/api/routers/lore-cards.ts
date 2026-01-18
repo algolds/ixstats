@@ -19,6 +19,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
   adminProcedure,
+  rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-lore-card-generator";
 import type { WikiSource } from "~/lib/mediawiki-config";
@@ -135,7 +136,6 @@ export const loreCardsRouter = createTRPCRouter({
             wikiSource: input.wikiSource,
             articleTitle: input.articleTitle,
             status: "PENDING",
-            costPaid: LORE_CARD_REQUEST_COST,
           },
         });
 
@@ -234,14 +234,6 @@ export const loreCardsRouter = createTRPCRouter({
           orderBy: { requestedAt: "desc" },
           take: input?.limit ?? 50,
           skip: input?.offset ?? 0,
-          include: {
-            user: {
-              select: {
-                id: true,
-                clerkUserId: true,
-              },
-            },
-          },
         });
 
         const total = await ctx.db.loreCardRequest.count({
@@ -385,7 +377,7 @@ export const loreCardsRouter = createTRPCRouter({
           where: { userId: request.userId },
           data: {
             credits: {
-              increment: request.costPaid,
+              increment: LORE_CARD_REQUEST_COST,
             },
           },
         });
@@ -399,7 +391,7 @@ export const loreCardsRouter = createTRPCRouter({
           await ctx.db.vaultTransaction.create({
             data: {
               vaultId: vault.id,
-              credits: request.costPaid,
+              credits: LORE_CARD_REQUEST_COST,
               balanceAfter: vault.credits,
               type: "INCOME",
               source: "REFUND",
@@ -412,7 +404,7 @@ export const loreCardsRouter = createTRPCRouter({
         }
 
         console.log(
-          `[Lore Cards] Admin ${adminUserId} rejected request ${input.requestId}. User refunded ${request.costPaid} IxC`
+          `[Lore Cards] Admin ${adminUserId} rejected request ${input.requestId}. User refunded ${LORE_CARD_REQUEST_COST} IxC`
         );
 
         return {
@@ -490,7 +482,8 @@ export const loreCardsRouter = createTRPCRouter({
           where: { id: input.requestId },
           data: {
             status: "GENERATED",
-            generatedCardId: cardId,
+            cardId,
+            generatedAt: new Date(),
           },
         });
 
@@ -545,4 +538,114 @@ export const loreCardsRouter = createTRPCRouter({
       });
     }
   }),
+
+  /**
+   * Get all lore cards for public gallery (public endpoint)
+   */
+  getAllLoreCards: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        wikiSource: z.enum(["ixwiki", "iiwiki", "all"]).optional().default("all"),
+        rarity: z.enum(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY", "all"]).optional().default("all"),
+        category: z.string().optional(),
+        season: z.number().int().min(1).optional(),
+        search: z.string().min(1).max(200).optional(),
+        sortBy: z.enum(["rarity", "season", "dateAdded", "marketValue", "title"]).optional().default("dateAdded"),
+        limit: z.number().int().min(1).max(100).optional().default(20),
+        offset: z.number().int().min(0).optional().default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        // Build where clause
+        const where: any = {
+          cardType: "LORE",
+        };
+
+        // Wiki source filter
+        if (input.wikiSource !== "all") {
+          where.wikiSource = input.wikiSource;
+        }
+
+        // Rarity filter
+        if (input.rarity !== "all") {
+          where.rarity = input.rarity;
+        }
+
+        // Season filter
+        if (input.season) {
+          where.season = input.season;
+        }
+
+        // Category filter (stored in metadata)
+        if (input.category) {
+          where.metadata = {
+            path: ["category"],
+            equals: input.category,
+          };
+        }
+
+        // Search filter
+        if (input.search) {
+          where.OR = [
+            { title: { contains: input.search, mode: "insensitive" } },
+            { wikiArticleTitle: { contains: input.search, mode: "insensitive" } },
+          ];
+        }
+
+        // Build orderBy
+        let orderBy: any = { createdAt: "desc" }; // dateAdded
+        if (input.sortBy === "rarity") {
+          orderBy = { rarity: "desc" };
+        } else if (input.sortBy === "season") {
+          orderBy = { season: "desc" };
+        } else if (input.sortBy === "marketValue") {
+          orderBy = { marketValue: "desc" };
+        } else if (input.sortBy === "title") {
+          orderBy = { title: "asc" };
+        }
+
+        // Fetch cards
+        const [cards, total] = await Promise.all([
+          ctx.db.card.findMany({
+            where,
+            orderBy,
+            take: input.limit,
+            skip: input.offset,
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              artwork: true,
+              artworkVariants: true,
+              rarity: true,
+              season: true,
+              cardType: true,
+              wikiSource: true,
+              wikiArticleTitle: true,
+              stats: true,
+              marketValue: true,
+              totalSupply: true,
+              level: true,
+              metadata: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          }),
+          ctx.db.card.count({ where }),
+        ]);
+
+        return {
+          cards,
+          total,
+          hasMore: input.offset + input.limit < total,
+        };
+      } catch (error) {
+        console.error("[Lore Cards] Error in getAllLoreCards:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch lore cards",
+        });
+      }
+    }),
 });

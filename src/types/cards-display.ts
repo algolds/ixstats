@@ -31,6 +31,7 @@ export interface CardInstance {
   wikiUrl: string | null;
   countryId: string | null;
   stats: any;
+  metadata?: any;
   marketValue: number;
   totalSupply: number;
   level: number;

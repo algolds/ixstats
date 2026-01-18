@@ -10,6 +10,8 @@ import { nsApiClient } from "~/lib/ns-api-client";
 import { SyncHealthMonitor } from "~/lib/ns-sync-monitor";
 import { TRPCError } from "@trpc/server";
 
+const SYNC_TYPE = "NS_CARD_SYNC";
+
 export const nsImportRouter = createTRPCRouter({
   /**
    * Fetch a nation's deck (public - no auth required)
@@ -471,7 +473,12 @@ export const nsImportRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const checkpoint = await ctx.db.syncCheckpoint.findUnique({
-        where: { season: input.season },
+        where: {
+          syncType_season: {
+            syncType: SYNC_TYPE,
+            season: input.season,
+          },
+        },
       });
 
       if (!checkpoint) {
@@ -487,20 +494,27 @@ export const nsImportRouter = createTRPCRouter({
         };
       }
 
-      const progress = checkpoint.totalCards > 0
-        ? (checkpoint.cardsProcessed / checkpoint.totalCards) * 100
+      const cp = (checkpoint.checkpoint as any) || {};
+      const cardsProcessed = Number(cp.cardsProcessed ?? 0);
+      const totalCards = Number(cp.totalCards ?? 0);
+      const errorCount = Number(cp.errorCount ?? 0);
+      const lastCheckpoint = cp.lastCheckpointAt ? new Date(cp.lastCheckpointAt) : new Date(checkpoint.updatedAt);
+      const completedAt = cp.completedAt ? new Date(cp.completedAt) : null;
+
+      const progress = totalCards > 0
+        ? (cardsProcessed / totalCards) * 100
         : 0;
 
       return {
         season: input.season,
-        status: checkpoint.status,
-        cardsProcessed: checkpoint.cardsProcessed,
-        totalCards: checkpoint.totalCards,
+        status: (cp.status as string) || "IN_PROGRESS",
+        cardsProcessed,
+        totalCards,
         progress,
-        errorCount: checkpoint.errorCount,
-        lastCheckpoint: checkpoint.lastCheckpointAt,
-        completedAt: checkpoint.completedAt,
-        lastProcessedCardId: checkpoint.lastProcessedCardId,
+        errorCount,
+        lastCheckpoint,
+        completedAt,
+        lastProcessedCardId: checkpoint.lastCardId ?? null,
       };
     }),
 
@@ -647,7 +661,7 @@ export const nsImportRouter = createTRPCRouter({
 
       // Delete existing checkpoint
       await ctx.db.syncCheckpoint.deleteMany({
-        where: { season },
+        where: { syncType: SYNC_TYPE, season },
       });
 
       // Log the reset
@@ -727,5 +741,142 @@ export const nsImportRouter = createTRPCRouter({
           ? log.completedAt.getTime() - log.startedAt.getTime()
           : null,
       }));
+    }),
+
+  /**
+   * Get user's import history
+   */
+  getMyImportHistory: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().int().min(1).max(50).default(10),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Get user's vault transactions for NS imports
+      const vault = await ctx.db.myVault.findUnique({
+        where: { userId: ctx.user.id },
+        include: {
+          transactions: {
+            where: {
+              source: "ns_import_bonus",
+            },
+            orderBy: { createdAt: "desc" },
+            take: input.limit,
+          },
+        },
+      });
+
+      const imports = vault?.transactions || [];
+
+      return imports.map(tx => ({
+        id: tx.id,
+        nationName: (tx.metadata as any)?.nationName || "Unknown",
+        cardsImported: (tx.metadata as any)?.cardsImported || 0,
+        totalValue: (tx.metadata as any)?.totalValue || 0,
+        bonusCredits: tx.credits,
+        importedAt: tx.createdAt,
+      }));
+    }),
+
+  /**
+   * Get import statistics
+   */
+  getImportStats: protectedProcedure.query(async ({ ctx }) => {
+    // Count NS import transactions
+    const vault = await ctx.db.myVault.findUnique({
+      where: { userId: ctx.user.id },
+      include: {
+        transactions: {
+          where: {
+            source: "ns_import_bonus",
+          },
+        },
+      },
+    });
+
+    const imports = vault?.transactions || [];
+    const totalImports = imports.length;
+    const lastImport = imports[0]?.createdAt || null;
+
+    // Count imported cards
+    const importedCards = await ctx.db.cardOwnership.findMany({
+      where: {
+        userId: ctx.user.id,
+        cards: {
+          cardType: "NS_IMPORT",
+        },
+      },
+      include: {
+        cards: true,
+      },
+    });
+
+    const totalCards = importedCards.reduce(
+      (sum, ownership) => sum + ownership.quantity,
+      0
+    );
+    const totalValue = importedCards.reduce(
+      (sum, ownership) => sum + (ownership.cards.marketValue || 0),
+      0
+    );
+
+    return {
+      totalImports,
+      totalCards,
+      totalValue,
+      lastImport,
+    };
+  }),
+
+  /**
+   * Preview deck before import (for step wizard)
+   */
+  previewDeck: protectedProcedure
+    .input(
+      z.object({
+        nationName: z.string().min(1).max(100),
+      })
+    )
+    .query(async ({ input }) => {
+      const deckData = await nsApiClient.fetchDeck(input.nationName);
+
+      if (!deckData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Failed to fetch deck from NationStates",
+        });
+      }
+
+      // Deduplicate and count unique cards
+      const cardMap = new Map<string, { rarity: string; value: number }>();
+
+      for (const card of deckData.cards) {
+        const key = `${card.id}-${card.season}`;
+        if (!cardMap.has(key)) {
+          cardMap.set(key, {
+            rarity: card.rarity,
+            value: parseFloat(card.market_value || "0"),
+          });
+        }
+      }
+
+      // Count by rarity
+      const rarityCount: Record<string, number> = {};
+      let totalValue = 0;
+
+      for (const { rarity, value } of cardMap.values()) {
+        rarityCount[rarity] = (rarityCount[rarity] || 0) + 1;
+        totalValue += value;
+      }
+
+      return {
+        nation: deckData.nation,
+        totalCards: deckData.num_cards,
+        uniqueCards: cardMap.size,
+        deckValue: deckData.deck_value,
+        estimatedIxCredits: Math.min(cardMap.size * 10, 500),
+        rarityBreakdown: rarityCount,
+      };
     }),
 });

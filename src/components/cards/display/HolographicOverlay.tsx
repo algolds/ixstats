@@ -248,8 +248,8 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
           />
         )}
 
-        {/* Animated light rays */}
-        {showLightRays && (
+        {/* Animated light rays - only on hover */}
+        {showLightRays && isHovered && (
           <div className="absolute inset-0">
             {lightRays.map((ray, index) => (
               <motion.div
@@ -261,13 +261,13 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
                 }}
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{
-                  opacity: isHovered ? [0, 0.6, 0] : [0, 0.3, 0],
+                  opacity: [0, 0.6, 0],
                   scaleX: [0, 1, 0],
                 }}
                 transition={{
                   duration: 2,
                   delay: ray.delay,
-                  repeat: Infinity,
+                  repeat: 2, // Only repeat twice instead of infinite
                   ease: "easeInOut",
                 }}
               />
@@ -298,7 +298,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
             }
             transition={{
               duration: 2,
-              repeat: Infinity,
+              repeat: isHovered ? 1 : 0, // Only animate on hover, repeat once
               ease: "easeInOut",
             }}
           />
@@ -324,19 +324,26 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
               style={{
                 textShadow: "0 0 10px rgba(255,255,255,0.8)",
               }}
-              animate={{
-                rotate: [0, 360],
-                scale: [1, 1.1, 1],
-              }}
+              animate={
+                isHovered
+                  ? {
+                      rotate: [0, 360],
+                      scale: [1, 1.1, 1],
+                    }
+                  : {
+                      rotate: 0,
+                      scale: 1,
+                    }
+              }
               transition={{
                 rotate: {
                   duration: 20,
-                  repeat: Infinity,
+                  repeat: 0, // No infinite repeat
                   ease: "linear",
                 },
                 scale: {
                   duration: 2,
-                  repeat: Infinity,
+                  repeat: 0, // No infinite repeat
                   ease: "easeInOut",
                 },
               }}

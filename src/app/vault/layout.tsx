@@ -4,9 +4,11 @@ import { useState } from "react";
 import { AuthenticationGuard } from "~/components/mycountry/primitives/AuthenticationGuard";
 import { VaultNavigation } from "~/components/vault/VaultNavigation";
 import { VaultHeader } from "~/components/vault/VaultHeader";
+import { VaultBackground } from "~/components/vault/VaultBackground";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useHasRoleLevel } from "~/hooks/usePermissions";
+import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import {
   Sheet,
   SheetContent,
@@ -27,6 +29,9 @@ function VaultLayoutContent({ children }: VaultLayoutProps) {
     { userId: user?.id ?? "" },
     { enabled: !!user?.id && isAdmin }
   );
+
+  // Fetch vault stats for navigation badges
+  const { stats } = useVaultStats();
 
   // Show access denied if not admin (after all hooks have been called)
   if (!isAdmin) {
@@ -53,7 +58,7 @@ function VaultLayoutContent({ children }: VaultLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
+    <VaultBackground>
       {/* Header */}
       <VaultHeader
         balance={balanceData?.credits ?? 0}
@@ -64,25 +69,36 @@ function VaultLayoutContent({ children }: VaultLayoutProps) {
 
       <div className="flex">
         {/* Desktop sidebar */}
-        <aside className="glass-hierarchy-parent sticky top-16 hidden h-[calc(100vh-4rem)] w-64 border-r border-white/10 p-4 md:block">
-          <VaultNavigation />
+        <aside className="glass-hierarchy-parent sticky top-16 hidden h-[calc(100vh-4rem)] w-64 xl:w-72 border-r border-border/40 p-4 md:block">
+          <VaultNavigation
+            stats={{
+              unopenedPacks: stats?.unopenedPacks,
+              activeAuctions: stats?.activeAuctions,
+            }}
+          />
         </aside>
 
         {/* Mobile drawer */}
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <SheetContent side="left" className="w-64 bg-black/95 p-4">
-            <VaultNavigation onClose={() => setMobileNavOpen(false)} />
+          <SheetContent side="left" className="w-72 bg-background/98 backdrop-blur-xl border-r border-border/40 p-4">
+            <VaultNavigation
+              onClose={() => setMobileNavOpen(false)}
+              stats={{
+                unopenedPacks: stats?.unopenedPacks,
+                activeAuctions: stats?.activeAuctions,
+              }}
+            />
           </SheetContent>
         </Sheet>
 
         {/* Main content */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>
         </main>
       </div>
-    </div>
+    </VaultBackground>
   );
 }
 

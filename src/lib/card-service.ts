@@ -3,7 +3,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { CardType, CardRarity, AcquireMethod } from "@prisma/client";
+import { CardType, CardRarity, AcquireMethod } from "~/lib/card-enums";
 
 /**
  * Card creation input interface
@@ -793,24 +793,26 @@ export async function awardAchievementCard(
     });
 
     // Log the award to activity feed (best effort, non-blocking)
+    // TODO: Re-enable when Activity model is added to Prisma schema
     try {
-      await db.activity.create({
-        data: {
-          userId: user.clerkUserId,
-          activityType: "CARD_ACQUIRED",
-          title: "Achievement Card Unlocked",
-          description: `Received commemorative card "${card.title}" for unlocking ${achievementTitle}`,
-          metadata: {
-            cardId: card.id,
-            cardTitle: card.title,
-            cardRarity: card.rarity,
-            achievementId,
-            achievementTitle,
-            acquireMethod: AcquireMethod.ACHIEVEMENT,
-            serialNumber: nextSerial,
-          },
-        },
-      });
+      // await (db as any).activity.create({
+      //   data: {
+      //     userId: user.clerkUserId,
+      //     activityType: "CARD_ACQUIRED",
+      //     title: "Achievement Card Unlocked",
+      //     description: `Received commemorative card "${card.title}" for unlocking ${achievementTitle}`,
+      //     metadata: {
+      //       cardId: card.id,
+      //       cardTitle: card.title,
+      //       cardRarity: card.rarity,
+      //       achievementId,
+      //       achievementTitle,
+      //       acquireMethod: AcquireMethod.ACHIEVEMENT,
+      //       serialNumber: nextSerial,
+      //     },
+      //   },
+      // });
+      console.log("[CARD_SERVICE] Achievement card awarded (activity logging disabled)");
     } catch (activityError) {
       console.error("[CARD_SERVICE] Failed to log card award activity:", activityError);
     }

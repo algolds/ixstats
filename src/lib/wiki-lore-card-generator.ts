@@ -21,6 +21,10 @@ import { db } from "~/server/db";
 import { CardType, CardRarity } from "@prisma/client";
 import type { WikiSource } from "~/lib/mediawiki-config";
 import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/mediawiki-config";
+import { LORE_CATEGORIES } from "./lore-card-constants";
+
+// Re-export for backwards compatibility
+export { LORE_CATEGORIES };
 
 /**
  * Article quality metrics for scoring
@@ -55,18 +59,6 @@ interface LoreCardCandidate {
   };
   qualityScore: number;
 }
-
-/**
- * Lore card categories
- */
-export const LORE_CATEGORIES = {
-  HISTORICAL_FIGURES: "Historical Figures",
-  LOCATIONS: "Geographical Locations",
-  EVENTS: "Historical Events",
-  ARTIFACTS: "Cultural Artifacts",
-  CULTURE: "Cultural Heritage",
-  MYTHOLOGY: "Mythology & Legends",
-} as const;
 
 /**
  * Wiki Lore Card Generator Service
@@ -159,14 +151,16 @@ export class WikiLoreCardGenerator {
       url.searchParams.set("action", "query");
       url.searchParams.set("format", "json");
       url.searchParams.set("titles", title);
-      url.searchParams.set("prop", "extracts|pageimages|info|categories|links|revisions");
+      url.searchParams.set("prop", "extracts|pageimages|info|categories|links|revisions|images");
       url.searchParams.set("exintro", "1"); // Get intro only for summary
       url.searchParams.set("explaintext", "1"); // Plain text
-      url.searchParams.set("piprop", "original"); // Get original image
+      url.searchParams.set("piprop", "original|name"); // Get original image and name
+      url.searchParams.set("pithumbsize", "500"); // Thumbnail size
       url.searchParams.set("inprop", "url");
       url.searchParams.set("cllimit", "50"); // Get up to 50 categories
       url.searchParams.set("pllimit", "500"); // Get up to 500 links (inbound indicator)
       url.searchParams.set("rvprop", "content|timestamp"); // Get full wikitext and timestamp
+      url.searchParams.set("imlimit", "10"); // Get up to 10 images
 
       const response = await fetch(url.toString(), {
         headers: { "User-Agent": userAgent },
@@ -183,6 +177,38 @@ export class WikiLoreCardGenerator {
 
       const page = Object.values(pages)[0] as any;
       if (page.missing) return null;
+
+      // Get wikitext
+      const wikitext = page.revisions?.[0]?.["*"] || "";
+
+      // Parse infobox from wikitext
+      const infoboxData = this.parseInfobox(wikitext);
+
+      // Extract featured image (try multiple sources)
+      let featuredImage = page.original?.source; // From pageimages API
+
+      // If no pageimage, try to get from infobox
+      if (!featuredImage && infoboxData.image) {
+        // Get actual image URL from image filename
+        featuredImage = await this.getImageUrl(infoboxData.image, wikiSource);
+      }
+
+      // If still no image, try first image from article
+      if (!featuredImage && page.images?.length > 0) {
+        // Get first non-icon image
+        const firstImage = page.images.find((img: any) => {
+          const filename = img.title?.toLowerCase() || "";
+          return !filename.includes("icon") &&
+                 !filename.includes("flag") &&
+                 !filename.includes("logo") &&
+                 (filename.endsWith(".jpg") ||
+                  filename.endsWith(".jpeg") ||
+                  filename.endsWith(".png"));
+        });
+        if (firstImage) {
+          featuredImage = await this.getImageUrl(firstImage.title, wikiSource);
+        }
+      }
 
       // Get backlinks count (inbound links)
       const backlinksUrl = new URL(apiUrl);
@@ -202,13 +228,19 @@ export class WikiLoreCardGenerator {
         inboundLinks = backlinksData.query?.backlinks?.length || 0;
       }
 
+      // Clean text by removing all templates except infobox
+      const cleanedText = this.removeTemplates(wikitext);
+
       return {
         title: page.title,
         extract: page.extract,
-        text: page.revisions?.[0]?.["*"] || "",
-        image: page.original?.source,
+        text: cleanedText,
+        rawText: wikitext,
+        image: featuredImage,
+        infobox: infoboxData,
         categories: page.categories || [],
         links: page.links || [],
+        images: page.images || [],
         inboundLinks,
         lastModified: page.revisions?.[0]?.timestamp
           ? new Date(page.revisions[0].timestamp)
@@ -217,6 +249,110 @@ export class WikiLoreCardGenerator {
       };
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching article "${title}":`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Parse infobox template from wikitext
+   */
+  private parseInfobox(wikitext: string): Record<string, string> {
+    const infobox: Record<string, string> = {};
+
+    // Match infobox template
+    const infoboxMatch = wikitext.match(/\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i);
+    if (!infoboxMatch) return infobox;
+
+    const infoboxText = infoboxMatch[0];
+
+    // Extract key-value pairs from infobox
+    const lines = infoboxText.split('\n');
+    for (const line of lines) {
+      const match = line.match(/^\s*\|\s*([^=]+?)\s*=\s*(.+?)\s*$/);
+      if (match) {
+        const key = match[1]?.trim().toLowerCase() || "";
+        let value = match[2]?.trim() || "";
+
+        // Clean value (remove nested templates, links)
+        value = value.replace(/\{\{[^}]*\}\}/g, ''); // Remove templates
+        value = value.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, '$1'); // Extract link text
+        value = value.replace(/<[^>]+>/g, ''); // Remove HTML tags
+        value = value.trim();
+
+        if (value && key) {
+          infobox[key] = value;
+        }
+      }
+    }
+
+    return infobox;
+  }
+
+  /**
+   * Remove all templates except infobox from wikitext
+   */
+  private removeTemplates(wikitext: string): string {
+    // Remove all templates except infobox
+    let cleaned = wikitext;
+
+    // First, preserve infobox
+    const infoboxMatch = wikitext.match(/\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i);
+    const infoboxPlaceholder = infoboxMatch ? `___INFOBOX_PLACEHOLDER___` : '';
+    if (infoboxMatch) {
+      cleaned = cleaned.replace(infoboxMatch[0], infoboxPlaceholder);
+    }
+
+    // Remove all other templates (nested template handling)
+    let prevCleaned = '';
+    while (prevCleaned !== cleaned) {
+      prevCleaned = cleaned;
+      cleaned = cleaned.replace(/\{\{[^{}]*\}\}/g, '');
+    }
+
+    // Restore infobox if it was there
+    if (infoboxMatch) {
+      cleaned = cleaned.replace(infoboxPlaceholder, '');
+    }
+
+    // Remove reference tags
+    cleaned = cleaned.replace(/<ref[^>]*>.*?<\/ref>/gi, '');
+    cleaned = cleaned.replace(/<ref[^>]*\/>/gi, '');
+
+    return cleaned;
+  }
+
+  /**
+   * Get image URL from filename via MediaWiki API
+   */
+  private async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
+    try {
+      const apiUrl = getMediaWikiApiUrl(wikiSource);
+      const userAgent = getWikiUserAgent(wikiSource);
+
+      // Remove "File:" or "Image:" prefix if present
+      const cleanFilename = filename.replace(/^(File|Image):/i, '');
+
+      const url = new URL(apiUrl);
+      url.searchParams.set("action", "query");
+      url.searchParams.set("format", "json");
+      url.searchParams.set("titles", `File:${cleanFilename}`);
+      url.searchParams.set("prop", "imageinfo");
+      url.searchParams.set("iiprop", "url");
+
+      const response = await fetch(url.toString(), {
+        headers: { "User-Agent": userAgent },
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      const pages = data.query?.pages;
+      if (!pages) return null;
+
+      const page = Object.values(pages)[0] as any;
+      return page.imageinfo?.[0]?.url || null;
+    } catch (error) {
+      console.error(`[Lore Card Generator] Error fetching image URL:`, error);
       return null;
     }
   }
@@ -243,23 +379,28 @@ export class WikiLoreCardGenerator {
    * Analyze article quality metrics
    */
   private analyzeArticleQuality(articleData: any): ArticleQuality {
-    // Count references ({{cite}} templates, <ref> tags)
-    const text = articleData.text || "";
-    const refMatches = text.match(/<ref[^>]*>|{{cite/gi) || [];
+    // Use raw text for template/reference detection
+    const rawText = articleData.rawText || articleData.text || "";
+
+    // Use cleaned text for length measurement
+    const cleanText = articleData.text || "";
+
+    // Count references ({{cite}} templates, <ref> tags) from raw text
+    const refMatches = rawText.match(/<ref[^>]*>|{{cite/gi) || [];
     const referenceCount = refMatches.length;
 
-    // Check for infobox
-    const hasInfobox = /{{infobox/i.test(text);
+    // Check for infobox from raw text
+    const hasInfobox = /{{infobox/i.test(rawText);
 
     // Check if featured (has {{featured}} template or in Featured category)
     const isFeatured =
-      /{{featured/i.test(text) ||
+      /{{featured/i.test(rawText) ||
       articleData.categories?.some((cat: any) =>
         cat.title?.toLowerCase().includes("featured")
       );
 
     return {
-      length: text.length,
+      length: cleanText.length, // Use cleaned text length
       referenceCount,
       inboundLinks: articleData.inboundLinks || 0,
       categoryCount: articleData.categories?.length || 0,
@@ -419,8 +560,8 @@ export class WikiLoreCardGenerator {
       return articleData.image;
     }
 
-    // Fallback to placeholder based on category
-    return "/images/cards/lore-placeholder.png";
+    // Fallback to placeholder SVG
+    return "/images/cards/lore-placeholder.svg";
   }
 
   /**

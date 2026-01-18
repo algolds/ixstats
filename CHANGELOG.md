@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ **Critical System Fixes** - PM2, permissions, and file system issues resolved
 - ✅ **Builder UX Improvements** - Text field focus and step navigation fixes
 
+**Breaking Changes:**
+- ⚠️ **Maps System Deprecated** - Complete removal of Martin tile server and map infrastructure (November 13, 2025)
+
 **Documentation Added:**
 - 15+ new comprehensive guides and summaries
 - Complete API documentation updates
@@ -28,6 +31,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New API endpoints: 27+ (17 marketplace + 10 autosave)
 - Modified routers: 9
 - Test pass rate: 100%
+
+---
+
+### Removed - Maps System Deprecated (November 13, 2025)
+
+**Complete decoupling of map infrastructure to prepare for ground-up redesign.**
+
+#### Infrastructure Removed
+- Martin tile server and PM2 configuration
+- Redis tile caching (kept Redis for rate limiting)
+- Vector tile generation and pre-generation scripts
+- Map-related npm scripts from package.json
+
+#### Code Removed (~90 files, ~15,000+ lines)
+- 6 database models: `map_layer_*` (rivers, political, climate, altitudes, lakes, icecaps)
+- 3 tRPC routers: `geo`, `mapEditor`, `mapMonitoring`
+- 4+ API route directories: `/api/tiles/`, `/api/geojson/`
+- 30+ React components in `components/maps/`
+- Map-related hooks, utilities, and types
+- 4 map pages: `/maps`, `/admin/map-editor`, `/mycountry/map-editor`, `/help/maps`
+
+#### Dependencies Removed
+- `maplibre-gl`, `maplibre-gl-equal-earth`
+- `@geoman-io/maplibre-geoman-free`
+- `@mapbox/mapbox-gl-draw`
+- `geojson-vt`, `vt-pbf`
+- `d3-geo`, `d3-geo-projection`
+
+#### Documentation Removed
+- All map system documentation (`docs/maps/`, `docs/systems/map-system.md`, etc.)
+- Martin tile server guides and configuration docs
+- Vector tiles implementation guides
+
+#### Migration Notes
+- Map layer database tables commented out in Prisma schema (will be dropped in future migration)
+- Redis infrastructure preserved for rate limiting and general caching
+- No impact on core IxStats gameplay (economic simulation, diplomatic systems, cards, etc.)
+- Maps system will be redesigned and re-implemented from scratch
 
 ---
 

@@ -20,7 +20,7 @@
 export function proxyNSImage(nsImageUrl: string | null | undefined): string {
   // Return placeholder if no URL provided
   if (!nsImageUrl) {
-    return "/images/placeholder-card.png";
+    return "/images/cards/lore-placeholder.svg";
   }
 
   // If already a relative URL or not from NS, return as-is

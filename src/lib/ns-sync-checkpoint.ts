@@ -20,7 +20,6 @@
  */
 
 import { db } from "~/server/db";
-import type { PrismaClient } from "@prisma/client";
 
 /**
  * Sync checkpoint data structure
@@ -45,6 +44,7 @@ export interface SyncCheckpoint {
  */
 export class CheckpointManager {
   private readonly CHECKPOINT_INTERVAL = 500; // Save every 500 cards
+  private static readonly SYNC_TYPE = "NS_CARD_SYNC";
 
   /**
    * Save checkpoint to database
@@ -59,44 +59,58 @@ export class CheckpointManager {
         `${checkpoint.cardsProcessed}/${checkpoint.totalCards} cards (${checkpoint.errorCount} errors)`
       );
 
+      const checkpointJson = {
+        status: checkpoint.status,
+        cardsProcessed: checkpoint.cardsProcessed,
+        totalCards: checkpoint.totalCards,
+        errorCount: checkpoint.errorCount,
+        startedAt: checkpoint.startedAt instanceof Date ? checkpoint.startedAt.toISOString() : checkpoint.startedAt,
+        lastCheckpointAt:
+          checkpoint.lastCheckpointAt instanceof Date
+            ? checkpoint.lastCheckpointAt.toISOString()
+            : checkpoint.lastCheckpointAt,
+        completedAt:
+          checkpoint.completedAt instanceof Date || checkpoint.completedAt === null
+            ? checkpoint.completedAt
+              ? checkpoint.completedAt.toISOString()
+              : null
+            : checkpoint.completedAt,
+        metadata: checkpoint.metadata || {},
+      };
+
       // Upsert checkpoint (create or update)
       const saved = await db.syncCheckpoint.upsert({
-        where: { season: checkpoint.season },
+        where: {
+          syncType_season: {
+            syncType: CheckpointManager.SYNC_TYPE,
+            season: checkpoint.season,
+          },
+        },
         create: {
+          syncType: CheckpointManager.SYNC_TYPE,
           season: checkpoint.season,
-          status: checkpoint.status,
-          cardsProcessed: checkpoint.cardsProcessed,
-          totalCards: checkpoint.totalCards,
-          lastProcessedCardId: checkpoint.lastProcessedCardId,
-          errorCount: checkpoint.errorCount,
-          startedAt: checkpoint.startedAt,
-          lastCheckpointAt: checkpoint.lastCheckpointAt,
-          completedAt: checkpoint.completedAt,
-          metadata: checkpoint.metadata || {},
+          lastCardId: checkpoint.lastProcessedCardId,
+          checkpoint: checkpointJson,
         },
         update: {
-          status: checkpoint.status,
-          cardsProcessed: checkpoint.cardsProcessed,
-          lastProcessedCardId: checkpoint.lastProcessedCardId,
-          errorCount: checkpoint.errorCount,
-          lastCheckpointAt: checkpoint.lastCheckpointAt,
-          completedAt: checkpoint.completedAt,
-          metadata: checkpoint.metadata || {},
+          lastCardId: checkpoint.lastProcessedCardId,
+          checkpoint: checkpointJson,
         },
       });
 
+      const cp = (saved.checkpoint as any) || {};
       return {
         id: saved.id,
-        season: saved.season,
-        status: saved.status as "IN_PROGRESS" | "COMPLETED" | "FAILED",
-        cardsProcessed: saved.cardsProcessed,
-        totalCards: saved.totalCards,
-        lastProcessedCardId: saved.lastProcessedCardId,
-        errorCount: saved.errorCount,
-        startedAt: saved.startedAt,
-        lastCheckpointAt: saved.lastCheckpointAt,
-        completedAt: saved.completedAt,
-        metadata: saved.metadata as Record<string, any>,
+        season: saved.season ?? checkpoint.season,
+        status: cp.status as "IN_PROGRESS" | "COMPLETED" | "FAILED",
+        cardsProcessed: Number(cp.cardsProcessed ?? 0),
+        totalCards: Number(cp.totalCards ?? 0),
+        lastProcessedCardId: saved.lastCardId ?? null,
+        errorCount: Number(cp.errorCount ?? 0),
+        startedAt: cp.startedAt ? new Date(cp.startedAt) : new Date(),
+        lastCheckpointAt: cp.lastCheckpointAt ? new Date(cp.lastCheckpointAt) : new Date(),
+        completedAt: cp.completedAt ? new Date(cp.completedAt) : null,
+        metadata: (cp.metadata as Record<string, any>) || {},
       };
     } catch (error) {
       console.error(`[Checkpoint] Failed to save checkpoint for season ${checkpoint.season}:`, error);
@@ -113,7 +127,12 @@ export class CheckpointManager {
   async loadCheckpoint(season: number): Promise<SyncCheckpoint | null> {
     try {
       const checkpoint = await db.syncCheckpoint.findUnique({
-        where: { season },
+        where: {
+          syncType_season: {
+            syncType: CheckpointManager.SYNC_TYPE,
+            season,
+          },
+        },
       });
 
       if (!checkpoint) {
@@ -121,32 +140,34 @@ export class CheckpointManager {
         return null;
       }
 
+      const cp = (checkpoint.checkpoint as any) || {};
+
       // Don't resume from COMPLETED or FAILED checkpoints
-      if (checkpoint.status !== "IN_PROGRESS") {
+      if (cp.status !== "IN_PROGRESS") {
         console.log(
-          `[Checkpoint] Checkpoint for season ${season} has status ${checkpoint.status}, skipping resume`
+          `[Checkpoint] Checkpoint for season ${season} has status ${cp.status}, skipping resume`
         );
         return null;
       }
 
       console.log(
         `[Checkpoint] Loaded checkpoint for season ${season}: ` +
-        `${checkpoint.cardsProcessed}/${checkpoint.totalCards} cards processed ` +
-        `(${checkpoint.errorCount} errors, last saved: ${checkpoint.lastCheckpointAt.toISOString()})`
+        `${cp.cardsProcessed}/${cp.totalCards} cards processed ` +
+        `(${cp.errorCount} errors, last saved: ${new Date(cp.lastCheckpointAt).toISOString()})`
       );
 
       return {
         id: checkpoint.id,
-        season: checkpoint.season,
-        status: checkpoint.status as "IN_PROGRESS" | "COMPLETED" | "FAILED",
-        cardsProcessed: checkpoint.cardsProcessed,
-        totalCards: checkpoint.totalCards,
-        lastProcessedCardId: checkpoint.lastProcessedCardId,
-        errorCount: checkpoint.errorCount,
-        startedAt: checkpoint.startedAt,
-        lastCheckpointAt: checkpoint.lastCheckpointAt,
-        completedAt: checkpoint.completedAt,
-        metadata: checkpoint.metadata as Record<string, any>,
+        season: checkpoint.season ?? season,
+        status: cp.status as "IN_PROGRESS" | "COMPLETED" | "FAILED",
+        cardsProcessed: Number(cp.cardsProcessed ?? 0),
+        totalCards: Number(cp.totalCards ?? 0),
+        lastProcessedCardId: checkpoint.lastCardId ?? null,
+        errorCount: Number(cp.errorCount ?? 0),
+        startedAt: cp.startedAt ? new Date(cp.startedAt) : new Date(),
+        lastCheckpointAt: cp.lastCheckpointAt ? new Date(cp.lastCheckpointAt) : new Date(),
+        completedAt: cp.completedAt ? new Date(cp.completedAt) : null,
+        metadata: (cp.metadata as Record<string, any>) || {},
       };
     } catch (error) {
       console.error(`[Checkpoint] Error loading checkpoint for season ${season}:`, error);
@@ -163,7 +184,12 @@ export class CheckpointManager {
   async clearCheckpoint(season: number): Promise<void> {
     try {
       await db.syncCheckpoint.delete({
-        where: { season },
+        where: {
+          syncType_season: {
+            syncType: CheckpointManager.SYNC_TYPE,
+            season,
+          },
+        },
       });
       console.log(`[Checkpoint] Cleared checkpoint for season ${season}`);
     } catch (error) {
@@ -220,7 +246,12 @@ export class CheckpointManager {
   async markCompleted(season: number): Promise<void> {
     try {
       const checkpoint = await db.syncCheckpoint.findUnique({
-        where: { season },
+        where: {
+          syncType_season: {
+            syncType: CheckpointManager.SYNC_TYPE,
+            season,
+          },
+        },
       });
 
       if (!checkpoint) {
@@ -228,12 +259,22 @@ export class CheckpointManager {
         return;
       }
 
+      const cp = (checkpoint.checkpoint as any) || {};
+
       await db.syncCheckpoint.update({
-        where: { season },
+        where: {
+          syncType_season: {
+            syncType: CheckpointManager.SYNC_TYPE,
+            season,
+          },
+        },
         data: {
-          status: "COMPLETED",
-          completedAt: new Date(),
-          lastCheckpointAt: new Date(),
+          checkpoint: {
+            ...cp,
+            status: "COMPLETED",
+            completedAt: new Date().toISOString(),
+            lastCheckpointAt: new Date().toISOString(),
+          },
         },
       });
 
@@ -253,7 +294,12 @@ export class CheckpointManager {
   async markFailed(season: number, errorMessage: string): Promise<void> {
     try {
       const checkpoint = await db.syncCheckpoint.findUnique({
-        where: { season },
+        where: {
+          syncType_season: {
+            syncType: CheckpointManager.SYNC_TYPE,
+            season,
+          },
+        },
       });
 
       if (!checkpoint) {
@@ -261,16 +307,27 @@ export class CheckpointManager {
         return;
       }
 
+      const cp = (checkpoint.checkpoint as any) || {};
+      const existingMeta = (cp.metadata as Record<string, any>) || {};
+
       await db.syncCheckpoint.update({
-        where: { season },
+        where: {
+          syncType_season: {
+            syncType: CheckpointManager.SYNC_TYPE,
+            season,
+          },
+        },
         data: {
-          status: "FAILED",
-          completedAt: new Date(),
-          lastCheckpointAt: new Date(),
-          metadata: {
-            ...(checkpoint.metadata as Record<string, any>),
-            errorMessage,
-            failedAt: new Date().toISOString(),
+          checkpoint: {
+            ...cp,
+            status: "FAILED",
+            completedAt: new Date().toISOString(),
+            lastCheckpointAt: new Date().toISOString(),
+            metadata: {
+              ...existingMeta,
+              errorMessage,
+              failedAt: new Date().toISOString(),
+            },
           },
         },
       });
@@ -290,21 +347,29 @@ export class CheckpointManager {
   async getAllCheckpoints(): Promise<SyncCheckpoint[]> {
     try {
       const checkpoints = await db.syncCheckpoint.findMany({
-        orderBy: { lastCheckpointAt: "desc" },
+        where: { syncType: CheckpointManager.SYNC_TYPE },
+        orderBy: { updatedAt: "desc" },
       });
 
       return checkpoints.map((checkpoint) => ({
         id: checkpoint.id,
-        season: checkpoint.season,
-        status: checkpoint.status as "IN_PROGRESS" | "COMPLETED" | "FAILED",
-        cardsProcessed: checkpoint.cardsProcessed,
-        totalCards: checkpoint.totalCards,
-        lastProcessedCardId: checkpoint.lastProcessedCardId,
-        errorCount: checkpoint.errorCount,
-        startedAt: checkpoint.startedAt,
-        lastCheckpointAt: checkpoint.lastCheckpointAt,
-        completedAt: checkpoint.completedAt,
-        metadata: checkpoint.metadata as Record<string, any>,
+        season: checkpoint.season ?? 0,
+        status: ((checkpoint.checkpoint as any)?.status ??
+          "IN_PROGRESS") as "IN_PROGRESS" | "COMPLETED" | "FAILED",
+        cardsProcessed: Number((checkpoint.checkpoint as any)?.cardsProcessed ?? 0),
+        totalCards: Number((checkpoint.checkpoint as any)?.totalCards ?? 0),
+        lastProcessedCardId: checkpoint.lastCardId ?? null,
+        errorCount: Number((checkpoint.checkpoint as any)?.errorCount ?? 0),
+        startedAt: (checkpoint.checkpoint as any)?.startedAt
+          ? new Date((checkpoint.checkpoint as any).startedAt)
+          : new Date(checkpoint.createdAt),
+        lastCheckpointAt: (checkpoint.checkpoint as any)?.lastCheckpointAt
+          ? new Date((checkpoint.checkpoint as any).lastCheckpointAt)
+          : new Date(checkpoint.updatedAt),
+        completedAt: (checkpoint.checkpoint as any)?.completedAt
+          ? new Date((checkpoint.checkpoint as any).completedAt)
+          : null,
+        metadata: ((checkpoint.checkpoint as any)?.metadata as Record<string, any>) || {},
       }));
     } catch (error) {
       console.error("[Checkpoint] Error fetching all checkpoints:", error);

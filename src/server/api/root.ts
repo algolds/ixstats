@@ -47,9 +47,10 @@ import { militaryEquipmentRouter } from "./routers/militaryEquipment";
 import { smallArmsEquipmentRouter } from "./routers/smallArmsEquipment";
 import { diplomaticScenariosRouter } from "./routers/diplomaticScenarios";
 import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
-import { geoRouter } from "./routers/geo";
-import { mapEditorRouter } from "./routers/mapEditor";
-import { mapMonitoringRouter } from "./routers/mapMonitoring";
+// DEPRECATED: Map system routers removed (November 2025)
+// import { geoRouter } from "./routers/geo";
+// import { mapEditorRouter } from "./routers/mapEditor";
+// import { mapMonitoringRouter } from "./routers/mapMonitoring";
 import { crisisEventsRouter } from "./routers/crisis-events";
 import { historicalRouter } from "./routers/historical";
 import { systemRouter } from "./routers/system";
@@ -119,9 +120,10 @@ export const appRouter = createTRPCRouter({
   smallArmsEquipment: smallArmsEquipmentRouter, // Small arms equipment catalog (Phase 9 - October 2025)
   diplomaticScenarios: diplomaticScenariosRouter, // Diplomatic scenario generation and choice tracking (Phase 7B)
   npcPersonalities: npcPersonalitiesRouter, // NPC personality system for behavioral prediction (Phase 8 - FINAL PHASE)
-  geo: geoRouter, // Geographic router for country border management with PostGIS integration
-  mapEditor: mapEditorRouter, // Map Editor for CRUD operations on subdivisions, cities, and POIs
-  mapMonitoring: mapMonitoringRouter, // Map system monitoring and statistics (Admin only)
+  // DEPRECATED: Map system routers removed (November 2025) - maps system being redesigned from scratch
+  // geo: geoRouter, // Geographic router for country border management with PostGIS integration
+  // mapEditor: mapEditorRouter, // Map Editor for CRUD operations on subdivisions, cities, and POIs
+  // mapMonitoring: mapMonitoringRouter, // Map system monitoring and statistics (Admin only)
   crisisEvents: crisisEventsRouter, // Crisis events management (natural disasters, economic crises, diplomatic incidents, etc.)
   historical: historicalRouter, // Historical time-series data and analytics (12 endpoints)
   cardPacks: cardPacksRouter, // IxCards pack purchase and opening system (Phase 1 - Card Packs)

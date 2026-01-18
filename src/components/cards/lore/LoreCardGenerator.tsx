@@ -192,7 +192,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
           <h3 className="font-semibold text-white mb-3">Your Recent Requests</h3>
 
           <div className="space-y-2">
-            {myRequests.data.requests.map((request) => (
+            {myRequests.data.requests.map((request: any) => (
               <div
                 key={request.id}
                 className="glass-child p-3 rounded-lg flex items-center justify-between"

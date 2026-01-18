@@ -15,7 +15,10 @@ export type HolographicPattern =
   | "diagonal-sweep" // Diagonal sweeping light
   | "cross-hatch" // Cross-hatched metallic pattern
   | "cosmic" // Cosmic/space holographic for legendary
-  | "liquid-glass"; // IxStats signature liquid glass effect
+  | "liquid-glass" // IxStats signature liquid glass effect
+  | "sparkle-grid" // Pokemon-style grid-based sparkle pattern
+  | "prismatic-wave" // Pokemon-style wave refraction
+  | "holofoil-texture"; // Pokemon-style textured foil
 
 /**
  * Holographic intensity levels
@@ -30,9 +33,9 @@ export function getHolographicPattern(rarity: CardRarity): HolographicPattern {
     COMMON: "diagonal-sweep",
     UNCOMMON: "diagonal-sweep",
     RARE: "rainbow-shimmer",
-    ULTRA_RARE: "radial-burst",
-    EPIC: "radial-burst",
-    LEGENDARY: "cosmic",
+    ULTRA_RARE: "prismatic-wave", // Pokemon-inspired wave effect
+    EPIC: "sparkle-grid", // Pokemon-inspired sparkle grid
+    LEGENDARY: "cosmic", // Keep cosmic for legendary
   };
 
   return patterns[rarity] || "diagonal-sweep";
@@ -119,6 +122,82 @@ export function getMetallicGradient(baseColor: string = "gold"): string {
 }
 
 /**
+ * Generate Pokemon-style sparkle grid pattern
+ */
+export function getSparkleGridGradient(): string {
+  return `
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.3) 2px,
+      rgba(255, 255, 255, 0.3) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.3) 2px,
+      rgba(255, 255, 255, 0.3) 4px
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 0, 255, 0.2) 0%,
+      rgba(0, 255, 255, 0.2) 25%,
+      rgba(255, 255, 0, 0.2) 50%,
+      rgba(0, 255, 255, 0.2) 75%,
+      rgba(255, 0, 255, 0.2) 100%
+    )
+  `;
+}
+
+/**
+ * Generate Pokemon-style prismatic wave pattern
+ */
+export function getPrismaticWaveGradient(): string {
+  return `
+    linear-gradient(
+      45deg,
+      rgba(255, 0, 0, 0.3) 0%,
+      rgba(255, 127, 0, 0.3) 10%,
+      rgba(255, 255, 0, 0.3) 20%,
+      rgba(0, 255, 0, 0.3) 30%,
+      rgba(0, 255, 255, 0.3) 40%,
+      rgba(0, 0, 255, 0.3) 50%,
+      rgba(127, 0, 255, 0.3) 60%,
+      rgba(255, 0, 255, 0.3) 70%,
+      rgba(255, 0, 127, 0.3) 80%,
+      rgba(255, 0, 0, 0.3) 90%,
+      rgba(255, 127, 0, 0.3) 100%
+    )
+  `;
+}
+
+/**
+ * Generate Pokemon-style holofoil texture pattern
+ */
+export function getHolofoilTextureGradient(): string {
+  return `
+    linear-gradient(
+      125deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 40%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.4) 90%,
+      transparent 100%
+    ),
+    linear-gradient(
+      55deg,
+      transparent 0%,
+      rgba(255, 200, 255, 0.3) 40%,
+      transparent 50%,
+      rgba(200, 255, 255, 0.3) 90%,
+      transparent 100%
+    )
+  `;
+}
+
+/**
  * Get rarity-specific holographic CSS classes
  */
 export function getHolographicClasses(rarity: CardRarity): string {
@@ -139,6 +218,9 @@ export function getHolographicClasses(rarity: CardRarity): string {
     "cross-hatch": ["bg-cross-hatch", "animate-cross-fade"],
     cosmic: ["bg-cosmic", "animate-cosmic-drift"],
     "liquid-glass": ["bg-liquid-glass", "animate-liquid-flow"],
+    "sparkle-grid": ["bg-sparkle-grid", "animate-sparkle-twinkle"],
+    "prismatic-wave": ["bg-prismatic-wave", "animate-wave-refraction"],
+    "holofoil-texture": ["bg-holofoil", "animate-foil-shimmer"],
   };
 
   const intensityClasses: Record<HolographicIntensity, string> = {
@@ -496,6 +578,55 @@ export function generateShimmerKeyframes(): string {
         filter: hue-rotate(30deg);
       }
     }
+
+    @keyframes sparkle-twinkle {
+      0%, 100% {
+        opacity: 0.4;
+        transform: scale(1);
+      }
+      25% {
+        opacity: 0.7;
+        transform: scale(1.1);
+      }
+      50% {
+        opacity: 0.5;
+        transform: scale(0.95);
+      }
+      75% {
+        opacity: 0.8;
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes wave-refraction {
+      0% {
+        background-position: 0% 0%;
+        filter: hue-rotate(0deg);
+      }
+      33% {
+        background-position: 50% 50%;
+        filter: hue-rotate(15deg);
+      }
+      66% {
+        background-position: 100% 100%;
+        filter: hue-rotate(30deg);
+      }
+      100% {
+        background-position: 0% 0%;
+        filter: hue-rotate(0deg);
+      }
+    }
+
+    @keyframes foil-shimmer {
+      0%, 100% {
+        background-position: 0% 50%;
+        opacity: 0.5;
+      }
+      50% {
+        background-position: 100% 50%;
+        opacity: 0.8;
+      }
+    }
   `;
 }
 
@@ -526,5 +657,52 @@ export function getLightRefractionStyle(
   return {
     transform: `perspective(1000px) rotateY(${(deltaX / centerX) * 5}deg) rotateX(${-(deltaY / centerY) * 5}deg)`,
     filter: `brightness(${1 + intensity * 0.2}) contrast(${1 + intensity * 0.1})`,
+  };
+}
+
+/**
+ * Get Pokemon-style enhanced 3D tilt effect
+ * Provides stronger perspective and rotation for more dramatic tilt
+ */
+export function getPokemon3DTiltStyle(
+  mouseX: number,
+  mouseY: number,
+  elementWidth: number,
+  elementHeight: number,
+  intensity: number = 1
+): {
+  cardTransform: string;
+  glareTransform: string;
+  glareOpacity: number;
+  backgroundPosition: string;
+} {
+  const centerX = elementWidth / 2;
+  const centerY = elementHeight / 2;
+
+  // Normalize mouse position to -1 to 1
+  const normalizedX = (mouseX - centerX) / centerX;
+  const normalizedY = (mouseY - centerY) / centerY;
+
+  // Calculate rotation angles with intensity multiplier
+  const rotateY = normalizedX * 15 * intensity; // Max 15deg rotation
+  const rotateX = -normalizedY * 15 * intensity;
+
+  // Calculate distance from center for glare intensity
+  const distance = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
+  const glareOpacity = Math.max(0.3, 1 - distance) * intensity;
+
+  // Background position for shimmer effect
+  const bgX = 50 + normalizedX * 30;
+  const bgY = 50 + normalizedY * 30;
+
+  // Glare position (opposite to mouse position for realistic reflection)
+  const glareX = 50 - normalizedX * 40;
+  const glareY = 50 - normalizedY * 40;
+
+  return {
+    cardTransform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`,
+    glareTransform: `translate(${glareX}%, ${glareY}%)`,
+    glareOpacity,
+    backgroundPosition: `${bgX}% ${bgY}%`,
   };
 }

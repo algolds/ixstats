@@ -97,14 +97,9 @@ fi
 echo "✅ Production build found"
 echo ""
 
-# Start Redis cache for tile caching
+# Start Redis cache for rate limiting and caching
 echo "💾 Starting Redis cache server..."
 ./scripts/setup-redis.sh start
-echo ""
-
-# Start Martin tile server for map functionality
-echo "🗺️  Starting Martin tile server..."
-./scripts/martin-tiles.sh start
 echo ""
 
 # Start the server

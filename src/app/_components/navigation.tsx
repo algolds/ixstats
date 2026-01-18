@@ -58,6 +58,8 @@ import { GiSoapExperiment } from "react-icons/gi";
 import { GiVibratingShield } from "react-icons/gi";
 import { FaTreeCity } from "react-icons/fa6";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
+import { UserProfileMenu } from "~/components/UserProfileMenu";
+import { useCountryFlag } from "~/hooks/useCountryFlags";
 
 interface NavigationItem {
   name: string;
@@ -463,6 +465,11 @@ export function Navigation() {
   // Get user profile to show linked country
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery();
 
+  // Fetch country flag for user profile
+  const { flag: userCountryFlag, loading: flagsLoading } = useCountryFlag(
+    userProfile?.country?.name || ""
+  );
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mediaQuery = window.matchMedia("(max-width: 1023px)");
@@ -856,7 +863,7 @@ export function Navigation() {
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
                                       <Link
-                                        href={subItem.href}
+                                        href={withBasePath(subItem.href)}
                                         className="flex cursor-pointer items-center gap-3 px-3 py-3"
                                       >
                                         <SubIcon className="text-muted-foreground h-4 w-4" />
@@ -1102,7 +1109,7 @@ export function Navigation() {
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
                                       <Link
-                                        href={subItem.href}
+                                        href={withBasePath(subItem.href)}
                                         className="flex cursor-pointer items-center gap-3 px-3 py-3"
                                       >
                                         <SubIcon className="text-muted-foreground h-4 w-4" />
@@ -1365,11 +1372,33 @@ export function Navigation() {
                 </button>
               </div>
 
+              {/* Mobile Authentication Section */}
+              <div className="mt-6 pb-5 border-b border-border/40">
+                <div className="flex items-center gap-2 mb-3">
+                  <User className="h-3.5 w-3.5 text-muted-foreground/70" />
+                  <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
+                    Account
+                  </p>
+                </div>
+                <div className="bg-accent/5 rounded-xl p-3 border border-border/30">
+                  <UserProfileMenu
+                    user={user}
+                    userProfile={userProfile}
+                    setupStatus={setupStatus}
+                    userCountryFlag={userCountryFlag?.flagUrl || null}
+                    flagsLoading={flagsLoading}
+                  />
+                </div>
+              </div>
+
               <div className="mt-6 space-y-5">
                 <div>
-                  <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
-                    Global navigation
-                  </p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Compass className="h-3.5 w-3.5 text-muted-foreground/70" />
+                    <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
+                      Global navigation
+                    </p>
+                  </div>
                   <div className="mt-3 space-y-2">
                     {visibleNavItems.map((item) => {
                       const Icon = item.icon;
@@ -1398,7 +1427,7 @@ export function Navigation() {
                                 return (
                                   <Link
                                     key={subItem.name}
-                                    href={subItem.href}
+                                    href={withBasePath(subItem.href)}
                                     className="text-muted-foreground hover:border-border/60 hover:text-foreground flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm transition-colors min-h-[44px]"
                                     onClick={() => setMobileMenuOpen(false)}
                                   >
@@ -1453,6 +1482,17 @@ export function Navigation() {
                   </div>
                 </div>
 
+                {/* Section Divider */}
+                <div className="border-t border-border/40 pt-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+                    <span className="text-muted-foreground/60 text-[10px] font-semibold tracking-wider uppercase">
+                      Context Menu
+                    </span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+                  </div>
+                </div>
+
                 {contextMenu.groups.map((group) => (
                   <div key={group.title}>
                     <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
@@ -1500,9 +1540,20 @@ export function Navigation() {
                 ))}
               </div>
 
-              <div className="border-border/60 bg-muted/40 text-muted-foreground mt-8 rounded-2xl border border-dashed px-4 py-3 text-xs">
-                Menus adapt to the page you are working on. Use this drawer for rapid jumps across
-                IxStats systems.
+              {/* Footer */}
+              <div className="mt-8 space-y-3">
+                <div className="border-border/60 bg-muted/40 text-muted-foreground rounded-2xl border border-dashed px-4 py-3 text-xs leading-relaxed">
+                  <span className="font-semibold">💡 Smart Navigation:</span> This menu adapts to your current page. Use it for rapid jumps across IxStats systems.
+                </div>
+
+                {/* Close Button for easier mobile UX */}
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full rounded-xl bg-accent/20 hover:bg-accent/30 text-foreground font-medium px-4 py-3 text-sm transition-colors border border-border/40 min-h-[50px]"
+                >
+                  Close Menu
+                </button>
               </div>
             </motion.aside>
           </motion.div>

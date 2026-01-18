@@ -260,12 +260,6 @@ async function logGenerationResult(result: LoreCardGenerationResult): Promise<vo
         errorMessage: result.errors.length > 0 ? JSON.stringify(result.errors) : null,
         startedAt: new Date(result.timestamp.getTime() - result.duration),
         completedAt: result.timestamp,
-        metadata: JSON.stringify({
-          ixwikiCount: result.ixwikiCount,
-          iiwikiCount: result.iiwikiCount,
-          rarityBreakdown: result.rarityBreakdown,
-          categoryBreakdown: result.categoryBreakdown,
-        }),
       },
     });
 
@@ -287,7 +281,12 @@ export async function getLastGenerationResult(): Promise<LoreCardGenerationResul
 
     if (!lastLog) return null;
 
-    const metadata = lastLog.metadata ? JSON.parse(lastLog.metadata as string) : {};
+	const metadata: Partial<{
+		ixwikiCount: number;
+		iiwikiCount: number;
+		rarityBreakdown: Record<string, number>;
+		categoryBreakdown: Record<string, number>;
+	}> = {};
     const errors = lastLog.errorMessage ? JSON.parse(lastLog.errorMessage) : [];
 
     return {

@@ -12,7 +12,7 @@ import {
 } from "~/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import type { MarketAnalytics, TrendingCard } from "~/types/marketplace";
-import { CardRarity } from "@prisma/client";
+import { CardRarity } from "~/lib/card-enums";
 
 interface MarketAnalyticsProps {
   timeRange?: "24h" | "7d" | "30d";
@@ -30,12 +30,12 @@ function formatCredits(amount: number): string {
  * Rarity color mapping
  */
 const RARITY_COLORS: Record<CardRarity, string> = {
-  COMMON: "text-gray-400",
-  UNCOMMON: "text-green-400",
-  RARE: "text-blue-400",
-  ULTRA_RARE: "text-purple-400",
-  EPIC: "text-pink-400",
-  LEGENDARY: "text-yellow-400",
+  [CardRarity.COMMON]: "text-gray-400",
+  [CardRarity.UNCOMMON]: "text-green-400",
+  [CardRarity.RARE]: "text-blue-400",
+  [CardRarity.ULTRA_RARE]: "text-purple-400",
+  [CardRarity.EPIC]: "text-pink-400",
+  [CardRarity.LEGENDARY]: "text-yellow-400",
 };
 
 /**

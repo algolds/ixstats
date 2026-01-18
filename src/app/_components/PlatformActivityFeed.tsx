@@ -260,10 +260,12 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
         }))
       : [];
 
-    // Merge and sort by timestamp
-    return [...regularActivities, ...thinkpagesActivities].sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    // Merge, deduplicate, and sort by timestamp
+    const allActivities = [...regularActivities, ...thinkpagesActivities];
+    const uniqueActivities = allActivities.filter(
+      (activity, index, self) => index === self.findIndex((a) => a.id === activity.id)
     );
+    return uniqueActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [activitiesData, thinkpagesFeed, flagUrls]);
 
   // Load flags for countries mentioned in activities

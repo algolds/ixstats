@@ -113,7 +113,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
           },
         },
         valueHistory: {
-          orderBy: { timestamp: "desc" },
+          orderBy: { recordedAt: "desc" },
           take: 30, // Last 30 entries for correlation
         },
       },
@@ -141,24 +141,24 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
 
         // Calculate sale statistics from recent CardOwnership trades
         const recentSales = card.CardOwnership.filter(
-          (ownership) => ownership.lastSalePrice !== null && ownership.lastSalePrice > 0
+          (ownership: any) => ownership.lastSalePrice !== null && ownership.lastSalePrice > 0
         );
 
         const avgSalePrice =
           recentSales.length > 0
-            ? recentSales.reduce((sum, o) => sum + (o.lastSalePrice || 0), 0) /
+            ? recentSales.reduce((sum: number, o: any) => sum + (o.lastSalePrice || 0), 0) /
               recentSales.length
             : null;
 
         const highestSale =
           recentSales.length > 0
-            ? Math.max(...recentSales.map((o) => o.lastSalePrice || 0))
+            ? Math.max(...recentSales.map((o: any) => o.lastSalePrice || 0))
             : null;
 
         const lowestSale =
           recentSales.length > 0
             ? Math.min(
-                ...recentSales.map((o) => o.lastSalePrice || 0).filter((p) => p > 0)
+                ...recentSales.map((o: any) => o.lastSalePrice || 0).filter((p: number) => p > 0)
               )
             : null;
 
@@ -168,13 +168,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
         await db.cardValueHistory.create({
           data: {
             cardId: card.id,
-            marketValue: currentValue,
-            totalSupply: card.totalSupply,
-            ownedBy,
-            avgSalePrice,
-            highestSale,
-            lowestSale,
-            timestamp: new Date(),
+            value: currentValue,
           },
         });
 
@@ -184,7 +178,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
           // Get card value history (newest to oldest, reverse to oldest to newest)
           const cardValues = [...card.valueHistory]
             .reverse()
-            .map((h) => h.marketValue);
+            .map((h) => h.value);
 
           // Get corresponding GDP values for the same time periods
           // For simplicity, use current GDP as approximation (in production, would query GDP history)
@@ -202,7 +196,7 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
 
         // Calculate value change percentage
         const previousValue =
-          card.valueHistory.length > 0 ? card.valueHistory[0]!.marketValue : currentValue;
+          card.valueHistory.length > 0 ? card.valueHistory[0]!.value : currentValue;
         const valueChange =
           previousValue > 0 ? ((currentValue - previousValue) / previousValue) * 100 : 0;
 

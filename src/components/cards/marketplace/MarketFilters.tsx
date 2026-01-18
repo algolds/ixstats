@@ -5,7 +5,7 @@
 
 import React, { memo, useState } from "react";
 import { cn } from "~/lib/utils";
-import { CardRarity, CardType } from "@prisma/client";
+import { CardRarity, CardType } from "~/lib/card-enums";
 import type { MarketFilters } from "~/types/marketplace";
 
 interface MarketFiltersProps {
@@ -26,11 +26,7 @@ const RARITY_OPTIONS: Array<{
   { value: CardRarity.COMMON, label: "Common", color: "text-gray-400" },
   { value: CardRarity.UNCOMMON, label: "Uncommon", color: "text-green-400" },
   { value: CardRarity.RARE, label: "Rare", color: "text-blue-400" },
-  {
-    value: CardRarity.ULTRA_RARE,
-    label: "Ultra Rare",
-    color: "text-purple-400",
-  },
+  { value: CardRarity.ULTRA_RARE, label: "Ultra Rare", color: "text-purple-400" },
   { value: CardRarity.EPIC, label: "Epic", color: "text-pink-400" },
   { value: CardRarity.LEGENDARY, label: "Legendary", color: "text-yellow-400" },
 ];

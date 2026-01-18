@@ -89,7 +89,7 @@ export class BudgetVaultCalculator {
         // Get average vault multiplier from sub-budgets
         const subBudgets = department.subBudgets;
         const avgMultiplier = subBudgets.length > 0
-          ? subBudgets.reduce((sum, sb) => sum + sb.vaultMultiplier, 0) / subBudgets.length
+          ? subBudgets.reduce((sum, sb) => sum + ((sb as any).vaultMultiplier || 1.0), 0) / subBudgets.length
           : 1.0; // Default to neutral if no sub-budgets
 
         const allocatedPercent = recentAllocation.allocatedPercent;
@@ -168,7 +168,7 @@ export class BudgetVaultCalculator {
 
         const subBudgets = department.subBudgets;
         const avgMultiplier = subBudgets.length > 0
-          ? subBudgets.reduce((sum, sb) => sum + sb.vaultMultiplier, 0) / subBudgets.length
+          ? subBudgets.reduce((sum, sb) => sum + ((sb as any).vaultMultiplier || 1.0), 0) / subBudgets.length
           : 1.0;
 
         const allocatedPercent = recentAllocation.allocatedPercent;

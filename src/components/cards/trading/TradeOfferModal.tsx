@@ -149,13 +149,13 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
     );
 
     // Create trade mutation
-    const createTrade = api.trading.createTradeOffer.useMutation({
+    const createTrade = api.trading.createtradeOffer.useMutation({
       onSuccess: () => {
         toast.success("Trade offer sent successfully!");
         onClose();
         resetForm();
       },
-      onError: (error) => {
+      onError: (error: any) => {
         toast.error(error.message || "Failed to create trade offer");
       },
     });

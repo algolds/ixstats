@@ -4,13 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Status & Context (November 2025)
 
+### ⚠️ **Breaking Change (November 13, 2025)** ⚠️
+**Maps System Deprecated**: The entire Martin tile server and map infrastructure has been removed (~90 files, ~15,000 lines). Maps system is being redesigned from scratch. See CHANGELOG.md for details.
+
 ### 🎯 **Current Maturity: 100% Complete (Grade A+ - v1.42 Release)** ✅
 IxStats is a production-ready economic simulation platform with comprehensive V1 compliance audit completed, all critical systems operational, extensive documentation coverage (106 atomic components documented), organized codebase structure, and **100% hardcoded data migration complete** (14,677 lines migrated to database).
 
 #### ✅ **Production-Ready Systems (100%)**
 - **Core Infrastructure**: Next.js 15, Prisma ORM (131 models), **52 tRPC routers** (580+ endpoints), IxTime synchronization
 - **Content Management System**: **17 admin interfaces**, 80+ reference data endpoints, 750+ seeded records, 100% dynamic
-- **Vector Tile Maps**: Martin tile server + Redis caching + pre-generation delivering **100-1000x performance** (sub-10ms response times)
 - **NPC AI System**: 8 personality traits, 6 archetypes, behavioral prediction, personality drift algorithm
 - **Crisis Management**: Dynamic crisis events (natural disasters, economic crises, diplomatic incidents) with player responses
 - **Security & Authentication**: Clerk integration, 13 security fixes, 8-layer middleware, audit logging, Redis rate limiting
@@ -83,7 +85,6 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - Core platform infrastructure with Next.js 15, Prisma ORM (131 models), and **52 tRPC routers** (580+ endpoints)
 - Authentication system with 8-layer middleware and database audit logging
 - Economic calculation engine with tier-based modeling and historical tracking (**all formulas documented** with examples)
-- Vector tile map system with **100-1000x performance improvement** (Martin + Redis + pre-generation)
 - NPC AI personality system with 8 traits, 6 archetypes, behavioral prediction
 - Crisis events system with dynamic scenarios and player response options
 - Glass physics design system with 100+ components (485 total components)
@@ -137,7 +138,6 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - **[docs/reference/edge-cases.md](./docs/reference/edge-cases.md)** - **NEW:** Comprehensive edge case handling and error scenarios
 - **[docs/systems/calculations.md](./docs/systems/calculations.md)** - **NEW:** All economic formulas with step-by-step examples
 - **[docs/systems/npc-ai.md](./docs/systems/npc-ai.md)** - **NEW:** Complete NPC personality system documentation
-- **[docs/systems/map-system.md](./docs/systems/map-system.md)** - **NEW:** Vector tile system architecture and performance
 - **[docs/systems/crisis-events.md](./docs/systems/crisis-events.md)** - **NEW:** Crisis management system guide
 - **[docs/systems/admin-cms.md](./docs/systems/admin-cms.md)** - **NEW:** All 17 admin interfaces documented
 - **[docs/reference/database.md](./docs/reference/database.md)** - Prisma schema and data models (131 models)
@@ -146,7 +146,6 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - **[docs/RATE_LIMITING_GUIDE.md](./docs/RATE_LIMITING_GUIDE.md)** - Rate limiting configuration and Redis setup
 - **[docs/USER_PROFILE_UTILS_USAGE.md](./docs/USER_PROFILE_UTILS_USAGE.md)** - User profile and display name utilities
 - **[docs/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md](./docs/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md)** - Complete tax system reference
-- **[docs/VECTOR_TILES_COMPLETE_GUIDE.md](./docs/VECTOR_TILES_COMPLETE_GUIDE.md)** - Map editor and vector tiles guide
 - **[docs/API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)** - Comprehensive API documentation
 
 ### MyCountry Architecture (v1.4.2 - November 2025)

@@ -4,7 +4,7 @@
  * Phase 1: Card Display Components
  */
 
-import { CardRarity } from "@prisma/client";
+import { CardRarity } from "~/lib/card-enums";
 import type { CardInstance, FormattedStats, RarityConfig, CardDisplaySize } from "~/types/cards-display";
 
 /**
@@ -23,48 +23,49 @@ export type CardRarityType = typeof CARD_RARITIES[keyof typeof CARD_RARITIES];
 
 /**
  * Rarity color mappings with Tailwind classes
+ * Enhanced color hierarchy for instant visual identification
  */
 const RARITY_COLORS: Record<string, RarityConfig> = {
   [CARD_RARITIES.COMMON]: {
-    color: "text-gray-400",
-    glowColor: "shadow-gray-500/50",
-    glowIntensity: "shadow-md",
-    borderColor: "border-gray-500/20",
+    color: "text-slate-400",
+    glowColor: "shadow-slate-500/40",
+    glowIntensity: "shadow-sm",
+    borderColor: "border-slate-500/20",
     label: "Common",
   },
   [CARD_RARITIES.UNCOMMON]: {
-    color: "text-green-400",
-    glowColor: "shadow-green-500/50",
-    glowIntensity: "shadow-lg",
-    borderColor: "border-green-500/20",
+    color: "text-emerald-400",
+    glowColor: "shadow-emerald-500/50",
+    glowIntensity: "shadow-md",
+    borderColor: "border-emerald-500/30",
     label: "Uncommon",
   },
   [CARD_RARITIES.RARE]: {
-    color: "text-blue-400",
-    glowColor: "shadow-blue-500/50",
+    color: "text-cyan-400",
+    glowColor: "shadow-cyan-500/60",
     glowIntensity: "shadow-lg",
-    borderColor: "border-blue-500/20",
+    borderColor: "border-cyan-500/40",
     label: "Rare",
   },
   [CARD_RARITIES.ULTRA_RARE]: {
-    color: "text-purple-400",
-    glowColor: "shadow-purple-500/50",
+    color: "text-violet-400",
+    glowColor: "shadow-violet-500/70",
     glowIntensity: "shadow-xl",
-    borderColor: "border-purple-500/20",
+    borderColor: "border-violet-500/50",
     label: "Ultra Rare",
   },
   [CARD_RARITIES.EPIC]: {
-    color: "text-violet-400",
-    glowColor: "shadow-violet-500/50",
-    glowIntensity: "shadow-xl",
-    borderColor: "border-violet-500/20",
+    color: "text-orange-400",
+    glowColor: "shadow-orange-500/80",
+    glowIntensity: "shadow-2xl",
+    borderColor: "border-orange-500/60",
     label: "Epic",
   },
   [CARD_RARITIES.LEGENDARY]: {
-    color: "text-amber-400",
-    glowColor: "shadow-amber-500/50",
+    color: "text-yellow-300",
+    glowColor: "shadow-yellow-400/90",
     glowIntensity: "shadow-2xl",
-    borderColor: "border-amber-500/20",
+    borderColor: "border-yellow-400/70",
     label: "Legendary",
   },
 };
@@ -96,6 +97,87 @@ export function getRarityGlow(rarity: string): string {
  */
 export function getRarityConfig(rarity: string): RarityConfig {
   return RARITY_COLORS[rarity] ?? RARITY_COLORS[CARD_RARITIES.COMMON]!;
+}
+
+/**
+ * Enhanced visual hierarchy configuration for rarity
+ * Provides complete styling information including gradients, patterns, and visual markers
+ * @param rarity - Card rarity tier
+ * @returns Visual hierarchy configuration
+ */
+export function getRarityVisualHierarchy(rarity: string): {
+  primaryColor: string;
+  secondaryColor: string;
+  tertiaryColor?: string;
+  borderGradient: string;
+  glowAnimation: string;
+  backgroundTexture: string;
+  badgeStyle: string;
+} {
+  const configs: Record<string, {
+    primaryColor: string;
+    secondaryColor: string;
+    tertiaryColor?: string;
+    borderGradient: string;
+    glowAnimation: string;
+    backgroundTexture: string;
+    badgeStyle: string;
+  }> = {
+    [CARD_RARITIES.COMMON]: {
+      primaryColor: "#94a3b8", // slate-400
+      secondaryColor: "#64748b", // slate-500
+      borderGradient: "linear-gradient(135deg, #cbd5e1 0%, #94a3b8 50%, #64748b 100%)",
+      glowAnimation: "none",
+      backgroundTexture: "none",
+      badgeStyle: "bg-slate-500/20 border-slate-400/30",
+    },
+    [CARD_RARITIES.UNCOMMON]: {
+      primaryColor: "#34d399", // emerald-400
+      secondaryColor: "#10b981", // emerald-500
+      borderGradient: "linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #10b981 100%)",
+      glowAnimation: "pulse-subtle 3s ease-in-out infinite",
+      backgroundTexture: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(16, 185, 129, 0.05) 10px, rgba(16, 185, 129, 0.05) 20px)",
+      badgeStyle: "bg-emerald-500/30 border-emerald-400/50",
+    },
+    [CARD_RARITIES.RARE]: {
+      primaryColor: "#22d3ee", // cyan-400
+      secondaryColor: "#06b6d4", // cyan-500
+      tertiaryColor: "#0891b2", // cyan-600
+      borderGradient: "linear-gradient(135deg, #67e8f9 0%, #22d3ee 33%, #06b6d4 66%, #0891b2 100%)",
+      glowAnimation: "pulse-medium 2.5s ease-in-out infinite",
+      backgroundTexture: "radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.1) 0%, transparent 50%)",
+      badgeStyle: "bg-cyan-500/40 border-cyan-400/60",
+    },
+    [CARD_RARITIES.ULTRA_RARE]: {
+      primaryColor: "#a78bfa", // violet-400
+      secondaryColor: "#8b5cf6", // violet-500
+      tertiaryColor: "#7c3aed", // violet-600
+      borderGradient: "linear-gradient(135deg, #c4b5fd 0%, #a78bfa 25%, #8b5cf6 50%, #7c3aed 75%, #6d28d9 100%)",
+      glowAnimation: "pulse-intense 2s ease-in-out infinite",
+      backgroundTexture: "conic-gradient(from 45deg at 50% 50%, rgba(167, 139, 250, 0.1), rgba(139, 92, 246, 0.15), rgba(124, 58, 237, 0.1), rgba(167, 139, 250, 0.1))",
+      badgeStyle: "bg-violet-500/50 border-violet-400/70",
+    },
+    [CARD_RARITIES.EPIC]: {
+      primaryColor: "#fb923c", // orange-400
+      secondaryColor: "#f97316", // orange-500
+      tertiaryColor: "#ef4444", // red-500
+      borderGradient: "linear-gradient(135deg, #fdba74 0%, #fb923c 20%, #f97316 40%, #ea580c 60%, #ef4444 80%, #dc2626 100%)",
+      glowAnimation: "pulse-epic 1.5s ease-in-out infinite",
+      backgroundTexture: "radial-gradient(circle at 50% 50%, rgba(251, 146, 60, 0.15) 0%, rgba(239, 68, 68, 0.1) 50%, transparent 100%)",
+      badgeStyle: "bg-gradient-to-r from-orange-500/60 to-red-500/60 border-orange-400/80",
+    },
+    [CARD_RARITIES.LEGENDARY]: {
+      primaryColor: "#fcd34d", // yellow-300
+      secondaryColor: "#f59e0b", // amber-500
+      tertiaryColor: "#a855f7", // purple-500
+      borderGradient: "linear-gradient(135deg, #fef3c7 0%, #fcd34d 15%, #fbbf24 30%, #f59e0b 45%, #f97316 60%, #ef4444 75%, #a855f7 90%, #fcd34d 100%)",
+      glowAnimation: "pulse-legendary 1s ease-in-out infinite",
+      backgroundTexture: "conic-gradient(from 0deg at 50% 50%, rgba(252, 211, 77, 0.2), rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2), rgba(168, 85, 247, 0.2), rgba(252, 211, 77, 0.2))",
+      badgeStyle: "bg-gradient-to-r from-yellow-400/70 via-orange-400/70 to-purple-500/70 border-yellow-300/90",
+    },
+  };
+
+  return configs[rarity] ?? configs[CARD_RARITIES.COMMON]!;
 }
 
 /**

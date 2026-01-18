@@ -10,7 +10,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import { getRarityConfig, getShimmerEffect, CARD_RARITIES } from "~/lib/card-display-utils";
-import { CardRarity } from "@prisma/client";
+import type { CardRarity } from "~/lib/card-enums";
 
 /**
  * RarityBadge component props
@@ -79,21 +79,8 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
         animate={
           animated && rarity === CARD_RARITIES.LEGENDARY
             ? {
-                // Rainbow pulse for legendary
-                boxShadow: [
-                  "0 0 10px rgba(251, 191, 36, 0.5)",
-                  "0 0 20px rgba(168, 85, 247, 0.5)",
-                  "0 0 10px rgba(251, 191, 36, 0.5)",
-                ],
-              }
-            : undefined
-        }
-        transition={
-          animated && rarity === CARD_RARITIES.LEGENDARY
-            ? {
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
+                // Static glow for legendary - no pulsing
+                boxShadow: "0 0 15px rgba(251, 191, 36, 0.6)",
               }
             : undefined
         }
@@ -101,22 +88,15 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
         {/* Rarity label */}
         <span className="relative z-10">{config.label}</span>
 
-        {/* Background shimmer gradient for legendary */}
+        {/* Static shimmer gradient for legendary - no animation */}
         {animated && rarity === CARD_RARITIES.LEGENDARY && (
-          <motion.div
-            className="absolute inset-0 rounded-full opacity-50"
+          <div
+            className="absolute inset-0 rounded-full opacity-30"
             style={{
               background:
                 "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
               backgroundSize: "200% 200%",
-            }}
-            animate={{
-              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "linear",
+              backgroundPosition: "50% 50%",
             }}
           />
         )}
