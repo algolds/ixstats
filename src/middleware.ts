@@ -117,12 +117,30 @@ function enhanceResponse(
 
 // If Clerk is not configured, use a simple middleware that doesn't handle auth
 function simpleMiddleware(req: NextRequest) {
+  // Block spoofed internal headers (defense in depth for CVE-2025-29927)
+  const internalHeader = req.headers.get("x-middleware-subrequest");
+  if (internalHeader) {
+    console.warn(
+      `[Security] Blocked spoofed x-middleware-subrequest header from ${req.headers.get("x-forwarded-for") || "unknown"}`
+    );
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
   const response = NextResponse.next();
   return enhanceResponse(response, req, null);
 }
 
 export default isClerkConfigured
   ? clerkMiddleware(async (auth, req) => {
+      // Block spoofed internal headers (defense in depth for CVE-2025-29927)
+      const internalHeader = req.headers.get("x-middleware-subrequest");
+      if (internalHeader) {
+        console.warn(
+          `[Security] Blocked spoofed x-middleware-subrequest header from ${req.headers.get("x-forwarded-for") || "unknown"}`
+        );
+        return new NextResponse("Forbidden", { status: 403 });
+      }
+
       const { userId, sessionClaims } = await auth();
 
       // Allow public routes to pass through without auth
