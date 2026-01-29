@@ -33,7 +33,7 @@ interface EnhancedBarChartProps extends EnhancedChartProps {
 
 interface ChartTooltipProps {
   active?: boolean;
-  payload?: Array<{ name: string; value: number; fill?: string; color?: string }>;
+  payload?: readonly { name: string; value: number; fill?: string; color?: string }[];
   label?: string | number;
   formatValue?: (value: number) => string;
   colors: string[];
@@ -75,7 +75,7 @@ function renderCustomLabel(entry: ChartLabelEntry, formatValue?: (value: number)
       y={String(safeY - 5)}
       fill="currentColor"
       textAnchor="middle"
-      dominantBaseline="bottom"
+      dominantBaseline="auto"
       fontSize="11"
       fontWeight="500"
       className="fill-gray-700 dark:fill-gray-300"

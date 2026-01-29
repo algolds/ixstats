@@ -293,37 +293,34 @@ export const tradingRouter = createTRPCRouter({
         // Cast Json card IDs to string arrays
         const initiatorCardIds = trade.initiatorCardIds as string[];
         const recipientCardIds = trade.recipientCardIds as string[];
+        const now = new Date();
 
-        // Transfer cards from initiator to recipient
-        for (const cardId of initiatorCardIds) {
-          await tx.cardOwnership.update({
-            where: { id: cardId },
-            data: {
-              ownerId: trade.recipientId,
-              userId: trade.recipientId,
-              acquiredAt: new Date(),
-              lastSaleDate: new Date(),
-            },
-          });
-        }
+        // Transfer cards from initiator to recipient (batch update - fixes N+1)
+        await tx.cardOwnership.updateMany({
+          where: { id: { in: initiatorCardIds } },
+          data: {
+            ownerId: trade.recipientId,
+            userId: trade.recipientId,
+            acquiredAt: now,
+            lastSaleDate: now,
+          },
+        });
 
-        // Transfer cards from recipient to initiator
-        for (const cardId of recipientCardIds) {
-          await tx.cardOwnership.update({
-            where: { id: cardId },
-            data: {
-              ownerId: trade.initiatorId,
-              userId: trade.initiatorId,
-              acquiredAt: new Date(),
-              lastSaleDate: new Date(),
-            },
-          });
-        }
+        // Transfer cards from recipient to initiator (batch update - fixes N+1)
+        await tx.cardOwnership.updateMany({
+          where: { id: { in: recipientCardIds } },
+          data: {
+            ownerId: trade.initiatorId,
+            userId: trade.initiatorId,
+            acquiredAt: now,
+            lastSaleDate: now,
+          },
+        });
 
         // Transfer credits if any
         if (trade.initiatorCredits > 0) {
-          // Deduct from initiator
-          await tx.myVault.update({
+          // Deduct from initiator and capture result to avoid redundant query
+          const initiatorVault = await tx.myVault.update({
             where: { userId: trade.initiatorId },
             data: { credits: { decrement: trade.initiatorCredits } },
           });
@@ -334,12 +331,12 @@ export const tradingRouter = createTRPCRouter({
             data: { credits: { increment: trade.initiatorCredits } },
           });
 
-          // Log transactions
+          // Log transactions using cached vault data (fixes redundant queries)
           await tx.vaultTransaction.create({
             data: {
-              vaultId: (await tx.myVault.findUnique({ where: { userId: trade.initiatorId } }))!.id,
+              vaultId: initiatorVault.id,
               credits: -trade.initiatorCredits,
-              balanceAfter: (await tx.myVault.findUnique({ where: { userId: trade.initiatorId } }))!.credits - trade.initiatorCredits,
+              balanceAfter: initiatorVault.credits, // Already decremented by the update
               type: "SPEND_MARKET",
               source: "P2P_TRADE",
               metadata: { tradeId: input.tradeId },

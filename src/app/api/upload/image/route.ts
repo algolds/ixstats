@@ -1,21 +1,62 @@
-// API endpoint for uploading images (flags, coat of arms, etc.)
+/**
+ * API endpoint for uploading images (flags, coat of arms, etc.)
+ *
+ * SECURITY:
+ * - Requires Clerk authentication
+ * - Rate limited to prevent abuse (10 uploads per minute per user)
+ * - File type validation (whitelist)
+ * - File size validation (5MB max)
+ * - Safe filename generation
+ * - SVG files are sanitized to remove potential XSS vectors
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 import crypto from "crypto";
+import { rateLimiter } from "~/lib/rate-limiter";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const UPLOAD_RATE_LIMIT = 10; // Max uploads per minute per user
+
+// SECURITY: Only allow specific image types
+// Note: SVG support is limited due to XSS risks - consider removing if not needed
 const ALLOWED_TYPES = [
   "image/png",
   "image/jpeg",
   "image/jpg",
   "image/gif",
   "image/webp",
+  // SVG is allowed but sanitized - see sanitizeSvg function
   "image/svg+xml",
-  "image/svg", // Support browsers that send image/svg for SVG files
+  "image/svg",
 ];
+
+/**
+ * SECURITY: Sanitize SVG content to remove potential XSS vectors
+ * Removes script tags, event handlers, and dangerous attributes
+ */
+function sanitizeSvg(svgContent: string): string {
+  // Remove script tags and their content
+  let sanitized = svgContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "");
+
+  // Remove event handler attributes (onclick, onload, onerror, etc.)
+  sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, "");
+  sanitized = sanitized.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, "");
+
+  // Remove javascript: and data: URLs in href/xlink:href/src attributes
+  sanitized = sanitized.replace(/(href|xlink:href|src)\s*=\s*["']?\s*javascript:[^"'\s>]*/gi, "");
+  sanitized = sanitized.replace(/(href|xlink:href|src)\s*=\s*["']?\s*data:text\/html[^"'\s>]*/gi, "");
+
+  // Remove foreignObject elements (can embed HTML)
+  sanitized = sanitized.replace(/<foreignObject\b[^<]*(?:(?!<\/foreignObject>)<[^<]*)*<\/foreignObject>/gi, "");
+
+  // Remove use elements with external references (can load external content)
+  sanitized = sanitized.replace(/<use\b[^>]*xlink:href\s*=\s*["'][^#][^"']*["'][^>]*>/gi, "");
+
+  return sanitized;
+}
 
 // Get base path for production deployments (e.g., /projects/ixstats)
 const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -42,6 +83,33 @@ export async function POST(request: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    // SECURITY: Rate limit file uploads
+    const rateLimitResult = await rateLimiter.check(userId, "file_upload");
+    if (!rateLimitResult.success) {
+      console.warn(
+        `[SECURITY] Rate limit exceeded for file upload: userId=${userId}`
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Rate limit exceeded. Please try again later.",
+          retryAfter: Math.ceil(
+            (rateLimitResult.resetAt.getTime() - Date.now()) / 1000
+          ),
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil(
+                (rateLimitResult.resetAt.getTime() - Date.now()) / 1000
+              )
+            ),
+          },
+        }
+      );
     }
 
     const formData = await request.formData();
@@ -83,9 +151,22 @@ export async function POST(request: NextRequest) {
       console.log(`[ImageUpload] Created directory: ${uploadsDir}`);
     }
 
-    // Save the file to disk
+    // Get file content
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
+
+    // SECURITY: Sanitize SVG files to remove XSS vectors
+    const isSvg = file.type === "image/svg+xml" || file.type === "image/svg";
+    if (isSvg) {
+      const svgContent = buffer.toString("utf-8");
+      const sanitizedSvg = sanitizeSvg(svgContent);
+      buffer = Buffer.from(sanitizedSvg, "utf-8");
+      console.log(
+        `[ImageUpload] Sanitized SVG file for user ${userId}: ${file.name}`
+      );
+    }
+
+    // Save the file to disk
     const filePath = path.join(uploadsDir, fileName);
     await writeFile(filePath, buffer);
 

@@ -13,13 +13,23 @@ PROJECT_DIR="/ixwiki/public/projects/ixstats"
 cd "$PROJECT_DIR"
 
 # Load production environment variables
+# Load order: .env.production (template) first, then .env.production.local (secrets override)
 if [ -f ".env.production" ]; then
-    echo "📄 Loading production environment variables..."
+    echo "📄 Loading production environment template..."
     export NODE_ENV=production
-    export $(grep -v '^#' .env.production | xargs 2>/dev/null)
+    export $(grep -v '^#' .env.production | grep -v '^\s*$' | xargs 2>/dev/null)
 else
     echo "❌ Error: .env.production file not found"
     exit 1
+fi
+
+# Load local secrets (overrides template values)
+if [ -f ".env.production.local" ]; then
+    echo "🔐 Loading production secrets from .env.production.local..."
+    export $(grep -v '^#' .env.production.local | grep -v '^\s*$' | xargs 2>/dev/null)
+else
+    echo "⚠️  Warning: .env.production.local not found - secrets may be missing"
+    echo "   Create it with actual values for CLERK_SECRET_KEY, DATABASE_URL, etc."
 fi
 
 # Ensure base path variables are configured for production deployments.

@@ -51,8 +51,13 @@ export const env = createEnv({
     VERCEL_URL: z.string().optional(),
     // App URL for self-referencing
     APP_URL: z.string().url().optional(),
-    // Cron job secret for scheduled tasks
-    CRON_SECRET: z.string().optional(),
+    // Cron job secret for scheduled tasks - REQUIRED in production
+    CRON_SECRET:
+      process.env.NODE_ENV === "production"
+        ? z.string().min(32, "CRON_SECRET must be at least 32 characters in production")
+        : z.string().optional(),
+    // System owner Clerk IDs (comma-separated) - loaded from env for security
+    SYSTEM_OWNER_IDS: z.string().optional(),
   },
 
   /**
@@ -124,6 +129,7 @@ export const env = createEnv({
     VERCEL_URL: process.env.VERCEL_URL,
     APP_URL: process.env.APP_URL,
     CRON_SECRET: process.env.CRON_SECRET,
+    SYSTEM_OWNER_IDS: process.env.SYSTEM_OWNER_IDS,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

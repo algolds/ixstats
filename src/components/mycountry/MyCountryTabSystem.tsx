@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart3,
   TrendingUp,
@@ -61,7 +61,7 @@ function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3
   return normalizedValue;
 }
 
-export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemProps) {
+function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystemProps) {
   const { user } = useUser();
   const { country, economyData, currentIxTime } = useCountryData();
 
@@ -1444,3 +1444,7 @@ export function MyCountryTabSystem({ variant = "unified" }: MyCountryTabSystemPr
     </Tabs>
   );
 }
+
+MyCountryTabSystemComponent.displayName = "MyCountryTabSystem";
+
+export const MyCountryTabSystem = React.memo(MyCountryTabSystemComponent);

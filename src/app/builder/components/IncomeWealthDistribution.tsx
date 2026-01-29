@@ -326,7 +326,7 @@ export function IncomeWealthDistribution({
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                    <Tooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -354,7 +354,7 @@ export function IncomeWealthDistribution({
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                    <Tooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -462,7 +462,7 @@ export function IncomeWealthDistribution({
                   <BarChart data={incomeData2}>
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                    <Tooltip formatter={(value) => `$${Number(value ?? 0).toLocaleString()}`} />
                     <Bar dataKey="income" name="Average Income">
                       {incomeData2.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -497,7 +497,7 @@ export function IncomeWealthDistribution({
                         position: "insideLeft",
                       }}
                     />
-                    <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                    <Tooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                     <Line
                       data={equalityLine}
                       type="linear"

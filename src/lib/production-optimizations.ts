@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { performance } from "perf_hooks";
+// Note: Using globalThis.performance (available in Node.js 16+ and browsers)
+// instead of importing from perf_hooks which isn't bundleable for client-side
 
 /**
  * Memory optimization utilities

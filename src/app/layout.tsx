@@ -11,6 +11,10 @@ import { AuthProvider } from "~/context/auth-context";
 import { Navigation } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
+import {
+  ChunkLoadErrorBoundary,
+  ChunkLoadErrorHandler,
+} from "~/components/ChunkLoadErrorBoundary";
 import { ToasterProvider } from "~/components/ToasterProvider";
 import { IxTimeProvider } from "~/contexts/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
@@ -19,7 +23,8 @@ import { ToastProvider } from "~/components/ui/toast";
 import { NotificationBadgeProvider } from "~/components/notifications/NotificationBadgeProvider";
 import { withBasePath } from "~/lib/base-path";
 
-export const dynamic = "force-dynamic";
+// Removed force-dynamic to enable static generation and ISR where possible
+// Dynamic data is handled through proper React boundaries and tRPC
 
 // Check if Clerk is configured with valid keys
 const isClerkConfigured = Boolean(
@@ -79,14 +84,17 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
-        <ClerkProvider
-          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-        >
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </ClerkProvider>
-        <ToasterProvider />
+        <ChunkLoadErrorHandler />
+        <ChunkLoadErrorBoundary>
+          <ClerkProvider
+            publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+          >
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </ClerkProvider>
+          <ToasterProvider />
+        </ChunkLoadErrorBoundary>
       </body>
     </html>
   );

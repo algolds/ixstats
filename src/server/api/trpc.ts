@@ -13,11 +13,12 @@ import { getAuth } from "@clerk/nextjs/server";
 import { verifyToken } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
 
-import { db } from "~/server/db";
+import { db, isDatabaseReadOnly } from "~/server/db";
 import { rateLimiter } from "~/lib/rate-limiter";
 import { userLoggingMiddleware } from "~/lib/user-logging-middleware";
 import { UserManagementService } from "~/lib/user-management-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
+import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/trpc-cache";
 
 /**
  * 1. CONTEXT
@@ -65,10 +66,33 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     // Get user from database if we have a userId
     if (auth?.userId) {
       try {
-        // ALWAYS use centralized user management service to ensure correct role
-        console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
-        const userService = new UserManagementService(db);
-        user = await userService.getOrCreateUser(auth.userId);
+        // In read-only mode, only look up existing users (no creation)
+        if (isDatabaseReadOnly) {
+          console.log(`[TRPC Context] Read-only mode: Looking up user ${auth.userId} (no creation)`);
+          user = await db.user.findUnique({
+            where: { clerkUserId: auth.userId },
+            include: {
+              country: true,
+              role: {
+                include: {
+                  rolePermissions: {
+                    include: {
+                      permission: true,
+                    },
+                  },
+                },
+              },
+            },
+          });
+          if (!user) {
+            console.warn(`[TRPC Context] Read-only mode: User ${auth.userId} not found in database (cannot create)`);
+          }
+        } else {
+          // Normal mode: use centralized user management service to ensure correct role
+          console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
+          const userService = new UserManagementService(db);
+          user = await userService.getOrCreateUser(auth.userId);
+        }
 
         if (user) {
           console.log(
@@ -397,28 +421,32 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
       if (auditEntry.securityLevel === "HIGH" || error) {
         console.error("[SECURITY_AUDIT]", auditEntry);
 
-        // Persist high-security events to database
-        try {
-          await ctx.db.auditLog.create({
-            data: {
-              userId: auditEntry.userId || "anonymous",
-              action: auditEntry.action,
-              details: JSON.stringify({
-                method: auditEntry.method,
-                duration: auditEntry.duration,
-                securityLevel: auditEntry.securityLevel,
-                ip: auditEntry.ip,
-                userAgent: auditEntry.userAgent,
-                inputSummary: auditEntry.inputSummary,
-              }),
-              success: auditEntry.success,
-              error: auditEntry.errorMessage,
-              timestamp: new Date(),
-            },
-          });
-        } catch (dbError) {
-          // Don't fail the request if audit logging fails
-          console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
+        // Persist high-security events to database (skip in read-only mode)
+        if (!isDatabaseReadOnly) {
+          try {
+            await ctx.db.auditLog.create({
+              data: {
+                userId: auditEntry.userId || "anonymous",
+                action: auditEntry.action,
+                details: JSON.stringify({
+                  method: auditEntry.method,
+                  duration: auditEntry.duration,
+                  securityLevel: auditEntry.securityLevel,
+                  ip: auditEntry.ip,
+                  userAgent: auditEntry.userAgent,
+                  inputSummary: auditEntry.inputSummary,
+                }),
+                success: auditEntry.success,
+                error: auditEntry.errorMessage,
+                timestamp: new Date(),
+              },
+            });
+          } catch (dbError) {
+            // Don't fail the request if audit logging fails
+            console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
+          }
+        } else {
+          console.log("[AUDIT_DB] Skipping database write (read-only mode)");
         }
       } else if (process.env.NODE_ENV === "development") {
         // Development: Log all actions to console for debugging
@@ -752,3 +780,50 @@ export const readOnlyPublicProcedure = publicProcedure.use(readOnlyRateLimit);
 
 // Public rate-limited procedures (30 req/min)
 export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);
+
+/**
+ * CACHED PROCEDURE VARIANTS
+ *
+ * Use these procedures for read-heavy endpoints that benefit from server-side caching.
+ * Results are cached in Redis (with in-memory fallback) to reduce database load.
+ *
+ * Cache configurations:
+ * - cachedPublicProcedure: For public data (60s TTL)
+ * - cachedProtectedProcedure: For authenticated user data (30s TTL)
+ * - cachedStaticProcedure: For rarely changing data (1hr TTL)
+ * - cachedUserSpecificProcedure: For user-specific data with user-aware cache keys (30s TTL)
+ *
+ * High-value cache targets:
+ * - countries.getList - called on every page load
+ * - countries.getGlobalStats - expensive aggregation
+ * - referenceData.* - static reference data
+ * - intelligence.getOverview - complex dashboard data
+ */
+
+// Create cache middleware instances
+const standardCacheMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
+  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.standard);
+  return cacheFactory({ ctx, path, input, next });
+});
+
+const staticCacheMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
+  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.static);
+  return cacheFactory({ ctx, path, input, next });
+});
+
+const userSpecificCacheMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
+  const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.userSpecific);
+  return cacheFactory({ ctx, path, input, next });
+});
+
+// Cached public procedure (60s cache)
+export const cachedPublicProcedure = publicProcedure.use(standardCacheMiddleware);
+
+// Cached protected procedure (60s cache)
+export const cachedProtectedProcedure = protectedProcedure.use(standardCacheMiddleware);
+
+// Cached static procedure (1hr cache) - for reference data that rarely changes
+export const cachedStaticProcedure = publicProcedure.use(staticCacheMiddleware);
+
+// Cached user-specific procedure (30s cache) - uses user ID in cache key
+export const cachedUserSpecificProcedure = protectedProcedure.use(userSpecificCacheMiddleware);

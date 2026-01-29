@@ -2,16 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Status & Context (November 2025)
+## Project Status & Context (January 2026)
 
-### ⚠️ **Breaking Change (November 13, 2025)** ⚠️
-**Maps System Deprecated**: The entire Martin tile server and map infrastructure has been removed (~90 files, ~15,000 lines). Maps system is being redesigned from scratch. See CHANGELOG.md for details.
+### ⚠️ **v2 Migration (January 2026)** ⚠️
+- **Maps System Deprecated**: The entire Martin tile server and map infrastructure has been removed (~90 files, ~15,000 lines). Maps system is being redesigned from scratch.
+- **Major Framework Upgrades**: Next.js 15 -> 16.1.3, React 18 -> 19.1.3, Prisma 6.19, Zod 4, Express 5, Jest 30
+- **Middleware Renamed**: `src/middleware.ts` -> `src/proxy.ts` (Clerk middleware + CSP + security headers)
+- **Active Branch**: `v2`
 
 ### 🎯 **Current Maturity: 100% Complete (Grade A+ - v1.42 Release)** ✅
 IxStats is a production-ready economic simulation platform with comprehensive V1 compliance audit completed, all critical systems operational, extensive documentation coverage (106 atomic components documented), organized codebase structure, and **100% hardcoded data migration complete** (14,677 lines migrated to database).
 
 #### ✅ **Production-Ready Systems (100%)**
-- **Core Infrastructure**: Next.js 15, Prisma ORM (131 models), **52 tRPC routers** (580+ endpoints), IxTime synchronization
+- **Core Infrastructure**: Next.js 16.1.3, React 19.1.3, Prisma ORM (131 models), **52 tRPC routers** (580+ endpoints), IxTime synchronization
 - **Content Management System**: **17 admin interfaces**, 80+ reference data endpoints, 750+ seeded records, 100% dynamic
 - **NPC AI System**: 8 personality traits, 6 archetypes, behavioral prediction, personality drift algorithm
 - **Crisis Management**: Dynamic crisis events (natural disasters, economic crises, diplomatic incidents) with player responses
@@ -37,11 +40,13 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 > See [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) for detailed feature matrix
 
 ### 🏗️ **Architecture Overview**
-- **Framework**: Next.js 15 with App Router, TypeScript, tRPC
-- **Database**: SQLite (dev) / PostgreSQL (prod) with Prisma ORM
+- **Framework**: Next.js 16.1.3 with App Router, React 19.1.3, TypeScript 5.8, tRPC 11.4
+- **Database**: PostgreSQL (dev + prod) with Prisma 6.19 ORM, PostGIS
 - **UI System**: Tailwind CSS v4 with custom glass physics design framework
+- **Middleware**: `src/proxy.ts` - Clerk auth + CSP + security headers (NOT `middleware.ts`)
 - **Time System**: Custom IxTime (2x speed) synchronized with Discord bot
 - **Economic Engine**: Tier-based growth modeling with sophisticated calculations
+- **Dev Server**: Webpack mode (Turbopack disabled for stability), 4GB memory limit
 
 ## Design Practices
 
@@ -67,9 +72,9 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 4. **Performance**: Continue React optimization patterns and database query optimization
 
 ### Code Quality Standards
-- **TypeScript**: Maintain 100% TypeScript coverage with strict type checking
+- **TypeScript**: Maintain TypeScript coverage (do NOT run global type checks - see constraints section)
 - **React Patterns**: Use React.memo, useMemo, useCallback for performance optimization
-- **Error Handling**: Implement defensive programming with comprehensive error boundaries  
+- **Error Handling**: Implement defensive programming with comprehensive error boundaries
 - **API Integration**: Prefer tRPC APIs over direct database access in components
 
 ### System Architecture Status
@@ -82,7 +87,7 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - ✅ **Rate Limiting**: Redis-based with in-memory fallback implemented
 
 **Production-Ready Systems:**
-- Core platform infrastructure with Next.js 15, Prisma ORM (131 models), and **52 tRPC routers** (580+ endpoints)
+- Core platform infrastructure with Next.js 16.1.3, Prisma ORM (131 models), and **52 tRPC routers** (580+ endpoints)
 - Authentication system with 8-layer middleware and database audit logging
 - Economic calculation engine with tier-based modeling and historical tracking (**all formulas documented** with examples)
 - NPC AI personality system with 8 traits, 6 archetypes, behavioral prediction
@@ -99,6 +104,12 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - Social platform (ThinkPages, ThinkShare, ThinkTanks) operational (85% complete)
 
 ### Key File Locations
+**Middleware & Security:**
+- Middleware (Clerk + CSP + headers): `/src/proxy.ts` (NOT middleware.ts)
+- CSP Configuration: `generateCSP()` function in `/src/proxy.ts`
+- System owner constants: `/src/lib/system-owner-constants.ts`
+- Production optimizations: `/src/lib/production-optimizations.ts`
+
 **Intelligence System:**
 - Components: `/src/app/mycountry/components/`
 - Types: `/src/app/mycountry/types/intelligence.ts`
@@ -112,10 +123,17 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - UI Components: `/src/components/ui/`
 - Design Documentation: `/docs/DESIGN_SYSTEM.md`
 
+**Configuration:**
+- Next.js config: `/next.config.js`
+- Dev startup: `/start-development.sh`
+- Production startup: `/start-production.sh`
+- PM2 config: `/ecosystem.config.cjs`
+
 ### Testing & Validation
-- Run `npm run check` for full validation (lint + typecheck)
-- Use `npm run dev` for development with comprehensive validation
+- Run `npm run lint` for linting (ESLint with cache)
+- Use `npm run dev` for development server (Webpack mode, port 3000)
 - Database operations: `npm run db:setup` for initialization
+- **DO NOT** run `npm run typecheck:full` or `tsc --noEmit` globally - see TypeScript section below
 
 ### Performance Considerations
 - **Component Optimization**: Already implemented React.memo patterns, maintain consistency
@@ -254,20 +272,46 @@ This pattern has successfully refactored:
 
 See `REFACTORING_SUMMARY_OCT_2025.md` for complete implementation details.
 
-### Current Development Status (November 2025)
-**Production Released - V1.42** ✅
-- ✅ **Hardcoded Data Migration**: 100% COMPLETE - All 14,677 lines migrated to database (8 phases completed)
-- ✅ **Content Management System**: 12 admin interfaces, 80+ reference data endpoints, 750+ seeded records
-- ✅ **Security**: 13 critical fixes implemented, production guards active, Redis rate limiting on public endpoints
-- ✅ **Authentication**: Full RBAC with Clerk, admin middleware, audit logging
-- ✅ **Data Wiring**: Full integration (580+ active endpoints), all systems operational
-- ✅ **Economic Engine**: Tier-based modeling, real-time calculations, historical tracking, verified persistence
-- ✅ **Atomic Government**: 106 components documented (24 government, 40+ economy, 42 tax) with synergy detection
-- ✅ **Diplomatic Systems**: Embassy network, missions, cultural exchanges, dynamic scenarios, NPC personalities
-- ✅ **Social Platform**: ThinkPages, ThinkShare, ThinkTanks operational with rate limiting
-- ✅ **Production Infrastructure**: Discord webhooks, compression, caching, monitoring
-- ✅ **Documentation Organization**: Clean root structure, archived completed docs, comprehensive reference guides
+### Current Development Status (January 2026)
+**v2 Migration In Progress** (branch: `v2`)
 
-The IxStats platform has achieved **v1.42 production release (100% complete, Grade A+)** with hardcoded data migration fully completed. The platform now features a complete content management system with 12 admin interfaces, dynamic diplomatic scenarios, NPC personality systems, and comprehensive documentation. All 14,677 lines of hardcoded TypeScript data have been successfully migrated to the database, enabling dynamic content updates without code deployments.
+**Recent Upgrades (v2):**
+- Next.js 15 -> **16.1.3** (with Webpack dev mode)
+- React 18 -> **19.1.3**
+- Prisma 5 -> **6.19.2**
+- Zod 3 -> **4.0.5**
+- Express 4 -> **5.1.0**
+- Jest 29 -> **30.0.4**
+- ESLint 8 -> **9.31.0**
+- tRPC -> **11.4.3**
+- Tailwind CSS -> **4.1.11**
+- Middleware renamed: `src/middleware.ts` -> `src/proxy.ts`
+- `src/middleware.ts` deleted (Next.js picks up `proxy.ts` via compiled output)
 
-PLEASE NEVER RUN TYPECHECK OR TYPESCRIPT CHECKS GLOBALLY. THIS PROJECT IS MASSIVE AND IT WILL CRASH THE SERVER. IF YOU NEED TO CHECK, PLEASE ONLY EVER DO ISOLATED CHECKS ON THE FILES IN QUESITON. NEVER GLOBALLY.
+**v1.42 Production Baseline:**
+- ✅ All 14,677 lines hardcoded data migrated to database
+- ✅ 17 admin interfaces, 580+ tRPC endpoints across 52 routers
+- ✅ Full RBAC with Clerk, audit logging, Redis rate limiting
+- ✅ Glass physics design system with 485 total components
+
+## CRITICAL: TypeScript and Memory Constraints
+
+**NEVER run global TypeScript checks.** This project has 131 Prisma models, 485 components, and 580+ API endpoints. Global `tsc` WILL exhaust server memory (7.2GB total, 4GB allocated to Node).
+
+**Forbidden commands:**
+- `tsc --noEmit` (global)
+- `npm run typecheck:full`
+- `npm run typecheck:quick`
+- `npm run check` (calls typecheck)
+- Any command that runs TypeScript compiler across the entire codebase
+
+**Safe alternatives:**
+- Check individual files: `npx tsc --noEmit path/to/file.ts --skipLibCheck`
+- Rely on the Next.js dev server for incremental type checking
+- Rely on the build process: `npm run build` (has `ignoreBuildErrors: true`)
+- Use IDE/editor TypeScript for per-file checking
+
+**Development server memory:**
+- `NODE_OPTIONS="--max-old-space-size=4096"` is set in `start-development.sh`
+- Turbopack is disabled (Webpack mode used instead) due to memory constraints
+- Dev command: `npm run dev` starts via `start-development.sh`

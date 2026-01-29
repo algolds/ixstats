@@ -620,7 +620,7 @@ export function PopulationDetailsModal({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, percentage }) => `${name} ${percentage.toFixed(1)}%`}
+                          label={(props: any) => `${props.name ?? ''} ${(props.payload?.percentage ?? 0).toFixed(1)}%`}
                         >
                           {demographicBreakdown.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />

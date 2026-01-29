@@ -10,6 +10,10 @@ import {
   executiveProcedure,
   countryOwnerProcedure,
   rateLimitedPublicProcedure,
+  adminProcedure,
+  // Cached procedures for high-traffic endpoints
+  cachedPublicProcedure,
+  cachedStaticProcedure,
 } from "~/server/api/trpc";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { IxTime } from "~/lib/ixtime";
@@ -242,7 +246,8 @@ const countriesRouter = createTRPCRouter({
     }),
 
   // Get all countries with basic info + total count
-  getAll: rateLimitedPublicProcedure
+  // Using cachedPublicProcedure for Redis-backed caching (60s TTL)
+  getAll: cachedPublicProcedure
     .input(
       z
         .object({
@@ -1407,7 +1412,8 @@ const countriesRouter = createTRPCRouter({
       return results;
     }),
 
-  getGlobalStats: publicProcedure
+  // Using cachedStaticProcedure for longer cache (1hr TTL) - global stats change slowly
+  getGlobalStats: cachedStaticProcedure
     .input(
       z
         .object({
@@ -3142,8 +3148,14 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  triggerEconomicNarrative: publicProcedure.mutation(async () => {
-    const { detectEconomicMilestoneAndTriggerNarrative } = await import("~/lib/auto-post-service");
+  // SECURITY: Admin-only endpoint for triggering system-wide economic narratives
+  triggerEconomicNarrative: adminProcedure.mutation(async ({ ctx }) => {
+    console.log(
+      `[AUDIT] Economic narrative triggered by admin userId=${ctx.auth?.userId}`
+    );
+    const { detectEconomicMilestoneAndTriggerNarrative } = await import(
+      "~/lib/auto-post-service"
+    );
     await detectEconomicMilestoneAndTriggerNarrative();
     return { success: true, message: "Economic narrative triggered" };
   }),
@@ -3727,7 +3739,8 @@ const countriesRouter = createTRPCRouter({
     }),
 
   // Get custom geography (continents and regions)
-  getCustomGeography: publicProcedure.query(async ({ ctx }) => {
+  // Using cachedStaticProcedure - geography data rarely changes (1hr TTL)
+  getCustomGeography: cachedStaticProcedure.query(async ({ ctx }) => {
     // For now, return empty custom geography
     // In the future, this could fetch from a CustomGeography table
     return {
@@ -5232,7 +5245,8 @@ const countriesRouter = createTRPCRouter({
     }),
 
   // Get global analytics for dashboard
-  getGlobalAnalytics: publicProcedure.query(async ({ ctx }) => {
+  // Using cachedPublicProcedure for analytics (60s TTL)
+  getGlobalAnalytics: cachedPublicProcedure.query(async ({ ctx }) => {
     // Get all countries
     const countries = await ctx.db.country.findMany({
       select: {

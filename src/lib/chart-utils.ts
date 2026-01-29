@@ -417,3 +417,44 @@ function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3
   // Otherwise, the value is reasonable as-is
   return value;
 }
+
+// =============================================================================
+// RECHARTS TYPE UTILITIES
+// Added January 2026 for Next.js 16 / React 19 type compatibility
+// =============================================================================
+
+/**
+ * Recharts formatter wrapper that handles undefined values
+ * Recharts passes undefined when data is unavailable
+ *
+ * @example
+ * // BEFORE (causes type error)
+ * formatter={(value: number) => `${value.toFixed(1)}%`}
+ *
+ * // AFTER
+ * formatter={rechartsFormatter((value) => `${value.toFixed(1)}%`)}
+ */
+export function rechartsFormatter(
+  fn: (value: number) => string,
+  fallback = ""
+): (value: number | undefined) => string {
+  return (value) => (value !== undefined ? fn(value) : fallback);
+}
+
+/**
+ * Chart data interface with index signature for Recharts compatibility
+ * Recharts requires data items to have an index signature for type safety
+ */
+export interface ChartDataItem {
+  name: string;
+  value: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Extended chart data interface with optional color
+ */
+export interface ChartDataItemWithColor extends ChartDataItem {
+  fill?: string;
+  color?: string;
+}

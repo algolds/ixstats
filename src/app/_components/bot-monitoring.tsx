@@ -383,7 +383,7 @@ export function BotMonitoringDashboard() {
                         labelStyle={{ color: "#E2E8F0" }} // Light label
                         itemStyle={{ color: "#E2E8F0" }} // Light item text
                         labelFormatter={(label) => new Date(label).toLocaleString()}
-                        formatter={(value: number) => [`${value.toFixed(1)}ms`, "Response Time"]}
+                        formatter={(value) => [`${(Number(value ?? 0)).toFixed(1)}ms`, "Response Time"]}
                       />
                       <Line
                         type="monotone"
@@ -424,8 +424,8 @@ export function BotMonitoringDashboard() {
                         labelStyle={{ color: "#E2E8F0" }}
                         itemStyle={{ color: "#E2E8F0" }}
                         labelFormatter={(label) => new Date(label).toLocaleString()}
-                        formatter={(value: number) => [
-                          value === 1 ? "Online" : "Offline",
+                        formatter={(value) => [
+                          Number(value) === 1 ? "Online" : "Offline",
                           "Status",
                         ]}
                       />

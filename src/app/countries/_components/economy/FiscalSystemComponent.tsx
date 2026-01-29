@@ -60,7 +60,7 @@ interface FiscalSystemComponentProps {
 
 const COLORS = FISCAL_CHART_COLORS;
 
-export function FiscalSystemComponent({
+function FiscalSystemComponentInner({
   fiscalData,
   nominalGDP,
   totalPopulation,
@@ -390,7 +390,7 @@ export function FiscalSystemComponent({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                         <Legend
                           verticalAlign="bottom"
                           height={36}
@@ -592,7 +592,7 @@ export function FiscalSystemComponent({
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="name" />
                           <YAxis tickFormatter={(value) => `${value}%`} />
-                          <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                          <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                           <Bar dataKey="value" name="% of GDP">
                             {revenueChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -759,7 +759,7 @@ export function FiscalSystemComponent({
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                          <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                           <Legend />
                         </RechartsPieChart>
                       </ResponsiveContainer>
@@ -850,8 +850,8 @@ export function FiscalSystemComponent({
                           label={{ value: "Amount (Billions)", angle: 90, position: "insideRight" }}
                         />
                         <RechartsTooltip
-                          formatter={(value: number, name: string) => [
-                            name === "percent" ? `${value.toFixed(1)}%` : formatCurrency(value),
+                          formatter={(value, name) => [
+                            name === "percent" ? `${Number(value ?? 0).toFixed(1)}%` : formatCurrency(Number(value ?? 0)),
                             name === "percent" ? "% of Budget" : "Amount",
                           ]}
                         />
@@ -1416,3 +1416,7 @@ export function FiscalSystemComponent({
     </TooltipProvider>
   );
 }
+
+FiscalSystemComponentInner.displayName = "FiscalSystemComponent";
+
+export const FiscalSystemComponent = React.memo(FiscalSystemComponentInner);

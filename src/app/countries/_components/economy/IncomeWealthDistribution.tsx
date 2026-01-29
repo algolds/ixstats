@@ -491,7 +491,7 @@ export function IncomeWealthDistribution({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -524,7 +524,7 @@ export function IncomeWealthDistribution({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -658,7 +658,7 @@ export function IncomeWealthDistribution({
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="decile" />
                           <YAxis />
-                          <RechartsTooltip formatter={(value: number) => formatCurrency(value)} />
+                          <RechartsTooltip formatter={(value) => value !== undefined ? formatCurrency(Number(value)) : ''} />
                           <Area
                             type="monotone"
                             dataKey="income"
@@ -703,7 +703,7 @@ export function IncomeWealthDistribution({
                               position: "insideLeft",
                             }}
                           />
-                          <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                          <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                           <Line
                             data={[
                               { x: 0, y: 0 },

@@ -79,7 +79,7 @@ export const TimeSeriesChart = React.memo(function TimeSeriesChart({
               <YAxis tickFormatter={formatMetricValue} tick={{ fontSize: 10 }} />
               <RechartsTooltip
                 labelFormatter={(value) => `Year ${value}`}
-                formatter={(value: number) => [formatMetricValue(value), metricLabel]}
+                formatter={(value) => [formatMetricValue(Number(value ?? 0)), metricLabel]}
                 contentStyle={{ fontSize: "12px" }}
               />
               <Line

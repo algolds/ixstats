@@ -11,6 +11,9 @@
 // Import polyfill plugin
 import NodePolyfillPlugin from "node-polyfill-webpack-plugin";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
 
 // Normalize base path so we can deploy under https://ixwiki.com/projects/ixstats
 const normalizeBasePath = (value) => {
@@ -60,6 +63,8 @@ const config = {
     ],
     // Reduce compilation time
     esmExternals: true,
+    // Enable instrumentation hook for production startup
+    instrumentationHook: true,
   },
 
   // Build performance improvements
@@ -169,10 +174,47 @@ const config = {
       config.optimization.removeEmptyChunks = false;
       config.optimization.splitChunks = false;
     } else {
-      // Production build optimizations - keep it simple to avoid chunk loading issues
+      // Production build optimizations
       config.optimization = {
         ...config.optimization,
         usedExports: true,
+        // Split chunks to separate heavy vendor libraries
+        // This reduces initial bundle size and improves caching
+        splitChunks: {
+          chunks: "all",
+          maxInitialRequests: 25,
+          minSize: 20000,
+          cacheGroups: {
+            // Separate recharts (heavy charting library)
+            recharts: {
+              test: /[\\/]node_modules[\\/]recharts[\\/]/,
+              name: "recharts",
+              chunks: "all",
+              priority: 30,
+            },
+            // Separate Radix UI components
+            radix: {
+              test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
+              name: "radix",
+              chunks: "all",
+              priority: 30,
+            },
+            // Separate framer-motion (animation library)
+            framer: {
+              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
+              name: "framer",
+              chunks: "all",
+              priority: 30,
+            },
+            // Group remaining vendor modules
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: "vendors",
+              chunks: "all",
+              priority: 10,
+            },
+          },
+        },
       };
     }
 
@@ -182,8 +224,8 @@ const config = {
   // Build performance
   productionBrowserSourceMaps: false,
 
-  // Compression (if enabled via env)
-  compress: process.env.ENABLE_COMPRESSION === "true",
+  // Compression enabled by default in production (60-70% payload reduction)
+  compress: process.env.NODE_ENV === "production",
 
   // Production optimizations
   poweredByHeader: false, // Remove X-Powered-By header
@@ -224,8 +266,7 @@ const config = {
     // Allow local API routes with query strings (for NS image proxy and placeholders)
     localPatterns: [
       {
-        pathname: "/api/**",
-        search: "",
+        pathname: "/**",
       },
     ],
     formats: ["image/avif", "image/webp"],

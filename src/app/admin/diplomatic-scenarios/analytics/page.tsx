@@ -282,7 +282,7 @@ export default function DiplomaticScenariosAnalyticsPage() {
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) =>
-                    `${name.length > 15 ? name.substring(0, 15) + "..." : name}: ${((percent ?? 0) * 100).toFixed(0)}%`
+                    `${(name ?? '').length > 15 ? (name ?? '').substring(0, 15) + "..." : (name ?? '')}: ${((percent ?? 0) * 100).toFixed(0)}%`
                   }
                   outerRadius={80}
                   fill="#8884d8"

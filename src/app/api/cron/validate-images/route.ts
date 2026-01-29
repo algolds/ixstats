@@ -33,13 +33,28 @@ export const maxDuration = 300; // 5 minutes max
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authorization (optional but recommended)
+    // SECURITY: Verify authorization - REQUIRED in production
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
+    const isProduction = process.env.NODE_ENV === "production";
 
-    // If CRON_SECRET is set, require it for authentication
+    // In production, CRON_SECRET is mandatory
+    if (isProduction && !cronSecret) {
+      console.error(
+        "[SECURITY] CRON_SECRET not configured in production - cron endpoint disabled"
+      );
+      return NextResponse.json(
+        { error: "Cron endpoint not configured" },
+        { status: 503 }
+      );
+    }
+
+    // Require valid Bearer token if CRON_SECRET is set
     if (cronSecret) {
       if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
+        console.warn(
+          `[SECURITY] Unauthorized cron access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
+        );
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
     }

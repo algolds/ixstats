@@ -1,10 +1,15 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins", "nativeDistinct"]
+  // relationJoins: Uses SQL JOINs instead of separate queries for relations (significant perf improvement)
+  // nativeDistinct: Uses native SQL DISTINCT for better deduplication performance
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Uncomment directUrl when using a connection pooler (PgBouncer/Prisma Accelerate):
+  // directUrl = env("DIRECT_URL")
 }
 
 model Post {
@@ -166,6 +171,7 @@ model Territory {
   geom_postgis Unsupported("geometry")?
   country      Country                  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 
+  @@index([countryId])  // FK index for country territory queries
   @@index([geom_postgis], map: "idx_territory_geom", type: Gist)
   @@map("territories")
 }
@@ -840,6 +846,7 @@ model GovernmentComponent {
   @@index([countryId])
   @@index([componentType])
   @@index([isActive])
+  @@index([countryId, componentType, isActive])  // Compound index for active components by type
 }
 
 model ComponentSynergy {
@@ -879,6 +886,7 @@ model EconomicComponent {
   @@index([countryId])
   @@index([componentType])
   @@index([isActive])
+  @@index([countryId, componentType, isActive])  // Compound index for active components by type
 }
 
 model TaxComponent {
@@ -1239,6 +1247,7 @@ model ThinktankMessage {
   @@index([userId])
   @@index([ixTimeTimestamp])
   @@index([messageType])
+  @@index([groupId, ixTimeTimestamp])  // Compound index for chronological group messages
 }
 
 model ThinktankInvite {
@@ -1348,6 +1357,7 @@ model ThinkshareMessage {
   @@index([classification])
   @@index([priority])
   @@index([status])
+  @@index([conversationId, ixTimeTimestamp])  // Compound index for chronological conversation threads
 }
 
 model MessageReadReceipt {

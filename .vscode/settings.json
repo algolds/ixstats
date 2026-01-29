@@ -1,3 +1,30 @@
 {
-    "typescript.tsdk": "node_modules/typescript/lib"
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.tsserver.experimental.useBundledNode": false,
+    
+    // Memory limits for TypeScript server
+    // This project has 131 Prisma models, 485 components, and 580+ endpoints
+    // which can cause tsserver to consume excessive memory (3.7GB+)
+    "typescript.tsserver.maxTsServerMemory": 2048,
+    
+    // Exclude heavy directories from TypeScript file watching
+    // to reduce memory usage and improve responsiveness
+    "typescript.tsserver.watchOptions": {
+        "watchFile": "useFsEvents",
+        "watchDirectory": "useFsEvents",
+        "fallbackPolling": "dynamicPriority",
+        "excludeDirectories": [
+            "**/node_modules",
+            "**/.next",
+            "**/prisma/migrations",
+            "**/.git",
+            "**/dist"
+        ]
+    },
+    
+    // Disable automatic type acquisition to reduce memory
+    "typescript.disableAutomaticTypeAcquisition": true,
+    
+    // Use workspace version of TypeScript for consistency
+    "typescript.enablePromptUseWorkspaceTsdk": true
 }

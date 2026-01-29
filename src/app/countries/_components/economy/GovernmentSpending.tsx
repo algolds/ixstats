@@ -462,7 +462,7 @@ export function GovernmentSpending({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                         <Legend />
                       </RechartsPieChart>
                     </ResponsiveContainer>

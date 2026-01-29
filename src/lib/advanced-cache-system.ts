@@ -4,7 +4,7 @@
  */
 
 // import { Redis } from '@upstash/redis'; // Commented out for now - will be enabled when Redis is configured
-import { performance } from "perf_hooks";
+// Note: Using globalThis.performance (available in Node.js 16+ and browsers)
 
 // In-memory cache for fallback
 class InMemoryCache {

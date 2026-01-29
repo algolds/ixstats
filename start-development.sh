@@ -34,14 +34,33 @@ fi
 
 # Use PostgreSQL database from .env.local.dev (October 2025: migrated from SQLite to PostgreSQL with PostGIS)
 # DATABASE_URL is now set from .env.local.dev and should not be overridden
-echo "🔄 Using PostgreSQL database from environment: ${DATABASE_URL}"
+echo "🔄 Using PostgreSQL database from environment"
+
+# Display read-only mode banner if DATABASE_READONLY is set
+if [ "$DATABASE_READONLY" = "true" ]; then
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════════╗"
+    echo "║                   🔒 READ-ONLY DATABASE MODE                      ║"
+    echo "╠══════════════════════════════════════════════════════════════════╣"
+    echo "║  Connected to production data (82 nations) in read-only mode     ║"
+    echo "║  • All database write operations are BLOCKED                     ║"
+    echo "║  • User creation disabled (login as existing user)               ║"
+    echo "║  • Audit logging to database disabled                            ║"
+    echo "║  • db:push, db:migrate, db:reset commands blocked                ║"
+    echo "╚══════════════════════════════════════════════════════════════════╝"
+    echo ""
+fi
 
 # Use development port 3000 (3001 is used by Discord bot API, 3002 by IxMaps production, 3003 by IxMaps dev)
 DEVELOPMENT_PORT=3000
 
 echo "🔍 Development Environment Summary:"
 echo "   NODE_ENV: $NODE_ENV"
-echo "   Database: $DATABASE_URL (Development Database)"
+if [ "$DATABASE_READONLY" = "true" ]; then
+    echo "   Database: 🔒 READ-ONLY (production data: 82 nations)"
+else
+    echo "   Database: Full access (development mode)"
+fi
 echo "   Port: $DEVELOPMENT_PORT"
 echo "   Base Path: / (root)"
 echo "   MediaWiki URL: ${NEXT_PUBLIC_MEDIAWIKI_URL:-https://ixwiki.com/}"
@@ -72,8 +91,8 @@ echo "✅ Port $DEVELOPMENT_PORT is available"
 # Check PostgreSQL database connection
 if [[ "$DATABASE_URL" == postgresql://* ]]; then
     echo "✅ PostgreSQL database configured (with PostGIS support)"
-    # Test connection by counting countries
-    PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d ixstats -tAc "SELECT COUNT(*) FROM \"Country\";" > /dev/null 2>&1 && \
+    # Test connection via Docker (uses trust auth for local socket)
+    docker exec ixstats-postgres psql -U postgres -d ixstats -tAc "SELECT COUNT(*) FROM \"Country\";" > /dev/null 2>&1 && \
         echo "   Database connection verified ✓" || \
         echo "   ⚠️  Warning: Could not verify database connection"
 else
@@ -93,6 +112,18 @@ fi
 echo "✅ Dependencies installed"
 echo ""
 
+# Clean stale production build artifacts from .next/ (prevents conflicts with dev server)
+if [ -d ".next/server" ] || [ -d ".next/static" ] || [ -f ".next/BUILD_ID" ]; then
+    echo "🧹 Cleaning stale production build artifacts from .next/..."
+    rm -rf .next/build .next/server .next/static .next/standalone .next/BUILD_ID \
+           .next/build-manifest.json .next/app-path-routes-manifest.json \
+           .next/export-marker.json .next/images-manifest.json \
+           .next/prerender-manifest.json .next/required-server-files.* \
+           .next/next-server.js.nft.json .next/next-minimal-server.js.nft.json \
+           .next/fallback-build-manifest.json .next/node_modules .next/package.json
+    echo "   Stale artifacts removed ✓"
+fi
+
 # Start Redis cache for rate limiting and caching
 echo "💾 Starting Redis cache server..."
 ./scripts/setup-redis.sh start
@@ -105,7 +136,7 @@ echo "   API Endpoints:   http://localhost:$DEVELOPMENT_PORT/api/*"
 echo "   tRPC API:        http://localhost:$DEVELOPMENT_PORT/api/trpc/*"
 echo ""
 echo "   Features:"
-echo "   • Hot reload enabled (Turbopack)"
+echo "   • Hot reload enabled (Webpack)"
 echo "   • Root path routing (no basePath)"
 echo "   • Development database"
 if [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_test_ ]]; then
@@ -120,5 +151,8 @@ echo "   Press Ctrl+C to stop the server"
 echo "   Run 'npm run auth:check:dev' to verify auth configuration"
 echo ""
 
-# Start Next.js development server with Turbopack
-exec npx next dev --turbo --port "$DEVELOPMENT_PORT"
+# Set memory limit to prevent swap thrashing on memory-constrained server (7.2GB total)
+export NODE_OPTIONS="--max-old-space-size=4096"
+
+# Start Next.js development server with Webpack (Turbopack struggles with this codebase size on limited RAM)
+exec npx next dev --webpack --port "$DEVELOPMENT_PORT"

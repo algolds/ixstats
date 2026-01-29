@@ -286,7 +286,7 @@ export function GovernmentSpending({
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                  <Tooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>

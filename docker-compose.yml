@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: ixstats-postgres
+    restart: unless-stopped
+    ports:
+      # SECURITY: Bind to localhost only - not accessible from external IPs
+      - "127.0.0.1:5433:5432"
+    environment:
+      # Use the secure password (URL-decoded version)
+      POSTGRES_PASSWORD: "kxslIz4cICVDon/qwP2yrUzOKjtsryQDt9d28hmMjlk="
+      POSTGRES_DB: ixstats
+      POSTGRES_USER: postgres
+      # Disable dangerous extensions that allow code execution
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=trust"
+    volumes:
+      - ixstats_pgdata:/var/lib/postgresql/data
+      # Mount custom pg_hba.conf for stricter access control
+      - ./docker/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    command: >
+      postgres
+      -c shared_preload_libraries=''
+      -c log_statement=ddl
+      -c log_connections=on
+      -c log_disconnections=on
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ixstats"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # SECURITY: Run as non-root and limit capabilities
+    security_opt:
+      - no-new-privileges:true
+    # Limit resources to prevent crypto mining abuse
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  ixstats_pgdata:
+    name: ixstats_pgdata

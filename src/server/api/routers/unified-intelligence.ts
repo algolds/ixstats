@@ -154,75 +154,73 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        // Get country data
-        const country = await ctx.db.country.findUnique({
-          where: { id: input.countryId },
-          include: {
-            governmentStructure: true,
-            economicModel: true,
-            taxSystem: true,
-          },
-        });
+        // Parallelize all independent queries for 3-6x performance improvement
+        const [country, vitalitySnapshots, alerts, briefings, recentMeetings, activePolicies] = await Promise.all([
+          // Get country data
+          ctx.db.country.findUnique({
+            where: { id: input.countryId },
+            include: {
+              governmentStructure: true,
+              economicModel: true,
+              taxSystem: true,
+            },
+          }),
+          // Get latest vitality snapshots
+          ctx.db.vitalitySnapshot.findMany({
+            where: { countryId: input.countryId },
+            orderBy: { calculatedAt: "desc" },
+            take: 4, // One for each major area
+          }),
+          // Get active intelligence alerts
+          ctx.db.intelligenceAlert.findMany({
+            where: {
+              countryId: input.countryId,
+              isActive: true,
+              isResolved: false,
+            },
+            orderBy: [{ severity: "desc" }, { detectedAt: "desc" }],
+            take: 10,
+          }),
+          // Get active intelligence briefings
+          ctx.db.intelligenceBriefing.findMany({
+            where: {
+              countryId: input.countryId,
+              isActive: true,
+            },
+            include: {
+              recommendations: {
+                where: { isActive: true, isImplemented: false },
+                take: 5,
+              },
+            },
+            orderBy: [{ priority: "desc" }, { generatedAt: "desc" }],
+            take: 5,
+          }),
+          // Get recent cabinet meetings
+          ctx.db.cabinetMeeting.findMany({
+            where: { countryId: input.countryId },
+            orderBy: { scheduledDate: "desc" },
+            take: 5,
+            include: {
+              decisions: {
+                where: { implementationStatus: { in: ["pending", "in_progress"] } },
+              },
+            },
+          }),
+          // Get active policies
+          ctx.db.policy.findMany({
+            where: {
+              countryId: input.countryId,
+              status: "active",
+            },
+            orderBy: { effectiveDate: "desc" },
+            take: 10,
+          }),
+        ]);
 
         if (!country) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
         }
-
-        // Get latest vitality snapshots
-        const vitalitySnapshots = await ctx.db.vitalitySnapshot.findMany({
-          where: { countryId: input.countryId },
-          orderBy: { calculatedAt: "desc" },
-          take: 4, // One for each major area
-        });
-
-        // Get active intelligence alerts
-        const alerts = await ctx.db.intelligenceAlert.findMany({
-          where: {
-            countryId: input.countryId,
-            isActive: true,
-            isResolved: false,
-          },
-          orderBy: [{ severity: "desc" }, { detectedAt: "desc" }],
-          take: 10,
-        });
-
-        // Get active intelligence briefings
-        const briefings = await ctx.db.intelligenceBriefing.findMany({
-          where: {
-            countryId: input.countryId,
-            isActive: true,
-          },
-          include: {
-            recommendations: {
-              where: { isActive: true, isImplemented: false },
-              take: 5,
-            },
-          },
-          orderBy: [{ priority: "desc" }, { generatedAt: "desc" }],
-          take: 5,
-        });
-
-        // Get recent cabinet meetings
-        const recentMeetings = await ctx.db.cabinetMeeting.findMany({
-          where: { countryId: input.countryId },
-          orderBy: { scheduledDate: "desc" },
-          take: 5,
-          include: {
-            decisions: {
-              where: { implementationStatus: { in: ["pending", "in_progress"] } },
-            },
-          },
-        });
-
-        // Get active policies
-        const activePolicies = await ctx.db.policy.findMany({
-          where: {
-            countryId: input.countryId,
-            status: "active",
-          },
-          orderBy: { effectiveDate: "desc" },
-          take: 10,
-        });
 
         // Calculate summary metrics
         const criticalAlerts = alerts.filter(

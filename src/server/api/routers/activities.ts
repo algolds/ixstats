@@ -120,6 +120,29 @@ export const activitiesRouter = createTRPCRouter({
       // Combine activities and ThinkPages posts
       const combinedActivities: any[] = [];
 
+      // Batch fetch users and countries to avoid N+1 queries
+      const userIds = [...new Set(activityFeedEntries.filter(a => a.userId).map(a => a.userId!))] as string[];
+      const countryIds = [...new Set(activityFeedEntries.filter(a => a.countryId).map(a => a.countryId!))] as string[];
+
+      const [users, countries] = await Promise.all([
+        userIds.length > 0
+          ? ctx.db.user.findMany({
+              where: { clerkUserId: { in: userIds } },
+              include: { country: true },
+            })
+          : [],
+        countryIds.length > 0
+          ? ctx.db.country.findMany({
+              where: { id: { in: countryIds } },
+              select: { id: true, name: true, leader: true },
+            })
+          : [],
+      ]);
+
+      // Create lookup maps for O(1) access
+      const userMap = new Map(users.map(u => [u.clerkUserId, u]));
+      const countryMap = new Map(countries.map(c => [c.id, c]));
+
       // Transform ActivityFeed entries
       for (const activity of activityFeedEntries) {
         // Parse metadata if it exists
@@ -142,15 +165,12 @@ export const activitiesRouter = createTRPCRouter({
           console.warn("Failed to parse related countries:", e);
         }
 
-        // Get user/country details if available
+        // Get user/country details from pre-fetched maps (fixes N+1 query)
         let user: any = null;
         let country: any = null;
 
         if (activity.userId) {
-          const dbUser = await ctx.db.user.findUnique({
-            where: { clerkUserId: activity.userId },
-            include: { country: true },
-          });
+          const dbUser = userMap.get(activity.userId);
           if (dbUser) {
             user = {
               id: dbUser.clerkUserId,
@@ -162,10 +182,7 @@ export const activitiesRouter = createTRPCRouter({
         }
 
         if (activity.countryId) {
-          country = await ctx.db.country.findUnique({
-            where: { id: activity.countryId },
-            select: { id: true, name: true, leader: true },
-          });
+          country = countryMap.get(activity.countryId);
         }
 
         combinedActivities.push({

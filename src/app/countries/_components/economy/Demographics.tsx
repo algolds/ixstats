@@ -497,7 +497,7 @@ export function Demographics({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -530,7 +530,7 @@ export function Demographics({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -863,7 +863,7 @@ export function Demographics({
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
+                          <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -972,7 +972,7 @@ export function Demographics({
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="name" />
                           <YAxis />
-                          <RechartsTooltip formatter={(value: number) => formatPopulation(value)} />
+                          <RechartsTooltip formatter={(value) => value !== undefined ? formatPopulation(Number(value)) : ''} />
                           <Legend />
                           <Bar dataKey="population" name="Total Population" fill="#3b82f6" />
                           <Bar dataKey="urbanPopulation" name="Urban Population" fill="#8b5cf6" />

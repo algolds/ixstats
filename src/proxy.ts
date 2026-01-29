@@ -39,14 +39,26 @@ const isClerkConfigured = Boolean(
 /**
  * Generate Content Security Policy
  * Protects against XSS, clickjacking, and other code injection attacks
+ *
+ * SECURITY: This CSP uses nonce-based script execution to prevent XSS attacks.
+ * - Scripts must have the correct nonce attribute to execute
+ * - unsafe-inline is ONLY used for styles (required by many UI libraries)
+ * - unsafe-eval is REMOVED to prevent dynamic code execution attacks
+ *
+ * If Clerk SDK breaks, check: https://clerk.com/docs/security/csp
  */
 function generateCSP(nonce: string): string {
   const isDevelopment = process.env.NODE_ENV === "development";
 
-  // Base CSP directives
+  // Base CSP directives - strict mode
   const directives = [
     `default-src 'self'`,
-    `script-src 'self' 'unsafe-eval' 'unsafe-inline' 'nonce-${nonce}' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`,
+    // SECURITY: Use nonce-based script execution, no unsafe-eval
+    // In development, we need unsafe-inline for hot reload
+    isDevelopment
+      ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${nonce}' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
+      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`,
+    // Styles still need unsafe-inline for CSS-in-JS and inline styles
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https: http:`, // Allow external images (flags, etc)
     `font-src 'self' https://fonts.gstatic.com data:`,
@@ -60,9 +72,11 @@ function generateCSP(nonce: string): string {
     `upgrade-insecure-requests`,
   ];
 
-  // Relax CSP in development for hot reload
+  // Additional script-src-elem directive for development hot reload
   if (isDevelopment) {
-    directives.push(`script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev`);
+    directives.push(
+      `script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev`
+    );
   }
 
   return directives.join("; ");

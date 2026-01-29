@@ -4,17 +4,14 @@
  */
 
 import { db } from "~/server/db";
-import { performance } from "perf_hooks";
 
-export interface QueryMetrics {
-  queryKey: string;
-  duration: number;
-  success: boolean;
-  cacheHit?: boolean;
-  dataSize?: number;
-  error?: string;
-  timestamp: number;
-}
+// Re-export from query-monitor for backward compatibility
+// The QueryPerformanceMonitor is in a separate file to avoid circular dependencies
+export {
+  QueryPerformanceMonitor,
+  queryMonitor,
+  type QueryMetrics,
+} from "./query-monitor";
 
 export interface OptimizedQueryOptions {
   cache?: boolean;
@@ -24,45 +21,6 @@ export interface OptimizedQueryOptions {
   select?: Record<string, boolean>;
   include?: Record<string, boolean>;
 }
-
-/**
- * Performance monitoring for database queries
- */
-export class QueryPerformanceMonitor {
-  private metrics: QueryMetrics[] = [];
-  private readonly MAX_METRICS = 1000;
-
-  recordQuery(metrics: QueryMetrics): void {
-    this.metrics.push(metrics);
-
-    // Keep only recent metrics
-    if (this.metrics.length > this.MAX_METRICS) {
-      this.metrics = this.metrics.slice(-this.MAX_METRICS);
-    }
-
-    // Log slow queries (>100ms)
-    if (metrics.duration > 100) {
-      console.warn(`[SLOW QUERY] ${metrics.queryKey}: ${metrics.duration}ms`);
-    }
-  }
-
-  getMetrics(): QueryMetrics[] {
-    return [...this.metrics];
-  }
-
-  getAverageDuration(queryKey: string): number {
-    const relevant = this.metrics.filter((m) => m.queryKey === queryKey && m.success);
-    if (relevant.length === 0) return 0;
-
-    return relevant.reduce((sum, m) => sum + m.duration, 0) / relevant.length;
-  }
-
-  getSlowQueries(threshold = 100): QueryMetrics[] {
-    return this.metrics.filter((m) => m.duration > threshold && m.success);
-  }
-}
-
-export const queryMonitor = new QueryPerformanceMonitor();
 
 /**
  * Optimized country queries with intelligent caching and batching

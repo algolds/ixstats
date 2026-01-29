@@ -233,17 +233,20 @@ export const adminRouter = createTRPCRouter({
           { key: "timeMultiplier", value: input.timeMultiplier.toString() },
         ];
 
-        for (const config of configUpdates) {
-          await ctx.db.systemConfig.upsert({
-            where: { key: config.key },
-            update: { value: config.value, updatedAt: new Date() },
-            create: {
-              key: config.key,
-              value: config.value,
-              description: `System configuration for ${config.key}`,
-            },
-          });
-        }
+        // Batch upserts using transaction for better performance (avoids N+1 pattern)
+        await ctx.db.$transaction(
+          configUpdates.map((config) =>
+            ctx.db.systemConfig.upsert({
+              where: { key: config.key },
+              update: { value: config.value, updatedAt: new Date() },
+              create: {
+                key: config.key,
+                value: config.value,
+                description: `System configuration for ${config.key}`,
+              },
+            })
+          )
+        );
 
         return { success: true, message: "Configuration saved successfully" };
       } catch (error) {
@@ -1088,17 +1091,20 @@ export const adminRouter = createTRPCRouter({
           { key: "showMapsTab", value: input.showMapsTab.toString() },
         ];
 
-        for (const config of configUpdates) {
-          await ctx.db.systemConfig.upsert({
-            where: { key: config.key },
-            update: { value: config.value, updatedAt: new Date() },
-            create: {
-              key: config.key,
-              value: config.value,
-              description: `Navigation tab visibility setting for ${config.key}`,
-            },
-          });
-        }
+        // Batch upserts using transaction for better performance (avoids N+1 pattern)
+        await ctx.db.$transaction(
+          configUpdates.map((config) =>
+            ctx.db.systemConfig.upsert({
+              where: { key: config.key },
+              update: { value: config.value, updatedAt: new Date() },
+              create: {
+                key: config.key,
+                value: config.value,
+                description: `Navigation tab visibility setting for ${config.key}`,
+              },
+            })
+          )
+        );
 
         return { success: true, message: "Navigation settings updated successfully" };
       } catch (error) {

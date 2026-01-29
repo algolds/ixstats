@@ -666,7 +666,7 @@ export function ComparativeAnalysis({
                       />
                       <YAxis />
                       <Tooltip
-                        formatter={(value: number) => [formatCurrency(value), "Avg GDP per Capita"]}
+                        formatter={(value) => [value !== undefined ? formatCurrency(Number(value)) : '', "Avg GDP per Capita"]}
                       />
                       <Bar dataKey="avgGdpPerCapita" fill="#3B82F6">
                         {regionalData.map((entry, index) => (
@@ -701,7 +701,7 @@ export function ComparativeAnalysis({
                       />
                       <YAxis />
                       <Tooltip
-                        formatter={(value: number) => [`${value.toFixed(4)}%`, "Avg Growth Rate"]}
+                        formatter={(value) => [`${(Number(value ?? 0)).toFixed(4)}%`, "Avg Growth Rate"]}
                       />
                       <Bar dataKey="avgGrowthRate" fill="#10B981">
                         {regionalData.map((entry, index) => (
@@ -736,7 +736,7 @@ export function ComparativeAnalysis({
                       />
                       <YAxis />
                       <Tooltip
-                        formatter={(value: number) => [`${value.toFixed(1)}%`, "Avg Unemployment"]}
+                        formatter={(value) => [`${(Number(value ?? 0)).toFixed(1)}%`, "Avg Unemployment"]}
                       />
                       <Bar dataKey="avgUnemployment" fill="#F59E0B">
                         {regionalData.map((entry, index) => (
@@ -771,8 +771,8 @@ export function ComparativeAnalysis({
                       />
                       <YAxis />
                       <Tooltip
-                        formatter={(value: number) => [
-                          formatCurrency(value / 1e9) + "B",
+                        formatter={(value) => [
+                          formatCurrency(Number(value ?? 0) / 1e9) + "B",
                           "Total GDP",
                         ]}
                       />
