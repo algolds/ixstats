@@ -1,135 +1,132 @@
-# IxStats v1.42
+# IxStats v2
 
-⚠️ **Breaking Change (November 13, 2025)**: Maps system deprecated and removed. Maps infrastructure will be redesigned from scratch. See CHANGELOG.md for details.
-
-IxStats is a modern nation simulation and worldbuilding platform. The codebase combines a rich React front end with a tRPC API layer, Prisma schema, and a custom server runtime that enables real-time updates for executive intelligence, diplomacy, economics, and collaborative storytelling features.
+IxStats is a nation simulation and worldbuilding platform built with Next.js, tRPC, and Prisma. The codebase combines a React front end with a type-safe API layer, PostgreSQL database, and a custom server runtime that enables real-time updates for executive intelligence, diplomacy, economics, and collaborative storytelling.
 
 ## Platform Overview
+
 - Next.js 16.1.3 App Router with client and server components under `src/app`
-- React 19.1.3 + TypeScript 5.8 with an extensive shared component library in `src/components` (598+ components)
-- tRPC 11.4 API layer (`src/server/api/routers`) with **61 routers** and **920+ typed procedures** (460+ queries / 460+ mutations)
-- Prisma 6.19 schema (`prisma/schema.prisma`) covering **201 models** with PostgreSQL database
-- Custom Node server (`server.mjs`) that loads environment tiers and enables production WebSocket feeds for live intelligence updates
-- Documentation-first approach with Markdown guides in `docs/` and an in-app help center at `/help`
-- **✅ 100% Dynamic Content Management**: All game content now database-driven (14,677 lines migrated from hardcoded TypeScript)
-- **✅ NPC AI System**: 8 personality traits, 6 archetypes, behavioral prediction for diplomatic interactions
-- **✅ Crisis Events System**: Dynamic natural disasters, economic crises, diplomatic incidents with player responses
+- React 19.1.3 + TypeScript 5.8 with 597+ components in `src/components`
+- tRPC 11.4 API layer (`src/server/api/routers`) with **59 routers** and **900+ typed procedures**
+- Prisma 6.19 ORM (`prisma/schema.prisma`) with **201 models** on PostgreSQL
+- Custom Node server (`server.mjs`) with layered env loading and Socket.IO realtime feeds
+- In-app help center at `/help` and Markdown docs in `docs/`
 
 ## Feature Pillars
-- **MyCountry Command Suite** – Unified dashboard at `src/app/mycountry` with executive briefing, compliance, defense, economic, and analytics modules powered by hooks such as `useMyCountryCompliance`
-- **Intelligence & Compliance** – Live diplomatic and domestic intelligence feeds (`src/components/diplomatic/LiveDiplomaticFeed.tsx`) backed by routers like `diplomatic-intelligence.ts` and `intelligence.ts`
-- **Diplomacy & Foreign Affairs** – Embassy missions, cultural exchanges, and influence tracking across `src/app/mycountry/intelligence`, `src/components/diplomatic`, and tRPC routers including `diplomatic.ts`
-- **Economic Simulation & Builder Tools** – Country builder flows (`src/app/builder`, `src/components/builders`) with tier-based economic calculations and historical data services in `src/server/api/routers/economics.ts`
-- **Social & Collaboration Systems** – ThinkPages and ThinkShare social experiences (`src/app/thinkpages`, `src/components/thinkshare`) with activity feeds, comments, and shared research hubs
-- **Achievements & Leaderboards** – Global achievement tracking and ranking interfaces (`src/app/achievements`, `src/app/leaderboards`) driven by routers such as `achievements.ts`
-- **Content Management System** – **18 admin interfaces** (`/admin/*`) for dynamic content management including diplomatic scenarios, NPC personalities, military equipment, economic archetypes, and performance monitoring
-- **Elections & Political Parties** – D'Hondt/FPTP electoral systems, legislature management, party creation with hemicycle visualization (`src/components/executive/politics`)
-- **IxCards & MyVault** – Trading card system with 13 card types, pack opening, crafting, P2P trading, marketplace with auction system (`src/app/vault`, `src/components/cards`)
-- **NPC Personality System** – Data-driven AI personalities with 8 traits, 6 archetypes, behavioral prediction, and personality drift over time
-- **Crisis Management** – Dynamic crisis events (natural disasters, economic crises, diplomatic incidents) with player response options and realistic outcomes
-- **Integrated Help & Knowledge Base** – Rich help center under `src/app/help` plus curated Markdown documentation within the repository
 
-## Technology Snapshot
+| Pillar | Description |
+|--------|-------------|
+| **MyCountry Command Suite** | Unified executive dashboard with briefing, compliance, defense, economic, and analytics modules |
+| **Intelligence & Compliance** | Live diplomatic and domestic intelligence feeds with unified intelligence system |
+| **Diplomacy & Foreign Affairs** | Embassy missions, cultural exchanges, NPC personalities with behavioral prediction |
+| **Economic Simulation** | Country builder with tier-based economic calculations, historical tracking, projections |
+| **Social Platform** | ThinkPages, ThinkShare, ThinkTanks for content sharing and collaborative research |
+| **IxCards & MyVault** | Trading card system with 13 card types, pack opening, crafting, P2P trading, marketplace |
+| **Elections & Politics** | D'Hondt/FPTP electoral systems, legislature management, hemicycle visualization |
+| **Crisis Management** | Dynamic natural disasters, economic crises, diplomatic incidents with player responses |
+| **Content Management** | 18 admin interfaces for dynamic content (scenarios, NPC personalities, equipment, archetypes) |
+| **Achievements & Leaderboards** | Global achievement tracking and ranking |
+
+## Technology Stack
+
 | Area | Details |
-| --- | --- |
-| Runtime | Node.js ≥ 18.17, npm ≥ 9.0 |
+|------|---------|
+| Runtime | Node.js >= 18.17, npm >= 9.0 |
 | Framework | Next.js 16.1.3, React 19.1.3 |
 | Language | TypeScript 5.8.3 |
-| API Layer | tRPC 11.4 with superjson + Clerk auth context |
-| Data | Prisma 6.19 ORM, PostgreSQL database (`localhost:5433/ixstats`), PostgreSQL-native |
-| Styling | Tailwind CSS 4, custom "glass physics" design tokens, Lucide icons |
-| Realtime | Socket.IO server enabled in production via `server.mjs` and `src/lib/websocket-server.ts` |
+| API Layer | tRPC 11.4 with SuperJSON + Clerk auth context |
+| Database | Prisma 6.19, PostgreSQL (port 5433) |
+| Styling | Tailwind CSS 4, custom glass physics design system, Lucide icons |
+| Realtime | Socket.IO via `server.mjs` and `src/lib/websocket-server.ts` |
 
 ## Getting Started
+
 ### Prerequisites
-- Node.js 18.17 or later and npm 9+
-- PostgreSQL database (port 5433, database name `ixstats`)
-- Optional Clerk credentials for authentication (demo mode works without keys)
+
+- Node.js 18.17+ and npm 9+
+- PostgreSQL database (port 5433, database `ixstats`)
+- Optional: Clerk credentials for authentication (demo mode works without)
 
 ### Installation
+
 ```bash
 npm install
-npm run db:setup   # prisma generate + db push + seed/init scripts
-npm run dev        # wraps start-development.sh and launches Next.js on http://localhost:3000
+npm run db:setup   # prisma generate + db push + seed
+npm run dev        # launches Next.js on http://localhost:3000
 ```
 
-The development script loads `.env.local.dev` or `.env.local` if present. At minimum set:
+The dev script loads `.env.local.dev` or `.env.local`. At minimum set:
 
 ```dotenv
 DATABASE_URL="postgresql://ixstats:ixstats@localhost:5433/ixstats?schema=public"
 NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_your_key"   # optional
-CLERK_SECRET_KEY="sk_test_your_key"                    # optional
-IXTIME_BOT_URL="http://localhost:3001"                # optional local bot integration
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."   # optional
+CLERK_SECRET_KEY="sk_test_..."                    # optional
+IXTIME_BOT_URL="http://localhost:3001"            # optional
 ```
 
-More details on required and optional variables are tracked in `docs/operations/environments.md` (updated in this refresh).
+### Database
 
-### Database Notes
-- Prisma migrations live in `prisma/migrations`
-- `npm run db:setup` (or `npm run dev:db`) initializes the schema and seed routines
-- Use `npm run db:studio` for the dev database and `npm run db:studio:prod` when pointing at production data
+- Prisma migrations: `prisma/migrations/`
+- Initialize: `npm run db:setup`
+- Prisma Studio: `npm run db:studio` (dev) or `npm run db:studio:prod` (production)
 
-## Build, Test, and Quality Gates
-- `npm run build` – production build using the custom base path script
-- `npm run start` – start the production server (uses `server.mjs`)
-- `npm run preview` – build + Next.js preview server on port 3550 by default
-- `npm run test` – Jest + @testing-library suite for API routers and critical services
-- `npm run audit:wiring` – validates that TRPC queries/mutations resolve to live implementations
-- `npm run typecheck:app`, `npm run typecheck:server`, `npm run typecheck:components` – targeted TypeScript checks for specific areas
+## Build & Quality
 
-## Folder Structure
+| Command | Purpose |
+|---------|---------|
+| `npm run build` | Production build |
+| `npm run start:prod` | Production server (port 3550) |
+| `npm run lint` | ESLint with cache |
+| `npm run dev` | Development server with incremental type checking |
+
+> **Note:** Do not run `tsc --noEmit` globally — the project is too large and will exhaust server memory. Use `npm run dev` for incremental checking.
+
+## Project Structure
+
 ```
-├─ src/
-│  ├─ app/                     # Next.js routes (App Router)
-│  │  ├─ mycountry/            # Executive command suite
-│  │  ├─ dashboard/            # Signed-in dashboards and cards
-│  │  ├─ thinkpages/           # Social knowledge sharing hub
-│  │  ├─ achievements/         # Achievement explorer
-│  │  ├─ leaderboards/         # Rankings and stats
-│  │  ├─ help/                 # In-app help experience
-│  │  └─ api/                  # Edge/API route handlers
-│  ├─ components/              # Shared and domain component libraries (598+)
-│  ├─ hooks/                   # Cross-domain React hooks (71 hooks)
-│  ├─ server/
-│  │  ├─ api/routers/          # tRPC routers (61 total)
-│  │  └─ db/                   # Prisma client helpers
-│  ├─ lib/                     # Utilities (rate limiter, websocket server, formatting)
-│  └─ services/                # Domain services and adapters
-├─ prisma/                     # Schema (201 models), migrations, PostgreSQL database
-├─ scripts/                    # Operational and audit scripts
-├─ docs/                       # Markdown documentation suite (refreshed in this update)
-└─ tests/                      # Jest setup, mocks, integration utilities
+├── src/
+│   ├── app/                     # Next.js App Router pages (118 routes)
+│   │   ├── mycountry/           # Executive command suite
+│   │   ├── dashboard/           # Signed-in dashboards
+│   │   ├── thinkpages/          # Social knowledge sharing
+│   │   ├── vault/               # IxCards & MyVault
+│   │   ├── help/                # In-app help center
+│   │   └── api/                 # API route handlers
+│   ├── components/              # UI and domain components (597+)
+│   ├── hooks/                   # Custom React hooks (71)
+│   ├── server/api/routers/      # tRPC routers (59)
+│   ├── lib/                     # Utilities, rate limiter, formatting
+│   └── services/                # Domain services and adapters
+├── prisma/                      # Schema (201 models) and migrations
+├── scripts/                     # Operational utilities
+├── docs/                        # Documentation (see docs/README.md)
+└── tests/                       # Test setup and utilities
 ```
 
 ## API & Data Access
-- tRPC context defined in `src/server/api/trpc.ts` (Clerk auth, rate limiting, user auto-provisioning)
-- Routers are co-located by domain under `src/server/api/routers`; see generated summaries in the refreshed documentation set
-- Database access uses Prisma; helpers for common queries live in `src/server/db`
-- Realtime events originate from `src/lib/websocket-server.ts` and are consumed by live intelligence components
 
-## Observability & Operations
-- Rate limiting middleware lives in `~/lib/rate-limiter`
-- Error logging via `~/lib/error-logger` with optional Discord webhooks controlled by environment flags
-- Production server loads layered environment files (`.env.production`, `.env.local`, `.env`) before bootstrapping Next.js and the WebSocket layer
+- tRPC context: `src/server/api/trpc.ts` (Clerk auth, rate limiting, user provisioning)
+- Router index: `src/server/api/root.ts` (59 domain routers)
+- Database: Prisma client helpers in `src/server/db`
+- Realtime: Socket.IO events from `src/lib/websocket-server.ts`
 
-## Documentation & Help System
-- Full documentation lives under `docs/` (see `docs/README.md` for navigation)
-- `/help` exposes the in-app help center with articles that mirror the Markdown guidance
-- Domain-specific READMEs (e.g., `src/app/mycountry/README.md`) summarise implementation details after this refresh
+## Observability
+
+- Rate limiting: `src/lib/rate-limiter` (Redis-based with in-memory fallback)
+- Error logging: `src/lib/error-logger` with optional Discord webhooks
+- Middleware: `src/proxy.ts` (Clerk auth + CSP + security headers)
+
+## Documentation
+
+- `docs/README.md` — documentation hub and navigation
+- `docs/reference/api-complete.md` — full tRPC API catalog
+- `docs/systems/` — system-specific guides (MyCountry, Intelligence, Diplomacy, Economy)
+- `IMPLEMENTATION_STATUS.md` — current feature maturity matrix
+- `CHANGELOG.md` — version history
 
 ## Contributing
-1. Fork or branch from `main`
-2. Install dependencies and run `npm run db:setup` for a working dataset
-3. Keep coverage and linting healthy (`npm run test`, `npm run typecheck:*`)
-4. Update relevant docs/help content when adding or changing features
 
-Additional contribution standards, coding style, and review expectations are captured in `docs/processes/contributing.md`.
-
-## Support & Contact
-- For environment or deployment issues see `docs/operations/deployment.md`
-- Incident response runbooks and audit scripts live under `scripts/` and the accompanying documentation
-- Reach out to the IxStats maintainers through the project Discord or filing an issue in the tracker (internal tooling)
-
----
-This README reflects the current codebase as of the documentation refresh performed in this update. Keep it in sync with structural changes and major feature work.
+1. Branch from `v2`
+2. `npm install && npm run db:setup`
+3. Keep linting clean: `npm run lint`
+4. Update relevant docs when adding or changing features
