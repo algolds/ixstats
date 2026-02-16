@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { VariableSizeList, type VariableSizeListHandle } from "~/lib/react-window-compat";
 const List = VariableSizeList;
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   AlertTriangle,
   AlertCircle,
@@ -385,7 +385,7 @@ const BriefingCard = React.memo(
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         className={cn(
-          "glass-surface glass-refraction rounded-lg border",
+          "glass-hierarchy-child rounded-lg border",
           briefing.isRead ? "opacity-70" : ""
         )}
       >
@@ -508,7 +508,7 @@ const RecommendationCard = React.memo(
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         className={cn(
-          "glass-surface glass-refraction rounded-lg border",
+          "glass-hierarchy-child rounded-lg border",
           recommendation.isImplemented ? "opacity-50" : ""
         )}
       >
@@ -627,7 +627,7 @@ const TrendCard = React.memo(
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="glass-surface glass-refraction rounded-lg border"
+        className="glass-hierarchy-child rounded-lg border"
       >
         <div className="hover:bg-muted/50 cursor-pointer p-4 transition-colors" onClick={onToggle}>
           <div className="flex items-start gap-3">

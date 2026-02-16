@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useCountryDiplomaticUpdates } from "~/hooks/useDiplomaticUpdates";
 import type { LiveIntelligenceUpdate, DiplomaticEvent } from "~/lib/diplomatic-websocket";

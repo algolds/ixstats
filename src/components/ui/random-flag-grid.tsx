@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { SimpleFlag } from "~/components/SimpleFlag";
 import { cn } from "~/lib/utils";
 

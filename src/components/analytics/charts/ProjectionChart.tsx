@@ -54,7 +54,7 @@ export const ProjectionChart = React.memo<ProjectionChartProps>(
             : "1 year";
 
     return (
-      <Card className="glass-surface glass-refraction" id="gdp-projections-chart">
+      <Card className="glass-hierarchy-child" id="gdp-projections-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

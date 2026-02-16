@@ -1,19 +1,19 @@
 # IxStats Implementation Status
 
-**Version**: 1.1.0  
-**Last Updated**: October 2025 (documentation refresh)  
+**Version**: v2
+**Last Updated**: February 2026
 **Maintainers**: IxStats engineering team
 
-This status page reflects the current codebase after the repository-wide documentation update. All metrics below are derived from the live source tree and automation under `scripts/audit`.
+This status page reflects the current codebase after the v2 migration. All metrics below are derived from the live source tree.
 
 ## Snapshot
-- Next.js 15.4.1 App Router with 65 route entries (`find src/app -name page.tsx`)
-- React 19.1.0 + TypeScript 5.8.3 with granular tsconfig targets for app, components, and server packages
-- tRPC 11.4 API layer: **37 routers / 580+ procedures** (290+ queries, 290+ mutations)
-- Prisma 6.12 ORM with **131 models** defined in `prisma/schema.prisma`
+- Next.js 16.1.3 App Router with 118 route entries (`find src/app -name page.tsx`)
+- React 19.1.3 + TypeScript 5.8.3 with granular tsconfig targets for app, components, and server packages
+- tRPC 11.4 API layer: **61 routers / 920+ procedures** (460+ queries, 460+ mutations)
+- Prisma 6.19 ORM with **201 models** defined in `prisma/schema.prisma`
 - Custom server runtime (`server.mjs`) adds layered env loading and Socket.IO realtime feeds
-- Frontend experience composed from >40 domain component folders under `src/components`
-- **Hardcoded Data Migration**: ✅ 100% complete (14,677 lines migrated, 8 phases, 12 admin interfaces)
+- Frontend experience composed from 598+ components across `src/components`, 71 custom hooks
+- **Hardcoded Data Migration**: ✅ 100% complete (14,677 lines migrated, 8 phases, 18 admin interfaces)
 
 ## Maturity Matrix
 | Area | Status | Evidence |
@@ -24,7 +24,7 @@ This status page reflects the current codebase after the repository-wide documen
 | Intelligence & Diplomatic Feeds | ✅ Ready | Live routers (`diplomatic-intelligence.ts`, `intelligence.ts`), UI consumption in `LiveDiplomaticFeed.tsx` |
 | Economic Engine & Builder | ✅ Ready | Economic calculations (`economics.ts`, `enhanced-economics.ts`), builder flows in `src/app/builder` |
 | Diplomacy Systems | ✅ Ready | Embassy, missions, cultural exchange data in `diplomatic.ts`, UI in `DiplomaticOperationsHub.tsx`, dynamic scenarios (`diplomaticScenarios.ts`) |
-| Content Management System | ✅ Complete | 12 admin interfaces for reference data management, 80+ API endpoints, 750+ records seeded |
+| Content Management System | ✅ Complete | 18 admin interfaces for reference data management, 920+ API endpoints, 750+ records seeded |
 | Social / ThinkPages Platform | ✅ Operational | ThinkPages routes & components (`src/app/thinkpages`, `src/components/thinkshare`), comment/activity APIs |
 | Achievements & Leaderboards | ✅ Ready | Routers (`achievements.ts`, `leaderboards` queries), UI at `/achievements` & `/leaderboards` |
 | Help & Knowledge Base | 🔄 Refreshing | Help hub is live (`src/app/help/page.tsx`); article content rebuilt in this update |
@@ -33,24 +33,29 @@ This status page reflects the current codebase after the repository-wide documen
 
 ## Backend Coverage
 ```
-Routers: 37
-Procedures: 580+ (290+ queries / 290+ mutations)
+Routers: 61 (60 registered in appRouter)
+Procedures: 920+ (460+ queries / 460+ mutations)
 Key Middleware: rateLimiter, userLoggingMiddleware, Clerk auth context
 Reference Data Routers: 8 (diplomaticOptions, economicArchetypes, governmentComponents,
                          economicComponents, militaryEquipment, diplomaticScenarios,
                          npcPersonalities, intelligenceTemplates)
+Additional Routers (v2): elections, cardImages, vault, cards, cardPacks, loreCards,
+                         cardMarket, cardAnalytics, crafting, trading, nsImport,
+                         autosaveHistory, autosaveMonitoring, historical
 ```
-Core routers include `countries`, `diplomatic-intelligence`, `economics`, `intelligence`, `notifications`, `policies`, `quickactions`, `sdi`, `unified-intelligence`, `wikiCache`, and 8 reference data routers. Refer to `docs/reference/api.md` for the generated index.
+Core routers include `countries`, `diplomatic-intelligence`, `economics`, `intelligence`, `notifications`, `policies`, `quickactions`, `sdi`, `unified-intelligence`, `wikiCache`, 8 reference data routers, and 14 additional routers added in v2. Refer to `docs/reference/api-complete.md` for the full index.
 
 ## Data Model Status
-- `prisma/schema.prisma` defines economic, diplomatic, social, notification, and intelligence domains
-- SQLite databases for dev/prod live under `prisma/`
+- `prisma/schema.prisma` defines 201 models across economic, diplomatic, social, notification, intelligence, cards/vault, elections, and crafting/trading domains
+- PostgreSQL databases for dev and production
 - Seed, backup, and restore scripts in `scripts/setup`
 - Migrations are linear and applied via `npm run db:migrate`
 
 ## Frontend Coverage
-- Executive dashboards leverage shared UI kits in `src/components/ui`
-- MyCountry views compose analytics components (`IntelligenceTabSystem.tsx`, `NationalPerformanceCommandCenter.tsx`)
+- 598+ components in `src/components/`, 71 custom hooks in `src/hooks/`, 118 page routes
+- Single-page router pattern: `MyCountryRouter`, `VaultRouter`, `ThinkPagesRouter`, `DashboardRouter` manage sections via client-side state + `pushState`
+- Sidebar layout system with contextual widgets (`ExecutiveSidebarWidget`, `DiplomacySidebarWidget`, `DefenseSidebarWidget`)
+- Metric detail modals with `BaseMetricDetailsModal` (4-tab drill-down system)
 - ThinkPages and ThinkShare share feed widgets (`src/components/thinkpages`, `src/components/thinkshare`)
 - In-app help and onboarding content renders from `/help/*` routes using shared layouts (`src/app/help/_components/ArticleLayout.tsx`)
 
@@ -93,8 +98,8 @@ Between October 26-29, 2025, IxStats completed a comprehensive migration of **14
 | 8 | NPC Personalities | 1,448 | ✅ Production | Oct 29, 2025 |
 
 ### Deliverables
-- **12 Admin Interfaces**: Full CRUD capabilities with Glass Physics design
-- **80+ API Endpoints**: Type-safe tRPC endpoints with audit logging
+- **18 Admin Interfaces**: Full CRUD capabilities with Glass Physics design
+- **920+ API Endpoints**: Type-safe tRPC endpoints with audit logging
 - **8 Analytics Dashboards**: Real-time insights and usage tracking
 - **750+ Reference Records**: Seeded across all systems
 - **14 Database Models**: Specialized reference data schemas
@@ -114,6 +119,12 @@ Between October 26-29, 2025, IxStats completed a comprehensive migration of **14
 10. `/admin/diplomatic-scenarios/analytics` - Scenario analytics
 11. `/admin/npc-personalities` - Personality catalog with trait sliders
 12. `/admin/npc-personalities/analytics` - Personality usage analytics
+13. `/admin/lore-cards/batch-generator` - Lore card batch generation
+14. `/admin/autosave-monitor` - Autosave system monitoring
+15. `/admin/ns-sync` - NationStates data synchronization
+16. `/admin/military-equipment/small-arms` - Small arms equipment catalog
+17. `/admin/military-equipment/manufacturers` - Equipment manufacturer management (also #7)
+18. `/admin/membership` - User role and membership management
 
 ### Impact
 - **Before**: 14,677 lines of hardcoded data requiring deployments for changes
@@ -185,6 +196,34 @@ Between November 1-7, 2025, IxStats completed a comprehensive reorganization of 
 
 ### Status: Production Ready ✅
 All v1.4.2-1.4.4 features deployed and operational.
+
+## v2 Systems (January-February 2026)
+
+### Single-Page Router Architecture
+All major sections use client-side routing for instant SPA-like navigation:
+- `MyCountryRouter` - 5 sections with sidebar widgets and metric modals
+- `VaultRouter` - Card collection, acquisition, creation, import
+- `ThinkPagesRouter` - Feed, ThinkTanks, ThinkShare
+- `DashboardRouter` - Main dashboard, diplomacy, feed, trends
+
+### Elections & Political System
+- D'Hondt and FPTP seat allocation algorithms
+- Political party CRUD, legislature configuration
+- Election simulation with hemicycle visualization
+- Router: `elections.ts`
+
+### Card Image Management
+- Custom card backgrounds for 13 card types
+- Per-country image management with presets
+- Router: `cardImages.ts`
+
+### Defense Operations Expansion
+- `ActiveOperations`, `DeploymentWizard`, `PvPConflictPanel`
+- Alliance system and foreign policy management
+
+### Dashboard Expansion
+- `DashboardRouter` with diplomacy, feed, trends sub-sections
+- Sidebar layout with player widget and world stats bar
 
 ## Testing & Tooling
 - Jest environment configured in `package.json`

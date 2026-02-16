@@ -20,7 +20,7 @@ import {
   Zap,
   Shield,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 import type { ComponentType } from "~/types/government";
 import {

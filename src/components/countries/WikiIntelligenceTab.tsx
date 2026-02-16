@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import type { WikiIntelligenceTabProps } from "~/types/wiki-intelligence";
 import { useWikiIntelligence } from "~/hooks/useWikiIntelligence";
 import { WikiHeader } from "./wiki/WikiHeader";

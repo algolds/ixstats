@@ -19,7 +19,7 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import {
   Activity,
   Target,
@@ -75,7 +75,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
   // Premium/permission fallback
   if (analytics.analyticsError) {
     return (
-      <Card className="glass-surface glass-refraction">
+      <Card className="glass-hierarchy-child">
         <CardHeader>
           <CardTitle>Analytics Unavailable</CardTitle>
           <CardDescription>Advanced analytics require MyCountry Premium access.</CardDescription>
@@ -90,7 +90,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <AnalyticsHeader
         dateRange={analytics.dateRange}
@@ -115,7 +115,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
         </TabsList>
 
         {/* Overview Section */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview" className="space-y-4">
           <OverviewSection
             summaryMetrics={analytics.summaryMetrics}
             economicChartData={analytics.economicChartData}
@@ -129,7 +129,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
         </TabsContent>
 
         {/* Economic Analytics Section */}
-        <TabsContent value="economic" className="space-y-6">
+        <TabsContent value="economic" className="space-y-4">
           <EconomicSection
             sectorPerformanceData={analytics.sectorPerformanceData}
             volatilityMetrics={analytics.volatilityMetrics}
@@ -142,7 +142,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
         </TabsContent>
 
         {/* Policy Analytics Section */}
-        <TabsContent value="policy" className="space-y-6">
+        <TabsContent value="policy" className="space-y-4">
           <PolicySection
             policyDistributionData={analytics.policyDistributionData}
             budgetImpactData={analytics.budgetImpactData}
@@ -154,17 +154,14 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
         </TabsContent>
 
         {/* Diplomatic Analytics Section */}
-        <TabsContent value="diplomatic" className="space-y-6">
+        <TabsContent value="diplomatic" className="space-y-4">
           {/* Diplomatic Network Power Card */}
-          <Card className="glass-surface glass-refraction border-purple-200 dark:border-purple-800/40">
+          <Card className="glass-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-purple-600" />
+                <Globe className="h-4 w-4 text-purple-600" />
                 Diplomatic Network Analysis
               </CardTitle>
-              <CardDescription>
-                Comprehensive view of your diplomatic reach and effectiveness
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
@@ -175,11 +172,11 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
                   >
-                    <div className="rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-gray-800/50 dark:to-gray-900/50">
-                      <div className="mb-2 flex items-center gap-2">
+                    <div className="rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 p-3 dark:from-gray-800/50 dark:to-gray-900/50">
+                      <div className="mb-1 flex items-center gap-1.5">
                         <stat.icon
                           className={cn(
-                            "h-5 w-5",
+                            "h-3.5 w-3.5",
                             stat.color === "purple" && "text-purple-600",
                             stat.color === "blue" && "text-blue-600",
                             stat.color === "green" && "text-green-600",
@@ -188,7 +185,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                         />
                         <span className="text-muted-foreground text-xs">{stat.label}</span>
                       </div>
-                      <div className="text-2xl font-bold">{stat.value}</div>
+                      <div className="text-lg font-bold">{stat.value}</div>
                     </div>
                   </motion.div>
                 ))}
@@ -196,7 +193,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <DiplomaticInfluenceChart
               data={analytics.diplomaticInfluenceData}
               GlassTooltip={GlassTooltip}
@@ -233,11 +230,11 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
           <EmbassyNetworkChart data={analytics.embassyNetworkData} GlassTooltip={GlassTooltip} />
 
           {/* Mission Success Rates & Cultural Exchange */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card className="glass-surface glass-refraction">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Card className="glass-hierarchy-child">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-green-600" />
                   Mission Success Rates
                 </CardTitle>
               </CardHeader>
@@ -268,10 +265,10 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
               </CardContent>
             </Card>
 
-            <Card className="glass-surface glass-refraction">
+            <Card className="glass-hierarchy-child">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-yellow-600" />
+                  <Zap className="h-4 w-4 text-yellow-600" />
                   Cultural Exchange Participation
                 </CardTitle>
               </CardHeader>
@@ -306,15 +303,14 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
         </TabsContent>
 
         {/* Forecasting Section */}
-        <TabsContent value="forecasting" className="space-y-6">
+        <TabsContent value="forecasting" className="space-y-4">
           {/* Scenario Selector */}
-          <Card className="glass-surface glass-refraction">
+          <Card className="glass-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-purple-600" />
+                <Target className="h-4 w-4 text-purple-600" />
                 Scenario Configuration
               </CardTitle>
-              <CardDescription>Select scenarios to compare in projections</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
@@ -363,7 +359,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="glass-surface glass-refraction">
+                  <Card className="glass-hierarchy-child">
                     <CardHeader>
                       <CardTitle className="text-lg capitalize">
                         {scenario.scenario} Scenario
@@ -397,10 +393,10 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
           </div>
 
           {/* Methodology */}
-          <Card className="glass-surface glass-refraction border-blue-200 dark:border-blue-800/40">
+          <Card className="glass-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5 text-blue-600" />
+                <Info className="h-4 w-4 text-blue-600" />
                 Forecasting Methodology
               </CardTitle>
             </CardHeader>

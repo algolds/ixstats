@@ -20,6 +20,7 @@ import {
   generateIntelligenceFromBranchUpdate,
 } from "~/lib/defense-integration";
 import { notificationAPI } from "~/lib/notification-api";
+import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 
 // ===========================
 // Input Validation Schemas
@@ -1649,5 +1650,510 @@ export const securityRouter = createTRPCRouter({
       }
 
       return generateIntelligenceFromBranchUpdate(input);
+    }),
+
+  // ============================================================
+  // Military Operations (Phase 4)
+  // ============================================================
+
+  // Get active and past operations
+  getOperations: publicProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        includeCompleted: z.boolean().optional().default(false),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const statusFilter = input.includeCompleted
+        ? {}
+        : { status: { in: ["planned", "active"] } };
+
+      return ctx.db.militaryOperation.findMany({
+        where: { countryId: input.countryId, ...statusFilter },
+        include: {
+          targetCountry: { select: { id: true, name: true, flagUrl: true } },
+          deployments: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }),
+
+  // Create a military operation and deploy units/assets
+  createOperation: protectedProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        operationType: z.enum(["peacekeeping", "defense_pact", "blockade", "intervention", "training"]),
+        name: z.string().min(2),
+        description: z.string().optional(),
+        targetCountryId: z.string().optional(),
+        personnelDeployed: z.number().min(0).default(0),
+        unitIds: z.array(z.string()).optional().default([]),
+        assetIds: z.array(z.string()).optional().default([]),
+        duration: z.number().min(1).optional(), // Planned IxTime days
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        select: { countryId: true, id: true },
+      });
+
+      if (userProfile?.countryId !== input.countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only create operations for your own country.",
+        });
+      }
+
+      // Get country GDP for cost calculation
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: { id: true, name: true, gdpPerCapita: true, population: true },
+      });
+
+      if (!country) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
+      }
+
+      // Calculate daily cost: (personnel * $200/day) + (asset maintenance * 1.5x)
+      let assetMaintenanceCost = 0;
+      if (input.assetIds.length > 0) {
+        const assets = await ctx.db.militaryAsset.findMany({
+          where: { id: { in: input.assetIds } },
+          select: { maintenanceCost: true },
+        });
+        assetMaintenanceCost = assets.reduce((sum, a) => sum + (a.maintenanceCost ?? 0), 0);
+      }
+
+      const dailyCost = input.personnelDeployed * 200 + assetMaintenanceCost * 1.5;
+      const annualCost = dailyCost * 365;
+      const gdp = (country.gdpPerCapita ?? 10000) * (country.population ?? 1000000);
+      const gdpDrain = gdp > 0 ? annualCost / gdp : 0;
+
+      // Create the operation
+      const operation = await ctx.db.militaryOperation.create({
+        data: {
+          countryId: input.countryId,
+          operationType: input.operationType,
+          name: input.name,
+          description: input.description,
+          targetCountryId: input.targetCountryId,
+          status: "active",
+          personnelDeployed: input.personnelDeployed,
+          dailyCost,
+          gdpDrain,
+          duration: input.duration,
+        },
+        include: {
+          targetCountry: { select: { id: true, name: true } },
+        },
+      });
+
+      // Create deployments for units
+      if (input.unitIds.length > 0) {
+        await ctx.db.deployment.createMany({
+          data: input.unitIds.map((unitId) => ({
+            operationId: operation.id,
+            unitId,
+            status: "deployed",
+          })),
+        });
+
+        // Reduce unit readiness
+        await ctx.db.militaryUnit.updateMany({
+          where: { id: { in: input.unitIds } },
+          data: { readiness: { decrement: 10 } },
+        });
+      }
+
+      // Create deployments for assets
+      if (input.assetIds.length > 0) {
+        await ctx.db.deployment.createMany({
+          data: input.assetIds.map((assetId) => ({
+            operationId: operation.id,
+            assetId,
+            status: "deployed",
+          })),
+        });
+      }
+
+      // Create DmInputs for GDP drain
+      if (gdpDrain > 0) {
+        await ctx.db.dmInputs.create({
+          data: {
+            countryId: input.countryId,
+            ixTimeTimestamp: new Date(),
+            inputType: "GDP_ADJUSTMENT",
+            value: -gdpDrain,
+            description: `Military operation: ${input.name} (${input.operationType})`,
+            duration: input.duration ? Math.ceil(input.duration / 365) : 1,
+            isActive: true,
+            createdBy: userProfile.id,
+          },
+        });
+      }
+
+      // Diplomatic impact for certain operation types
+      if (input.targetCountryId && input.operationType === "peacekeeping") {
+        const relation = await ctx.db.diplomaticRelation.findFirst({
+          where: {
+            OR: [
+              { country1: input.countryId, country2: input.targetCountryId },
+              { country1: input.targetCountryId, country2: input.countryId },
+            ],
+          },
+        });
+        if (relation) {
+          await ctx.db.diplomaticRelation.update({
+            where: { id: relation.id },
+            data: { strength: Math.min(100, relation.strength + 10) },
+          });
+        }
+      }
+
+      // Auto-news: military deployment
+      void generateDiplomaticNews(ctx.db, input.countryId, "military_deployed", {
+        countryName: country.name,
+        operationName: input.name,
+        personnel: input.personnelDeployed,
+        targetName: operation.targetCountry?.name,
+      });
+
+      return operation;
+    }),
+
+  // Recall a deployment / end an operation
+  endOperation: protectedProcedure
+    .input(
+      z.object({
+        operationId: z.string(),
+        successRating: z.enum(["success", "partial", "failure"]).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        select: { countryId: true },
+      });
+
+      const operation = await ctx.db.militaryOperation.findUnique({
+        where: { id: input.operationId },
+        include: { deployments: true },
+      });
+
+      if (!operation) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Operation not found." });
+      }
+
+      if (operation.countryId !== userProfile?.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Not your operation." });
+      }
+
+      if (operation.status !== "active" && operation.status !== "planned") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Operation is not active." });
+      }
+
+      // Recall all deployments
+      await ctx.db.deployment.updateMany({
+        where: { operationId: input.operationId, status: "deployed" },
+        data: { status: "recalled", recalledAt: new Date() },
+      });
+
+      // Restore partial unit readiness (+5 per recalled unit)
+      const unitDeployments = operation.deployments.filter((d) => d.unitId && d.status === "deployed");
+      if (unitDeployments.length > 0) {
+        const unitIds = unitDeployments.map((d) => d.unitId!);
+        await ctx.db.militaryUnit.updateMany({
+          where: { id: { in: unitIds } },
+          data: { readiness: { increment: 5 } },
+        });
+      }
+
+      // End operation
+      const updated = await ctx.db.militaryOperation.update({
+        where: { id: input.operationId },
+        data: {
+          status: "completed",
+          successRating: input.successRating,
+        },
+      });
+
+      // Deactivate DmInputs for this operation
+      await ctx.db.dmInputs.updateMany({
+        where: {
+          countryId: operation.countryId,
+          description: { contains: operation.name },
+          isActive: true,
+        },
+        data: { isActive: false },
+      });
+
+      return updated;
+    }),
+
+  // Propose a PvP conflict (requires mutual acceptance)
+  proposePvPConflict: protectedProcedure
+    .input(
+      z.object({
+        defenderId: z.string(),
+        reason: z.string().optional(),
+        pvpRules: z
+          .object({
+            victoryConditions: z.string(),
+            maxDuration: z.number(), // IxTime days
+            stakes: z.string(),
+          })
+          .optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        select: { countryId: true },
+      });
+
+      if (!userProfile?.countryId) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Not associated with a country." });
+      }
+
+      if (userProfile.countryId === input.defenderId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot declare conflict against yourself." });
+      }
+
+      // Check for existing active conflict
+      const existing = await ctx.db.militaryConflict.findFirst({
+        where: {
+          OR: [
+            { initiatorId: userProfile.countryId, defenderId: input.defenderId },
+            { initiatorId: input.defenderId, defenderId: userProfile.countryId },
+          ],
+          status: { in: ["proposed", "accepted", "active"] },
+        },
+      });
+
+      if (existing) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "An active or pending conflict already exists between these nations.",
+        });
+      }
+
+      const conflict = await ctx.db.militaryConflict.create({
+        data: {
+          type: "pvp",
+          initiatorId: userProfile.countryId,
+          defenderId: input.defenderId,
+          status: "proposed",
+          initiatorApproved: true,
+          defenderApproved: false,
+          reason: input.reason,
+          pvpRules: input.pvpRules ? JSON.stringify(input.pvpRules) : null,
+        },
+        include: {
+          initiator: { select: { id: true, name: true } },
+          defender: { select: { id: true, name: true } },
+        },
+      });
+
+      return conflict;
+    }),
+
+  // Accept or decline a PvP conflict
+  respondToConflict: protectedProcedure
+    .input(
+      z.object({
+        conflictId: z.string(),
+        accept: z.boolean(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        select: { countryId: true },
+      });
+
+      const conflict = await ctx.db.militaryConflict.findUnique({
+        where: { id: input.conflictId },
+      });
+
+      if (!conflict) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Conflict not found." });
+      }
+
+      if (conflict.defenderId !== userProfile?.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the defender can respond." });
+      }
+
+      if (conflict.status !== "proposed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Conflict is not in proposed state." });
+      }
+
+      if (!input.accept) {
+        return ctx.db.militaryConflict.update({
+          where: { id: input.conflictId },
+          data: { status: "resolved", winner: "declined" },
+        });
+      }
+
+      return ctx.db.militaryConflict.update({
+        where: { id: input.conflictId },
+        data: {
+          defenderApproved: true,
+          status: "active",
+          startDate: new Date(),
+        },
+        include: {
+          initiator: { select: { id: true, name: true } },
+          defender: { select: { id: true, name: true } },
+        },
+      });
+    }),
+
+  // Get conflicts involving a country
+  getConflicts: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.militaryConflict.findMany({
+        where: {
+          OR: [{ initiatorId: input.countryId }, { defenderId: input.countryId }],
+        },
+        include: {
+          initiator: { select: { id: true, name: true, flagUrl: true } },
+          defender: { select: { id: true, name: true, flagUrl: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }),
+
+  // Resolve a PvNPC conflict automatically
+  resolvePvNPCConflict: protectedProcedure
+    .input(
+      z.object({
+        targetCountryId: z.string(),
+        reason: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        select: { countryId: true, id: true },
+      });
+
+      if (!userProfile?.countryId) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Not associated with a country." });
+      }
+
+      // Get both countries' military data
+      const [initiatorBranches, defenderBranches, initiator, defender] = await Promise.all([
+        ctx.db.militaryBranch.findMany({
+          where: { countryId: userProfile.countryId, isActive: true },
+          include: { units: true, assets: true },
+        }),
+        ctx.db.militaryBranch.findMany({
+          where: { countryId: input.targetCountryId, isActive: true },
+          include: { units: true, assets: true },
+        }),
+        ctx.db.country.findUnique({
+          where: { id: userProfile.countryId },
+          select: { id: true, name: true, gdpPerCapita: true, population: true },
+        }),
+        ctx.db.country.findUnique({
+          where: { id: input.targetCountryId },
+          select: { id: true, name: true, gdpPerCapita: true, population: true },
+        }),
+      ]);
+
+      if (!initiator || !defender) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
+      }
+
+      // Calculate military strength
+      const calcStrength = (branches: typeof initiatorBranches) =>
+        branches.reduce((sum, b) => {
+          const unitStr = b.units.reduce(
+            (s, u) => s + (u.personnel ?? 0) * ((u.readiness ?? 50) / 100),
+            0
+          );
+          const assetStr = b.assets.reduce(
+            (s, a) => s + (a.quantity ?? 0) * (a.operational ?? 0) * 10,
+            0
+          );
+          return sum + unitStr + assetStr;
+        }, 0);
+
+      const initiatorStrength = calcStrength(initiatorBranches);
+      const defenderStrength = calcStrength(defenderBranches);
+      const totalStrength = initiatorStrength + defenderStrength || 1;
+
+      // Random swing factor (10-30%)
+      const swing = 0.1 + Math.random() * 0.2;
+      const effectiveRatio = initiatorStrength / totalStrength + (Math.random() > 0.5 ? swing : -swing);
+
+      const initiatorWins = effectiveRatio > 0.5;
+      const marginOfVictory = Math.abs(effectiveRatio - 0.5);
+
+      // Calculate casualties proportional to strength ratio
+      const baseCasualties = Math.round((initiatorStrength + defenderStrength) * 0.05);
+      const initiatorCasualties = Math.round(
+        baseCasualties * (initiatorWins ? 0.3 : 0.7) * (1 + Math.random() * 0.3)
+      );
+      const defenderCasualties = Math.round(
+        baseCasualties * (initiatorWins ? 0.7 : 0.3) * (1 + Math.random() * 0.3)
+      );
+
+      // Economic damage
+      const econDamage = marginOfVictory < 0.1 ? 0.02 : marginOfVictory < 0.2 ? 0.01 : 0.005;
+
+      const conflict = await ctx.db.militaryConflict.create({
+        data: {
+          type: "pvnpc",
+          initiatorId: userProfile.countryId,
+          defenderId: input.targetCountryId,
+          status: "resolved",
+          initiatorApproved: true,
+          defenderApproved: true,
+          reason: input.reason,
+          startDate: new Date(),
+          endDate: new Date(),
+          winner: initiatorWins ? userProfile.countryId : input.targetCountryId,
+          initiatorCasualties,
+          defenderCasualties,
+          economicDamage: econDamage,
+        },
+        include: {
+          initiator: { select: { id: true, name: true } },
+          defender: { select: { id: true, name: true } },
+        },
+      });
+
+      // Create DmInputs for economic damage
+      await ctx.db.dmInputs.createMany({
+        data: [
+          {
+            countryId: userProfile.countryId,
+            ixTimeTimestamp: new Date(),
+            inputType: "GDP_ADJUSTMENT",
+            value: -econDamage * (initiatorWins ? 0.5 : 1.5),
+            description: `Military conflict with ${defender.name}: ${initiatorWins ? "victory" : "defeat"}`,
+            duration: 2,
+            isActive: true,
+            createdBy: userProfile.id,
+          },
+          {
+            countryId: input.targetCountryId,
+            ixTimeTimestamp: new Date(),
+            inputType: "GDP_ADJUSTMENT",
+            value: -econDamage * (initiatorWins ? 1.5 : 0.5),
+            description: `Military conflict with ${initiator.name}: ${initiatorWins ? "defeat" : "defense"}`,
+            duration: 2,
+            isActive: true,
+            createdBy: userProfile.id,
+          },
+        ],
+      });
+
+      return conflict;
     }),
 });

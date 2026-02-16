@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import {
   Plus,
@@ -24,7 +24,7 @@ import {
   HelpCircle,
   Image,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
@@ -222,14 +222,14 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <Card className="glass-hierarchy-child">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-blue-600" />
+                <Shield className="h-4 w-4 text-blue-600" />
                 Military Forces Management
                 <Dialog>
                   <DialogTrigger asChild>
@@ -302,9 +302,6 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                   </DialogContent>
                 </Dialog>
               </CardTitle>
-              <CardDescription>
-                Build and customize your armed forces with branches, units, and assets
-              </CardDescription>
             </div>
             <Button onClick={handleCreateBranch}>
               <Plus className="mr-2 h-4 w-4" />
@@ -371,9 +368,9 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                       {isExpanded ? (
-                        <ChevronDown className="text-muted-foreground h-5 w-5" />
+                        <ChevronDown className="text-muted-foreground h-4 w-4" />
                       ) : (
-                        <ChevronRight className="text-muted-foreground h-5 w-5" />
+                        <ChevronRight className="text-muted-foreground h-4 w-4" />
                       )}
                     </div>
                   </div>
@@ -387,26 +384,26 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <CardContent className="space-y-6 pt-6">
+                      <CardContent className="space-y-4 pt-4">
                         {/* Personnel Stats */}
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="bg-muted/50 rounded-lg p-4 text-center">
-                            <Users className="mx-auto mb-2 h-5 w-5 text-blue-600" />
-                            <div className="text-2xl font-bold">
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-muted/50 rounded-lg p-3 text-center">
+                            <Users className="mx-auto mb-1 h-3.5 w-3.5 text-blue-600" />
+                            <div className="text-lg font-bold">
                               <NumberFlowDisplay value={branch.activeDuty} />
                             </div>
                             <div className="text-muted-foreground text-xs">Active Duty</div>
                           </div>
-                          <div className="bg-muted/50 rounded-lg p-4 text-center">
-                            <Users className="mx-auto mb-2 h-5 w-5 text-green-600" />
-                            <div className="text-2xl font-bold">
+                          <div className="bg-muted/50 rounded-lg p-3 text-center">
+                            <Users className="mx-auto mb-1 h-3.5 w-3.5 text-green-600" />
+                            <div className="text-lg font-bold">
                               <NumberFlowDisplay value={branch.reserves} />
                             </div>
                             <div className="text-muted-foreground text-xs">Reserves</div>
                           </div>
-                          <div className="bg-muted/50 rounded-lg p-4 text-center">
-                            <Users className="mx-auto mb-2 h-5 w-5 text-purple-600" />
-                            <div className="text-2xl font-bold">
+                          <div className="bg-muted/50 rounded-lg p-3 text-center">
+                            <Users className="mx-auto mb-1 h-3.5 w-3.5 text-purple-600" />
+                            <div className="text-lg font-bold">
                               <NumberFlowDisplay value={branch.civilianStaff} />
                             </div>
                             <div className="text-muted-foreground text-xs">Civilian Staff</div>
@@ -416,12 +413,12 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                         <Separator />
 
                         {/* Readiness Metrics */}
-                        <div className="space-y-4">
-                          <h4 className="flex items-center gap-2 font-semibold">
-                            <Target className="h-4 w-4" />
+                        <div className="space-y-3">
+                          <h4 className="flex items-center gap-2 text-sm font-semibold">
+                            <Target className="h-3.5 w-3.5" />
                             Readiness & Capability
                           </h4>
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Readiness Level</span>
@@ -480,9 +477,9 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                         <Separator />
 
                         {/* Budget */}
-                        <div className="bg-muted/50 flex items-center justify-between rounded-lg p-4">
+                        <div className="bg-muted/50 flex items-center justify-between rounded-lg p-3">
                           <div className="flex items-center gap-2">
-                            <DollarSign className="h-5 w-5 text-green-600" />
+                            <DollarSign className="h-4 w-4 text-green-600" />
                             <span className="font-medium">Annual Budget</span>
                           </div>
                           <div className="text-right">
@@ -501,8 +498,8 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                         </div>
 
                         {/* Units & Assets Managers */}
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                          <div className="bg-card rounded-lg border p-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <div className="bg-card rounded-lg border p-3">
                             <UnitManager
                               branchId={branch.id}
                               branchType={branch.branchType}
@@ -510,7 +507,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                               onRefetch={refetchBranches}
                             />
                           </div>
-                          <div className="bg-card rounded-lg border p-4">
+                          <div className="bg-card rounded-lg border p-3">
                             <AssetManager
                               branchId={branch.id}
                               branchType={branch.branchType}
@@ -529,9 +526,9 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
         </div>
       ) : (
         <Card className="glass-hierarchy-child">
-          <CardContent className="py-12 text-center">
-            <Shield className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
-            <h3 className="mb-2 text-lg font-semibold">No Military Branches</h3>
+          <CardContent className="py-8 text-center">
+            <Shield className="text-muted-foreground/50 mx-auto mb-3 h-10 w-10" />
+            <h3 className="mb-2 text-sm font-semibold">No Military Branches</h3>
             <p className="text-muted-foreground mb-4 text-sm">
               Create your first military branch to start building your armed forces
             </p>
@@ -637,7 +634,7 @@ function BranchDialog({
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Icon className={cn("h-5 w-5", config?.color)} />
+            <Icon className={cn("h-4 w-4", config?.color)} />
             {branch ? "Edit Military Branch" : "Create Military Branch"}
           </DialogTitle>
           <DialogDescription>
@@ -746,7 +743,7 @@ function BranchDialog({
           </TabsContent>
 
           <TabsContent value="personnel" className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label>Active Duty Personnel</Label>
                 <Input
@@ -781,7 +778,7 @@ function BranchDialog({
 
             <Separator />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Annual Budget ($)</Label>
                 <Input
@@ -808,7 +805,7 @@ function BranchDialog({
             </div>
           </TabsContent>
 
-          <TabsContent value="readiness" className="space-y-6">
+          <TabsContent value="readiness" className="space-y-4">
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

@@ -5,7 +5,7 @@
 
 import { useState, memo, useEffect } from "react";
 import type { FC } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   TrendingUp,
   AlertTriangle,

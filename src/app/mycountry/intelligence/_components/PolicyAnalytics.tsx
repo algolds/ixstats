@@ -413,7 +413,7 @@ export function PolicyAnalytics({ countryId, userId }: PolicyAnalyticsProps) {
               </div>
 
               {/* Impact Preview */}
-              <div className="mt-6 p-6 rounded-lg border bg-muted/30">
+              <div className="mt-6 p-6 rounded-lg border bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20">
                 <h4 className="font-semibold mb-4">Projected Impacts</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -716,48 +716,52 @@ export function PolicyAnalytics({ countryId, userId }: PolicyAnalyticsProps) {
                 </Select>
               </div>
 
-              {selectedScenario && (
-                <div className="p-6 rounded-lg border bg-muted/30">
-                  <h4 className="font-semibold mb-2">
-                    {scenarios.find((s) => s.id === selectedScenario)?.name}
-                  </h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {scenarios.find((s) => s.id === selectedScenario)?.description}
-                  </p>
+              {selectedScenario && (() => {
+                const scenarioData: Record<string, { growth: string; growthColor: string; budget: string; budgetColor: string; risk: string; riskColor: string }> = {
+                  baseline: { growth: "+3.00%", growthColor: "text-green-600", budget: "+0.5%", budgetColor: "text-green-600", risk: "Low", riskColor: "text-blue-600" },
+                  high_growth: { growth: "+4.20%", growthColor: "text-green-600", budget: "-2.1%", budgetColor: "text-red-600", risk: "High", riskColor: "text-orange-600" },
+                  fiscal_consolidation: { growth: "+2.10%", growthColor: "text-yellow-600", budget: "+3.8%", budgetColor: "text-green-600", risk: "Medium", riskColor: "text-yellow-600" },
+                  welfare_state: { growth: "+2.50%", growthColor: "text-green-600", budget: "-1.5%", budgetColor: "text-red-600", risk: "Low", riskColor: "text-blue-600" },
+                };
+                const data = scenarioData[selectedScenario] || scenarioData.baseline!;
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded bg-background">
-                      <span className="text-sm font-medium">Projected GDP Growth</span>
-                      <Badge variant="outline" className="text-green-600">
-                        +{(Math.random() * 2 + 2).toFixed(2)}%
-                      </Badge>
+                return (
+                  <div className="p-6 rounded-lg border bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                    <h4 className="font-semibold mb-2">
+                      {scenarios.find((s) => s.id === selectedScenario)?.name}
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {scenarios.find((s) => s.id === selectedScenario)?.description}
+                    </p>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-background">
+                        <span className="text-sm font-medium">Projected GDP Growth</span>
+                        <Badge variant="outline" className={data.growthColor}>
+                          {data.growth}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-background">
+                        <span className="text-sm font-medium">Budget Impact</span>
+                        <Badge variant="outline" className={data.budgetColor}>
+                          {data.budget}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-background">
+                        <span className="text-sm font-medium">Risk Level</span>
+                        <Badge variant="outline" className={data.riskColor}>
+                          {data.risk}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded bg-background">
-                      <span className="text-sm font-medium">Budget Impact</span>
-                      <Badge variant="outline" className={Math.random() > 0.5 ? "text-green-600" : "text-red-600"}>
-                        {Math.random() > 0.5 ? "+" : "-"}{(Math.random() * 5).toFixed(1)}%
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded bg-background">
-                      <span className="text-sm font-medium">Risk Level</span>
-                      <Badge variant="outline" className={
-                        selectedScenario === "fiscal_consolidation" ? "text-yellow-600" :
-                        selectedScenario === "high_growth" ? "text-orange-600" :
-                        "text-blue-600"
-                      }>
-                        {selectedScenario === "fiscal_consolidation" ? "Medium" :
-                         selectedScenario === "high_growth" ? "High" :
-                         "Low"}
-                      </Badge>
-                    </div>
+
+                    <Button className="w-full mt-6" variant="default">
+                      <Send className="h-4 w-4 mr-2" />
+                      Run Detailed Simulation
+                    </Button>
                   </div>
-
-                  <Button className="w-full mt-6" variant="default">
-                    <Send className="h-4 w-4 mr-2" />
-                    Run Detailed Simulation
-                  </Button>
-                </div>
-              )}
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>

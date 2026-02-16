@@ -5,10 +5,10 @@
 IxStats is a modern nation simulation and worldbuilding platform. The codebase combines a rich React front end with a tRPC API layer, Prisma schema, and a custom server runtime that enables real-time updates for executive intelligence, diplomacy, economics, and collaborative storytelling features.
 
 ## Platform Overview
-- Next.js 15.4.1 App Router with client and server components under `src/app`
-- React 19 + TypeScript 5.8 with an extensive shared component library in `src/components` (485 components)
-- tRPC 11.4 API layer (`src/server/api/routers`) with **52 routers** and **580+ typed procedures** (290 queries / 290 mutations)
-- Prisma 6.12 schema (`prisma/schema.prisma`) covering **131 models** with PostgreSQL database
+- Next.js 16.1.3 App Router with client and server components under `src/app`
+- React 19.1.3 + TypeScript 5.8 with an extensive shared component library in `src/components` (598+ components)
+- tRPC 11.4 API layer (`src/server/api/routers`) with **61 routers** and **920+ typed procedures** (460+ queries / 460+ mutations)
+- Prisma 6.19 schema (`prisma/schema.prisma`) covering **201 models** with PostgreSQL database
 - Custom Node server (`server.mjs`) that loads environment tiers and enables production WebSocket feeds for live intelligence updates
 - Documentation-first approach with Markdown guides in `docs/` and an in-app help center at `/help`
 - **✅ 100% Dynamic Content Management**: All game content now database-driven (14,677 lines migrated from hardcoded TypeScript)
@@ -17,12 +17,14 @@ IxStats is a modern nation simulation and worldbuilding platform. The codebase c
 
 ## Feature Pillars
 - **MyCountry Command Suite** – Unified dashboard at `src/app/mycountry` with executive briefing, compliance, defense, economic, and analytics modules powered by hooks such as `useMyCountryCompliance`
-- **Intelligence & Compliance** – Live diplomatic and domestic intelligence feeds (`src/components/mycountry/IntelligenceTabSystem.tsx`, `src/components/diplomatic/LiveDiplomaticFeed.tsx`) backed by routers like `diplomatic-intelligence.ts` and `intelligence.ts`
+- **Intelligence & Compliance** – Live diplomatic and domestic intelligence feeds (`src/components/diplomatic/LiveDiplomaticFeed.tsx`) backed by routers like `diplomatic-intelligence.ts` and `intelligence.ts`
 - **Diplomacy & Foreign Affairs** – Embassy missions, cultural exchanges, and influence tracking across `src/app/mycountry/intelligence`, `src/components/diplomatic`, and tRPC routers including `diplomatic.ts`
 - **Economic Simulation & Builder Tools** – Country builder flows (`src/app/builder`, `src/components/builders`) with tier-based economic calculations and historical data services in `src/server/api/routers/economics.ts`
 - **Social & Collaboration Systems** – ThinkPages and ThinkShare social experiences (`src/app/thinkpages`, `src/components/thinkshare`) with activity feeds, comments, and shared research hubs
 - **Achievements & Leaderboards** – Global achievement tracking and ranking interfaces (`src/app/achievements`, `src/app/leaderboards`) driven by routers such as `achievements.ts`
-- **Content Management System** – **17 admin interfaces** (`/admin/*`) for dynamic content management including diplomatic scenarios, NPC personalities, military equipment, economic archetypes, and performance monitoring
+- **Content Management System** – **18 admin interfaces** (`/admin/*`) for dynamic content management including diplomatic scenarios, NPC personalities, military equipment, economic archetypes, and performance monitoring
+- **Elections & Political Parties** – D'Hondt/FPTP electoral systems, legislature management, party creation with hemicycle visualization (`src/components/executive/politics`)
+- **IxCards & MyVault** – Trading card system with 13 card types, pack opening, crafting, P2P trading, marketplace with auction system (`src/app/vault`, `src/components/cards`)
 - **NPC Personality System** – Data-driven AI personalities with 8 traits, 6 archetypes, behavioral prediction, and personality drift over time
 - **Crisis Management** – Dynamic crisis events (natural disasters, economic crises, diplomatic incidents) with player response options and realistic outcomes
 - **Integrated Help & Knowledge Base** – Rich help center under `src/app/help` plus curated Markdown documentation within the repository
@@ -31,10 +33,10 @@ IxStats is a modern nation simulation and worldbuilding platform. The codebase c
 | Area | Details |
 | --- | --- |
 | Runtime | Node.js ≥ 18.17, npm ≥ 9.0 |
-| Framework | Next.js 15.4.1, React 19.1.0 |
+| Framework | Next.js 16.1.3, React 19.1.3 |
 | Language | TypeScript 5.8.3 |
 | API Layer | tRPC 11.4 with superjson + Clerk auth context |
-| Data | Prisma 6.12 ORM, PostgreSQL database (`localhost:5433/ixstats`), PostgreSQL-native |
+| Data | Prisma 6.19 ORM, PostgreSQL database (`localhost:5433/ixstats`), PostgreSQL-native |
 | Styling | Tailwind CSS 4, custom "glass physics" design tokens, Lucide icons |
 | Realtime | Socket.IO server enabled in production via `server.mjs` and `src/lib/websocket-server.ts` |
 
@@ -87,14 +89,14 @@ More details on required and optional variables are tracked in `docs/operations/
 │  │  ├─ leaderboards/         # Rankings and stats
 │  │  ├─ help/                 # In-app help experience
 │  │  └─ api/                  # Edge/API route handlers
-│  ├─ components/              # Shared and domain component libraries
-│  ├─ hooks/                   # Cross-domain React hooks
+│  ├─ components/              # Shared and domain component libraries (598+)
+│  ├─ hooks/                   # Cross-domain React hooks (71 hooks)
 │  ├─ server/
-│  │  ├─ api/routers/          # tRPC routers (52 total)
+│  │  ├─ api/routers/          # tRPC routers (61 total)
 │  │  └─ db/                   # Prisma client helpers
 │  ├─ lib/                     # Utilities (rate limiter, websocket server, formatting)
 │  └─ services/                # Domain services and adapters
-├─ prisma/                     # Schema, migrations, PostgreSQL database
+├─ prisma/                     # Schema (201 models), migrations, PostgreSQL database
 ├─ scripts/                    # Operational and audit scripts
 ├─ docs/                       # Markdown documentation suite (refreshed in this update)
 └─ tests/                      # Jest setup, mocks, integration utilities

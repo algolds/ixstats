@@ -28,7 +28,7 @@ class CountryFlagService {
 
   constructor(options: CountryFlagServiceOptions = {}) {
     this.options = {
-      enableIiwikiFallback: true, // Default to true for backward compatibility
+      enableIiwikiFallback: false, // Disabled: iiwiki proxy blocked by Cloudflare (502)
       ...options,
     };
   }

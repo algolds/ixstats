@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ArrowLeft, Plus, Building2, Crown, TrendingUp, Users, Star } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
@@ -71,18 +71,18 @@ export function CreateNewStep({ onBack, onCreate, isCreating }: CreateNewStepPro
           Back to options
         </Button>
 
-        <h1 className="text-foreground mb-6 text-5xl font-bold">Create New Country</h1>
+        <h1 className="text-foreground mb-4 text-2xl font-bold md:text-3xl">Create New Country</h1>
       </div>
 
-      <div className="glass-hierarchy-parent border-border rounded-3xl border p-8">
-        <div className="mb-8">
-          <h2 className="text-foreground mb-4 flex items-center text-2xl font-bold">
-            <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
-              <Building2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+      <div className="glass-hierarchy-parent border-border rounded-xl border p-4 md:p-6">
+        <div className="mb-6">
+          <h2 className="text-foreground mb-3 flex items-center text-lg font-bold md:text-xl">
+            <div className="glass-hierarchy-child mr-3 rounded-lg p-2">
+              <Building2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             MyCountry Builder
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-sm md:text-base">
             Build your country exactly how you want. Our builder allows you to customize everything
             from your government structure to your economy and demographics to your policies and
             manage diplomatic relations. We use a multi-layered Economic Engine that models
@@ -99,28 +99,28 @@ export function CreateNewStep({ onBack, onCreate, isCreating }: CreateNewStepPro
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * (index + 1) }}
-                className="glass-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
+                className="glass-hierarchy-child group hover:glass-hierarchy-interactive rounded-xl p-4 text-center transition-all duration-500"
               >
-                <div className="glass-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
-                  <feature.icon className={`h-10 w-10 ${feature.color}`} />
+                <div className="glass-hierarchy-child mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110">
+                  <feature.icon className={`h-6 w-6 ${feature.color}`} />
                 </div>
-                <h3 className="text-foreground mb-3 text-xl font-bold">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+                <h3 className="text-foreground mb-2 text-sm font-bold">{feature.title}</h3>
+                <p className="text-muted-foreground text-xs">{feature.description}</p>
               </motion.div>
             ))}
           </div>
 
-          <div className="glass-hierarchy-child rounded-2xl p-8">
-            <div className="mb-6 flex items-center">
-              <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
-                <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+          <div className="glass-hierarchy-child rounded-xl p-4 md:p-6">
+            <div className="mb-4 flex items-center">
+              <div className="glass-hierarchy-child mr-3 rounded-lg p-2">
+                <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <h3 className="text-foreground text-2xl font-bold">What You'll Get</h3>
+              <h3 className="text-foreground text-lg font-bold">What You'll Get</h3>
             </div>
-            <ul className="text-muted-foreground space-y-4">
+            <ul className="text-muted-foreground space-y-3 text-sm">
               {benefits.map((benefit, index) => (
                 <li key={index} className="flex items-start">
-                  <div className="mt-2 mr-4 h-2 w-2 flex-shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
+                  <div className="mt-1.5 mr-3 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
                   <span>{benefit}</span>
                 </li>
               ))}
@@ -130,7 +130,7 @@ export function CreateNewStep({ onBack, onCreate, isCreating }: CreateNewStepPro
           <Button
             onClick={onCreate}
             disabled={isCreating}
-            className="glass-hierarchy-interactive w-full rounded-2xl py-6 text-lg font-semibold"
+            className="glass-hierarchy-interactive w-full rounded-xl py-4 text-base font-semibold"
             size="lg"
           >
             {isCreating ? (

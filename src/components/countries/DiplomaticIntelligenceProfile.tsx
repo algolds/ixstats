@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { getCountryPath } from "~/lib/slug-utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { HealthRing } from "~/components/ui/health-ring";
 import { TextReveal } from "~/components/ui/text-reveal";
@@ -28,16 +29,34 @@ import {
   RiTeamLine,
   RiUserAddLine,
   RiWifiLine,
-} from "react-icons/ri"; // Keep RiLockLine for clearance restriction display
+} from "react-icons/ri";
 import { CLASSIFICATION_LEVELS } from "~/components/ui/ClassificationBadge";
 import { INTELLIGENCE_GLYPHS } from "~/components/ui/IntelligenceGlyph";
 
 import type { EnhancedCountryProfileData, SocialActionType } from "~/types/social-profile";
-import { EmbassyNetworkVisualization } from "~/components/diplomatic/EmbassyNetworkVisualization";
-import { SecureCommunications } from "~/app/mycountry/intelligence/_components/SecureCommunications";
-import { CulturalExchangeProgram } from "~/components/diplomatic/CulturalExchangeProgram";
-import { AchievementConstellation } from "~/components/achievements/AchievementConstellation";
-import { AchievementUnlockModal } from "~/components/achievements/AchievementUnlockModal";
+
+// Dynamic imports — these are heavy tab-only components (2,257 + 902 lines) that render
+// only when their specific tab is selected. Lazy-loading saves ~300KB from initial bundle.
+const EmbassyNetworkVisualization = dynamic(
+  () => import("~/components/diplomatic/EmbassyNetworkVisualization").then((m) => ({ default: m.EmbassyNetworkVisualization })),
+  { ssr: false }
+);
+const SecureCommunications = dynamic(
+  () => import("~/app/mycountry/intelligence/_components/SecureCommunications").then((m) => ({ default: m.SecureCommunications })),
+  { ssr: false }
+);
+const CulturalExchangeProgram = dynamic(
+  () => import("~/components/diplomatic/CulturalExchangeProgram").then((m) => ({ default: m.CulturalExchangeProgram })),
+  { ssr: false }
+);
+const AchievementConstellation = dynamic(
+  () => import("~/components/achievements/AchievementConstellation").then((m) => ({ default: m.AchievementConstellation })),
+  { ssr: false }
+);
+const AchievementUnlockModal = dynamic(
+  () => import("~/components/achievements/AchievementUnlockModal").then((m) => ({ default: m.AchievementUnlockModal })),
+  { ssr: false }
+);
 import { LiveDiplomaticFeed } from "~/components/diplomatic/LiveDiplomaticFeed";
 import { DiplomaticLeaderboards } from "~/components/diplomatic/DiplomaticLeaderboards";
 import { SocialActivityFeed } from "~/components/diplomatic/SocialActivityFeed";

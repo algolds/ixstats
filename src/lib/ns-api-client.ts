@@ -407,6 +407,115 @@ export class NSApiClient {
   }
 
   /**
+   * Fetch list of nations in a specific region
+   * @param regionName - Region name (e.g., "greater_ixnay")
+   * @returns Array of nation names, or null on failure
+   */
+  async fetchRegionNations(regionName: string): Promise<string[] | null> {
+    try {
+      await this.rateLimit();
+
+      const response = await fetch(
+        `${this.baseUrl}?region=${encodeURIComponent(regionName)}&q=nations`,
+        {
+          headers: {
+            "User-Agent": this.userAgent,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`[NS API] Failed to fetch region nations: ${response.status}`);
+        return null;
+      }
+
+      const xml = await response.text();
+      const nationsTag = this.extractTag(xml, "NATIONS");
+
+      if (!nationsTag) {
+        console.log(`[NS API] No NATIONS tag found for region ${regionName}`);
+        return [];
+      }
+
+      // Nations are colon-delimited in the NS API response
+      const nations = nationsTag.split(":").filter(Boolean);
+      console.log(`[NS API] Found ${nations.length} nations in region ${regionName}`);
+      return nations;
+    } catch (error) {
+      console.error(`[NS API] Failed to fetch region nations:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch regions matching a size tag from the World API.
+   * Valid tags: minuscule, small, medium, large, enormous, massive, gargantuan
+   * @param tag - Region size tag
+   * @returns Array of region names, or null on failure
+   */
+  async fetchRegionsByTag(tag: string): Promise<string[] | null> {
+    try {
+      await this.rateLimit();
+
+      const response = await fetch(
+        `${this.baseUrl}?q=regionsbytag;tags=${encodeURIComponent(tag)}`,
+        { headers: { "User-Agent": this.userAgent } }
+      );
+
+      if (!response.ok) {
+        console.error(`[NS API] Failed to fetch regions by tag "${tag}": ${response.status}`);
+        return null;
+      }
+
+      const xml = await response.text();
+      const regionsTag = this.extractTag(xml, "REGIONS");
+
+      if (!regionsTag) {
+        console.log(`[NS API] No REGIONS tag found for tag "${tag}"`);
+        return [];
+      }
+
+      const regions = regionsTag.split(",").filter(Boolean);
+      console.log(`[NS API] Found ${regions.length} regions with tag "${tag}"`);
+      return regions;
+    } catch (error) {
+      console.error(`[NS API] Failed to fetch regions by tag:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch nation count for a specific region.
+   * @param regionName - Region name
+   * @returns Nation count, or null on failure
+   */
+  async fetchRegionNationCount(regionName: string): Promise<{ name: string; numnations: number } | null> {
+    try {
+      await this.rateLimit();
+
+      const response = await fetch(
+        `${this.baseUrl}?region=${encodeURIComponent(regionName)}&q=name+numnations`,
+        { headers: { "User-Agent": this.userAgent } }
+      );
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const xml = await response.text();
+      const name = this.extractTag(xml, "NAME") ?? regionName;
+      const numStr = this.extractTag(xml, "NUMNATIONS");
+
+      return {
+        name,
+        numnations: numStr ? parseInt(numStr, 10) : 0,
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
    * Rate limit helper (NS API rate limit: 50 requests per 30 seconds)
    * Using 800ms delay to be more conservative and avoid 429 errors
    */

@@ -66,6 +66,8 @@ import { autosaveHistoryRouter } from "./routers/autosaveHistory";
 import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
 import { craftingRouter } from "./routers/crafting";
 import { tradingRouter } from "./routers/trading";
+import { cardImagesRouter } from "./routers/cardImages";
+import { electionsRouter } from "./routers/elections";
 
 /**
  * This is the primary router for your server.
@@ -138,6 +140,8 @@ export const appRouter = createTRPCRouter({
   autosaveMonitoring: autosaveMonitoringRouter, // Autosave system monitoring and analytics (admin-only)
   crafting: craftingRouter, // Card crafting/fusion/evolution system (Phase 3 - Crafting System)
   trading: tradingRouter, // P2P card trading system (Phase 3 - Trading System)
+  cardImages: cardImagesRouter, // Card background image management for MyCountry UI customization
+  elections: electionsRouter, // Election system: parties, legislature, elections, hemicycle visualization
 });
 
 // export type definition of API

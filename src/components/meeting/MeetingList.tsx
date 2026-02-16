@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { MeetingCard } from "./MeetingCard";
 import type { Meeting } from "~/lib/meeting-scheduler-utils";

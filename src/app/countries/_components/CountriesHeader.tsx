@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { TextAnimate } from "~/components/magicui/text-animate";
 import { RiCommandLine } from "react-icons/ri";
 

@@ -16,7 +16,13 @@
  */
 
 import { useMemo } from "react";
-import * as Icons from "lucide-react";
+import {
+  DollarSign, BarChart3, Building2, Target, Heart, Brain, Lightbulb,
+  Wrench, Leaf, Factory, Users, Zap, Unlock, Shield, Briefcase,
+  GraduationCap, Globe, Lock, ArrowUpDown, BriefcaseBusiness,
+  PieChart, Activity, HelpCircle, TrendingUp, Crown, Network,
+  Landmark, Scale, BookOpen, Cpu,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { api } from "~/trpc/react";
 import {
@@ -25,21 +31,24 @@ import {
   type EconomicComponentType,
 } from "~/lib/atomic-economic-data";
 
-const ICON_REGISTRY = Icons as unknown as Record<string, LucideIcon | undefined>;
-const DEFAULT_COMPONENT_ICON =
-  ICON_REGISTRY.BriefcaseBusiness ??
-  ICON_REGISTRY.PieChart ??
-  ICON_REGISTRY.Activity ??
-  ICON_REGISTRY.HelpCircle!;
+// Manual icon registry — only the ~30 icons used by economic components.
+// Avoids `import * from "lucide-react"` which pulls all 3,824 icons (~40MB) into the module graph.
+const ICON_REGISTRY: Record<string, LucideIcon> = {
+  DollarSign, BarChart3, Building2, Target, Heart, Brain, Lightbulb,
+  Wrench, Leaf, Factory, Users, Zap, Unlock, Shield, Briefcase,
+  GraduationCap, Globe, Lock, ArrowUpDown, BriefcaseBusiness,
+  PieChart, Activity, HelpCircle, TrendingUp, Crown, Network,
+  Landmark, Scale, BookOpen, Cpu,
+};
+const DEFAULT_COMPONENT_ICON = BriefcaseBusiness;
 
 function resolveComponentIcon(iconName?: string | null): LucideIcon {
   if (!iconName) return DEFAULT_COMPONENT_ICON;
 
   const candidates = [iconName, iconName.charAt(0).toUpperCase() + iconName.slice(1)];
   for (const candidate of candidates) {
-    const icon = ICON_REGISTRY[candidate];
-    if (icon) {
-      return icon;
+    if (candidate in ICON_REGISTRY) {
+      return ICON_REGISTRY[candidate]!;
     }
   }
 

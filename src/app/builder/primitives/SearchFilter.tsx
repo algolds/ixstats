@@ -1,7 +1,7 @@
 "use client";
 
 import React, { forwardRef } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Search } from "lucide-react";
 import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";
 

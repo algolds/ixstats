@@ -1,8 +1,8 @@
 # Frontend Architecture
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
-The frontend is built entirely on the Next.js 15 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components`.
+The frontend is built entirely on the Next.js 16.1.3 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components` (598+ components, 118 page routes).
 
 ## Layout Composition
 - **App Router** – Each route folder contains `page.tsx`, optional `layout.tsx`, and feature-specific components. The root layout lives at `src/app/layout.tsx`.
@@ -64,6 +64,39 @@ This pattern has been successfully applied to:
 - **Readability**: Main components are simple orchestrators
 - **Type Safety**: TypeScript interfaces distributed across modules
 
+## Single-Page Router Pattern (February 2026)
+
+Major sections use a client-side routing pattern for instant, SPA-like navigation while retaining Next.js App Router structure:
+
+- A central `*Router.tsx` component manages section state via `useState`
+- URL synchronization via `window.history.pushState()` (bypasses Next.js route transitions)
+- All sub-page `page.tsx` files render the same Router component
+- `popstate` listener enables browser back/forward navigation
+
+| Router | Location | Sections |
+|--------|----------|----------|
+| `MyCountryRouter` | `src/components/mycountry/MyCountryRouter.tsx` | Overview, Executive, Diplomacy, Intelligence, Defense |
+| `VaultRouter` | `src/components/vault/VaultRouter.tsx` | Dashboard, Cards, Acquire, Create, Import |
+| `ThinkPagesRouter` | `src/components/thinkpages/ThinkPagesRouter.tsx` | Feed, ThinkTanks, ThinkShare |
+| `DashboardRouter` | `src/components/dashboard/DashboardRouter.tsx` | Main, Diplomacy, Feed, Trends |
+
+**Supporting Infrastructure:**
+- `*SidebarNav` - Dual-mode navigation (controlled via props or uncontrolled via pathname)
+- `*SidebarLayout` - Shared responsive grid (`lg:grid-cols-4`)
+- Sidebar widgets per section (Executive, Diplomacy, Defense)
+- `BaseMetricDetailsModal` with 4-tab drill-down system
+
+## Hooks Library
+
+71 custom hooks in `src/hooks/` organized by domain:
+- **Builder/Sync**: `useAtomicEconomicBuilder`, `useBuilderAutoSync`, `useGovernmentAutoSync`, `useTaxSystemAutoSync`
+- **Data**: `useEconomicComponentsData`, `useGovernmentComponentsData`, `useEconomyData`, `useFiscalData`
+- **Flags**: `useFlag`, `useSimpleFlag`, `useUnifiedFlags`, `useCountryFlags`, `useBulkFlagCache`
+- **Intelligence**: `useIntelligenceData`, `useIntelligenceMetrics`, `useRealTimeIntelligence`
+- **Diplomatic**: `useDiplomaticOperations`, `useDiplomaticScenarios`, `useEmbassyNetworkData`
+- **Vault**: `useVaultBalance`, `useVaultStats`, `useCollections`, `useDailyBonus`, `useEarnCredits`
+- **UI**: `useMetricDetailsModal`, `usePageTitle`, `useRelativeTime`, `useAmbientImage`
+
 ## Styling & Theming
 - Tailwind CSS 4 with `prettier-plugin-tailwindcss` ensures consistent class ordering.
 - Dark/light mode friendly gradients, blur, and depth levels implemented via utility classes and helper components (`src/components/magicui`).
@@ -75,7 +108,7 @@ This pattern has been successfully applied to:
 - **Server Components** – Data-heavy sections such as leaderboards and dashboard cards leverage server components for hydration efficiency when feasible.
 
 ## Performance Considerations
-- Turbopack dev server (`npm run dev`) for quick reloads.
+- Webpack dev server (`npm run dev`) - Turbopack disabled for memory stability.
 - Lazy loading via dynamic imports for large visualisations and modals.
 - Shared chart utilities (`src/lib/chart-utils.ts`) to standardise formatting and avoid duplicate logic.
 

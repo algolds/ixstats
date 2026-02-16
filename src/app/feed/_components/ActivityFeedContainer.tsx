@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Activity, TrendingUp, Zap, RefreshCw, Filter } from "lucide-react";
 import { ActivityFeedItem } from "./ActivityFeedItem";
 import { ActivityFilters } from "./ActivityFilters";

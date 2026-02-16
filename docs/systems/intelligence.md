@@ -1,11 +1,11 @@
 # Intelligence System
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
 The intelligence stack aggregates diplomatic, economic, and security signals into executive-ready briefings.
 
 ## Frontend Surfaces
-- `src/components/mycountry/IntelligenceTabSystem.tsx` – Tab-level orchestration
+- `src/components/mycountry/EnhancedIntelligenceContent.tsx` – Intelligence content orchestrator
 - `src/app/mycountry/intelligence/_components/IntelligenceFeed.tsx` – Core feed component combining hot issues, opportunities, and risk mitigation
 - `src/app/mycountry/intelligence/_components/DiplomaticOperationsHub.tsx` – Mission tracking, embassy posture, and regional insights
 - `src/components/diplomatic/LiveDiplomaticFeed.tsx` – WebSocket-enabled diplomatic activity stream

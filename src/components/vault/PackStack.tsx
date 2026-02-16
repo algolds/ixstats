@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence, type Easing } from "framer-motion";
+import { motion, AnimatePresence, type Easing } from "motion/react";
 import { Package, PackageOpen } from "lucide-react";
 import { cn } from "~/lib/utils";
 

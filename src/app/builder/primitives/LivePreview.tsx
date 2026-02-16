@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Eye, Zap } from "lucide-react";
 import { BlurFade } from "~/components/magicui/blur-fade";
 import { GlassCard, GlassCardContent, GlassCardHeader } from "../components/glass/GlassCard";

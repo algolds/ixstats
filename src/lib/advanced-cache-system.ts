@@ -6,11 +6,13 @@
 // import { Redis } from '@upstash/redis'; // Commented out for now - will be enabled when Redis is configured
 // Note: Using globalThis.performance (available in Node.js 16+ and browsers)
 
+import { memoryConfig } from "./dev-memory-config";
+
 // In-memory cache for fallback
 class InMemoryCache {
   private cache = new Map<string, { value: any; expires: number; hits: number }>();
-  private readonly maxSize = 10000;
-  private readonly defaultTTL = 300000; // 5 minutes
+  private readonly maxSize = memoryConfig.cache.maxEntries;
+  private readonly defaultTTL = memoryConfig.cache.defaultTTL;
 
   set(key: string, value: any, ttl = this.defaultTTL): void {
     // Remove oldest entries if cache is full
@@ -160,11 +162,15 @@ export interface CacheStats {
  * Advanced multi-tier caching system
  */
 export class AdvancedCacheSystem {
-  private memoryCache = new InMemoryCache();
+  // Exposed for synchronous access by intelligence-cache facade
+  readonly memoryCache = new InMemoryCache();
   private redisCache = new RedisCache();
+  // Use running averages instead of storing arrays of individual timings
   private performanceMetrics = {
-    getTimes: [] as number[],
-    setTimes: [] as number[],
+    getTimeSum: 0,
+    getTimeCount: 0,
+    setTimeSum: 0,
+    setTimeCount: 0,
     totalOperations: 0,
   };
 
@@ -253,16 +259,12 @@ export class AdvancedCacheSystem {
    */
   getStats(): CacheStats {
     const memoryStats = this.memoryCache.getStats();
-    const avgGetTime =
-      this.performanceMetrics.getTimes.length > 0
-        ? this.performanceMetrics.getTimes.reduce((a, b) => a + b, 0) /
-          this.performanceMetrics.getTimes.length
-        : 0;
-    const avgSetTime =
-      this.performanceMetrics.setTimes.length > 0
-        ? this.performanceMetrics.setTimes.reduce((a, b) => a + b, 0) /
-          this.performanceMetrics.setTimes.length
-        : 0;
+    const avgGetTime = this.performanceMetrics.getTimeCount > 0
+      ? this.performanceMetrics.getTimeSum / this.performanceMetrics.getTimeCount
+      : 0;
+    const avgSetTime = this.performanceMetrics.setTimeCount > 0
+      ? this.performanceMetrics.setTimeSum / this.performanceMetrics.setTimeCount
+      : 0;
 
     return {
       memory: memoryStats,
@@ -279,22 +281,14 @@ export class AdvancedCacheSystem {
   }
 
   private recordGetTime(duration: number): void {
-    this.performanceMetrics.getTimes.push(duration);
+    this.performanceMetrics.getTimeSum += duration;
+    this.performanceMetrics.getTimeCount++;
     this.performanceMetrics.totalOperations++;
-
-    // Keep only recent metrics
-    if (this.performanceMetrics.getTimes.length > 1000) {
-      this.performanceMetrics.getTimes = this.performanceMetrics.getTimes.slice(-500);
-    }
   }
 
   private recordSetTime(duration: number): void {
-    this.performanceMetrics.setTimes.push(duration);
-
-    // Keep only recent metrics
-    if (this.performanceMetrics.setTimes.length > 1000) {
-      this.performanceMetrics.setTimes = this.performanceMetrics.setTimes.slice(-500);
-    }
+    this.performanceMetrics.setTimeSum += duration;
+    this.performanceMetrics.setTimeCount++;
   }
 }
 

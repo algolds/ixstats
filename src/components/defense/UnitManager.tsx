@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import {
   Plus,
@@ -369,7 +369,7 @@ function UnitDialog({
           )}
 
           {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Unit Name *</Label>
               <Input
@@ -399,7 +399,7 @@ function UnitDialog({
           </div>
 
           {/* Specialization & Personnel */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Specialization (Optional)</Label>
               <Select
@@ -431,7 +431,7 @@ function UnitDialog({
           </div>
 
           {/* Commander */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Commander Name (Optional)</Label>
               <Input
@@ -451,7 +451,7 @@ function UnitDialog({
           </div>
 
           {/* Location */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Home Base (Optional)</Label>
               <Input
@@ -491,7 +491,7 @@ function UnitDialog({
           </div>
 
           {/* Readiness Metrics */}
-          <div className="space-y-4 rounded-lg border p-4">
+          <div className="space-y-3 rounded-lg border p-3">
             <h4 className="text-sm font-medium">Readiness Metrics</h4>
 
             <div className="space-y-2">

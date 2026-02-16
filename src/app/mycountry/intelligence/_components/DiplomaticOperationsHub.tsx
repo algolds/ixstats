@@ -60,7 +60,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="glass-surface glass-refraction border-blue-200 dark:border-blue-800/40">
+      <Card className="glass-hierarchy-child border-blue-200 dark:border-blue-800/40">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -138,7 +138,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
               ))}
             </div>
           ) : (
-            <Card className="glass-surface glass-refraction">
+            <Card className="glass-hierarchy-child">
               <CardContent className="py-12 text-center">
                 <Building2 className="text-muted-foreground mx-auto mb-4 h-16 w-16 opacity-50" />
                 <h3 className="mb-2 text-lg font-semibold">No Embassies Yet</h3>
@@ -186,7 +186,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
           </div>
 
           {!operations.selectedEmbassy ? (
-            <Card className="glass-surface glass-refraction">
+            <Card className="glass-hierarchy-child">
               <CardContent className="py-12 text-center">
                 <Target className="text-muted-foreground mx-auto mb-4 h-16 w-16 opacity-50" />
                 <h3 className="mb-2 text-lg font-semibold">Select an Embassy</h3>
@@ -212,7 +212,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
               ))}
             </div>
           ) : (
-            <Card className="glass-surface glass-refraction">
+            <Card className="glass-hierarchy-child">
               <CardContent className="py-12 text-center">
                 <Target className="text-muted-foreground mx-auto mb-4 h-16 w-16 opacity-50" />
                 <h3 className="mb-2 text-lg font-semibold">
@@ -268,7 +268,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
               {operations.filteredExchanges.map((exchange) => (
                 <Card
                   key={exchange.id}
-                  className="glass-surface glass-refraction transition-shadow hover:shadow-md"
+                  className="glass-hierarchy-child transition-shadow hover:shadow-md"
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -340,7 +340,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
               ))}
             </div>
           ) : (
-            <Card className="glass-surface glass-refraction">
+            <Card className="glass-hierarchy-child">
               <CardContent className="py-12 text-center">
                 <Heart className="text-muted-foreground mx-auto mb-4 h-16 w-16 opacity-50" />
                 <h3 className="mb-2 text-lg font-semibold">
@@ -372,7 +372,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
               {operations.relationships
                 .filter((r) => r.treaties && r.treaties.length > 0)
                 .map((relationship) => (
-                  <Card key={relationship.id} className="glass-surface glass-refraction">
+                  <Card key={relationship.id} className="glass-hierarchy-child">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
                         <FileText className="h-5 w-5 text-blue-600" />
@@ -400,7 +400,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
                 ))}
             </div>
           ) : (
-            <Card className="glass-surface glass-refraction">
+            <Card className="glass-hierarchy-child">
               <CardContent className="py-12 text-center">
                 <FileText className="text-muted-foreground mx-auto mb-4 h-16 w-16 opacity-50" />
                 <h3 className="mb-2 text-lg font-semibold">No Active Treaties</h3>

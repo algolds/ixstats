@@ -17,7 +17,7 @@
  */
 
 import React, { useRef } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { RealTimeDataService } from "./RealTimeDataService";
 import { useDataSync } from "../hooks/useDataSync";
 import { useUnifiedNotifications } from "~/hooks/useUnifiedNotifications";

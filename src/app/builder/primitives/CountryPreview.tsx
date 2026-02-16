@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { DollarSign, Activity, BarChart } from "lucide-react";
 import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";
 import { HealthRing } from "~/components/ui/health-ring";

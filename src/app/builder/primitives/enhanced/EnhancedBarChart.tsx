@@ -13,7 +13,7 @@ import {
   Cell,
   LabelList,
 } from "recharts";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, generateSectionChartColors, getGlassClasses } from "./theme-utils";
 import { MOTION_VARIANTS } from "./animation-utils";

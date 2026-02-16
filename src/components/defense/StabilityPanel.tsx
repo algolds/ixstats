@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import {
   Users,
@@ -18,7 +18,7 @@ import {
   HelpCircle,
   Info,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
@@ -97,7 +97,7 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Overall Stability */}
       <Card
         className={cn(
@@ -109,7 +109,7 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
+                <Users className="h-4 w-4 text-blue-600" />
                 Internal Stability
                 {/* Help Dialog */}
                 <Dialog>
@@ -375,9 +375,6 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
                   </DialogContent>
                 </Dialog>
               </CardTitle>
-              <CardDescription>
-                Social cohesion, crime rates, and domestic security metrics
-              </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {metrics && getTrendIcon(metrics.stabilityTrend)}
@@ -388,7 +385,7 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* Stability Score */}
           <div>
             <div className="mb-2 flex items-center justify-between">
@@ -654,10 +651,9 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
       <Card className="glass-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
             Active Security Events ({activeEvents.length})
           </CardTitle>
-          <CardDescription>Current internal security incidents and developments</CardDescription>
         </CardHeader>
         <CardContent>
           {activeEvents.length > 0 ? (
@@ -667,7 +663,7 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
                   key={event.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-lg border p-4"
+                  className="bg-card rounded-lg border p-3"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -729,8 +725,8 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
               ))}
             </div>
           ) : (
-            <div className="text-muted-foreground py-8 text-center">
-              <CheckCircle className="mx-auto mb-3 h-12 w-12 text-green-600" />
+            <div className="text-muted-foreground py-6 text-center">
+              <CheckCircle className="mx-auto mb-3 h-8 w-8 text-green-600" />
               <h4 className="mb-1 font-medium">All Clear</h4>
               <p className="text-sm">No active security events at this time</p>
             </div>

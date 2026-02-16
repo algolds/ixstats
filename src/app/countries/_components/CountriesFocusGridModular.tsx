@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { CountryFocusCard, type CountryCardData } from "~/components/countries/CountryFocusCard";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
 import { RiGlobalLine } from "react-icons/ri";

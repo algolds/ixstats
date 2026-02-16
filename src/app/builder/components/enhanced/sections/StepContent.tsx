@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { stepConfig } from "../builderConfig";

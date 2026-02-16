@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, type Easing } from "framer-motion";
+import { motion, type Easing } from "motion/react";
 import { Crown, Globe } from "lucide-react";
 import { cn } from "~/lib/utils";
 

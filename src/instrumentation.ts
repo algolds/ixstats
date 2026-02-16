@@ -8,11 +8,18 @@
  * - Memory monitoring setup
  * - Performance metric collection
  *
+ * IMPORTANT: register() runs in BOTH Node.js and Edge runtimes.
+ * Guard Node.js-only imports behind process.env.NEXT_RUNTIME === 'nodejs'
+ * so Turbopack excludes them from the Edge bundle (avoids process.memoryUsage warnings).
+ *
  * @see https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 
 export async function register() {
-  // Only run optimizations in production
+  // Only run in Node.js runtime — skip Edge runtime entirely.
+  // Turbopack uses this check to tree-shake Node.js imports from the Edge bundle.
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
   if (process.env.NODE_ENV === "production") {
     console.log("[Instrumentation] Initializing production optimizations...");
 
@@ -48,6 +55,18 @@ export async function register() {
       console.error("[Instrumentation] Failed to initialize optimizations:", error);
     }
   } else {
-    console.log("[Instrumentation] Development mode - skipping production optimizations");
+    console.log("[Instrumentation] Development mode - initializing memory monitoring...");
+
+    try {
+      const { ProductionStartup } = await import("./lib/production-optimizations");
+
+      // Initialize memory monitoring (cache clearing, GC triggers) in dev mode
+      // This enables proactive cache clearing at 65% threshold before Next.js restarts at 80%
+      await ProductionStartup.initialize();
+
+      console.log("[Instrumentation] Dev memory monitoring initialized");
+    } catch (error) {
+      console.warn("[Instrumentation] Dev memory monitoring setup failed (non-fatal):", error);
+    }
   }
 }

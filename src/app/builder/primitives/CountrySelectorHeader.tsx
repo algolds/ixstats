@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Download, ExternalLink, ArrowLeft, Check, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";

@@ -1,6 +1,6 @@
 // Enhanced Animation Utilities for NumberFlow and Smooth Transitions
 
-import { useSpring, useMotionValue, useTransform, MotionValue } from "framer-motion";
+import { useSpring, useMotionValue, useTransform, MotionValue } from "motion/react";
 import { useEffect, useMemo } from "react";
 import type { AnimationConfig } from "./types";
 

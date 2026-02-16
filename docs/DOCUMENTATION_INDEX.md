@@ -1,4 +1,4 @@
-# IxStats Documentation Index (2025 Refresh)
+# IxStats Documentation Index (February 2026)
 
 This index mirrors the new documentation structure. Use it as the canonical map when authoring, reviewing, or discovering guidance.
 
@@ -10,7 +10,9 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 - **Environment Reference** – [`docs/operations/environments.md`](operations/environments.md)
 - **Help System Authoring** – [`docs/systems/help.md`](systems/help.md)
 - **Tax System Reference** – [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md)
-- **Map Editor Guide** – [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md)
+- **Admin CMS** – [`systems/admin-cms.md`](systems/admin-cms.md)
+- **API Complete** – [`reference/api-complete.md`](reference/api-complete.md)
+- ~~**Map Editor Guide**~~ – DEPRECATED (maps removed November 2025)
 - **Rate Limiting Guide** – [`RATE_LIMITING_GUIDE.md`](RATE_LIMITING_GUIDE.md)
 
 ## Category Breakdown
@@ -40,6 +42,11 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`systems/achievements.md`](systems/achievements.md) | Achievement unlock logic, leaderboards, notifications, and analytics |
 | [`systems/builder.md`](systems/builder.md) | Nation creation flows, atomic components, wiki importers |
 | [`systems/help.md`](systems/help.md) | Help center architecture, article conventions, and synchronization with `/help` |
+| [`systems/admin-cms.md`](systems/admin-cms.md) | 18 admin interfaces, CMS architecture, dynamic content management |
+| [`systems/calculations.md`](systems/calculations.md) | Economic formulas and step-by-step calculation examples |
+| [`systems/npc-ai.md`](systems/npc-ai.md) | NPC personality traits, archetypes, behavioral prediction |
+| [`systems/crisis-events.md`](systems/crisis-events.md) | Crisis event types, player responses, outcome mechanics |
+| [`systems/diplomatic-ai.md`](systems/diplomatic-ai.md) | Diplomatic AI scenario system |
 | [`systems/myvault.md`](systems/myvault.md) | MyVault economy system, IxCredits currency, earning/spending mechanics, and vault progression |
 | [`systems/cards.md`](systems/cards.md) | IxCards system, card types (Nation, Lore, NS Import, Special), rarity mechanics, and ownership tracking |
 | [`systems/card-packs.md`](systems/card-packs.md) | Card pack types, rarity distribution, pack opening flow, and bonus mechanics |
@@ -75,7 +82,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`TAX_SYSTEM_FRONTEND_EXAMPLE.md`](TAX_SYSTEM_FRONTEND_EXAMPLE.md) | Tax system frontend integration examples |
 | [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) | Complete tax system implementation summary |
 
-### Map Editor & Vector Tiles Reference
+### Map Editor & Vector Tiles Reference (DEPRECATED - Maps removed November 2025)
 | Document | Summary |
 | --- | --- |
 | [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md) | Comprehensive vector tiles implementation guide |

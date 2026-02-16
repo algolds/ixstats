@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Reorder } from "framer-motion";
+import { Reorder } from "motion/react";
 import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { GlassCard } from "./enhanced-card";
 import { Button } from "./button";

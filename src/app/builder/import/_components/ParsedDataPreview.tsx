@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Import, CheckCircle, Users, DollarSign, MapPin, Building } from "lucide-react";
 import { GlassCard, GlassCardContent, GlassCardHeader } from "../../components/glass/GlassCard";
 import { cn } from "~/lib/utils";

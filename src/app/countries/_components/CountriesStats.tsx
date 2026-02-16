@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { type CountryCardData } from "~/components/countries/CountryFocusCard";
 import { RiGlobalLine, RiGroupLine, RiBarChartLine, RiTrophyLine } from "react-icons/ri";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";

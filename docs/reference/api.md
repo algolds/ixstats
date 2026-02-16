@@ -1,8 +1,8 @@
 # API Reference Snapshot
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
-The tRPC layer exposes 35 routers with a combined 546 procedures (274 queries / 272 mutations). This snapshot lists each router with counts for quick auditing. For detailed schemas, inspect the router files under `src/server/api/routers`.
+The tRPC layer exposes 61 routers with a combined 920+ procedures. This snapshot lists each router with counts for quick auditing. For detailed schemas, inspect the router files under `src/server/api/routers`. See also [api-complete.md](./api-complete.md) for the comprehensive catalog.
 
 ## Router Index
 | Router | Procedures | Queries | Mutations |
@@ -42,6 +42,22 @@ The tRPC layer exposes 35 routers with a combined 546 procedures (274 queries / 
 | users | 19 | 9 | 10 |
 | wikiCache | 11 | 5 | 6 |
 | wikiImporter | 5 | 4 | 1 |
+| cards | — | — | — |
+| card-packs | — | — | — |
+| card-analytics | — | — | — |
+| card-market | — | — | — |
+| cardImages | — | — | — |
+| crafting | — | — | — |
+| trading | — | — | — |
+| lore-cards | — | — | — |
+| vault | — | — | — |
+| elections | — | — | — |
+| economicArchetypes | — | — | — |
+| smallArmsEquipment | — | — | — |
+| ns-import | — | — | — |
+| historical | — | — | — |
+
+> **Note:** Routers marked with `—` were added during the v2 migration. Run `npm run audit:wiring` or inspect the router files for current procedure counts.
 
 ## Usage Notes
 - Procedures are generated with strongly typed inputs/outputs via Zod schemas defined in each router

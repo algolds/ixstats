@@ -8,9 +8,9 @@ import {
   useSpring,
   useTransform,
   useVelocity,
-} from "framer-motion";
+} from "motion/react";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import type { MotionValue } from "framer-motion";
+import type { MotionValue } from "motion/react";
 
 import { cn } from "~/lib/utils";
 

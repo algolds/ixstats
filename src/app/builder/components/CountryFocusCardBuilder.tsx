@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware"; // Import route-aware flag hook
 import { Globe } from "lucide-react"; // Import Globe icon for fallback

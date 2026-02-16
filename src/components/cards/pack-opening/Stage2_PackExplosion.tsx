@@ -4,7 +4,7 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import type { CardInstance } from "~/types/pack-opening";
 import type { CardRarity } from "@prisma/client";
 import { getPackOpeningService } from "~/lib/pack-opening-service";

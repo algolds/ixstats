@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion } from "motion/react";
 import {
   BarChart3,
   Filter,
@@ -9,7 +10,25 @@ import {
   RefreshCw,
   ChevronDown,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -285,12 +304,20 @@ export function ComparativeAnalysis({
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
       {/* Header */}
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+      <motion.div 
+        className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200/50 dark:border-blue-700/30"
+        variants={itemVariants}
+      >
         <div>
-          <h3 className="flex items-center gap-2 text-lg font-semibold">
-            <BarChart3 className="text-primary h-5 w-5" />
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-blue-700 dark:text-blue-400">
+            <BarChart3 className="h-5 w-5" />
             Comparative Economic Analysis
           </h3>
           <p className="text-muted-foreground text-sm">
@@ -299,19 +326,22 @@ export function ComparativeAnalysis({
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="bg-white/50 dark:bg-black/20">
             <RefreshCw className="mr-2 h-4 w-4" />
             Update Data
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="bg-white/50 dark:bg-black/20">
             <Download className="mr-2 h-4 w-4" />
             Export Analysis
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Filters */}
-      <div className="bg-muted/50 flex flex-wrap items-center gap-4 rounded-lg p-4">
+      <motion.div 
+        className="bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-900/20 dark:to-gray-900/20 flex flex-wrap items-center gap-4 rounded-xl p-4 border border-slate-200/50 dark:border-slate-700/30"
+        variants={itemVariants}
+      >
         <div className="flex items-center gap-2">
           <Label className="text-sm">Regions:</Label>
           <DropdownMenu>
@@ -361,7 +391,7 @@ export function ComparativeAnalysis({
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="outline">
+          <Badge variant="outline" className="bg-white/50 dark:bg-black/20">
             {filteredCountries.length} of {allCountries.length} countries
           </Badge>
           {selectedRegions.length > 0 && !selectedRegions.includes("Global Average") && (
@@ -370,9 +400,10 @@ export function ComparativeAnalysis({
             </Badge>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
+      <motion.div variants={itemVariants}>
+        <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
         <TabsList>
           <TabsTrigger value="scatter">Scatter Plot</TabsTrigger>
           <TabsTrigger value="ranking">Rankings</TabsTrigger>
@@ -380,7 +411,7 @@ export function ComparativeAnalysis({
           <TabsTrigger value="trends">Regional Trends</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="scatter" className="space-y-6">
+        <TabsContent value="scatter" className="space-y-4">
           {/* Metric Selectors */}
           <div className="flex items-center gap-4">
             <div>
@@ -417,12 +448,11 @@ export function ComparativeAnalysis({
 
           {/* Scatter Plot */}
           <Card>
-            <CardHeader>
-              <CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold">
                 {metrics.find((m) => m.key === selectedMetricY)?.label} vs{" "}
                 {metrics.find((m) => m.key === selectedMetricX)?.label}
               </CardTitle>
-              <CardDescription>Economic performance comparison across countries</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-96">
@@ -498,14 +528,11 @@ export function ComparativeAnalysis({
           </Card>
         </TabsContent>
 
-        <TabsContent value="ranking" className="space-y-6">
+        <TabsContent value="ranking" className="space-y-4">
           {/* User Country Rankings */}
           <Card>
-            <CardHeader>
-              <CardTitle>{userCountry.name} Performance Rankings</CardTitle>
-              <CardDescription>
-                Your position relative to all countries in the analysis
-              </CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold">{userCountry.name} Performance Rankings</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -545,7 +572,7 @@ export function ComparativeAnalysis({
               <CardTitle>Top Performers by Category</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {metrics.slice(0, 4).map((metric) => {
                   const topCountries = [...allCountries]
                     .sort((a, b) => (b as any)[metric.key] - (a as any)[metric.key])
@@ -582,17 +609,14 @@ export function ComparativeAnalysis({
           </Card>
         </TabsContent>
 
-        <TabsContent value="radar" className="space-y-6">
+        <TabsContent value="radar" className="space-y-4">
           {/* Country Selection for Radar */}
           <Card>
-            <CardHeader>
-              <CardTitle>Multi-Country Comparison</CardTitle>
-              <CardDescription>
-                Select up to 5 countries to compare across all metrics
-              </CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold">Multi-Country Comparison</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <Label className="mb-2 block text-sm">
                     Selected Countries ({selectedCountries.length}/5)
@@ -644,13 +668,12 @@ export function ComparativeAnalysis({
           </Card>
         </TabsContent>
 
-        <TabsContent value="trends" className="space-y-6">
+        <TabsContent value="trends" className="space-y-4">
           {/* Regional Averages - Multiple Metrics */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card>
-              <CardHeader>
-                <CardTitle>Regional GDP per Capita</CardTitle>
-                <CardDescription>Average GDP per capita by region</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Regional GDP per Capita</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-80">
@@ -683,9 +706,8 @@ export function ComparativeAnalysis({
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Regional Growth Rates</CardTitle>
-                <CardDescription>Average economic growth by region</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Regional Growth Rates</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-80">
@@ -718,9 +740,8 @@ export function ComparativeAnalysis({
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Regional Unemployment</CardTitle>
-                <CardDescription>Average unemployment rates by region</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Regional Unemployment</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-80">
@@ -753,9 +774,8 @@ export function ComparativeAnalysis({
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Regional Total GDP</CardTitle>
-                <CardDescription>Combined economic output by region</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Regional Total GDP</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-80">
@@ -799,14 +819,16 @@ export function ComparativeAnalysis({
                 <Card key={region.region} className={isUserRegion ? "ring-primary ring-2" : ""}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">{region.region}</CardTitle>
-                      {isUserRegion && (
-                        <Badge variant="default" className="text-xs">
-                          Your Region
-                        </Badge>
-                      )}
+                      <CardTitle className="text-sm font-semibold">{region.region}</CardTitle>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground">{region.countries.length} countries</span>
+                        {isUserRegion && (
+                          <Badge variant="default" className="text-[10px]">
+                            Your Region
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <CardDescription>{region.countries.length} countries</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -843,7 +865,8 @@ export function ComparativeAnalysis({
             })}
           </div>
         </TabsContent>
-      </Tabs>
-    </div>
+        </Tabs>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import { EnhancedSocialCountryProfile } from "~/components/countries/EnhancedSocialCountryProfile";
 import { DynamicCountryHeader } from "~/components/countries/DynamicCountryHeader";

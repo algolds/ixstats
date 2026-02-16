@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { BarChart3, LineChart, PieChart, Settings, Palette } from "lucide-react";
 import {

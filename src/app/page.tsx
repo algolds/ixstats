@@ -2,7 +2,7 @@
 
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { EnhancedCommandCenter } from "./_components/EnhancedCommandCenter";
+import { DashboardRouter } from "~/components/dashboard/DashboardRouter";
 import { IxStatsSplashPage } from "./_components/IxStatsSplashPage";
 
 export default function Home() {
@@ -30,5 +30,5 @@ export default function Home() {
     return <IxStatsSplashPage />;
   }
 
-  return <EnhancedCommandCenter />;
+  return <DashboardRouter />;
 }

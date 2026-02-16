@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import {
   Plus,
@@ -661,7 +661,7 @@ function AssetDialog({
                 );
               })}
               {filteredEquipment.length === 0 && (
-                <div className="text-muted-foreground py-8 text-center text-sm">
+                <div className="text-muted-foreground py-6 text-center text-sm">
                   No equipment found matching your criteria
                 </div>
               )}
@@ -690,7 +690,7 @@ function AssetDialog({
             </div>
 
             {/* Name & Category */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Name *</Label>
                 <Input
@@ -710,7 +710,7 @@ function AssetDialog({
             </div>
 
             {/* Quantity */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Total Quantity</Label>
                 <Input
@@ -745,7 +745,7 @@ function AssetDialog({
             </div>
 
             {/* Performance */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Range (km) (Optional)</Label>
                 <Input
@@ -805,7 +805,7 @@ function AssetDialog({
             <Separator />
 
             {/* Costs */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Acquisition Cost ($)</Label>
                 <Input

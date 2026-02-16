@@ -15,7 +15,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { GovernmentBuilder } from "~/components/government";
 import { BudgetManagementDashboard } from "~/components/government/BudgetManagementDashboard";
 import { GovernmentStructurePreview } from "./GovernmentStructurePreview";

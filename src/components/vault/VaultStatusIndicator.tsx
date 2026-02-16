@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Lock, Shield, CheckCircle, AlertTriangle } from "lucide-react";
 import { cn } from "~/lib/utils";
 

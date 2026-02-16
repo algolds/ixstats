@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -550,16 +550,16 @@ export function IxStatsSplashPage() {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="mx-auto mb-32 max-w-7xl"
         >
-          <div className="glass-hierarchy-parent relative overflow-hidden rounded-3xl border border-yellow-500/30 p-12">
+          <div className="glass-hierarchy-parent relative overflow-hidden rounded-2xl border border-yellow-500/30 p-6 md:p-8">
             <div className="pointer-events-none absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-yellow-500/10 to-transparent" />
 
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 shadow-xl shadow-yellow-500/30">
-                  <Crown className="h-10 w-10 text-white" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 shadow-xl shadow-yellow-500/30">
+                  <Crown className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 bg-clip-text text-5xl font-bold text-transparent">
+                  <h2 className="bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
                     MyCountry©
                   </h2>
                   <p className="text-muted-foreground text-xl">Your Nation Management Hub</p>
@@ -571,12 +571,12 @@ export function IxStatsSplashPage() {
               </p>
 
               <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <div className="glass-hierarchy-child rounded-xl border border-yellow-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-yellow-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500">
                       <Building2 className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Country Builder</h3>
+                    <h3 className="text-base font-semibold">Country Builder</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     7-step guided setup from national identity to economic indicators. Import from
@@ -584,12 +584,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-blue-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-blue-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
                       <Crown className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Executive Dashboard</h3>
+                    <h3 className="text-base font-semibold">Executive Dashboard</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     8 specialized tabs covering economy, labor, demographics, and government.
@@ -598,12 +598,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-purple-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-purple-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
                       <Shield className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Defense System</h3>
+                    <h3 className="text-base font-semibold">Defense System</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Build and manage your military with 8 branch types (Army, Navy, Air Force, Cyber
@@ -612,12 +612,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-green-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-green-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
                       <Brain className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Intelligence & Insights</h3>
+                    <h3 className="text-base font-semibold">Intelligence & Insights</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Real-time alerts, trend analysis, risk assessment, and forward-looking
@@ -637,16 +637,16 @@ export function IxStatsSplashPage() {
           transition={{ duration: 0.8, delay: 0.8 }}
           className="mx-auto mb-32 max-w-7xl"
         >
-          <div className="glass-hierarchy-parent relative overflow-hidden rounded-3xl border border-blue-500/30 p-12">
+          <div className="glass-hierarchy-parent relative overflow-hidden rounded-2xl border border-blue-500/30 p-6 md:p-8">
             <div className="pointer-events-none absolute top-0 left-0 h-full w-1/2 bg-gradient-to-r from-blue-500/10 to-transparent" />
 
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-xl shadow-blue-500/30">
-                  <MessageSquare className="h-10 w-10 text-white" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-xl shadow-blue-500/30">
+                  <MessageSquare className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 bg-clip-text text-5xl font-bold text-transparent">
+                  <h2 className="bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
                     ThinkPages
                   </h2>
                   <p className="text-muted-foreground text-xl">25 Voices, One Nation</p>
@@ -658,12 +658,12 @@ export function IxStatsSplashPage() {
               </p>
 
               <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="glass-hierarchy-child rounded-xl border border-blue-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-blue-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500">
                       <Users className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Create Your Society</h3>
+                    <h3 className="text-base font-semibold">Create Your Society</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Design unique characters - from prime ministers to street activists. Give each
@@ -672,12 +672,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-cyan-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-cyan-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-400">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-400">
                       <MessageSquare className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Share & Collaborate</h3>
+                    <h3 className="text-base font-semibold">Share & Collaborate</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Post updates on the social feed, message other nations privately, or join
@@ -686,12 +686,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-indigo-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-indigo-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500">
                       <Sparkles className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Canon Worldbuilding</h3>
+                    <h3 className="text-base font-semibold">Canon Worldbuilding</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     ThinkPages is{" "}
@@ -821,7 +821,7 @@ export function IxStatsSplashPage() {
           </div>
 
           <div className="mx-auto mt-10 max-w-4xl space-y-4">
-            <div className="glass-hierarchy-child rounded-xl border border-purple-500/20 p-6">
+            <div className="glass-hierarchy-child rounded-xl border border-purple-500/20 p-4">
               <p className="text-muted-foreground text-sm leading-relaxed">
                 <strong className="text-purple-300">Natural Interactions:</strong> Components work
                 together realistically - choose a Technocratic Process with Professional Bureaucracy
@@ -829,7 +829,7 @@ export function IxStatsSplashPage() {
                 elements for interesting storytelling.
               </p>
             </div>
-            <div className="glass-hierarchy-child rounded-xl border border-green-500/20 p-6">
+            <div className="glass-hierarchy-child rounded-xl border border-green-500/20 p-4">
               <p className="text-muted-foreground text-sm leading-relaxed">
                 <strong className="text-green-300">Shape Your Economy:</strong> Your choices matter.
                 A Free Market System with Innovation support grows differently than a Planned
@@ -837,7 +837,7 @@ export function IxStatsSplashPage() {
                 quality of life over time.
               </p>
             </div>
-            <div className="glass-hierarchy-child rounded-xl border border-blue-500/20 p-6">
+            <div className="glass-hierarchy-child rounded-xl border border-blue-500/20 p-4">
               <p className="text-muted-foreground text-sm leading-relaxed">
                 <strong className="text-blue-300">Everything Connects:</strong> Your government
                 structure affects how efficiently you can collect taxes. Your economic model
@@ -855,16 +855,16 @@ export function IxStatsSplashPage() {
           transition={{ duration: 0.8, delay: 1.2 }}
           className="mx-auto mb-32 max-w-7xl"
         >
-          <div className="glass-hierarchy-parent relative overflow-hidden rounded-3xl border border-green-500/30 p-12">
+          <div className="glass-hierarchy-parent relative overflow-hidden rounded-2xl border border-green-500/30 p-6 md:p-8">
             <div className="pointer-events-none absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-green-500/10 to-transparent" />
 
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-xl shadow-green-500/30">
-                  <Globe className="h-10 w-10 text-white" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-xl shadow-green-500/30">
+                  <Globe className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 bg-clip-text text-5xl font-bold text-transparent">
+                  <h2 className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
                     Dynamic World
                   </h2>
                   <p className="text-muted-foreground text-xl">Where Every Choice Matters</p>
@@ -879,12 +879,12 @@ export function IxStatsSplashPage() {
               </p>
 
               <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="glass-hierarchy-child rounded-xl border border-green-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-green-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
                       <Activity className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Shared Timeline</h3>
+                    <h3 className="text-base font-semibold">Shared Timeline</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Everyone plays on the same clock. Schedule cabinet meetings with specific dates,
@@ -893,12 +893,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-emerald-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-emerald-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500">
                       <TrendingUp className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Growing Nations</h3>
+                    <h3 className="text-base font-semibold">Growing Nations</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Watch your economy grow over months and years. Track meaningful progress as your
@@ -907,12 +907,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-teal-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-teal-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-cyan-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500">
                       <Network className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Real Impact</h3>
+                    <h3 className="text-base font-semibold">Real Impact</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Your choices matter. Trade agreements strengthen partner economies. Diplomatic
@@ -932,16 +932,16 @@ export function IxStatsSplashPage() {
           transition={{ duration: 0.8, delay: 1.4 }}
           className="mx-auto mb-32 max-w-7xl"
         >
-          <div className="glass-hierarchy-parent relative overflow-hidden rounded-3xl border border-indigo-500/30 p-12">
+          <div className="glass-hierarchy-parent relative overflow-hidden rounded-2xl border border-indigo-500/30 p-6 md:p-8">
             <div className="pointer-events-none absolute top-0 left-0 h-full w-1/2 bg-gradient-to-r from-indigo-500/10 to-transparent" />
 
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-xl shadow-indigo-500/30">
-                  <Globe className="h-10 w-10 text-white" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-xl shadow-indigo-500/30">
+                  <Globe className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 bg-clip-text text-5xl font-bold text-transparent">
+                  <h2 className="bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
                     Diplomacy & Relations
                   </h2>
                   <p className="text-muted-foreground text-xl">Connect with the World</p>
@@ -955,12 +955,12 @@ export function IxStatsSplashPage() {
               </p>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="glass-hierarchy-child rounded-xl border border-indigo-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-indigo-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500">
                       <Building2 className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Embassies & Missions</h3>
+                    <h3 className="text-base font-semibold">Embassies & Missions</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Open embassies in other nations and run diplomatic missions - negotiate trade
@@ -969,12 +969,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-purple-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-purple-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
                       <MessageSquare className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Private Communications</h3>
+                    <h3 className="text-base font-semibold">Private Communications</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     Send secure messages to other nations&apos; leaders. Negotiate treaties, share
@@ -983,12 +983,12 @@ export function IxStatsSplashPage() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-pink-500/20 p-6">
+                <div className="glass-hierarchy-child rounded-xl border border-pink-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-500">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-pink-500 to-rose-500">
                       <Network className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold">Track Relationships</h3>
+                    <h3 className="text-base font-semibold">Track Relationships</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
                     See your diplomatic ties at a glance. Monitor relationship strength with other
@@ -1008,11 +1008,11 @@ export function IxStatsSplashPage() {
           transition={{ duration: 0.8, delay: 1.2 }}
           className="mx-auto mb-16 max-w-4xl text-center"
         >
-          <div className="glass-hierarchy-parent rounded-3xl border border-[#5865F2]/30 p-12">
-            <h2 className="mb-4 bg-gradient-to-r from-[#5865F2] via-[#7289DA] to-[#5865F2] bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
+          <div className="glass-hierarchy-parent rounded-2xl border border-[#5865F2]/30 p-6 md:p-8">
+            <h2 className="mb-4 bg-gradient-to-r from-[#5865F2] via-[#7289DA] to-[#5865F2] bg-clip-text text-3xl font-bold text-transparent md:text-4xl">
               Join Our Community
             </h2>
-            <p className="text-muted-foreground mx-auto mb-8 max-w-2xl text-xl">
+            <p className="text-muted-foreground mx-auto mb-6 max-w-2xl text-base md:text-lg">
               IxStats is in active development. Join our Discord to follow updates, suggest
               features, and connect with the community.
             </p>

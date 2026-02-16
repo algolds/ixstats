@@ -6,7 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Users, ChevronDown, ChevronRight, CheckCircle, AlertTriangle, Info } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { GovernmentDepartment } from "~/types/government";
 import { formatCurrency, formatNumber } from "~/lib/format-utils";
 

@@ -4,6 +4,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion } from "motion/react";
 import {
   Users,
   DollarSign,
@@ -31,6 +32,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+
+// Animation variants for staggered entrance
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24,
+    },
+  },
+};
+
+const cardHover = {
+  scale: 1.02,
+  transition: { type: "spring", stiffness: 400, damping: 10 },
+};
 import {
   formatPopulation,
   formatCurrency,
@@ -625,208 +656,248 @@ export function CountryAtGlance({
           <Separator />
 
           {/* Economic Indicators */}
-          <div className="space-y-4">
-            <h4 className="text-muted-foreground flex items-center text-sm font-semibold">
+          <motion.div 
+            className="space-y-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
+            <motion.h4 
+              className="text-muted-foreground flex items-center text-sm font-semibold"
+              variants={itemVariants}
+            >
               <DollarSign className="mr-2 h-4 w-4" />
               Economic Indicators
-            </h4>
+            </motion.h4>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* GDP per Capita */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    className="bg-muted/50 hover:bg-muted/70 cursor-pointer rounded-lg p-3 transition-colors"
-                    onClick={() => setIsGdpPerCapitaModalOpen(true)}
-                  >
-                    <div className="mb-1 flex items-center justify-between">
-                      <p className="text-muted-foreground text-xs">GDP per Capita</p>
-                      {formatted.getGrowthIconComponent(country.adjustedGdpGrowth)}
-                    </div>
-                    <p className="text-lg font-semibold">{formatted.gdpPerCapita}</p>
-                    <p
-                      className={`text-xs ${formatted.getGrowthColorClass(
-                        country.adjustedGdpGrowth
-                      )}`}
-                    >
-                      {formatted.gdpGrowth} annually
-                    </p>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Current GDP per capita, growth capped at max rate {formatted.maxGdpGrowth}</p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Economic Tier: {country.economicTier}
-                  </p>
-                  <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Total GDP */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    className="bg-muted/50 hover:bg-muted/70 cursor-pointer rounded-lg p-3 transition-colors"
-                    onClick={() => setIsGdpModalOpen(true)}
-                  >
-                    <div className="mb-1 flex items-center justify-between">
-                      <p className="text-muted-foreground text-xs">Total GDP</p>
-                      <BarChart3 className="text-muted-foreground h-3 w-3" />
-                    </div>
-                    <p className="text-lg font-semibold">{formatted.totalGdp}</p>
-                    <p className="text-muted-foreground text-xs">{country.economicTier} economy</p>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Gross domestic product (total economic output)</p>
-                  <p className="text-muted-foreground mt-1 text-xs">Population × GDP per Capita</p>
-                  <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* GDP Density */}
-              {country.gdpDensity != null && (
+              <motion.div variants={itemVariants} whileHover={cardHover}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="mb-1 flex items-center justify-between">
-                        <p className="text-muted-foreground text-xs">GDP Density</p>
-                        <MapPin className="text-muted-foreground h-3 w-3" />
+                    <div
+                      className="bg-gradient-to-br from-emerald-50/80 to-green-50/80 dark:from-emerald-900/20 dark:to-green-900/20 hover:from-emerald-100 hover:to-green-100 dark:hover:from-emerald-900/30 dark:hover:to-green-900/30 cursor-pointer rounded-xl p-4 transition-all border border-emerald-200/50 dark:border-emerald-700/30 shadow-sm hover:shadow-md"
+                      onClick={() => setIsGdpPerCapitaModalOpen(true)}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">GDP per Capita</p>
+                        {formatted.getGrowthIconComponent(country.adjustedGdpGrowth)}
                       </div>
-                      <p className="text-lg font-semibold">{formatted.gdpDensity}</p>
-                      <p className="text-muted-foreground text-xs">economic output per km²</p>
+                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatted.gdpPerCapita}</p>
+                      <p
+                        className={`text-sm mt-1 font-medium ${formatted.getGrowthColorClass(
+                          country.adjustedGdpGrowth
+                        )}`}
+                      >
+                        {formatted.gdpGrowth} annually
+                      </p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>GDP per square kilometer of land area</p>
+                    <p>Current GDP per capita, growth capped at max rate {formatted.maxGdpGrowth}</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Economic Tier: {country.economicTier}
+                    </p>
+                    <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
                   </TooltipContent>
                 </Tooltip>
+              </motion.div>
+
+              {/* Total GDP */}
+              <motion.div variants={itemVariants} whileHover={cardHover}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className="bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 cursor-pointer rounded-xl p-4 transition-all border border-blue-200/50 dark:border-blue-700/30 shadow-sm hover:shadow-md"
+                      onClick={() => setIsGdpModalOpen(true)}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Total GDP</p>
+                        <BarChart3 className="text-blue-500 h-4 w-4" />
+                      </div>
+                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{formatted.totalGdp}</p>
+                      <p className="text-sm mt-1 text-muted-foreground">{country.economicTier} economy</p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Gross domestic product (total economic output)</p>
+                    <p className="text-muted-foreground mt-1 text-xs">Population × GDP per Capita</p>
+                    <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
+
+              {/* GDP Density */}
+              {country.gdpDensity != null && (
+                <motion.div variants={itemVariants} whileHover={cardHover}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="bg-gradient-to-br from-purple-50/80 to-violet-50/80 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-4 border border-purple-200/50 dark:border-purple-700/30 shadow-sm">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">GDP Density</p>
+                          <MapPin className="text-purple-500 h-4 w-4" />
+                        </div>
+                        <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">{formatted.gdpDensity}</p>
+                        <p className="text-sm mt-1 text-muted-foreground">economic output per km²</p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>GDP per square kilometer of land area</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </motion.div>
               )}
             </div>
-          </div>
+          </motion.div>
 
           <Separator />
 
           {/* Demographics */}
-          <div className="space-y-4">
-            <h4 className="text-muted-foreground flex items-center text-sm font-semibold">
+          <motion.div 
+            className="space-y-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
+            <motion.h4 
+              className="text-muted-foreground flex items-center text-sm font-semibold"
+              variants={itemVariants}
+            >
               <Users className="mr-2 h-4 w-4" />
               Demographics
-            </h4>
+            </motion.h4>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Population */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    className="bg-muted/50 hover:bg-muted/70 cursor-pointer rounded-lg p-3 transition-colors"
-                    onClick={() => setIsPopulationModalOpen(true)}
-                  >
-                    <div className="mb-1 flex items-center justify-between">
-                      <p className="text-muted-foreground text-xs">Population</p>
-                      {formatted.getGrowthIconComponent(country.populationGrowthRate)}
-                    </div>
-                    <p className="text-lg font-semibold">{formatted.population}</p>
-                    <p
-                      className={`text-xs ${formatted.getGrowthColorClass(
-                        country.populationGrowthRate
-                      )}`}
-                    >
-                      {formatted.populationGrowth} annually
-                    </p>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Current population and annual growth rate</p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Population Tier: {country.populationTier}
-                  </p>
-                  <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Population Density */}
-              {country.populationDensity != null && (
+              <motion.div variants={itemVariants} whileHover={cardHover}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="mb-1 flex items-center justify-between">
-                        <p className="text-muted-foreground text-xs">Pop. Density</p>
-                        <Globe className="text-muted-foreground h-3 w-3" />
+                    <div
+                      className="bg-gradient-to-br from-cyan-50/80 to-sky-50/80 dark:from-cyan-900/20 dark:to-sky-900/20 hover:from-cyan-100 hover:to-sky-100 dark:hover:from-cyan-900/30 dark:hover:to-sky-900/30 cursor-pointer rounded-xl p-4 transition-all border border-cyan-200/50 dark:border-cyan-700/30 shadow-sm hover:shadow-md"
+                      onClick={() => setIsPopulationModalOpen(true)}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Population</p>
+                        {formatted.getGrowthIconComponent(country.populationGrowthRate)}
                       </div>
-                      <p className="text-lg font-semibold">{formatted.populationDensity}</p>
-                      <p className="text-muted-foreground text-xs">people per km²</p>
+                      <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">{formatted.population}</p>
+                      <p
+                        className={`text-sm mt-1 font-medium ${formatted.getGrowthColorClass(
+                          country.populationGrowthRate
+                        )}`}
+                      >
+                        {formatted.populationGrowth} annually
+                      </p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Population per square kilometer of land area</p>
+                    <p>Current population and annual growth rate</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Population Tier: {country.populationTier}
+                    </p>
+                    <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
                   </TooltipContent>
                 </Tooltip>
+              </motion.div>
+
+              {/* Population Density */}
+              {country.populationDensity != null && (
+                <motion.div variants={itemVariants} whileHover={cardHover}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-4 border border-amber-200/50 dark:border-amber-700/30 shadow-sm">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Pop. Density</p>
+                          <Globe className="text-amber-500 h-4 w-4" />
+                        </div>
+                        <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{formatted.populationDensity}</p>
+                        <p className="text-sm mt-1 text-muted-foreground">people per km²</p>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Population per square kilometer of land area</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </motion.div>
               )}
 
               {/* Land Area */}
               {country.landArea != null && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="bg-muted/50 rounded-lg p-3">
-                      <div className="mb-1 flex items-center justify-between">
-                        <p className="text-muted-foreground text-xs">Land Area</p>
-                        <MapPin className="text-muted-foreground h-3 w-3" />
+                <motion.div variants={itemVariants} whileHover={cardHover}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="bg-gradient-to-br from-rose-50/80 to-pink-50/80 dark:from-rose-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-rose-200/50 dark:border-rose-700/30 shadow-sm">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Land Area</p>
+                          <MapPin className="text-rose-500 h-4 w-4" />
+                        </div>
+                        <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{formatted.landArea}</p>
+                        <p className="text-sm mt-1 text-muted-foreground">{formatted.areaSqMi}</p>
                       </div>
-                      <p className="text-lg font-semibold">{formatted.landArea}</p>
-                      <p className="text-muted-foreground text-xs">{formatted.areaSqMi}</p>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Total land area in metric and imperial units</p>
-                  </TooltipContent>
-                </Tooltip>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Total land area in metric and imperial units</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </motion.div>
               )}
             </div>
-          </div>
+          </motion.div>
 
           <Separator />
 
           {/* Growth Factors & Modifiers */}
-          <div className="space-y-4">
-            <h4 className="text-muted-foreground flex items-center text-sm font-semibold">
+          <motion.div 
+            className="space-y-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
+            <motion.h4 
+              className="text-muted-foreground flex items-center text-sm font-semibold"
+              variants={itemVariants}
+            >
               <TrendingUp className="mr-2 h-4 w-4" />
               Growth Factors
-            </h4>
+            </motion.h4>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <div className="mb-1 flex items-center justify-between">
-                      <p className="text-muted-foreground text-xs">Max GDP Growth</p>
-                      <BarChart3 className="text-muted-foreground h-3 w-3" />
+              <motion.div variants={itemVariants} whileHover={cardHover}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="bg-gradient-to-br from-indigo-50/80 to-blue-50/80 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-indigo-200/50 dark:border-indigo-700/30 shadow-sm">
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Max GDP Growth</p>
+                        <BarChart3 className="text-indigo-500 h-4 w-4" />
+                      </div>
+                      <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{formatted.maxGdpGrowth}</p>
+                      <p className="text-sm mt-1 text-muted-foreground">tier-based cap</p>
                     </div>
-                    <p className="text-lg font-semibold">{formatted.maxGdpGrowth}</p>
-                    <p className="text-muted-foreground text-xs">tier-based cap</p>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Maximum allowed GDP growth rate for {country.economicTier} economies</p>
-                </TooltipContent>
-              </Tooltip>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Maximum allowed GDP growth rate for {country.economicTier} economies</p>
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <div className="mb-1 flex items-center justify-between">
-                      <p className="text-muted-foreground text-xs">Local Factor</p>
-                      <Activity className="text-muted-foreground h-3 w-3" />
+              <motion.div variants={itemVariants} whileHover={cardHover}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="bg-gradient-to-br from-teal-50/80 to-emerald-50/80 dark:from-teal-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-teal-200/50 dark:border-teal-700/30 shadow-sm">
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Local Factor</p>
+                        <Activity className="text-teal-500 h-4 w-4" />
+                      </div>
+                      <p className="text-2xl font-bold text-teal-700 dark:text-teal-400">
+                        {((country.localGrowthFactor - 1) * 100).toFixed(2)}%
+                      </p>
+                      <p className="text-sm mt-1 text-muted-foreground">growth modifier</p>
                     </div>
-                    <p className="text-lg font-semibold">
-                      {((country.localGrowthFactor - 1) * 100).toFixed(2)}%
-                    </p>
-                    <p className="text-muted-foreground text-xs">growth modifier</p>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Local growth factor affecting economic development</p>
-                </TooltipContent>
-              </Tooltip>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Local growth factor affecting economic development</p>
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           <Separator />
 

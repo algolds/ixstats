@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   BookOpen,
   Users,
@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { ThinkPagesIcon } from "./ThinkPagesIcon";
 
 export function ThinkPagesGuide() {
   const [activeSection, setActiveSection] = useState<"about" | "features" | "tips" | null>("about");
@@ -128,14 +129,13 @@ export function ThinkPagesGuide() {
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
           <motion.div
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-lg dark:bg-[#0050a1]"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
-            <span className="text-sm font-bold text-white">T</span>
+            <ThinkPagesIcon size={28} />
           </motion.div>
           <div>
-            <CardTitle className="text-sm font-bold text-blue-600 dark:text-[#0050a1]">
+            <CardTitle className="text-sm font-bold text-foreground tracking-tight">
               ThinkPages Guide
             </CardTitle>
             <p className="text-muted-foreground text-xs">Master the art of digital discourse</p>

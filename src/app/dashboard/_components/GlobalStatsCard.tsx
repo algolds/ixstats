@@ -12,7 +12,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Brain, ChevronLeft, TrendingUp } from "lucide-react";
 import { ExecutiveActivityRings } from "~/components/ui/executive-activity-rings";
 import { RubiksCubeFlags } from "~/components/ui/rubiks-cube-flags";

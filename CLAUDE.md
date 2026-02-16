@@ -14,14 +14,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 IxStats is a production-ready economic simulation platform with comprehensive V1 compliance audit completed, all critical systems operational, extensive documentation coverage (106 atomic components documented), organized codebase structure, and **100% hardcoded data migration complete** (14,677 lines migrated to database).
 
 #### ✅ **Production-Ready Systems (100%)**
-- **Core Infrastructure**: Next.js 16.1.3, React 19.1.3, Prisma ORM (131 models), **52 tRPC routers** (580+ endpoints), IxTime synchronization
-- **Content Management System**: **17 admin interfaces**, 80+ reference data endpoints, 750+ seeded records, 100% dynamic
+- **Core Infrastructure**: Next.js 16.1.3, React 19.1.3, Prisma ORM (201 models), **61 tRPC routers** (920+ endpoints), IxTime synchronization
+- **Content Management System**: **18 admin interfaces**, 80+ reference data endpoints, 750+ seeded records, 100% dynamic
 - **NPC AI System**: 8 personality traits, 6 archetypes, behavioral prediction, personality drift algorithm
 - **Crisis Management**: Dynamic crisis events (natural disasters, economic crises, diplomatic incidents) with player responses
 - **Security & Authentication**: Clerk integration, 13 security fixes, 8-layer middleware, audit logging, Redis rate limiting
-- **Design System**: Glass physics framework with 100+ UI components, 485 total components
+- **Design System**: Glass physics framework with 100+ UI components, 598+ total components
 - **Economic Engine**: Tier-based modeling, real-time calculations, historical tracking, comprehensive formulas documented
-- **Database**: 131 models, 10+ migrations applied, PostgreSQL with PostGIS integration
+- **Database**: 201 models, 10+ migrations applied, PostgreSQL with PostGIS integration
 - **External Integrations**: IxWiki API, Discord webhooks, flag services, monitoring systems
 
 #### ✅ **Feature Complete (90-95%)**
@@ -87,13 +87,13 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - ✅ **Rate Limiting**: Redis-based with in-memory fallback implemented
 
 **Production-Ready Systems:**
-- Core platform infrastructure with Next.js 16.1.3, Prisma ORM (131 models), and **52 tRPC routers** (580+ endpoints)
+- Core platform infrastructure with Next.js 16.1.3, Prisma ORM (201 models), and **61 tRPC routers** (920+ endpoints)
 - Authentication system with 8-layer middleware and database audit logging
 - Economic calculation engine with tier-based modeling and historical tracking (**all formulas documented** with examples)
 - NPC AI personality system with 8 traits, 6 archetypes, behavioral prediction
 - Crisis events system with dynamic scenarios and player response options
-- Glass physics design system with 100+ components (485 total components)
-- **17 admin interfaces** for complete content management (up from 12)
+- Glass physics design system with 100+ components (598+ total components)
+- **18 admin interfaces** for complete content management
 - External API integrations (IxWiki, Discord webhooks, flag services) fully operational
 - Production optimizations (compression, caching, security headers, monitoring)
 
@@ -152,13 +152,13 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 ### Key Documentation Resources (v1.42)
 - **[docs/README.md](./docs/README.md)** - Documentation hub and navigation guide
 - **[docs/DOCUMENTATION_INDEX.md](./docs/DOCUMENTATION_INDEX.md)** - Complete documentation index
-- **[docs/reference/api-complete.md](./docs/reference/api-complete.md)** - Complete tRPC API catalog (**580+ endpoints across 52 routers**)
+- **[docs/reference/api-complete.md](./docs/reference/api-complete.md)** - Complete tRPC API catalog (**920+ endpoints across 61 routers**)
 - **[docs/reference/edge-cases.md](./docs/reference/edge-cases.md)** - **NEW:** Comprehensive edge case handling and error scenarios
 - **[docs/systems/calculations.md](./docs/systems/calculations.md)** - **NEW:** All economic formulas with step-by-step examples
 - **[docs/systems/npc-ai.md](./docs/systems/npc-ai.md)** - **NEW:** Complete NPC personality system documentation
 - **[docs/systems/crisis-events.md](./docs/systems/crisis-events.md)** - **NEW:** Crisis management system guide
-- **[docs/systems/admin-cms.md](./docs/systems/admin-cms.md)** - **NEW:** All 17 admin interfaces documented
-- **[docs/reference/database.md](./docs/reference/database.md)** - Prisma schema and data models (131 models)
+- **[docs/systems/admin-cms.md](./docs/systems/admin-cms.md)** - **NEW:** All 18 admin interfaces documented
+- **[docs/reference/database.md](./docs/reference/database.md)** - Prisma schema and data models (201 models)
 - **[docs/systems/](./docs/systems/)** - System-specific guides (MyCountry, Intelligence, Diplomacy, Economy, etc.)
 - **[docs/SYNERGY_REFERENCE.md](./docs/SYNERGY_REFERENCE.md)** - Government component synergy system
 - **[docs/RATE_LIMITING_GUIDE.md](./docs/RATE_LIMITING_GUIDE.md)** - Rate limiting configuration and Redis setup
@@ -206,6 +206,58 @@ The MyCountry system now follows a strict separation principle:
 - ✅ DiplomaticAnalytics component (5 interactive chart tabs)
 - ✅ DiplomaticEventsHub component (event management system)
 - ✅ Clean separation enforced (removed DiplomaticIntelligenceHub from Diplomacy)
+
+### Single-Page Router Architecture (February 2026)
+
+MyCountry, Vault, ThinkPages, and Dashboard all use a **single-page router pattern** for instant navigation:
+
+**Pattern:**
+- A central `*Router.tsx` component manages section state via `useState`
+- URL sync via `window.history.pushState()` (no Next.js route transitions)
+- All sub-page `page.tsx` files render the same Router component
+- `popstate` listener handles browser back/forward
+
+**Implementations:**
+| Router | Location | Sections |
+|--------|----------|----------|
+| `MyCountryRouter` | `src/components/mycountry/MyCountryRouter.tsx` | Overview, Executive, Diplomacy, Intelligence, Defense |
+| `VaultRouter` | `src/components/vault/VaultRouter.tsx` | Dashboard, Cards, Acquire, Create, Import |
+| `ThinkPagesRouter` | `src/components/thinkpages/ThinkPagesRouter.tsx` | Feed, ThinkTanks, ThinkShare |
+| `DashboardRouter` | `src/components/dashboard/DashboardRouter.tsx` | Main, Diplomacy, Feed, Trends |
+
+**Supporting Infrastructure:**
+- `*SidebarNav` - Dual-mode navigation (controlled via props or uncontrolled via pathname)
+- `*SidebarLayout` - Shared responsive grid (`lg:grid-cols-4`)
+- Sidebar widgets: `ExecutiveSidebarWidget`, `DiplomacySidebarWidget`, `DefenseSidebarWidget`
+- `BaseMetricDetailsModal` with 4-tab drill-down (Overview, Trends, Comparison, Details)
+
+### New Systems (v2 - January-February 2026)
+
+**Elections & Political Parties** (`src/server/api/routers/elections.ts`):
+- D'Hondt proportional representation and FPTP seat allocation
+- Political party management, legislature configuration, election simulation
+- Components in `src/components/executive/politics/`
+
+**Card Image Management** (`src/server/api/routers/cardImages.ts`):
+- Background image customization for 13 card types
+- Per-country custom or preset images
+- Components: `CardBackgroundImage`, `CardImageUploadModal` in `src/components/mycountry/primitives/`
+
+**Defense Operations** (`src/components/defense/operations/`):
+- `ActiveOperations`, `DeploymentWizard`, `PvPConflictPanel`
+
+**Alliance & Foreign Policy Systems**:
+- Alliances: `src/components/diplomacy/alliances/`
+- Foreign Policy: `src/components/diplomacy/foreign-policy/`
+
+**Dev Country View** (`src/context/DevCountryViewContext.tsx`):
+- Development tool for system owners to view other countries' data
+
+**Memory Configuration** (`src/lib/dev-memory-config.ts`):
+- Environment-aware memory limits to prevent OOM crashes in development
+
+**News Auto-Generation** (`src/lib/diplomatic-news-generator.ts`):
+- Auto-generates ThinkPages news posts for diplomatic events
 
 ### Development Focus Areas (v1.1.3 Status)
 - ✅ **Authentication System**: COMPLETE - 13 security fixes, 8-layer middleware, audit logging
@@ -290,13 +342,13 @@ See `REFACTORING_SUMMARY_OCT_2025.md` for complete implementation details.
 
 **v1.42 Production Baseline:**
 - ✅ All 14,677 lines hardcoded data migrated to database
-- ✅ 17 admin interfaces, 580+ tRPC endpoints across 52 routers
+- ✅ 18 admin interfaces, 920+ tRPC endpoints across 61 routers
 - ✅ Full RBAC with Clerk, audit logging, Redis rate limiting
-- ✅ Glass physics design system with 485 total components
+- ✅ Glass physics design system with 598+ total components
 
 ## CRITICAL: TypeScript and Memory Constraints
 
-**NEVER run global TypeScript checks.** This project has 131 Prisma models, 485 components, and 580+ API endpoints. Global `tsc` WILL exhaust server memory (7.2GB total, 4GB allocated to Node).
+**NEVER run global TypeScript checks.** This project has 201 Prisma models, 598+ components, and 920+ API endpoints. Global `tsc` WILL exhaust server memory (7.2GB total, 4GB allocated to Node).
 
 **Forbidden commands:**
 - `tsc --noEmit` (global)

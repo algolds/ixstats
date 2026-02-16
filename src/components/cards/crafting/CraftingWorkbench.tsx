@@ -7,7 +7,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { useSoundService } from "~/lib/sound-service";

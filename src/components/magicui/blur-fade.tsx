@@ -7,7 +7,7 @@ import {
   type UseInViewOptions,
   type Variants,
   type MotionProps,
-} from "framer-motion";
+} from "motion/react";
 import { useRef } from "react";
 
 type MarginType = UseInViewOptions["margin"];

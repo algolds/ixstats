@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import {
   Activity,
   BarChart3,
@@ -95,6 +95,21 @@ interface ContextualMenuDefinition {
   description?: string;
   groups: ContextualMenuGroup[];
 }
+
+// ── Nav item color config (ShineBorder hex + icon glow/hover classes) ──
+const NAV_COLORS: Record<string, { shine: string[]; glow: string; hover: string }> = {
+  "MyCountry®":   { shine: ["#f59e0b", "#eab308", "#fbbf24"], glow: "text-amber-400",   hover: "group-hover:text-amber-400" },
+  "ThinkPages":   { shine: ["#3b82f6", "#1d4ed8", "#60a5fa"], glow: "text-blue-400",    hover: "group-hover:text-blue-400" },
+  "Dashboard":    { shine: ["#10b981", "#059669", "#34d399"], glow: "text-emerald-400", hover: "group-hover:text-emerald-400" },
+  "Feed":         { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400",  hover: "group-hover:text-purple-400" },
+  "Explore":      { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400",  hover: "group-hover:text-purple-400" },
+  "Countries":    { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400",  hover: "group-hover:text-purple-400" },
+  "Intelligence": { shine: ["#6366f1", "#4f46e5", "#818cf8"], glow: "text-indigo-400",  hover: "group-hover:text-indigo-400" },
+  "Admin":        { shine: ["#ef4444", "#dc2626", "#f87171"], glow: "text-red-400",     hover: "group-hover:text-red-400" },
+  "Cards":        { shine: ["#06b6d4", "#0891b2", "#22d3ee"], glow: "text-cyan-400",    hover: "group-hover:text-cyan-400" },
+  "Help":         { shine: ["#fb923c", "#f97316", "#fdba74"], glow: "text-orange-400",  hover: "group-hover:text-orange-400" },
+};
+const DEFAULT_NAV = { shine: ["#3b82f6", "#8b5cf6", "#06b6d4"], glow: "text-blue-400", hover: "group-hover:text-blue-400" };
 
 const contextualMenus: Record<string, ContextualMenuDefinition> = {
   dashboard: {
@@ -563,13 +578,6 @@ export function Navigation() {
       requiresAuth: true,
     },
     {
-      name: "Feed",
-      href: "/feed",
-      icon: Activity,
-      requiresAuth: false,
-      description: "Real-time platform activity and updates",
-    },
-    {
       name: "Explore",
       href: "/countries",
       icon: Globe,
@@ -958,27 +966,7 @@ export function Navigation() {
                           >
                             <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                               <ShineBorder
-                                shineColor={
-                                  item.name === "MyCountry®"
-                                    ? ["#f59e0b", "#eab308", "#fbbf24"]
-                                    : item.name === "ThinkPages"
-                                      ? ["#3b82f6", "#1d4ed8", "#60a5fa"]
-                                      : item.name === "Dashboard"
-                                        ? ["#10b981", "#059669", "#34d399"]
-                                        : item.name === "Feed"
-                                          ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
-                                          : item.name === "Explore"
-                                            ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
-                                            : item.name === "Intelligence"
-                                              ? ["#6366f1", "#4f46e5", "#818cf8"]
-                                              : item.name === "Admin"
-                                                ? ["#ef4444", "#dc2626", "#f87171"]
-                                                : item.name === "Cards"
-                                                  ? ["#06b6d4", "#0891b2", "#22d3ee"]
-                                                  : item.name === "Help"
-                                                    ? ["#fb923c", "#f97316", "#fdba74"]
-                                                    : ["#3b82f6", "#8b5cf6", "#06b6d4"]
-                                }
+                                shineColor={(NAV_COLORS[item.name] ?? DEFAULT_NAV).shine}
                                 duration={30}
                                 borderWidth={1}
                                 className="rounded-lg"
@@ -986,50 +974,10 @@ export function Navigation() {
                             </div>
                             <div className="relative">
                               <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
-                                <Icon
-                                  className={`h-4 w-4 ${
-                                    item.name === "MyCountry®"
-                                      ? "text-amber-400"
-                                      : item.name === "ThinkPages"
-                                        ? "text-blue-400"
-                                        : item.name === "Dashboard"
-                                          ? "text-emerald-400"
-                                          : item.name === "Feed"
-                                            ? "text-purple-400"
-                                            : item.name === "Explore"
-                                              ? "text-purple-400"
-                                              : item.name === "Intelligence"
-                                                ? "text-indigo-400"
-                                                : item.name === "Admin"
-                                                  ? "text-red-400"
-                                                  : item.name === "Cards"
-                                                    ? "text-cyan-400"
-                                                    : item.name === "Help"
-                                                      ? "text-orange-400"
-                                                      : "text-blue-400"
-                                  }`}
-                                />
+                                <Icon className={`h-4 w-4 ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).glow}`} />
                               </div>
                               <Icon
-                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
-                                  item.name === "MyCountry®"
-                                    ? "group-hover:text-amber-400"
-                                    : item.name === "ThinkPages"
-                                      ? "group-hover:text-blue-400"
-                                      : item.name === "Dashboard"
-                                        ? "group-hover:text-emerald-400"
-                                        : item.name === "Feed"
-                                          ? "group-hover:text-purple-400"
-                                          : item.name === "Countries" || item.name === "Explore"
-                                            ? "group-hover:text-purple-400"
-                                            : item.name === "Admin"
-                                              ? "group-hover:text-red-400"
-                                              : item.name === "Cards"
-                                                ? "group-hover:text-cyan-400"
-                                                : item.name === "Help"
-                                                  ? "group-hover:text-orange-400"
-                                                  : "group-hover:text-blue-400"
-                                }`}
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).hover}`}
                                 aria-hidden="true"
                               />
                             </div>
@@ -1204,27 +1152,7 @@ export function Navigation() {
                           >
                             <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                               <ShineBorder
-                                shineColor={
-                                  item.name === "MyCountry®"
-                                    ? ["#f59e0b", "#eab308", "#fbbf24"]
-                                    : item.name === "ThinkPages"
-                                      ? ["#3b82f6", "#1d4ed8", "#60a5fa"]
-                                      : item.name === "Dashboard"
-                                        ? ["#10b981", "#059669", "#34d399"]
-                                        : item.name === "Feed"
-                                          ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
-                                          : item.name === "Explore"
-                                            ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
-                                            : item.name === "Intelligence"
-                                              ? ["#6366f1", "#4f46e5", "#818cf8"]
-                                              : item.name === "Admin"
-                                                ? ["#ef4444", "#dc2626", "#f87171"]
-                                                : item.name === "Cards"
-                                                  ? ["#06b6d4", "#0891b2", "#22d3ee"]
-                                                  : item.name === "Help"
-                                                    ? ["#fb923c", "#f97316", "#fdba74"]
-                                                    : ["#3b82f6", "#8b5cf6", "#06b6d4"]
-                                }
+                                shineColor={(NAV_COLORS[item.name] ?? DEFAULT_NAV).shine}
                                 duration={30}
                                 borderWidth={1}
                                 className="rounded-lg"
@@ -1232,50 +1160,10 @@ export function Navigation() {
                             </div>
                             <div className="relative">
                               <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
-                                <Icon
-                                  className={`h-4 w-4 ${
-                                    item.name === "MyCountry®"
-                                      ? "text-amber-400"
-                                      : item.name === "ThinkPages"
-                                        ? "text-blue-400"
-                                        : item.name === "Dashboard"
-                                          ? "text-emerald-400"
-                                          : item.name === "Feed"
-                                            ? "text-purple-400"
-                                            : item.name === "Explore"
-                                              ? "text-purple-400"
-                                              : item.name === "Intelligence"
-                                                ? "text-indigo-400"
-                                                : item.name === "Admin"
-                                                  ? "text-red-400"
-                                                  : item.name === "Cards"
-                                                    ? "text-cyan-400"
-                                                    : item.name === "Help"
-                                                      ? "text-orange-400"
-                                                      : "text-blue-400"
-                                  }`}
-                                />
+                                <Icon className={`h-4 w-4 ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).glow}`} />
                               </div>
                               <Icon
-                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
-                                  item.name === "MyCountry®"
-                                    ? "group-hover:text-amber-400"
-                                    : item.name === "ThinkPages"
-                                      ? "group-hover:text-blue-400"
-                                      : item.name === "Dashboard"
-                                        ? "group-hover:text-emerald-400"
-                                        : item.name === "Feed"
-                                          ? "group-hover:text-purple-400"
-                                          : item.name === "Countries" || item.name === "Explore"
-                                            ? "group-hover:text-purple-400"
-                                            : item.name === "Admin"
-                                              ? "group-hover:text-red-400"
-                                              : item.name === "Cards"
-                                                ? "group-hover:text-cyan-400"
-                                                : item.name === "Help"
-                                                  ? "group-hover:text-orange-400"
-                                                  : "group-hover:text-blue-400"
-                                }`}
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).hover}`}
                                 aria-hidden="true"
                               />
                             </div>

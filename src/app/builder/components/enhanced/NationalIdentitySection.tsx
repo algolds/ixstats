@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useEffect, useCallback } from "react";
-import { MediaSearchModal } from "~/components/MediaSearchModal";
+import dynamic from "next/dynamic";
+
+// Dynamic import for heavy media search modal
+const MediaSearchModal = dynamic(
+  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  { ssr: false }
+);
 import {
   Flag,
   Globe,

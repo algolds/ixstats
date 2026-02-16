@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { HealthRing } from "~/components/ui/health-ring";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";

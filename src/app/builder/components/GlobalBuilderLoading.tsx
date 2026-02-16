@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import {
   Building2,
@@ -229,7 +229,7 @@ export function GlobalBuilderLoading({
                 transition={{ delay: 0.8 + index * 0.1 }}
                 className="flex flex-col items-center gap-2"
               >
-                <div className="rounded-lg border border-white/20 bg-white/50 p-3 backdrop-blur-sm">
+                <div className="glass-hierarchy-child rounded-lg border border-border/40 p-3">
                   <subsystem.icon className={cn("h-6 w-6", subsystem.color)} />
                 </div>
                 <div className="text-muted-foreground text-center text-xs">{subsystem.label}</div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { TrendingUp, TrendingDown, AlertCircle, Shield } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { IntegratedEconomicAnalysis } from "~/lib/enhanced-economic-calculations";

@@ -7,7 +7,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { cn } from "~/lib/utils";
 import { CardDisplay } from "./CardDisplay";
 import { CardBack } from "./CardBack";

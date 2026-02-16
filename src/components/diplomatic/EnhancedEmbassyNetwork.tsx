@@ -15,7 +15,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { SharedDataModal } from "~/components/diplomatic/SharedDataModal";
 import { EstablishEmbassyModal } from "~/components/diplomatic/EstablishEmbassyModal";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "motion/react";
 
 // Custom hooks
 import { useEmbassyNetworkData } from "~/hooks/useEmbassyNetworkData";

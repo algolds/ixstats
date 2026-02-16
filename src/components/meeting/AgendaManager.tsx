@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Plus, Clock, ListChecks, GripVertical } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";

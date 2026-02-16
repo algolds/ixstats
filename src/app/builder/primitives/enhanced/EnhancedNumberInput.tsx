@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { motion, useMotionTemplate } from "framer-motion";
+import { motion, useMotionTemplate } from "motion/react";
 import { Minus, Plus, RotateCcw, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";

@@ -6,8 +6,9 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -40,8 +41,13 @@ import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
-import { Card3DViewer } from "~/components/cards/display/Card3DViewer";
 import type { CardInstance } from "~/types/cards-display";
+
+// Dynamic import for heavy 3D viewer
+const Card3DViewer = dynamic(
+  () => import("~/components/cards/display/Card3DViewer").then(m => m.Card3DViewer),
+  { ssr: false }
+);
 
 export default function CollectionDetailPage() {
   const params = useParams();

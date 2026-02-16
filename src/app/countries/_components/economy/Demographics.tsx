@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion } from "motion/react";
 import {
   Users,
   MapPin,
@@ -25,6 +26,29 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
+
+const cardHover = {
+  scale: 1.02,
+  transition: { type: "spring", stiffness: 400, damping: 10 },
+};
 import {
   PieChart,
   Pie,
@@ -398,73 +422,87 @@ export function Demographics({
 
         {/* Overview Tab */}
         {view === "overview" && (
-          <div className="space-y-6">
+          <motion.div 
+            className="space-y-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
             {/* Key Metrics */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {basicMetrics.map((metric) => {
+              {basicMetrics.map((metric, index) => {
                 const Icon = metric.icon;
                 const metricValue = metric.value ?? 0;
                 const progress = metric.reverse
                   ? Math.max(0, 100 - (metricValue / metric.target) * 100)
                   : Math.min(100, (metricValue / metric.target) * 100);
+                
+                const cardColors = [
+                  "from-rose-50/80 to-pink-50/80 dark:from-rose-900/20 dark:to-pink-900/20 border-rose-200/50 dark:border-rose-700/30",
+                  "from-cyan-50/80 to-blue-50/80 dark:from-cyan-900/20 dark:to-blue-900/20 border-cyan-200/50 dark:border-cyan-700/30",
+                  "from-violet-50/80 to-purple-50/80 dark:from-violet-900/20 dark:to-purple-900/20 border-violet-200/50 dark:border-violet-700/30",
+                ];
+                const textColors = ["text-rose-700 dark:text-rose-400", "text-cyan-700 dark:text-cyan-400", "text-violet-700 dark:text-violet-400"];
 
                 return (
-                  <Card key={metric.field}>
-                    <CardContent className="p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Icon className="text-primary h-4 w-4" />
-                          <span className="text-sm font-medium">{metric.label}</span>
+                  <motion.div key={metric.field} variants={itemVariants} whileHover={cardHover}>
+                    <Card className={`bg-gradient-to-br ${cardColors[index % 3]} border shadow-sm`}>
+                      <CardContent className="p-4">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icon className={`h-5 w-5 ${textColors[index % 3]}`} />
+                            <span className="text-sm font-medium">{metric.label}</span>
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <HelpCircle className="text-muted-foreground h-3 w-3" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{metric.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="text-muted-foreground h-3 w-3" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{metric.description}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-2xl font-bold">{metric.format(metric.value)}</span>
-                          {editMode ? (
-                            <Input
-                              type="number"
-                              value={metricValue}
-                              onChange={(e) => {
-                                if (metric.field === "urbanRuralSplit") {
-                                  handleUrbanRuralChange(parseFloat(e.target.value) || 0);
-                                } else {
-                                  handleField(metric.field, parseFloat(e.target.value) || 0);
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-2xl font-bold ${textColors[index % 3]}`}>{metric.format(metric.value)}</span>
+                            {editMode ? (
+                              <Input
+                                type="number"
+                                value={metricValue}
+                                onChange={(e) => {
+                                  if (metric.field === "urbanRuralSplit") {
+                                    handleUrbanRuralChange(parseFloat(e.target.value) || 0);
+                                  } else {
+                                    handleField(metric.field, parseFloat(e.target.value) || 0);
+                                  }
+                                }}
+                                className="h-8 w-20 text-right"
+                                step={metric.field === "lifeExpectancy" ? "0.1" : "1"}
+                                min="0"
+                                max={metric.field === "lifeExpectancy" ? "120" : "100"}
+                              />
+                            ) : (
+                              <Badge
+                                variant={
+                                  progress >= 80
+                                    ? "default"
+                                    : progress >= 60
+                                      ? "secondary"
+                                      : "destructive"
                                 }
-                              }}
-                              className="h-8 w-20 text-right"
-                              step={metric.field === "lifeExpectancy" ? "0.1" : "1"}
-                              min="0"
-                              max={metric.field === "lifeExpectancy" ? "120" : "100"}
-                            />
-                          ) : (
-                            <Badge
-                              variant={
-                                progress >= 80
-                                  ? "default"
-                                  : progress >= 60
-                                    ? "secondary"
-                                    : "destructive"
-                              }
-                            >
-                              {progress >= 80 ? "Good" : progress >= 60 ? "Fair" : "Poor"}
-                            </Badge>
-                          )}
+                              >
+                                {progress >= 80 ? "Good" : progress >= 60 ? "Fair" : "Poor"}
+                              </Badge>
+                            )}
+                          </div>
+                          <Progress value={progress} className="h-2" />
+                          <div className="text-muted-foreground text-xs">
+                            Target: {metric.format(metric.target)}
+                          </div>
                         </div>
-                        <Progress value={progress} className="h-2" />
-                        <div className="text-muted-foreground text-xs">
-                          Target: {metric.format(metric.target)}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 );
               })}
             </div>
@@ -679,7 +717,7 @@ export function Demographics({
                 </CardContent>
               </Card>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* Detailed Tab */}

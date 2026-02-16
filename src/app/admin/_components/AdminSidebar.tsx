@@ -239,11 +239,11 @@ export function AdminSidebar({ selectedSection, onSectionChange }: AdminSidebarP
                 <span className="text-sm font-medium">NPC Personalities</span>
               </a>
               <a
-                href={withBasePath("/vault")}
+                href={withBasePath("/admin/ns-sync")}
                 className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
               >
                 <CreditCard className="h-5 w-5" />
-                <span className="text-sm font-medium">IxCards / MyVault</span>
+                <span className="text-sm font-medium">NS Card Management</span>
               </a>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useMemo } from "react";
-import { motion, useMotionValue, type PanInfo } from "framer-motion";
+import { motion, useMotionValue, type PanInfo } from "motion/react";
 import { cn } from "~/lib/utils";
 import { Minus, Plus } from "lucide-react";
 

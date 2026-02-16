@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Sparkles, Grid3X3, Zap, Settings } from "lucide-react";
 import { cn } from "~/lib/utils";
 

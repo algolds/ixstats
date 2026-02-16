@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, useSpring, useTransform } from "framer-motion";
+import { motion, useSpring, useTransform } from "motion/react";
 import { AnimatedNumber } from "./animated-number";
 import { Tooltip, TooltipTrigger, TooltipContent } from "./tooltip";
 

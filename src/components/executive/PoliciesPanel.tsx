@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { FileText, Plus, Layers, AlertCircle, CheckCircle, Clock } from "lucide-react";
@@ -96,30 +96,24 @@ export function PoliciesPanel({ countryId }: PoliciesPanelProps) {
 
   const PolicyCard = ({ policy }: { policy: any }) => {
     return (
-      <div className="border-border/40 bg-muted/40 rounded-lg border p-4 transition-all hover:shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-indigo-50 p-2 dark:bg-indigo-950/20">
-              <FileText className="h-5 w-5 text-indigo-500" />
+      <div className="border-border/40 bg-muted/40 rounded-lg border p-3 transition-all hover:shadow-sm">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <FileText className="h-3.5 w-3.5 flex-shrink-0 text-indigo-500" />
+              <span className="truncate text-sm font-semibold">{policy.title}</span>
+              {getStatusBadge(policy)}
+              {getPriorityBadge(policy.priority)}
             </div>
-            <div>
-              <div className="text-foreground font-semibold">{policy.title}</div>
-              <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-sm">
-                <span>{policy.category ? policy.category.toUpperCase() : "GENERAL"}</span>
-                <span>•</span>
-                <span>Effective: {formatDate(policy.effectiveDate ?? policy.createdAt)}</span>
-              </div>
+            <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">
+              <span>{policy.category ? policy.category.toUpperCase() : "GENERAL"}</span>
+              <span>•</span>
+              <span>Effective: {formatDate(policy.effectiveDate ?? policy.createdAt)}</span>
             </div>
-          </div>
-
-          <div className="flex flex-col items-start gap-2 md:items-end">
-            {getStatusBadge(policy)}
-            {getPriorityBadge(policy.priority)}
           </div>
         </div>
-
         {policy.description && (
-          <div className="text-muted-foreground mt-3 line-clamp-2 text-sm">
+          <div className="text-muted-foreground mt-1.5 line-clamp-2 text-xs">
             {policy.description}
           </div>
         )}
@@ -144,65 +138,46 @@ export function PoliciesPanel({ countryId }: PoliciesPanelProps) {
         }}
       />
 
-      <div className="space-y-6">
-        {/* Header Card */}
-        <Card className="glass-hierarchy-child border-border">
-          <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                Executive Policy Management
-                <SectionHelpIcon
-                  title="Policy Management"
-                  content="Create and manage national policies that guide your country's governance. Policies can affect economic development, social programs, foreign relations, and more. Draft policies for review, activate them to implement changes, and archive outdated policies to maintain an organized policy framework."
-                />
-              </CardTitle>
-              <CardDescription>
-                Create, review, and manage national policies and directives
-              </CardDescription>
-            </div>
-            <Button onClick={() => setPolicyCreatorOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Policy
-            </Button>
-          </CardHeader>
-        </Card>
+      <div className="space-y-4">
+        {/* Section Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="text-sm font-semibold">Policy Management</h3>
+            <SectionHelpIcon
+              title="Policy Management"
+              content="Create and manage national policies that guide your country's governance. Policies can affect economic development, social programs, foreign relations, and more. Draft policies for review, activate them to implement changes, and archive outdated policies to maintain an organized policy framework."
+            />
+          </div>
+          <Button size="sm" onClick={() => setPolicyCreatorOpen(true)} className="gap-1.5">
+            <Plus className="h-3 w-3" />
+            Create Policy
+          </Button>
+        </div>
 
-        {/* Policy Stats */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Active</p>
-                  <p className="mt-2 text-3xl font-bold">{active.length}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Draft</p>
-                  <p className="mt-2 text-3xl font-bold">{draft.length}</p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Total</p>
-                  <p className="mt-2 text-3xl font-bold">{policies.length}</p>
-                </div>
-                <Layers className="h-8 w-8 text-indigo-600" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Policy Stats Strip */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="glass-hierarchy-child rounded-lg bg-green-50 p-2.5 dark:bg-green-950/20">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle className="h-3.5 w-3.5 flex-shrink-0 text-green-600" />
+              <span className="text-muted-foreground text-xs font-medium">Active</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">{active.length}</div>
+          </div>
+          <div className="glass-hierarchy-child rounded-lg bg-yellow-50 p-2.5 dark:bg-yellow-950/20">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 flex-shrink-0 text-yellow-600" />
+              <span className="text-muted-foreground text-xs font-medium">Draft</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">{draft.length}</div>
+          </div>
+          <div className="glass-hierarchy-child rounded-lg bg-indigo-50 p-2.5 dark:bg-indigo-950/20">
+            <div className="flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5 flex-shrink-0 text-indigo-600" />
+              <span className="text-muted-foreground text-xs font-medium">Total</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">{policies.length}</div>
+          </div>
         </div>
 
         {/* Active Policies */}
@@ -225,8 +200,8 @@ export function PoliciesPanel({ countryId }: PoliciesPanelProps) {
                 ))}
               </div>
             ) : (
-              <div className="border-border/50 text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-center text-sm">
-                <FileText className="text-muted-foreground/70 h-8 w-8" />
+              <div className="border-border/50 text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center text-sm">
+                <FileText className="text-muted-foreground/70 h-6 w-6" />
                 <p>No active policies.</p>
                 <Button variant="outline" onClick={() => setPolicyCreatorOpen(true)} className="gap-2">
                   <Plus className="h-4 w-4" />

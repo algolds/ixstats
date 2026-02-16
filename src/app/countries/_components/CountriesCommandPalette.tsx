@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { RainbowButton } from "~/components/magicui/rainbow-button";
 import { RiSearchLine, RiCommandLine } from "react-icons/ri";
 

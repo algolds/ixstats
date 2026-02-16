@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { Lock, Unlock as UnlockIcon } from "lucide-react";

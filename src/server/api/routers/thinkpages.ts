@@ -353,6 +353,7 @@ export const thinkpagesRouter = createTRPCRouter({
         repostCount: true,
         replyCount: true,
       },
+      take: 500,
     });
 
     const hashtagCounts: Record<string, { count: number; engagement: number }> = {};
@@ -1522,6 +1523,7 @@ export const thinkpagesRouter = createTRPCRouter({
     const twentyFourHoursAgo = new Date(currentIxTime - 24 * 60 * 60 * 1000);
 
     const countries = await db.country.findMany({
+      take: 250,
       select: { id: true, name: true },
     });
 
@@ -1529,9 +1531,9 @@ export const thinkpagesRouter = createTRPCRouter({
       const citizenAccounts = await db.user.findMany({
         where: {
           countryId: country.id,
-          // accountType: 'citizen', // Field doesn't exist in User model
           isActive: true,
         },
+        take: 500,
         select: { id: true },
       });
 
@@ -1547,7 +1549,8 @@ export const thinkpagesRouter = createTRPCRouter({
           accountId: { in: citizenAccountIds },
           ixTimeTimestamp: { gte: twentyFourHoursAgo },
         },
-        include: { reactions: true }, // Include reactions for sentiment analysis
+        include: { reactions: true },
+        take: 200,
       });
 
       if (recentCitizenPosts.length === 0) {

@@ -3,7 +3,7 @@
 import React, { useRef, useState, useCallback } from "react";
 import { CountryFocusCardBuilder, type CountryCardData } from "./CountryFocusCardBuilder";
 import { RiGlobalLine } from "react-icons/ri";
-import { motion, useAnimation } from "framer-motion";
+import { motion, useAnimation } from "motion/react";
 import { BlurFade } from "~/components/magicui/blur-fade";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
 

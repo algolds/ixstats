@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ArrowLeft, Crown, Settings, Sparkles, Grid3X3, Zap } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";

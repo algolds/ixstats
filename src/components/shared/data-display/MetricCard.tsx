@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
@@ -86,20 +86,20 @@ export function MetricCard({
         )}
         style={themeStyles}
       >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
           <div className="flex flex-1 items-center gap-2">
             {Icon && (
               <div
                 className={cn(
-                  "rounded-lg p-2",
+                  "rounded-lg p-1.5",
                   theme ? `bg-gradient-to-br ${theme.primary}` : "bg-primary/10"
                 )}
               >
-                <Icon className={cn("h-4 w-4", theme ? "text-white" : "text-primary")} />
+                <Icon className={cn("h-3.5 w-3.5", theme ? "text-white" : "text-primary")} />
               </div>
             )}
             <div className="flex-1">
-              <CardTitle className="text-sm leading-none font-medium">{title}</CardTitle>
+              <CardTitle className="text-xs leading-none font-medium">{title}</CardTitle>
               {description && (
                 <CardDescription className="mt-1 text-xs">{description}</CardDescription>
               )}
@@ -123,10 +123,10 @@ export function MetricCard({
           ) : (
             <>
               <div className="flex items-end justify-between">
-                <div className="text-2xl font-bold tracking-tight">{value}</div>
+                <div className="text-lg font-bold tracking-tight">{value}</div>
                 {trend && <TrendIndicatorUI trend={trend.direction} value={trend.value} />}
               </div>
-              {footer && <div className="border-border/10 mt-3 border-t pt-3">{footer}</div>}
+              {footer && <div className="border-border/10 mt-2 border-t pt-2">{footer}</div>}
             </>
           )}
         </CardContent>

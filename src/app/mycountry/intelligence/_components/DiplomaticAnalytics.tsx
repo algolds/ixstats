@@ -16,7 +16,7 @@
  * @module DiplomaticAnalytics
  */
 
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -52,6 +52,8 @@ interface DiplomaticAnalyticsProps {
 }
 
 export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyticsProps) {
+  const [activeTab, setActiveTab] = useState("trends");
+
   // Fetch diplomatic relationships
   const { data: relationships, isLoading: relationshipsLoading } =
     api.diplomatic.getRelationships.useQuery({ countryId });
@@ -229,7 +231,7 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
         </Card>
 
         <Card className="glass-hierarchy-child">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Avg. Strength</p>
@@ -245,7 +247,7 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
         </Card>
 
         <Card className="glass-hierarchy-child">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Active Embassies</p>
@@ -257,7 +259,7 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
         </Card>
 
         <Card className="glass-hierarchy-child">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Recent Activity</p>
@@ -270,7 +272,7 @@ export function DiplomaticAnalytics({ countryId, countryName }: DiplomaticAnalyt
       </div>
 
       {/* Main Analytics Tabs */}
-      <Tabs defaultValue="trends" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
           <TabsTrigger value="trends" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
             <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />

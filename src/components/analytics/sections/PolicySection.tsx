@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { CheckCircle } from "lucide-react";
 import { PolicyDistributionChart } from "../charts/PolicyDistributionChart";
 import { BudgetImpactChart } from "../charts/BudgetImpactChart";
@@ -51,7 +51,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
             onExportPDF={() => exportToPDF("policy-distribution-chart", "Policy Distribution")}
           />
 
-          <Card className="glass-surface glass-refraction">
+          <Card className="glass-hierarchy-child">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
@@ -128,7 +128,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
         />
 
         {/* Cost-Benefit Analysis */}
-        <Card className="glass-surface glass-refraction">
+        <Card className="glass-hierarchy-child">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">Cost-Benefit Analysis</CardTitle>
           </CardHeader>

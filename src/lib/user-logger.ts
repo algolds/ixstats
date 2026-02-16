@@ -214,18 +214,22 @@ export class UserLogger {
           break;
       }
 
-      // Persist to database
-      await this.persistToDatabase(logEntry);
+      // In development, skip expensive I/O operations (DB writes + file I/O)
+      // Console logging above is sufficient for dev debugging
+      if (process.env.NODE_ENV !== "development") {
+        // Persist to database
+        await this.persistToDatabase(logEntry);
 
-      // Write to user-specific log file
-      await this.writeToUserLogFile(context.clerkUserId, logEntry);
+        // Write to user-specific log file
+        await this.writeToUserLogFile(context.clerkUserId, logEntry);
 
-      // Update user session activity
-      await this.updateUserSession(context);
+        // Update user session activity
+        await this.updateUserSession(context);
 
-      // Log security events
-      if (action.severity === "CRITICAL" || action.category === "AUTH") {
-        await this.logSecurityEvent(context, action);
+        // Log security events
+        if (action.severity === "CRITICAL" || action.category === "AUTH") {
+          await this.logSecurityEvent(context, action);
+        }
       }
     } catch (error) {
       ErrorLogger.logError(error as Error, {

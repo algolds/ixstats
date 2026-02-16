@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Globe, Sparkles, ChevronDown, ChevronRight, Check, Plus } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { EnhancedTooltip, InfoIcon } from "~/components/ui/enhanced-tooltip";

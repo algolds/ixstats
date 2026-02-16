@@ -48,42 +48,19 @@ import type {
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { ActivityGenerator } from "~/lib/activity-generator";
 import { achievementService } from "~/lib/achievement-service";
+import { globalCache } from "~/lib/advanced-cache-system";
 
-// Simple in-memory cache for frequently accessed data
-const cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
-const CACHE_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
-
-// Cleanup expired cache entries
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of cache.entries()) {
-    if (now - value.timestamp > value.ttl) {
-      cache.delete(key);
-    }
-  }
-}, CACHE_CLEANUP_INTERVAL);
-
+// Cache helpers using consolidated globalCache (eliminates per-router Map + setInterval)
 function getCacheKey(operation: string, params: any): string {
-  return `${operation}_${JSON.stringify(params)}`;
+  return `countries:${operation}:${JSON.stringify(params)}`;
 }
 
-function getCachedData(key: string): unknown | null {
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.timestamp < cached.ttl) {
-    return cached.data;
-  }
-  if (cached) {
-    cache.delete(key);
-  }
-  return null;
+async function getCachedData<T = unknown>(key: string): Promise<T | null> {
+  return globalCache.get<T>(key);
 }
 
-function setCachedData(key: string, data: unknown, ttl = 30000): void {
-  cache.set(key, {
-    data,
-    timestamp: Date.now(),
-    ttl,
-  });
+async function setCachedData(key: string, data: unknown, ttlMs = 30000): Promise<void> {
+  await globalCache.set(key, data, { ttl: Math.round(ttlMs / 1000), skipRedis: true });
 }
 
 // Economic configuration
@@ -281,6 +258,7 @@ const countriesRouter = createTRPCRouter({
             dmInputs: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
+              take: 50,
             },
             nationalIdentity: true,
           },
@@ -508,6 +486,7 @@ const countriesRouter = createTRPCRouter({
           },
         },
         orderBy: { ixTimeTimestamp: "asc" },
+        take: 1000,
       });
       if (!historical || historical.length < 5) {
         historical = [];
@@ -1425,7 +1404,7 @@ const countriesRouter = createTRPCRouter({
       const targetTime = input?.timestamp ?? IxTime.getCurrentIxTime();
 
       const cacheKey = getCacheKey("globalStats", { timestamp: targetTime });
-      const cached = getCachedData(cacheKey);
+      const cached = await getCachedData(cacheKey);
       if (cached) {
         return cached;
       }
@@ -1496,7 +1475,7 @@ const countriesRouter = createTRPCRouter({
         ixTimeTimestamp: targetTime,
       };
 
-      setCachedData(cacheKey, response, 30000);
+      await setCachedData(cacheKey, response, 30000);
 
       return response;
     }),
@@ -1738,10 +1717,12 @@ const countriesRouter = createTRPCRouter({
       }
 
       const all = await ctx.db.country.findMany({
+        take: 250,
         include: {
           dmInputs: {
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
+            take: 50,
           },
         },
       });
@@ -2314,7 +2295,7 @@ const countriesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const cacheKey = getCacheKey("topCountriesByGdpPerCapita", { limit: input.limit });
-        const cached = getCachedData(cacheKey);
+        const cached = await getCachedData(cacheKey);
         if (cached) return cached;
 
         const countries = await ctx.db.country.findMany({
@@ -2338,7 +2319,7 @@ const countriesRouter = createTRPCRouter({
           currentPopulation: validateNumber(country.currentPopulation ?? 0, 1e11, 1),
         }));
 
-        setCachedData(cacheKey, result, 5 * 60 * 1000);
+        await setCachedData(cacheKey, result, 5 * 60 * 1000);
         return result;
       } catch (error) {
         console.error("Failed to get top countries by GDP per capita:", error);
@@ -2355,7 +2336,7 @@ const countriesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const cacheKey = getCacheKey("topCountriesByPopulation", { limit: input.limit });
-        const cached = getCachedData(cacheKey);
+        const cached = await getCachedData(cacheKey);
         if (cached) return cached;
 
         const countries = await ctx.db.country.findMany({
@@ -2381,7 +2362,7 @@ const countriesRouter = createTRPCRouter({
           populationGrowthRate: validateGrowthRate(country.populationGrowthRate),
         }));
 
-        setCachedData(cacheKey, result, 5 * 60 * 1000);
+        await setCachedData(cacheKey, result, 5 * 60 * 1000);
         return result;
       } catch (error) {
         console.error("Failed to get top countries by population:", error);
@@ -2398,7 +2379,7 @@ const countriesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const cacheKey = getCacheKey("economicData", { countryId: input.countryId });
-        const cached = getCachedData(cacheKey);
+        const cached = await getCachedData(cacheKey);
         if (cached) return cached;
 
         const country = await ctx.db.country.findUnique({
@@ -2450,7 +2431,7 @@ const countriesRouter = createTRPCRouter({
           baselineDate: country.baselineDate.getTime(),
         };
 
-        setCachedData(cacheKey, economicData, 60000);
+        await setCachedData(cacheKey, economicData, 60000);
         return economicData;
       } catch (error) {
         console.error("Failed to get economic data:", error);
@@ -3176,6 +3157,7 @@ const countriesRouter = createTRPCRouter({
       const relations = await ctx.db.diplomaticRelation.findMany({
         where: whereClause,
         orderBy: { lastContact: "desc" },
+        take: 200,
       });
 
       return relations.map((relation) => ({
@@ -5249,6 +5231,7 @@ const countriesRouter = createTRPCRouter({
   getGlobalAnalytics: cachedPublicProcedure.query(async ({ ctx }) => {
     // Get all countries
     const countries = await ctx.db.country.findMany({
+      take: 500,
       select: {
         id: true,
         currentTotalGdp: true,

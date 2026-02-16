@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { cn } from "~/lib/utils";

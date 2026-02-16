@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import {
   AlertTriangle,
   CheckCircle,

@@ -10,7 +10,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { AnimatePresence, motion, useWillChange } from "framer-motion";
+import { AnimatePresence, motion, useWillChange } from "motion/react";
 
 // Optimized animation constants for instant responsiveness
 const stiffness = 400; // Increased for snappier response
@@ -28,6 +28,7 @@ export type SizePresets =
   | "default"
   | "compact"
   | "compactLong"
+  | "compactTall"
   | "large"
   | "long"
   | "minimalLeading"
@@ -38,8 +39,7 @@ export type SizePresets =
   | "ultra"
   | "massive"
   | "extraWide"
-  | "fullWidth"
-  | "compactTall";
+  | "fullWidth";
 
 const SIZE_PRESETS = {
   RESET: "reset",
@@ -47,6 +47,7 @@ const SIZE_PRESETS = {
   DEFAULT: "default",
   COMPACT: "compact",
   COMPACT_LONG: "compactLong",
+  COMPACT_TALL: "compactTall",
   LARGE: "large",
   LONG: "long",
   MINIMAL_LEADING: "minimalLeading",
@@ -58,7 +59,6 @@ const SIZE_PRESETS = {
   MASSIVE: "massive",
   EXTRA_WIDE: "extraWide",
   FULL_WIDTH: "fullWidth",
-  COMPACT_TALL: "compactTall",
 } as const;
 
 type Preset = {
@@ -102,6 +102,11 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
   [SIZE_PRESETS.COMPACT_LONG]: {
     width: 300,
     aspectRatio: 60 / 300,
+    borderRadius: 46,
+  },
+  [SIZE_PRESETS.COMPACT_TALL]: {
+    width: 350,
+    aspectRatio: 80 / 350,
     borderRadius: 46,
   },
   [SIZE_PRESETS.COMPACT_MEDIUM]: {
@@ -149,11 +154,6 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     width: 1400,
     aspectRatio: 80 / 1400,
     borderRadius: 28,
-  },
-  [SIZE_PRESETS.COMPACT_TALL]: {
-    width: 350,
-    aspectRatio: 80 / 350,
-    borderRadius: 46,
   },
 };
 
@@ -375,8 +375,11 @@ const DynamicIsland = ({ children, id, ...props }: { children: ReactNode; id: st
 const calculateDimensions = (
   size: SizePresets,
   screenSize: string,
-  currentSize: Preset
+  currentSize: Preset | undefined
 ): { width: string; height: number | string } => {
+  // Defensive fallback if preset is undefined
+  const resolvedSize = currentSize ?? DynamicIslandSizePresets.default;
+
   const isMassiveOnMobile = size === "massive" && screenSize === "mobile";
   const isUltraOnMobile = size === "ultra" && screenSize === "mobile";
   const isWideOnMobile = (size === "extraWide" || size === "fullWidth") && screenSize === "mobile";
@@ -420,7 +423,7 @@ const calculateDimensions = (
   }
 
   // For other preset sizes, use the preset width directly without MIN_WIDTH restriction
-  return { width: `${currentSize.width}px`, height: currentSize.aspectRatio * currentSize.width };
+  return { width: `${resolvedSize.width}px`, height: resolvedSize.aspectRatio * resolvedSize.width };
 };
 
 const DynamicIslandContent = ({
@@ -437,7 +440,7 @@ const DynamicIslandContent = ({
   [key: string]: any;
 }) => {
   const { state, presets } = useDynamicIslandSize();
-  const currentSize = presets[state.size];
+  const currentSize = presets[state.size] ?? DynamicIslandSizePresets.default;
 
   const dimensions = calculateDimensions(state.size, screenSize, currentSize);
 

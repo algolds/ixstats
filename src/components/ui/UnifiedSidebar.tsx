@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { GlassCard } from "./enhanced-card";
 import { cn } from "~/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Settings,
   Menu,

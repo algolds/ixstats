@@ -1,9 +1,9 @@
 # Database Reference Snapshot
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
-Prisma schema: `prisma/schema.prisma`  
-Models: **131**
+Prisma schema: `prisma/schema.prisma`
+Models: **201**
 
 ## Domain Groupings
 | Domain | Representative Models |
@@ -16,6 +16,10 @@ Models: **131**
 | Social & Collaboration | `ThinkPage`, `ThinkPost`, `ThinkComment`, `Activity`, `ActivityEngagement` |
 | Achievements & Notifications | `Achievement`, `UserAchievement`, `Notification`, `NotificationRule`, `NotificationLog` |
 | Users & Roles | `User`, `Role`, `Permission`, `UserLogEntry`, `SessionMetric` |
+| Cards & Vault | `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardBackgroundImage`, `LoreCard` |
+| Elections & Politics | `PoliticalParty`, `Legislature`, `Election`, `ElectionResult` |
+| Crafting & Trading | `CraftingRecipe`, `TradeOffer`, `AuctionListing`, `TradeReview` |
+| Autosave | `AutosaveHistory` |
 
 ## Schema Conventions
 - IDs default to `cuid()` for string identifiers; some legacy tables use autoincrement integers

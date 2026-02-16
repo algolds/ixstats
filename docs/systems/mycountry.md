@@ -1,9 +1,28 @@
 # MyCountry Command Suite
 
-**Last updated:** November 2025 (v1.42)
-**Architecture:** Clear separation of concerns with dedicated pages for each system
+**Last updated:** February 2026 (v2)
+**Architecture:** Single-page router with sidebar layout and clear separation of concerns
 
-The MyCountry experience gives nation owners a unified command environment. After v1.42 reorganization, each page serves a single, clear purpose.
+The MyCountry experience gives nation owners a unified command environment. As of v2, all sections are managed by `MyCountryRouter` for instant SPA-like navigation.
+
+## Single-Page Router Architecture (February 2026)
+
+All 5 `page.tsx` files render `<MyCountryRouter />` identically. The router manages section state via `useState<MyCountrySection>` with URL sync via `window.history.pushState()`.
+
+**Key Files:**
+- `src/components/mycountry/MyCountryRouter.tsx` – Central hub; provider chain: MobileOptimized > AuthenticationGuard > CountryDataProvider > AtomicStateProvider
+- `src/components/mycountry/MyCountrySidebarNav.tsx` – Dual-mode nav (controlled + uncontrolled)
+- `src/components/mycountry/MyCountrySidebarLayout.tsx` – Grid: `lg:grid-cols-4` (1 sidebar + 3 content)
+
+**Sidebar Widgets:**
+- `sidebar-widgets/ExecutiveSidebarWidget` – Meetings/policies (amber theme)
+- `sidebar-widgets/DiplomacySidebarWidget` – Embassies/relations (cyan theme)
+- `sidebar-widgets/DefenseSidebarWidget` – Security/military (red theme)
+
+**Metric Detail Modals:**
+- `BaseMetricDetailsModal` with 4-tab system (Overview, Trends, Comparison, Details)
+- Available: GDP, Population, Labor, GovernmentSpending, Debt, DemographicsHealth
+- Managed by `useMetricDetailsModal` hook in `src/hooks/useMetricDetailsModal.ts`
 
 ## Architecture Overview
 
@@ -20,10 +39,9 @@ MyCountry follows a **clear separation of concerns** principle:
 **Purpose:** Real-time dashboard with current state snapshot
 
 **Components:**
-- `src/app/mycountry/page.tsx` – Entry point
+- `src/app/mycountry/page.tsx` – Renders `<MyCountryRouter />`
 - `EnhancedMyCountryContent.tsx` – Main dashboard
 - `MyCountryTabSystem.tsx` – Tab navigation
-- `CountryHeader.tsx` – Header with vitality metrics
 
 **Data Sources:**
 - `api.countries.getByIdWithEconomicData` – Current economic data
@@ -97,7 +115,7 @@ MyCountry follows a **clear separation of concerns** principle:
 **Components:**
 - `src/app/mycountry/intelligence/page.tsx`
 - `EnhancedIntelligenceContent.tsx`
-- `IntelligenceTabSystem.tsx`
+- Intelligence tab system
 
 **Tabs:**
 1. **Dashboard** - IntelligenceOverview
@@ -198,6 +216,6 @@ MyCountry follows a **clear separation of concerns** principle:
 
 ---
 
-**Architecture Version:** v1.42
-**Last Major Update:** November 2025
-**Status:** Production-ready with clear separation of concerns
+**Architecture Version:** v2
+**Last Major Update:** February 2026
+**Status:** Production-ready with single-page router and clear separation of concerns

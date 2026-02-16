@@ -4,7 +4,7 @@
 // Refactored from EnhancedIntelligenceBriefing.tsx
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";

@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { Clock, Users, ListChecks, FileText, Trash2, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";

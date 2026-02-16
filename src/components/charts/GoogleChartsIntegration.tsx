@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Chart } from "react-google-charts";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { GlassChart, chartTheme } from "./GlassChart";
 import { generateChartColors } from "~/lib/builder-theme-utils";
 

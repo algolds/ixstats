@@ -8,7 +8,7 @@ import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { navigateTo } from "~/lib/url-utils";
 import { useUserCountry } from "~/hooks/useUserCountry";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
   Link,
@@ -176,8 +176,8 @@ export default function SetupPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading setup...</p>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
+          <p className="text-muted-foreground">Loading setup...</p>
         </div>
       </div>
     );
@@ -225,17 +225,17 @@ export default function SetupPage() {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                      className="mb-12"
+                      className="mb-8"
                     >
-                      <div className="mx-auto mb-10">
+                      <div className="mx-auto mb-6">
                         <IxStatsLogo size="xl" animated={true} />
                       </div>
 
-                      <h1 className="text-foreground mb-8 text-6xl font-bold">
+                      <h1 className="text-foreground mb-6 text-3xl font-bold md:text-4xl">
                         Welcome to IxStats, {user?.firstName || "User"}!
                       </h1>
 
-                      <p className="text-muted-foreground mx-auto max-w-4xl text-2xl leading-relaxed">
+                      <p className="text-muted-foreground mx-auto max-w-4xl text-base leading-relaxed md:text-lg">
                         To get started, please choose an option below.
                       </p>
                     </motion.div>
@@ -244,7 +244,7 @@ export default function SetupPage() {
                     <div className="mx-auto mb-8 max-w-4xl">
                       <motion.button
                         onClick={() => setCurrentStep("create-new")}
-                        className="glass-hierarchy-parent group hover:glass-hierarchy-interactive relative w-full overflow-hidden rounded-3xl border border-amber-200/30 p-12 text-left transition-all duration-500 dark:border-amber-800/30"
+                        className="glass-hierarchy-parent group hover:glass-hierarchy-interactive relative w-full overflow-hidden rounded-2xl border border-amber-200/30 p-6 text-left transition-all duration-500 md:p-8 dark:border-amber-800/30"
                         whileHover={{
                           y: -12,
                           scale: 1.02,
@@ -259,7 +259,7 @@ export default function SetupPage() {
                         <div className="absolute inset-0 bg-gradient-to-br from-amber-50/20 via-transparent to-yellow-50/20 opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:from-amber-950/20 dark:via-transparent dark:to-yellow-950/20" />
 
                         {/* Animated border glow */}
-                        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-amber-400/20 via-yellow-400/20 to-amber-400/20 opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-100" />
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-400/20 via-yellow-400/20 to-amber-400/20 opacity-0 blur-sm transition-opacity duration-500 group-hover:opacity-100" />
 
                         {/* Floating particles effect */}
                         <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-amber-400/60 opacity-0 transition-opacity duration-300 group-hover:animate-pulse group-hover:opacity-100" />
@@ -272,7 +272,7 @@ export default function SetupPage() {
                               <MyCountryLogo size="lg" variant="icon-only" animated={true} />
                             </div>
                             <div>
-                              <h3 className="mb-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-4xl font-bold text-transparent transition-all duration-300 group-hover:from-amber-500 group-hover:via-yellow-400 group-hover:to-amber-500">
+                              <h3 className="mb-2 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 bg-clip-text text-2xl font-bold text-transparent transition-all duration-300 group-hover:from-amber-500 group-hover:via-yellow-400 group-hover:to-amber-500 md:text-3xl">
                                 Create New Country
                               </h3>
                               <div className="flex items-center">
@@ -285,16 +285,16 @@ export default function SetupPage() {
                             </div>
                           </div>
 
-                          <p className="text-muted-foreground group-hover:text-foreground/80 mb-8 text-xl leading-relaxed transition-colors duration-300">
+                          <p className="text-muted-foreground group-hover:text-foreground/80 mb-6 text-base leading-relaxed transition-colors duration-300">
                             Start fresh with a new nation. Create your country's government
                             structure, economy, demographics, and policies to your liking.
                           </p>
 
-                          <div className="flex items-center text-xl text-amber-600 transition-all duration-300 group-hover:text-amber-500 dark:text-amber-400 dark:group-hover:text-amber-300">
+                          <div className="flex items-center text-base text-amber-600 transition-all duration-300 group-hover:text-amber-500 dark:text-amber-400 dark:group-hover:text-amber-300">
                             <span className="bg-gradient-to-r from-amber-600 to-yellow-600 bg-clip-text font-semibold text-transparent dark:from-amber-400 dark:to-yellow-400">
                               Get Started with MyCountry© Builder
                             </span>
-                            <ArrowRight className="ml-3 h-8 w-8 transition-all duration-300 group-hover:translate-x-3 group-hover:scale-110" />
+                            <ArrowRight className="ml-3 h-5 w-5 transition-all duration-300 group-hover:translate-x-3 group-hover:scale-110" />
                           </div>
                         </div>
                       </motion.button>

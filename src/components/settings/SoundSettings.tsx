@@ -4,7 +4,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Volume2, VolumeX, Play, RotateCcw } from "lucide-react";
 import { CometCard } from "~/components/ui/comet-card";
 import { Button } from "~/components/ui/button";

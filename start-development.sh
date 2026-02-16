@@ -136,7 +136,7 @@ echo "   API Endpoints:   http://localhost:$DEVELOPMENT_PORT/api/*"
 echo "   tRPC API:        http://localhost:$DEVELOPMENT_PORT/api/trpc/*"
 echo ""
 echo "   Features:"
-echo "   • Hot reload enabled (Webpack)"
+echo "   • Hot reload enabled (Turbopack)"
 echo "   • Root path routing (no basePath)"
 echo "   • Development database"
 if [[ "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" =~ ^pk_test_ ]]; then
@@ -151,8 +151,19 @@ echo "   Press Ctrl+C to stop the server"
 echo "   Run 'npm run auth:check:dev' to verify auth configuration"
 echo ""
 
-# Set memory limit to prevent swap thrashing on memory-constrained server (7.2GB total)
-export NODE_OPTIONS="--max-old-space-size=4096"
+# Memory optimization for development server (7.2GB total server RAM)
+# --max-old-space-size=4096: 4GB heap. Leaves ~3.2GB for wiki, forum, PostgreSQL, OS.
+#   With module graph optimizations (lucide-react manual registry, react-icons tree-shaking),
+#   actual usage stays ~1.5-2.5GB. Next.js 16 auto-restarts at 80% (3.2GB).
+# --expose-gc: Enable programmatic garbage collection (called by MemoryOptimizer at 65% threshold)
+export NODE_OPTIONS="--max-old-space-size=4096 --expose-gc"
 
-# Start Next.js development server with Webpack (Turbopack struggles with this codebase size on limited RAM)
-exec npx next dev --webpack --port "$DEVELOPMENT_PORT"
+echo "   Memory config:"
+echo "   • Heap limit: 4GB (--max-old-space-size=4096, Next.js restarts at 80% = 3.2GB)"
+echo "   • Proactive GC: enabled (--expose-gc)"
+echo "   • Cache sizes: reduced for dev (see dev-memory-config.ts)"
+echo ""
+
+# Start Next.js development server with Turbopack (default in Next.js 16, uses incremental compilation)
+# Pass --webpack to fall back to Webpack if Turbopack has issues with specific features
+exec npx next dev --port "$DEVELOPMENT_PORT"

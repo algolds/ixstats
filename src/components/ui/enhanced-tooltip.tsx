@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
 import { cn } from "~/lib/utils";
 import { Info, TrendingUp, TrendingDown, AlertTriangle, HelpCircle } from "lucide-react";

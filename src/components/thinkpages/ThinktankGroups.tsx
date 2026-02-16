@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { FixedSizeList as List, type FixedSizeListHandle } from "~/lib/react-window-compat";
 import {
   Globe,

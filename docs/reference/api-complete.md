@@ -1,8 +1,8 @@
 # Complete tRPC API Reference
 
-**Last updated:** November 2025
+**Last updated:** February 2026
 
-Comprehensive reference for all 52 tRPC routers with 580+ procedures across the IxStats platform.
+Comprehensive reference for all 61 tRPC routers with 920+ procedures across the IxStats platform.
 
 ## Quick Navigation
 - [Core Systems](#core-systems) (10 routers, 147 procedures)
@@ -11,8 +11,9 @@ Comprehensive reference for all 52 tRPC routers with 580+ procedures across the 
 - [Defense & Security](#defense--security) (4 routers, 81 procedures)
 - [Social & Collaboration](#social--collaboration) (5 routers, 120 procedures)
 - [Operations](#operations) (7 routers, 79 procedures)
-- [Maps & Geography](#maps--geography) (5 routers, 54 procedures)
-- [Cards & MyVault](#cards--myvault) (4 routers, 23 procedures)
+- [Cards & MyVault](#cards--myvault) (11 routers, ~100 procedures)
+- [Elections & Politics](#elections--politics) (1 router, ~13 procedures)
+- ~~[Maps & Geography](#maps--geography)~~ (DEPRECATED - removed November 2025)
 
 ---
 
@@ -70,19 +71,26 @@ Comprehensive reference for all 52 tRPC routers with 580+ procedures across the 
 | notifications | 4 | 2 | 6 | Notification management |
 | quickactions | 8 | 13 | 21 | Quick actions orchestration |
 | scheduledChanges | 3 | 4 | 7 | Delayed impact changes |
-| **MAPS & GEOGRAPHY** | | | | |
-| geo | 8 | 6 | 14 | Country borders, PostGIS integration |
-| mapEditor | 7 | 11 | 18 | Subdivisions, cities, POIs management |
-| mapMonitoring | 5 | 2 | 7 | Map performance monitoring (admin) |
+| ~~**MAPS & GEOGRAPHY**~~ | | | | **DEPRECATED - removed November 2025** |
 | **CARDS & MYVAULT** | | | | |
 | vault | 5 | 2 | 7 | IxCredits balance, transactions, bonuses |
 | cards | 5 | 1 | 6 | Card browsing, ownership, stats |
 | cardPacks | 4 | 3 | 7 | Pack purchase, opening, management |
-| nsIntegration | 2 | 1 | 3 | NationStates card import and sync |
+| cardImages | 3 | 2 | 5 | Card background image management |
+| lore-cards | 4 | 4 | 8 | Wiki lore card generation |
+| card-market | 7 | 6 | 13 | Marketplace and auction system |
+| card-analytics | 3 | 2 | 5 | Card economy analytics |
+| crafting | 4 | 4 | 8 | Card crafting/fusion/evolution |
+| trading | 3 | 3 | 6 | P2P card trading |
+| ns-import | 10 | 11 | 21 | NationStates deck import |
+| **ELECTIONS & POLITICS** | | | | |
+| elections | 6 | 7 | 13 | Political parties, elections, legislature |
+| **HISTORICAL** | | | | |
+| historical | 6 | 6 | 12 | Historical time-series data |
 | **AUTOSAVE SYSTEM** | | | | |
 | autosaveHistory | 5 | 0 | 5 | Autosave history, stats, timeline |
 | autosaveMonitoring | 5 | 0 | 5 | Global autosave monitoring (admin) |
-| **TOTAL** | **314** | **299** | **613** | |
+| **TOTAL** | **~460** | **~460** | **~920** | |
 
 **Legend:** Q = Queries, M = Mutations
 

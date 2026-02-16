@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Marquee } from "~/components/ui/marquee";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";

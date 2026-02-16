@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { Info, ChevronDown, ChevronUp } from "lucide-react";
 import { GlassCard, GlassCardContent } from "./GlassCard";

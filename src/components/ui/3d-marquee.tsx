@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 export const ThreeDMarquee = ({ images, className }: { images: string[]; className?: string }) => {
   // Split the images array into 4 equal parts

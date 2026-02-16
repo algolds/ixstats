@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, easeInOut } from "framer-motion";
+import { motion, easeInOut } from "motion/react";
 import { cn } from "~/lib/utils";
 import type { CulturalExchange } from "./cultural-exchange-types";
 import { EXCHANGE_TYPES, STATUS_STYLES, getIconAnimation } from "./cultural-exchange-types";

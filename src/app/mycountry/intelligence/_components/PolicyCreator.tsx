@@ -19,7 +19,7 @@
  */
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Building2,
   TrendingUp,
@@ -689,7 +689,7 @@ export function PolicyCreator({
   return (
     <div className="space-y-6">
       {/* Progress Header */}
-      <Card className="glass-surface glass-refraction">
+      <Card className="glass-hierarchy-child">
         <CardHeader>
           <div className="mb-4 flex items-center justify-between">
             <CardTitle className="text-2xl">Create New Policy</CardTitle>
@@ -750,7 +750,7 @@ export function PolicyCreator({
       </Card>
 
       {/* Step Content */}
-      <Card className="glass-surface glass-refraction">
+      <Card className="glass-hierarchy-child">
         <CardContent className="pt-6">
           <AnimatePresence mode="wait">
             <motion.div
@@ -767,7 +767,7 @@ export function PolicyCreator({
       </Card>
 
       {/* Navigation */}
-      <Card className="glass-surface glass-refraction">
+      <Card className="glass-hierarchy-child">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <Button

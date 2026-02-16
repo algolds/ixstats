@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { EconomicArchetype as PrismaArchetype } from "@prisma/client";
+import { memoryConfig } from "~/lib/dev-memory-config";
 
 // Import hardcoded fallback data
 import { modernArchetypes } from "~/app/builder/data/archetypes/modern";
@@ -118,6 +119,7 @@ export const economicArchetypesRouter = createTRPCRouter({
   /**
    * Get all archetypes with optional filters
    * Falls back to hardcoded data if database is empty
+   * Memory optimization: Added pagination with default limits
    */
   getAllArchetypes: publicProcedure
     .input(
@@ -126,31 +128,67 @@ export const economicArchetypesRouter = createTRPCRouter({
         region: z.string().optional(),
         complexity: z.string().optional(),
         isActive: z.boolean().optional(),
+        // Pagination for memory optimization
+        limit: z.number().min(1).max(200).default(memoryConfig.query.defaultLimit),
+        offset: z.number().min(0).default(0),
       })
     )
     .query(async ({ ctx, input }) => {
       try {
-        const archetypes = await ctx.db.economicArchetype.findMany({
-          where: {
-            ...(input.era !== "all" && { era: input.era }),
-            ...(input.region && { region: input.region }),
-            ...(input.complexity && { implementationComplexity: input.complexity }),
-            ...(input.isActive !== undefined && { isActive: input.isActive }),
-          },
-          orderBy: [{ era: "asc" }, { usageCount: "desc" }],
-        });
+        const where = {
+          ...(input.era !== "all" && { era: input.era }),
+          ...(input.region && { region: input.region }),
+          ...(input.complexity && { implementationComplexity: input.complexity }),
+          ...(input.isActive !== undefined && { isActive: input.isActive }),
+        };
+
+        const [archetypes, totalCount] = await Promise.all([
+          ctx.db.economicArchetype.findMany({
+            where,
+            orderBy: [{ era: "asc" }, { usageCount: "desc" }],
+            take: input.limit,
+            skip: input.offset,
+          }),
+          ctx.db.economicArchetype.count({ where }),
+        ]);
 
         // Fallback to hardcoded if database empty
-        if (archetypes.length === 0) {
-          return getFallbackArchetypes(input.era);
+        if (archetypes.length === 0 && input.offset === 0) {
+          const fallback = getFallbackArchetypes(input.era);
+          return {
+            archetypes: fallback.slice(0, input.limit),
+            pagination: {
+              total: fallback.length,
+              limit: input.limit,
+              offset: 0,
+              hasMore: fallback.length > input.limit,
+            },
+          };
         }
 
         // Parse JSON fields back to objects
-        return archetypes.map(parseArchetypeJSON);
+        return {
+          archetypes: archetypes.map(parseArchetypeJSON),
+          pagination: {
+            total: totalCount,
+            limit: input.limit,
+            offset: input.offset,
+            hasMore: input.offset + archetypes.length < totalCount,
+          },
+        };
       } catch (error) {
         console.error("Error fetching archetypes:", error);
         // Fallback on error
-        return getFallbackArchetypes(input.era);
+        const fallback = getFallbackArchetypes(input.era);
+        return {
+          archetypes: fallback.slice(0, input.limit),
+          pagination: {
+            total: fallback.length,
+            limit: input.limit,
+            offset: 0,
+            hasMore: fallback.length > input.limit,
+          },
+        };
       }
     }),
 

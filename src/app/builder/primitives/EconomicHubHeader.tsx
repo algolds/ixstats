@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ChevronLeft, Flag } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";

@@ -14,6 +14,10 @@ import { verifyToken } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
 
 import { db, isDatabaseReadOnly } from "~/server/db";
+
+// Gate verbose logging behind env var to reduce GC pressure from string allocation
+// Set TRPC_VERBOSE=true to enable detailed logging for debugging
+const VERBOSE = process.env.TRPC_VERBOSE === "true";
 import { rateLimiter } from "~/lib/rate-limiter";
 import { userLoggingMiddleware } from "~/lib/user-logging-middleware";
 import { UserManagementService } from "~/lib/user-management-service";
@@ -32,6 +36,34 @@ import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/trpc-cache";
  *
  * @see https://trpc.io/docs/server/context
  */
+// Short-lived user context cache to avoid redundant DB queries during parallel tRPC calls.
+// When a page loads, 5-15 tRPC calls fire simultaneously for the same user.
+// Without this cache, each call independently queries user+role+permissions from the DB.
+// TTL of 5 seconds is short enough that role/permission changes propagate quickly.
+const userContextCache = new Map<string, { user: any; timestamp: number }>();
+const USER_CONTEXT_TTL = 5000; // 5 seconds
+
+function getCachedUserContext(clerkUserId: string): any | null {
+  const cached = userContextCache.get(clerkUserId);
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp > USER_CONTEXT_TTL) {
+    userContextCache.delete(clerkUserId);
+    return null;
+  }
+  return cached.user;
+}
+
+function setCachedUserContext(clerkUserId: string, user: any): void {
+  userContextCache.set(clerkUserId, { user, timestamp: Date.now() });
+  // Lazy cleanup: if cache grows beyond 50 entries, purge expired ones
+  if (userContextCache.size > 50) {
+    const now = Date.now();
+    for (const [key, val] of userContextCache) {
+      if (now - val.timestamp > USER_CONTEXT_TTL) userContextCache.delete(key);
+    }
+  }
+}
+
 export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequest }) => {
   // Extract Clerk auth information if available
   let auth = null;
@@ -66,9 +98,13 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     // Get user from database if we have a userId
     if (auth?.userId) {
       try {
-        // In read-only mode, only look up existing users (no creation)
-        if (isDatabaseReadOnly) {
-          console.log(`[TRPC Context] Read-only mode: Looking up user ${auth.userId} (no creation)`);
+        // Check short-lived user context cache first (avoids redundant DB queries during parallel calls)
+        user = getCachedUserContext(auth.userId);
+        if (user) {
+          if (VERBOSE) console.log(`[TRPC Context] User ${auth.userId} served from context cache`);
+        } else if (isDatabaseReadOnly) {
+          // In read-only mode, only look up existing users (no creation)
+          if (VERBOSE) console.log(`[TRPC Context] Read-only mode: Looking up user ${auth.userId} (no creation)`);
           user = await db.user.findUnique({
             where: { clerkUserId: auth.userId },
             include: {
@@ -86,16 +122,21 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
           });
           if (!user) {
             console.warn(`[TRPC Context] Read-only mode: User ${auth.userId} not found in database (cannot create)`);
+          } else {
+            setCachedUserContext(auth.userId, user);
           }
         } else {
           // Normal mode: use centralized user management service to ensure correct role
-          console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
+          if (VERBOSE) console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
           const userService = new UserManagementService(db);
           user = await userService.getOrCreateUser(auth.userId);
+          if (user) {
+            setCachedUserContext(auth.userId, user);
+          }
         }
 
         if (user) {
-          console.log(
+          if (VERBOSE) console.log(
             `[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || "NO_ROLE"}, roleId: ${(user as any).roleId || "NULL"}, roleLevel: ${(user as any).role?.level ?? "NULL"}`
           );
         } else {
@@ -196,16 +237,14 @@ export const createTRPCRouter = t.router;
 const timingMiddleware = t.middleware(async ({ next, path }) => {
   const start = Date.now();
 
-  if (t._config.isDev) {
-    // artificial delay in dev
-    const waitMs = Math.floor(Math.random() * 400) + 100;
-    await new Promise((resolve) => setTimeout(resolve, waitMs));
-  }
-
   const result = await next();
 
   const end = Date.now();
-  console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
+  const duration = end - start;
+  // Only log slow queries (>500ms) to reduce console noise and GC pressure
+  if (duration > 500) {
+    console.log(`[TRPC] ${path} took ${duration}ms to execute`);
+  }
 
   return result;
 });
@@ -286,8 +325,8 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
     );
   }
 
-  // Fetch country data since it's not included in UserWithRole type
-  const country = await ctx.db.country.findUnique({
+  // Use country from user context if already loaded (avoids redundant DB query)
+  const country = (ctx.user as any).country || await ctx.db.country.findUnique({
     where: { id: ctx.user.countryId },
   });
 
@@ -446,10 +485,10 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
             console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
           }
         } else {
-          console.log("[AUDIT_DB] Skipping database write (read-only mode)");
+          if (VERBOSE) console.log("[AUDIT_DB] Skipping database write (read-only mode)");
         }
-      } else if (process.env.NODE_ENV === "development") {
-        // Development: Log all actions to console for debugging
+      } else if (VERBOSE) {
+        // Development: Log all actions to console for debugging (only when verbose)
         console.log("[AUDIT]", auditEntry);
       }
     }
@@ -478,7 +517,7 @@ const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
     throw new Error("FORBIDDEN: MyCountry Premium membership required");
   }
 
-  console.log(`[PREMIUM_ACCESS] Premium user ${ctx.auth.userId} accessing premium content`);
+  if (VERBOSE) console.log(`[PREMIUM_ACCESS] Premium user ${ctx.auth.userId} accessing premium content`);
 
   return next({
     ctx: {
@@ -502,7 +541,7 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   // If user wasn't loaded in context, try to load it here
   let user = ctx.user;
   if (!user) {
-    console.log(`[ADMIN_MIDDLEWARE] User not in context, loading for ${ctx.auth.userId}`);
+    if (VERBOSE) console.log(`[ADMIN_MIDDLEWARE] User not in context, loading for ${ctx.auth.userId}`);
     try {
       user = await db.user.findUnique({
         where: { clerkUserId: ctx.auth.userId },
@@ -530,7 +569,7 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
 
   // System owners bypass all role checks
   if (isSystemOwnerUser) {
-    console.log(`[ADMIN_MIDDLEWARE] System owner detected: ${ctx.auth.userId} - bypassing role checks`);
+    if (VERBOSE) console.log(`[ADMIN_MIDDLEWARE] System owner detected: ${ctx.auth.userId} - bypassing role checks`);
     return next({
       ctx: {
         ...ctx,
@@ -575,14 +614,16 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     );
   }
 
-  if (isSystemOwnerUser) {
-    console.log(
-      `[ADMIN_ACCESS] System owner ${ctx.auth.userId} accessing admin functions (hardcoded override)`
-    );
-  } else {
-    console.log(
-      `[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(user as any).role?.name || "NO_ROLE"}, level: ${roleLevel}) accessing admin functions`
-    );
+  if (VERBOSE) {
+    if (isSystemOwnerUser) {
+      console.log(
+        `[ADMIN_ACCESS] System owner ${ctx.auth.userId} accessing admin functions (hardcoded override)`
+      );
+    } else {
+      console.log(
+        `[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(user as any).role?.name || "NO_ROLE"}, level: ${roleLevel}) accessing admin functions`
+      );
+    }
   }
 
   return next({
@@ -604,7 +645,7 @@ const dataPrivacyMiddleware = t.middleware(async ({ ctx, next, path }) => {
   // For intelligence feeds and executive data, ensure sensitive info is filtered
   if (path.includes("Intelligence") || path.includes("executive")) {
     // Log data access for privacy compliance
-    console.log(
+    if (VERBOSE) console.log(
       `[DATA_PRIVACY] User ${ctx.auth?.userId} accessed ${path} at ${new Date().toISOString()}`
     );
 

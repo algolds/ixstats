@@ -13,7 +13,7 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { Calendar as CalendarIcon, Plus, ListChecks, FileText, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";

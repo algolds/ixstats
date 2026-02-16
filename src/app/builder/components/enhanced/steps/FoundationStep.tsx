@@ -4,7 +4,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Globe } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { CountrySelector } from "../CountrySelector";

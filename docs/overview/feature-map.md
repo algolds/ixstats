@@ -1,6 +1,6 @@
 # Feature Map & Inventory
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
 This document inventories the primary code areas. Use it when auditing coverage, mapping dependencies, or planning refactors.
 
@@ -14,9 +14,16 @@ This document inventories the primary code areas. Use it when auditing coverage,
 | `/dashboard` | Signed-in overview widgets and cards |
 | `/help` | In-app documentation hub |
 | `/leaderboards` | Global rankings and comparative stats |
-| `/mycountry` | Executive command suite |
-| `/mycountry/intelligence` | Diplomatic operations, live feeds |
-| `/thinkpages` | Social knowledge sharing and collaboration |
+| `/mycountry` | Executive command suite (MyCountryRouter) |
+| `/mycountry/executive` | Executive decision-making |
+| `/mycountry/diplomacy` | Diplomatic operations hub |
+| `/mycountry/intelligence` | Analytics and intelligence feeds |
+| `/mycountry/defense` | Military and security operations |
+| `/vault` | MyVault, IxCards, trading, crafting (VaultRouter) |
+| `/dashboard/diplomacy` | Dashboard diplomacy section |
+| `/dashboard/feed` | Dashboard activity feed |
+| `/dashboard/trends` | Dashboard trends section |
+| `/thinkpages` | Social knowledge sharing (ThinkPagesRouter) |
 | `/wiki` | Wiki integration tools and info |
 | `/setup`, `/sign-in`, `/sign-up` | Onboarding and auth surfaces |
 
@@ -34,7 +41,7 @@ This document inventories the primary code areas. Use it when auditing coverage,
 - Services under `src/app/mycountry/services`, `src/services`, and `src/lib` encapsulate data fetches, caching, and job orchestration
 
 ## tRPC Routers (`src/server/api/routers`)
-**35 routers / 546 procedures**. Key files:
+**61 routers / 920+ procedures**. Key files:
 ```
 achievements.ts        activities.ts        admin.ts
 archetypes.ts          atomicEconomic.ts    atomicGovernment.ts
@@ -47,13 +54,18 @@ policies.ts            quickactions.ts      roles.ts
 scheduledChanges.ts    sdi.ts               security.ts
 taxSystem.ts           thinkpages.ts        unifiedAtomic.ts
 unified-intelligence.ts user-logging.ts     users.ts
-wikiCache.ts           wikiImporter.ts
+vault.ts               wikiCache.ts        wikiImporter.ts
+cards.ts               card-packs.ts       card-market.ts
+card-analytics.ts      cardImages.ts       crafting.ts
+trading.ts             lore-cards.ts       elections.ts
+ns-import.ts           historical.ts       crisis-events.ts
+autosaveHistory.ts     autosaveMonitoring.ts
 ```
 - Auth-aware context lives in `src/server/api/trpc.ts`
 - Middleware: rate limiting (`~/lib/rate-limiter`), user logging (`~/lib/user-logging-middleware`)
 
 ## Database & Data Flow
-- Prisma schema: `prisma/schema.prisma` (131 models)
+- Prisma schema: `prisma/schema.prisma` (201 models)
 - Seed scripts: `scripts/setup/`
 - ETL & audits: `scripts/audit/` (wiring verifier, CRUD sweeps, economic calculators)
 - PostgreSQL database: `localhost:5433/ixstats` (migrated from SQLite in October 2025)

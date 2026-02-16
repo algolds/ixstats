@@ -1,8 +1,19 @@
 # Social & Collaboration System
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
 IxStats provides collaborative storytelling tools through ThinkPages, ThinkShare, activity feeds, and research hubs.
+
+## Router Architecture (February 2026)
+
+ThinkPages uses `ThinkPagesRouter` (`src/components/thinkpages/ThinkPagesRouter.tsx`) with a sidebar layout:
+- `ThinkPagesSidebarNav` (`src/components/thinkpages/ThinkPagesSidebarNav.tsx`) – Section navigation
+- `ThinkPagesSidebarLayout` (`src/components/thinkpages/ThinkPagesSidebarLayout.tsx`) – Grid layout
+- `ThinkPagesHeader` / `ThinkPagesFooter` / `ThinkPagesIcon` – UI components
+- `ThinkPagesStatusWidget` – Status display widget
+- Sections: Feed, ThinkTanks, ThinkShare (messages)
+- Dynamically imports heavy components (ThinktankGroups, ThinkshareMessages)
+- Account management modals (AccountCreationModal, AccountSettingsModal)
 
 ## User Experience
 - `src/app/thinkpages` – Main ThinkPages exploration and content creation flows

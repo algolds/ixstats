@@ -498,6 +498,130 @@ export const cardsRouter = createTRPCRouter({
     }),
 
   /**
+   * Get NS Import cards for the NS Library tab
+   * Accessible to all authenticated users
+   */
+  getNSCards: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().int().min(1).max(100).optional().default(50),
+        offset: z.number().int().min(0).optional().default(0),
+        search: z.string().max(100).optional(),
+        season: z.number().int().min(1).optional(),
+        rarity: z.string().optional(),
+        region: z.string().max(100).optional(),
+        sortBy: z.enum(["marketValue", "rarity", "recent", "name"]).optional().default("rarity"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const where: Record<string, unknown> = {
+          cardType: "NS_IMPORT",
+        };
+
+        if (input.season) {
+          where.season = input.season;
+        }
+
+        if (input.rarity && Object.values(CardRarity).includes(input.rarity as CardRarity)) {
+          where.rarity = input.rarity;
+        }
+
+        if (input.search) {
+          where.OR = [
+            { title: { contains: input.search.trim(), mode: "insensitive" } },
+            { name: { contains: input.search.trim(), mode: "insensitive" } },
+          ];
+        }
+
+        if (input.region) {
+          where.stats = {
+            path: ["region"],
+            string_contains: input.region,
+          };
+        }
+
+        let orderBy: Record<string, string>[];
+        switch (input.sortBy) {
+          case "marketValue":
+            orderBy = [{ marketValue: "desc" }];
+            break;
+          case "name":
+            orderBy = [{ title: "asc" }];
+            break;
+          case "recent":
+            orderBy = [{ createdAt: "desc" }];
+            break;
+          case "rarity":
+          default:
+            orderBy = [{ marketValue: "desc" }];
+            break;
+        }
+
+        const [total, cards] = await Promise.all([
+          ctx.db.card.count({ where: where as any }),
+          ctx.db.card.findMany({
+            where: where as any,
+            orderBy,
+            take: input.limit,
+            skip: input.offset,
+          }),
+        ]);
+
+        return {
+          cards,
+          total,
+          hasMore: input.offset + input.limit < total,
+        };
+      } catch (error) {
+        console.error("[CARDS_ROUTER] Error in getNSCards:", error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch NS cards",
+        });
+      }
+    }),
+
+  /**
+   * Get NS Library statistics
+   * Accessible to all authenticated users
+   */
+  getNSLibraryStats: protectedProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const [totalCards, cardsByRegion, lastSync] = await Promise.all([
+          ctx.db.card.count({ where: { cardType: "NS_IMPORT" } }),
+          ctx.db.$queryRaw`
+            SELECT stats->>'region' as region, COUNT(*)::int as count
+            FROM cards
+            WHERE "cardType" = 'NS_IMPORT' AND stats->>'region' IS NOT NULL AND stats->>'region' != ''
+            GROUP BY stats->>'region'
+            ORDER BY count DESC
+            LIMIT 20
+          ` as Promise<Array<{ region: string; count: number }>>,
+          ctx.db.syncLog.findFirst({
+            where: { syncType: { startsWith: "NS_" } },
+            orderBy: { startedAt: "desc" },
+            select: { startedAt: true, status: true, syncType: true },
+          }),
+        ]);
+
+        return {
+          totalCards,
+          cardsByRegion: cardsByRegion ?? [],
+          lastSync: lastSync ? { at: lastSync.startedAt, status: lastSync.status, type: lastSync.syncType } : null,
+        };
+      } catch (error) {
+        console.error("[CARDS_ROUTER] Error in getNSLibraryStats:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch NS library stats",
+        });
+      }
+    }),
+
+  /**
    * Get card market value
    * Admin-only endpoint
    */

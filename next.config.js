@@ -8,8 +8,6 @@
 // The env validation will be handled by the application at runtime
 // This is a common pattern when using TypeScript env files with JavaScript config files
 
-// Import polyfill plugin
-import NodePolyfillPlugin from "node-polyfill-webpack-plugin";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -51,20 +49,36 @@ const config = {
   reactStrictMode: true,
 
   // Performance optimizations
+  // Prevent webpack from bundling heavy server-only packages (loaded via require at runtime)
+  serverExternalPackages: [
+    "@prisma/client",
+    "prisma",
+    "@node-rs/argon2",
+    "sharp",
+  ],
+
   experimental: {
-    // Enable optimizations for heavy packages
+    // Enable optimizations for heavy packages (tree-shakes unused exports)
     optimizePackageImports: [
+      "lucide-react",          // 45MB, 3824 icons - only ~200 used
+      "recharts",              // 8MB charting library
+      "react-icons/ri",        // 2500+ Remix Icons barrel
+      "react-icons/fa",        // FontAwesome barrel
+      "react-icons/fa6",       // FontAwesome 6 barrel
+      "react-icons/gi",        // Game Icons barrel
       "framer-motion",
+      "motion",
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
       "@radix-ui/react-tabs",
       "@radix-ui/react-select",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-popover",
       "@clerk/nextjs",
     ],
     // Reduce compilation time
     esmExternals: true,
-    // Enable instrumentation hook for production startup
-    instrumentationHook: true,
+    // Note: instrumentationHook removed - Next.js 16 loads instrumentation.ts automatically
   },
 
   // Build performance improvements
@@ -100,25 +114,15 @@ const config = {
         ...config.cache,
         type: "filesystem",
         compression: "gzip",
-        maxMemoryGenerations: Infinity,
-        // Optimize serialization for large strings by using buffers
+        // Keep only 1 generation in memory (current), evict older ones to disk.
+        // Infinity keeps ALL compiled modules in RAM indefinitely → memory leak.
+        maxMemoryGenerations: 1,
         store: "pack",
-        // Use absolute path for cache directory to avoid illegal path issues
         cacheDirectory: cacheDir,
-        // Remove buildDependencies to prevent ESM resolution issues during cache serialization
         buildDependencies: {
           config: [__filename],
         },
       };
-    }
-
-    // Additional polyfills for client-side only
-    if (!isServer) {
-      config.plugins.push(
-        new NodePolyfillPlugin({
-          includeAliases: ["global", "Buffer", "process"],
-        })
-      );
     }
 
     // Server-side: externalize socket.io packages and prevent bundling
@@ -166,13 +170,29 @@ const config = {
     if (dev) {
       config.watchOptions = {
         poll: false,
-        ignored: ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/.git/**", "**/prisma/**"],
+        ignored: [
+          "**/node_modules/**",
+          "**/.next/**",
+          "**/dist/**",
+          "**/.git/**",
+          "**/prisma/**",
+          "**/docs/**",
+          "**/scripts/**",
+          "**/public/flags/**",
+          "**/*.md",
+        ],
       };
 
       // Faster builds in development
       config.optimization.removeAvailableModules = false;
       config.optimization.removeEmptyChunks = false;
       config.optimization.splitChunks = false;
+
+      // Reduce memory pressure in dev — faster ID algorithms + less stats overhead
+      config.optimization.moduleIds = 'named';
+      config.optimization.chunkIds = 'named';
+      config.stats = 'errors-warnings';
+      config.infrastructureLogging = { level: 'warn' };
     } else {
       // Production build optimizations
       config.optimization = {

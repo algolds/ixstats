@@ -1,8 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { GlassCard, GlassCardContent } from "../glass/GlassCard";
-import { MediaSearchModal } from "~/components/MediaSearchModal";
+
+// Dynamic import for heavy media search modal
+const MediaSearchModal = dynamic(
+  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  { ssr: false }
+);
 import { CountrySymbolsUploader } from "../CountrySymbolsUploader";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 import { useBuilderTheming } from "~/hooks/useBuilderTheming";

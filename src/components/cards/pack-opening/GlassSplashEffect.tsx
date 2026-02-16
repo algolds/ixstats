@@ -4,7 +4,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { CardRarity } from "@prisma/client";
 import { getParticleConfig } from "~/lib/holographic-effects";
 

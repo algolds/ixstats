@@ -23,7 +23,7 @@ interface RelationshipDistributionChartProps {
 export const RelationshipDistributionChart = React.memo<RelationshipDistributionChartProps>(
   ({ data, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-surface glass-refraction" id="relationship-distribution-chart">
+      <Card className="glass-hierarchy-child" id="relationship-distribution-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

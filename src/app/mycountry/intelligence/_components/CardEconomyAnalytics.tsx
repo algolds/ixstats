@@ -9,12 +9,10 @@ import {
   BarChart3,
   Target,
   Briefcase,
-  AlertCircle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import { api } from "~/trpc/react";
 import {
   LineChart,
@@ -87,25 +85,24 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
 
   if (economyLoading) {
     return (
-      <Card className="glass-hierarchy-child border-blue-200 dark:border-blue-700/40">
-        <CardContent className="py-12">
-          <div className="flex items-center justify-center gap-2 text-muted-foreground">
-            <Activity className="h-4 w-4 animate-spin" />
-            <span>Loading card economy analytics...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex min-h-[200px] items-center justify-center">
+        <div className="space-y-4 text-center">
+          <Activity className="mx-auto h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-muted-foreground text-sm">Loading card economy analytics...</p>
+        </div>
+      </div>
     );
   }
 
   if (!economyData) {
     return (
-      <Alert className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          No card economy data available for this country.
-        </AlertDescription>
-      </Alert>
+      <div className="text-muted-foreground py-8 text-center">
+        <BarChart3 className="text-muted-foreground/50 mx-auto mb-3 h-8 w-8" />
+        <h3 className="mb-1 text-sm font-semibold">No Card Economy Data</h3>
+        <p className="mx-auto max-w-md text-xs">
+          Card economy analytics will appear once cards are minted for this country.
+        </p>
+      </div>
     );
   }
 
@@ -114,7 +111,7 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Nation Card Value */}
-        <Card className="glass-hierarchy-interactive border-blue-200 dark:border-blue-700/40">
+        <Card className="glass-hierarchy-interactive">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -143,7 +140,7 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
         </Card>
 
         {/* GDP Correlation */}
-        <Card className="glass-hierarchy-interactive border-blue-200 dark:border-blue-700/40">
+        <Card className="glass-hierarchy-interactive">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Target className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
@@ -165,7 +162,7 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
         </Card>
 
         {/* Total Cards */}
-        <Card className="glass-hierarchy-interactive border-blue-200 dark:border-blue-700/40">
+        <Card className="glass-hierarchy-interactive">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
@@ -183,7 +180,7 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
 
       {/* Top Card */}
       {economyData.topCard && (
-        <Card className="glass-hierarchy-interactive border-blue-200 dark:border-blue-700/40">
+        <Card className="glass-hierarchy-interactive">
           <CardHeader>
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -217,17 +214,21 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
   const renderValueTrends = () => {
     if (historyLoading) {
       return (
-        <div className="py-12 text-center text-muted-foreground">
-          <Activity className="h-4 w-4 animate-spin inline-block mr-2" />
-          Loading value trends...
+        <div className="flex min-h-[200px] items-center justify-center">
+          <div className="space-y-2 text-center">
+            <Activity className="mx-auto h-6 w-6 animate-spin text-blue-600" />
+            <p className="text-muted-foreground text-sm">Loading value trends...</p>
+          </div>
         </div>
       );
     }
 
     if (!valueHistory || valueHistory.history.length === 0) {
       return (
-        <div className="py-12 text-center text-muted-foreground">
-          No historical data available
+        <div className="text-muted-foreground py-8 text-center">
+          <TrendingUp className="text-muted-foreground/50 mx-auto mb-3 h-8 w-8" />
+          <h3 className="mb-1 text-sm font-semibold">No Historical Data</h3>
+          <p className="mx-auto max-w-md text-xs">Value trend data will appear once cards begin trading.</p>
         </div>
       );
     }
@@ -296,17 +297,21 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
   const renderCorrelationAnalysis = () => {
     if (correlationLoading) {
       return (
-        <div className="py-12 text-center text-muted-foreground">
-          <Activity className="h-4 w-4 animate-spin inline-block mr-2" />
-          Calculating correlation...
+        <div className="flex min-h-[200px] items-center justify-center">
+          <div className="space-y-2 text-center">
+            <Activity className="mx-auto h-6 w-6 animate-spin text-blue-600" />
+            <p className="text-muted-foreground text-sm">Calculating correlation...</p>
+          </div>
         </div>
       );
     }
 
     if (!correlationData || correlationData.dataPoints.length === 0) {
       return (
-        <div className="py-12 text-center text-muted-foreground">
-          {correlationData?.message || "No correlation data available"}
+        <div className="text-muted-foreground py-8 text-center">
+          <Target className="text-muted-foreground/50 mx-auto mb-3 h-8 w-8" />
+          <h3 className="mb-1 text-sm font-semibold">No Correlation Data</h3>
+          <p className="mx-auto max-w-md text-xs">{correlationData?.message || "Correlation analysis requires sufficient historical trading data."}</p>
         </div>
       );
     }
@@ -360,19 +365,22 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
   const renderPortfolio = () => {
     if (portfolioLoading) {
       return (
-        <div className="py-12 text-center text-muted-foreground">
-          <Activity className="h-4 w-4 animate-spin inline-block mr-2" />
-          Loading portfolio...
+        <div className="flex min-h-[200px] items-center justify-center">
+          <div className="space-y-2 text-center">
+            <Activity className="mx-auto h-6 w-6 animate-spin text-blue-600" />
+            <p className="text-muted-foreground text-sm">Loading portfolio...</p>
+          </div>
         </div>
       );
     }
 
     if (!portfolioData || portfolioData.totalCards === 0) {
       return (
-        <Alert className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
-          <Briefcase className="h-4 w-4" />
-          <AlertDescription>You don't own any cards yet.</AlertDescription>
-        </Alert>
+        <div className="text-muted-foreground py-8 text-center">
+          <Briefcase className="text-muted-foreground/50 mx-auto mb-3 h-8 w-8" />
+          <h3 className="mb-1 text-sm font-semibold">No Cards in Portfolio</h3>
+          <p className="mx-auto max-w-md text-xs">Acquire cards from the Vault to see portfolio analytics here.</p>
+        </div>
       );
     }
 
@@ -380,7 +388,7 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
       <div className="space-y-4">
         {/* Portfolio Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="glass-hierarchy-interactive border-blue-200 dark:border-blue-700/40">
+          <Card className="glass-hierarchy-interactive">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Cards
@@ -391,7 +399,7 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
             </CardContent>
           </Card>
 
-          <Card className="glass-hierarchy-interactive border-blue-200 dark:border-blue-700/40">
+          <Card className="glass-hierarchy-interactive">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Value
@@ -405,7 +413,7 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
 
         {/* Top Performer */}
         {portfolioData.topPerformer && (
-          <Card className="glass-hierarchy-interactive border-green-200 dark:border-green-700/40">
+          <Card className="glass-hierarchy-interactive">
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -433,7 +441,7 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
         )}
 
         {/* Recent Acquisitions */}
-        <Card className="glass-hierarchy-interactive border-blue-200 dark:border-blue-700/40">
+        <Card className="glass-hierarchy-interactive">
           <CardHeader>
             <CardTitle className="text-sm font-medium">Recent Acquisitions</CardTitle>
           </CardHeader>
@@ -475,17 +483,21 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
   const renderMarketActivity = () => {
     if (activityLoading) {
       return (
-        <div className="py-12 text-center text-muted-foreground">
-          <Activity className="h-4 w-4 animate-spin inline-block mr-2" />
-          Loading market activity...
+        <div className="flex min-h-[200px] items-center justify-center">
+          <div className="space-y-2 text-center">
+            <Activity className="mx-auto h-6 w-6 animate-spin text-blue-600" />
+            <p className="text-muted-foreground text-sm">Loading market activity...</p>
+          </div>
         </div>
       );
     }
 
     if (!marketActivity || marketActivity.activities.length === 0) {
       return (
-        <div className="py-12 text-center text-muted-foreground">
-          No recent market activity for this card
+        <div className="text-muted-foreground py-8 text-center">
+          <Activity className="text-muted-foreground/50 mx-auto mb-3 h-8 w-8" />
+          <h3 className="mb-1 text-sm font-semibold">No Market Activity</h3>
+          <p className="mx-auto max-w-md text-xs">Recent card transactions will appear here once trading begins.</p>
         </div>
       );
     }
@@ -541,57 +553,53 @@ export function CardEconomyAnalytics({ countryId, userId }: CardEconomyAnalytics
   };
 
   return (
-    <Card className="glass-hierarchy-child border-blue-200 dark:border-blue-700/40">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          IxCards Economy Analytics
-        </CardTitle>
-        <CardDescription>
-          Comprehensive card economy analysis with GDP correlation and portfolio performance
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5">
-            <TabsTrigger value="overview" className="text-xs lg:text-sm">
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="trends" className="text-xs lg:text-sm">
-              Value Trends
-            </TabsTrigger>
-            <TabsTrigger value="correlation" className="text-xs lg:text-sm">
-              Correlation
-            </TabsTrigger>
-            <TabsTrigger value="portfolio" className="text-xs lg:text-sm">
-              Portfolio
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="text-xs lg:text-sm">
-              Market
-            </TabsTrigger>
-          </TabsList>
+    <div className="space-y-4">
+      {/* Section Header */}
+      <div className="flex items-center gap-2">
+        <Activity className="h-4 w-4 text-blue-600" />
+        <h3 className="text-sm font-semibold">IxCards Economy Analytics</h3>
+        <span className="text-muted-foreground text-xs">Card economy analysis with GDP correlation</span>
+      </div>
 
-          <TabsContent value="overview" className="space-y-4">
-            {renderOverview()}
-          </TabsContent>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-5 gap-0.5">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="text-xs sm:text-sm">
+            Trends
+          </TabsTrigger>
+          <TabsTrigger value="correlation" className="text-xs sm:text-sm">
+            Correlation
+          </TabsTrigger>
+          <TabsTrigger value="portfolio" className="text-xs sm:text-sm">
+            Portfolio
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="text-xs sm:text-sm">
+            Market
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="trends" className="space-y-4">
-            {renderValueTrends()}
-          </TabsContent>
+        <TabsContent value="overview" className="space-y-4">
+          {renderOverview()}
+        </TabsContent>
 
-          <TabsContent value="correlation" className="space-y-4">
-            {renderCorrelationAnalysis()}
-          </TabsContent>
+        <TabsContent value="trends" className="space-y-4">
+          {renderValueTrends()}
+        </TabsContent>
 
-          <TabsContent value="portfolio" className="space-y-4">
-            {renderPortfolio()}
-          </TabsContent>
+        <TabsContent value="correlation" className="space-y-4">
+          {renderCorrelationAnalysis()}
+        </TabsContent>
 
-          <TabsContent value="activity" className="space-y-4">
-            {renderMarketActivity()}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+        <TabsContent value="portfolio" className="space-y-4">
+          {renderPortfolio()}
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4">
+          {renderMarketActivity()}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

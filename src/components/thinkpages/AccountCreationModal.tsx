@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import {
   X,
@@ -22,8 +23,13 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
-import { MediaSearchModal } from "~/components/MediaSearchModal";
 import { WikiSearch } from "./WikiSearch";
+
+// Dynamic import for heavy media search modal
+const MediaSearchModal = dynamic(
+  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  { ssr: false }
+);
 
 interface AccountCreationModalProps {
   isOpen: boolean;

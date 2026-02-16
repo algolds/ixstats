@@ -1,4 +1,4 @@
-import { easeInOut, easeOut } from "framer-motion";
+import { easeInOut, easeOut } from "motion/react";
 import type { IconType } from "react-icons";
 import {
   RiGlobalLine,

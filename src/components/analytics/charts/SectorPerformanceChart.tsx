@@ -33,7 +33,7 @@ interface SectorPerformanceChartProps {
 export const SectorPerformanceChart = React.memo<SectorPerformanceChartProps>(
   ({ data, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-surface glass-refraction" id="sector-performance-chart">
+      <Card className="glass-hierarchy-child" id="sector-performance-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

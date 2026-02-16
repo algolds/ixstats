@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Target, Plus, TrendingUp, AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { StrategicPlanningModal } from "~/components/modals/StrategicPlanningModal";
@@ -34,65 +34,46 @@ export function PlansPanel({ countryId }: PlansPanelProps) {
         countryName={country?.name || "Your Country"}
       />
 
-      <div className="space-y-6">
-        {/* Header Card */}
-        <Card className="glass-hierarchy-child border-border">
-          <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                Strategic Planning
-                <SectionHelpIcon
-                  title="Strategic Planning"
-                  content="Develop and manage long-term strategic initiatives for your nation. Strategic plans guide major national projects, policy directions, and development goals over multiple years. Use this system to align your government's efforts toward key objectives and track progress on transformative initiatives."
-                />
-              </CardTitle>
-              <CardDescription>
-                Create and manage long-term strategic initiatives and projects
-              </CardDescription>
-            </div>
-            <Button onClick={() => setStrategyModalOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Strategic Plan
-            </Button>
-          </CardHeader>
-        </Card>
+      <div className="space-y-4">
+        {/* Section Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <h3 className="text-sm font-semibold">Strategic Planning</h3>
+            <SectionHelpIcon
+              title="Strategic Planning"
+              content="Develop and manage long-term strategic initiatives for your nation. Strategic plans guide major national projects, policy directions, and development goals over multiple years. Use this system to align your government's efforts toward key objectives and track progress on transformative initiatives."
+            />
+          </div>
+          <Button size="sm" onClick={() => setStrategyModalOpen(true)} className="gap-1.5">
+            <Plus className="h-3 w-3" />
+            New Plan
+          </Button>
+        </div>
 
-        {/* Planning Stats */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Active Plans</p>
-                  <p className="mt-2 text-3xl font-bold">0</p>
-                </div>
-                <Target className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">In Progress</p>
-                  <p className="mt-2 text-3xl font-bold">0</p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Completed</p>
-                  <p className="mt-2 text-3xl font-bold">0</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Planning Stats Strip */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="glass-hierarchy-child rounded-lg bg-purple-50 p-2.5 dark:bg-purple-950/20">
+            <div className="flex items-center gap-1.5">
+              <Target className="h-3.5 w-3.5 flex-shrink-0 text-purple-600" />
+              <span className="text-muted-foreground text-xs font-medium">Active Plans</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">0</div>
+          </div>
+          <div className="glass-hierarchy-child rounded-lg bg-yellow-50 p-2.5 dark:bg-yellow-950/20">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 flex-shrink-0 text-yellow-600" />
+              <span className="text-muted-foreground text-xs font-medium">In Progress</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">0</div>
+          </div>
+          <div className="glass-hierarchy-child rounded-lg bg-green-50 p-2.5 dark:bg-green-950/20">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle className="h-3.5 w-3.5 flex-shrink-0 text-green-600" />
+              <span className="text-muted-foreground text-xs font-medium">Completed</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">0</div>
+          </div>
         </div>
 
         {/* Strategic Planning Interface */}
@@ -104,8 +85,8 @@ export function PlansPanel({ countryId }: PlansPanelProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="border-border/50 text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-12 text-center">
-              <Target className="text-muted-foreground/70 h-12 w-12" />
+            <div className="border-border/50 text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-center">
+              <Target className="text-muted-foreground/70 h-8 w-8" />
               <div>
                 <p className="font-medium">No strategic plans yet</p>
                 <p className="text-muted-foreground mt-1 text-sm">

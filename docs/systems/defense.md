@@ -1,17 +1,22 @@
 # Defense System
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
-Defense capabilities model national readiness, crisis response, and strategic defense initiative (SDI) modules.
+Defense capabilities model national readiness, crisis response, military operations, and strategic defense initiative (SDI) modules.
 
 ## UI Surfaces
 - `src/app/mycountry/defense` – Core defense dashboards, readiness scores, crisis response panels
 - `src/components/defense` – Modular widgets for threat levels, asset readiness, doctrine sliders
+- `src/components/defense/OperationsPanel.tsx` – Operations management panel
+- `src/components/defense/operations/` – ActiveOperations, DeploymentWizard, PvPConflictPanel
 - Compliance overlays in `MyCountryComplianceModal.tsx` highlight unresolved defense tasks
 
 ## Routers & Data
 - `sdi.ts` – Strategic defense initiative (module configs, readiness, upgrade paths)
 - `security.ts` – National security posture, threat detection hooks
+- `militaryEquipment.ts` – Equipment catalog management
+- `smallArmsEquipment.ts` – Infantry weapons and small arms
+- `crisis-events.ts` – Dynamic crisis event management
 - `intelligence.ts` – Security metrics integrated with broader intelligence dashboards
 - `notifications.ts` – Alerts for defense incidents and required actions
 

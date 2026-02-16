@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ArrowLeft, Search, MapPin, Link } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -77,22 +77,22 @@ export function LinkExistingStep({
           Back to options
         </Button>
 
-        <h1 className="text-foreground mb-6 text-5xl font-bold">Link to Existing Country</h1>
+        <h1 className="text-foreground mb-4 text-2xl font-bold md:text-3xl">Link to Existing Country</h1>
 
-        <p className="text-muted-foreground max-w-3xl text-2xl">
+        <p className="text-muted-foreground max-w-3xl text-base md:text-lg">
           Search and select an existing country to link to your account.
         </p>
       </div>
 
-      <div className="glass-hierarchy-parent border-border rounded-3xl border p-8">
-        <div className="mb-8">
-          <h2 className="text-foreground mb-4 flex items-center text-2xl font-bold">
-            <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
-              <Search className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+      <div className="glass-hierarchy-parent border-border rounded-xl border p-4 md:p-6">
+        <div className="mb-6">
+          <h2 className="text-foreground mb-3 flex items-center text-lg font-bold md:text-xl">
+            <div className="glass-hierarchy-child mr-3 rounded-lg p-2">
+              <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             Search Countries
           </h2>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-sm">
             Find your country by name, continent, or region
           </p>
         </div>
@@ -105,7 +105,7 @@ export function LinkExistingStep({
               placeholder="Search by name, continent, or region..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="glass-hierarchy-child border-border rounded-2xl py-4 pl-12 text-lg"
+              className="glass-hierarchy-child border-border rounded-xl py-3 pl-12 text-sm"
             />
           </div>
 
@@ -120,7 +120,7 @@ export function LinkExistingStep({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`glass-hierarchy-child w-full rounded-2xl p-6 text-left transition-all duration-500 ${
+                  className={`glass-hierarchy-child w-full rounded-xl p-3 text-left transition-all duration-500 ${
                     selectedCountryId === country.id
                       ? "glass-hierarchy-interactive border-primary scale-105 border-2"
                       : "hover:glass-hierarchy-interactive border-border border hover:scale-102"
@@ -134,7 +134,7 @@ export function LinkExistingStep({
                         <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <h3 className="text-foreground mb-2 text-xl font-bold">{country.name}</h3>
+                        <h3 className="text-foreground mb-1 text-sm font-bold">{country.name}</h3>
                         <p className="text-muted-foreground">
                           {country.continent} {country.region && `• ${country.region}`}
                         </p>
@@ -160,7 +160,7 @@ export function LinkExistingStep({
               <Button
                 onClick={() => onLink(selectedCountryId)}
                 disabled={isLinking}
-                className="glass-hierarchy-interactive w-full rounded-2xl py-6 text-lg font-semibold"
+                className="glass-hierarchy-interactive w-full rounded-xl py-4 text-base font-semibold"
                 size="lg"
               >
                 {isLinking ? (

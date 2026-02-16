@@ -7,7 +7,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { ChevronDown, ChevronUp } from "lucide-react";
 

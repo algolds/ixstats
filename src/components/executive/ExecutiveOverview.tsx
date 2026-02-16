@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -14,18 +14,21 @@ import {
   Clock,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StrategicPlanningModal } from "~/components/modals/StrategicPlanningModal";
+import { MeetingScheduler } from "~/components/quickactions/MeetingScheduler";
+import { PolicyCreator } from "~/components/quickactions/PolicyCreator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 
 interface ExecutiveOverviewProps {
   countryId: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
-  const router = useRouter();
+export function ExecutiveOverview({ countryId, onTabChange }: ExecutiveOverviewProps) {
   const [strategyModalOpen, setStrategyModalOpen] = useState(false);
+  const [meetingSchedulerOpen, setMeetingSchedulerOpen] = useState(false);
+  const [policyCreatorOpen, setPolicyCreatorOpen] = useState(false);
 
   // Fetch country data
   const { data: country } = api.countries.getByIdBasic.useQuery(
@@ -95,87 +98,71 @@ export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Executive Metrics Grid */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-4">
+        {/* Executive Metrics Strip */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           {executiveMetrics.map((metric) => {
             const Icon = metric.icon;
             return (
-              <Card key={metric.label} className="glass-hierarchy-child">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-muted-foreground text-sm font-medium">{metric.label}</p>
-                      <p className="mt-2 text-3xl font-bold">{metric.value}</p>
-                    </div>
-                    <div className={`rounded-lg p-3 ${metric.bgColor}`}>
-                      <Icon className={`h-6 w-6 ${metric.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={metric.label} className={`glass-hierarchy-child rounded-lg p-2.5 ${metric.bgColor}`}>
+                <div className="flex items-center gap-1.5">
+                  <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${metric.color}`} />
+                  <span className="text-muted-foreground text-xs font-medium">{metric.label}</span>
+                </div>
+                <div className="mt-0.5 text-lg font-bold">{metric.value}</div>
+              </div>
             );
           })}
         </div>
 
         {/* Quick Actions */}
-        <Card className="glass-hierarchy-child">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              Quick Actions
-              <SectionHelpIcon
-                title="Quick Actions"
-                content="Fast access to common executive tasks. Use these shortcuts to quickly schedule meetings, create policies, plan strategically, or record important decisions without navigating through multiple tabs."
-              />
-            </CardTitle>
-            <CardDescription>Common executive tasks and shortcuts</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => router.push("/mycountry/executive?tab=meetings")}
-              >
-                <Calendar className="h-4 w-4" />
-                Schedule Meeting
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => router.push("/mycountry/executive?tab=policies")}
-              >
-                <FileText className="h-4 w-4" />
-                Create Policy
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => setStrategyModalOpen(true)}
-              >
-                <Target className="h-4 w-4" />
-                Strategic Planning
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => router.push("/mycountry/executive?tab=decisions")}
-              >
-                <Layers className="h-4 w-4" />
-                Record Decision
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setMeetingSchedulerOpen(true)}
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            Schedule Meeting
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setPolicyCreatorOpen(true)}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Create Policy
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setStrategyModalOpen(true)}
+          >
+            <Target className="h-3.5 w-3.5" />
+            Strategic Planning
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => onTabChange?.("decisions")}
+          >
+            <Layers className="h-3.5 w-3.5" />
+            Record Decision
+          </Button>
+        </div>
 
         {/* Recent Activity */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Upcoming Meetings */}
           <Card className="glass-hierarchy-child">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-600" />
+                  <Calendar className="h-4 w-4 text-blue-600" />
                   Upcoming Meetings
                   <SectionHelpIcon
                     title="Upcoming Meetings"
@@ -191,7 +178,7 @@ export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
                   {upcomingMeetings.map((meeting: any) => (
                     <div
                       key={meeting.id}
-                      className="border-border/40 bg-muted/40 rounded-lg border p-3"
+                      className="border-border/40 bg-muted/40 rounded-lg border p-3 transition-all hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -210,8 +197,10 @@ export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
                   ))}
                 </div>
               ) : (
-                <div className="text-muted-foreground py-8 text-center text-sm">
-                  No upcoming meetings scheduled
+                <div className="text-muted-foreground py-6 text-center">
+                  <Calendar className="text-muted-foreground/50 mx-auto mb-3 h-8 w-8" />
+                  <p className="text-sm">No upcoming meetings scheduled</p>
+                  <p className="text-muted-foreground/80 mt-1 text-xs">Schedule a meeting to coordinate executive decisions</p>
                 </div>
               )}
             </CardContent>
@@ -222,7 +211,7 @@ export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-indigo-600" />
+                  <FileText className="h-4 w-4 text-indigo-600" />
                   Active Policies
                   <SectionHelpIcon
                     title="Active Policies"
@@ -238,7 +227,7 @@ export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
                   {activePolicies.map((policy: any) => (
                     <div
                       key={policy.id}
-                      className="border-border/40 bg-muted/40 rounded-lg border p-3"
+                      className="border-border/40 bg-muted/40 rounded-lg border p-3 transition-all hover:shadow-sm"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -253,8 +242,10 @@ export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
                   ))}
                 </div>
               ) : (
-                <div className="text-muted-foreground py-8 text-center text-sm">
-                  No active policies
+                <div className="text-muted-foreground py-6 text-center">
+                  <FileText className="text-muted-foreground/50 mx-auto mb-3 h-8 w-8" />
+                  <p className="text-sm">No active policies</p>
+                  <p className="text-muted-foreground/80 mt-1 text-xs">Create a policy to shape your nation&apos;s governance</p>
                 </div>
               )}
             </CardContent>
@@ -262,53 +253,47 @@ export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
         </div>
 
         {/* Executive Summary */}
-        <Card className="glass-hierarchy-child">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-600" />
-              Executive Summary
-              <SectionHelpIcon
-                title="Executive Summary"
-                content="High-level overview of your executive operations. This section highlights important items requiring attention, such as pending decisions from completed meetings, and provides a snapshot of your executive system's health."
-              />
-            </CardTitle>
-            <CardDescription>Key insights and recommendations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pendingDecisions > 0 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/20">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
-                    <div>
-                      <p className="font-medium text-amber-900 dark:text-amber-100">
-                        {pendingDecisions} meeting{pendingDecisions !== 1 ? "s" : ""} awaiting
-                        decisions
-                      </p>
-                      <p className="text-muted-foreground mt-1 text-sm">
-                        Review completed meetings and record executive decisions and action items
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <h3 className="text-sm font-semibold">Executive Summary</h3>
+            <SectionHelpIcon
+              title="Executive Summary"
+              content="High-level overview of your executive operations. This section highlights important items requiring attention, such as pending decisions from completed meetings, and provides a snapshot of your executive system's health."
+            />
+          </div>
 
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-                  <div>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">
-                      Executive operations running smoothly
-                    </p>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                      All executive systems are operational and functioning as expected
-                    </p>
-                  </div>
+          {pendingDecisions > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                <div>
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                    {pendingDecisions} meeting{pendingDecisions !== 1 ? "s" : ""} awaiting
+                    decisions
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    Review completed meetings and record executive decisions and action items
+                  </p>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/20">
+            <div className="flex items-start gap-2">
+              <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Executive operations running smoothly
+                </p>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  All executive systems are operational and functioning as expected
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Strategic Planning Modal */}
@@ -317,6 +302,20 @@ export function ExecutiveOverview({ countryId }: ExecutiveOverviewProps) {
         onClose={() => setStrategyModalOpen(false)}
         countryId={countryId}
         countryName={country?.name || "Your Country"}
+      />
+
+      {/* Meeting Scheduler Modal */}
+      <MeetingScheduler
+        countryId={countryId}
+        open={meetingSchedulerOpen}
+        onOpenChange={setMeetingSchedulerOpen}
+      />
+
+      {/* Policy Creator Modal */}
+      <PolicyCreator
+        countryId={countryId}
+        open={policyCreatorOpen}
+        onOpenChange={setPolicyCreatorOpen}
       />
     </>
   );

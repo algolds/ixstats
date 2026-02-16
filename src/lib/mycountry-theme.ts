@@ -11,6 +11,7 @@ export type TabTheme =
   | "demographics"
   | "diplomacy"
   | "intelligence"
+  | "defense"
   | "detailed"
   | "modeling";
 
@@ -61,6 +62,12 @@ export const MyCountryTabIcons = {
     secondary: "Eye", // Surveillance/monitoring
     tertiary: "Lock", // Classified/secure
     accent: "Zap", // Strategic operations
+  },
+  defense: {
+    primary: "Shield", // Defense/protection
+    secondary: "Sword", // Military force
+    tertiary: "Target", // Strategic targeting
+    accent: "Radio", // Communications/radar
   },
   detailed: {
     primary: "BarChart4", // Advanced analytics
@@ -135,6 +142,14 @@ export const TabColors = {
     background: "rgba(37, 99, 235, 0.08)",
     glow: "rgba(37, 99, 235, 0.3)",
     icon: "#1E40AF", // Blue-700
+  },
+  defense: {
+    primary: "#DC2626", // Red-600
+    secondary: "#EF4444", // Red-500
+    accent: "#F97316", // Orange-500
+    background: "rgba(220, 38, 38, 0.08)",
+    glow: "rgba(220, 38, 38, 0.3)",
+    icon: "#B91C1C", // Red-700
   },
   detailed: {
     primary: "#BE185D", // Pink-700
@@ -238,6 +253,7 @@ export const getTabAnimationDelay = (theme: TabTheme, index: number = 0) => {
     demographics: 400,
     diplomacy: 450,
     intelligence: 500,
+    defense: 550,
     detailed: 600,
     modeling: 700,
   };
@@ -275,6 +291,8 @@ export const getTabTailwindClasses = (theme: TabTheme) => {
     "#F472B6": "pink-400",
     "#1E40AF": "blue-700",
     "#60A5FA": "blue-400",
+    "#F97316": "orange-500",
+    "#B91C1C": "red-700",
   };
 
   return {

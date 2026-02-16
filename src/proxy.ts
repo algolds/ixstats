@@ -37,34 +37,32 @@ const isClerkConfigured = Boolean(
 );
 
 /**
- * Generate Content Security Policy
- * Protects against XSS, clickjacking, and other code injection attacks
+ * Content Security Policy — pre-computed at module load time.
  *
- * SECURITY: This CSP uses nonce-based script execution to prevent XSS attacks.
+ * SECURITY: Uses nonce-based script execution to prevent XSS attacks.
  * - Scripts must have the correct nonce attribute to execute
  * - unsafe-inline is ONLY used for styles (required by many UI libraries)
  * - unsafe-eval is REMOVED to prevent dynamic code execution attacks
  *
+ * The static template is built once and the __NONCE__ placeholder is replaced
+ * per-request. This avoids rebuilding ~1KB of string concatenation on every request.
+ *
  * If Clerk SDK breaks, check: https://clerk.com/docs/security/csp
  */
-function generateCSP(nonce: string): string {
+function buildCSPTemplate(): string {
   const isDevelopment = process.env.NODE_ENV === "development";
 
-  // Base CSP directives - strict mode
   const directives = [
     `default-src 'self'`,
-    // SECURITY: Use nonce-based script execution, no unsafe-eval
-    // In development, we need unsafe-inline for hot reload
     isDevelopment
-      ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${nonce}' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
-      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`,
-    // Styles still need unsafe-inline for CSS-in-JS and inline styles
+      ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
+      : `script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    `img-src 'self' data: blob: https: http:`, // Allow external images (flags, etc)
+    `img-src 'self' data: blob: https: http:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
     `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://api.clerk.com https://ixwiki.com https://commons.wikimedia.org https://api.unsplash.com https://*.tile.openstreetmap.org https://demotiles.maplibre.org wss: ws:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com`,
-    `worker-src 'self' blob:`, // Allow workers from same origin and blob URLs
+    `worker-src 'self' blob:`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
@@ -72,7 +70,6 @@ function generateCSP(nonce: string): string {
     `upgrade-insecure-requests`,
   ];
 
-  // Additional script-src-elem directive for development hot reload
   if (isDevelopment) {
     directives.push(
       `script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev`
@@ -82,6 +79,9 @@ function generateCSP(nonce: string): string {
   return directives.join("; ");
 }
 
+// Pre-compute once at module load — only the nonce changes per request
+const CSP_TEMPLATE = buildCSPTemplate();
+
 /**
  * Add comprehensive security and performance headers to response
  */
@@ -90,11 +90,12 @@ function enhanceResponse(
   req: NextRequest,
   userId: string | null
 ): NextResponse {
-  // Generate nonce for CSP
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  // Single UUID for both nonce and request tracking (one crypto call instead of two)
+  const requestId = crypto.randomUUID();
+  const nonce = Buffer.from(requestId).toString("base64");
 
-  // Content Security Policy
-  response.headers.set("Content-Security-Policy", generateCSP(nonce));
+  // Content Security Policy — inject nonce into pre-computed template
+  response.headers.set("Content-Security-Policy", CSP_TEMPLATE.replaceAll("__NONCE__", nonce));
   response.headers.set("X-CSP-Nonce", nonce);
 
   // Security headers
@@ -118,12 +119,9 @@ function enhanceResponse(
     response.headers.set("X-RateLimit-Identifier", identifier);
   }
 
-  // Request tracking
-  const requestId = crypto.randomUUID();
+  // Request tracking (reuse requestId from above)
   response.headers.set("X-Request-ID", requestId);
   response.headers.set("X-Request-Time", new Date().toISOString());
-
-  // Add request ID to response for logging
   response.headers.set("X-Trace-ID", requestId);
 
   return response;

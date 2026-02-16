@@ -60,13 +60,15 @@ export async function searchWikiImages(
     );
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      console.warn(`[WikiSearch] ${site} returned HTTP ${response.status} — skipping`);
+      return [];
     }
 
     const data = await response.json();
 
     if (data.error) {
-      throw new Error(`Wiki API Error: ${data.error.info || data.error.code}`);
+      console.warn(`[WikiSearch] ${site} API error: ${data.error.info || data.error.code}`);
+      return [];
     }
 
     const searchResults = data.query?.search || [];

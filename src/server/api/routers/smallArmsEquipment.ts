@@ -17,6 +17,7 @@ import {
   protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
+import { memoryConfig } from "~/lib/dev-memory-config";
 
 export const smallArmsEquipmentRouter = createTRPCRouter({
   // ===========================
@@ -25,6 +26,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
 
   /**
    * Get all equipment items with optional filtering
+   * Memory optimization: Added pagination with default limits
    */
   getAllEquipment: publicProcedure
     .input(
@@ -36,6 +38,9 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         isActive: z.boolean().optional(),
         includeManufacturer: z.boolean().default(true),
         includeEra: z.boolean().default(true),
+        // Pagination for memory optimization
+        limit: z.number().min(1).max(500).default(memoryConfig.query.defaultLimit),
+        offset: z.number().min(0).default(0),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -47,16 +52,29 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         ...(input.isActive !== undefined && { isActive: input.isActive }),
       };
 
-      const equipment = await ctx.db.smallArmsEquipment.findMany({
-        where,
-        include: {
-          manufacturer: input.includeManufacturer,
-          era: input.includeEra,
-        },
-        orderBy: [{ equipmentType: "asc" }, { category: "asc" }, { name: "asc" }],
-      });
+      const [equipment, totalCount] = await Promise.all([
+        ctx.db.smallArmsEquipment.findMany({
+          where,
+          include: {
+            manufacturer: input.includeManufacturer,
+            era: input.includeEra,
+          },
+          orderBy: [{ equipmentType: "asc" }, { category: "asc" }, { name: "asc" }],
+          take: input.limit,
+          skip: input.offset,
+        }),
+        ctx.db.smallArmsEquipment.count({ where }),
+      ]);
 
-      return equipment;
+      return {
+        equipment,
+        pagination: {
+          total: totalCount,
+          limit: input.limit,
+          offset: input.offset,
+          hasMore: input.offset + equipment.length < totalCount,
+        },
+      };
     }),
 
   /**

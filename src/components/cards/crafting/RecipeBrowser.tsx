@@ -7,7 +7,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { CometCard } from "~/components/ui/comet-card";

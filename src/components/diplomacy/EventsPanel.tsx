@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { HelpCircle } from "lucide-react";
+import { FileText, HelpCircle } from "lucide-react";
 import { DiplomaticEventsHub } from "~/app/mycountry/diplomacy/_components/DiplomaticEventsHub";
 import { api } from "~/trpc/react";
 
@@ -25,16 +25,16 @@ export function EventsPanel({ countryId }: EventsPanelProps) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with Help */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Diplomatic Events</h2>
-          <p className="text-muted-foreground text-sm">Respond to diplomatic scenarios and crises</p>
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-cyan-600" />
+          <h3 className="text-sm font-semibold">Diplomatic Events</h3>
         </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="icon">
+            <Button variant="ghost" size="icon" className="h-7 w-7">
               <HelpCircle className="h-4 w-4" />
             </Button>
           </DialogTrigger>

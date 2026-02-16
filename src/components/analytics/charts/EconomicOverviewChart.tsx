@@ -33,7 +33,7 @@ interface EconomicOverviewChartProps {
 export const EconomicOverviewChart = React.memo<EconomicOverviewChartProps>(
   ({ data, formatCurrency, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-surface glass-refraction" id="gdp-trend-chart">
+      <Card className="glass-hierarchy-child" id="gdp-trend-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

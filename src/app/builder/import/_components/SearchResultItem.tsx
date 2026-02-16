@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Globe, ExternalLink, Users, DollarSign, MapPin, Building } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";

@@ -1,12 +1,12 @@
 # Data Architecture
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
-IxStats stores structured gameplay data using Prisma 6.12. The schema models countries, economic indicators, diplomatic relationships, social content, achievements, notifications, and operational logs.
+IxStats stores structured gameplay data using Prisma 6.19. The schema models countries, economic indicators, diplomatic relationships, social content, achievements, notifications, cards/vault, elections, and operational logs.
 
 ## Schema Overview
 - Prisma schema lives at `prisma/schema.prisma`
-- 131 models span government, economic, diplomatic, social, notification, and audit domains
+- 201 models span government, economic, diplomatic, social, notification, cards/vault, elections, crafting/trading, and audit domains
 - Enum duplication (e.g., `Priority`, `Category`) retains legacy casing for compatibility across services
 
 ## Database Targets
@@ -31,6 +31,10 @@ IxStats stores structured gameplay data using Prisma 6.12. The schema models cou
 - **Social** – `ThinkPage`, `ThinkPost`, `ThinkComment`, `Activity`
 - **Achievements & Notifications** – `Achievement`, `UserAchievement`, `Notification`, `NotificationRule`
 - **Security & Audit** – `User`, `Role`, `Permission`, `UserLogEntry`
+- **Cards & Vault** – `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardBackgroundImage`, `LoreCard`
+- **Elections & Politics** – `PoliticalParty`, `Legislature`, `Election`, `ElectionResult`
+- **Crafting & Trading** – `CraftingRecipe`, `TradeOffer`, `AuctionListing`, `TradeReview`
+- **Autosave** – `AutosaveHistory`
 
 ## Access Patterns
 - tRPC routers use the generated Prisma client through `~/server/db`

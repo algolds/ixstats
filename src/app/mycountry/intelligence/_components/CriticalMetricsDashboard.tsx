@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { MetricCard } from "~/components/shared";
 import { AlertTriangle, TrendingUp, Target, Activity } from "lucide-react";
 

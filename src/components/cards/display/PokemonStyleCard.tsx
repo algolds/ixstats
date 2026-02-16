@@ -7,7 +7,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { motion, useMotionValue } from "framer-motion";
+import { motion, useMotionValue } from "motion/react";
 import Image from "next/image";
 import { cn } from "~/lib/utils";
 import { RarityBadge } from "./RarityBadge";

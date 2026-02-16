@@ -4,7 +4,7 @@ import Link from "next/link";
 import { type LucideIcon } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import React, { useState } from "react";
 
 interface QuickAction {

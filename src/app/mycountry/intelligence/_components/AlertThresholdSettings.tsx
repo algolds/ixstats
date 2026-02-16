@@ -186,17 +186,12 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
   const selectedMetric = availableMetrics.find((m) => m.value === formData.metricName);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="flex items-center gap-2 text-2xl font-bold">
-            <Settings className="h-6 w-6 text-purple-600" />
-            Alert Threshold Settings
-          </h3>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Configure custom alert thresholds for automatic monitoring
-          </p>
+        <div className="flex items-center gap-2">
+          <Settings className="h-4 w-4 text-purple-600" />
+          <h3 className="text-sm font-semibold">Alert Threshold Settings</h3>
         </div>
         {!isCreating && (
           <Button onClick={() => setIsCreating(true)} className="gap-2">
@@ -223,9 +218,9 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
             <CardTitle>{formData.id ? "Edit Threshold" : "Create New Threshold"}</CardTitle>
             <CardDescription>Define threshold ranges and notification preferences</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {/* Alert Type & Metric Selection */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Alert Type</Label>
                 <Select
@@ -273,11 +268,11 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
             </div>
 
             {/* Threshold Ranges */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <h4 className="text-sm font-semibold">Threshold Ranges</h4>
 
               {/* Critical Thresholds */}
-              <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+              <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/20">
                 <div className="mb-2 flex items-center justify-between">
                   <Label className="font-semibold text-red-700 dark:text-red-400">
                     Critical Level
@@ -317,7 +312,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
               </div>
 
               {/* High Thresholds */}
-              <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/20">
+              <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950/20">
                 <div className="mb-2 flex items-center justify-between">
                   <Label className="font-semibold text-orange-700 dark:text-orange-400">
                     High Level
@@ -357,7 +352,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
               </div>
 
               {/* Medium Thresholds */}
-              <div className="space-y-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-950/20">
+              <div className="space-y-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-950/20">
                 <div className="mb-2 flex items-center justify-between">
                   <Label className="font-semibold text-yellow-700 dark:text-yellow-400">
                     Medium Level
@@ -398,7 +393,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
             </div>
 
             {/* Notification Preferences */}
-            <div className="space-y-3 rounded-lg border p-4">
+            <div className="space-y-3 rounded-lg border p-3">
               <h4 className="flex items-center gap-2 text-sm font-semibold">
                 <Bell className="h-4 w-4" />
                 Notification Preferences
@@ -483,9 +478,9 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-muted-foreground py-8 text-center">Loading thresholds...</div>
+            <div className="text-muted-foreground py-6 text-center">Loading thresholds...</div>
           ) : !thresholdsData?.thresholds.length ? (
-            <div className="text-muted-foreground py-8 text-center">
+            <div className="text-muted-foreground py-6 text-center">
               No thresholds configured. Create one to get started.
             </div>
           ) : (

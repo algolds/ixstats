@@ -29,10 +29,12 @@ export class UserManagementService {
 
     try {
       // First, try to find existing user (preserves existing roles/data)
+      // Include country to avoid redundant re-fetch in countryOwnerMiddleware
       const existingUser = await this.db.user.findUnique({
         where: { clerkUserId },
         include: {
           role: true,
+          country: true,
         },
       });
 

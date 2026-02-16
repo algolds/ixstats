@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useCallback, useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Globe, ChevronUp, ChevronDown } from "lucide-react";
 import { ScrollVelocityContainer } from "~/components/magicui/scroll-based-velocity";
 import { CountriesFocusGridModularBuilder } from "../components/CountriesFocusGridModularBuilder";

@@ -18,7 +18,7 @@ interface VolatilityMetricsCardProps {
 
 export const VolatilityMetricsCard = React.memo<VolatilityMetricsCardProps>(({ metrics }) => {
   return (
-    <Card className="glass-surface glass-refraction">
+    <Card className="glass-hierarchy-child">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-orange-600" />

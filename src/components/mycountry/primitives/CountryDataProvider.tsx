@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+import { useDevCountryView } from "~/context/DevCountryViewContext";
 
 interface CountryDataContextValue {
   userProfile: any;
@@ -19,6 +20,8 @@ interface CountryDataContextValue {
   currentIxTime: number;
   isLoading: boolean;
   error: string | null;
+  /** True when viewing another country in dev mode */
+  isViewingOtherCountry: boolean;
 }
 
 const CountryDataContext = createContext<CountryDataContextValue | undefined>(undefined);
@@ -103,19 +106,25 @@ function generateEconomicDataForCountry(country: any) {
 }
 
 export function CountryDataProvider({ children, userId }: CountryDataProviderProps) {
+  // Dev mode: allow viewing any country
+  const { viewCountryId, isViewingOtherCountry } = useDevCountryView();
+
   const {
     data: userProfile,
     isLoading: profileLoading,
     error: profileError,
   } = api.users.getProfile.useQuery(undefined, { enabled: !!userId });
 
+  // Use dev view country if set, otherwise use user's actual country
+  const effectiveCountryId = viewCountryId ?? userProfile?.countryId ?? "";
+
   const {
     data: country,
     isLoading: countryLoading,
     error: countryError,
   } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: userProfile?.countryId || "" },
-    { enabled: !!userProfile?.countryId }
+    { id: effectiveCountryId },
+    { enabled: !!effectiveCountryId }
   );
 
   // Get public system information (IxTime)
@@ -180,8 +189,8 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     );
   }
 
-  // No country assigned to user
-  if (!isLoading && userProfile && !userProfile.countryId) {
+  // No country assigned to user (skip this check if viewing another country in dev mode)
+  if (!isLoading && userProfile && !userProfile.countryId && !viewCountryId) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="mx-auto max-w-2xl">
@@ -211,14 +220,16 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     );
   }
 
-  // Country not found - this could be a permissions issue
-  if (!isLoading && userProfile?.countryId && !country) {
+  // Country not found - this could be a permissions issue or invalid dev view ID
+  if (!isLoading && effectiveCountryId && !country) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert className="mx-auto max-w-2xl">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Country not found or access denied. Please contact an administrator.
+            {viewCountryId
+              ? "Country not found. The country ID in your dev view may be invalid."
+              : "Country not found or access denied. Please contact an administrator."}
           </AlertDescription>
         </Alert>
       </div>
@@ -234,6 +245,7 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     currentIxTime,
     isLoading: false,
     error: profileError?.message || countryError?.message || null,
+    isViewingOtherCountry,
   };
 
   return <CountryDataContext.Provider value={value}>{children}</CountryDataContext.Provider>;

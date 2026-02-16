@@ -25,7 +25,7 @@ interface SectorGrowthChartProps {
 export const SectorGrowthChart = React.memo<SectorGrowthChartProps>(
   ({ data, formatPercent, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="glass-surface glass-refraction" id="sector-growth-chart">
+      <Card className="glass-hierarchy-child" id="sector-growth-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

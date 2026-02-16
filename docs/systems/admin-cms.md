@@ -1,8 +1,8 @@
 # Admin Content Management System
 
-**Last updated:** November 2025
+**Last updated:** February 2026
 
-Comprehensive guide to IxStats' 17 admin interfaces for managing dynamic content, reference data, and system configuration.
+Comprehensive guide to IxStats' 18 admin interfaces for managing dynamic content, reference data, and system configuration.
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -595,25 +595,38 @@ interface IntelligenceTemplate {
 - Price trends
 - Availability analysis
 
-### 15. Maps Monitoring (`/admin/maps-monitoring`)
+### 15. Lore Cards Batch Generator (`/admin/lore-cards/batch-generator`)
 
-**Purpose:** Monitor map system performance
+**Purpose:** Batch generate wiki lore cards from IxWiki content
 
-(Covered in detail in [map-system.md](./map-system.md))
+**Features:**
+- Import wiki articles as lore cards
+- Batch generation with preview
+- Category and rarity assignment
 
-**Metrics:**
-- Tile requests per minute
-- Cache hit rates by layer
-- Martin server status
-- Redis memory usage
-- Error rates
-- Average response times
+### 16. Autosave Monitoring (`/admin/autosave-monitor`)
+
+**Purpose:** Monitor autosave system health and failure analysis
+
+**Features:**
+- Autosave success/failure rates
+- Queue status monitoring
+- Error pattern analysis
+
+### 17. NS Sync (`/admin/ns-sync`)
+
+**Purpose:** NationStates data synchronization management
+
+**Features:**
+- Sync status monitoring
+- Manual sync triggers
+- Rate limit compliance tracking
 
 ---
 
 ## System Administration
 
-### 16. Membership Management (`/admin/membership`)
+### 18. Membership Management (`/admin/membership`)
 
 **Purpose:** Manage user roles, permissions, and country assignments
 
@@ -666,11 +679,7 @@ USER
   └─ No admin access
 ```
 
-### 17. Map Editor (`/admin/map-editor`)
-
-**Purpose:** GIS editing interface for map data
-
-(Covered in detail in [map-system.md](./map-system.md))
+### ~~Map Editor~~ (DEPRECATED - Maps removed November 2025)
 
 ---
 

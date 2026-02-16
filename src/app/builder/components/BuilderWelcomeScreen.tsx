@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Carousel, Card } from "~/components/ui/apple-cards-carousel";
 import { Button } from "~/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -13,7 +13,7 @@ const welcomeCards = [
     category: "Welcome to the Builder",
     content: (
       <div>
-        <p className="text-base text-neutral-600 dark:text-neutral-400">
+        <p className="text-base text-muted-foreground">
           Create a new country from scratch using powerful economic modeling tools. Define your
           nation's identity, from its economic foundations to its national symbols.
         </p>
@@ -26,7 +26,7 @@ const welcomeCards = [
     category: "Advanced Mode",
     content: (
       <div>
-        <p className="text-base text-neutral-600 dark:text-neutral-400">
+        <p className="text-base text-muted-foreground">
           Have a spreadsheet with your country's data? Import it directly to get started quickly and
           see your nation come to life.
         </p>
@@ -39,7 +39,7 @@ const welcomeCards = [
     category: "For New Users",
     content: (
       <div>
-        <p className="text-base text-neutral-600 dark:text-neutral-400">
+        <p className="text-base text-muted-foreground">
           Not sure where to start? Our guided process will walk you through each step of creating a
           vibrant and realistic country.
         </p>
@@ -63,10 +63,10 @@ export const BuilderWelcomeScreen = ({ onStartBuilding }: BuilderWelcomeScreenPr
         transition={{ duration: 0.8, ease: "easeInOut" }}
         className="px-4 pt-10 text-center"
       >
-        <h1 className="bg-gradient-to-b from-neutral-800 to-neutral-500 bg-clip-text text-4xl font-bold text-transparent md:text-6xl dark:from-white dark:to-neutral-400">
+        <h1 className="bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-4xl font-bold text-transparent md:text-6xl">
           MyCountry Builder
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-neutral-600 dark:text-neutral-300">
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
           The ultimate sandbox for crafting nations. Forge economies, define cultures, and shape the
           world.
         </p>

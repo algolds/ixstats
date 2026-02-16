@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { HealthRing } from "./health-ring";
 import { Badge } from "./badge";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";

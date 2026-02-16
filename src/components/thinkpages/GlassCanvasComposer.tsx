@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import {
   Send,
@@ -25,8 +26,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/component
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
-import { MediaSearchModal } from "~/components/MediaSearchModal";
 import { withBasePath } from "~/lib/base-path";
+
+// Dynamic import for heavy media search modal
+const MediaSearchModal = dynamic(
+  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  { ssr: false }
+);
 
 interface GlassCanvasComposerProps {
   account: any;
@@ -72,6 +78,26 @@ export function GlassCanvasComposer({
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const composerRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
+  const hasContent = content.trim().length > 0 || selectedImages.length > 0 || selectedVisualizations.length > 0;
+
+  // Auto-collapse on scroll down (only if no content is being composed)
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const scrollingDown = currentY > lastScrollY.current && currentY > 100;
+      lastScrollY.current = currentY;
+
+      if (scrollingDown && isExpanded && !hasContent) {
+        setIsExpanded(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isExpanded, hasContent]);
 
   // Get latest economic data for visualizations - live wired
   const { data: economicData, isLoading: isLoadingEconomic } =
@@ -353,384 +379,406 @@ export function GlassCanvasComposer({
   const remainingChars = characterLimit - content.length;
 
   return (
-    <Card className="glass-hierarchy-child border-blue-500/30 bg-blue-500/5">
-      <CardContent className="p-4">
-        <div className="space-y-4">
-          {/* Account Info with Manager */}
-          <Collapsible open={showAccountManager} onOpenChange={setShowAccountManager}>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
+    <Card ref={composerRef} className="glass-hierarchy-child border-blue-500/30 bg-blue-500/5">
+      {/* ── Collapsed bar ── */}
+      <AnimatePresence mode="wait">
+        {!isExpanded ? (
+          <motion.div
+            key="collapsed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/5"
+            >
+              <Avatar className="h-7 w-7">
                 <AvatarImage src={account.profileImageUrl} alt={account.displayName} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 font-semibold text-white">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
                   {account.displayName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1">
-                <div className="text-sm font-medium">{account.displayName}</div>
-                <div className="text-muted-foreground text-xs">@{account.username}</div>
-              </div>
-              <Badge variant="outline" className="mr-2">
-                Glass Canvas
-              </Badge>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  {showAccountManager ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-
-            <CollapsibleContent className="mt-3">
-              <div className="border-t border-white/10 pt-3">
-                <div className="mb-3 flex items-center justify-between">
-                  <h4 className="text-sm font-medium">Switch Account</h4>
-                  {isOwner && accounts.length < 25 && (
+              <span className="text-muted-foreground flex-1 text-xs">{placeholder}</span>
+              <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="expanded"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <CardContent className="p-3">
+              <div className="space-y-3">
+                {/* Account Info with Manager */}
+                <Collapsible open={showAccountManager} onOpenChange={setShowAccountManager}>
+                  <div className="flex items-center gap-2.5">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={account.profileImageUrl} alt={account.displayName} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
+                        {account.displayName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium leading-tight">{account.displayName}</div>
+                      <div className="text-muted-foreground text-[0.65rem]">@{account.username}</div>
+                    </div>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                        {showAccountManager ? (
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={onCreateAccount}
-                      className="h-7 text-xs"
+                      className="text-muted-foreground h-7 w-7 p-0"
+                      onClick={() => setIsExpanded(false)}
                     >
-                      <Plus className="mr-1 h-3 w-3" />
-                      New Account
+                      <ChevronUp className="h-3.5 w-3.5" />
                     </Button>
-                  )}
-                </div>
+                  </div>
 
-                <div className="grid max-h-40 gap-2 overflow-y-auto">
-                  {accounts.map((acc) => (
-                    <div
-                      key={acc.id}
-                      onClick={() => {
-                        onAccountSelect?.(acc);
-                        setShowAccountManager(false);
-                      }}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors",
-                        acc.id === account.id
-                          ? "border border-blue-500/30 bg-blue-500/20"
-                          : "border border-transparent hover:bg-white/10"
-                      )}
-                    >
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={acc.profileImageUrl} />
-                        <AvatarFallback className="text-xs">
-                          {acc.displayName.charAt(0)}
+                  <CollapsibleContent className="mt-2.5">
+                    <div className="border-t border-white/10 pt-2.5">
+                      <div className="mb-2 flex items-center justify-between">
+                        <h4 className="text-xs font-medium">Switch Account</h4>
+                        {isOwner && accounts.length < 25 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onCreateAccount}
+                            className="h-6 text-[0.65rem]"
+                          >
+                            <Plus className="mr-1 h-2.5 w-2.5" />
+                            New
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="grid max-h-32 gap-1.5 overflow-y-auto">
+                        {accounts.map((acc) => (
+                          <div
+                            key={acc.id}
+                            onClick={() => {
+                              onAccountSelect?.(acc);
+                              setShowAccountManager(false);
+                            }}
+                            className={cn(
+                              "flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors",
+                              acc.id === account.id
+                                ? "border border-blue-500/30 bg-blue-500/20"
+                                : "border border-transparent hover:bg-white/10"
+                            )}
+                          >
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={acc.profileImageUrl} />
+                              <AvatarFallback className="text-[0.6rem]">
+                                {acc.displayName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-[0.65rem] font-medium">{acc.displayName}</div>
+                            </div>
+                            <Badge variant="outline" className="h-3.5 px-1 py-0 text-[9px]">
+                              {acc.accountType}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Embedded Repost Display */}
+                {repostData && (
+                  <Card className="border-green-500/30 bg-green-500/5 p-2.5">
+                    <div className="mb-1.5 flex items-center gap-2 text-xs text-green-500">
+                      <Repeat2 className="h-3 w-3" />
+                      <span>Reposting</span>
+                    </div>
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage
+                          src={repostData.originalPost.account?.profileImageUrl}
+                          alt={repostData.originalPost.account?.displayName}
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-[0.6rem] font-semibold text-white">
+                          {repostData.originalPost.account?.displayName?.charAt(0) || "?"}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs font-medium">{acc.displayName}</div>
-                        <div className="text-muted-foreground truncate text-xs">
-                          @{acc.username}
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="h-4 px-1 py-0 text-[10px]">
-                        {acc.accountType}
-                      </Badge>
+                      <span className="text-xs font-semibold">
+                        {repostData.originalPost.account?.displayName || "Unknown"}
+                      </span>
+                      <span className="text-muted-foreground text-[0.65rem]">
+                        @{repostData.originalPost.account?.username || "unknown"}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+                    <div className="text-muted-foreground line-clamp-2 text-xs">
+                      {repostData.originalPost.content}
+                    </div>
+                  </Card>
+                )}
 
-          {/* Embedded Repost Display */}
-          {repostData && (
-            <Card className="border-green-500/30 bg-green-500/5 p-3">
-              <div className="mb-2 flex items-center gap-2 text-xs text-green-500">
-                <Repeat2 className="h-3 w-3" />
-                <span>Reposting</span>
-              </div>
-              <div className="mb-2 flex items-center gap-2">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage
-                    src={repostData.originalPost.account?.profileImageUrl}
-                    alt={repostData.originalPost.account?.displayName}
+                {/* Text Composer */}
+                <div className="space-y-1.5">
+                  <Textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder={placeholder}
+                    className="min-h-16 resize-none border-0 bg-white/5 text-sm backdrop-blur-sm transition-all focus:bg-white/10"
+                    maxLength={characterLimit}
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-xs font-semibold text-white">
-                    {repostData.originalPost.account?.displayName?.charAt(0) || "?"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm font-semibold">
-                      {repostData.originalPost.account?.displayName || "Unknown"}
-                    </span>
-                    <span className="text-muted-foreground text-xs">
-                      @{repostData.originalPost.account?.username || "unknown"}
+                  <div className="flex items-center justify-between text-[0.65rem]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">Live data</span>
+                      {(hasEconomicData || hasHistoricalData || hasDiplomaticData || hasTradeData) && (
+                        <Badge
+                          variant="outline"
+                          className="h-3.5 border-green-500/30 bg-green-500/10 px-1 py-0 text-[9px] text-green-400"
+                        >
+                          Live
+                        </Badge>
+                      )}
+                    </div>
+                    <span
+                      className={cn(
+                        "font-medium",
+                        remainingChars < 20
+                          ? "text-red-400"
+                          : remainingChars < 50
+                            ? "text-orange-400"
+                            : "text-muted-foreground"
+                      )}
+                    >
+                      {remainingChars}
                     </span>
                   </div>
                 </div>
-              </div>
-              <div className="text-muted-foreground line-clamp-3 text-sm">
-                {repostData.originalPost.content}
-              </div>
-            </Card>
-          )}
 
-          {/* Text Composer */}
-          <div className="space-y-2">
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={placeholder}
-              className="min-h-24 resize-none border-0 bg-white/5 backdrop-blur-sm transition-all focus:bg-white/10"
-              maxLength={characterLimit}
-            />
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Enhanced with live data</span>
-                {(hasEconomicData || hasHistoricalData || hasDiplomaticData || hasTradeData) && (
-                  <Badge
-                    variant="outline"
-                    className="h-4 border-green-500/30 bg-green-500/10 px-1 py-0 text-[10px] text-green-400"
-                  >
-                    Live
-                  </Badge>
-                )}
-              </div>
-              <span
-                className={cn(
-                  "font-medium",
-                  remainingChars < 20
-                    ? "text-red-400"
-                    : remainingChars < 50
-                      ? "text-orange-400"
-                      : "text-muted-foreground"
-                )}
-              >
-                {remainingChars}
-              </span>
-            </div>
-          </div>
-
-          {/* Selected Images */}
-          <AnimatePresence>
-            {selectedImages.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="grid grid-cols-2 gap-2"
-              >
-                {selectedImages.map((imageUrl, index) => (
-                  <motion.div
-                    key={imageUrl}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-white/5"
-                  >
-                    <button
-                      onClick={() => removeImage(imageUrl)}
-                      className="absolute top-2 right-2 z-10 rounded-full bg-black/60 p-1 transition-colors hover:bg-red-500/80"
+                {/* Selected Images */}
+                <AnimatePresence>
+                  {selectedImages.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="grid grid-cols-2 gap-2"
                     >
-                      <X className="h-4 w-4 text-white" />
-                    </button>
-                    <img
-                      src={imageUrl}
-                      alt={`Selected image ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Selected Visualizations */}
-          <AnimatePresence>
-            {selectedVisualizations.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-2"
-              >
-                {selectedVisualizations.map((viz) => (
-                  <motion.div
-                    key={viz.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="relative rounded-lg border border-white/10 bg-white/5 p-3"
-                  >
-                    <button
-                      onClick={() => removeVisualization(viz.id)}
-                      className="absolute top-2 right-2 rounded-full p-1 transition-colors hover:bg-red-500/20"
-                    >
-                      <X className="h-4 w-4 text-red-400" />
-                    </button>
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium">{viz.title}</div>
-                      {getVisualizationPreview(viz)}
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Visualization Panel */}
-          <AnimatePresence>
-            {showVisualizationPanel && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="rounded-lg border border-white/10 bg-white/5 p-3"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-blue-400" />
-                    <span className="text-sm font-medium">Add Live Data Visualization</span>
-                  </div>
-                  {(isLoadingEconomic ||
-                    isLoadingHistory ||
-                    isLoadingDiplomatic ||
-                    isLoadingTrade) && (
-                    <div className="flex items-center gap-1 text-xs text-blue-400">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span>Loading data...</span>
-                    </div>
+                      {selectedImages.map((imageUrl, index) => (
+                        <motion.div
+                          key={imageUrl}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-white/5"
+                        >
+                          <button
+                            onClick={() => removeImage(imageUrl)}
+                            className="absolute top-1.5 right-1.5 z-10 rounded-full bg-black/60 p-0.5 transition-colors hover:bg-red-500/80"
+                          >
+                            <X className="h-3.5 w-3.5 text-white" />
+                          </button>
+                          <img
+                            src={imageUrl}
+                            alt={`Selected image ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        </motion.div>
+                      ))}
+                    </motion.div>
                   )}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
+                </AnimatePresence>
+
+                {/* Selected Visualizations */}
+                <AnimatePresence>
+                  {selectedVisualizations.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-1.5"
+                    >
+                      {selectedVisualizations.map((viz) => (
+                        <motion.div
+                          key={viz.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="relative rounded-lg border border-white/10 bg-white/5 p-2.5"
+                        >
+                          <button
+                            onClick={() => removeVisualization(viz.id)}
+                            className="absolute top-1.5 right-1.5 rounded-full p-0.5 transition-colors hover:bg-red-500/20"
+                          >
+                            <X className="h-3.5 w-3.5 text-red-400" />
+                          </button>
+                          <div className="space-y-1.5">
+                            <div className="text-xs font-medium">{viz.title}</div>
+                            {getVisualizationPreview(viz)}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Visualization Panel */}
+                <AnimatePresence>
+                  {showVisualizationPanel && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="rounded-lg border border-white/10 bg-white/5 p-2.5"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+                          <span className="text-xs font-medium">Add Live Data</span>
+                        </div>
+                        {(isLoadingEconomic ||
+                          isLoadingHistory ||
+                          isLoadingDiplomatic ||
+                          isLoadingTrade) && (
+                          <div className="flex items-center gap-1 text-[0.65rem] text-blue-400">
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                            <span>Loading...</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVisualization("economic_chart")}
+                          disabled={isGeneratingVisualization || isLoadingHistory || !hasHistoricalData}
+                          className="h-auto flex-col p-2"
+                        >
+                          {isLoadingHistory ? (
+                            <Loader2 className="mb-0.5 h-5 w-5 animate-spin" />
+                          ) : (
+                            <TrendingUp className="mb-0.5 h-5 w-5" />
+                          )}
+                          <span className="text-[0.65rem]">Economic</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVisualization("diplomatic_map")}
+                          disabled={
+                            isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData
+                          }
+                          className="h-auto flex-col p-2"
+                        >
+                          {isLoadingDiplomatic ? (
+                            <Loader2 className="mb-0.5 h-5 w-5 animate-spin" />
+                          ) : (
+                            <Globe className="mb-0.5 h-5 w-5" />
+                          )}
+                          <span className="text-[0.65rem]">Diplomatic</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVisualization("trade_flow")}
+                          disabled={isGeneratingVisualization || isLoadingTrade || !hasTradeData}
+                          className="h-auto flex-col p-2"
+                        >
+                          {isLoadingTrade ? (
+                            <Loader2 className="mb-0.5 h-5 w-5 animate-spin" />
+                          ) : (
+                            <BarChart3 className="mb-0.5 h-5 w-5" />
+                          )}
+                          <span className="text-[0.65rem]">Trade</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addVisualization("gdp_growth")}
+                          disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
+                          className="h-auto flex-col p-2"
+                        >
+                          {isLoadingEconomic ? (
+                            <Loader2 className="mb-0.5 h-5 w-5 animate-spin" />
+                          ) : (
+                            <BarChart3 className="mb-0.5 h-5 w-5" />
+                          )}
+                          <span className="text-[0.65rem]">GDP</span>
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Action Bar */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowVisualizationPanel(!showVisualizationPanel)}
+                      className="h-7 px-2 text-xs text-blue-400 hover:text-blue-300"
+                    >
+                      {isGeneratingVisualization ? (
+                        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Plus className="mr-1 h-3.5 w-3.5" />
+                      )}
+                      Data
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowMediaModal(true)}
+                      disabled={isUploadingImage || selectedImages.length >= 4}
+                      className="h-7 px-2 text-xs text-green-400 hover:text-green-300"
+                    >
+                      {isUploadingImage ? (
+                        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Image className="mr-1 h-3.5 w-3.5" />
+                      )}
+                      Media
+                      {selectedImages.length > 0 && (
+                        <Badge variant="outline" className="ml-1 h-3.5 px-1 py-0 text-[9px]">
+                          {selectedImages.length}/4
+                        </Badge>
+                      )}
+                    </Button>
+                  </div>
+
                   <Button
-                    variant="outline"
+                    onClick={handleSubmit}
                     size="sm"
-                    onClick={() => addVisualization("economic_chart")}
-                    disabled={isGeneratingVisualization || isLoadingHistory || !hasHistoricalData}
-                    className="h-auto flex-col p-3"
-                  >
-                    {isLoadingHistory ? (
-                      <Loader2 className="mb-1 h-6 w-6 animate-spin" />
-                    ) : (
-                      <TrendingUp className="mb-1 h-6 w-6" />
-                    )}
-                    <span className="text-xs">Economic Chart</span>
-                    {!hasHistoricalData && !isLoadingHistory && (
-                      <span className="text-[10px] text-red-400">No data</span>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addVisualization("diplomatic_map")}
                     disabled={
-                      isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData
+                      createPostMutation.isPending ||
+                      (!content.trim() &&
+                        selectedVisualizations.length === 0 &&
+                        selectedImages.length === 0)
                     }
-                    className="h-auto flex-col p-3"
+                    className="h-7 bg-blue-600 px-3 text-xs text-white hover:bg-blue-700"
                   >
-                    {isLoadingDiplomatic ? (
-                      <Loader2 className="mb-1 h-6 w-6 animate-spin" />
+                    {createPostMutation.isPending ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Globe className="mb-1 h-6 w-6" />
+                      <Send className="mr-1.5 h-3.5 w-3.5" />
                     )}
-                    <span className="text-xs">Diplomatic Map</span>
-                    {!hasDiplomaticData && !isLoadingDiplomatic && (
-                      <span className="text-[10px] text-red-400">No data</span>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addVisualization("trade_flow")}
-                    disabled={isGeneratingVisualization || isLoadingTrade || !hasTradeData}
-                    className="h-auto flex-col p-3"
-                  >
-                    {isLoadingTrade ? (
-                      <Loader2 className="mb-1 h-6 w-6 animate-spin" />
-                    ) : (
-                      <BarChart3 className="mb-1 h-6 w-6" />
-                    )}
-                    <span className="text-xs">Trade Flows</span>
-                    {!hasTradeData && !isLoadingTrade && (
-                      <span className="text-[10px] text-red-400">No data</span>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addVisualization("gdp_growth")}
-                    disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
-                    className="h-auto flex-col p-3"
-                  >
-                    {isLoadingEconomic ? (
-                      <Loader2 className="mb-1 h-6 w-6 animate-spin" />
-                    ) : (
-                      <BarChart3 className="mb-1 h-6 w-6" />
-                    )}
-                    <span className="text-xs">GDP Dashboard</span>
-                    {!hasEconomicData && !isLoadingEconomic && (
-                      <span className="text-[10px] text-red-400">No data</span>
-                    )}
+                    Share
                   </Button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Action Bar */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowVisualizationPanel(!showVisualizationPanel)}
-                className="text-blue-400 hover:text-blue-300"
-              >
-                {isGeneratingVisualization ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-                Data Viz
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowMediaModal(true)}
-                disabled={isUploadingImage || selectedImages.length >= 4}
-                className="text-green-400 hover:text-green-300"
-              >
-                {isUploadingImage ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Image className="h-4 w-4" />
-                )}
-                Media
-                {selectedImages.length > 0 && (
-                  <Badge variant="outline" className="ml-1 h-4 px-1 py-0 text-[10px]">
-                    {selectedImages.length}/4
-                  </Badge>
-                )}
-              </Button>
-            </div>
-
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                createPostMutation.isPending ||
-                (!content.trim() &&
-                  selectedVisualizations.length === 0 &&
-                  selectedImages.length === 0)
-              }
-              className="bg-blue-600 text-white hover:bg-blue-700"
-            >
-              {createPostMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
-              Share
-            </Button>
-          </div>
-        </div>
-      </CardContent>
+              </div>
+            </CardContent>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Media Search Modal */}
       <MediaSearchModal

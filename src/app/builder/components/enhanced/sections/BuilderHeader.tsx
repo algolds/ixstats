@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ArrowLeft, Settings, AlertTriangle, Zap, Save, Loader2, History } from "lucide-react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { Button } from "~/components/ui/button";

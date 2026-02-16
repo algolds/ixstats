@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion } from "motion/react";
 import {
   Briefcase,
   Users,
@@ -27,6 +28,29 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 },
+  },
+};
+
+const cardHover = {
+  scale: 1.02,
+  transition: { type: "spring", stiffness: 400, damping: 10 },
+};
 import {
   PieChart,
   Pie,
@@ -305,139 +329,163 @@ export function LaborEmployment({
 
         {/* Overview Tab */}
         {view === "overview" && (
-          <div className="space-y-6">
+          <motion.div 
+            className="space-y-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
             {/* Key Metrics */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {basicMetrics.map((metric) => {
+              {basicMetrics.map((metric, index) => {
                 const Icon = metric.icon;
                 const progress = metric.reverse
                   ? Math.max(0, 100 - (metric.value / metric.target) * 100)
                   : Math.min(100, (metric.value / metric.target) * 100);
+                
+                const cardColors = [
+                  "from-red-50/80 to-rose-50/80 dark:from-red-900/20 dark:to-rose-900/20 border-red-200/50 dark:border-red-700/30",
+                  "from-emerald-50/80 to-green-50/80 dark:from-emerald-900/20 dark:to-green-900/20 border-emerald-200/50 dark:border-emerald-700/30",
+                  "from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200/50 dark:border-blue-700/30",
+                ];
+                const textColors = ["text-red-700 dark:text-red-400", "text-emerald-700 dark:text-emerald-400", "text-blue-700 dark:text-blue-400"];
 
                 return (
-                  <Card key={metric.field}>
-                    <CardContent className="p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Icon className="text-primary h-4 w-4" />
-                          <span className="text-sm font-medium">{metric.label}</span>
+                  <motion.div key={metric.field} variants={itemVariants} whileHover={cardHover}>
+                    <Card className={`bg-gradient-to-br ${cardColors[index % 3]} border shadow-sm`}>
+                      <CardContent className="p-4">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icon className={`h-5 w-5 ${textColors[index % 3]}`} />
+                            <span className="text-sm font-medium">{metric.label}</span>
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <HelpCircle className="text-muted-foreground h-3 w-3" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{metric.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="text-muted-foreground h-3 w-3" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{metric.description}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-2xl font-bold">
-                            {formatPercentage(metric.value)}
-                          </span>
-                          {editMode ? (
-                            <Input
-                              type="number"
-                              value={metric.value}
-                              onChange={(e) =>
-                                handleField(metric.field, parseFloat(e.target.value) || 0)
-                              }
-                              className="h-8 w-20 text-right"
-                              step="0.1"
-                              min="0"
-                              max="100"
-                            />
-                          ) : (
-                            <Badge
-                              variant={
-                                progress >= 80
-                                  ? "default"
-                                  : progress >= 60
-                                    ? "secondary"
-                                    : "destructive"
-                              }
-                            >
-                              {progress >= 80 ? "Good" : progress >= 60 ? "Fair" : "Poor"}
-                            </Badge>
-                          )}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-2xl font-bold ${textColors[index % 3]}`}>
+                              {formatPercentage(metric.value)}
+                            </span>
+                            {editMode ? (
+                              <Input
+                                type="number"
+                                value={metric.value}
+                                onChange={(e) =>
+                                  handleField(metric.field, parseFloat(e.target.value) || 0)
+                                }
+                                className="h-8 w-20 text-right"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                              />
+                            ) : (
+                              <Badge
+                                variant={
+                                  progress >= 80
+                                    ? "default"
+                                    : progress >= 60
+                                      ? "secondary"
+                                      : "destructive"
+                                }
+                              >
+                                {progress >= 80 ? "Good" : progress >= 60 ? "Fair" : "Poor"}
+                              </Badge>
+                            )}
+                          </div>
+                          <Progress value={progress} className="h-2" />
+                          <div className="text-muted-foreground text-xs">
+                            Target: {formatPercentage(metric.target)}
+                          </div>
                         </div>
-                        <Progress value={progress} className="h-2" />
-                        <div className="text-muted-foreground text-xs">
-                          Target: {formatPercentage(metric.target)}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 );
               })}
             </div>
 
             {/* Additional Key Metrics */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Clock className="text-primary mx-auto mb-2 h-6 w-6" />
-                  <div className="text-lg font-bold">{laborData.averageWorkweekHours}h</div>
-                  <div className="text-muted-foreground text-xs">Avg Work Week</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <TrendingUp className="mx-auto mb-2 h-6 w-6 text-green-600" />
-                  <div className="text-lg font-bold">{formatCurrency(laborData.minimumWage)}</div>
-                  <div className="text-muted-foreground text-xs">Minimum Wage</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <TrendingUp className="mx-auto mb-2 h-6 w-6 text-blue-600" />
-                  <div className="text-lg font-bold">
-                    {formatCurrency(laborData.averageAnnualIncome)}
-                  </div>
-                  <div className="text-muted-foreground text-xs">Avg Annual Income</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 text-center">
-                  <Users className="mx-auto mb-2 h-6 w-6 text-purple-600" />
-                  <div className="text-lg font-bold">
-                    {formatPopulation(laborData.totalWorkforce)}
-                  </div>
-                  <div className="text-muted-foreground text-xs">Total Workforce</div>
-                </CardContent>
-              </Card>
+              <motion.div variants={itemVariants} whileHover={cardHover}>
+                <Card className="bg-gradient-to-br from-amber-50/80 to-yellow-50/80 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200/50 dark:border-amber-700/30 shadow-sm h-full">
+                  <CardContent className="p-4 text-center">
+                    <Clock className="mx-auto mb-2 h-6 w-6 text-amber-600" />
+                    <div className="text-xl font-bold text-amber-700 dark:text-amber-400">{laborData.averageWorkweekHours}h</div>
+                    <div className="text-muted-foreground text-xs">Avg Work Week</div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div variants={itemVariants} whileHover={cardHover}>
+                <Card className="bg-gradient-to-br from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/50 dark:border-green-700/30 shadow-sm h-full">
+                  <CardContent className="p-4 text-center">
+                    <TrendingUp className="mx-auto mb-2 h-6 w-6 text-green-600" />
+                    <div className="text-xl font-bold text-green-700 dark:text-green-400">{formatCurrency(laborData.minimumWage)}</div>
+                    <div className="text-muted-foreground text-xs">Minimum Wage</div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div variants={itemVariants} whileHover={cardHover}>
+                <Card className="bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200/50 dark:border-blue-700/30 shadow-sm h-full">
+                  <CardContent className="p-4 text-center">
+                    <TrendingUp className="mx-auto mb-2 h-6 w-6 text-blue-600" />
+                    <div className="text-xl font-bold text-blue-700 dark:text-blue-400">
+                      {formatCurrency(laborData.averageAnnualIncome)}
+                    </div>
+                    <div className="text-muted-foreground text-xs">Avg Annual Income</div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div variants={itemVariants} whileHover={cardHover}>
+                <Card className="bg-gradient-to-br from-purple-50/80 to-violet-50/80 dark:from-purple-900/20 dark:to-violet-900/20 border border-purple-200/50 dark:border-purple-700/30 shadow-sm h-full">
+                  <CardContent className="p-4 text-center">
+                    <Users className="mx-auto mb-2 h-6 w-6 text-purple-600" />
+                    <div className="text-xl font-bold text-purple-700 dark:text-purple-400">
+                      {formatPopulation(laborData.totalWorkforce)}
+                    </div>
+                    <div className="text-muted-foreground text-xs">Total Workforce</div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
             {showComparison && referenceCountry && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Comparison with {referenceCountry.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Unemployment Rate:</span>
-                      <div className="space-x-2">
-                        <span className="font-medium">
-                          {laborData.unemploymentRate !== null &&
-                          laborData.unemploymentRate !== undefined
-                            ? formatPercentage(laborData.unemploymentRate)
-                            : "Missing data"}
-                        </span>
-                        {referenceCountry && (
-                          <>
-                            <span className="text-muted-foreground">vs</span>
-                            <span>{formatPercentage(referenceCountry.unemploymentRate)}</span>
-                          </>
-                        )}
+              <motion.div variants={itemVariants}>
+                <Card className="bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-900/20 dark:to-gray-900/20 border border-slate-200/50 dark:border-slate-700/30 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Comparison with {referenceCountry.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Unemployment Rate:</span>
+                        <div className="space-x-2">
+                          <span className="font-medium">
+                            {laborData.unemploymentRate !== null &&
+                            laborData.unemploymentRate !== undefined
+                              ? formatPercentage(laborData.unemploymentRate)
+                              : "Missing data"}
+                          </span>
+                          {referenceCountry && (
+                            <>
+                              <span className="text-muted-foreground">vs</span>
+                              <span>{formatPercentage(referenceCountry.unemploymentRate)}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* Detailed Tab */}

@@ -7,7 +7,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Loader2, AlertCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { CardDisplay } from "./CardDisplay";

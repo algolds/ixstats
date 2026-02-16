@@ -1,7 +1,7 @@
 "use client";
 
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { EnhancedCommandCenter } from "../_components/EnhancedCommandCenter";
+import { DashboardRouter } from "~/components/dashboard/DashboardRouter";
 import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 
 export default function DashboardPage() {
@@ -14,7 +14,7 @@ export default function DashboardPage() {
       title="Dashboard Error"
       description="An error occurred while loading the dashboard. Please try again."
     >
-      <EnhancedCommandCenter />
+      <DashboardRouter />
     </DashboardErrorBoundary>
   );
 }

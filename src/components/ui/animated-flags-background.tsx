@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useCallback, useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { SimpleFlag } from "~/components/SimpleFlag";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
 

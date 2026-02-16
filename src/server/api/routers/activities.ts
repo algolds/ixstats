@@ -3,6 +3,8 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { getWikiRecentChanges, getWikiTrendingPages } from "~/lib/wiki-recentchanges-service";
+import { getForumActivity, getForumTrendingThreads } from "~/lib/xenforo-service";
 
 // Input schemas
 const activityFilterSchema = z.object({
@@ -255,6 +257,94 @@ export const activitiesRouter = createTRPCRouter({
           visibility: post.visibility,
           relatedCountries: post.account.country?.id ? [post.account.country.id] : [],
         });
+      }
+
+      // Add wiki recent changes as feed items
+      if (input.filter === "all" || input.filter === "meta") {
+        try {
+          const wikiChanges = await getWikiRecentChanges(10);
+          for (const rc of wikiChanges) {
+            const sizeChange = rc.newlen - rc.oldlen;
+            const isNewPage = rc.type === "new";
+            combinedActivities.push({
+              id: `wiki-rc-${rc.title}-${rc.timestamp}`,
+              type: "meta",
+              category: "platform",
+              source: "wiki",
+              user: {
+                id: `wiki-user-${rc.user}`,
+                name: rc.user,
+              },
+              content: {
+                title: isNewPage ? `New wiki page: ${rc.title}` : `Wiki edit: ${rc.title}`,
+                description: (() => {
+                  const sizeStr = `${sizeChange > 0 ? "+" : ""}${sizeChange} bytes`;
+                  if (isNewPage) return `Created new page (${sizeStr})`;
+                  if (!rc.comment) return `Edited page (${sizeStr})`;
+                  const clean = rc.comment.replace(/\/\*.*?\*\/\s*/, "").trim();
+                  if (!clean) return `Edited page (${sizeStr})`;
+                  return clean.length <= 100 ? `${clean} (${sizeStr})` : `${clean.slice(0, 97)}... (${sizeStr})`;
+                })(),
+                metadata: {
+                  source: "ixwiki",
+                  pageTitle: rc.title,
+                  sizeChange,
+                  isNewPage,
+                  wikiUrl: `https://ixwiki.com/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+                },
+              },
+              engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
+              timestamp: new Date(rc.timestamp),
+              priority: isNewPage ? "medium" : "low",
+              visibility: "public",
+              relatedCountries: [],
+            });
+          }
+        } catch (error) {
+          console.error("[GlobalFeed] Wiki recent changes failed:", error);
+        }
+      }
+
+      // Add forum activity as feed items
+      if (input.filter === "all" || input.filter === "social") {
+        try {
+          const forumItems = await getForumActivity(10);
+          for (const item of forumItems) {
+            combinedActivities.push({
+              id: item.id,
+              type: "social",
+              category: "social",
+              source: "forum",
+              user: {
+                id: `forum-user-${item.author}`,
+                name: item.author,
+              },
+              content: {
+                title: item.type === "thread" ? `New forum thread: ${item.title}` : `Forum reply in: ${item.title}`,
+                description: item.excerpt || `${item.author} posted in the IxWiki community forum`,
+                metadata: {
+                  source: "xenforo",
+                  forumName: item.forumName,
+                  replyCount: item.replyCount,
+                  viewCount: item.viewCount,
+                  forumUrl: item.url,
+                },
+              },
+              engagement: {
+                likes: 0,
+                comments: item.replyCount ?? 0,
+                shares: 0,
+                views: item.viewCount ?? 0,
+              },
+              timestamp: item.timestamp,
+              priority: "low",
+              visibility: "public",
+              relatedCountries: [],
+            });
+          }
+        } catch (error) {
+          console.error("[GlobalFeed] Forum activity failed:", error);
+        }
       }
 
       // Sort combined activities by timestamp (most recent first)
@@ -685,6 +775,7 @@ export const activitiesRouter = createTRPCRouter({
             views: true,
             createdAt: true,
           },
+          take: 200,
         });
 
         // Calculate engagement score with weighted metrics
@@ -1112,5 +1203,549 @@ export const activitiesRouter = createTRPCRouter({
         following: followingCount,
         followers: followersCount,
       };
+    }),
+
+  /**
+   * Global headlines engine — aggregates live data from multiple game systems
+   * into short, news-style headlines for the ThinkPages ticker.
+   * Pulls from: countries (economic stats), crisis events, diplomatic events,
+   * embassy missions, ThinkPages government/media posts, and security threats.
+   */
+  getGlobalHeadlines: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(5).max(60).default(25),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      const last48h = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+      type Headline = {
+        id: string;
+        text: string;
+        category: "economic" | "crisis" | "diplomatic" | "military" | "social" | "political" | "achievement" | "wiki" | "forum";
+        priority: "critical" | "high" | "medium" | "low";
+        timestamp: string;
+        url?: string;
+      };
+
+      const headlines: Headline[] = [];
+
+      // ── 1. Country economic snapshots (GDP leaders, growth, decline) ──
+      const [topGdp, fastGrowth, declining, highPop] = await Promise.all([
+        ctx.db.country.findMany({
+          orderBy: { currentTotalGdp: "desc" },
+          take: 5,
+          select: { id: true, name: true, currentTotalGdp: true, currentGdpPerCapita: true, economicTier: true },
+        }),
+        ctx.db.country.findMany({
+          where: { adjustedGdpGrowth: { gt: 0.025 } },
+          orderBy: { adjustedGdpGrowth: "desc" },
+          take: 5,
+          select: { id: true, name: true, adjustedGdpGrowth: true, economicTier: true },
+        }),
+        ctx.db.country.findMany({
+          where: { adjustedGdpGrowth: { lt: -0.005 } },
+          orderBy: { adjustedGdpGrowth: "asc" },
+          take: 3,
+          select: { id: true, name: true, adjustedGdpGrowth: true },
+        }),
+        ctx.db.country.findMany({
+          where: { currentPopulation: { gt: 100_000_000 } },
+          orderBy: { currentPopulation: "desc" },
+          take: 3,
+          select: { id: true, name: true, currentPopulation: true, populationGrowthRate: true },
+        }),
+      ]);
+
+      // Format GDP
+      const fmtGdp = (v: number) => {
+        if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
+        if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`;
+        if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
+        return `$${v.toLocaleString()}`;
+      };
+      const fmtPop = (v: number) => {
+        if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+        if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
+        return v.toLocaleString();
+      };
+
+      topGdp.forEach((c, i) => {
+        headlines.push({
+          id: `gdp_rank_${c.id}`,
+          text: `${c.name} holds #${i + 1} global GDP at ${fmtGdp(c.currentTotalGdp)} (${c.economicTier})`,
+          category: "economic",
+          priority: i === 0 ? "high" : "medium",
+          timestamp: now.toISOString(),
+        });
+      });
+
+      fastGrowth.forEach((c) => {
+        headlines.push({
+          id: `growth_${c.id}`,
+          text: `${c.name} reports ${(c.adjustedGdpGrowth * 100).toFixed(1)}% GDP growth — ${c.economicTier} economy accelerating`,
+          category: "economic",
+          priority: c.adjustedGdpGrowth > 0.05 ? "high" : "medium",
+          timestamp: now.toISOString(),
+        });
+      });
+
+      declining.forEach((c) => {
+        headlines.push({
+          id: `decline_${c.id}`,
+          text: `Economic contraction: ${c.name} GDP shrinks ${(Math.abs(c.adjustedGdpGrowth) * 100).toFixed(1)}%`,
+          category: "economic",
+          priority: c.adjustedGdpGrowth < -0.02 ? "high" : "medium",
+          timestamp: now.toISOString(),
+        });
+      });
+
+      highPop.forEach((c) => {
+        headlines.push({
+          id: `pop_${c.id}`,
+          text: `${c.name} population reaches ${fmtPop(c.currentPopulation)} — growth at ${(c.populationGrowthRate * 100).toFixed(1)}%`,
+          category: "economic",
+          priority: "low",
+          timestamp: now.toISOString(),
+        });
+      });
+
+      // ── 2. Active crisis events ──
+      const crises = await ctx.db.crisisEvent.findMany({
+        where: {
+          responseStatus: { in: ["pending", "in_progress", "monitoring"] },
+        },
+        orderBy: [{ severity: "desc" }, { timestamp: "desc" }],
+        take: 8,
+      });
+
+      crises.forEach((crisis) => {
+        const severityMap: Record<string, "critical" | "high" | "medium" | "low"> = {
+          critical: "critical",
+          high: "high",
+          medium: "medium",
+          low: "low",
+        };
+        const prefix = crisis.severity === "critical"
+          ? "BREAKING"
+          : crisis.severity === "high"
+            ? "ALERT"
+            : "UPDATE";
+        headlines.push({
+          id: `crisis_${crisis.id}`,
+          text: `${prefix}: ${crisis.title}${crisis.location ? ` — ${crisis.location}` : ""}`,
+          category: "crisis",
+          priority: severityMap[crisis.severity ?? "medium"] ?? "medium",
+          timestamp: crisis.timestamp.toISOString(),
+        });
+      });
+
+      // ── 3. Recent diplomatic events ──
+      const diplomaticEvents = await ctx.db.diplomaticEvent.findMany({
+        where: { createdAt: { gte: last48h } },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      });
+
+      // Resolve country names for diplomatic events
+      const diploCountryIds = new Set<string>();
+      diplomaticEvents.forEach((e) => {
+        diploCountryIds.add(e.country1Id);
+        if (e.country2Id) diploCountryIds.add(e.country2Id);
+      });
+      const diploCountries = diploCountryIds.size > 0
+        ? await ctx.db.country.findMany({
+            where: { id: { in: [...diploCountryIds] } },
+            select: { id: true, name: true },
+          })
+        : [];
+      const diploMap = new Map(diploCountries.map((c) => [c.id, c.name]));
+
+      diplomaticEvents.forEach((event) => {
+        const c1 = diploMap.get(event.country1Id) ?? "Unknown";
+        const c2 = event.country2Id ? diploMap.get(event.country2Id) : null;
+        const eventLabel = event.eventType?.replace(/_/g, " ") ?? "diplomatic exchange";
+        const text = c2
+          ? `${c1} and ${c2}: ${event.title || eventLabel}`
+          : `${c1}: ${event.title || eventLabel}`;
+        headlines.push({
+          id: `diplo_${event.id}`,
+          text,
+          category: "diplomatic",
+          priority: event.severity === "high" || event.severity === "critical" ? "high" : "medium",
+          timestamp: event.createdAt.toISOString(),
+        });
+      });
+
+      // ── 4. Embassy missions (completed/in-progress) ──
+      const missions = await ctx.db.embassyMission.findMany({
+        where: {
+          OR: [
+            { status: "in_progress", updatedAt: { gte: last48h } },
+            { status: "completed", updatedAt: { gte: last48h } },
+          ],
+        },
+        take: 5,
+        orderBy: { updatedAt: "desc" },
+        include: {
+          embassy: {
+            include: {
+              hostCountry: { select: { name: true } },
+              guestCountry: { select: { name: true } },
+            },
+          },
+        },
+      });
+
+      missions.forEach((mission) => {
+        const host = mission.embassy?.hostCountry?.name ?? "Unknown";
+        const guest = mission.embassy?.guestCountry?.name ?? "Unknown";
+        const statusText = mission.status === "completed" ? "completes" : "underway";
+        headlines.push({
+          id: `mission_${mission.id}`,
+          text: `Embassy mission ${statusText}: ${mission.name} between ${host} and ${guest}`,
+          category: "diplomatic",
+          priority: mission.status === "completed" ? "medium" : "low",
+          timestamp: mission.updatedAt.toISOString(),
+        });
+      });
+
+      // ── 5. Security threats (active) ──
+      const threats = await ctx.db.securityThreat.findMany({
+        where: { isActive: true },
+        orderBy: [{ severity: "desc" }, { updatedAt: "desc" }],
+        take: 5,
+        include: {
+          country: { select: { name: true } },
+        },
+      });
+
+      threats.forEach((threat) => {
+        const countryName = threat.country?.name ?? "Unknown region";
+        const prefix = threat.severity === "critical" || threat.severity === "high"
+          ? "Security alert"
+          : "Monitoring";
+        headlines.push({
+          id: `threat_${threat.id}`,
+          text: `${prefix}: ${threat.threatName} — ${countryName} (${threat.threatType.replace(/_/g, " ")})`,
+          category: "military",
+          priority: threat.severity === "critical" ? "critical" : threat.severity === "high" ? "high" : "medium",
+          timestamp: threat.updatedAt.toISOString(),
+        });
+      });
+
+      // ── 6. ThinkPages notable posts (government/media verified accounts, recent) ──
+      const notablePosts = await ctx.db.thinkpagesPost.findMany({
+        where: {
+          visibility: "public",
+          createdAt: { gte: last48h },
+          account: {
+            OR: [
+              { accountType: "government", verified: true },
+              { accountType: "media", verified: true },
+            ],
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+        include: {
+          account: {
+            select: {
+              displayName: true,
+              username: true,
+              accountType: true,
+              country: { select: { name: true } },
+            },
+          },
+        },
+      });
+
+      notablePosts.forEach((post) => {
+        const source = post.account?.accountType === "government"
+          ? `Gov. of ${post.account.country?.name ?? "Unknown"}`
+          : `@${post.account?.username ?? "unknown"}`;
+        const preview = post.content.length > 80
+          ? post.content.slice(0, 77) + "..."
+          : post.content;
+        headlines.push({
+          id: `post_${post.id}`,
+          text: `${source}: "${preview}"`,
+          category: "social",
+          priority: post.account?.accountType === "government" ? "medium" : "low",
+          timestamp: post.createdAt.toISOString(),
+        });
+      });
+
+      // ── 7. Cabinet meetings (scheduled/completed recently) ──
+      const meetings = await ctx.db.cabinetMeeting.findMany({
+        where: {
+          OR: [
+            { status: "scheduled" },
+            { status: "in_progress" },
+            { status: "completed", completedAt: { gte: last48h } },
+          ],
+        },
+        take: 4,
+        orderBy: { scheduledDate: "desc" },
+      });
+
+      // Resolve country names for meetings
+      const meetingCountryIds = [...new Set(meetings.map((m) => m.countryId))];
+      const meetingCountries = meetingCountryIds.length > 0
+        ? await ctx.db.country.findMany({
+            where: { id: { in: meetingCountryIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+      const meetingMap = new Map(meetingCountries.map((c) => [c.id, c.name]));
+
+      meetings.forEach((meeting) => {
+        const countryName = meetingMap.get(meeting.countryId) ?? "Unknown";
+        const statusLabel = meeting.status === "completed"
+          ? "concluded"
+          : meeting.status === "in_progress"
+            ? "in session"
+            : "scheduled";
+        headlines.push({
+          id: `meeting_${meeting.id}`,
+          text: `${countryName} cabinet meeting ${statusLabel}: ${meeting.title}`,
+          category: "political",
+          priority: meeting.status === "in_progress" ? "high" : "low",
+          timestamp: (meeting.scheduledDate ?? meeting.createdAt).toISOString(),
+        });
+      });
+
+      // ── 8. Wiki recent edits ──
+      try {
+        const wikiChanges = await getWikiRecentChanges(8);
+        for (const rc of wikiChanges) {
+          const sizeChange = rc.newlen - rc.oldlen;
+          const sizeLabel = sizeChange > 0 ? `+${sizeChange}` : String(sizeChange);
+          const isNewPage = rc.type === "new";
+          // Clean up edit summary: drop auto-generated "Created page with ..." noise
+          let summary = "";
+          if (!isNewPage && rc.comment) {
+            const clean = rc.comment.replace(/\/\*.*?\*\/\s*/, "").trim();
+            if (clean && clean.length <= 80) summary = ` — ${clean}`;
+            else if (clean) summary = ` — ${clean.slice(0, 77)}...`;
+          }
+          const verb = isNewPage ? "created" : "edited";
+          headlines.push({
+            id: `wiki_${rc.title}_${rc.timestamp}`,
+            text: `Wiki: ${rc.user} ${verb} "${rc.title}"${summary} (${sizeLabel} bytes)`,
+            category: "wiki",
+            priority: isNewPage ? "medium" : "low",
+            timestamp: new Date(rc.timestamp).toISOString(),
+            url: `https://ixwiki.com/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+          });
+        }
+      } catch (error) {
+        console.error("[Headlines] Wiki recent changes failed:", error);
+      }
+
+      // ── 9. Forum activity ──
+      try {
+        const forumItems = await getForumActivity(6);
+        for (const item of forumItems) {
+          const verb = item.type === "thread" ? "started thread" : "posted in";
+          headlines.push({
+            id: item.id,
+            text: `Forum: ${item.author} ${verb} "${item.title}"${item.forumName ? ` in ${item.forumName}` : ""}`,
+            category: "forum",
+            priority: "low",
+            timestamp: item.timestamp.toISOString(),
+            url: item.url,
+          });
+        }
+      } catch (error) {
+        console.error("[Headlines] Forum activity failed:", error);
+      }
+
+      // ── Shuffle headlines (Fisher-Yates) so the ticker feels dynamic ──
+      for (let i = headlines.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [headlines[i]!, headlines[j]!] = [headlines[j]!, headlines[i]!];
+      }
+
+      return {
+        headlines: headlines.slice(0, input.limit),
+        generatedAt: now.toISOString(),
+      };
+    }),
+
+  /**
+   * Unified trending — cross-platform trending topics scored by engagement.
+   * Aggregates: ThinkPages posts, forum threads, wiki page activity, IxStats activities.
+   * Scoring: weighted engagement with time decay (newer content ranks higher).
+   */
+  getUnifiedTrending: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(20).default(8),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      type TrendingItem = {
+        id: string;
+        title: string;
+        source: "thinkpages" | "forum" | "wiki" | "ixstats";
+        score: number;
+        engagement: { views: number; replies: number; likes: number; reposts: number };
+        author?: string;
+        url?: string;
+        excerpt?: string;
+        timestamp: string;
+        isNew?: boolean;
+      };
+
+      const now = Date.now();
+      const last48h = new Date(now - 48 * 60 * 60 * 1000);
+      const items: TrendingItem[] = [];
+
+      // Time decay: content from 0h ago = 1.0x, 48h ago = 0.1x
+      const timeDecay = (ts: Date) => Math.max(0.1, 1 - (now - ts.getTime()) / (48 * 60 * 60 * 1000));
+
+      // ── 1. ThinkPages trending posts ──
+      try {
+        const posts = await ctx.db.thinkpagesPost.findMany({
+          where: { visibility: "public", createdAt: { gte: last48h } },
+          orderBy: { impressions: "desc" },
+          take: 15,
+          include: {
+            account: { select: { username: true, displayName: true, verified: true } },
+          },
+        });
+
+        for (const post of posts) {
+          const raw = post.repostCount * 3 + post.replyCount * 2 + post.likeCount + post.impressions * 0.01;
+          const score = raw * timeDecay(post.createdAt);
+          const preview = post.content.length > 100 ? post.content.slice(0, 97) + "..." : post.content;
+          items.push({
+            id: `tp-${post.id}`,
+            title: `@${post.account?.username ?? "unknown"}`,
+            source: "thinkpages",
+            score,
+            engagement: {
+              views: post.impressions,
+              replies: post.replyCount,
+              likes: post.likeCount,
+              reposts: post.repostCount,
+            },
+            author: post.account?.displayName ?? post.account?.username,
+            excerpt: preview,
+            timestamp: post.createdAt.toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error("[UnifiedTrending] ThinkPages failed:", error);
+      }
+
+      // ── 2. Forum threads ──
+      try {
+        const threads = await getForumTrendingThreads(10);
+        for (const thread of threads) {
+          // Forum engagement: views are significant, replies = comments
+          const raw = thread.replyCount * 2 + thread.viewCount * 0.05;
+          const score = raw * timeDecay(thread.timestamp);
+          items.push({
+            id: `forum-${thread.threadId}`,
+            title: thread.title,
+            source: "forum",
+            score,
+            engagement: {
+              views: thread.viewCount,
+              replies: thread.replyCount,
+              likes: 0,
+              reposts: 0,
+            },
+            author: thread.author,
+            url: thread.url,
+            timestamp: thread.timestamp.toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error("[UnifiedTrending] Forum failed:", error);
+      }
+
+      // ── 3. Wiki trending pages ──
+      try {
+        const pages = await getWikiTrendingPages(10);
+        for (const page of pages) {
+          // Wiki engagement: edits = activity signal, multiple editors = collaborative interest
+          // Byte changes proxy for content depth; new pages get a bonus
+          const raw =
+            page.editCount * 5 +
+            page.uniqueEditors * 10 +
+            Math.min(page.totalBytesChanged / 500, 20) +
+            (page.isNew ? 15 : 0);
+          const score = raw * timeDecay(page.latestEdit);
+          items.push({
+            id: `wiki-${page.title}`,
+            title: page.title,
+            source: "wiki",
+            score,
+            engagement: {
+              views: 0,
+              replies: 0,
+              likes: 0,
+              reposts: 0,
+            },
+            author: undefined,
+            url: page.url,
+            excerpt: page.isNew
+              ? `New page — ${page.editCount} edit${page.editCount > 1 ? "s" : ""} by ${page.uniqueEditors} editor${page.uniqueEditors > 1 ? "s" : ""}`
+              : `${page.editCount} edit${page.editCount > 1 ? "s" : ""} by ${page.uniqueEditors} editor${page.uniqueEditors > 1 ? "s" : ""} (${page.totalBytesChanged > 0 ? "+" : ""}${page.totalBytesChanged} bytes)`,
+            timestamp: page.latestEdit.toISOString(),
+            isNew: page.isNew,
+          });
+        }
+      } catch (error) {
+        console.error("[UnifiedTrending] Wiki failed:", error);
+      }
+
+      // ── 4. IxStats activities ──
+      try {
+        const activities = await ctx.db.activityFeed.findMany({
+          where: { createdAt: { gte: last48h }, visibility: "public" },
+          orderBy: { views: "desc" },
+          take: 10,
+          select: {
+            id: true,
+            title: true,
+            type: true,
+            likes: true,
+            comments: true,
+            shares: true,
+            views: true,
+            createdAt: true,
+          },
+        });
+
+        for (const a of activities) {
+          const raw = a.shares * 3 + a.comments * 2 + a.likes + a.views * 0.01;
+          const score = raw * timeDecay(a.createdAt);
+          items.push({
+            id: `ix-${a.id}`,
+            title: a.title,
+            source: "ixstats",
+            score,
+            engagement: {
+              views: a.views,
+              replies: a.comments,
+              likes: a.likes,
+              reposts: a.shares,
+            },
+            timestamp: a.createdAt.toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error("[UnifiedTrending] IxStats activities failed:", error);
+      }
+
+      // Sort by score descending and return top items
+      items.sort((a, b) => b.score - a.score);
+      return { items: items.slice(0, input.limit), generatedAt: new Date().toISOString() };
     }),
 });

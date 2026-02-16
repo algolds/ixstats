@@ -1,21 +1,16 @@
 /**
  * Query Performance Optimizations
  * Addresses slow compilation and query performance issues
+ *
+ * Note: Query caching is now handled by globalCache (advanced-cache-system.ts)
+ * and tRPC cached procedures. The per-module Map + setInterval cache was removed
+ * to reduce memory overhead.
  */
 
 import type { PrismaClient } from "@prisma/client";
+import { globalCache } from "./advanced-cache-system";
 
-// Global cache for expensive queries
-const queryCache = new Map<
-  string,
-  {
-    data: any;
-    timestamp: number;
-    ttl: number;
-  }
->();
-
-// Cache configuration
+// Cache configuration (TTLs in ms for backward compatibility)
 const CACHE_CONFIGS = {
   globalStats: 60000, // 1 minute
   countryList: 30000, // 30 seconds
@@ -23,42 +18,18 @@ const CACHE_CONFIGS = {
   notifications: 5000, // 5 seconds
 } as const;
 
-// Cache utilities
+// Cache utilities using consolidated globalCache
 export function getCacheKey(operation: string, params: any = {}): string {
-  return `${operation}_${JSON.stringify(params)}`;
+  return `query:${operation}:${JSON.stringify(params)}`;
 }
 
-export function getCachedResult<T>(key: string): T | null {
-  const cached = queryCache.get(key);
-  if (cached && Date.now() - cached.timestamp < cached.ttl) {
-    return cached.data as T;
-  }
-  if (cached) {
-    queryCache.delete(key);
-  }
-  return null;
+export async function getCachedResult<T>(key: string): Promise<T | null> {
+  return globalCache.get<T>(key);
 }
 
-export function setCachedResult<T>(key: string, data: T, ttlMs: number): void {
-  queryCache.set(key, {
-    data,
-    timestamp: Date.now(),
-    ttl: ttlMs,
-  });
+export async function setCachedResult<T>(key: string, data: T, ttlMs: number): Promise<void> {
+  await globalCache.set(key, data, { ttl: Math.round(ttlMs / 1000), skipRedis: true });
 }
-
-// Cleanup expired cache entries every 5 minutes
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, value] of queryCache.entries()) {
-      if (now - value.timestamp > value.ttl) {
-        queryCache.delete(key);
-      }
-    }
-  },
-  5 * 60 * 1000
-);
 
 // Optimized query functions
 export async function getOptimizedCountryList(
@@ -72,7 +43,7 @@ export async function getOptimizedCountryList(
   } = {}
 ) {
   const cacheKey = getCacheKey("countryList", params);
-  const cached = getCachedResult(cacheKey);
+  const cached = await getCachedResult(cacheKey);
   if (cached) return cached;
 
   const where: any = {};
@@ -110,13 +81,13 @@ export async function getOptimizedCountryList(
     skip: params.offset || 0,
   });
 
-  setCachedResult(cacheKey, result, CACHE_CONFIGS.countryList);
+  await setCachedResult(cacheKey, result, CACHE_CONFIGS.countryList);
   return result;
 }
 
 export async function getOptimizedGlobalStats(db: PrismaClient) {
   const cacheKey = getCacheKey("globalStats");
-  const cached = getCachedResult(cacheKey);
+  const cached = await getCachedResult(cacheKey);
   if (cached) return cached;
 
   // Use a more efficient aggregation query
@@ -145,7 +116,7 @@ export async function getOptimizedGlobalStats(db: PrismaClient) {
   `) as any[];
 
   const stats = result[0];
-  setCachedResult(cacheKey, stats, CACHE_CONFIGS.globalStats);
+  await setCachedResult(cacheKey, stats, CACHE_CONFIGS.globalStats);
   return stats;
 }
 
@@ -159,7 +130,7 @@ export async function getOptimizedUserNotifications(
   }
 ) {
   const cacheKey = getCacheKey("notifications", params);
-  const cached = getCachedResult(cacheKey);
+  const cached = await getCachedResult(cacheKey);
   if (cached) return cached;
 
   // Build OR conditions - only include countryId if it's provided
@@ -196,13 +167,13 @@ export async function getOptimizedUserNotifications(
   });
 
   // Shorter cache for notifications
-  setCachedResult(cacheKey, result, CACHE_CONFIGS.notifications);
+  await setCachedResult(cacheKey, result, CACHE_CONFIGS.notifications);
   return result;
 }
 
 export async function getOptimizedUserProfile(db: PrismaClient, userId: string) {
   const cacheKey = getCacheKey("userProfile", { userId });
-  const cached = getCachedResult(cacheKey);
+  const cached = await getCachedResult(cacheKey);
   if (cached) return cached;
 
   const result = await db.user.findUnique({
@@ -237,7 +208,7 @@ export async function getOptimizedUserProfile(db: PrismaClient, userId: string) 
     },
   });
 
-  setCachedResult(cacheKey, result, CACHE_CONFIGS.userProfile);
+  await setCachedResult(cacheKey, result, CACHE_CONFIGS.userProfile);
   return result;
 }
 
@@ -246,7 +217,7 @@ export async function getOptimizedCountryBatch(db: PrismaClient, countryIds: str
   if (countryIds.length === 0) return [];
 
   const cacheKey = getCacheKey("countryBatch", { ids: countryIds.sort() });
-  const cached = getCachedResult(cacheKey);
+  const cached = await getCachedResult(cacheKey);
   if (cached) return cached;
 
   const result = await db.country.findMany({
@@ -266,7 +237,7 @@ export async function getOptimizedCountryBatch(db: PrismaClient, countryIds: str
     },
   });
 
-  setCachedResult(cacheKey, result, 30000); // 30 second cache
+  await setCachedResult(cacheKey, result, 30000); // 30 second cache
   return result;
 }
 

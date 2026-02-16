@@ -6,6 +6,7 @@ import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { MyCountryNavCards } from "./MyCountryNavCards";
 import { Crown, Edit } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { DevCountryViewSelect } from "~/components/dev";
 
 interface MyCountryCompactHeaderProps {
   country: {
@@ -64,6 +65,9 @@ export function MyCountryCompactHeader({ country, flagUrl, currentPage = "overvi
                 <span className="sm:hidden">Edit</span>
               </Button>
             </Link>
+
+            {/* Dev Country View Selector (dev mode only) */}
+            <DevCountryViewSelect />
           </div>
 
           {/* Right: Inline Nav Cards (hidden on mobile, shown on desktop) */}

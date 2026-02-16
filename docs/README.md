@@ -34,6 +34,14 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/achievements.md`](systems/achievements.md) – achievement unlock logic, leaderboards, and notifications
 - [`systems/builder.md`](systems/builder.md) – nation creation flows, atomic components, and data ingestion
 - [`systems/help.md`](systems/help.md) – in-app help center architecture and authoring workflow
+- [`systems/admin-cms.md`](systems/admin-cms.md) – 18 admin interfaces, CMS architecture, and role-based access
+- [`systems/calculations.md`](systems/calculations.md) – economic formulas with step-by-step examples
+- [`systems/npc-ai.md`](systems/npc-ai.md) – NPC personality system documentation
+- [`systems/crisis-events.md`](systems/crisis-events.md) – crisis management system guide
+- [`systems/cards.md`](systems/cards.md) – IxCards system, card types, ownership
+- [`systems/card-packs.md`](systems/card-packs.md) – card pack types, rarity, opening flow
+- [`systems/myvault.md`](systems/myvault.md) – MyVault economy, IxCredits
+- [`systems/ns-integration.md`](systems/ns-integration.md) – NationStates integration
 
 ### Operations
 - [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
@@ -45,6 +53,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`processes/contributing.md`](processes/contributing.md) – coding standards, review expectations, and release management
 
 ### Reference
+- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (920+ endpoints across 61 routers)
 - [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
 - [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
 - [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs
@@ -62,7 +71,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`TAX_SYSTEM_FRONTEND_EXAMPLE.md`](TAX_SYSTEM_FRONTEND_EXAMPLE.md) – tax system frontend integration examples
 - [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) – complete tax system implementation summary
 
-### Map Editor & Vector Tiles Reference
+### Map Editor & Vector Tiles Reference (DEPRECATED - Maps removed November 2025)
 - [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md) – comprehensive vector tiles implementation guide
 - [`VECTOR_TILES_API.md`](VECTOR_TILES_API.md) – vector tiles API reference and endpoints
 - [`VECTOR_TILES_IMPLEMENTATION.md`](VECTOR_TILES_IMPLEMENTATION.md) – vector tiles technical implementation details
@@ -107,4 +116,4 @@ Completed implementation docs, audit reports, and historical documentation are p
 4. Move outdated docs to `docs/archive/<date>` instead of deleting them when retiring features.
 5. Keep root directory clean—only active documents (README, CLAUDE, CHANGELOG, IMPLEMENTATION_PLAN, IMPLEMENTATION_STATUS).
 
-The documentation refresh targets accuracy as of October 22, 2025 (v1.1.3). Treat the structure as the source of truth going forward.
+The documentation was last refreshed February 2026 (v2). Treat the structure as the source of truth going forward.

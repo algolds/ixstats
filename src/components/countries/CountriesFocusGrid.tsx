@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { CountryFocusCard, type CountryCardData } from "./CountryFocusCard";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
 import { RainbowButton } from "~/components/magicui/rainbow-button";

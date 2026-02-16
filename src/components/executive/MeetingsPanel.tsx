@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Calendar, Plus, Users, Clock, Layers, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Plus, Clock, Layers, CheckCircle, XCircle } from "lucide-react";
 import { api } from "~/trpc/react";
 import { MeetingScheduler } from "~/components/quickactions/MeetingScheduler";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
@@ -77,42 +77,27 @@ export function MeetingsPanel({ countryId }: MeetingsPanelProps) {
     const { date, time } = formatDateTime(meeting.scheduledDate);
 
     return (
-      <div className="border-border/40 bg-muted/40 rounded-lg border p-4 transition-all hover:shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-purple-50 p-2 dark:bg-purple-950/20">
-              <Calendar className="h-5 w-5 text-purple-500" />
+      <div className="border-border/40 bg-muted/40 rounded-lg border p-3 transition-all hover:shadow-sm">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-purple-500" />
+              <span className="truncate text-sm font-semibold">{meeting.title}</span>
+              {getStatusBadge(meeting)}
             </div>
-            <div>
-              <div className="text-foreground font-semibold">{meeting.title}</div>
-              <div className="text-muted-foreground mt-1 flex items-center gap-3 text-sm">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {date}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {time}
-                </span>
-                <span>• {meeting.duration ?? 60} min</span>
-              </div>
+            <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">
+              <span>{date}</span>
+              <span>•</span>
+              <span>{time}</span>
+              <span>•</span>
+              <span>{meeting.duration ?? 60} min</span>
+              {(meeting.attendances?.length ?? 0) > 0 && (
+                <><span>•</span><span>{meeting.attendances?.length} attendees</span></>
+              )}
+              {(meeting.agendaItems?.length ?? 0) > 0 && (
+                <><span>•</span><span>{meeting.agendaItems?.length} agenda items</span></>
+              )}
             </div>
-          </div>
-
-          <div className="flex flex-col items-start gap-2 md:items-end">
-            {getStatusBadge(meeting)}
-            {(meeting.attendances?.length ?? 0) > 0 && (
-              <div className="text-muted-foreground flex items-center gap-1 text-sm">
-                <Users className="h-3 w-3" />
-                {meeting.attendances?.length ?? 0} participants
-              </div>
-            )}
-            {(meeting.agendaItems?.length ?? 0) > 0 && (
-              <div className="text-muted-foreground flex items-center gap-1 text-sm">
-                <Layers className="h-3 w-3" />
-                {meeting.agendaItems?.length ?? 0} agenda items
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -133,65 +118,46 @@ export function MeetingsPanel({ countryId }: MeetingsPanelProps) {
         }}
       />
 
-      <div className="space-y-6">
-        {/* Header Card */}
-        <Card className="glass-hierarchy-child border-border">
-          <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                Executive Meeting Management
-                <SectionHelpIcon
-                  title="Meeting Management"
-                  content="Organize and track executive meetings for your nation's leadership. Meetings help coordinate policy decisions, review progress on strategic initiatives, and ensure alignment across your government. Schedule meetings with specific agendas, invite participants, and record outcomes to maintain institutional memory."
-                />
-              </CardTitle>
-              <CardDescription>
-                Schedule cabinet meetings, manage agendas, and track decisions
-              </CardDescription>
-            </div>
-            <Button onClick={() => setMeetingSchedulerOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Schedule Meeting
-            </Button>
-          </CardHeader>
-        </Card>
+      <div className="space-y-4">
+        {/* Section Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <h3 className="text-sm font-semibold">Meeting Management</h3>
+            <SectionHelpIcon
+              title="Meeting Management"
+              content="Organize and track executive meetings for your nation's leadership. Meetings help coordinate policy decisions, review progress on strategic initiatives, and ensure alignment across your government. Schedule meetings with specific agendas, invite participants, and record outcomes to maintain institutional memory."
+            />
+          </div>
+          <Button size="sm" onClick={() => setMeetingSchedulerOpen(true)} className="gap-1.5">
+            <Plus className="h-3 w-3" />
+            Schedule Meeting
+          </Button>
+        </div>
 
-        {/* Meeting Stats */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Upcoming</p>
-                  <p className="mt-2 text-3xl font-bold">{upcoming.length}</p>
-                </div>
-                <Calendar className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Completed</p>
-                  <p className="mt-2 text-3xl font-bold">{past.length}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="glass-hierarchy-child">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">Total</p>
-                  <p className="mt-2 text-3xl font-bold">{meetings.length}</p>
-                </div>
-                <Layers className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Meeting Stats Strip */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="glass-hierarchy-child rounded-lg bg-blue-50 p-2.5 dark:bg-blue-950/20">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 flex-shrink-0 text-blue-600" />
+              <span className="text-muted-foreground text-xs font-medium">Upcoming</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">{upcoming.length}</div>
+          </div>
+          <div className="glass-hierarchy-child rounded-lg bg-green-50 p-2.5 dark:bg-green-950/20">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle className="h-3.5 w-3.5 flex-shrink-0 text-green-600" />
+              <span className="text-muted-foreground text-xs font-medium">Completed</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">{past.length}</div>
+          </div>
+          <div className="glass-hierarchy-child rounded-lg bg-purple-50 p-2.5 dark:bg-purple-950/20">
+            <div className="flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5 flex-shrink-0 text-purple-600" />
+              <span className="text-muted-foreground text-xs font-medium">Total</span>
+            </div>
+            <div className="mt-0.5 text-lg font-bold">{meetings.length}</div>
+          </div>
         </div>
 
         {/* Upcoming Meetings */}
@@ -214,8 +180,8 @@ export function MeetingsPanel({ countryId }: MeetingsPanelProps) {
                 ))}
               </div>
             ) : (
-              <div className="border-border/50 text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-center text-sm">
-                <Calendar className="text-muted-foreground/70 h-8 w-8" />
+              <div className="border-border/50 text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center text-sm">
+                <Calendar className="text-muted-foreground/70 h-6 w-6" />
                 <p>No upcoming meetings scheduled.</p>
                 <Button variant="outline" onClick={() => setMeetingSchedulerOpen(true)} className="gap-2">
                   <Plus className="h-4 w-4" />

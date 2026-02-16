@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Loader2, CheckCircle } from "lucide-react";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 

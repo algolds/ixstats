@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, type FC } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Heart, Smile, Angry, ThumbsUp, ThumbsDown, Flame, Plus, Sparkles } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";

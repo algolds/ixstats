@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import type { ReactElement } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { ConstellationBuilder } from "~/lib/constellation-builder";
 import {

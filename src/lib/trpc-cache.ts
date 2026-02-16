@@ -20,6 +20,7 @@ import { Redis } from "ioredis";
 import { initTRPC } from "@trpc/server";
 import { createHash } from "crypto";
 import type { createTRPCContext } from "~/server/api/trpc";
+import { memoryConfig } from "~/lib/dev-memory-config";
 
 // Type for the tRPC middleware context
 type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
@@ -63,7 +64,7 @@ interface MemoryCacheEntry {
 }
 
 const memoryCache = new Map<string, MemoryCacheEntry>();
-const MAX_MEMORY_CACHE_SIZE = 1000;
+const MAX_MEMORY_CACHE_SIZE = memoryConfig.trpc.maxCacheSize;
 
 // Clean up expired entries periodically
 let cleanupInterval: NodeJS.Timeout | null = null;

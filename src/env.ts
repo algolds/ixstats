@@ -45,6 +45,9 @@ export const env = createEnv({
     ADMIN_EMAIL: z.string().email().optional(),
     // NationStates verification secret (required for NS nation verification)
     NS_VERIFICATION_SECRET: z.string().optional(),
+    // XenForo Forum API Configuration
+    XENFORO_API_KEY: z.string().optional(),
+    XENFORO_API_URL: z.string().url().optional().default("https://forum.ixwiki.com/api"),
     // Server port
     PORT: z.string().optional().default("3550"),
     // Vercel URL (auto-set by Vercel)
@@ -124,6 +127,9 @@ export const env = createEnv({
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     // NationStates
     NS_VERIFICATION_SECRET: process.env.NS_VERIFICATION_SECRET,
+    // XenForo Forum
+    XENFORO_API_KEY: process.env.XENFORO_API_KEY,
+    XENFORO_API_URL: process.env.XENFORO_API_URL,
     // Server
     PORT: process.env.PORT,
     VERCEL_URL: process.env.VERCEL_URL,

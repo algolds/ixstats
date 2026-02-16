@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
@@ -178,37 +178,29 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Activity className="text-primary h-8 w-8 animate-spin" />
+        <Activity className="text-primary h-6 w-6 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Header Section */}
       <Card className="glass-hierarchy-parent">
-        <CardHeader>
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/20 rounded-lg p-3">
-                <Crown className="text-primary h-6 w-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-2xl">Atomic Government System</CardTitle>
-                  <HelpTooltip text="Build your government using atomic components. Each component adds unique characteristics and influences calculations. Use synergies to maximize effectiveness and avoid conflicts." />
-                </div>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  {countryData?.name || "Government"} - Component-Based Architecture
-                </p>
-              </div>
+            <div className="flex items-center gap-2">
+              <Crown className="text-primary h-4 w-4" />
+              <CardTitle className="text-sm font-semibold">Atomic Government System</CardTitle>
+              <HelpTooltip text="Build your government using atomic components. Each component adds unique characteristics and influences calculations. Use synergies to maximize effectiveness and avoid conflicts." />
             </div>
             <Button
               onClick={() => setShowComponentSelector(!showComponentSelector)}
               variant="outline"
-              className="gap-2"
+              size="sm"
+              className="gap-1.5"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3" />
               Add Component
             </Button>
           </div>
@@ -216,7 +208,7 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
 
         <CardContent>
           {/* Key Metrics Grid */}
-          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
             <AtomicMetric
               label="Government Effectiveness"
               value={calculateEffectiveness.total}
@@ -285,7 +277,7 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
                 positive: false,
               },
             ]}
-            className="mb-6"
+            className="mb-4"
           />
 
           {/* Tabs Section */}
@@ -299,7 +291,7 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
 
             <TabsContent value="overview" className="space-y-4">
               {/* System Gauges */}
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <AtomicGauge
                   value={calculateEffectiveness.total}
                   max={100}
@@ -328,7 +320,7 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
               {/* Progress Indicators */}
               <Card className="glass-hierarchy-child">
                 <CardHeader>
-                  <CardTitle className="text-lg">System Performance</CardTitle>
+                  <CardTitle className="text-sm font-semibold">System Performance</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <AtomicProgress
@@ -366,10 +358,10 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="glass-hierarchy-child mb-4 rounded-lg p-4"
+                  className="glass-hierarchy-child mb-3 rounded-lg p-3"
                 >
-                  <h3 className="mb-3 font-semibold">Available Components</h3>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <h3 className="mb-2 text-sm font-semibold">Available Components</h3>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {Object.values(ATOMIC_COMPONENTS).map(
                       (component) =>
                         component && (
@@ -396,7 +388,7 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
               )}
 
               {/* Active Components */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {calculateEffectiveness.components.map((component) => (
                   <AtomicComponentCard
                     key={component.id}
@@ -419,9 +411,9 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
 
               {calculateEffectiveness.components.length === 0 && (
                 <Card className="glass-hierarchy-child">
-                  <CardContent className="py-8 text-center">
-                    <Info className="text-muted-foreground mx-auto mb-3 h-12 w-12" />
-                    <p className="text-muted-foreground">
+                  <CardContent className="py-6 text-center">
+                    <Info className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+                    <p className="text-muted-foreground text-sm">
                       No components selected. Click "Add Component" to build your government system.
                     </p>
                   </CardContent>
@@ -434,8 +426,8 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
               {synergyAnalysis.synergies.length > 0 && (
                 <Card className="glass-hierarchy-child">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Zap className="h-5 w-5 text-green-500" />
+                    <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                      <Zap className="h-4 w-4 text-green-500" />
                       Active Synergies
                     </CardTitle>
                   </CardHeader>
@@ -456,8 +448,8 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
               {synergyAnalysis.conflicts.length > 0 && (
                 <Card className="glass-hierarchy-child">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                    <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
                       Component Conflicts
                     </CardTitle>
                   </CardHeader>
@@ -476,9 +468,9 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
 
               {synergyAnalysis.synergies.length === 0 && synergyAnalysis.conflicts.length === 0 && (
                 <Card className="glass-hierarchy-child">
-                  <CardContent className="py-8 text-center">
-                    <Info className="text-muted-foreground mx-auto mb-3 h-12 w-12" />
-                    <p className="text-muted-foreground">
+                  <CardContent className="py-6 text-center">
+                    <Info className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+                    <p className="text-muted-foreground text-sm">
                       Select multiple components to see synergies and conflicts.
                     </p>
                   </CardContent>
@@ -487,10 +479,10 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <Card className="glass-hierarchy-child">
                   <CardHeader>
-                    <CardTitle className="text-lg">Component Distribution</CardTitle>
+                    <CardTitle className="text-sm font-semibold">Component Distribution</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
@@ -514,7 +506,7 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
 
                 <Card className="glass-hierarchy-child">
                   <CardHeader>
-                    <CardTitle className="text-lg">Cost Breakdown</CardTitle>
+                    <CardTitle className="text-sm font-semibold">Cost Breakdown</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">

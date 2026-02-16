@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import {

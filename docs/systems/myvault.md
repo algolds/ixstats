@@ -1,9 +1,18 @@
 # MyVault System
 
-**Last updated:** November 2025 (Phase 1)
-**Status:** Development - Phase 1 Implementation
+**Last updated:** February 2026
+**Status:** Production - VaultRouter Architecture
 
 MyVault is IxStats' personal virtual vault system where players earn, manage, and spend IxCredits (IxC) - the platform's universal currency. It serves as the economic backbone connecting gameplay actions to rewards and unlockables.
+
+## Router Architecture (February 2026)
+
+MyVault uses `VaultRouter` (`src/components/vault/VaultRouter.tsx`) with a sidebar layout for instant SPA-like navigation:
+- `VaultSidebarNav` (`src/components/vault/VaultSidebarNav.tsx`) – Section navigation
+- `VaultSidebarLayout` (`src/components/vault/VaultSidebarLayout.tsx`) – Grid layout
+- Sections: Dashboard, Cards, Acquire, Create, Import
+- Section components in `src/components/vault/sections/`
+- New routes: `/vault/acquire`, `/vault/cards`, `/vault/create`
 
 ## Overview
 

@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import type { ComparativeBenchmark } from "~/lib/analytics-data-transformers";
@@ -19,7 +19,7 @@ interface ComparativeBenchmarkingCardProps {
 export const ComparativeBenchmarkingCard = React.memo<ComparativeBenchmarkingCardProps>(
   ({ data }) => {
     return (
-      <Card className="glass-surface glass-refraction">
+      <Card className="glass-hierarchy-child">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-indigo-600" />

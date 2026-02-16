@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Activity, DollarSign, Users, Shield, Building } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { HealthRing } from "~/components/ui/health-ring";
 
@@ -111,23 +111,23 @@ export function VitalityRings({
       );
     }
 
-    // Grid variant
+    // Grid variant — pronounced cards
     return (
-      <div key={index} className="flex flex-col items-center gap-3 text-center">
+      <div key={index} className="glass-hierarchy-child flex items-center gap-3 rounded-lg p-2.5">
         <HealthRing
           value={Number(value)}
-          size={80}
+          size={44}
           color={config.color}
           className="flex-shrink-0"
           label={config.label}
-          tooltip={`${config.label}: ${value.toFixed(1)}% performance - ${config.subtitle}`}
+          tooltip={`${config.label}: ${value.toFixed(1)}% - ${config.subtitle}`}
         />
-        <div className="space-y-1">
-          <div className="flex items-center justify-center gap-2">
-            <config.icon className="h-4 w-4" style={{ color: config.color }} />
-            <span className="text-sm font-medium">{config.label}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <config.icon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: config.color }} />
+            <span className="truncate text-xs font-semibold">{config.label}</span>
           </div>
-          <div className="text-muted-foreground text-xs">{value.toFixed(1)}% performance</div>
+          <div className="mt-0.5 text-sm font-bold" style={{ color: config.color }}>{value.toFixed(1)}%</div>
         </div>
       </div>
     );
@@ -138,30 +138,21 @@ export function VitalityRings({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-blue-500" />
-            <CardTitle>National Vitality</CardTitle>
-          </div>
-          <Badge variant="outline" className="text-xs">
-            LIVE DATA
-          </Badge>
-        </div>
-        <CardDescription>
-          Real-time assessment of key national performance indicators
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div
-          className={
-            variant === "horizontal" ? "space-y-6" : "grid grid-cols-2 gap-6 lg:grid-cols-4"
-          }
-        >
-          {RING_CONFIG.map(renderRing)}
-        </div>
-      </CardContent>
+    <Card className="px-3 py-2">
+      <div className="flex items-center gap-1 mb-1.5">
+        <Activity className="h-3.5 w-3.5 text-blue-500" />
+        <span className="text-xs font-semibold">National Vitality</span>
+        <Badge variant="outline" className="ml-auto text-[10px] px-1.5 py-0">
+          LIVE
+        </Badge>
+      </div>
+      <div
+        className={
+          variant === "horizontal" ? "space-y-4" : "grid grid-cols-2 gap-3 xl:grid-cols-4"
+        }
+      >
+        {RING_CONFIG.map(renderRing)}
+      </div>
     </Card>
   );
 }

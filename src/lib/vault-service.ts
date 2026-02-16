@@ -559,15 +559,18 @@ export class VaultService {
         return 0;
       }
 
-      // Economic tier multipliers
+      // Economic tier multipliers (mapped to actual tier names in database)
       const tierMultipliers: Record<string, number> = {
-        "1": 3.0,
-        "2": 2.0,
-        "3": 1.5,
-        "4": 1.0,
+        Extravagant: 3.5,
+        "Very Strong": 3.0,
+        Strong: 2.5,
+        Developed: 2.0,
+        Healthy: 1.5,
+        Developing: 1.0,
+        Impoverished: 0.5,
       };
 
-      const tierMultiplier = (tierMultipliers as Record<string, number>)[country.economicTier] || 1.0;
+      const tierMultiplier = tierMultipliers[country.economicTier] ?? 1.0;
 
       // Base rate: (GDP Per Capita / 10000) * Economic Tier Multiplier
       const baseRate = (country.currentGdpPerCapita / 10000) * tierMultiplier;
@@ -575,8 +578,8 @@ export class VaultService {
       // Population bonus: +0.01 IxC per 1M citizens
       const populationBonus = (country.currentPopulation / 1000000) * 0.01;
 
-      // Growth bonus: +10% if GDP growth > 3% this quarter
-      const growthBonus = (country.adjustedGdpGrowth || 0) > 3 ? baseRate * 0.1 : 0;
+      // Growth bonus: +10% if GDP growth > 3% (stored as decimal, e.g. 0.03 = 3%)
+      const growthBonus = (country.adjustedGdpGrowth || 0) > 0.03 ? baseRate * 0.1 : 0;
 
       const baseIncome = baseRate + populationBonus + growthBonus;
 

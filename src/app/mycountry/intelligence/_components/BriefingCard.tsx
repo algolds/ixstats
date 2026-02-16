@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -24,30 +24,28 @@ export function BriefingCard({
   const TypeIcon = typeConfig.icon;
 
   return (
-    <Card className="glass-surface glass-refraction">
+    <Card className="glass-hierarchy-child">
       <CardHeader
         className="hover:bg-muted/50 cursor-pointer transition-colors"
         onClick={onToggleExpand}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`rounded p-2 ${typeConfig.bg}`}>
-              <TypeIcon className={`h-5 w-5 ${typeConfig.color}`} />
-            </div>
-            <div>
-              <CardTitle className="text-lg">{briefing.title}</CardTitle>
-              <p className="text-muted-foreground mt-1 text-sm">{briefing.description}</p>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <TypeIcon className={`h-4 w-4 flex-shrink-0 ${typeConfig.color}`} />
+            <div className="min-w-0">
+              <CardTitle className="text-sm">{briefing.title}</CardTitle>
+              <p className="text-muted-foreground mt-0.5 text-xs truncate">{briefing.description}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline">{briefing.confidence.toFixed(2)}%</Badge>
             <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-              <ChevronDown className="text-muted-foreground h-5 w-5" />
+              <ChevronDown className="text-muted-foreground h-4 w-4" />
             </motion.div>
           </div>
         </div>
 
-        <div className="text-muted-foreground mt-3 flex items-center gap-3 text-xs">
+        <div className="text-muted-foreground mt-2 flex items-center gap-2 text-xs">
           <Badge variant="secondary" className="text-xs">
             {typeConfig.label}
           </Badge>

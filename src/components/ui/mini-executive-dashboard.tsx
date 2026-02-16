@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Button } from "./button";
 import { Badge } from "./badge";
 import { Progress } from "./progress";
