@@ -63,10 +63,6 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
               if (path.startsWith("unifiedIntelligence.getAnalytics")) {
                 return false;
               }
-              // Suppress map editor search queries (expected to have empty results)
-              if (path.includes("mapEditor") && path.includes("get")) {
-                return false;
-              }
             }
 
             return true;

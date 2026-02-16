@@ -74,7 +74,7 @@ export function TrendRiskAnalytics({ countryId, userId }: TrendRiskAnalyticsProp
 
   // Get security dashboard for risk assessment
   const { data: securityDashboard, isLoading: securityLoading } =
-    api.eci.getSecurityDashboard.useQuery({ userId: userId ?? "" }, { enabled: !!userId });
+    api.unifiedIntelligence.getSecurityDashboard.useQuery({ userId: userId ?? "" }, { enabled: !!userId });
 
   // Get country data for context
   const { data: countryData, isLoading: countryLoading } =

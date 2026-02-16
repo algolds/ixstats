@@ -21,7 +21,7 @@ The MyCountry route (`/mycountry`) provides the executive dashboard for nation o
 - Country metrics: `api.countries.getByIdWithEconomicData`, `api.countries.getActivityRingsData`
 - Intelligence: `api.intelligence.getExecutiveDashboard`, `api.diplomaticIntelligence.getIntelligenceBriefing`, `api.unifiedIntelligence.getCommandView`
 - Compliance & Alerts: `api.mycountry.getComplianceSummary`, `api.notifications.getCountryAlerts`
-- Defense: `api.sdi.getModules`, `api.security.getThreatStatus`
+- Defense: `api.unifiedIntelligence.getModules`, `api.security.getThreatStatus`
 
 ## Implementation Notes
 - Tab configuration lives in `MyCountryTabSystem.tsx`

@@ -21,7 +21,6 @@ import {
   Brain,
   Building2,
   Plane,
-  Map,
 } from "lucide-react";
 
 interface HelpSection {
@@ -386,29 +385,6 @@ const helpSections: HelpSection[] = [
         description: "UI framework and design principles",
         path: "/help/technical/design-system",
         tags: ["technical", "design", "ui"],
-      },
-    ],
-  },
-  {
-    id: "maps-geography",
-    title: "Maps & Geography",
-    description: "Vector tiles and map editing",
-    icon: Map,
-    category: "technical",
-    articles: [
-      {
-        id: "vector-tiles",
-        title: "Vector Tile System",
-        description: "100-1000x performance with Martin + Redis",
-        path: "/help/maps/vector-tiles",
-        tags: ["maps", "performance", "tiles"],
-      },
-      {
-        id: "map-editor",
-        title: "Interactive Map Editor",
-        description: "Create subdivisions, cities, and POIs",
-        path: "/help/maps/editor",
-        tags: ["maps", "editor", "gis"],
       },
     ],
   },

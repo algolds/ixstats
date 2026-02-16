@@ -5,11 +5,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { countriesRouter } from "./routers/countries";
 import { adminRouter } from "./routers/admin";
 import { usersRouter } from "./routers/users";
-// DEPRECATED: Use unifiedIntelligence router instead
-import { sdiRouter } from "./routers/sdi";
 import { intelligenceRouter, intelligenceBriefingRouter } from "./routers/intelligence";
-// DEPRECATED: Use unifiedIntelligence router instead
-import { eciRouter } from "./routers/eci";
 import { meetingsRouter } from "./routers/meetings";
 import { notificationsRouter } from "./routers/notifications";
 import { myCountryRouter } from "./routers/mycountry";
@@ -47,10 +43,6 @@ import { militaryEquipmentRouter } from "./routers/militaryEquipment";
 import { smallArmsEquipmentRouter } from "./routers/smallArmsEquipment";
 import { diplomaticScenariosRouter } from "./routers/diplomaticScenarios";
 import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
-// DEPRECATED: Map system routers removed (November 2025)
-// import { geoRouter } from "./routers/geo";
-// import { mapEditorRouter } from "./routers/mapEditor";
-// import { mapMonitoringRouter } from "./routers/mapMonitoring";
 import { crisisEventsRouter } from "./routers/crisis-events";
 import { historicalRouter } from "./routers/historical";
 import { systemRouter } from "./routers/system";
@@ -58,7 +50,6 @@ import { cardPacksRouter } from "./routers/card-packs";
 import { vaultRouter } from "./routers/vault";
 import { cardsRouter } from "./routers/cards";
 import { loreCardsRouter } from "./routers/lore-cards";
-// import { nsIntegrationRouter } from "./routers/ns-integration"; // DISABLED: Missing dependencies, replaced by nsImport
 import { nsImportRouter } from "./routers/ns-import";
 import { cardMarketRouter } from "./routers/card-market";
 import { cardAnalyticsRouter } from "./routers/card-analytics";
@@ -80,13 +71,9 @@ export const appRouter = createTRPCRouter({
   users: usersRouter, // FIXED: Added users router
   system: systemRouter, // Public system information (IxTime, etc.)
   roles: rolesRouter, // Role and permission management
-  // DEPRECATED: Use unifiedIntelligence router instead (will be removed in v2.0.0)
-  sdi: sdiRouter,
   intelligence: intelligenceRouter,
   intelligenceBriefing: intelligenceBriefingRouter, // Intelligence Briefing system (stored in database)
   unifiedIntelligence: unifiedIntelligenceRouter, // Unified Intelligence system (SDI/ECI combined with executive operations)
-  // DEPRECATED: Use unifiedIntelligence router instead (will be removed in v2.0.0)
-  eci: eciRouter, // ECI router for Executive Command Interface
   meetings: meetingsRouter, // Cabinet meetings, government officials, and meeting management
   notifications: notificationsRouter, // Notifications router
   mycountry: myCountryRouter, // MyCountry specialized endpoints
@@ -122,17 +109,12 @@ export const appRouter = createTRPCRouter({
   smallArmsEquipment: smallArmsEquipmentRouter, // Small arms equipment catalog (Phase 9 - October 2025)
   diplomaticScenarios: diplomaticScenariosRouter, // Diplomatic scenario generation and choice tracking (Phase 7B)
   npcPersonalities: npcPersonalitiesRouter, // NPC personality system for behavioral prediction (Phase 8 - FINAL PHASE)
-  // DEPRECATED: Map system routers removed (November 2025) - maps system being redesigned from scratch
-  // geo: geoRouter, // Geographic router for country border management with PostGIS integration
-  // mapEditor: mapEditorRouter, // Map Editor for CRUD operations on subdivisions, cities, and POIs
-  // mapMonitoring: mapMonitoringRouter, // Map system monitoring and statistics (Admin only)
   crisisEvents: crisisEventsRouter, // Crisis events management (natural disasters, economic crises, diplomatic incidents, etc.)
   historical: historicalRouter, // Historical time-series data and analytics (12 endpoints)
   cardPacks: cardPacksRouter, // IxCards pack purchase and opening system (Phase 1 - Card Packs)
   vault: vaultRouter, // MyVault IxCredits economy system (Phase 1 - MyVault)
   cards: cardsRouter, // IxCards trading card system (Phase 1 - Card Service & Router)
   loreCards: loreCardsRouter, // Wiki lore card generation and user request system (Phase 4 - Advanced Features)
-  // nsIntegration: nsIntegrationRouter, // DISABLED: Missing dependencies, replaced by nsImport
   nsImport: nsImportRouter, // NationStates deck import for IxCards (Phase 2 - NS Deck Import)
   cardMarket: cardMarketRouter, // Card marketplace and auction system (Phase 2 - Auction Logic & Market Services)
   cardAnalytics: cardAnalyticsRouter, // Card economy analytics for Intelligence dashboard (Phase 5-6 - Analytics Integration)

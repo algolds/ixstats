@@ -30,10 +30,6 @@ export default function NavigationArticle() {
             (requires ADMIN role).
           </li>
           <li>
-            <strong>Map Editor:</strong> `/admin/map-editor` for creating subdivisions, cities, POIs
-            (requires MAP_EDITOR role).
-          </li>
-          <li>
             <strong>Help:</strong> `/help` is always available with 47 articles covering all platform
             features.
           </li>

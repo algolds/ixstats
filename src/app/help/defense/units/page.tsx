@@ -14,7 +14,7 @@ export default function DefenseUnitsArticle() {
         <ul className="list-disc space-y-2 pl-6">
           <li>Maintain inventory of ground, naval, air, and special capability units.</li>
           <li>Use readiness metrics to spot under-maintained assets.</li>
-          <li>Link assets to SDI modules for strategic readiness scoring.</li>
+          <li>Link assets to unified intelligence modules for strategic readiness scoring.</li>
         </ul>
       </Section>
 
@@ -22,7 +22,7 @@ export default function DefenseUnitsArticle() {
         <InfoBox title="Tools">
           <ul className="list-disc space-y-1 pl-6">
             <li>Defense tab components (`src/app/mycountry/defense`).</li>
-            <li>Routers: `api.sdi.updateModule`, `api.security.updateAssetStatus`.</li>
+            <li>Routers: `api.unifiedIntelligence.updateModule`, `api.security.updateAssetStatus`.</li>
             <li>Documentation: `docs/systems/defense.md`.</li>
           </ul>
         </InfoBox>
