@@ -34,6 +34,7 @@ import {
 } from "~/lib/holographic-effects";
 import { proxyNSImage } from "~/lib/ns-image-proxy";
 import { useSoundService } from "~/lib/sound-service";
+import { CardHolographicCover } from "../display/CardHolographicCover";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 
 /**
@@ -213,12 +214,11 @@ export const NSImportCardLayout = React.memo<NSImportCardLayoutProps>(
                 unoptimized
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-green-900 to-blue-900">
-                <div className="text-center p-4">
-                  <div className="text-4xl mb-2">🌍</div>
-                  <div className="text-xs text-gray-400">Image unavailable</div>
-                </div>
-              </div>
+              <CardHolographicCover
+                cardType={card.cardType}
+                rarity={card.rarity}
+                title={card.title}
+              />
             )}
 
             {/* Metallic gradient overlay for premium feel */}

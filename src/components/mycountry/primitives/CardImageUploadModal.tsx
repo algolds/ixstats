@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { 
   getCardImagePreset, 
   type CardImageType 
@@ -144,6 +144,7 @@ export function CardImageUploadModal({
   currentImageUrl,
   onSuccess,
 }: CardImageUploadModalProps) {
+  const notify = useNotify();
   const [activeTab, setActiveTab] = useState<"presets" | "search">("presets");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
@@ -156,14 +157,14 @@ export function CardImageUploadModal({
   // Mutation to save the image
   const upsertMutation = api.cardImages.upsert.useMutation({
     onSuccess: () => {
-      toast.success("Image saved successfully");
+      notify.success("Image saved successfully");
       utils.cardImages.getByCountryAndType.invalidate({ countryId, cardType });
       utils.cardImages.getAllByCountry.invalidate({ countryId });
       onSuccess?.();
       handleClose();
     },
     onError: (error) => {
-      toast.error(`Failed to save image: ${error.message}`);
+      notify.error(`Failed to save image: ${error.message}`);
       setIsSaving(false);
     },
   });
@@ -171,14 +172,14 @@ export function CardImageUploadModal({
   // Mutation to delete the image
   const deleteMutation = api.cardImages.delete.useMutation({
     onSuccess: () => {
-      toast.success("Image reset to default");
+      notify.success("Image reset to default");
       utils.cardImages.getByCountryAndType.invalidate({ countryId, cardType });
       utils.cardImages.getAllByCountry.invalidate({ countryId });
       onSuccess?.();
       handleClose();
     },
     onError: (error) => {
-      toast.error(`Failed to reset image: ${error.message}`);
+      notify.error(`Failed to reset image: ${error.message}`);
     },
   });
 
@@ -191,7 +192,7 @@ export function CardImageUploadModal({
   // Save the selected image
   const handleSave = async () => {
     if (!selectedImage) {
-      toast.error("Please select an image");
+      notify.error("Please select an image");
       return;
     }
 
@@ -226,7 +227,7 @@ export function CardImageUploadModal({
       });
     } catch (error) {
       console.error("Error saving image:", error);
-      toast.error("Failed to save image");
+      notify.error("Failed to save image");
       setIsSaving(false);
     }
   };

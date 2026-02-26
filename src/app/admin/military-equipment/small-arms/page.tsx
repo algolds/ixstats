@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Plus,
   Pencil,
@@ -99,7 +99,7 @@ export default function SmallArmsEquipmentPage() {
   usePageTitle({ title: "Small Arms Equipment Admin" });
 
   const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // State
   const [activeMainTab, setActiveMainTab] = useState("catalog");
@@ -153,118 +153,70 @@ export default function SmallArmsEquipmentPage() {
   // Mutations
   const createMutation = api.smallArmsEquipment.createEquipment.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Equipment created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Equipment created successfully");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create equipment",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create equipment");
     },
   });
 
   const updateMutation = api.smallArmsEquipment.updateEquipment.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Equipment updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Equipment updated successfully");
       refetch();
       setEditingEquipment(null);
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update equipment",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update equipment");
     },
   });
 
   const deleteMutation = api.smallArmsEquipment.deleteEquipment.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Equipment deactivated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Equipment deactivated successfully");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to deactivate equipment",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to deactivate equipment");
     },
   });
 
   const createManufacturerMutation = api.smallArmsEquipment.createManufacturer.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Manufacturer created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Manufacturer created successfully");
       refetch();
       setIsManufacturerDialogOpen(false);
       resetManufacturerForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create manufacturer",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create manufacturer");
     },
   });
 
   const updateManufacturerMutation = api.smallArmsEquipment.updateManufacturer.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Manufacturer updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Manufacturer updated successfully");
       refetch();
       setIsManufacturerDialogOpen(false);
       setEditingManufacturer(null);
       resetManufacturerForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update manufacturer",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update manufacturer");
     },
   });
 
   const bulkImportMutation = api.smallArmsEquipment.bulkImportEquipment.useMutation({
     onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: `Imported ${data.imported} equipment items`,
-        type: "success",
-      });
+      notify.success("Success", `Imported ${data.imported} equipment items`);
       refetch();
       setBulkImportJson("");
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to import equipment",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to import equipment");
     },
   });
 
@@ -346,11 +298,7 @@ export default function SmallArmsEquipmentPage() {
 
   const handleCreate = () => {
     if (!formData.name || !formData.key || !formData.manufacturerKey || !formData.eraKey) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        type: "error",
-      });
+      notify.error("Validation Error", "Please fill in all required fields");
       return;
     }
 
@@ -428,11 +376,7 @@ export default function SmallArmsEquipmentPage() {
 
   const handleCreateManufacturer = () => {
     if (!manufacturerFormData.name || !manufacturerFormData.key) {
-      toast({
-        title: "Validation Error",
-        description: "Name and key are required",
-        type: "error",
-      });
+      notify.error("Validation Error", "Name and key are required");
       return;
     }
 
@@ -474,11 +418,7 @@ export default function SmallArmsEquipmentPage() {
       }
       bulkImportMutation.mutate({ equipment: parsed });
     } catch (error) {
-      toast({
-        title: "Invalid JSON",
-        description: error instanceof Error ? error.message : "Failed to parse JSON",
-        type: "error",
-      });
+      notify.error("Invalid JSON", error instanceof Error ? error.message : "Failed to parse JSON");
     }
   };
 

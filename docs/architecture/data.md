@@ -6,7 +6,7 @@ IxStats stores structured gameplay data using Prisma 6.19. The schema models cou
 
 ## Schema Overview
 - Prisma schema lives at `prisma/schema.prisma`
-- 201 models span government, economic, diplomatic, social, notification, cards/vault, elections, crafting/trading, and audit domains
+- 206 models span government, economic, diplomatic, social, notification, cards/vault, elections, national issues, forum, crafting/trading, and audit domains
 - Enum duplication (e.g., `Priority`, `Category`) retains legacy casing for compatibility across services
 
 ## Database Targets

@@ -7,9 +7,11 @@
  * @module useMeetingScheduler
  */
 
+"use client";
+
 import { useState, useMemo, useCallback } from "react";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   filterMeetingsByDate,
   sortMeetingsByTime,
@@ -206,6 +208,8 @@ export function useMeetingScheduler(
   userId: string,
   governmentStructureId?: string
 ) {
+  const notify = useNotify();
+
   // ============================================================================
   // State
   // ============================================================================
@@ -278,77 +282,77 @@ export function useMeetingScheduler(
 
   const createMeeting = api.meetings.createMeeting.useMutation({
     onSuccess: () => {
-      toast.success("Meeting created successfully");
+      notify.success("Meeting created successfully");
       void refetchMeetings();
       setCreateMeetingOpen(false);
       resetMeetingForm();
     },
     onError: (error) => {
-      toast.error(`Failed to create meeting: ${error.message}`);
+      notify.error(`Failed to create meeting: ${error.message}`);
     },
   });
 
   const updateMeeting = api.meetings.updateMeeting.useMutation({
     onSuccess: () => {
-      toast.success("Meeting updated successfully");
+      notify.success("Meeting updated successfully");
       void refetchMeetings();
     },
     onError: (error) => {
-      toast.error(`Failed to update meeting: ${error.message}`);
+      notify.error(`Failed to update meeting: ${error.message}`);
     },
   });
 
   const deleteMeeting = api.meetings.deleteMeeting.useMutation({
     onSuccess: () => {
-      toast.success("Meeting deleted successfully");
+      notify.success("Meeting deleted successfully");
       void refetchMeetings();
       setSelectedMeetingId(null);
     },
     onError: (error) => {
-      toast.error(`Failed to delete meeting: ${error.message}`);
+      notify.error(`Failed to delete meeting: ${error.message}`);
     },
   });
 
   const addAgendaItem = api.meetings.addAgendaItem.useMutation({
     onSuccess: () => {
-      toast.success("Agenda item added");
+      notify.success("Agenda item added");
       void refetchMeetings();
       resetAgendaForm();
     },
     onError: (error) => {
-      toast.error(`Failed to add agenda item: ${error.message}`);
+      notify.error(`Failed to add agenda item: ${error.message}`);
     },
   });
 
   const recordAttendance = api.meetings.recordAttendance.useMutation({
     onSuccess: () => {
-      toast.success("Attendance recorded");
+      notify.success("Attendance recorded");
       void refetchMeetings();
     },
     onError: (error) => {
-      toast.error(`Failed to record attendance: ${error.message}`);
+      notify.error(`Failed to record attendance: ${error.message}`);
     },
   });
 
   const recordDecision = api.meetings.recordDecision.useMutation({
     onSuccess: () => {
-      toast.success("Decision recorded");
+      notify.success("Decision recorded");
       void refetchMeetings();
       resetDecisionForm();
     },
     onError: (error) => {
-      toast.error(`Failed to record decision: ${error.message}`);
+      notify.error(`Failed to record decision: ${error.message}`);
     },
   });
 
   const createActionItem = api.meetings.createActionItem.useMutation({
     onSuccess: () => {
-      toast.success("Action item created");
+      notify.success("Action item created");
       void refetchMeetings();
       resetActionForm();
     },
     onError: (error) => {
-      toast.error(`Failed to create action item: ${error.message}`);
+      notify.error(`Failed to create action item: ${error.message}`);
     },
   });
 
@@ -426,7 +430,7 @@ export function useMeetingScheduler(
     const validation = validateMeetingData(meetingForm.title, meetingForm.scheduledDate);
 
     if (!validation.valid) {
-      toast.error(validation.error);
+      notify.error(validation.error ?? "Validation error");
       return;
     }
 
@@ -445,14 +449,14 @@ export function useMeetingScheduler(
 
   const handleAddAgendaItem = useCallback(() => {
     if (!selectedMeetingId) {
-      toast.error("Please select a meeting first");
+      notify.error("Please select a meeting first");
       return;
     }
 
     const validation = validateAgendaItemData(agendaForm.title, agendaForm.estimatedDuration);
 
     if (!validation.valid) {
-      toast.error(validation.error);
+      notify.error(validation.error ?? "Validation error");
       return;
     }
 
@@ -468,14 +472,14 @@ export function useMeetingScheduler(
 
   const handleRecordDecision = useCallback(() => {
     if (!selectedMeetingId) {
-      toast.error("Please select a meeting first");
+      notify.error("Please select a meeting first");
       return;
     }
 
     const validation = validateDecisionData(decisionForm.title);
 
     if (!validation.valid) {
-      toast.error(validation.error);
+      notify.error(validation.error ?? "Validation error");
       return;
     }
 
@@ -493,7 +497,7 @@ export function useMeetingScheduler(
 
   const handleCreateActionItem = useCallback(() => {
     if (!selectedMeetingId) {
-      toast.error("Please select a meeting first");
+      notify.error("Please select a meeting first");
       return;
     }
 
@@ -504,7 +508,7 @@ export function useMeetingScheduler(
     );
 
     if (!validation.valid) {
-      toast.error(validation.error);
+      notify.error(validation.error ?? "Validation error");
       return;
     }
 

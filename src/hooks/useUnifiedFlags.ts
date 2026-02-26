@@ -39,12 +39,15 @@ export interface UseFlagPreloaderResult {
  * @returns Flag data and loading state
  */
 export function useFlag(countryName?: string): UseFlagResult {
+  // Strip " (Demo)" suffix so demo countries resolve the real flag
+  const cleanName = countryName?.replace(/ \(Demo\)$/, "");
+
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!countryName) {
+    if (!cleanName) {
       setFlagUrl(null);
       setIsLoading(false);
       setError(false);
@@ -59,7 +62,7 @@ export function useFlag(countryName?: string): UseFlagResult {
         setError(false);
 
         // Try cached first for immediate response
-        const cachedUrl = unifiedFlagService.getCachedFlagUrl(countryName);
+        const cachedUrl = unifiedFlagService.getCachedFlagUrl(cleanName);
         if (cachedUrl && mounted) {
           setFlagUrl(cachedUrl);
           setIsLoading(false);
@@ -67,14 +70,14 @@ export function useFlag(countryName?: string): UseFlagResult {
         }
 
         // Fetch if not cached
-        const url = await unifiedFlagService.getFlagUrl(countryName);
+        const url = await unifiedFlagService.getFlagUrl(cleanName);
 
         if (mounted) {
           setFlagUrl(url);
           setIsLoading(false);
         }
       } catch (err) {
-        console.error(`[useFlag] Error loading flag for ${countryName}:`, err);
+        console.error(`[useFlag] Error loading flag for ${cleanName}:`, err);
         if (mounted) {
           setError(true);
           setIsLoading(false);
@@ -88,9 +91,9 @@ export function useFlag(countryName?: string): UseFlagResult {
     return () => {
       mounted = false;
     };
-  }, [countryName]);
+  }, [cleanName]);
 
-  const isLocal = flagUrl ? unifiedFlagService.hasLocalFlag(countryName || "") : false;
+  const isLocal = flagUrl ? unifiedFlagService.hasLocalFlag(cleanName || "") : false;
   const isPlaceholder = flagUrl ? unifiedFlagService.isPlaceholderFlag(flagUrl) : false;
 
   return {

@@ -9,6 +9,7 @@ import type { CardInstance } from "~/types/pack-opening";
 import type { CardRarity } from "@prisma/client";
 import { getPackOpeningService } from "~/lib/pack-opening-service";
 import { getParticleConfig } from "~/lib/holographic-effects";
+import { CardHolographicCover } from "../display/CardHolographicCover";
 
 interface Stage2_PackExplosionProps {
   cards: CardInstance[];
@@ -243,9 +244,13 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
                 }}
               >
                 {/* Mini card representation */}
-                <div className="h-32 w-24 rounded-lg bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-sm">
+                <div className="relative h-32 w-24 rounded-lg bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-sm overflow-hidden">
+                  <CardHolographicCover
+                    cardType={card.cardType}
+                    rarity={card.rarity}
+                  />
                   <div
-                    className="h-full w-full rounded-lg bg-cover bg-center opacity-60"
+                    className="absolute inset-0 rounded-lg bg-cover bg-center opacity-60"
                     style={{
                       backgroundImage: `url(${card.artwork})`,
                     }}

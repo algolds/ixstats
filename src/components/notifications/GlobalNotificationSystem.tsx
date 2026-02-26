@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "~/context/auth-context";
 import { usePathname } from "next/navigation";
 import { api } from "~/trpc/react";
@@ -13,7 +13,7 @@ import { useNotificationStore } from "~/stores/notificationStore";
 import { UnifiedNotificationProvider } from "~/hooks/useUnifiedNotifications";
 import { globalNotificationBridge } from "~/services/GlobalNotificationBridge";
 import { LiveDataIntegration } from "./LiveDataIntegration";
-import { useToast } from "../ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 
 interface GlobalNotificationSystemProps {
   children: React.ReactNode;
@@ -26,17 +26,19 @@ export function GlobalNotificationSystem({
 }: GlobalNotificationSystemProps) {
   const { user } = useUser();
   const pathname = usePathname();
-  const { toast } = useToast();
+  const notify = useNotify();
+  const notifyRef = useRef(notify);
+  notifyRef.current = notify;
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Get user profile for country context
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
-  // Notification store integration
-  const notifications = useNotificationStore((state) => state.notifications);
+  // Notification store integration — use lastUpdate (primitive) to avoid re-renders from array ref changes
+  const notificationCount = useNotificationStore((state) => state.notifications.length);
   const initialize = useNotificationStore((state) => state.initialize);
 
-  // Initialize the entire notification system
+  // Initialize the entire notification system (runs once)
   useEffect(() => {
     const initializeSystem = async () => {
       try {
@@ -54,12 +56,7 @@ export function GlobalNotificationSystem({
 
           // Show toast for certain types of notifications
           if (notification.deliveryMethod === "toast" || notification.priority === "low") {
-            toast({
-              title: String(notification.title),
-              description: String(notification.message),
-              type: "info",
-              duration: 5000,
-            });
+            notifyRef.current.info(String(notification.title), String(notification.message));
           }
         });
 
@@ -71,19 +68,17 @@ export function GlobalNotificationSystem({
     };
 
     initializeSystem();
-  }, [initialize, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialize]);
 
   // Monitor notification changes for debugging
   useEffect(() => {
-    if (isInitialized && notifications.length > 0) {
-      const unreadCount = notifications.filter(
-        (n) => n.status !== "read" && n.status !== "dismissed"
-      ).length;
+    if (isInitialized && notificationCount > 0) {
       console.log(
-        `[GlobalNotificationSystem] ${notifications.length} total notifications, ${unreadCount} unread`
+        `[GlobalNotificationSystem] ${notificationCount} total notifications`
       );
     }
-  }, [notifications, isInitialized]);
+  }, [notificationCount, isInitialized]);
 
   // Route-based notification context updates
   useEffect(() => {

@@ -192,7 +192,7 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
         },
         {
           label: "Population Density",
-          value: country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : null,
+          value: country.populationDensity ? `${Math.round(country.populationDensity)}/km²` : null,
         },
         { label: "Capital", value: wikiData?.capital },
         { label: "Largest City", value: wikiData?.largest_city },

@@ -5,13 +5,10 @@ import Link from "next/link";
 import {
   Book,
   Search,
-  Cpu,
   Users,
   TrendingUp,
   Shield,
-  BarChart3,
   Settings,
-  Lightbulb,
   Zap,
   Target,
   Code,
@@ -21,6 +18,9 @@ import {
   Brain,
   Building2,
   Plane,
+  Crown,
+  Coins,
+  Gamepad2,
 } from "lucide-react";
 
 interface HelpSection {
@@ -28,7 +28,7 @@ interface HelpSection {
   title: string;
   description: string;
   icon: React.ElementType;
-  category: "getting-started" | "features" | "systems" | "technical" | "admin";
+  category: "getting-started" | "features" | "systems" | "technical" | "admin" | "gameplay";
   articles: HelpArticle[];
 }
 
@@ -44,21 +44,28 @@ const helpSections: HelpSection[] = [
   {
     id: "getting-started",
     title: "Getting Started",
-    description: "Learn the basics of IxStats",
+    description: "New to IxStats? Start here to learn the basics",
     icon: Sparkles,
     category: "getting-started",
     articles: [
       {
         id: "welcome",
         title: "Welcome to IxStats",
-        description: "Introduction to the platform and core concepts",
+        description: "What IxStats is and what you can do here",
         path: "/help/getting-started/welcome",
         tags: ["basics", "intro", "overview"],
       },
       {
+        id: "gameplay-overview",
+        title: "Gameplay Overview",
+        description: "How the simulation, economy, diplomacy, and progression systems work together",
+        path: "/help/getting-started/gameplay-overview",
+        tags: ["basics", "gameplay", "overview", "simulation"],
+      },
+      {
         id: "ixtime",
         title: "Understanding IxTime",
-        description: "Learn about the custom time system that powers the simulation",
+        description: "How the 2x-speed in-world clock affects your gameplay",
         path: "/help/getting-started/ixtime",
         tags: ["time", "basics", "simulation"],
       },
@@ -72,23 +79,118 @@ const helpSections: HelpSection[] = [
       {
         id: "navigation",
         title: "Navigating the Platform",
-        description: "Understanding the interface and navigation",
+        description: "Where to find everything and useful shortcuts",
         path: "/help/getting-started/navigation",
         tags: ["ui", "interface", "basics"],
       },
     ],
   },
   {
+    id: "gameplay",
+    title: "Gameplay Mechanics",
+    description: "Core simulation, progression, and competitive systems",
+    icon: Gamepad2,
+    category: "gameplay",
+    articles: [
+      {
+        id: "simulation",
+        title: "How the Simulation Works",
+        description: "How the world simulation runs behind your nation",
+        path: "/help/gameplay/simulation",
+        tags: ["gameplay", "simulation", "ixtime", "engine"],
+      },
+      {
+        id: "country-building",
+        title: "Country Building Guide",
+        description: "How to use the Country Builder to design your nation",
+        path: "/help/gameplay/country-building",
+        tags: ["gameplay", "builder", "country", "guide"],
+      },
+      {
+        id: "achievements",
+        title: "Achievements & Progression",
+        description: "Achievement categories, rarity tiers, and IxCredits rewards",
+        path: "/help/gameplay/achievements",
+        tags: ["gameplay", "achievements", "progression", "rewards"],
+      },
+      {
+        id: "leaderboards",
+        title: "Leaderboards & Rankings",
+        description: "GDP, population, achievements, and diplomatic influence rankings",
+        path: "/help/gameplay/leaderboards",
+        tags: ["gameplay", "leaderboards", "rankings", "competitive"],
+      },
+      {
+        id: "national-issues",
+        title: "National Issues System",
+        description: "Dynamic events that test your leadership with real consequences",
+        path: "/help/gameplay/national-issues",
+        tags: ["gameplay", "issues", "events", "decisions"],
+      },
+    ],
+  },
+  {
+    id: "mycountry",
+    title: "MyCountry Hub",
+    description: "Your nation's command center for managing everything",
+    icon: Crown,
+    category: "features",
+    articles: [
+      {
+        id: "overview",
+        title: "National Overview",
+        description: "Your nation's health at a glance with vitality scores and key metrics",
+        path: "/help/mycountry/overview",
+        tags: ["mycountry", "overview", "dashboard", "metrics"],
+      },
+      {
+        id: "executive",
+        title: "Executive Command",
+        description: "Cabinet meetings, national policies, and strategic decisions",
+        path: "/help/mycountry/executive",
+        tags: ["mycountry", "executive", "policies", "meetings"],
+      },
+      {
+        id: "diplomacy",
+        title: "MyCountry Diplomacy",
+        description: "Embassy management, communications, and foreign policy",
+        path: "/help/mycountry/diplomacy",
+        tags: ["mycountry", "diplomacy", "embassies", "foreign-policy"],
+      },
+      {
+        id: "intelligence",
+        title: "MyCountry Intelligence",
+        description: "Analytics dashboard, analysis panels, and key findings",
+        path: "/help/mycountry/intelligence",
+        tags: ["mycountry", "intelligence", "analytics"],
+      },
+      {
+        id: "defense",
+        title: "MyCountry Defense",
+        description: "Military command, force customization, and operations",
+        path: "/help/mycountry/defense",
+        tags: ["mycountry", "defense", "military"],
+      },
+      {
+        id: "politics",
+        title: "MyCountry Politics",
+        description: "Legislature, political parties, and elections",
+        path: "/help/mycountry/politics",
+        tags: ["mycountry", "politics", "elections", "parties"],
+      },
+    ],
+  },
+  {
     id: "economic-system",
     title: "Economic System",
-    description: "Understanding the economy engine",
+    description: "GDP, trade, taxes, and how your nation's economy grows",
     icon: TrendingUp,
     category: "features",
     articles: [
       {
         id: "economic-tiers",
         title: "Economic Tier System",
-        description: "How tier-based growth modeling works",
+        description: "Seven economic tiers from Developing to Transcendent and how to advance",
         path: "/help/economy/tiers",
         tags: ["economy", "tiers", "growth"],
       },
@@ -113,33 +215,40 @@ const helpSections: HelpSection[] = [
         path: "/help/economy/trade",
         tags: ["economy", "trade", "international"],
       },
+      {
+        id: "tax-system",
+        title: "Tax System",
+        description: "42 tax components, brackets, exemptions, and revenue calculations",
+        path: "/help/economy/tax-system",
+        tags: ["economy", "tax", "revenue", "fiscal"],
+      },
     ],
   },
   {
     id: "government",
     title: "Government Systems",
-    description: "Traditional & atomic government design",
+    description: "Build and customize your nation's government structure",
     icon: Building2,
     category: "features",
     articles: [
       {
         id: "traditional",
         title: "Traditional Government Builder",
-        description: "Creating conventional government structures",
+        description: "Pick a government type and customize its structure",
         path: "/help/government/traditional",
         tags: ["government", "builder", "traditional"],
       },
       {
         id: "atomic",
         title: "Atomic Government System",
-        description: "Advanced modular government design",
+        description: "Mix and match government components for synergy bonuses",
         path: "/help/government/atomic",
         tags: ["government", "atomic", "advanced"],
       },
       {
         id: "components",
         title: "Government Components",
-        description: "Understanding the 24 atomic components",
+        description: "Browse all available government, economic, and tax components",
         path: "/help/government/components",
         tags: ["government", "components", "modules"],
       },
@@ -206,7 +315,7 @@ const helpSections: HelpSection[] = [
   {
     id: "intelligence",
     title: "Intelligence System",
-    description: "Executive insights and analytics",
+    description: "Executive insights, analytics, and strategic intelligence",
     icon: Brain,
     category: "features",
     articles: [
@@ -238,6 +347,27 @@ const helpSections: HelpSection[] = [
         path: "/help/intelligence/forecasting",
         tags: ["intelligence", "forecasting", "predictions"],
       },
+      {
+        id: "unified-overview",
+        title: "Unified Intelligence Overview",
+        description: "How all four intelligence domains work together",
+        path: "/help/intelligence/unified-overview",
+        tags: ["intelligence", "unified", "analytics"],
+      },
+      {
+        id: "executive-operations",
+        title: "Executive Operations",
+        description: "Command center and strategic operations",
+        path: "/help/intelligence/executive-operations",
+        tags: ["executive", "operations", "command"],
+      },
+      {
+        id: "strategic-intelligence",
+        title: "Strategic Intelligence",
+        description: "Long-term intelligence for major national decisions",
+        path: "/help/intelligence/strategic-intelligence",
+        tags: ["intelligence", "crisis", "strategic"],
+      },
     ],
   },
   {
@@ -264,7 +394,7 @@ const helpSections: HelpSection[] = [
       {
         id: "npc-personalities",
         title: "NPC Personality & AI",
-        description: "8 traits, 6 archetypes, behavioral prediction",
+        description: "How NPC leaders think and react based on their personality",
         path: "/help/diplomacy/npc-personalities",
         tags: ["diplomacy", "npc", "ai", "personality"],
       },
@@ -285,90 +415,104 @@ const helpSections: HelpSection[] = [
     ],
   },
   {
+    id: "vault",
+    title: "Cards & Vault",
+    description: "Trading cards, pack opening, marketplace, and IxCredits economy",
+    icon: Coins,
+    category: "features",
+    articles: [
+      {
+        id: "vault-overview",
+        title: "Vault Overview",
+        description: "Your card collection, IxCredits balance, and vault progression",
+        path: "/help/vault/overview",
+        tags: ["vault", "cards", "overview", "ixcredits"],
+      },
+      {
+        id: "card-packs",
+        title: "Card Packs & Opening",
+        description: "Purchasing, opening, and the animated reveal experience",
+        path: "/help/vault/card-packs",
+        tags: ["vault", "packs", "cards", "opening"],
+      },
+      {
+        id: "trading",
+        title: "Trading & Marketplace",
+        description: "Auction system, bidding, and direct card trades",
+        path: "/help/vault/trading",
+        tags: ["vault", "trading", "marketplace", "auction"],
+      },
+      {
+        id: "lore-cards",
+        title: "Lore Cards",
+        description: "Wiki-generated cards with article content and holographic effects",
+        path: "/help/vault/lore-cards",
+        tags: ["vault", "lore", "wiki", "cards"],
+      },
+      {
+        id: "ixcredits",
+        title: "IxCredits Economy",
+        description: "Earning, spending, daily caps, and vault leveling",
+        path: "/help/vault/ixcredits",
+        tags: ["vault", "ixcredits", "economy", "earning"],
+      },
+    ],
+  },
+  {
     id: "social",
     title: "Social Platform",
-    description: "ThinkPages, ThinkShare, ThinkTanks",
+    description: "Connect with other players through posts, messages, and groups",
     icon: Users,
     category: "features",
     articles: [
       {
         id: "thinkpages",
         title: "ThinkPages",
-        description: "Creating and sharing content",
+        description: "Post updates, share news, and engage with the community",
         path: "/help/social/thinkpages",
         tags: ["social", "thinkpages", "content"],
       },
       {
         id: "thinkshare",
         title: "ThinkShare",
-        description: "Social sharing and collaboration",
+        description: "Direct messaging and real-time chat with other players",
         path: "/help/social/thinkshare",
         tags: ["social", "thinkshare", "collaboration"],
       },
       {
         id: "thinktanks",
         title: "ThinkTanks",
-        description: "Research groups and think tanks",
+        description: "Join or create collaborative groups for shared projects",
         path: "/help/social/thinktanks",
         tags: ["social", "thinktanks", "research"],
       },
     ],
   },
   {
-    id: "unified-intelligence",
-    title: "Unified Intelligence System",
-    description: "Executive command and strategic intelligence (formerly ECI/SDI)",
-    icon: BarChart3,
-    category: "systems",
-    articles: [
-      {
-        id: "unified-overview",
-        title: "Unified Intelligence Overview",
-        description: "Understanding the unified intelligence system",
-        path: "/help/intelligence/unified-overview",
-        tags: ["intelligence", "unified", "analytics"],
-      },
-      {
-        id: "executive-operations",
-        title: "Executive Operations",
-        description: "Command center and strategic operations",
-        path: "/help/intelligence/executive-operations",
-        tags: ["executive", "operations", "command"],
-      },
-      {
-        id: "strategic-intelligence",
-        title: "Strategic Intelligence",
-        description: "Intelligence feeds and crisis management",
-        path: "/help/intelligence/strategic-intelligence",
-        tags: ["intelligence", "crisis", "strategic"],
-      },
-    ],
-  },
-  {
     id: "technical",
     title: "Technical Documentation",
-    description: "Architecture and technical details",
+    description: "Under the hood: architecture, API, and database reference",
     icon: Code,
     category: "technical",
     articles: [
       {
         id: "architecture",
         title: "System Architecture",
-        description: "Understanding the technical architecture",
+        description: "How the platform is built and how the layers connect",
         path: "/help/technical/architecture",
         tags: ["technical", "architecture"],
       },
       {
         id: "api",
         title: "API Documentation",
-        description: "52 routers, 580+ procedures reference",
+        description: "61 routers, 927 endpoints reference",
         path: "/help/technical/api",
         tags: ["technical", "api", "trpc"],
       },
       {
         id: "database",
         title: "Database Schema",
-        description: "131 Prisma models and data structure",
+        description: "209 Prisma models and data structure",
         path: "/help/technical/database",
         tags: ["technical", "database", "schema"],
       },
@@ -398,7 +542,7 @@ const helpSections: HelpSection[] = [
       {
         id: "cms-overview",
         title: "Admin CMS Overview",
-        description: "17 interfaces for 100% dynamic content",
+        description: "Managing all platform content through the admin dashboard",
         path: "/help/admin/cms-overview",
         tags: ["admin", "cms", "management"],
       },
@@ -424,8 +568,8 @@ export default function HelpPage() {
   const categories = [
     { id: "all", label: "All Topics", icon: Book },
     { id: "getting-started", label: "Getting Started", icon: Sparkles },
+    { id: "gameplay", label: "Gameplay", icon: Gamepad2 },
     { id: "features", label: "Features", icon: Zap },
-    { id: "systems", label: "Systems", icon: Cpu },
     { id: "technical", label: "Technical", icon: Code },
     { id: "admin", label: "Admin", icon: Settings },
   ];
@@ -468,9 +612,7 @@ export default function HelpPage() {
               Help & Documentation
             </h1>
           </div>
-          <p className="text-lg text-slate-600 dark:text-slate-300">
-            Comprehensive guides and documentation for IxStats platform
-          </p>
+         
         </div>
       </div>
 
@@ -579,7 +721,7 @@ export default function HelpPage() {
         )}
 
         {/* Quick Links Footer */}
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/help/getting-started/welcome"
             className="group flex items-center gap-3 rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-500/20 to-purple-500/20 p-4 transition-all hover:border-blue-400/50"
@@ -592,6 +734,28 @@ export default function HelpPage() {
           </Link>
 
           <Link
+            href="/help/gameplay/simulation"
+            className="group flex items-center gap-3 rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-4 transition-all hover:border-purple-400/50"
+          >
+            <Gamepad2 className="h-8 w-8 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
+            <div>
+              <div className="font-semibold text-slate-900 dark:text-white">Gameplay</div>
+              <div className="text-sm text-slate-700 dark:text-slate-300">How it works</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/help/vault/overview"
+            className="group flex items-center gap-3 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-orange-500/20 p-4 transition-all hover:border-amber-400/50"
+          >
+            <Coins className="h-8 w-8 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
+            <div>
+              <div className="font-semibold text-slate-900 dark:text-white">Cards & Vault</div>
+              <div className="text-sm text-slate-700 dark:text-slate-300">IxCredits & collecting</div>
+            </div>
+          </Link>
+
+          <Link
             href="/help/technical/api"
             className="group flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 p-4 transition-all hover:border-emerald-400/50"
           >
@@ -599,17 +763,6 @@ export default function HelpPage() {
             <div>
               <div className="font-semibold text-slate-900 dark:text-white">API Docs</div>
               <div className="text-sm text-slate-700 dark:text-slate-300">For developers</div>
-            </div>
-          </Link>
-
-          <Link
-            href="/"
-            className="group flex items-center gap-3 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-orange-500/20 p-4 transition-all hover:border-amber-400/50"
-          >
-            <Lightbulb className="h-8 w-8 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
-            <div>
-              <div className="font-semibold text-slate-900 dark:text-white">Back to Platform</div>
-              <div className="text-sm text-slate-700 dark:text-slate-300">Return home</div>
             </div>
           </Link>
         </div>

@@ -70,7 +70,7 @@ export function DataImportSection({
               <li>• Supports Excel (.xlsx, .xls) formats only</li>
               <li>• Upload shows a preview of changes before importing</li>
               <li>• You can choose to update existing countries or skip them</li>
-              <li>• Historical data and DM inputs are always preserved</li>
+              <li>• Historical data and storyteller effects are always preserved</li>
               <li>• New countries are automatically added to the system</li>
               <li>• Statistics are recalculated after successful import</li>
               <li>• Required fields: Country, Population, GDP PC</li>

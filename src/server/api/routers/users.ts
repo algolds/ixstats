@@ -41,7 +41,7 @@ export const usersRouter = createTRPCRouter({
 
       const countryArgs = {
         include: {
-          dmInputs: {
+          storytellerEffects: {
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
           },
@@ -106,7 +106,7 @@ export const usersRouter = createTRPCRouter({
         }
       }
 
-      // If we still don't have country details, attempt to load with dmInputs for completeness
+      // If we still don't have country details, attempt to load with storytellerEffects for completeness
       if (!countryRecord && userRecord?.countryId) {
         countryRecord = await ctx.db.country.findUnique({
           where: { id: userRecord.countryId },
@@ -164,7 +164,7 @@ export const usersRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: user.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -180,6 +180,39 @@ export const usersRouter = createTRPCRouter({
         console.error("Error fetching user profile:", error);
         throw new Error("Failed to fetch user profile");
       }
+    }),
+
+  // Get multiple user profiles by IDs (batch)
+  getProfilesByIds: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        userIds: z.array(z.string().min(1)).max(100),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const validIds = input.userIds.filter((id) => id.trim() !== "");
+      if (validIds.length === 0) return [];
+
+      const users = await ctx.db.user.findMany({
+        where: { clerkUserId: { in: validIds } },
+        include: {
+          country: {
+            select: { id: true, name: true, slug: true, flagUrl: true },
+          },
+        },
+      });
+
+      const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
+
+      return validIds.map((userId) => {
+        const user = userMap.get(userId);
+        return {
+          userId,
+          countryId: user?.country?.id ?? null,
+          country: user?.country ?? null,
+          hasCompletedSetup: !!user?.country,
+        };
+      });
     }),
 
   // Link user to existing country
@@ -247,7 +280,7 @@ export const usersRouter = createTRPCRouter({
         const updatedCountry = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -414,7 +447,7 @@ export const usersRouter = createTRPCRouter({
             lifeExpectancy: input.initialData?.lifeExpectancy || 75.0,
           },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -539,7 +572,7 @@ export const usersRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: user.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },

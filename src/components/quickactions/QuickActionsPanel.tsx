@@ -21,9 +21,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { MeetingScheduler } from "./MeetingScheduler";
-import { PolicyCreator } from "./PolicyCreator";
 import { MeetingDecisionsModal } from "./MeetingDecisionsModal";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface QuickActionsPanelProps {
   countryId: string;
@@ -38,8 +37,8 @@ export function QuickActionsPanel({
   variant = "compact",
   className,
 }: QuickActionsPanelProps) {
+  const notify = useNotify();
   const [showMeetingScheduler, setShowMeetingScheduler] = useState(false);
-  const [showPolicyCreator, setShowPolicyCreator] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<{ id: string; title: string } | null>(
     null
   );
@@ -67,9 +66,9 @@ export function QuickActionsPanel({
 
   const handleMeetingClick = (meeting: any) => {
     if (meeting.status === "completed") {
-      toast.info("Meeting already completed. View decisions in meeting history.");
+      notify.info("Meeting already completed. View decisions in meeting history.");
     } else if (meeting.status === "scheduled") {
-      toast.info("Meeting scheduled. Complete it to record decisions.");
+      notify.info("Meeting scheduled. Complete it to record decisions.");
     }
   };
 
@@ -130,7 +129,7 @@ export function QuickActionsPanel({
           <Button
             variant="outline"
             className="h-auto flex-col items-start p-4 hover:bg-green-50 dark:hover:bg-green-950/20"
-            onClick={() => setShowPolicyCreator(true)}
+            onClick={() => notify.info("Use the Policies & Strategy tab in Executive")}
           >
             <FileText className="mb-2 h-5 w-5 text-green-600" />
             <span className="text-sm font-semibold">Create Policy</span>
@@ -163,7 +162,7 @@ export function QuickActionsPanel({
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                       className="bg-card hover:bg-accent/50 cursor-pointer rounded-lg border p-3 transition-colors"
-                      onClick={() => setShowPolicyCreator(true)}
+                      onClick={() => notify.info("Use the Policies & Strategy tab in Executive")}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
@@ -406,15 +405,6 @@ export function QuickActionsPanel({
         countryId={countryId}
         open={showMeetingScheduler}
         onOpenChange={setShowMeetingScheduler}
-      />
-
-      <PolicyCreator
-        countryId={countryId}
-        open={showPolicyCreator}
-        onOpenChange={setShowPolicyCreator}
-        onSuccess={() => {
-          void refetch();
-        }}
       />
 
       {selectedMeeting && (

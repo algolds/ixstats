@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { GlassCard, GlassCardContent, GlassCardHeader } from "./glass/GlassCard";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { BorderBeam } from "~/components/magicui/border-beam";
-import { PathGlareCard } from "~/components/ui/path-glare-card";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { safeSetItemSync, safeGetItemSync } from "~/lib/localStorageMutex";
@@ -54,7 +53,7 @@ const pathOptions = [
     color: "amber",
     gradient: "from-amber-500/20 to-orange-600/20 hover:from-amber-500/30 hover:to-orange-600/30",
     border: "border-amber-400/30",
-    iconColor: "text-white-400",
+    iconColor: "text-amber-200",
   },
   {
     id: "skip",
@@ -234,30 +233,36 @@ export const BuilderOnboardingWizard = ({
                                 </span>
                               </div>
                             )}
-                            <div onClick={() => handlePathSelect(option.id)}>
-                              <PathGlareCard>
+                            {(() => {
+                              const isPrimary = Boolean(option.primary);
+                              const titleClass = isPrimary ? "text-white" : "text-slate-900 dark:text-slate-100";
+                              const durationClass = isPrimary ? "text-white/85" : "text-slate-700 dark:text-slate-300";
+                              const descriptionClass = isPrimary ? "text-white/90" : "text-slate-800 dark:text-slate-200";
+
+                              return (
                                 <Button
                                   variant="outline"
                                   size="lg"
-                                  className={`flex h-auto w-full flex-col items-start bg-gradient-to-br p-6 ${option.gradient} ${option.border} pointer-events-none relative overflow-hidden border-none text-left text-white dark:text-white`}
+                                  onClick={() => handlePathSelect(option.id)}
+                                  className={`flex min-h-[170px] h-auto w-full flex-col items-start justify-start bg-gradient-to-br p-6 ${option.gradient} ${option.border} relative overflow-hidden border text-left`}
                                 >
                                   <div className="mb-3 flex w-full items-center gap-3">
                                     <option.icon className={`h-6 w-6 ${option.iconColor}`} />
                                     <div className="flex-1">
-                                      <span className="block font-semibold text-slate-900 dark:text-white">
+                                      <span className={`block text-base font-semibold ${titleClass}`}>
                                         {option.title}
                                       </span>
-                                      <span className="block text-xs font-medium text-slate-800 opacity-90 dark:text-white">
+                                      <span className={`block text-xs font-medium ${durationClass}`}>
                                         {option.duration}
                                       </span>
                                     </div>
                                   </div>
-                                  <p className="text-sm leading-relaxed font-medium text-slate-800 opacity-95 dark:text-white">
+                                  <p className={`text-sm leading-relaxed font-medium whitespace-normal ${descriptionClass}`}>
                                     {option.description}
                                   </p>
                                 </Button>
-                              </PathGlareCard>
-                            </div>
+                              );
+                            })()}
                           </motion.div>
                         ))}
                       </div>

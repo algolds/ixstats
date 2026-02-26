@@ -135,7 +135,7 @@ export function ExpandableStatCard({
                             <Users className="h-4 w-4 text-purple-500" />
                             <span>Avg Pop. Density: </span>
                             <span className="ml-auto font-semibold">
-                              {avgPopulationDensity.toFixed(1)}/km²
+                              {Math.round(avgPopulationDensity)}/km²
                             </span>
                           </div>
                           {/* Add more stats here as desired */}

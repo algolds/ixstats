@@ -203,7 +203,7 @@ export function NumberFlowDisplay({
         : format === "decimal"
           ? 2
           : format === "percentage"
-            ? 1
+            ? 2
             : format === "population" || format === "compact"
               ? 1
               : 0);

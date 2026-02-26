@@ -1,15 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { Settings, Database, Shield, BarChart3 } from "lucide-react";
-import { ArticleLayout, Section, InfoBox, WarningBox } from "../../_components/ArticleLayout";
+import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function AdminCMSOverviewArticle() {
   return (
     <ArticleLayout
       title="Admin Content Management System"
-      description="Manage 100% dynamic content through 17 admin interfaces for government components, economic policies, military equipment, diplomatic scenarios, and system configuration."
+      description="Manage 100% dynamic content through 20+ admin interfaces for government components, economic policies, military equipment, diplomatic scenarios, and system configuration."
       icon={Settings}
     >
+      <ContentCard>
       <Section title="CMS Capabilities">
         <ul className="list-disc space-y-2 pl-6">
           <li>
@@ -17,8 +19,8 @@ export default function AdminCMSOverviewArticle() {
             deployments needed for updates.
           </li>
           <li>
-            <strong>17 Admin Interfaces:</strong> 9 reference data, 2 intelligence/templates, 4
-            analytics, 2 system admin.
+            <strong>20+ Admin Interfaces:</strong> 10+ reference data, 2 intelligence/templates, 4
+            analytics, 2 system admin, and specialized tools.
           </li>
           <li>
             <strong>Role-Based Access:</strong> ADMIN, CONTENT_EDITOR, MILITARY_ADMIN roles with
@@ -71,7 +73,9 @@ export default function AdminCMSOverviewArticle() {
           </ul>
         </InfoBox>
       </Section>
+      </ContentCard>
 
+      <ContentCard>
       <Section title="Intelligence & Templates (2 Interfaces)">
         <ul className="list-disc space-y-2 pl-6">
           <li>
@@ -88,12 +92,8 @@ export default function AdminCMSOverviewArticle() {
       <Section title="Analytics & Monitoring (4 Interfaces)">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            <strong>Map Monitoring:</strong> Tile cache hit rates, generation times, Redis
-            statistics.
-          </li>
-          <li>
-            <strong>API Performance:</strong> tRPC router latencies, error rates, usage patterns (52
-            routers, 580+ procedures).
+            <strong>API Performance:</strong> tRPC router latencies, error rates, usage patterns (61
+            routers, 927 endpoints).
           </li>
           <li>
             <strong>User Activity:</strong> Login tracking, feature usage, session analytics.
@@ -152,26 +152,30 @@ export default function AdminCMSOverviewArticle() {
             complete change history.
           </li>
           <li>
-            <BarChart3 className="inline h-4 w-4" /> Monitor admin activity via{" "}
-            <code>/admin/analytics</code> dashboard.
+            <BarChart3 className="inline h-4 w-4" /> Monitor admin activity via the admin analytics
+            dashboard.
           </li>
           <li>Enable 2FA for admin accounts in production environments (recommended).</li>
         </ul>
       </WarningBox>
 
-      <InfoBox title="Related Documentation">
+      <InfoBox title="Related Articles">
         <ul className="list-disc space-y-1 pl-6">
           <li>
-            <code>docs/systems/admin-cms.md</code> – Complete admin interface documentation.
+            <Link href="/help/admin/reference-data" className="text-blue-400 underline hover:text-blue-300">
+              Reference Data Management
+            </Link>{" "}
+            -- Managing game content catalogs.
           </li>
           <li>
-            <code>/help/admin/reference-data</code> – Managing game content catalogs.
-          </li>
-          <li>
-            <code>/help/technical/api</code> – Admin API routers and procedures.
+            <Link href="/help/technical/api" className="text-blue-400 underline hover:text-blue-300">
+              API & tRPC
+            </Link>{" "}
+            -- Admin API routers and procedures.
           </li>
         </ul>
       </InfoBox>
+      </ContentCard>
     </ArticleLayout>
   );
 }

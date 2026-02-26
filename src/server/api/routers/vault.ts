@@ -19,6 +19,7 @@ import {
 } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault-service";
 import { budgetVaultCalculator } from "~/lib/budget-vault-calculator";
+import { notificationAPI } from "~/lib/notification-api";
 import { type VaultTransactionType } from "@prisma/client";
 
 /**
@@ -40,9 +41,8 @@ const vaultTransactionTypeEnum = z.enum([
 export const vaultRouter = createTRPCRouter({
   /**
    * Get vault balance and stats for a user
-   * Admin-only endpoint
    */
-  getBalance: adminProcedure
+  getBalance: protectedProcedure
     .input(
       z.object({
         userId: z.string().min(1, "User ID is required"),
@@ -60,9 +60,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get transaction history with pagination
-   * Admin-only endpoint
    */
-  getTransactions: adminProcedure
+  getTransactions: protectedProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).optional().default(50),
@@ -97,9 +96,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Claim daily login bonus
-   * Admin-only endpoint
    */
-  claimDailyBonus: adminProcedure.mutation(async ({ ctx }) => {
+  claimDailyBonus: protectedProcedure.mutation(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new Error("User ID not found in authentication context");
@@ -110,6 +108,19 @@ export const vaultRouter = createTRPCRouter({
       if (!result.success) {
         throw new Error(result.message || "Failed to claim daily bonus");
       }
+
+      // Notification: daily bonus claimed (fire-and-forget)
+      try {
+        await notificationAPI.create({
+          userId: ctx.auth.userId,
+          title: "Daily Bonus Claimed",
+          message: `+${result.bonus} IxC! ${result.streak}-day streak`,
+          type: "SYSTEM",
+          category: "achievement",
+          priority: "low",
+          metadata: { bonus: result.bonus, streak: result.streak },
+        }, ctx.db);
+      } catch {}
 
       return {
         success: true,
@@ -128,9 +139,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Claim streak bonus (updates login streak)
-   * Admin-only endpoint
    */
-  claimStreakBonus: adminProcedure.mutation(async ({ ctx }) => {
+  claimStreakBonus: protectedProcedure.mutation(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new Error("User ID not found in authentication context");
@@ -151,9 +161,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Spend IxCredits
-   * Admin-only endpoint
    */
-  spendCredits: adminProcedure
+  spendCredits: protectedProcedure
     .input(
       z.object({
         amount: z.number().min(0.01, "Amount must be positive"),
@@ -203,9 +212,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get vault level
-   * Admin-only endpoint
    */
-  getVaultLevel: adminProcedure
+  getVaultLevel: protectedProcedure
     .input(
       z.object({
         userId: z.string().min(1, "User ID is required"),
@@ -229,9 +237,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get today's earnings summary
-   * Admin-only endpoint
    */
-  getEarningsSummary: adminProcedure.query(async ({ ctx }) => {
+  getEarningsSummary: protectedProcedure.query(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new Error("User ID not found in authentication context");
@@ -248,9 +255,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get today's earnings breakdown by source
-   * Admin-only endpoint
    */
-  getTodayEarnings: adminProcedure.query(async ({ ctx }) => {
+  getTodayEarnings: protectedProcedure.query(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new Error("User ID not found in authentication context");
@@ -289,9 +295,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Calculate passive income for a country
-   * Admin-only endpoint
    */
-  calculatePassiveIncome: adminProcedure
+  calculatePassiveIncome: protectedProcedure
     .input(
       z.object({
         countryId: z.string().min(1, "Country ID is required"),
@@ -315,9 +320,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Check daily earning cap
-   * Admin-only endpoint
    */
-  checkDailyCap: adminProcedure
+  checkDailyCap: protectedProcedure
     .input(
       z.object({
         earnType: z.enum(["EARN_ACTIVE", "EARN_SOCIAL"]),
@@ -396,9 +400,8 @@ export const vaultRouter = createTRPCRouter({
 
   /**
    * Get user stats (totalCards, deckValue)
-   * Admin-only endpoint
    */
-  getUserStats: adminProcedure.query(async ({ ctx }) => {
+  getUserStats: protectedProcedure.query(async ({ ctx }) => {
     try {
       if (!ctx.user?.id) {
         throw new Error("User not found in authentication context");

@@ -7,7 +7,6 @@ import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry";
 import { QuickActionsPanel } from "~/components/quickactions/QuickActionsPanel";
 import { MeetingScheduler } from "~/components/quickactions/MeetingScheduler";
-import { PolicyCreator } from "~/components/quickactions/PolicyCreator";
 import { DefenseModal } from "~/components/quickactions/DefenseModal";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -33,7 +32,6 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
   const { country } = useCountryData();
   const router = useRouter();
   const [showMeetingScheduler, setShowMeetingScheduler] = React.useState(false);
-  const [showPolicyCreator, setShowPolicyCreator] = React.useState(false);
   const [showDefenseModal, setShowDefenseModal] = React.useState(false);
 
   // Get real-time metrics
@@ -183,7 +181,7 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Button
           className="h-16 w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
-          onClick={() => setShowPolicyCreator(true)}
+          onClick={() => router.push("/mycountry/executive")}
         >
           <div className="flex flex-col items-center gap-1">
             <TrendingUp className="h-5 w-5" />
@@ -263,12 +261,6 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
             countryId={country.id}
             open={showMeetingScheduler}
             onOpenChange={setShowMeetingScheduler}
-          />
-
-          <PolicyCreator
-            countryId={country.id}
-            open={showPolicyCreator}
-            onOpenChange={setShowPolicyCreator}
           />
 
           <DefenseModal

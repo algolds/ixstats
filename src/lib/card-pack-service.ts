@@ -231,6 +231,7 @@ export async function purchasePack(
         isOpened: false,
         acquiredMethod: "PURCHASE",
       },
+      include: { pack: true },
     });
 
     return userPack;

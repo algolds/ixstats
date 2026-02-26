@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Heart, Reply, Edit, Trash2, Check, CheckCheck } from "lucide-react";
 import { MessageTimestamp } from "./MessageTimestamp";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface ThinkshareMessage {
   id: string;
@@ -53,6 +53,7 @@ const MessageBubble = React.memo(function MessageBubble({
   onReply,
   getAccountTypeIcon,
 }: MessageBubbleProps) {
+  const notify = useNotify();
   const [showQuickReactions, setShowQuickReactions] = useState<string | null>(null);
 
   // Stabilize the refetch function to prevent infinite loops
@@ -63,34 +64,34 @@ const MessageBubble = React.memo(function MessageBubble({
   const addReactionMutation = api.thinkpages.addReactionToMessage.useMutation({
     onSuccess: stableRefetch,
     onError: (error: any) => {
-      toast.error(error.message || "Failed to add reaction");
+      notify.error(error.message || "Failed to add reaction");
     },
   });
 
   const removeReactionMutation = api.thinkpages.removeReactionFromMessage.useMutation({
     onSuccess: stableRefetch,
     onError: (error: any) => {
-      toast.error(error.message || "Failed to remove reaction");
+      notify.error(error.message || "Failed to remove reaction");
     },
   });
 
   const editMessageMutation = api.thinkpages.editMessage.useMutation({
     onSuccess: () => {
       stableRefetch();
-      toast.success("Message edited");
+      notify.success("Message edited");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to edit message");
+      notify.error(error.message || "Failed to edit message");
     },
   });
 
   const deleteMessageMutation = api.thinkpages.deleteMessage.useMutation({
     onSuccess: () => {
       stableRefetch();
-      toast.success("Message deleted");
+      notify.success("Message deleted");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to delete message");
+      notify.error(error.message || "Failed to delete message");
     },
   });
 

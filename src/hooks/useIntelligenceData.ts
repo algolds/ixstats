@@ -343,7 +343,7 @@ export function useIntelligenceData({
             {
               id: "density",
               label: "Population Density",
-              value: country.populationDensity.toFixed(1),
+              value: Math.round(country.populationDensity).toString(),
               unit: "/km²",
               icon: RiMapLine,
               classification: "PUBLIC" as const,

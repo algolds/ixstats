@@ -35,7 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface ThinkshareConversation {
   id: string;
@@ -66,6 +66,7 @@ export function ChatHeader({
   currentAccountId,
   onSearchToggle,
 }: ChatHeaderProps) {
+  const notify = useNotify();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -89,20 +90,20 @@ export function ChatHeader({
     if (onSearchToggle) {
       onSearchToggle(searchQuery);
     }
-    toast.info(`Searching for: ${searchQuery}`);
+    notify.info(`Searching for: ${searchQuery}`);
   };
 
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
-    toast.success(isMuted ? "Notifications enabled" : "Notifications muted");
+    notify.success(isMuted ? "Notifications enabled" : "Notifications muted");
   };
 
   const handleArchive = () => {
-    toast.info("Archive conversation - Feature coming soon");
+    notify.info("Archive conversation - Feature coming soon");
   };
 
   const handleDelete = () => {
-    toast.error("Delete conversation - Feature coming soon");
+    notify.error("Delete conversation - Feature coming soon");
   };
 
   return (

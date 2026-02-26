@@ -15,7 +15,7 @@ import { SPENDING_POLICIES } from "../../data/government-spending-policies";
 import { IxTime } from "~/lib/ixtime";
 import type { GovernmentBuilderState } from "~/types/government";
 import type { EconomicInputs } from "../../lib/economy-data-service";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface SpendingPreviewProps {
   selectedPolicies: Set<string>;
@@ -38,11 +38,12 @@ export function SpendingPreview({
   onSave,
   className,
 }: SpendingPreviewProps) {
+  const notify = useNotify();
   const handleSave = () => {
     if (onSave) {
       onSave();
     } else {
-      toast.success("Government structure saved successfully!");
+      notify.success("Government structure saved successfully!");
     }
   };
 

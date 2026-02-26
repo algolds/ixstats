@@ -2,7 +2,7 @@
 
 **Last updated:** February 2026
 
-The tRPC layer exposes 61 routers with a combined 920+ procedures. This snapshot lists each router with counts for quick auditing. For detailed schemas, inspect the router files under `src/server/api/routers`. See also [api-complete.md](./api-complete.md) for the comprehensive catalog.
+The tRPC layer exposes 61 routers with a combined 927 procedures. This snapshot lists each router with counts for quick auditing. For detailed schemas, inspect the router files under `src/server/api/routers`. See also [api-complete.md](./api-complete.md) for the comprehensive catalog.
 
 ## Router Index
 | Router | Procedures | Queries | Mutations |

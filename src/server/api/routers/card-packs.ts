@@ -5,6 +5,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
+  protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
 import {
@@ -13,6 +14,8 @@ import {
   getAvailablePacks,
   getUserPacks,
 } from "~/lib/card-pack-service";
+import { syncUserToForum } from "~/lib/xenforo-user-sync";
+import { notificationAPI } from "~/lib/notification-api";
 
 /**
  * Card Packs Router
@@ -27,7 +30,7 @@ export const cardPacksRouter = createTRPCRouter({
    * Get all available packs for purchase
    * Admin-only endpoint
    */
-  getAvailablePacks: adminProcedure.query(async ({ ctx }) => {
+  getAvailablePacks: protectedProcedure.query(async ({ ctx }) => {
     try {
       const packs = await getAvailablePacks(ctx.db);
 
@@ -48,10 +51,10 @@ export const cardPacksRouter = createTRPCRouter({
    * Get pack details by ID
    * Admin-only endpoint
    */
-  getPackById: adminProcedure
+  getPackById: protectedProcedure
     .input(
       z.object({
-        packId: z.string().cuid(),
+        packId: z.string().min(1),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -96,7 +99,7 @@ export const cardPacksRouter = createTRPCRouter({
    * Get user's packs (unopened by default)
    * Admin-only endpoint
    */
-  getMyPacks: adminProcedure
+  getMyPacks: protectedProcedure
     .input(
       z
         .object({
@@ -138,10 +141,10 @@ export const cardPacksRouter = createTRPCRouter({
    * Purchase pack with IxCredits
    * Admin-only endpoint
    */
-  purchasePack: adminProcedure
+  purchasePack: protectedProcedure
     .input(
       z.object({
-        packId: z.string().cuid(),
+        packId: z.string().min(1),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -154,6 +157,22 @@ export const cardPacksRouter = createTRPCRouter({
         }
 
         const userPack = await purchasePack(ctx.db, ctx.user.id, input.packId);
+
+        // Sync to forum profile (fire-and-forget)
+        syncUserToForum(ctx.user.id).catch(() => {});
+
+        // Notification: pack purchased (fire-and-forget)
+        try {
+          await notificationAPI.create({
+            userId: ctx.user.id,
+            title: "Pack Purchased",
+            message: "Your card pack is ready to open!",
+            type: "CARD",
+            category: "achievement",
+            priority: "medium",
+            metadata: { packId: input.packId },
+          }, ctx.db);
+        } catch {}
 
         return {
           success: true,
@@ -196,7 +215,7 @@ export const cardPacksRouter = createTRPCRouter({
    * Open pack and reveal cards
    * Admin-only endpoint
    */
-  openPack: adminProcedure
+  openPack: protectedProcedure
     .input(
       z.object({
         userPackId: z.string().cuid(),
@@ -213,6 +232,9 @@ export const cardPacksRouter = createTRPCRouter({
 
         const cards = await openPack(ctx.db, ctx.user.id, input.userPackId);
 
+        // Sync to forum profile (fire-and-forget)
+        syncUserToForum(ctx.user.id).catch(() => {});
+
         // Format cards with rarity reveal data
         const revealData = cards.map((card) => ({
           id: card.id,
@@ -222,6 +244,23 @@ export const cardPacksRouter = createTRPCRouter({
           artwork: card.artwork,
           season: card.season,
         }));
+
+        // Notification: cards revealed (fire-and-forget)
+        try {
+          const bestRarity = cards.reduce((best, c) => {
+            const order = ["COMMON", "UNCOMMON", "RARE", "EPIC", "ULTRA_RARE", "LEGENDARY"];
+            return order.indexOf(c.rarity) > order.indexOf(best) ? c.rarity : best;
+          }, "COMMON");
+          await notificationAPI.create({
+            userId: ctx.user.id,
+            title: "Cards Revealed!",
+            message: `${cards.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
+            type: "CARD",
+            category: "achievement",
+            priority: bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
+            metadata: { cardCount: cards.length, bestRarity },
+          }, ctx.db);
+        } catch {}
 
         return {
           success: true,
@@ -256,6 +295,16 @@ export const cardPacksRouter = createTRPCRouter({
   // ============================================================
 
   /**
+   * Get all packs (including inactive) for admin management
+   */
+  getAllPacks: adminProcedure.query(async ({ ctx }) => {
+    const packs = await ctx.db.cardPack.findMany({
+      orderBy: [{ isActive: "desc" }, { packType: "asc" }, { priceCredits: "asc" }],
+    });
+    return { packs };
+  }),
+
+  /**
    * Create new pack configuration
    * Admin-only endpoint
    */
@@ -264,6 +313,7 @@ export const cardPacksRouter = createTRPCRouter({
       z.object({
         name: z.string().min(1).max(100),
         description: z.string().optional(),
+        artwork: z.string().optional(),
         packType: z.string(),
         priceCredits: z.number().positive(),
         cardCount: z.number().int().min(1).max(20).default(5),
@@ -275,9 +325,9 @@ export const cardPacksRouter = createTRPCRouter({
       try {
         const pack = await ctx.db.cardPack.create({
           data: {
-            id: `pack_${Date.now()}`,
             name: input.name,
             description: input.description,
+            artwork: input.artwork,
             packType: input.packType,
             priceCredits: input.priceCredits,
             cardCount: input.cardCount,
@@ -312,10 +362,11 @@ export const cardPacksRouter = createTRPCRouter({
   updatePack: adminProcedure
     .input(
       z.object({
-        packId: z.string().cuid(),
+        packId: z.string().min(1),
         updates: z.object({
           name: z.string().min(1).max(100).optional(),
           description: z.string().optional(),
+          artwork: z.string().optional().nullable(),
           cardCount: z.number().int().min(1).max(20).optional(),
           packType: z.string().optional(),
           priceCredits: z.number().positive().optional(),
@@ -354,7 +405,7 @@ export const cardPacksRouter = createTRPCRouter({
   deactivatePack: adminProcedure
     .input(
       z.object({
-        packId: z.string().cuid(),
+        packId: z.string().min(1),
       })
     )
     .mutation(async ({ ctx, input }) => {

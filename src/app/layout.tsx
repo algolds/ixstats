@@ -15,7 +15,7 @@ import {
   ChunkLoadErrorBoundary,
   ChunkLoadErrorHandler,
 } from "~/components/ChunkLoadErrorBoundary";
-import { ToasterProvider } from "~/components/ToasterProvider";
+// ToasterProvider removed — all toasts now route through Dynamic Island
 import { IxTimeProvider } from "~/contexts/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
 import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotificationSystem";
@@ -93,7 +93,7 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               <AppContent />
             </AuthProvider>
           </ClerkProvider>
-          <ToasterProvider />
+          {/* ToasterProvider removed — DynamicIslandToastManager handles rendering */}
         </ChunkLoadErrorBoundary>
       </body>
     </html>

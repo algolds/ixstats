@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Plus,
   Pencil,
@@ -134,7 +134,7 @@ export default function DiplomaticScenariosPage() {
   usePageTitle({ title: "Diplomatic Scenarios Admin" });
 
   const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // State
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -209,58 +209,34 @@ export default function DiplomaticScenariosPage() {
   // Mutations
   const createMutation = api.diplomaticScenarios.createScenario.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Scenario created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Scenario created successfully");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create scenario",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create scenario");
     },
   });
 
   const updateMutation = api.diplomaticScenarios.updateScenario.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Scenario updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Scenario updated successfully");
       refetch();
       setEditingScenario(null);
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update scenario",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update scenario");
     },
   });
 
   const deleteMutation = api.diplomaticScenarios.deleteScenario.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Scenario deleted successfully",
-        type: "success",
-      });
+      notify.success("Success", "Scenario deleted successfully");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete scenario",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to delete scenario");
     },
   });
 
@@ -320,11 +296,7 @@ export default function DiplomaticScenariosPage() {
 
   const handleCreate = () => {
     if (!formData.title || !formData.narrative || !formData.country1Id || !formData.country2Id) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        type: "error",
-      });
+      notify.error("Validation Error", "Please fill in all required fields");
       return;
     }
 
@@ -451,11 +423,7 @@ export default function DiplomaticScenariosPage() {
 
   const handleBulkActivate = () => {
     if (selectedIds.size === 0) {
-      toast({
-        title: "No selection",
-        description: "Please select at least one scenario",
-        type: "warning",
-      });
+      notify.warning("No selection", "Please select at least one scenario");
       return;
     }
 
@@ -464,30 +432,18 @@ export default function DiplomaticScenariosPage() {
       Array.from(selectedIds).map((id) => updateMutation.mutateAsync({ id, status: "active" }))
     )
       .then(() => {
-        toast({
-          title: "Success",
-          description: `Activated ${selectedIds.size} scenarios`,
-          type: "success",
-        });
+        notify.success("Success", `Activated ${selectedIds.size} scenarios`);
         setSelectedIds(new Set());
         refetch();
       })
       .catch(() => {
-        toast({
-          title: "Error",
-          description: "Failed to activate some scenarios",
-          type: "error",
-        });
+        notify.error("Error", "Failed to activate some scenarios");
       });
   };
 
   const handleBulkDeactivate = () => {
     if (selectedIds.size === 0) {
-      toast({
-        title: "No selection",
-        description: "Please select at least one scenario",
-        type: "warning",
-      });
+      notify.warning("No selection", "Please select at least one scenario");
       return;
     }
 
@@ -495,20 +451,12 @@ export default function DiplomaticScenariosPage() {
       Array.from(selectedIds).map((id) => updateMutation.mutateAsync({ id, status: "expired" }))
     )
       .then(() => {
-        toast({
-          title: "Success",
-          description: `Deactivated ${selectedIds.size} scenarios`,
-          type: "success",
-        });
+        notify.success("Success", `Deactivated ${selectedIds.size} scenarios`);
         setSelectedIds(new Set());
         refetch();
       })
       .catch(() => {
-        toast({
-          title: "Error",
-          description: "Failed to deactivate some scenarios",
-          type: "error",
-        });
+        notify.error("Error", "Failed to deactivate some scenarios");
       });
   };
 
@@ -553,11 +501,7 @@ export default function DiplomaticScenariosPage() {
 
   const handleSaveChoice = () => {
     if (!choiceFormData.label) {
-      toast({
-        title: "Validation Error",
-        description: "Choice label is required",
-        type: "error",
-      });
+      notify.error("Validation Error", "Choice label is required");
       return;
     }
 

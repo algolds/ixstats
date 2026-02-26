@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { LucideIcon } from "lucide-react";
 import { MetricCard, type MetricCardProps } from "~/components/shared/data-display/MetricCard";
@@ -10,12 +10,14 @@ import { Button } from "~/components/ui/button";
 import { Edit2, ImageIcon, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { api } from "~/trpc/react";
-import { 
-  getCardImagePreset, 
-  getFallbackGradient, 
+import {
+  getCardImagePreset,
+  getFallbackGradient,
   allowsCustomUpload,
-  type CardImageType 
+  type CardImageType
 } from "~/lib/card-image-presets";
+import { useCountryImage } from "~/hooks/useCountryImage";
+import type { CountryImageData, ImageContext } from "~/lib/country-image-engine";
 import { cn } from "~/lib/utils";
 
 // Theme color configurations
@@ -78,6 +80,7 @@ export interface MetricGridItem {
   };
   onClick?: () => void;
   footer?: React.ReactNode;
+  tooltip?: string;
 }
 
 export interface MetricCardGridProps {
@@ -97,6 +100,10 @@ export interface MetricCardGridProps {
     cardType: CardImageType;
     showEditButton?: boolean;
     onEditClick?: () => void;
+    /** Auto-fetch contextual Unsplash image when no custom DB image exists */
+    autoFallback?: boolean;
+    /** Country data for keyword generation (required if autoFallback=true) */
+    countryImageData?: CountryImageData;
   };
 }
 
@@ -123,15 +130,30 @@ export function MetricCardGrid({
   const themeConfig = themeColors[theme];
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  
+
   // Fetch the card image from database if backgroundImage is provided
   const { data: cardImage, isLoading: isLoadingImage } = api.cardImages.getByCountryAndType.useQuery(
-    { 
-      countryId: backgroundImage?.countryId || "", 
-      cardType: backgroundImage?.cardType || "national_identity" 
+    {
+      countryId: backgroundImage?.countryId || "",
+      cardType: backgroundImage?.cardType || "national_identity"
     },
     { enabled: !!backgroundImage?.countryId }
   );
+
+  // Auto-fallback: fetch contextual Unsplash image when no DB image exists
+  const cardTypeToContext = useMemo((): ImageContext => {
+    const ct = backgroundImage?.cardType;
+    if (ct === "defense") return "defense_card";
+    if (ct === "diplomacy") return "diplomacy_card";
+    return (ct as ImageContext) || "economic_indicators";
+  }, [backgroundImage?.cardType]);
+
+  const { imageUrl: autoImageUrl } = useCountryImage({
+    countryData: backgroundImage?.countryImageData ?? null,
+    context: cardTypeToContext,
+    enabled: !!backgroundImage?.autoFallback && !!backgroundImage?.countryImageData && !cardImage?.imageUrl,
+    size: "small",
+  });
   
   const gridCols = {
     2: "grid-cols-1 sm:grid-cols-2",
@@ -152,8 +174,8 @@ export function MetricCardGrid({
     
   const itemProps = animate ? { variants: staggerItem } : {};
 
-  // Get image URL and fallback gradient
-  const imageUrl = cardImage?.imageUrl || null;
+  // Get image URL: DB custom image takes priority, then auto-fallback
+  const imageUrl = cardImage?.imageUrl || autoImageUrl || null;
   const hasImage = !!imageUrl && !imageError;
   const fallbackGradient = backgroundImage?.cardType 
     ? getFallbackGradient(backgroundImage.cardType) 
@@ -179,6 +201,7 @@ export function MetricCardGrid({
             theme={themeConfig}
             onClick={metric.onClick}
             footer={metric.footer}
+            tooltip={metric.tooltip}
           />
         </ItemWrapper>
       ))}
@@ -236,7 +259,7 @@ export function MetricCardGrid({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 z-10 h-8 w-8 bg-black/30 hover:bg-black/50 text-white"
+              className="absolute top-2 right-2 z-10 h-8 w-8 bg-foreground/30 hover:bg-foreground/50 text-background"
               onClick={(e) => {
                 e.stopPropagation();
                 backgroundImage.onEditClick?.();

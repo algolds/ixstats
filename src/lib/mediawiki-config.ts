@@ -64,7 +64,7 @@ export const WIKI_SOURCES = {
   iiwiki: {
     name: "IIWiki",
     baseUrl: "https://iiwiki.com", // CORRECT: iiwiki.com, NOT iiwiki.us
-    apiEndpoint: "/mediawiki/api.php",
+    apiEndpoint: "/api.php", // Direct path — /mediawiki/api.php no longer exists
     description: "SimFic and Alt-History Encyclopedia",
     userAgent: "IxStats-Builder", // REQUIRED: Must be exactly "IxStats-Builder" for iiwiki
     // NOTE: iiwiki MUST be accessed directly, NOT through proxy (Cloudflare blocks proxy)

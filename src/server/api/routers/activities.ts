@@ -366,6 +366,150 @@ export const activitiesRouter = createTRPCRouter({
     }
   }),
 
+  // Get feed from countries the user follows
+  getFollowingFeed: protectedProcedure
+    .input(z.object({ limit: z.number().min(1).max(50).default(30) }))
+    .query(async ({ ctx, input }) => {
+      const countryId = ctx.user?.countryId;
+      if (!countryId) {
+        return { activities: [], followingCount: 0 };
+      }
+
+      // Get followed country IDs
+      const follows = await ctx.db.countryFollow.findMany({
+        where: { followerCountryId: countryId },
+        select: { followedCountryId: true },
+      });
+
+      const followedIds = follows.map((f) => f.followedCountryId);
+      if (followedIds.length === 0) {
+        return { activities: [], followingCount: 0 };
+      }
+
+      // Fetch ActivityFeed entries from followed countries
+      const activityFeedEntries = await ctx.db.activityFeed.findMany({
+        where: { countryId: { in: followedIds } },
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
+      });
+
+      // Fetch ThinkPages posts from followed countries
+      const thinkpagesPosts = await ctx.db.thinkpagesPost.findMany({
+        where: {
+          visibility: "public",
+          account: { countryId: { in: followedIds } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
+        include: {
+          account: {
+            select: {
+              username: true,
+              accountType: true,
+              verified: true,
+              country: { select: { id: true, name: true, flag: true } },
+            },
+          },
+        },
+      });
+
+      // Batch fetch countries for activity entries
+      const countryIds = [...new Set(activityFeedEntries.filter((a) => a.countryId).map((a) => a.countryId!))];
+      const countries = countryIds.length > 0
+        ? await ctx.db.country.findMany({
+            where: { id: { in: countryIds } },
+            select: { id: true, name: true, leader: true },
+          })
+        : [];
+      const countryMap = new Map(countries.map((c) => [c.id, c]));
+
+      const combinedActivities: any[] = [];
+
+      // Transform ActivityFeed entries
+      for (const activity of activityFeedEntries) {
+        let metadata: any = {};
+        try {
+          if (activity.metadata) metadata = JSON.parse(activity.metadata);
+        } catch {}
+
+        const country = activity.countryId ? countryMap.get(activity.countryId) : null;
+
+        combinedActivities.push({
+          id: activity.id,
+          type: activity.type,
+          category: activity.category,
+          source: "activity",
+          user: country
+            ? {
+                id: `country-${country.id}`,
+                name: country.leader || `Leader of ${country.name}`,
+                countryName: country.name,
+                countryId: country.id,
+              }
+            : { id: "system", name: "IxStats System" },
+          content: {
+            title: activity.title,
+            description: activity.description,
+            metadata,
+          },
+          engagement: {
+            likes: activity.likes,
+            comments: activity.comments,
+            shares: activity.shares,
+            views: activity.views,
+          },
+          timestamp: activity.createdAt,
+          priority: activity.priority.toLowerCase(),
+          visibility: activity.visibility,
+          relatedCountries: [],
+        });
+      }
+
+      // Transform ThinkPages posts
+      for (const post of thinkpagesPosts) {
+        combinedActivities.push({
+          id: `thinkpages-${post.id}`,
+          type: "social",
+          category: "social",
+          source: "thinkpages",
+          user: {
+            id: post.accountId,
+            name: `@${post.account.username}`,
+            countryName: post.account.country?.name,
+            countryId: post.account.country?.id,
+          },
+          content: {
+            title: `@${post.account.username} posted on ThinkPages`,
+            description: post.content,
+            metadata: {
+              accountType: post.account.accountType,
+              verified: post.account.verified,
+              trending: post.trending,
+              postType: "thinkpages",
+            },
+          },
+          engagement: {
+            likes: post.likeCount,
+            comments: post.replyCount,
+            shares: post.repostCount,
+            views: post.impressions,
+          },
+          timestamp: post.createdAt,
+          priority: post.trending ? "high" : "medium",
+          visibility: post.visibility,
+          relatedCountries: post.account.country?.id ? [post.account.country.id] : [],
+        });
+      }
+
+      // Sort by timestamp and paginate
+      combinedActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      return {
+        activities: combinedActivities.slice(0, input.limit),
+        followingCount: followedIds.length,
+      };
+    }),
+
   // Get user-specific activity feed
   getUserFeed: publicProcedure
     .input(
@@ -1237,25 +1381,25 @@ export const activitiesRouter = createTRPCRouter({
         ctx.db.country.findMany({
           orderBy: { currentTotalGdp: "desc" },
           take: 5,
-          select: { id: true, name: true, currentTotalGdp: true, currentGdpPerCapita: true, economicTier: true },
+          select: { id: true, name: true, currentTotalGdp: true, currentGdpPerCapita: true, economicTier: true, updatedAt: true },
         }),
         ctx.db.country.findMany({
           where: { adjustedGdpGrowth: { gt: 0.025 } },
           orderBy: { adjustedGdpGrowth: "desc" },
           take: 5,
-          select: { id: true, name: true, adjustedGdpGrowth: true, economicTier: true },
+          select: { id: true, name: true, adjustedGdpGrowth: true, economicTier: true, updatedAt: true },
         }),
         ctx.db.country.findMany({
           where: { adjustedGdpGrowth: { lt: -0.005 } },
           orderBy: { adjustedGdpGrowth: "asc" },
           take: 3,
-          select: { id: true, name: true, adjustedGdpGrowth: true },
+          select: { id: true, name: true, adjustedGdpGrowth: true, updatedAt: true },
         }),
         ctx.db.country.findMany({
           where: { currentPopulation: { gt: 100_000_000 } },
           orderBy: { currentPopulation: "desc" },
           take: 3,
-          select: { id: true, name: true, currentPopulation: true, populationGrowthRate: true },
+          select: { id: true, name: true, currentPopulation: true, populationGrowthRate: true, updatedAt: true },
         }),
       ]);
 
@@ -1278,7 +1422,7 @@ export const activitiesRouter = createTRPCRouter({
           text: `${c.name} holds #${i + 1} global GDP at ${fmtGdp(c.currentTotalGdp)} (${c.economicTier})`,
           category: "economic",
           priority: i === 0 ? "high" : "medium",
-          timestamp: now.toISOString(),
+          timestamp: c.updatedAt.toISOString(),
         });
       });
 
@@ -1288,7 +1432,7 @@ export const activitiesRouter = createTRPCRouter({
           text: `${c.name} reports ${(c.adjustedGdpGrowth * 100).toFixed(1)}% GDP growth — ${c.economicTier} economy accelerating`,
           category: "economic",
           priority: c.adjustedGdpGrowth > 0.05 ? "high" : "medium",
-          timestamp: now.toISOString(),
+          timestamp: c.updatedAt.toISOString(),
         });
       });
 
@@ -1298,7 +1442,7 @@ export const activitiesRouter = createTRPCRouter({
           text: `Economic contraction: ${c.name} GDP shrinks ${(Math.abs(c.adjustedGdpGrowth) * 100).toFixed(1)}%`,
           category: "economic",
           priority: c.adjustedGdpGrowth < -0.02 ? "high" : "medium",
-          timestamp: now.toISOString(),
+          timestamp: c.updatedAt.toISOString(),
         });
       });
 
@@ -1308,7 +1452,7 @@ export const activitiesRouter = createTRPCRouter({
           text: `${c.name} population reaches ${fmtPop(c.currentPopulation)} — growth at ${(c.populationGrowthRate * 100).toFixed(1)}%`,
           category: "economic",
           priority: "low",
-          timestamp: now.toISOString(),
+          timestamp: c.updatedAt.toISOString(),
         });
       });
 

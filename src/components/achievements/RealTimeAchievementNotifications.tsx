@@ -13,7 +13,7 @@ import {
   RiStarFill,
   RiCloseLine,
 } from "react-icons/ri";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 
 interface AchievementNotificationProps {
   countryId: string;
@@ -101,18 +101,14 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
   const enableRealTime = false; // Disable real-time by default
   const { isConnected, recentEvents, actions } = useAchievementUpdates(countryId, enableRealTime);
   const [notifications, setNotifications] = useState<NotificationState[]>([]);
-  const { toast } = useToast();
+  const notify = useNotify();
 
   useEffect(() => {
     // Only show connection error if real-time is enabled but not connected
     if (enableRealTime && !isConnected) {
-      toast({
-        title: "Offline Mode",
-        description: "Achievement notifications require WebSocket connection",
-        type: "error",
-      });
+      notify.error("Offline Mode", "Achievement notifications require WebSocket connection");
     }
-  }, [isConnected, toast, enableRealTime]);
+  }, [isConnected, notify, enableRealTime]);
 
   // Process new achievement events
   useEffect(() => {

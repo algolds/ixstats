@@ -32,7 +32,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { PostActions } from "./primitives/PostActions";
 import { ReactionsDialog } from "./ReactionsDialog";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { formatContentEnhanced, extractHashtags, extractMentions } from "~/lib/text-formatter";
 
 interface ThinkpagesPostProps {
@@ -109,6 +109,7 @@ const ThinkpagesPostComponent = ({
   compact = false,
   showThread = false,
 }: ThinkpagesPostProps) => {
+  const notify = useNotify();
   const [showReplies, setShowReplies] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
@@ -151,9 +152,9 @@ const ThinkpagesPostComponent = ({
         accountId: currentUserAccountId,
         pinned: !post.pinned,
       });
-      toast.success(post.pinned ? "Post unpinned" : "Post pinned");
+      notify.success(post.pinned ? "Post unpinned" : "Post pinned");
     } catch (error: any) {
-      toast.error(error.message || "Failed to pin post");
+      notify.error(error.message || "Failed to pin post");
     }
   }, [pinPostMutation, post.id, post.pinned, currentUserAccountId]);
 
@@ -165,9 +166,9 @@ const ThinkpagesPostComponent = ({
         userId: currentUserAccountId,
         bookmarked: true,
       });
-      toast.success("Post bookmarked");
+      notify.success("Post bookmarked");
     } catch (error: any) {
-      toast.error(error.message || "Failed to bookmark post");
+      notify.error(error.message || "Failed to bookmark post");
     }
   }, [bookmarkPostMutation, post.id, currentUserAccountId]);
 
@@ -186,11 +187,11 @@ const ThinkpagesPostComponent = ({
         userId: currentUserAccountId,
         reason: flagReason,
       });
-      toast.success("Post flagged");
+      notify.success("Post flagged");
       setShowFlagDialog(false);
       setFlagReason("");
     } catch (error: any) {
-      toast.error(error.message || "Failed to flag post");
+      notify.error(error.message || "Failed to flag post");
     }
   }, [flagPostMutation, post.id, currentUserAccountId, flagReason]);
 
@@ -212,10 +213,10 @@ const ThinkpagesPostComponent = ({
         postId: post.id,
         content: editText,
       });
-      toast.success("Post updated");
+      notify.success("Post updated");
       setShowEditComposer(false);
     } catch (error: any) {
-      toast.error(error.message || "Failed to update post");
+      notify.error(error.message || "Failed to update post");
     }
   }, [updatePostMutation, post.id, editText, post.content, currentUserAccountId]);
 
@@ -230,10 +231,10 @@ const ThinkpagesPostComponent = ({
       await deletePostMutation.mutateAsync({
         postId: post.id,
       });
-      toast.success("Post deleted");
+      notify.success("Post deleted");
       setShowDeleteConfirm(false);
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete post");
+      notify.error(error.message || "Failed to delete post");
     }
   }, [deletePostMutation, post.id, currentUserAccountId]);
 
@@ -267,11 +268,11 @@ const ThinkpagesPostComponent = ({
         hashtags: extractHashtags(replyText),
         mentions: extractMentions(replyText),
       });
-      toast.success("Reply posted!");
+      notify.success("Reply posted!");
       setReplyText("");
       setShowReplyComposer(false);
     } catch (error: any) {
-      toast.error(error.message || "Failed to post reply");
+      notify.error(error.message || "Failed to post reply");
     }
   }, [createPostMutation, replyText, currentUserAccountId, post.id]);
 
@@ -509,7 +510,7 @@ const ThinkpagesPostComponent = ({
             isLiked={post.reactions?.some(
               (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
             )}
-            isReposted={false} // TODO: Track repost status
+            isReposted={post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false}
             likeCount={post.likeCount}
             repostCount={post.repostCount}
             replyCount={post.replyCount}
@@ -540,11 +541,11 @@ const ThinkpagesPostComponent = ({
                   .catch(() => {
                     // Fallback to clipboard if share fails
                     navigator.clipboard.writeText(postUrl);
-                    toast.success("Post link copied to clipboard!");
+                    notify.success("Post link copied to clipboard!");
                   });
               } else {
                 navigator.clipboard.writeText(postUrl);
-                toast.success("Post link copied to clipboard!");
+                notify.success("Post link copied to clipboard!");
               }
               onShare?.(post.id);
             }}

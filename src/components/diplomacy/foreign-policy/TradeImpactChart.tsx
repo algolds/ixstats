@@ -10,6 +10,7 @@ import {
 } from "~/components/ui/select";
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 
 interface TradeImpactChartProps {
   countryId: string;
@@ -32,7 +33,7 @@ export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
     ? [...new Map(
         relationships.map((r) => {
           const id = r.targetCountryId;
-          return [id, { id, name: r.targetCountry ?? id }];
+          return [id, { id, name: r.targetCountryName ?? id, flag: r.targetCountryFlag ?? null }];
         })
       ).values()]
     : [];
@@ -55,7 +56,10 @@ export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
           <SelectContent>
             {targetCountries.map((c) => (
               <SelectItem key={c.id} value={c.id}>
-                {c.name}
+                <span className="flex items-center gap-1.5">
+                  <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" showTooltip={false} />
+                  {c.name}
+                </span>
               </SelectItem>
             ))}
           </SelectContent>

@@ -9,6 +9,7 @@ import type { CardInstance } from "~/types/pack-opening";
 import { getPackOpeningService } from "~/lib/pack-opening-service";
 import { GlassSplashEffect } from "./GlassSplashEffect";
 import { getParticleConfig } from "~/lib/holographic-effects";
+import { CardHolographicCover } from "../display/CardHolographicCover";
 
 interface Stage3_CardRevealProps {
   cards: CardInstance[];
@@ -374,13 +375,18 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
 
             {/* Card content */}
             <div className="relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 p-1">
-              {/* Card image */}
-              <div
-                className="h-full w-full rounded-xl bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${card.artwork})`,
-                }}
-              >
+              {/* Card image with holographic fallback */}
+              <div className="relative h-full w-full rounded-xl overflow-hidden">
+                <CardHolographicCover
+                  cardType={card.cardType}
+                  rarity={card.rarity}
+                />
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${card.artwork})`,
+                  }}
+                >
                 {/* Gradient overlay */}
                 <div className="h-full w-full bg-gradient-to-t from-black/80 via-transparent to-transparent p-4">
                   {/* Card info */}
@@ -408,6 +414,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
                     {card.rarity.replace("_", " ")}
                   </div>
                 </div>
+              </div>
               </div>
             </div>
 

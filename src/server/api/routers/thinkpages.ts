@@ -370,25 +370,24 @@ export const thinkpagesRouter = createTRPCRouter({
       }
     }
 
-    for (const hashtag in hashtagCounts) {
-      const hashtagData = hashtagCounts[hashtag];
-      if (!hashtagData) continue;
-
-      await db.trendingTopic.upsert({
-        where: { hashtag },
-        create: {
-          hashtag,
-          postCount: hashtagData.count,
-          engagement: hashtagData.engagement,
-          peakTimestamp: new Date(),
-        },
-        update: {
-          postCount: hashtagData.count,
-          engagement: hashtagData.engagement,
-          peakTimestamp: new Date(),
-        },
-      });
-    }
+    await Promise.all(
+      Object.entries(hashtagCounts).map(([hashtag, hashtagData]) =>
+        db.trendingTopic.upsert({
+          where: { hashtag },
+          create: {
+            hashtag,
+            postCount: hashtagData.count,
+            engagement: hashtagData.engagement,
+            peakTimestamp: new Date(),
+          },
+          update: {
+            postCount: hashtagData.count,
+            engagement: hashtagData.engagement,
+            peakTimestamp: new Date(),
+          },
+        })
+      )
+    );
 
     return { success: true };
   }),
@@ -423,7 +422,9 @@ export const thinkpagesRouter = createTRPCRouter({
           isActive: true,
         },
         include: {
-          country: true,
+          country: {
+            select: { id: true, name: true, flag: true, slug: true },
+          },
         },
         take: 5,
       });
@@ -935,16 +936,33 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
-      // Hard delete the post
+      // Handle child posts before deletion:
+      // 1. Nullify parentPostId on replies (prevents FK constraint, marks as orphaned)
+      await db.thinkpagesPost.updateMany({
+        where: { parentPostId: input.postId },
+        data: { parentPostId: null },
+      });
+
+      // 2. Delete reposts of this post (reposts have no standalone value)
+      const repostCount = await db.thinkpagesPost.count({
+        where: { repostOfId: input.postId },
+      });
+      if (repostCount > 0) {
+        await db.thinkpagesPost.deleteMany({
+          where: { repostOfId: input.postId },
+        });
+      }
+
+      // Hard delete the post (PostReaction, PostMention, MediaAttachment cascade automatically)
       const deletedPost = await db.thinkpagesPost.delete({
         where: { id: input.postId },
       });
 
-      // Decrement account post count
+      // Decrement account post count (include deleted reposts)
       await db.thinkpagesAccount.update({
         where: { id: post.accountId },
         data: {
-          postCount: { decrement: 1 },
+          postCount: { decrement: 1 + repostCount },
         },
       });
 
@@ -1258,9 +1276,11 @@ export const thinkpagesRouter = createTRPCRouter({
         },
         reactions: true,
         mediaAttachments: true,
+        reposts: {
+          select: { accountId: true },
+        },
         _count: {
           select: {
-            // reactions: true // Relation doesn't exist,
             replies: true,
             reposts: true,
           },
@@ -1473,6 +1493,9 @@ export const thinkpagesRouter = createTRPCRouter({
           },
           reactions: true,
           mediaAttachments: true,
+          reposts: {
+            select: { accountId: true },
+          },
           _count: {
             select: {
               replies: true,
@@ -1527,71 +1550,93 @@ export const thinkpagesRouter = createTRPCRouter({
       select: { id: true, name: true },
     });
 
+    // Batch-fetch all active users and recent posts in 2 queries instead of per-country
+    const allUsers = await db.user.findMany({
+      where: {
+        countryId: { in: countries.map((c: any) => c.id) },
+        isActive: true,
+      },
+      select: { id: true, countryId: true },
+    });
+
+    // Group users by countryId
+    const usersByCountry = new Map<string, string[]>();
+    for (const u of allUsers) {
+      if (!u.countryId) continue;
+      const existing = usersByCountry.get(u.countryId) ?? [];
+      existing.push(u.id);
+      usersByCountry.set(u.countryId, existing);
+    }
+
+    // Batch-fetch all recent posts for all active users
+    const allUserIds = allUsers.map((u: any) => u.id);
+    const allRecentPosts = allUserIds.length > 0
+      ? await db.thinkpagesPost.findMany({
+          where: {
+            accountId: { in: allUserIds },
+            ixTimeTimestamp: { gte: twentyFourHoursAgo },
+          },
+          include: { reactions: true },
+        })
+      : [];
+
+    // Group posts by accountId for fast lookup
+    const postsByAccount = new Map<string, typeof allRecentPosts>();
+    for (const post of allRecentPosts) {
+      const existing = postsByAccount.get(post.accountId) ?? [];
+      existing.push(post);
+      postsByAccount.set(post.accountId, existing);
+    }
+
+    const dailyTimestamp = new Date(currentIxTime);
+    dailyTimestamp.setHours(0, 0, 0, 0);
+    const upsertPromises: Promise<any>[] = [];
+
     for (const country of countries) {
-      const citizenAccounts = await db.user.findMany({
-        where: {
-          countryId: country.id,
-          isActive: true,
-        },
-        take: 500,
-        select: { id: true },
-      });
+      const citizenIds = usersByCountry.get(country.id);
+      if (!citizenIds || citizenIds.length === 0) continue;
 
-      if (citizenAccounts.length === 0) {
-        console.log(`No citizen accounts for ${country.name}, skipping mood metric calculation.`);
-        continue;
+      // Collect posts for this country's citizens
+      const countryPosts: typeof allRecentPosts = [];
+      for (const userId of citizenIds) {
+        const userPosts = postsByAccount.get(userId);
+        if (userPosts) countryPosts.push(...userPosts);
       }
 
-      const citizenAccountIds = citizenAccounts.map((acc: any) => acc.id);
-
-      const recentCitizenPosts = await db.thinkpagesPost.findMany({
-        where: {
-          accountId: { in: citizenAccountIds },
-          ixTimeTimestamp: { gte: twentyFourHoursAgo },
-        },
-        include: { reactions: true },
-        take: 200,
-      });
-
-      if (recentCitizenPosts.length === 0) {
-        console.log(
-          `No recent citizen posts for ${country.name}, skipping mood metric calculation.`
-        );
-        continue;
-      }
+      if (countryPosts.length === 0) continue;
 
       let totalSentiment = 0;
-      for (const post of recentCitizenPosts) {
-        totalSentiment += analyzePostSentiment(post as any); // Cast to any due to Prisma type mismatch for relations
+      for (const post of countryPosts) {
+        totalSentiment += analyzePostSentiment(post as any);
       }
+      const averageSentiment = totalSentiment / countryPosts.length;
 
-      const averageSentiment = totalSentiment / recentCitizenPosts.length;
-
-      // Store the mood metric
-      const dailyTimestamp = new Date(currentIxTime);
-      dailyTimestamp.setHours(0, 0, 0, 0);
-
-      await db.countryMoodMetric.upsert({
-        where: {
-          countryId_timestamp: {
-            countryId: country.id,
+      upsertPromises.push(
+        db.countryMoodMetric.upsert({
+          where: {
+            countryId_timestamp: {
+              countryId: country.id,
+              timestamp: dailyTimestamp,
+            },
+          },
+          update: {
+            sentimentScore: averageSentiment,
+            postCount: countryPosts.length,
             timestamp: dailyTimestamp,
           },
-        },
-        update: {
-          sentimentScore: averageSentiment,
-          postCount: recentCitizenPosts.length,
-          timestamp: dailyTimestamp,
-        },
-        create: {
-          countryId: country.id,
-          sentimentScore: averageSentiment,
-          postCount: recentCitizenPosts.length,
-          timestamp: dailyTimestamp,
-        },
-      });
-      console.log(`Calculated mood metric for ${country.name}: ${averageSentiment.toFixed(2)}`);
+          create: {
+            countryId: country.id,
+            sentimentScore: averageSentiment,
+            postCount: countryPosts.length,
+            timestamp: dailyTimestamp,
+          },
+        })
+      );
     }
+
+    // Execute all upserts in parallel
+    await Promise.allSettled(upsertPromises);
+
     return { success: true, message: "Country mood metrics calculated" };
   }),
 
@@ -2994,10 +3039,21 @@ export const thinkpagesRouter = createTRPCRouter({
         });
         const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
 
+        // Fallback: diplomatic channels store countryId as userId — look up by country CUID
+        const unmatchedParticipantIds = Array.from(participantUserIds).filter((id) => !userMap.has(id));
+        const countryParticipantFallbacks = unmatchedParticipantIds.length > 0
+          ? await db.country.findMany({
+              where: { id: { in: unmatchedParticipantIds } },
+              select: { id: true, name: true, slug: true, flag: true },
+            })
+          : [];
+        const countryParticipantMap = new Map(countryParticipantFallbacks.map((c) => [c.id, c]));
+
         return {
           conversations: conversations.map((conv: any) => {
             const participantWithAccount = conv.participants.map((p: any) => {
               const u = userMap.get(p.userId);
+              const c = !u ? countryParticipantMap.get(p.userId) : null;
               return {
                 ...p,
                 accountId: p.userId,
@@ -3009,6 +3065,14 @@ export const thinkpagesRouter = createTRPCRouter({
                       profileImageUrl: u.country?.flag || null,
                       accountType: "country",
                     }
+                  : c
+                  ? {
+                      id: p.userId,
+                      username: c.slug || "",
+                      displayName: c.name || "Unknown Country",
+                      profileImageUrl: c.flag || null,
+                      accountType: "country",
+                    }
                   : null,
               };
             });
@@ -3018,6 +3082,9 @@ export const thinkpagesRouter = createTRPCRouter({
             );
             const lastMessageRaw = conv.messages[0];
             const lastMessageUser = lastMessageRaw ? userMap.get(lastMessageRaw.userId) : null;
+            const lastMessageCountry = lastMessageRaw && !lastMessageUser
+              ? countryParticipantMap.get(lastMessageRaw.userId) ?? null
+              : null;
             const lastMessage = lastMessageRaw
               ? {
                   ...lastMessageRaw,
@@ -3028,6 +3095,14 @@ export const thinkpagesRouter = createTRPCRouter({
                         username: lastMessageUser.country?.slug || "",
                         displayName: lastMessageUser.country?.name || "Unknown Country",
                         profileImageUrl: lastMessageUser.country?.flag || null,
+                        accountType: "country",
+                      }
+                    : lastMessageCountry
+                    ? {
+                        id: lastMessageRaw.userId,
+                        username: lastMessageCountry.slug || "",
+                        displayName: lastMessageCountry.name || "Unknown Country",
+                        profileImageUrl: lastMessageCountry.flag || null,
                         accountType: "country",
                       }
                     : null,
@@ -3156,20 +3231,43 @@ export const thinkpagesRouter = createTRPCRouter({
       // Create a map for quick lookup
       const accountMap = new Map(accounts.map((acc: any) => [acc.clerkUserId, acc]));
 
+      // Fallback: diplomatic channels store countryId as userId — look up by country CUID
+      const unmatchedIds = userIds.filter((id) => !accountMap.has(id));
+      const countryFallbacks = unmatchedIds.length > 0
+        ? await db.country.findMany({
+            where: { id: { in: unmatchedIds } },
+            select: { id: true, name: true, slug: true, flag: true },
+          })
+        : [];
+      const countryFallbackMap = new Map(countryFallbacks.map((c) => [c.id, c]));
+
       return {
         messages: messages.map((msg) => ({
           ...msg,
           account: (() => {
             const u = accountMap.get(msg.userId);
-            return u
-              ? {
-                  id: u.clerkUserId,
-                  username: u.country?.slug || "",
-                  displayName: u.country?.name || "Unknown Country",
-                  profileImageUrl: u.country?.flag || null,
-                  accountType: "country",
-                }
-              : null;
+            if (u) return {
+              id: u.clerkUserId,
+              username: u.country?.slug || "",
+              displayName: u.country?.name || "Unknown Country",
+              profileImageUrl: u.country?.flag || null,
+              accountType: "country",
+            };
+            const c = countryFallbackMap.get(msg.userId);
+            if (c) return {
+              id: msg.userId,
+              username: c.slug || "",
+              displayName: c.name || "Unknown Country",
+              profileImageUrl: c.flag || null,
+              accountType: "country",
+            };
+            return {
+              id: msg.userId,
+              username: "unknown",
+              displayName: "Unknown User",
+              profileImageUrl: null,
+              accountType: "user",
+            };
           })(),
           accountId: msg.userId, // Keep accountId for compatibility
           reactions: msg.reactions ? JSON.parse(msg.reactions) : {},

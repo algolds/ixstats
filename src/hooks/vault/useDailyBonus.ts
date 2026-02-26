@@ -10,19 +10,18 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 export function useDailyBonus() {
+  const notify = useNotify();
   const utils = api.useUtils();
 
   const claimMutation = api.vault.claimDailyBonus.useMutation({
     onSuccess: (data) => {
-      toast.success(`Daily bonus claimed! +${data.bonus} IxCredits`, {
-        description: `Login streak: ${data.streak} ${data.streak === 1 ? "day" : "days"}`,
-      });
+      notify.success(`Daily bonus claimed! +${data.bonus} IxCredits`, `Login streak: ${data.streak} ${data.streak === 1 ? "day" : "days"}`);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to claim daily bonus");
+      notify.error(error.message || "Failed to claim daily bonus");
     },
     onSettled: () => {
       // Invalidate balance and earnings summary

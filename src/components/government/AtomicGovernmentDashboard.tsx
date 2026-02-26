@@ -64,13 +64,11 @@ export const AtomicGovernmentDashboard: React.FC<AtomicGovernmentDashboardProps>
   const [selectedComponents, setSelectedComponents] = useState<Set<ComponentType>>(new Set());
   const [showComponentSelector, setShowComponentSelector] = useState(false);
 
-  // TODO: Re-enable when atomicGovernment router is available
-  // const { data: governmentData, isLoading } = api.atomicGovernment.getGovernmentStructure.useQuery(
-  //   { countryId },
-  //   { enabled: !!countryId }
-  // );
-  const governmentData = undefined;
-  const isLoading = false;
+  // atomicGovernment router is registered and available (uses getComponents, not getGovernmentStructure)
+  const { data: governmentData, isLoading } = api.atomicGovernment.getComponents.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
 
   const { data: countryData } = api.countries.getByIdWithEconomicData.useQuery(
     { id: countryId },

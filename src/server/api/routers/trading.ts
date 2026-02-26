@@ -16,6 +16,8 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus, type Prisma } from "@prisma/client";
+import { syncUserToForum } from "~/lib/xenforo-user-sync";
+import { notificationAPI } from "~/lib/notification-api";
 
 /**
  * Trade offer creation schema
@@ -159,6 +161,23 @@ export const tradingRouter = createTRPCRouter({
         },
       });
 
+      // Notify the recipient about the incoming trade offer
+      try {
+        const senderName = trade.initiator?.country?.name ?? "A player";
+        await notificationAPI.create({
+          title: "New Trade Offer",
+          message: `${senderName} sent you a trade offer with ${input.initiatorCardIds.length} card(s)`,
+          userId: input.recipientId,
+          category: "economic",
+          priority: "high",
+          type: "info",
+          source: "trading",
+          href: "/vault",
+          actionable: true,
+          metadata: { tradeId: trade.id, cardCount: input.initiatorCardIds.length },
+        });
+      } catch (e) { console.warn("[Notifications] trading.createtradeOffer:", e); }
+
       return trade;
     }),
 
@@ -289,7 +308,7 @@ export const tradingRouter = createTRPCRouter({
       }
 
       // ACCEPT - Execute the trade atomically
-      return await ctx.db.$transaction(async (tx: Prisma.TransactionClient) => {
+      const completedTrade = await ctx.db.$transaction(async (tx: Prisma.TransactionClient) => {
         // Cast Json card IDs to string arrays
         const initiatorCardIds = trade.initiatorCardIds as string[];
         const recipientCardIds = trade.recipientCardIds as string[];
@@ -359,7 +378,7 @@ export const tradingRouter = createTRPCRouter({
         }
 
         // Update trade status
-        const completedTrade = await tx.tradeOffer.update({
+        const updatedTrade = await tx.tradeOffer.update({
           where: { id: input.tradeId },
           data: {
             status: TradeStatus.ACCEPTED,
@@ -367,8 +386,29 @@ export const tradingRouter = createTRPCRouter({
           },
         });
 
-        return completedTrade;
+        return updatedTrade;
       });
+
+      // Sync both traders to forum profile (fire-and-forget)
+      syncUserToForum(trade.initiatorId).catch(() => {});
+      syncUserToForum(trade.recipientId).catch(() => {});
+
+      // Notify initiator that their trade was accepted
+      try {
+        await notificationAPI.create({
+          title: "Trade Accepted",
+          message: "Your trade offer has been accepted! Cards have been exchanged.",
+          userId: trade.initiatorId,
+          category: "economic",
+          priority: "high",
+          type: "success",
+          source: "trading",
+          href: "/vault",
+          metadata: { tradeId: input.tradeId },
+        });
+      } catch (e) { console.warn("[Notifications] trading.respondToTrade:", e); }
+
+      return completedTrade;
     }),
 
   /**

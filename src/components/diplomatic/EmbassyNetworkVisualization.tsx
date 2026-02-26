@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   RiShakeHandsLine,
   RiGlobalLine,
@@ -157,6 +157,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   onEstablishEmbassy,
   viewerClearanceLevel = "PUBLIC",
 }) => {
+  const notify = useNotify();
   const [selectedRelation, setSelectedRelation] = useState<DiplomaticRelation | null>(null);
   const [_selectedEmbassy, setSelectedEmbassy] = useState<Embassy | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
@@ -268,9 +269,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   // Game action mutations
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      toast.success(`Embassy established`, {
-        description: `Embassy now active in ${(data as any).hostCountryName || "the host nation"}.`,
-      });
+      notify.success(`Embassy established`, `Embassy now active in ${(data as any).hostCountryName || "the host nation"}.`);
       setShowEstablishEmbassy(false);
       setSelectedHostCountryId("");
       setNewEmbassyName("");
@@ -283,9 +282,7 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
       }
     },
     onError: (error) => {
-      toast.error("Failed to establish embassy", {
-        description: error.message,
-      });
+      notify.error("Failed to establish embassy", error.message);
     },
   });
 
@@ -344,60 +341,41 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
 
   const startMissionMutation = api.diplomatic.startMission.useMutation({
     onSuccess: (data) => {
-      toast.success(`Mission "${(data as any).name || "Mission"}" started!`, {
-        description: `Expected completion in ${(data as any).duration || 0} hours.`,
-      });
+      notify.success(`Mission "${(data as any).name || "Mission"}" started!`, `Expected completion in ${(data as any).duration || 0} hours.`);
     },
     onError: (error) => {
-      toast.error("Failed to start mission", {
-        description: error.message,
-      });
+      notify.error("Failed to start mission", error.message);
     },
   });
 
   const completeMissionMutation = api.diplomatic.completeMission.useMutation({
     onSuccess: (data) => {
       if (data.success) {
-        toast.success(`Mission completed successfully!`, {
-          description: `Gained ${(data as any).rewards?.experience || 0} XP and ${(data as any).rewards?.influence || 0} influence.`,
-        });
+        notify.success(`Mission completed successfully!`, `Gained ${(data as any).rewards?.experience || 0} XP and ${(data as any).rewards?.influence || 0} influence.`);
       } else {
-        toast.warning(`Mission failed`, {
-          description:
-            (data as any).message || "The mission did not succeed, but experience was gained.",
-        });
+        notify.warning(`Mission failed`, (data as any).message || "The mission did not succeed, but experience was gained.");
       }
     },
     onError: (error) => {
-      toast.error("Error completing mission", {
-        description: error.message,
-      });
+      notify.error("Error completing mission", error.message);
     },
   });
 
   const upgradeEmbassyMutation = api.diplomatic.upgradeEmbassy.useMutation({
     onSuccess: (data) => {
-      toast.success(`Embassy upgraded!`, {
-        description: `${(data as any).upgradeType || "Upgrade"} has been installed successfully.`,
-      });
+      notify.success(`Embassy upgraded!`, `${(data as any).upgradeType || "Upgrade"} has been installed successfully.`);
     },
     onError: (error) => {
-      toast.error("Failed to upgrade embassy", {
-        description: error.message,
-      });
+      notify.error("Failed to upgrade embassy", error.message);
     },
   });
 
   const payMaintenanceMutation = api.diplomatic.payMaintenance.useMutation({
     onSuccess: (_data) => {
-      toast.success("Maintenance paid successfully!", {
-        description: `Embassy maintenance paid successfully`,
-      });
+      notify.success("Maintenance paid successfully!", `Embassy maintenance paid successfully`);
     },
     onError: (error) => {
-      toast.error("Failed to pay maintenance", {
-        description: error.message,
-      });
+      notify.error("Failed to pay maintenance", error.message);
     },
   });
 

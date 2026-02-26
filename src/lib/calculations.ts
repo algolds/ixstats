@@ -6,7 +6,7 @@ import type {
   BaseCountryData,
   CountryStats,
   EconomicConfig,
-  DmInputs as DmInputRecord,
+  StorytellerEffect as StorytellerEffectRecord,
   HistoricalDataPoint,
 } from "../types/ixstats";
 
@@ -32,7 +32,7 @@ export enum PopulationTier {
   TIER_X = "X", // 500,000,000+
 }
 
-export enum DmInputType {
+export enum StorytellerEffectType {
   POPULATION_ADJUSTMENT = "population_adjustment",
   GDP_ADJUSTMENT = "gdp_adjustment",
   GROWTH_RATE_MODIFIER = "growth_rate_modifier",
@@ -150,7 +150,7 @@ export class IxStatsCalculator {
   calculateTimeProgression(
     baselineStats: CountryStats,
     targetTime?: number,
-    dmInputs: DmInputRecord[] = []
+    effects: StorytellerEffectRecord[] = []
   ): StatsCalculationResult {
     const targetTimeMs = targetTime || IxTime.getCurrentIxTime();
     const baselineTimeMs = this.baselineDate;
@@ -171,13 +171,13 @@ export class IxStatsCalculator {
     }
 
     const oldStats = { ...baselineStats };
-    const activeDmInputs = this.getActiveDmInputs(dmInputs, baselineTimeMs, targetTimeMs);
+    const activeEffects = this.getActiveEffects(effects, baselineTimeMs, targetTimeMs);
 
     const newPopulation = this.calculatePopulationProgression(
       baselineStats.population,
       baselineStats.populationGrowthRate,
       yearsFromBaseline,
-      activeDmInputs
+      activeEffects
     );
 
     const newGdpPerCapita = this.calculateGdpPerCapitaProgression(
@@ -186,7 +186,7 @@ export class IxStatsCalculator {
       baselineStats.maxGdpGrowthRate,
       baselineStats.economicTier as EconomicTier,
       yearsFromBaseline,
-      activeDmInputs,
+      activeEffects,
       baselineStats.localGrowthFactor
     );
 
@@ -210,7 +210,7 @@ export class IxStatsCalculator {
       lastCalculated: new Date(targetTimeMs),
     };
 
-    const modifiedStats = this.applySpecialModifiers(updatedStats, activeDmInputs);
+    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);
 
     if (
       modifiedStats.currentPopulation !== updatedStats.currentPopulation ||
@@ -235,13 +235,13 @@ export class IxStatsCalculator {
     baselinePopulation: number,
     growthRateDecimal: number,
     yearsFromBaseline: number,
-    dmInputs: DmInputRecord[]
+    effects: StorytellerEffectRecord[]
   ): number {
     let adjustedRate = growthRateDecimal;
 
-    dmInputs.forEach((input) => {
+    effects.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
-      if (input.inputType === DmInputType.POPULATION_ADJUSTMENT) {
+      if (input.inputType === StorytellerEffectType.POPULATION_ADJUSTMENT) {
         adjustedRate += inputValue;
       }
     });
@@ -258,7 +258,7 @@ export class IxStatsCalculator {
     maxGrowthRateDecimal: number,
     tier: EconomicTier,
     yearsFromBaseline: number,
-    dmInputs: DmInputRecord[],
+    effects: StorytellerEffectRecord[],
     localGrowthFactor = 1.0
   ): number {
     // Start with the base adjusted growth rate
@@ -275,12 +275,12 @@ export class IxStatsCalculator {
     const tierModifier = this.config.tierGrowthModifiers[tier] || 1.0;
     effectiveGrowthRate *= tierModifier;
 
-    // Apply DM inputs
-    dmInputs.forEach((input) => {
+    // Apply storyteller effects
+    effects.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
-      if (input.inputType === DmInputType.GDP_ADJUSTMENT) {
+      if (input.inputType === StorytellerEffectType.GDP_ADJUSTMENT) {
         effectiveGrowthRate += inputValue;
-      } else if (input.inputType === DmInputType.GROWTH_RATE_MODIFIER) {
+      } else if (input.inputType === StorytellerEffectType.GROWTH_RATE_MODIFIER) {
         effectiveGrowthRate *= 1 + inputValue;
       }
     });
@@ -351,7 +351,7 @@ export class IxStatsCalculator {
   calculateCurrentTimeProgression(
     currentStats: CountryStats,
     targetTime?: number,
-    dmInputs: DmInputRecord[] = []
+    effects: StorytellerEffectRecord[] = []
   ): StatsCalculationResult {
     const nowIxTimeMs = targetTime || IxTime.getCurrentIxTime();
     const lastCalculatedMs =
@@ -375,13 +375,13 @@ export class IxStatsCalculator {
     }
 
     const oldStats = { ...currentStats };
-    const activeDmInputs = this.getActiveDmInputs(dmInputs, lastCalculatedMs, nowIxTimeMs);
+    const activeEffects = this.getActiveEffects(effects, lastCalculatedMs, nowIxTimeMs);
 
     const newPopulation = this.calculatePopulationProgression(
       currentStats.currentPopulation,
       currentStats.populationGrowthRate,
       yearsElapsed,
-      activeDmInputs
+      activeEffects
     );
 
     const newGdpPerCapita = this.calculateGdpPerCapitaProgression(
@@ -390,7 +390,7 @@ export class IxStatsCalculator {
       currentStats.maxGdpGrowthRate,
       currentStats.economicTier as EconomicTier,
       yearsElapsed,
-      activeDmInputs,
+      activeEffects,
       currentStats.localGrowthFactor
     );
 
@@ -414,7 +414,7 @@ export class IxStatsCalculator {
       lastCalculated: new Date(nowIxTimeMs),
     };
 
-    const modifiedStats = this.applySpecialModifiers(updatedStats, activeDmInputs);
+    const modifiedStats = this.applySpecialModifiers(updatedStats, activeEffects);
 
     if (
       modifiedStats.currentPopulation !== updatedStats.currentPopulation ||
@@ -435,12 +435,12 @@ export class IxStatsCalculator {
     };
   }
 
-  private getActiveDmInputs(
-    dmInputs: DmInputRecord[],
+  private getActiveEffects(
+    effects: StorytellerEffectRecord[],
     startTime: number,
     endTime: number
-  ): DmInputRecord[] {
-    return dmInputs.filter((input) => {
+  ): StorytellerEffectRecord[] {
+    return effects.filter((input) => {
       const inputTime =
         input.ixTimeTimestamp instanceof Date
           ? input.ixTimeTimestamp.getTime()
@@ -457,26 +457,26 @@ export class IxStatsCalculator {
     });
   }
 
-  private applySpecialModifiers(stats: CountryStats, dmInputs: DmInputRecord[]): CountryStats {
+  private applySpecialModifiers(stats: CountryStats, effects: StorytellerEffectRecord[]): CountryStats {
     const modifiedStats = { ...stats };
 
-    dmInputs.forEach((input) => {
+    effects.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
       switch (input.inputType) {
-        case DmInputType.NATURAL_DISASTER:
+        case StorytellerEffectType.NATURAL_DISASTER:
           modifiedStats.currentPopulation *= 1 + inputValue;
           modifiedStats.currentTotalGdp *= 1 + inputValue * 1.5;
           break;
 
-        case DmInputType.TRADE_AGREEMENT:
+        case StorytellerEffectType.TRADE_AGREEMENT:
           modifiedStats.currentGdpPerCapita *= 1 + inputValue;
           break;
 
-        case DmInputType.ECONOMIC_POLICY:
+        case StorytellerEffectType.ECONOMIC_POLICY:
           modifiedStats.localGrowthFactor *= 1 + inputValue;
           break;
 
-        case DmInputType.SPECIAL_EVENT:
+        case StorytellerEffectType.SPECIAL_EVENT:
           modifiedStats.currentPopulation *= 1 + inputValue * 0.5;
           modifiedStats.currentGdpPerCapita *= 1 + inputValue * 0.8;
           break;

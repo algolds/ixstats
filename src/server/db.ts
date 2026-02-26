@@ -69,7 +69,7 @@ const createPrismaClient = () => {
   // Models that are writable even in read-only mode
   const WRITABLE_MODELS_IN_READONLY = new Set([
     // Vault / card system
-    "Card", "CardOwnership", "CardPack", "CardPackOpening",
+    "Card", "CardOwnership", "CardPack", "CardPackOpening", "UserPack",
     "MyVault", "VaultTransaction", "NSVerification",
     "CardTrade", "CardTradeOffer", "CardAuction", "CardBid",
     "CardCollection", "CardCollectionItem", "CraftingRecipe",
@@ -79,49 +79,91 @@ const createPrismaClient = () => {
     "Country", "EconomicProfile", "LaborMarket", "FiscalSystem",
     "IncomeDistribution", "GovernmentBudget", "Demographics",
     "HistoricalDataPoint", "CalculationLog", "NationalIdentity",
-    "AuditLog", "DmInputs", "User",
+    "AuditLog", "StorytellerEffect", "User", "CountryFollow",
+    "EconomicModel", "SectoralOutput", "PolicyEffect",
+    // Demo mode - all models written by DemoSeedService (clone-first system)
+    "SystemConfig", "GovernmentStructure", "InternalStabilityMetrics",
+    "CabinetMeeting", "MeetingAgendaItem", "MeetingAttendance",
+    "MeetingDecision", "MeetingActionItem", "Policy", "PolicyEffectLog",
+    "PoliticalParty", "Legislature", "Election", "ElectionCandidate",
+    "ElectionResult", "LegislativeSeat", "DiplomaticRelation",
+    "Embassy", "EmbassyMission", "IntelligenceBriefing",
+    "IntelligenceRecommendation", "IntelligenceAlert",
+    "MilitaryBranch", "MilitaryUnit", "MilitaryOperation", "MilitaryAsset",
+    "MilitaryConflict", "Deployment",
+    "NationalIssue", "NationalIssueConsequence", "CrisisEvent",
+    "ThinkpagesAccount", "ThinkpagesPost",
+    // New models cloned by demo-seed system
+    "DefenseBudget", "SecurityAssessment", "AtomicEffectiveness",
+    "GovernmentDepartment", "GovernmentOfficial", "BudgetAllocation",
+    "SubBudgetCategory", "RevenueSource",
+    "GovernmentComponent", "ComponentSynergy", "EconomicComponent",
+    "TaxComponent", "CrossBuilderSynergy",
+    "TaxSystem", "TaxCategory", "TaxBracket", "TaxExemption",
+    "TaxDeduction", "TaxPolicy",
+    "BorderSecurity", "NeighborThreatAssessment", "SecurityThreat",
+    "ThreatIncident", "SecurityEvent",
+    "Territory", "Subdivision", "City", "PointOfInterest",
+    "VitalityHistory", "ComponentEffectivenessHistory",
+    "NPCPersonalityAssignment", "CardBackgroundImage", "IntelligenceAlertThreshold",
+    // Diplomacy (all writable models for gameplay + demo seed)
+    "DiplomaticEvent", "DiplomaticAction", "DiplomaticOption", "DiplomaticOptionUsage",
+    "DiplomaticRelationshipHistory", "DiplomaticScenario",
+    "DiplomaticChannel", "DiplomaticChannelParticipant", "DiplomaticMessage",
+    "Alliance", "AllianceMember", "AllianceAction", "AllianceVote", "AllianceDocument",
+    "ForeignPolicyAction", "BilateralTrade",
+    "CulturalExchange", "CulturalExchangeParticipant", "CulturalArtifact",
+    "CulturalScenario", "CulturalExchangeOutcome", "CulturalExchangeVote",
+    "EmbassyUpgrade", "EmbassyRequirement",
+    // ThinkShare diplomatic channels & DMs (seeded by demo seed system)
+    "ThinkshareConversation", "ConversationParticipant", "ThinkshareMessage",
+    // ThinkTank groups (seeded by demo seed system)
+    "ThinktankGroup", "ThinktankMember", "ThinktankMessage",
+    "ThinktankInvite", "CollaborativeDoc",
+    // Activity feed & achievements (seeded/cleaned by demo seed system)
+    "ActivityFeed", "UserAchievement",
   ]);
 
   // In read-only mode, extend the client to block write operations
   // except for vault/card models which are allowed for dev testing
   console.log("\x1b[33m[DATABASE] Read-only mode enabled - write operations blocked (vault tables exempted)\x1b[0m");
 
-  const READONLY_ERROR = "[READ-ONLY MODE] Database write operations are blocked in development. The database contains production data.";
+  const READONLY_ERROR_PREFIX = "[READ-ONLY MODE] Write blocked for model";
 
   return baseClient.$extends({
     query: {
       $allModels: {
         async create({ model, args, query }) {
           if (WRITABLE_MODELS_IN_READONLY.has(model)) return query(args);
-          throw new Error(READONLY_ERROR);
+          throw new Error(`${READONLY_ERROR_PREFIX} "${model}" (create). Add it to WRITABLE_MODELS_IN_READONLY in src/server/db.ts if needed.`);
         },
         async createMany({ model, args, query }) {
           if (WRITABLE_MODELS_IN_READONLY.has(model)) return query(args);
-          throw new Error(READONLY_ERROR);
+          throw new Error(`${READONLY_ERROR_PREFIX} "${model}" (createMany). Add it to WRITABLE_MODELS_IN_READONLY in src/server/db.ts if needed.`);
         },
         async createManyAndReturn({ model, args, query }) {
           if (WRITABLE_MODELS_IN_READONLY.has(model)) return query(args);
-          throw new Error(READONLY_ERROR);
+          throw new Error(`${READONLY_ERROR_PREFIX} "${model}" (createManyAndReturn). Add it to WRITABLE_MODELS_IN_READONLY in src/server/db.ts if needed.`);
         },
         async update({ model, args, query }) {
           if (WRITABLE_MODELS_IN_READONLY.has(model)) return query(args);
-          throw new Error(READONLY_ERROR);
+          throw new Error(`${READONLY_ERROR_PREFIX} "${model}" (update). Add it to WRITABLE_MODELS_IN_READONLY in src/server/db.ts if needed.`);
         },
         async updateMany({ model, args, query }) {
           if (WRITABLE_MODELS_IN_READONLY.has(model)) return query(args);
-          throw new Error(READONLY_ERROR);
+          throw new Error(`${READONLY_ERROR_PREFIX} "${model}" (updateMany). Add it to WRITABLE_MODELS_IN_READONLY in src/server/db.ts if needed.`);
         },
         async delete({ model, args, query }) {
           if (WRITABLE_MODELS_IN_READONLY.has(model)) return query(args);
-          throw new Error(READONLY_ERROR);
+          throw new Error(`${READONLY_ERROR_PREFIX} "${model}" (delete). Add it to WRITABLE_MODELS_IN_READONLY in src/server/db.ts if needed.`);
         },
         async deleteMany({ model, args, query }) {
           if (WRITABLE_MODELS_IN_READONLY.has(model)) return query(args);
-          throw new Error(READONLY_ERROR);
+          throw new Error(`${READONLY_ERROR_PREFIX} "${model}" (deleteMany). Add it to WRITABLE_MODELS_IN_READONLY in src/server/db.ts if needed.`);
         },
         async upsert({ model, args, query }) {
           if (WRITABLE_MODELS_IN_READONLY.has(model)) return query(args);
-          throw new Error(READONLY_ERROR);
+          throw new Error(`${READONLY_ERROR_PREFIX} "${model}" (upsert). Add it to WRITABLE_MODELS_IN_READONLY in src/server/db.ts if needed.`);
         },
       },
     },

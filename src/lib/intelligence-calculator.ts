@@ -105,7 +105,7 @@ async function calculateCountryIntelligence(countryId: string) {
   const country = await db.country.findUnique({
     where: { id: countryId },
     include: {
-      dmInputs: {
+      storytellerEffects: {
         where: { isActive: true },
         orderBy: { ixTimeTimestamp: "desc" },
       },

@@ -8,8 +8,10 @@
  * - Intelligence-based suggestions
  */
 
+"use client";
+
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import type { TaxBuilderState } from "./useTaxBuilderState";
 import type { TaxBracketInput } from "~/types/tax-system";
 import type { SuggestionItem } from "~/components/builders/SuggestionsPanel";
@@ -43,6 +45,7 @@ interface UseTaxDataSyncOptions {
  * Custom hook for managing tax builder data synchronization
  */
 export function useTaxDataSync(options: UseTaxDataSyncOptions) {
+  const notify = useNotify();
   const {
     builderState,
     setBuilderState,
@@ -81,7 +84,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
       }));
 
       setParsedDataApplied(true);
-      toast.success("Tax data pre-populated from economic indicators");
+      notify.success("Tax data pre-populated from economic indicators");
     } catch (error) {
       console.error("Failed to parse economic data:", error);
     }
@@ -155,11 +158,9 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
 
       setRevenueAutoPopulated(true);
 
-      toast.success(
+      notify.success(
         `Auto-populated ${taxCategories.length} tax categories from government revenue sources`,
-        {
-          description: "Review and adjust the pre-populated tax structure as needed",
-        }
+        "Review and adjust the pre-populated tax structure as needed"
       );
 
       devLog("Successfully auto-populated tax categories:", {
@@ -169,9 +170,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
       });
     } catch (error) {
       console.error("Failed to auto-populate from revenue sources:", error);
-      toast.error("Failed to auto-populate tax categories", {
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-      });
+      notify.error("Failed to auto-populate tax categories", error instanceof Error ? error.message : "Unknown error occurred");
     }
   }, [
     governmentData,
@@ -210,7 +209,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
                 ...prev,
                 categories: updatedCategories,
               }));
-              toast.success(`Applied ${rec.taxType} tax recommendation: ${rec.recommendedRate}%`);
+              notify.success(`Applied ${rec.taxType} tax recommendation: ${rec.recommendedRate}%`);
             }
           },
         }));
@@ -225,7 +224,7 @@ export function useTaxDataSync(options: UseTaxDataSyncOptions) {
       }
 
       if (state.errors.length > 0) {
-        toast.error(`Tax sync error: ${state.errors[state.errors.length - 1]}`);
+        notify.error(`Tax sync error: ${state.errors[state.errors.length - 1]}`);
       }
     });
 

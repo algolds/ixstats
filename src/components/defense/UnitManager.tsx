@@ -36,7 +36,7 @@ import { Slider } from "~/components/ui/slider";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { UNIT_TEMPLATES } from "~/lib/military-equipment";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 
@@ -78,40 +78,41 @@ const DEPLOYMENT_STATUS_CONFIG = {
 } as const;
 
 export function UnitManager({ branchId, branchType, units, onRefetch }: UnitManagerProps) {
+  const notify = useNotify();
   const [showDialog, setShowDialog] = useState(false);
   const [editingUnit, setEditingUnit] = useState<any>(null);
 
   const createUnit = api.security.createMilitaryUnit.useMutation({
     onSuccess: () => {
-      toast.success("Unit created successfully");
+      notify.success("Unit created successfully");
       setShowDialog(false);
       setEditingUnit(null);
       onRefetch();
     },
     onError: (error) => {
-      toast.error(`Failed to create unit: ${error.message}`);
+      notify.error(`Failed to create unit: ${error.message}`);
     },
   });
 
   const updateUnit = api.security.updateMilitaryUnit.useMutation({
     onSuccess: () => {
-      toast.success("Unit updated successfully");
+      notify.success("Unit updated successfully");
       setShowDialog(false);
       setEditingUnit(null);
       onRefetch();
     },
     onError: (error) => {
-      toast.error(`Failed to update unit: ${error.message}`);
+      notify.error(`Failed to update unit: ${error.message}`);
     },
   });
 
   const deleteUnit = api.security.deleteMilitaryUnit.useMutation({
     onSuccess: () => {
-      toast.success("Unit deleted successfully");
+      notify.success("Unit deleted successfully");
       onRefetch();
     },
     onError: (error) => {
-      toast.error(`Failed to delete unit: ${error.message}`);
+      notify.error(`Failed to delete unit: ${error.message}`);
     },
   });
 
@@ -275,6 +276,7 @@ function UnitDialog({
   onCreate,
   onUpdate,
 }: UnitDialogProps) {
+  const notify = useNotify();
   const [formData, setFormData] = useState({
     name: unit?.name ?? "",
     unitType: unit?.unitType ?? "division",
@@ -311,7 +313,7 @@ function UnitDialog({
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast.error("Unit name is required");
+      notify.error("Unit name is required");
       return;
     }
 
@@ -332,7 +334,7 @@ function UnitDialog({
       unitType: template.type,
       personnel: template.personnel,
     });
-    toast.success("Template loaded");
+    notify.success("Template loaded");
   };
 
   const unitTypes = UNIT_TYPES[branchType as keyof typeof UNIT_TYPES] ?? ["division"];

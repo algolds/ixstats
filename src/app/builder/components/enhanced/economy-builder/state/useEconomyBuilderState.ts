@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
@@ -14,6 +14,7 @@ export function useEconomyBuilderState(
   countryId?: string,
   propsSelectedComponents: EconomicComponentType[] = []
 ) {
+  const notify = useNotify();
   const [economyBuilder, setEconomyBuilder] = useState<EconomyBuilderState>(() => ({
     structure: {
       economicModel: "Mixed Economy",
@@ -146,10 +147,10 @@ export function useEconomyBuilderState(
     onSuccess: () => {
       setLastSaved(new Date());
       setHasUnsavedChanges(false);
-      toast.success("Economy configuration saved successfully!");
+      notify.success("Economy configuration saved successfully!");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to save economy configuration");
+      notify.error(error.message || "Failed to save economy configuration");
     },
   });
 
@@ -351,13 +352,13 @@ export function useEconomyBuilderState(
 
   const handleSave = useCallback(async () => {
     if (!countryId) {
-      toast.error("No country selected. Please select a country first.");
+      notify.error("No country selected. Please select a country first.");
       return;
     }
 
     const validation = validateEconomyConfiguration();
     if (!validation.isValid) {
-      toast.error(`Validation failed: ${validation.errors.join(", ")}`);
+      notify.error(`Validation failed: ${validation.errors.join(", ")}`);
       return;
     }
 

@@ -20,6 +20,7 @@ interface CountriesFocusGridModularProps {
   searchInput: string;
   filterBy: string;
   onClearFilters: () => void;
+  viewerCountryId?: string;
 }
 
 export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps> = ({
@@ -36,6 +37,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
   searchInput,
   filterBy,
   onClearFilters,
+  viewerCountryId,
 }) => {
   const visibleCountries = countries.slice(0, visibleCount);
 
@@ -68,6 +70,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
               expanded={expanded}
               setExpanded={setExpanded}
               onCountryClick={onCountryClick}
+              viewerCountryId={viewerCountryId}
             />
           </motion.div>
         ))}

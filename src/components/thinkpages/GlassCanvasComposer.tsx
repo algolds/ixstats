@@ -25,7 +25,7 @@ import { Badge } from "~/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
 
 // Dynamic import for heavy media search modal
@@ -70,6 +70,7 @@ export function GlassCanvasComposer({
   countryId,
   repostData,
 }: GlassCanvasComposerProps) {
+  const notify = useNotify();
   const [content, setContent] = useState("");
   const [selectedVisualizations, setSelectedVisualizations] = useState<DataVisualization[]>([]);
   const [showVisualizationPanel, setShowVisualizationPanel] = useState(false);
@@ -128,20 +129,20 @@ export function GlassCanvasComposer({
 
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
-      toast.success("Post shared successfully!");
+      notify.success("Post shared successfully!");
       setContent("");
       setSelectedVisualizations([]);
       setSelectedImages([]);
       onPost();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create post");
+      notify.error(error.message || "Failed to create post");
     },
   });
 
   const handleSubmit = useCallback(() => {
     if (!content.trim() && selectedVisualizations.length === 0 && selectedImages.length === 0) {
-      toast.error("Please add content, a visualization, or an image");
+      notify.error("Please add content, a visualization, or an image");
       return;
     }
 
@@ -199,7 +200,7 @@ export function GlassCanvasComposer({
     }
 
     if (!hasRequiredData) {
-      toast.error(errorMessage);
+      notify.error(errorMessage);
       return;
     }
 
@@ -270,7 +271,7 @@ export function GlassCanvasComposer({
 
       setSelectedVisualizations((prev) => [...prev, newVisualization]);
       setIsGeneratingVisualization(false);
-      toast.success(`${newVisualization.title} added to post`);
+      notify.success(`${newVisualization.title} added to post`);
     }, 800);
   };
 
@@ -280,12 +281,12 @@ export function GlassCanvasComposer({
 
   const handleImageSelect = (imageUrl: string) => {
     if (selectedImages.length >= 4) {
-      toast.error("Maximum 4 images per post");
+      notify.error("Maximum 4 images per post");
       return;
     }
     setSelectedImages((prev) => [...prev, imageUrl]);
     setShowMediaModal(false);
-    toast.success("Image added to post");
+    notify.success("Image added to post");
   };
 
   const removeImage = (imageUrl: string) => {
@@ -294,7 +295,7 @@ export function GlassCanvasComposer({
 
   const handleFileUpload = async (file: File) => {
     if (selectedImages.length >= 4) {
-      toast.error("Maximum 4 images per post");
+      notify.error("Maximum 4 images per post");
       return;
     }
 
@@ -312,13 +313,13 @@ export function GlassCanvasComposer({
 
       if (result.success) {
         setSelectedImages((prev) => [...prev, result.url]);
-        toast.success("Image uploaded successfully");
+        notify.success("Image uploaded successfully");
       } else {
-        toast.error(result.error || "Failed to upload image");
+        notify.error(result.error || "Failed to upload image");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload image");
+      notify.error("Failed to upload image");
     } finally {
       setIsUploadingImage(false);
     }

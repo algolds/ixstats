@@ -82,11 +82,12 @@ export function DiplomaticIntelligenceHub({
     "overview" | "network" | "missions" | "exchanges"
   >("overview");
 
-  // Fetch diplomatic data with real-time refresh
+  // Fetch diplomatic data with periodic refresh
   const { data: embassies, isLoading: embassiesLoading } = api.diplomatic.getEmbassies.useQuery(
     { countryId },
     {
-      refetchInterval: 10000, // Refresh every 10 seconds
+      refetchInterval: 60000,
+      staleTime: 30000,
       enabled: !!countryId,
     }
   );
@@ -94,29 +95,17 @@ export function DiplomaticIntelligenceHub({
   const { data: relationships } = api.diplomatic.getRelationships.useQuery(
     { countryId },
     {
-      refetchInterval: 15000,
+      refetchInterval: 60000,
+      staleTime: 30000,
       enabled: !!countryId,
-    }
-  );
-
-  // Fetch all missions from all embassies
-  const { data: missions } = api.diplomatic.getEmbassies.useQuery(
-    { countryId },
-    {
-      refetchInterval: 12000,
-      enabled: !!countryId,
-      select: (data): MissionSummary[] => {
-        // Extract missions from embassies - would need actual mission data
-        // For now return empty array as missions are fetched per embassy
-        return [];
-      },
     }
   );
 
   const { data: exchanges } = api.diplomatic.getCulturalExchanges.useQuery(
     { countryId },
     {
-      refetchInterval: 15000,
+      refetchInterval: 60000,
+      staleTime: 30000,
       enabled: !!countryId,
     }
   );
@@ -124,12 +113,13 @@ export function DiplomaticIntelligenceHub({
   const { data: recentChanges } = api.diplomatic.getRecentChanges.useQuery(
     { countryId, hours: 24 },
     {
-      refetchInterval: 8000,
+      refetchInterval: 30000,
+      staleTime: 15000,
       enabled: !!countryId,
     }
   );
 
-  const missionList = missions ?? [];
+  const missionList: MissionSummary[] = [];
 
   const activeMissions = useMemo(
     () => missionList.filter((mission) => mission?.status === "active"),

@@ -20,7 +20,7 @@ import { Textarea } from "~/components/ui/textarea";
 
 import { IxTimePicker } from "~/components/ui/ixtime-picker";
 import { Globe, Calendar, MapPin, Users, FileText, CheckCircle2, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 export interface DiplomaticMeeting {
   id: string;
@@ -89,6 +89,7 @@ export function DiplomaticMeetingScheduler({
   defaultMeeting,
 }: DiplomaticMeetingSchedulerProps) {
   const { user } = useUser();
+  const notify = useNotify();
 
   // Form state
   const [meetingType, setMeetingType] = useState<DiplomaticMeeting["type"]>(
@@ -160,22 +161,22 @@ export function DiplomaticMeetingScheduler({
     e.preventDefault();
 
     if (selectedCountries.length === 0) {
-      toast.error("Please select at least one country to meet with");
+      notify.error("Please select at least one country to meet with");
       return;
     }
 
     if (!agenda.trim()) {
-      toast.error("Please provide a meeting agenda");
+      notify.error("Please provide a meeting agenda");
       return;
     }
 
     if (!location.trim()) {
-      toast.error("Please specify a meeting location");
+      notify.error("Please specify a meeting location");
       return;
     }
 
     // Create meeting (would call API mutation in production)
-    toast.success(`Diplomatic ${meetingType} scheduled successfully!`);
+    notify.success(`Diplomatic ${meetingType} scheduled successfully!`);
     onOpenChange(false);
     resetForm();
   };

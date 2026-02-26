@@ -113,7 +113,7 @@ export function SystemLogs() {
         "Economic tier updated for country",
         "Tax efficiency recalculated",
         "Population growth processed",
-        "DM input modifier applied",
+        "Storyteller effect modifier applied",
         "Atomic component effectiveness updated",
       ],
       SYSTEM: [

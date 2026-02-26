@@ -15,7 +15,7 @@ interface EventDistributionCardProps {
 }
 
 const eventTypes = [
-  { value: "dm_input", label: "DM Input", icon: Zap },
+  { value: "storyteller_effect", label: "Storyteller Effect", icon: Zap },
   { value: "policy_change", label: "Policy Change", icon: FileText },
   { value: "economic_shift", label: "Economic Shift", icon: TrendingUp },
   { value: "external_event", label: "External Event", icon: AlertCircle },

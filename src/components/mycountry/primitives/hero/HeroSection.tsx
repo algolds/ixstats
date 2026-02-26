@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Crown, Users, TrendingUp, Activity, Sparkles, Edit3 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
-import { unsplashService } from "~/lib/unsplash-service";
+import { useCountryImage } from "~/hooks/useCountryImage";
+import { extractCountryImageData } from "~/lib/country-image-engine";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { createUrl } from "~/lib/url-utils";
 
@@ -40,32 +41,17 @@ export function HeroSection({
   showEditButton = true,
   className = "",
 }: HeroSectionProps) {
-  const [unsplashImageUrl, setUnsplashImageUrl] = useState<string | undefined>();
   const [showGdpPerCapita, setShowGdpPerCapita] = useState(true);
   const [showFullPopulation, setShowFullPopulation] = useState(false);
 
-  // Load Unsplash header image (matching public country page pattern)
-  useEffect(() => {
-    if (country && !unsplashImageUrl) {
-      unsplashService
-        .getCountryHeaderImage(
-          country.economicTier || "Developing",
-          country.populationTier || "Tier 5",
-          country.name,
-          country.continent || undefined
-        )
-        .then((imageData) => {
-          setUnsplashImageUrl(imageData.url);
-          if (imageData.downloadUrl) {
-            void unsplashService.trackDownload(imageData.downloadUrl);
-          }
-        })
-        .catch((error) => {
-          console.warn("Failed to load Unsplash image:", error);
-          setUnsplashImageUrl(undefined);
-        });
-    }
-  }, [country, unsplashImageUrl]);
+  // Use the keyword engine for contextual hero images
+  const countryImageData = useMemo(() => extractCountryImageData(country), [country]);
+  const { imageUrl: unsplashImageUrl } = useCountryImage({
+    countryData: countryImageData,
+    context: "hero",
+    enabled: !!country,
+    size: "regular",
+  });
 
   const currentTotalGdp = country.currentGdp || 0;
   const currentGdpPerCapita = country.currentGdpPerCapita || 0;
@@ -118,7 +104,7 @@ export function HeroSection({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-white/70 hover:text-white hover:bg-white/10"
+                    className="h-6 px-2 text-foreground/70 hover:text-foreground hover:bg-foreground/10"
                   >
                     <Edit3 className="h-3 w-3 mr-1" />
                     <span className="hidden sm:inline text-xs">Edit</span>
@@ -171,7 +157,7 @@ export function HeroSection({
                 {country.economicTier && (
                   <Badge
                     variant="outline"
-                    className="border-white/20 bg-black/30 text-white backdrop-blur-sm"
+                    className="border-foreground/20 bg-background/30 text-foreground backdrop-blur-sm"
                   >
                     <Sparkles className="mr-1 h-3 w-3" />
                     {country.economicTier}

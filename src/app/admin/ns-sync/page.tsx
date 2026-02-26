@@ -1,10 +1,61 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { RefreshCw, Database, AlertCircle, CheckCircle, XCircle, Play, RotateCcw, Clock, TrendingUp, AlertTriangle, Globe, MapPin, Layers, Upload, FileUp, Search, Users } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { RefreshCw, Database, AlertCircle, CheckCircle, XCircle, Play, RotateCcw, Clock, TrendingUp, AlertTriangle, Globe, MapPin, Layers, Upload, FileUp, Search, Users, Package, Gavel, BookOpen } from 'lucide-react';
 import { api } from '~/trpc/react';
+import { CardPacksAdmin } from './CardPacksAdmin';
+import { LoreCardBatchAdmin } from './LoreCardBatchAdmin';
+
+type AdminTab = 'sync' | 'packs' | 'lore';
+
+function SeedDemoAuctionsButton() {
+  const seedMutation = api.cardMarket.seedDemoAuctions.useMutation({
+    onSuccess: (data) => {
+      alert(data.message);
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`);
+    },
+  });
+
+  return (
+    <div className="glass-card-child flex items-center justify-between rounded-xl border border-amber-500/20 p-4">
+      <div className="flex items-center gap-3">
+        <Gavel className="h-5 w-5 text-amber-400" />
+        <div>
+          <p className="text-sm font-medium text-foreground">Demo Auctions</p>
+          <p className="text-xs text-muted-foreground">Seed sample auctions with lore cards for marketplace testing</p>
+        </div>
+      </div>
+      <button
+        onClick={() => {
+          if (confirm('Create 6 demo auctions with sample lore cards?')) {
+            seedMutation.mutate();
+          }
+        }}
+        disabled={seedMutation.isPending}
+        className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {seedMutation.isPending ? (
+          <RefreshCw className="h-4 w-4 animate-spin" />
+        ) : (
+          <Gavel className="h-4 w-4" />
+        )}
+        Seed Auctions
+      </button>
+    </div>
+  );
+}
 
 export default function NSSyncMonitoringPage() {
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'packs') return 'packs';
+    if (tab === 'lore') return 'lore';
+    return 'sync';
+  });
   const [refreshInterval, setRefreshInterval] = useState<number | null>(10000);
   const [showResetConfirm, setShowResetConfirm] = useState<number | null>(null);
   const [regionName, setRegionName] = useState('greater_ixnay');
@@ -160,35 +211,77 @@ export default function NSSyncMonitoringPage() {
               </div>
               <div>
                 <h1 className="text-foreground text-2xl font-bold md:text-3xl">
-                  NationStates Card Management
+                  Card Management
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                  Manage NS card sync operations, region imports, and season dump processing
+                  NS card sync, card pack configuration, and import management
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <select
-                value={refreshInterval ?? 'off'}
-                onChange={(e) => setRefreshInterval(e.target.value === 'off' ? null : parseInt(e.target.value))}
-                className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-foreground backdrop-blur-sm"
-              >
-                <option value="off">Auto-refresh: Off</option>
-                <option value="5000">Every 5s</option>
-                <option value="10000">Every 10s</option>
-                <option value="30000">Every 30s</option>
-              </select>
-              <button
-                onClick={handleRefreshAll}
-                disabled={loadingHealth}
-                className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${loadingHealth ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </div>
+            {activeTab === 'sync' && (
+              <div className="flex items-center gap-3">
+                <select
+                  value={refreshInterval ?? 'off'}
+                  onChange={(e) => setRefreshInterval(e.target.value === 'off' ? null : parseInt(e.target.value))}
+                  className="rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground"
+                >
+                  <option value="off">Auto-refresh: Off</option>
+                  <option value="5000">Every 5s</option>
+                  <option value="10000">Every 10s</option>
+                  <option value="30000">Every 30s</option>
+                </select>
+                <button
+                  onClick={handleRefreshAll}
+                  disabled={loadingHealth}
+                  className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loadingHealth ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Tab Strip */}
+          <div className="mt-4 flex gap-2 border-t border-border pt-4">
+            {([
+              { id: 'sync' as AdminTab, label: 'NS Sync', icon: Database },
+              { id: 'packs' as AdminTab, label: 'Card Packs', icon: Package },
+              { id: 'lore' as AdminTab, label: 'Lore Cards', icon: BookOpen },
+            ]).map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'bg-blue-500/20 text-blue-400'
+                      : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        {/* Card Packs Tab */}
+        {activeTab === 'packs' && (
+          <div className="space-y-4">
+            <SeedDemoAuctionsButton />
+            <CardPacksAdmin />
+          </div>
+        )}
+
+        {/* Lore Cards Tab */}
+        {activeTab === 'lore' && <LoreCardBatchAdmin />}
+
+        {/* NS Sync Tab Content */}
+        {activeTab === 'sync' && (<>
 
         {/* ─── Interrupted Jobs Banner ────────────────────────── */}
         {interruptedJobs && interruptedJobs.length > 0 && !activeSyncLogId && (
@@ -795,6 +888,8 @@ export default function NSSyncMonitoringPage() {
             </div>
           </div>
         )}
+
+        </>)}
       </div>
     </div>
   );

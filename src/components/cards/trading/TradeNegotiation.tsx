@@ -20,9 +20,10 @@ import {
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { vaultNotify } from "~/lib/vault-notifications";
 import { useSoundService } from "~/lib/sound-service";
 import { formatDistanceToNow } from "date-fns";
+import { CardHolographicCover } from "../display/CardHolographicCover";
 
 /**
  * TradeNegotiation component props
@@ -69,28 +70,28 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     const respondToTrade = api.trading.respondToTrade.useMutation({
       onSuccess: (data, variables) => {
         if (variables.action === "ACCEPT") {
-          soundService?.play("trade-complete"); // Play trade complete sound
-          toast.success("Trade accepted! Cards have been exchanged.");
+          soundService?.play("trade-complete");
+          vaultNotify.tradeCompleted("Trade accepted! Cards have been exchanged.");
         } else if (variables.action === "REJECT") {
-          toast.success("Trade declined.");
+          vaultNotify.tradeCompleted("Trade declined.");
         } else {
-          toast.success("Counter-offer sent!");
+          vaultNotify.tradeCompleted("Counter-offer sent!");
         }
         onRefresh?.();
       },
       onError: (error) => {
-        toast.error(error.message || "Failed to respond to trade");
+        vaultNotify.error(error.message || "Failed to respond to trade");
       },
     });
 
     // Cancel trade mutation
     const cancelTrade = api.trading.cancelTrade.useMutation({
       onSuccess: () => {
-        toast.success("Trade cancelled.");
+        vaultNotify.tradeCompleted("Trade cancelled.");
         onRefresh?.();
       },
       onError: (error) => {
-        toast.error(error.message || "Failed to cancel trade");
+        vaultNotify.error(error.message || "Failed to cancel trade");
       },
     });
 
@@ -188,12 +189,18 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   className="flex items-center gap-3 glass-hierarchy-interactive rounded-lg p-2"
                 >
                   <div className="relative h-16 w-12 rounded overflow-hidden flex-shrink-0">
+                    <CardHolographicCover
+                      cardType={ownership.cards.cardType || "NATION"}
+                      rarity={ownership.cards.rarity || "COMMON"}
+                      title={ownership.cards.title}
+                    />
                     <Image
                       src={ownership.cards.artwork || "/images/cards/placeholder-nation.png"}
                       alt={ownership.cards.title}
                       fill
                       className="object-cover"
                       unoptimized
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -241,12 +248,18 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   className="flex items-center gap-3 glass-hierarchy-interactive rounded-lg p-2"
                 >
                   <div className="relative h-16 w-12 rounded overflow-hidden flex-shrink-0">
+                    <CardHolographicCover
+                      cardType={ownership.cards.cardType || "NATION"}
+                      rarity={ownership.cards.rarity || "COMMON"}
+                      title={ownership.cards.title}
+                    />
                     <Image
                       src={ownership.cards.artwork || "/images/cards/placeholder-nation.png"}
                       alt={ownership.cards.title}
                       fill
                       className="object-cover"
                       unoptimized
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
                   </div>
                   <div className="flex-1 min-w-0">

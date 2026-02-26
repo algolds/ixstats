@@ -7,6 +7,7 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { CardInstance, QuickActionType, QuickActionEvent } from "~/types/pack-opening";
 import { getPackOpeningService } from "~/lib/pack-opening-service";
+import { CardHolographicCover } from "../display/CardHolographicCover";
 
 interface Stage4_QuickActionsProps {
   cards: CardInstance[];
@@ -272,8 +273,12 @@ const CardActionItem = React.memo<CardActionItemProps>(
 
           {/* Card image */}
           <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-gradient-to-br from-white/10 to-white/5">
+            <CardHolographicCover
+              cardType={card.cardType}
+              rarity={card.rarity}
+            />
             <div
-              className="h-full w-full bg-cover bg-center transition-transform group-hover:scale-110"
+              className="absolute inset-0 bg-cover bg-center transition-transform group-hover:scale-110"
               style={{
                 backgroundImage: `url(${card.artwork})`,
               }}

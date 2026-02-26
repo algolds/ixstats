@@ -3,23 +3,22 @@
 
 import React, { useState } from "react";
 import { motion } from "motion/react";
-import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
+import { useLocalActions } from "~/hooks/useLocalActions";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
-import { Separator } from "~/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -37,8 +36,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Tag,
+  ChevronDown,
+  ChevronRight,
+  Settings2,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface MeetingSchedulerProps {
   countryId: string;
@@ -47,7 +49,7 @@ interface MeetingSchedulerProps {
   defaultMeeting?: {
     title?: string;
     description?: string;
-    ixTime?: number; // IxTime timestamp
+    ixTime?: number;
     officialIds?: string[];
   };
 }
@@ -71,17 +73,51 @@ const AGENDA_CATEGORIES = [
 ];
 
 const COMMON_TAGS = [
-  "urgent",
-  "budget",
-  "policy",
-  "review",
-  "appointment",
-  "quarterly",
-  "annual",
-  "strategic",
-  "operational",
-  "reform",
+  "urgent", "budget", "policy", "review", "appointment",
+  "quarterly", "annual", "strategic", "operational", "reform",
 ];
+
+function CollapsibleSection({
+  title,
+  icon: Icon,
+  badge,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  icon: React.ElementType;
+  badge?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="rounded-lg border border-border/50">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between p-3 text-sm font-medium hover:bg-muted/50 rounded-lg transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          <span>{title}</span>
+          {badge && (
+            <Badge variant="secondary" className="text-[0.65rem] px-1.5 py-0">
+              {badge}
+            </Badge>
+          )}
+        </div>
+        {isOpen ? (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+      {isOpen && <div className="px-3 pb-3">{children}</div>}
+    </div>
+  );
+}
 
 export function MeetingScheduler({
   countryId,
@@ -89,13 +125,14 @@ export function MeetingScheduler({
   onOpenChange,
   defaultMeeting,
 }: MeetingSchedulerProps) {
-  const { user } = useUser();
+  const notify = useNotify();
+  const { saveAction } = useLocalActions(countryId);
 
   // Form state
   const [title, setTitle] = useState(defaultMeeting?.title ?? "");
   const [description, setDescription] = useState(defaultMeeting?.description ?? "");
   const [scheduledIxTime, setScheduledIxTime] = useState(
-    defaultMeeting?.ixTime ?? IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000 // +1 day in IxTime
+    defaultMeeting?.ixTime ?? IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000
   );
   const [duration, setDuration] = useState(60);
   const [selectedOfficials, setSelectedOfficials] = useState<string[]>(
@@ -103,10 +140,11 @@ export function MeetingScheduler({
   );
   const [agendaItems, setAgendaItems] = useState<AgendaItem[]>([]);
 
-  // Current agenda item being added
+  // Agenda item form
   const [newAgendaTitle, setNewAgendaTitle] = useState("");
-  const [newAgendaDesc, setNewAgendaDesc] = useState("");
   const [newAgendaDuration, setNewAgendaDuration] = useState(15);
+  const [showAdvancedAgenda, setShowAdvancedAgenda] = useState(false);
+  const [newAgendaDesc, setNewAgendaDesc] = useState("");
   const [newAgendaCategory, setNewAgendaCategory] = useState("economic");
   const [newAgendaTags, setNewAgendaTags] = useState<string[]>([]);
   const [newAgendaPresenter, setNewAgendaPresenter] = useState("");
@@ -118,28 +156,23 @@ export function MeetingScheduler({
     { enabled: open }
   );
 
-  // Create meeting mutation
-  const createMeeting = api.quickActions.createMeeting.useMutation({
-    onSuccess: (result) => {
-      toast.success("Meeting scheduled successfully!");
-      onOpenChange(false);
-      resetForm();
-    },
-    onError: (error) => {
-      toast.error(`Failed to schedule meeting: ${error.message}`);
-    },
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setScheduledIxTime(IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000); // +1 day in IxTime
+    setScheduledIxTime(IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000);
     setDuration(60);
     setSelectedOfficials([]);
     setAgendaItems([]);
+    resetAgendaForm();
+  };
+
+  const resetAgendaForm = () => {
     setNewAgendaTitle("");
-    setNewAgendaDesc("");
     setNewAgendaDuration(15);
+    setShowAdvancedAgenda(false);
+    setNewAgendaDesc("");
     setNewAgendaCategory("economic");
     setNewAgendaTags([]);
     setNewAgendaPresenter("");
@@ -154,28 +187,20 @@ export function MeetingScheduler({
 
   const addAgendaItem = () => {
     if (!newAgendaTitle.trim()) {
-      toast.error("Agenda item title is required");
+      notify.error("Agenda item title is required");
       return;
     }
 
-    const item: AgendaItem = {
+    setAgendaItems([...agendaItems, {
       title: newAgendaTitle,
       description: newAgendaDesc,
       duration: newAgendaDuration,
       category: newAgendaCategory,
       tags: newAgendaTags,
       presenter: newAgendaPresenter,
-    };
+    }]);
 
-    setAgendaItems([...agendaItems, item]);
-
-    // Reset agenda form
-    setNewAgendaTitle("");
-    setNewAgendaDesc("");
-    setNewAgendaDuration(15);
-    setNewAgendaCategory("economic");
-    setNewAgendaTags([]);
-    setNewAgendaPresenter("");
+    resetAgendaForm();
   };
 
   const removeAgendaItem = (index: number) => {
@@ -198,360 +223,378 @@ export function MeetingScheduler({
     e.preventDefault();
 
     if (!title.trim()) {
-      toast.error("Meeting title is required");
+      notify.error("Meeting title is required");
       return;
     }
 
     if (agendaItems.length === 0) {
-      toast.error("Please add at least one agenda item");
+      notify.error("Please add at least one agenda item");
       return;
     }
 
     if (selectedOfficials.length === 0) {
-      toast.error("Please select at least one attendee");
+      notify.error("Please select at least one attendee");
       return;
     }
 
-    createMeeting.mutate({
-      countryId,
-      userId: user?.id ?? "",
-      meeting: {
-        title,
-        description: description || undefined,
-        scheduledDate: new Date(scheduledIxTime), // IxTime date as Date object
-        scheduledIxTime, // Pass IxTime timestamp so backend knows not to convert
-        duration,
-        attendeeIds: selectedOfficials,
-        agendaItems: agendaItems.map((item) => ({
-          title: item.title,
-          description: item.description || undefined,
-          duration: item.duration,
-          category: item.category,
-          tags: item.tags,
-          presenter: item.presenter || undefined,
-        })),
-      },
+    setIsSubmitting(true);
+    saveAction("meeting_scheduled", {
+      title,
+      description: description || undefined,
+      scheduledDate: new Date().toISOString(),
+      scheduledIxTime,
+      duration,
+      attendeeIds: selectedOfficials,
+      agendaItems: agendaItems.map((item) => ({
+        title: item.title,
+        description: item.description || undefined,
+        duration: item.duration,
+        category: item.category,
+        tags: item.tags,
+        presenter: item.presenter || undefined,
+      })),
     });
+    notify.success("Meeting saved locally!");
+    onOpenChange(false);
+    resetForm();
+    setIsSubmitting(false);
   };
 
   const totalAgendaDuration = agendaItems.reduce((sum, item) => sum + item.duration, 0);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-blue-500" />
-            Schedule Cabinet Meeting
-          </DialogTitle>
-          <DialogDescription>
-            Create a new meeting with agenda items and attendees. Decisions can be recorded after
-            the meeting concludes.
-          </DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-lg flex flex-col p-0">
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <SheetTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-amber-500" />
+            Schedule Meeting
+          </SheetTitle>
+          <SheetDescription>
+            Create a meeting with agenda items and attendees.
+          </SheetDescription>
+        </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="title">Meeting Title *</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g., Weekly Cabinet Meeting"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of the meeting purpose..."
-                rows={2}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <IxTimePicker
-                id="ixtime"
-                label="Meeting Date & Time (IxTime) *"
-                value={scheduledIxTime}
-                onChange={setScheduledIxTime}
-                required
-                showRealWorldTime={false}
-              />
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            {/* Basic Info — always visible */}
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="title" className="text-xs">Title *</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Weekly Cabinet Meeting"
+                  required
+                />
+              </div>
 
               <div>
-                <Label htmlFor="duration">Estimated Duration (minutes)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  min={15}
-                  max={480}
-                  value={duration}
-                  onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
+                <Label htmlFor="description" className="text-xs">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Brief description of the meeting purpose..."
+                  rows={2}
                 />
-                {totalAgendaDuration > 0 && (
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Agenda total: {totalAgendaDuration} minutes
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Attendees */}
-          <div className="space-y-3">
-            <Label className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Attendees * ({selectedOfficials.length} selected)
-            </Label>
-
-            {officialsLoading ? (
-              <div className="text-muted-foreground text-sm">Loading officials...</div>
-            ) : officials && officials.length > 0 ? (
-              <div className="bg-muted/30 grid max-h-40 grid-cols-2 gap-2 overflow-y-auto rounded-lg border p-3">
-                {officials.map((official) => (
-                  <div
-                    key={official.id}
-                    onClick={() => toggleOfficial(official.id)}
-                    className={`cursor-pointer rounded-md border p-2 transition-all ${
-                      selectedOfficials.includes(official.id)
-                        ? "border-blue-300 bg-blue-50 dark:bg-blue-950/30"
-                        : "hover:bg-muted"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{official.name}</p>
-                        <p className="text-muted-foreground truncate text-xs">{official.title}</p>
-                      </div>
-                      {selectedOfficials.includes(official.id) && (
-                        <CheckCircle2 className="ml-2 h-4 w-4 flex-shrink-0 text-blue-600" />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-muted-foreground bg-muted/30 rounded-lg border p-4 text-sm">
-                <AlertCircle className="mr-2 inline h-4 w-4" />
-                No government officials found. Add officials first in Government Management.
-              </div>
-            )}
-          </div>
-
-          <Separator />
-
-          {/* Agenda Items */}
-          <div className="space-y-4">
-            <Label className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Agenda Items * ({agendaItems.length} items)
-            </Label>
-
-            {/* Existing agenda items */}
-            {agendaItems.length > 0 && (
-              <div className="mb-4 space-y-2">
-                {agendaItems.map((item, index) => {
-                  const categoryConfig = AGENDA_CATEGORIES.find((c) => c.value === item.category);
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="bg-card rounded-lg border p-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-1 flex items-center gap-2">
-                            <div
-                              className={`h-2 w-2 rounded-full ${categoryConfig?.color ?? "bg-gray-500"}`}
-                            />
-                            <h4 className="text-sm font-medium">{item.title}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              {item.duration} min
-                            </Badge>
-                          </div>
-                          {item.description && (
-                            <p className="text-muted-foreground mb-2 text-sm">{item.description}</p>
-                          )}
-                          <div className="flex flex-wrap gap-1">
-                            {item.tags.map((tag) => (
-                              <Badge key={tag} variant="secondary" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                          {item.presenter && (
-                            <p className="text-muted-foreground mt-1 text-xs">
-                              Presenter: {item.presenter}
-                            </p>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeAgendaItem(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Add new agenda item */}
-            <div className="bg-muted/20 space-y-3 rounded-lg border-2 border-dashed p-4">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Plus className="h-4 w-4" />
-                Add Agenda Item
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <Input
-                    placeholder="Agenda item title *"
-                    value={newAgendaTitle}
-                    onChange={(e) => setNewAgendaTitle(e.target.value)}
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <Textarea
-                    placeholder="Description (optional)"
-                    value={newAgendaDesc}
-                    onChange={(e) => setNewAgendaDesc(e.target.value)}
-                    rows={2}
-                  />
-                </div>
-
+                <IxTimePicker
+                  id="ixtime"
+                  label="Date & Time (IxTime) *"
+                  value={scheduledIxTime}
+                  onChange={setScheduledIxTime}
+                  required
+                  showRealWorldTime={false}
+                />
                 <div>
-                  <Select value={newAgendaCategory} onValueChange={setNewAgendaCategory}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AGENDA_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
+                  <Label htmlFor="duration" className="text-xs">Duration (min)</Label>
                   <Input
+                    id="duration"
                     type="number"
-                    placeholder="Duration (min)"
-                    value={newAgendaDuration}
-                    onChange={(e) => setNewAgendaDuration(parseInt(e.target.value) || 15)}
-                    min={5}
-                    max={180}
+                    min={15}
+                    max={480}
+                    value={duration}
+                    onChange={(e) => setDuration(parseInt(e.target.value) || 60)}
                   />
-                </div>
-
-                <div className="col-span-2">
-                  <Input
-                    placeholder="Presenter (optional)"
-                    value={newAgendaPresenter}
-                    onChange={(e) => setNewAgendaPresenter(e.target.value)}
-                  />
-                </div>
-
-                {/* Tags */}
-                <div className="col-span-2">
-                  <div className="mb-2 flex gap-2">
-                    <Input
-                      placeholder="Add tags..."
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addTag(tagInput);
-                        }
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addTag(tagInput)}
-                    >
-                      <Tag className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Common tags */}
-                  <div className="mb-2 flex flex-wrap gap-1">
-                    {COMMON_TAGS.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className="hover:bg-primary/10 cursor-pointer"
-                        onClick={() => addTag(tag)}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  {/* Selected tags */}
-                  {newAgendaTags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {newAgendaTags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                          {tag}
-                          <X className="h-3 w-3 cursor-pointer" onClick={() => removeTag(tag)} />
-                        </Badge>
-                      ))}
-                    </div>
+                  {totalAgendaDuration > 0 && (
+                    <p className="text-muted-foreground mt-1 text-[0.65rem]">
+                      Agenda total: {totalAgendaDuration} min
+                    </p>
                   )}
                 </div>
               </div>
-
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={addAgendaItem}
-                className="w-full"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add to Agenda
-              </Button>
             </div>
+
+            {/* Attendees — collapsible */}
+            <CollapsibleSection
+              title="Attendees"
+              icon={Users}
+              badge={`${selectedOfficials.length} selected`}
+            >
+              {officialsLoading ? (
+                <div className="text-muted-foreground text-sm">Loading officials...</div>
+              ) : officials && officials.length > 0 ? (
+                <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+                  {officials.map((official) => (
+                    <div
+                      key={official.id}
+                      onClick={() => toggleOfficial(official.id)}
+                      className={`cursor-pointer rounded-md border p-2 transition-all text-xs ${
+                        selectedOfficials.includes(official.id)
+                          ? "border-amber-400/50 bg-amber-50 dark:bg-amber-950/30"
+                          : "hover:bg-muted border-border/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{official.name}</p>
+                          <p className="text-muted-foreground truncate">{official.title}</p>
+                        </div>
+                        {selectedOfficials.includes(official.id) && (
+                          <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-amber-600" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-xs flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  No officials found. Add officials in Government Management.
+                </div>
+              )}
+            </CollapsibleSection>
+
+            {/* Agenda — collapsible */}
+            <CollapsibleSection
+              title="Agenda"
+              icon={FileText}
+              badge={agendaItems.length > 0 ? `${agendaItems.length} items · ${totalAgendaDuration} min` : undefined}
+            >
+              <div className="space-y-3">
+                {/* Existing items */}
+                {agendaItems.length > 0 && (
+                  <div className="space-y-1.5">
+                    {agendaItems.map((item, index) => {
+                      const categoryConfig = AGENDA_CATEGORIES.find((c) => c.value === item.category);
+                      return (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center justify-between gap-2 rounded-md border border-border/40 bg-muted/30 px-2.5 py-2"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className={`h-2 w-2 rounded-full flex-shrink-0 ${categoryConfig?.color ?? "bg-gray-500"}`} />
+                            <span className="text-xs font-medium truncate">{item.title}</span>
+                            <Badge variant="outline" className="text-[0.6rem] px-1 py-0 flex-shrink-0">
+                              {item.duration}m
+                            </Badge>
+                            {item.tags.length > 0 && (
+                              <div className="hidden sm:flex gap-0.5">
+                                {item.tags.slice(0, 2).map((tag) => (
+                                  <Badge key={tag} variant="secondary" className="text-[0.6rem] px-1 py-0">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => removeAgendaItem(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Add new item form */}
+                <div className="space-y-2 rounded-lg border-2 border-dashed border-border/50 p-3">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Item
+                  </div>
+
+                  {/* Basic: Title + Duration */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Item title *"
+                      value={newAgendaTitle}
+                      onChange={(e) => setNewAgendaTitle(e.target.value)}
+                      className="flex-1 text-xs h-8"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !showAdvancedAgenda) {
+                          e.preventDefault();
+                          addAgendaItem();
+                        }
+                      }}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={newAgendaDuration}
+                      onChange={(e) => setNewAgendaDuration(parseInt(e.target.value) || 15)}
+                      min={5}
+                      max={180}
+                      className="w-16 text-xs h-8"
+                    />
+                  </div>
+
+                  {/* Advanced toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedAgenda(!showAdvancedAgenda)}
+                    className="flex items-center gap-1 text-[0.65rem] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Settings2 className="h-3 w-3" />
+                    {showAdvancedAgenda ? "Hide" : "Show"} advanced options
+                    {showAdvancedAgenda ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
+                  </button>
+
+                  {/* Advanced fields */}
+                  {showAdvancedAgenda && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      className="space-y-2"
+                    >
+                      <Textarea
+                        placeholder="Description (optional)"
+                        value={newAgendaDesc}
+                        onChange={(e) => setNewAgendaDesc(e.target.value)}
+                        rows={2}
+                        className="text-xs"
+                      />
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select value={newAgendaCategory} onValueChange={setNewAgendaCategory}>
+                          <SelectTrigger className="text-xs h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AGENDA_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat.value} value={cat.value}>
+                                {cat.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Input
+                          placeholder="Presenter"
+                          value={newAgendaPresenter}
+                          onChange={(e) => setNewAgendaPresenter(e.target.value)}
+                          className="text-xs h-8"
+                        />
+                      </div>
+
+                      {/* Tags */}
+                      <div>
+                        <div className="flex gap-1.5">
+                          <Input
+                            placeholder="Add tag... (press Enter)"
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                addTag(tagInput);
+                              }
+                            }}
+                            onBlur={() => {
+                              if (tagInput.trim()) addTag(tagInput);
+                            }}
+                            className="text-xs h-8"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => addTag(tagInput)}
+                          >
+                            <Tag className="h-3 w-3" />
+                          </Button>
+                        </div>
+
+                        {/* Common tag chips */}
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {COMMON_TAGS.filter((t) => !newAgendaTags.includes(t)).slice(0, 6).map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="cursor-pointer text-[0.6rem] px-1.5 py-0 hover:bg-muted"
+                              onClick={() => addTag(tag)}
+                            >
+                              + {tag}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* Selected tags */}
+                        {newAgendaTags.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {newAgendaTags.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="flex items-center gap-0.5 text-[0.6rem] px-1.5 py-0">
+                                {tag}
+                                <X className="h-2.5 w-2.5 cursor-pointer" onClick={() => removeTag(tag)} />
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={addAgendaItem}
+                    className="w-full h-7 text-xs"
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add to Agenda
+                  </Button>
+                </div>
+              </div>
+            </CollapsibleSection>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          {/* Sticky footer */}
+          <SheetFooter className="border-t border-border/50 px-6 py-4">
+            <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
               type="submit"
+              size="sm"
               disabled={
-                createMeeting.isPending ||
+                isSubmitting ||
                 agendaItems.length === 0 ||
                 selectedOfficials.length === 0
               }
             >
-              {createMeeting.isPending ? "Scheduling..." : "Schedule Meeting"}
+              {isSubmitting ? "Scheduling..." : "Schedule Meeting"}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

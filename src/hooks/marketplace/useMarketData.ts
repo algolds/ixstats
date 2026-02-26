@@ -1,12 +1,14 @@
 // src/hooks/marketplace/useMarketData.ts
-// Hook for fetching and managing marketplace auction data
+// Hook for fetching marketplace auction data via tRPC
 
-import { useState, useCallback, useEffect } from "react";
+"use client";
+
+import { useState, useCallback } from "react";
+import { api } from "~/trpc/react";
 import type {
   AuctionListing,
   MarketFilters,
   MarketSort,
-  PaginatedAuctions,
 } from "~/types/marketplace";
 
 interface UseMarketDataOptions {
@@ -26,8 +28,8 @@ interface UseMarketDataReturn {
   sort: MarketSort;
   setFilters: (filters: Partial<MarketFilters>) => void;
   setSort: (sort: MarketSort) => void;
-  loadMore: () => Promise<void>;
-  refetch: () => Promise<void>;
+  loadMore: () => void;
+  refetch: () => void;
   reset: () => void;
 }
 
@@ -44,12 +46,62 @@ const DEFAULT_FILTERS: MarketFilters = {
 
 const DEFAULT_SORT: MarketSort = {
   field: "endTime",
-  direction: "asc", // Ending soon first
+  direction: "asc",
 };
 
+function mapAuction(auction: any): AuctionListing {
+  const card = auction.CardOwnership?.cards;
+  return {
+    id: auction.id,
+    cardInstanceId: auction.cardOwnershipId,
+    sellerId: auction.sellerId,
+    sellerName: auction.User?.clerkUserId || "Unknown",
+    startingPrice: auction.startingPrice,
+    currentBid: auction.currentBid ?? auction.startingPrice,
+    buyoutPrice: auction.buyoutPrice,
+    endTime: new Date(auction.endTime).getTime(),
+    bidCount: auction.bidCount ?? auction.AuctionBid?.length ?? 0,
+    isExpired: new Date(auction.endTime) < new Date(),
+    isFeatured: auction.isFeatured ?? false,
+    isExpress:
+      new Date(auction.endTime).getTime() -
+        new Date(auction.createdAt).getTime() <=
+      30 * 60 * 1000,
+    cardInstance: card
+      ? {
+          id: card.id,
+          title: card.title ?? "Unknown",
+          description: card.description || null,
+          artwork: card.artwork || "/images/cards/placeholder-nation.png",
+          artworkVariants: card.artworkVariants || null,
+          cardType: card.cardType ?? "NS_IMPORT",
+          rarity: card.rarity ?? "COMMON",
+          season: card.season ?? 1,
+          nsCardId: card.nsCardId || null,
+          nsSeason: card.nsSeason || null,
+          nsData: card.nsData || null,
+          wikiSource: card.wikiSource || null,
+          wikiArticleTitle: card.wikiArticleTitle || null,
+          wikiUrl: card.wikiUrl || null,
+          countryId: card.countryId ?? null,
+          stats: card.stats || {},
+          totalSupply: card.totalSupply || 0,
+          marketValue: card.marketValue || 0,
+          level: card.level || 1,
+          evolutionStage: card.evolutionStage || 0,
+          enhancements: card.enhancements || null,
+          createdAt: card.createdAt ?? new Date(),
+          updatedAt: card.updatedAt ?? new Date(),
+          lastTrade: card.lastTrade || null,
+        }
+      : ({} as any),
+    createdAt: auction.createdAt,
+    updatedAt: auction.updatedAt,
+  };
+}
+
 /**
- * Hook for fetching and managing marketplace auction data
- * Handles pagination, filtering, sorting, and data fetching
+ * Hook for fetching and managing marketplace auction data via tRPC
  */
 export function useMarketData(
   options: UseMarketDataOptions = {}
@@ -58,151 +110,54 @@ export function useMarketData(
     initialFilters = {},
     initialSort = DEFAULT_SORT,
     pageSize = 20,
-    autoFetch = true,
   } = options;
 
-  // State
-  const [auctions, setAuctions] = useState<AuctionListing[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [total, setTotal] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
-
   const [filters, setFiltersState] = useState<MarketFilters>({
     ...DEFAULT_FILTERS,
     ...initialFilters,
   });
-
   const [sort, setSortState] = useState<MarketSort>(initialSort);
 
-  /**
-   * Fetch auctions from API
-   */
-  const fetchAuctions = useCallback(
-    async (append = false) => {
-      setLoading(true);
-      setError(null);
+  const { data, isLoading, error, refetch } =
+    api.cardMarket.getActiveAuctions.useQuery({
+      limit: pageSize,
+      offset,
+      isFeatured: filters.showFeaturedOnly || undefined,
+    });
 
-      try {
-        // TODO: Integrate with tRPC api.cardMarket.getActiveAuctions
-        // For now, return empty state until tRPC client is wired
-        // const result = await api.cardMarket.getActiveAuctions.query({
-        //   limit: pageSize,
-        //   offset: append ? offset : 0,
-        //   // Apply filters when backend supports them
-        //   cardId: filters.searchQuery, // Map to cardId filter
-        //   isFeatured: filters.showFeaturedOnly,
-        // });
+  const rawAuctions = data?.auctions ?? [];
+  const total = data?.total ?? 0;
+  const hasMore = offset + pageSize < total;
 
-        // Transform result to AuctionListing format
-        // const auctions: AuctionListing[] = result.auctions.map((auction) => ({
-        //   id: auction.id,
-        //   cardInstanceId: auction.cardInstanceId,
-        //   sellerId: auction.sellerId,
-        //   sellerName: auction.User?.clerkUserId || "Unknown",
-        //   startingPrice: auction.startingPrice,
-        //   currentBid: auction.currentBid ?? auction.startingPrice,
-        //   buyoutPrice: auction.buyoutPrice,
-        //   endTime: new Date(auction.endTime).getTime(),
-        //   bidCount: auction.bidCount,
-        //   isExpired: new Date(auction.endTime) < new Date(),
-        //   isFeatured: auction.isFeatured,
-        //   isExpress: new Date(auction.endTime).getTime() - new Date(auction.createdAt).getTime() <= 30 * 60 * 1000,
-        //   cardInstance: auction.CardOwnership?.cards as CardInstance,
-        //   createdAt: auction.createdAt,
-        //   updatedAt: auction.updatedAt,
-        // }));
+  const auctions: AuctionListing[] = rawAuctions.map(mapAuction);
 
-        // Placeholder until tRPC is wired
-        const mockResult: PaginatedAuctions = {
-          auctions: [],
-          total: 0,
-          hasMore: false,
-        };
-
-        if (append) {
-          setAuctions((prev) => [...prev, ...mockResult.auctions]);
-        } else {
-          setAuctions(mockResult.auctions);
-          setOffset(0);
-        }
-
-        setTotal(mockResult.total);
-        setHasMore(mockResult.hasMore);
-
-        if (append) {
-          setOffset((prev) => prev + pageSize);
-        } else {
-          setOffset(pageSize);
-        }
-      } catch (err) {
-        console.error("[useMarketData] Error fetching auctions:", err);
-        setError(
-          err instanceof Error ? err : new Error("Failed to fetch auctions")
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [filters, sort, pageSize, offset]
-  );
-
-  /**
-   * Update filters and refetch
-   */
   const setFilters = useCallback((newFilters: Partial<MarketFilters>) => {
     setFiltersState((prev) => ({ ...prev, ...newFilters }));
     setOffset(0);
   }, []);
 
-  /**
-   * Update sort and refetch
-   */
   const setSort = useCallback((newSort: MarketSort) => {
     setSortState(newSort);
     setOffset(0);
   }, []);
 
-  /**
-   * Load more auctions (pagination)
-   */
-  const loadMore = useCallback(async () => {
-    if (!hasMore || loading) return;
-    await fetchAuctions(true);
-  }, [hasMore, loading, fetchAuctions]);
+  const loadMore = useCallback(() => {
+    if (hasMore && !isLoading) {
+      setOffset((prev) => prev + pageSize);
+    }
+  }, [hasMore, isLoading, pageSize]);
 
-  /**
-   * Refetch from start
-   */
-  const refetch = useCallback(async () => {
-    await fetchAuctions(false);
-  }, [fetchAuctions]);
-
-  /**
-   * Reset to initial state
-   */
   const reset = useCallback(() => {
-    setAuctions([]);
     setOffset(0);
-    setTotal(0);
-    setHasMore(true);
-    setError(null);
     setFiltersState({ ...DEFAULT_FILTERS, ...initialFilters });
     setSortState(initialSort);
   }, [initialFilters, initialSort]);
 
-  // Auto-fetch on mount or filter/sort change
-  useEffect(() => {
-    if (autoFetch) {
-      void fetchAuctions(false);
-    }
-  }, [filters, sort]); // eslint-disable-line react-hooks/exhaustive-deps
-
   return {
     auctions,
-    loading,
-    error,
+    loading: isLoading,
+    error: error ? new Error(error.message) : null,
     total,
     hasMore,
     filters,
@@ -210,7 +165,7 @@ export function useMarketData(
     setFilters,
     setSort,
     loadMore,
-    refetch,
+    refetch: () => void refetch(),
     reset,
   };
 }

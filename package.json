@@ -59,6 +59,7 @@
     "db:sync:check": "echo 'Checking database sync status...' && npx prisma validate",
     "db:watch": "./scripts/watch-schema.sh",
     "db:seed": "tsx scripts/setup/seed-db.ts",
+    "db:seed-issues": "tsx prisma/seeds/seed-national-issues.ts",
     "db:backup": "tsx scripts/setup/backup-db.ts",
     "db:restore": "tsx scripts/setup/restore-db.ts",
     "add-system-owner": "tsx scripts/add-system-owner.ts",

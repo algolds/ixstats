@@ -54,7 +54,7 @@ export function DemographicsSection({
     () => [
       {
         label: "Total Population",
-        value: sectionUtils.formatNumber(totalPopulation, 1),
+        value: sectionUtils.formatNumber(totalPopulation, 0),
         icon: Users,
         theme: "gold" as const,
       },

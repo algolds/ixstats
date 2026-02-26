@@ -3,6 +3,5 @@
 
 export { MeetingScheduler } from "./MeetingScheduler";
 export { MeetingDecisionsModal } from "./MeetingDecisionsModal";
-export { PolicyCreator } from "./PolicyCreator";
 export { ActivityPlanner } from "./ActivityPlanner";
 export { QuickActionsPanel } from "./QuickActionsPanel";

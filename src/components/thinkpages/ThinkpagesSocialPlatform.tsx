@@ -20,7 +20,7 @@ import { ThinkpagesPost } from "./ThinkpagesPost";
 import { GlassCanvasComposer } from "./GlassCanvasComposer";
 import { LiveHeadlinesTicker } from "~/components/shared/LiveHeadlinesTicker";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { AccountManagerModal } from "./AccountManagerModal";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { RepostModal } from "./RepostModal";
@@ -51,6 +51,7 @@ export function ThinkpagesSocialPlatform({
   profileMode = false,
   countryOwnerClerkUserId,
 }: ThinkpagesSocialPlatformProps) {
+  const notify = useNotify();
   const [feedFilter, setFeedFilter] = useState<"recent" | "trending" | "hot">("recent");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -105,7 +106,7 @@ export function ThinkpagesSocialPlatform({
       ]);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to add reaction");
+      notify.error(error.message || "Failed to add reaction");
     },
   });
 
@@ -137,7 +138,7 @@ export function ThinkpagesSocialPlatform({
         setNextCursor(null);
       }
     } catch {
-      toast.error("Failed to load more posts");
+      notify.error("Failed to load more posts");
     } finally {
       setIsLoadingMore(false);
     }
@@ -198,7 +199,7 @@ export function ThinkpagesSocialPlatform({
           reactionType: "like",
         });
       } else {
-        toast.error("Please select an account first");
+        notify.error("Please select an account first");
       }
     },
     [selectedAccount, addReactionMutation],
@@ -213,7 +214,7 @@ export function ThinkpagesSocialPlatform({
           setIsRepostModalOpen(true);
         }
       } else {
-        toast.error("Please select an account first");
+        notify.error("Please select an account first");
       }
     },
     [selectedAccount, filteredPosts],
@@ -222,7 +223,7 @@ export function ThinkpagesSocialPlatform({
   const handleReply = useCallback(
     (_postId: string) => {
       if (!selectedAccount) {
-        toast.error("Please select an account first");
+        notify.error("Please select an account first");
       }
     },
     [selectedAccount],
@@ -237,7 +238,7 @@ export function ThinkpagesSocialPlatform({
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
+      notify.success("Link copied to clipboard!");
     }
   }, []);
 
@@ -257,7 +258,7 @@ export function ThinkpagesSocialPlatform({
           });
         }
       } else {
-        toast.error("Please select an account first");
+        notify.error("Please select an account first");
       }
     },
     [selectedAccount, addReactionMutation],
@@ -286,7 +287,7 @@ export function ThinkpagesSocialPlatform({
           onReply={handleReply}
           onShare={handleShare}
           onReaction={handleReaction}
-          onAccountClick={() => toast.info("Account profile view coming soon!")}
+          onAccountClick={() => notify.info("Account profile view coming soon!")}
           showThread={true}
         />
       </motion.div>
@@ -490,7 +491,7 @@ export function ThinkpagesSocialPlatform({
           <GlassCanvasComposer
             account={selectedAccount}
             onPost={() => {
-              toast.success("Posted successfully!");
+              notify.success("Posted successfully!");
               refetchDisplayFeed();
             }}
             placeholder="What's happening across the nations?"
@@ -606,7 +607,7 @@ export function ThinkpagesSocialPlatform({
           onCreateAccount={onCreateAccount}
           isOwner={isOwner}
           onPost={() => {
-            toast.success("Reposted successfully!");
+            notify.success("Reposted successfully!");
             refetchFeed();
             setIsRepostModalOpen(false);
             setRepostingPost(null);

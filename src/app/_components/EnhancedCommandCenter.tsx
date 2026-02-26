@@ -1233,7 +1233,7 @@ export function EnhancedCommandCenter() {
   const isAdmin = roleUser?.role?.level !== undefined && roleUser.role.level <= 10;
 
   // Fetch all necessary data
-  const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery();
+  const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
   const { data: globalStatsData, isLoading: globalStatsLoading } =
     api.countries.getGlobalStats.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });

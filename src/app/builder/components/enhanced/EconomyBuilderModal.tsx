@@ -18,7 +18,7 @@ import {
   Zap,
   BarChart3,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 // Economy Builder Components
 import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
@@ -63,6 +63,7 @@ export function EconomyBuilderModal({
   countryId,
   className = "",
 }: EconomyBuilderModalProps) {
+  const notify = useNotify();
   const [activeTab, setActiveTab] = useState<EconomyBuilderTab>("atomicComponents");
   const [economyBuilder, setEconomyBuilder] = useState<EconomyBuilderState | null>(null);
   const [selectedComponents, setSelectedComponents] = useState<EconomicComponentType[]>([]);
@@ -166,7 +167,7 @@ export function EconomyBuilderModal({
       await economyIntegrationService.updateEconomicComponents(defaultComponents);
     } catch (error) {
       console.error("Failed to generate initial economy builder:", error);
-      toast.error("Failed to initialize economy builder");
+      notify.error("Failed to initialize economy builder");
     }
   };
 
@@ -392,7 +393,7 @@ export function EconomyBuilderModal({
 
   const handleSave = async () => {
     if (!economyBuilder || !isValid) {
-      toast.error("Please fix validation errors before saving");
+      notify.error("Please fix validation errors before saving");
       return;
     }
 
@@ -406,11 +407,11 @@ export function EconomyBuilderModal({
       };
 
       await onSave(updatedBuilder);
-      toast.success("Economy configuration saved successfully!");
+      notify.success("Economy configuration saved successfully!");
       onClose();
     } catch (error) {
       console.error("Save failed:", error);
-      toast.error("Failed to save economy configuration");
+      notify.error("Failed to save economy configuration");
     } finally {
       setIsSaving(false);
     }

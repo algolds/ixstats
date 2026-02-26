@@ -84,7 +84,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
                 ? 25
                 : 10;
 
-  const stabilityScore = country.analytics?.stabilityScore ?? 80 + Math.random() * 20;
+  const stabilityScore = country.analytics?.stabilityScore ?? 75;
   const economicMomentum = country.analytics?.economicMomentum ?? economicHealth;
 
   // Key performance indicators
@@ -119,7 +119,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
     {
       label: "National Stability",
       value: stabilityScore,
-      change: Math.random() * 4 - 2, // Simulated stability change
+      change: 0, // Stability change requires historical data
       icon: Shield,
       color: "#10b981",
       format: "percentage",
@@ -420,7 +420,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Population Density:</span>
                       <span className="font-semibold">
-                        {country.populationDensity.toFixed(1)}/km²
+                        {Math.round(country.populationDensity)}/km²
                       </span>
                     </div>
                   )}

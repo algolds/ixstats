@@ -34,6 +34,7 @@ import {
 } from "~/lib/holographic-effects";
 import { proxyNSImage } from "~/lib/ns-image-proxy";
 import { useSoundService } from "~/lib/sound-service";
+import { CardHolographicCover } from "../display/CardHolographicCover";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 
 /**
@@ -211,12 +212,11 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                 unoptimized
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-                <div className="text-center p-4">
-                  <div className="text-4xl mb-2">🏛️</div>
-                  <div className="text-xs text-gray-400">Image unavailable</div>
-                </div>
-              </div>
+              <CardHolographicCover
+                cardType={card.cardType}
+                rarity={card.rarity}
+                title={card.title}
+              />
             )}
 
             {/* Metallic gradient overlay for premium feel */}
@@ -415,9 +415,9 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                       <span className="text-white/70 font-medium">Population</span>
                       <span className="font-black text-blue-400">
                         {population >= 1000000
-                          ? `${(population / 1000000).toFixed(1)}M`
+                          ? `${Math.round(population / 1000000)}M`
                           : population >= 1000
-                          ? `${(population / 1000).toFixed(1)}K`
+                          ? `${Math.round(population / 1000)}K`
                           : population}
                       </span>
                     </div>

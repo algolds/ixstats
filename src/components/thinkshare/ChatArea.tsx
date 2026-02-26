@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useRef } from "react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 // Import new sub-components
 import { ChatHeader } from "./ChatHeader";
@@ -39,6 +40,8 @@ interface ChatAreaProps {
     }) => Promise<void>;
     isLoading: boolean;
   };
+  sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export function ChatArea({
@@ -51,8 +54,17 @@ export function ChatArea({
   clientState,
   sendTypingIndicator,
   markMessagesAsReadMutation,
+  sidebarCollapsed,
+  onToggleSidebar,
 }: ChatAreaProps) {
+  const notify = useNotify();
   const [replyingToMessage, setReplyingToMessage] = useState<ThinkShareMessage | null>(null);
+
+  // Stabilize markMessagesAsRead via ref to avoid stale closure
+  const markAsReadRef = useRef(markMessagesAsReadMutation.mutate);
+  useEffect(() => {
+    markAsReadRef.current = markMessagesAsReadMutation.mutate;
+  }, [markMessagesAsReadMutation.mutate]);
 
   const sendMessageMutation = api.thinkpages.sendMessage.useMutation({
     onSuccess: () => {
@@ -78,19 +90,19 @@ export function ChatArea({
         errorMessage = "You don't have permission to send messages in this conversation";
       }
 
-      toast.error(errorMessage);
+      notify.error(errorMessage);
     },
   });
 
   useEffect(() => {
     if (selectedConversation && currentAccount?.id) {
-      markMessagesAsReadMutation.mutate({
+      markAsReadRef.current({
         conversationId: selectedConversation.id,
         userId: currentAccount.id,
-        messageIds: [], // Empty array to mark all as read
+        messageIds: [],
       });
     }
-  }, [selectedConversation?.id, currentAccount?.id]); // Removed markMessagesAsReadMutation from deps!
+  }, [selectedConversation?.id, currentAccount?.id]);
 
   const handleSendMessage = useCallback(
     (content?: string, plainText?: string) => {
@@ -111,26 +123,43 @@ export function ChatArea({
     [selectedConversation, currentAccount, sendMessageMutation]
   );
 
+  const SidebarIcon = sidebarCollapsed ? PanelLeftOpen : PanelLeftClose;
+
   return (
-    <Card className="glass-hierarchy-child flex flex-col">
-      {/* Chat Header */}
-      <ChatHeader
-        selectedConversation={selectedConversation}
-        currentAccountId={currentAccount?.id}
-      />
+    <Card className="glass-hierarchy-child flex h-[700px] flex-col">
+      {/* Chat Header with sidebar toggle */}
+      <div className="flex items-center">
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted ml-2 shrink-0 rounded-md p-2 transition-colors"
+            title={sidebarCollapsed ? "Show conversations" : "Hide conversations"}
+          >
+            <SidebarIcon className="h-4 w-4" />
+          </button>
+        )}
+        <div className="min-w-0 flex-1">
+          <ChatHeader
+            selectedConversation={selectedConversation}
+            currentAccountId={currentAccount?.id}
+          />
+        </div>
+      </div>
 
       <Separator />
 
-      {/* Messages */}
-      <MessageList
-        conversationMessages={conversationMessages}
-        isLoadingMessages={isLoadingMessages}
-        currentAccount={currentAccount}
-        clientState={clientState}
-        selectedConversation={selectedConversation}
-        refetchMessages={refetchMessages}
-        onReply={setReplyingToMessage}
-      />
+      {/* Messages — scrollable */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <MessageList
+          conversationMessages={conversationMessages}
+          isLoadingMessages={isLoadingMessages}
+          currentAccount={currentAccount}
+          clientState={clientState}
+          selectedConversation={selectedConversation}
+          refetchMessages={refetchMessages}
+          onReply={setReplyingToMessage}
+        />
+      </div>
 
       {/* Rich Text Message Input (includes reply preview) */}
       <MessageInput

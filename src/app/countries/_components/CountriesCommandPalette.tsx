@@ -3,7 +3,8 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { RainbowButton } from "~/components/magicui/rainbow-button";
-import { RiSearchLine, RiCommandLine } from "react-icons/ri";
+import { RiSearchLine, RiCommandLine, RiShuffleLine } from "react-icons/ri";
+import { cn } from "~/lib/utils";
 
 type SortOption = "random" | "name" | "population" | "gdp" | "gdpPerCapita" | "tier";
 type FilterOption = "all" | "developed" | "developing" | "superpower";
@@ -21,6 +22,22 @@ interface CountriesCommandPaletteProps {
   onImFeelingLucky: () => void;
   resultsCount: number;
 }
+
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: "random", label: "Random" },
+  { value: "name", label: "A–Z" },
+  { value: "population", label: "Population" },
+  { value: "gdp", label: "GDP" },
+  { value: "gdpPerCapita", label: "GDP/Cap" },
+  { value: "tier", label: "Tier" },
+];
+
+const filterOptions: { value: FilterOption; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "developed", label: "Developed" },
+  { value: "developing", label: "Developing" },
+  { value: "superpower", label: "Superpowers" },
+];
 
 export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = ({
   isOpen,
@@ -45,7 +62,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[10001] bg-black/40 backdrop-blur-md"
+            className="fixed inset-0 z-[10001] bg-black/50"
           />
 
           {/* Command Palette */}
@@ -54,149 +71,128 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -400, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-1/2 left-4 z-[10002] w-96 -translate-y-1/2"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)",
-              backdropFilter: "blur(32px) saturate(200%)",
-              WebkitBackdropFilter: "blur(32px) saturate(200%)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: "16px",
-              boxShadow:
-                "0 24px 96px rgba(0, 0, 0, 0.25), 0 16px 48px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)",
-            }}
+            className="bg-popover border-border fixed top-1/2 left-4 z-[10002] w-80 -translate-y-1/2 rounded-xl border shadow-xl md:w-96"
           >
-            {/* Refraction border effects */}
-            <div className="pointer-events-none absolute inset-0 rounded-2xl">
-              <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-              <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-              <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/40 to-transparent" />
-              <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-            </div>
-
-            <div className="relative z-10 p-6">
+            <div className="p-5">
               <div className="space-y-4">
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="text-foreground flex items-center gap-3 text-xl font-bold">
-                    <RiCommandLine className="h-6 w-6 text-blue-400" />
-                    Countries Filter
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="text-foreground flex items-center gap-2.5 text-base font-semibold">
+                    <RiCommandLine className="h-5 w-5 text-blue-400" />
+                    Filter & Sort
                   </div>
                   <button
                     onClick={onClose}
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-lg p-2 transition-colors"
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
 
                 {/* Search */}
                 <div className="relative">
-                  <RiSearchLine className="text-muted-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform" />
+                  <RiSearchLine className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     type="text"
                     placeholder="Search countries..."
                     value={searchInput}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="bg-accent/10 border-border text-foreground placeholder:text-muted-foreground focus:bg-accent/15 w-full rounded-xl py-3 pr-4 pl-12 text-base transition-all focus:border-blue-400"
+                    className="bg-muted/50 text-foreground placeholder:text-muted-foreground focus:ring-ring w-full rounded-lg border border-transparent py-2.5 pr-3 pl-10 text-sm transition-all focus:border-blue-400/50 focus:ring-1 focus:outline-none"
                     autoFocus
                   />
                 </div>
 
-                {/* Sort */}
+                {/* Sort — pill selector */}
                 <div>
-                  <label className="text-muted-foreground mb-2 block text-sm font-medium">
+                  <p className="text-muted-foreground mb-2 text-[11px] font-semibold uppercase tracking-wide">
                     Sort by
-                  </label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => onSortChange(e.target.value as SortOption)}
-                    className="bg-accent/10 border-border focus:ring-primary/50 text-foreground w-full rounded-xl px-3 py-3 focus:ring-2 focus:outline-none"
-                  >
-                    <option value="random">Random</option>
-                    <option value="name">Name</option>
-                    <option value="population">Population</option>
-                    <option value="gdp">Total GDP</option>
-                    <option value="gdpPerCapita">GDP per Capita</option>
-                    <option value="tier">Economic Tier</option>
-                  </select>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {sortOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => onSortChange(opt.value)}
+                        className={cn(
+                          "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                          sortBy === opt.value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Filter */}
+                {/* Filter — pill selector */}
                 <div>
-                  <label className="text-muted-foreground mb-2 block text-sm font-medium">
-                    Filter by
-                  </label>
-                  <select
-                    value={filterBy}
-                    onChange={(e) => onFilterChange(e.target.value as FilterOption)}
-                    className="bg-accent/10 border-border focus:ring-primary/50 text-foreground w-full rounded-xl px-3 py-3 focus:ring-2 focus:outline-none"
-                  >
-                    <option value="all">All Countries</option>
-                    <option value="developed">Developed</option>
-                    <option value="developing">Developing</option>
-                    <option value="superpower">Superpowers</option>
-                  </select>
+                  <p className="text-muted-foreground mb-2 text-[11px] font-semibold uppercase tracking-wide">
+                    Filter
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {filterOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => onFilterChange(opt.value)}
+                        className={cn(
+                          "rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                          filterBy === opt.value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="space-y-3">
+                <div className="flex gap-2">
                   <button
                     onClick={onReshuffle}
-                    className="bg-accent/10 hover:bg-accent/20 border-border text-foreground flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 transition-colors"
+                    className="bg-muted hover:bg-muted/80 text-foreground flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors"
                   >
-                    <RiCommandLine className="h-4 w-4" />
-                    <span>Reshuffle Order</span>
-                    <kbd className="bg-muted/50 border-border rounded px-2 py-1 text-xs">R</kbd>
+                    <RiShuffleLine className="h-4 w-4" />
+                    <span>Reshuffle</span>
+                    <kbd className="text-muted-foreground bg-background rounded px-1.5 py-0.5 text-[10px]">R</kbd>
                   </button>
 
                   <RainbowButton
                     onClick={onImFeelingLucky}
-                    className="relative flex w-full items-center justify-center gap-2 overflow-hidden font-medium text-white"
+                    className="relative flex flex-1 items-center justify-center gap-2 overflow-hidden text-sm font-medium text-white"
                     style={{
                       background:
-                        "linear-gradient(45deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8), rgba(236, 72, 153, 0.8), rgba(239, 68, 68, 0.8), rgba(245, 158, 11, 0.8), rgba(34, 197, 94, 0.8))",
+                        "linear-gradient(45deg, rgba(99,102,241,0.8), rgba(168,85,247,0.8), rgba(236,72,153,0.8), rgba(239,68,68,0.8), rgba(245,158,11,0.8), rgba(34,197,94,0.8))",
                       backgroundSize: "300% 300%",
                       animation: "rainbow-subtle 8s ease-in-out infinite",
-                      backdropFilter: "blur(10px)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      boxShadow:
-                        "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
                     }}
                     size="lg"
                   >
-                    <span className="relative z-10">🍀 I'm Feeling Lucky</span>
-                    <kbd className="border-border relative z-10 rounded bg-black/30 px-2 py-1 text-xs">
+                    <span className="relative z-10">Lucky</span>
+                    <kbd className="relative z-10 rounded bg-black/30 px-1.5 py-0.5 text-[10px]">
                       Ctrl+Tab
                     </kbd>
                   </RainbowButton>
                 </div>
 
-                {/* Results Preview */}
-                <div className="border border-t pt-4">
-                  <p className="text-muted-foreground text-sm">
-                    Showing {resultsCount} countries
+                {/* Results + Help */}
+                <div className="border-border border-t pt-3">
+                  <p className="text-muted-foreground text-xs">
+                    {resultsCount} countries
                     {searchInput && ` matching "${searchInput}"`}
-                    {filterBy !== "all" && ` in ${filterBy} category`}
+                    {filterBy !== "all" && ` · ${filterBy}`}
                   </p>
-                </div>
-
-                {/* Help Text */}
-                <div className="text-muted-foreground/50 flex items-center justify-center gap-2 pt-2 text-xs">
-                  <div className="flex items-center gap-1">
-                    <kbd className="bg-muted border-border rounded px-2 py-1">Tab</kbd>
-                    <span>to toggle</span>
-                  </div>
-                  <span>•</span>
-                  <div className="flex items-center gap-1">
-                    <kbd className="bg-muted border-border rounded px-2 py-1">Esc</kbd>
-                    <span>to close</span>
+                  <div className="text-muted-foreground/50 mt-2 flex items-center gap-3 text-[10px]">
+                    <span className="flex items-center gap-1">
+                      <kbd className="bg-muted rounded px-1.5 py-0.5">Tab</kbd> toggle
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <kbd className="bg-muted rounded px-1.5 py-0.5">Esc</kbd> close
+                    </span>
                   </div>
                 </div>
               </div>

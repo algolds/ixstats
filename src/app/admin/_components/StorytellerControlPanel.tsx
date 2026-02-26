@@ -5,7 +5,7 @@
  * STORYTELLER CONTROL PANEL
  *
  * Unified god-mode interface for complete narrative and economic control.
- * Merges DM Tools + SDI Admin + Direct Country Manipulation
+ * Merges Storyteller Tools + SDI Admin + Direct Country Manipulation
  *
  * Features:
  * - Direct country data editing (all fields)
@@ -427,7 +427,7 @@ export function StorytellerControlPanel() {
     data: interventionsData,
     isLoading: interventionsLoading,
     refetch: refetchInterventions,
-  } = api.countries.getDmInputs.useQuery({
+  } = api.countries.getStorytellerEffects.useQuery({
     countryId: selectedCountry || undefined,
   });
   const { data: auditLogData, isLoading: auditLogLoading } = api.admin.getAdminAuditLog.useQuery({
@@ -436,7 +436,7 @@ export function StorytellerControlPanel() {
   });
 
   // ========== MUTATIONS ==========
-  const createInterventionMutation = api.countries.addDmInput.useMutation({
+  const createInterventionMutation = api.countries.addStorytellerEffect.useMutation({
     onSuccess: () => {
       refetchInterventions();
       setShowInterventionDialog(false);
@@ -451,7 +451,7 @@ export function StorytellerControlPanel() {
     },
   });
 
-  const deleteInterventionMutation = api.countries.deleteDmInput.useMutation({
+  const deleteInterventionMutation = api.countries.deleteStorytellerEffect.useMutation({
     onSuccess: () => refetchInterventions(),
   });
 

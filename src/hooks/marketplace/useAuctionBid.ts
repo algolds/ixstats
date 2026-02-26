@@ -1,92 +1,59 @@
 // src/hooks/marketplace/useAuctionBid.ts
-// Hook for placing bids on auctions with optimistic updates
+// Hook for placing bids and buyouts on auctions via tRPC
 
-import { useState, useCallback } from "react";
-import type { PlaceBidInput, Bid } from "~/types/marketplace";
+"use client";
+
+import { api } from "~/trpc/react";
+import { vaultNotify } from "~/lib/vault-notifications";
 
 interface UseAuctionBidReturn {
-  placeBid: (input: PlaceBidInput) => Promise<void>;
-  isPlacing: boolean;
-  error: Error | null;
-  lastBid: Bid | null;
+  placeBid: (auctionId: string, amount: number) => void;
+  executeBuyout: (auctionId: string) => void;
+  isBidding: boolean;
+  isBuyingOut: boolean;
+  error: string | null;
 }
 
 /**
- * Hook for placing bids on auctions
- * Implements optimistic updates with rollback on error
+ * Hook for placing bids and executing buyouts on auctions
  */
-export function useAuctionBid(): UseAuctionBidReturn {
-  const [isPlacing, setIsPlacing] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [lastBid, setLastBid] = useState<Bid | null>(null);
+export function useAuctionBid(options?: {
+  onSuccess?: () => void;
+}): UseAuctionBidReturn {
+  const utils = api.useUtils();
 
-  /**
-   * Place a bid on an auction
-   * @param input - Bid placement input
-   */
-  const placeBid = useCallback(async (input: PlaceBidInput) => {
-    setIsPlacing(true);
-    setError(null);
+  const bidMutation = api.cardMarket.placeBid.useMutation({
+    onSuccess: (data) => {
+      vaultNotify.success(data.message);
+      void utils.cardMarket.getActiveAuctions.invalidate();
+      void utils.cardMarket.getMyActiveBids.invalidate();
+      options?.onSuccess?.();
+    },
+    onError: (error) => {
+      vaultNotify.error(error.message);
+    },
+  });
 
-    // Store previous state for rollback
-    const previousBid = lastBid;
-
-    try {
-      // Optimistic update - create temporary bid
-      const optimisticBid: Bid = {
-        id: `temp-${Date.now()}`,
-        auctionId: input.auctionId,
-        bidderId: "current-user", // TODO: Get from auth context
-        bidderName: "You",
-        amount: input.amount,
-        timestamp: Date.now(), // IxTime will be set by server
-        isAutoBid: false,
-      };
-
-      setLastBid(optimisticBid);
-
-      // TODO: Wire up tRPC mutation
-      // const result = await api.cardMarket.placeBid.mutate({
-      //   auctionId: input.auctionId,
-      //   amount: input.amount,
-      // });
-
-      // Transform result to Bid format
-      // const bid: Bid = {
-      //   id: result.bidId,
-      //   auctionId: input.auctionId,
-      //   bidderId: result.bidderId,
-      //   bidderName: result.bidderName,
-      //   amount: input.amount,
-      //   timestamp: result.timestamp,
-      //   isAutoBid: false,
-      // };
-      // setLastBid(bid);
-
-      // Mock success for now
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      console.log("[useAuctionBid] Bid placed successfully:", input);
-    } catch (err) {
-      console.error("[useAuctionBid] Error placing bid:", err);
-
-      // Rollback optimistic update
-      setLastBid(previousBid);
-
-      setError(
-        err instanceof Error ? err : new Error("Failed to place bid")
-      );
-
-      throw err;
-    } finally {
-      setIsPlacing(false);
-    }
-  }, [lastBid]);
+  const buyoutMutation = api.cardMarket.executeBuyout.useMutation({
+    onSuccess: (data) => {
+      vaultNotify.success(data.message);
+      void utils.cardMarket.getActiveAuctions.invalidate();
+      void utils.cardMarket.getMyActiveBids.invalidate();
+      void utils.vault.getBalance.invalidate();
+      options?.onSuccess?.();
+    },
+    onError: (error) => {
+      vaultNotify.error(error.message);
+    },
+  });
 
   return {
-    placeBid,
-    isPlacing,
-    error,
-    lastBid,
+    placeBid: (auctionId: string, amount: number) =>
+      bidMutation.mutate({ auctionId, amount }),
+    executeBuyout: (auctionId: string) =>
+      buyoutMutation.mutate({ auctionId }),
+    isBidding: bidMutation.isPending,
+    isBuyingOut: buyoutMutation.isPending,
+    error: bidMutation.error?.message ?? buyoutMutation.error?.message ?? null,
   };
 }

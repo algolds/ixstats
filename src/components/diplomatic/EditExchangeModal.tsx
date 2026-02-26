@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,7 @@ interface EditExchangeModalProps {
 
 export const EditExchangeModal = React.memo<EditExchangeModalProps>(
   ({ open, onOpenChange, exchange, formData, onFormDataChange, onSave, isPending }) => {
+    const notify = useNotify();
     if (!exchange) return null;
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +47,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
 
     const handleSave = () => {
       if (!formData.title.trim() || !formData.description.trim()) {
-        toast.error("Title and description cannot be empty");
+        notify.error("Title and description cannot be empty");
         return;
       }
       onSave();

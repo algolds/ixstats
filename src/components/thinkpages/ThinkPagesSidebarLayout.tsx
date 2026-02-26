@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { ThinkPagesSidebarNav, type ThinkPagesSection } from "./ThinkPagesSidebarNav";
 import { ThinkPagesStatusWidget } from "./ThinkPagesStatusWidget";
 
@@ -28,6 +29,8 @@ export function ThinkPagesSidebarLayout({
   isAuthenticated,
   onOpenSettings,
 }: ThinkPagesSidebarLayoutProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div className="space-y-0">
       {/* Hero Section */}
@@ -43,9 +46,13 @@ export function ThinkPagesSidebarLayout({
 
         {/* Main Layout — sidebar + content */}
         <div className="flex gap-4 sm:gap-6">
-          {/* Desktop: Fixed sidebar */}
-          <div className="relative z-30 hidden flex-shrink-0 lg:block">
-            <div className="sticky top-6 space-y-3">
+          {/* Desktop: Collapsible sidebar */}
+          <div
+            className={`relative z-30 hidden flex-shrink-0 transition-all duration-300 ease-in-out lg:block ${
+              collapsed ? "w-0 overflow-hidden opacity-0" : "w-56"
+            }`}
+          >
+            <div className="sticky top-6 w-56 space-y-3">
               <ThinkPagesSidebarNav
                 activeSection={activeSection}
                 onNavigate={onNavigate}
@@ -67,6 +74,22 @@ export function ThinkPagesSidebarLayout({
                 onNavigate={onNavigate}
                 variant="mobile"
               />
+            </div>
+
+            {/* Desktop: Collapse toggle */}
+            <div className="mb-3 hidden lg:block">
+              <button
+                onClick={() => setCollapsed((prev) => !prev)}
+                className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title={collapsed ? "Show sidebar" : "Hide sidebar"}
+              >
+                {collapsed ? (
+                  <PanelLeftOpen className="h-3.5 w-3.5" />
+                ) : (
+                  <PanelLeftClose className="h-3.5 w-3.5" />
+                )}
+                <span>{collapsed ? "Show sidebar" : "Hide sidebar"}</span>
+              </button>
             </div>
 
             <div className="space-y-4 sm:space-y-6">

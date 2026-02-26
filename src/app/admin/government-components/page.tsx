@@ -3,7 +3,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { SignInButton, useUser } from "~/context/auth-context";
@@ -31,7 +31,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Plus,
   Pencil,
@@ -167,7 +167,7 @@ export default function GovernmentComponentsPage() {
   usePageTitle({ title: "Government Components Admin" });
 
   const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
@@ -200,76 +200,44 @@ export default function GovernmentComponentsPage() {
   // Mutations
   const createMutation = api.governmentComponents.createComponent.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Component created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Component created successfully");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error: { message?: string }) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create component",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create component");
     },
   });
 
   const updateMutation = api.governmentComponents.updateComponent.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Component updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Component updated successfully");
       refetch();
       setEditingComponent(null);
     },
     onError: (error: { message?: string }) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update component",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update component");
     },
   });
 
   const deleteMutation = api.governmentComponents.deleteComponent.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Component deactivated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Component deactivated successfully");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to deactivate component",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to deactivate component");
     },
   });
 
   const createSynergyMutation = api.governmentComponents.createSynergy.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Synergy relationship created",
-        type: "success",
-      });
+      notify.success("Success", "Synergy relationship created");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create synergy",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create synergy");
     },
   });
 
@@ -1117,9 +1085,27 @@ function SynergyMatrixModal({
     }
   };
 
+  const getSynergyIcon = (type: string) => {
+    switch (type) {
+      case "strong": return "++";
+      case "moderate": return "+";
+      case "conflict": return "×";
+      default: return "";
+    }
+  };
+
+  const getSynergyLabel = (type: string) => {
+    switch (type) {
+      case "strong": return "Strong synergy";
+      case "moderate": return "Moderate synergy";
+      case "conflict": return "Conflict";
+      default: return "No relationship";
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[90vh] max-w-6xl flex-col overflow-hidden">
+      <DialogContent className="!flex !h-[95vh] !w-[95vw] !max-w-[95vw] flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Synergy Matrix</DialogTitle>
           <DialogDescription>
@@ -1130,16 +1116,17 @@ function SynergyMatrixModal({
         <div className="flex-1 overflow-auto p-4">
           <div
             className="grid gap-1"
-            style={{ gridTemplateColumns: `auto repeat(${components.length}, 1fr)` }}
+            style={{ gridTemplateColumns: `auto repeat(${components.length}, minmax(2.5rem, 1fr))` }}
           >
             {/* Header Row */}
-            <div className="bg-background sticky top-0 left-0 z-20" />
+            <div className="bg-background sticky top-0 left-0 z-20 min-h-[5rem]" />
             {components.map((comp) => (
               <div
                 key={comp.id}
-                className="bg-background sticky top-0 z-10 border border-white/10 p-2 text-center text-xs font-medium"
+                title={comp.name}
+                className="bg-background sticky top-0 z-10 flex min-h-[5rem] items-end border border-white/10 p-1 text-center text-xs font-medium"
               >
-                <div className="origin-center -rotate-45 transform whitespace-nowrap">
+                <div className="w-full origin-bottom-left -rotate-45 transform truncate whitespace-nowrap pb-1 text-left">
                   {comp.name.substring(0, 20)}
                 </div>
               </div>
@@ -1147,8 +1134,8 @@ function SynergyMatrixModal({
 
             {/* Matrix Rows */}
             {components.map((primary) => (
-              <>
-                <div className="bg-background sticky left-0 z-10 border border-white/10 p-2 text-xs font-medium">
+              <Fragment key={primary.id}>
+                <div title={primary.name} className="bg-background sticky left-0 z-10 border border-white/10 p-2 text-xs font-medium">
                   {primary.name}
                 </div>
                 {components.map((secondary) => {
@@ -1166,9 +1153,9 @@ function SynergyMatrixModal({
                         }
                       }}
                       disabled={primary.id === secondary.id}
-                      className={`border border-white/10 p-2 transition-all ${
+                      className={`flex aspect-square min-h-[2rem] items-center justify-center border border-white/10 text-xs font-bold transition-all ${
                         primary.id === secondary.id
-                          ? "cursor-not-allowed bg-white/5"
+                          ? "cursor-not-allowed bg-white/5 text-white/20"
                           : `${getSynergyColor(synergyType)} cursor-pointer ${
                               isSelected ? "ring-2 ring-[--intel-gold]" : ""
                             }`
@@ -1176,12 +1163,14 @@ function SynergyMatrixModal({
                       title={
                         primary.id === secondary.id
                           ? "Same component"
-                          : `${primary.name} ↔ ${secondary.name}`
+                          : `${primary.name} ↔ ${secondary.name}: ${getSynergyLabel(synergyType)}`
                       }
-                    />
+                    >
+                      {primary.id !== secondary.id && getSynergyIcon(synergyType)}
+                    </button>
                   );
                 })}
-              </>
+              </Fragment>
             ))}
           </div>
 

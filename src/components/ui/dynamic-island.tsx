@@ -95,18 +95,21 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     borderRadius: 22,
   },
   [SIZE_PRESETS.COMPACT]: {
-    width: 235,
-    aspectRatio: 44 / 235,
+    width: 200,
+    height: 36,
+    aspectRatio: 36 / 200,
     borderRadius: 46,
   },
   [SIZE_PRESETS.COMPACT_LONG]: {
-    width: 300,
-    aspectRatio: 60 / 300,
+    width: 320,
+    height: 40,
+    aspectRatio: 40 / 320,
     borderRadius: 46,
   },
   [SIZE_PRESETS.COMPACT_TALL]: {
-    width: 350,
-    aspectRatio: 80 / 350,
+    width: 360,
+    height: 44,
+    aspectRatio: 44 / 360,
     borderRadius: 46,
   },
   [SIZE_PRESETS.COMPACT_MEDIUM]: {
@@ -412,14 +415,15 @@ const calculateDimensions = (
     return { width: "min(1400px, 85vw)", height: 80 };
   }
 
-  // For compact and other modes, use auto width and fit-content height
+  // For compact modes, use explicit height but let width fit content
   if (
     size === "compact" ||
     size === "compactLong" ||
     size === "compactMedium" ||
     size === "compactTall"
   ) {
-    return { width: "auto", height: "auto" };
+    const h = resolvedSize.height ?? resolvedSize.aspectRatio * resolvedSize.width;
+    return { width: "fit-content", height: h };
   }
 
   // For other preset sizes, use the preset width directly without MIN_WIDTH restriction
@@ -450,8 +454,6 @@ const DynamicIslandContent = ({
       <motion.div
         className="absolute inset-0 opacity-60"
         animate={{
-          width: dimensions.width,
-          height: dimensions.height === "auto" ? "auto" : dimensions.height,
           borderRadius: currentSize.borderRadius,
           transition: {
             type: "spring",
@@ -490,7 +492,7 @@ const DynamicIslandContent = ({
       {/* Main dynamic island */}
       <motion.div
         id={id}
-        className="focus-within:bg-accent/80 hover:shadow-primary/20 relative mx-auto items-center justify-center overflow-hidden border border-white/20 text-center transition-colors duration-200 will-change-auto hover:shadow-2xl dark:border-white/10"
+        className="focus-within:bg-accent/80 hover:shadow-primary/20 relative mx-auto items-center justify-center overflow-visible border border-white/20 text-center transition-colors duration-200 will-change-auto hover:shadow-2xl dark:border-white/10"
         initial={{
           width: dimensions.width,
           height: dimensions.height === "auto" ? "auto" : dimensions.height,
@@ -509,7 +511,8 @@ const DynamicIslandContent = ({
         }}
         style={{
           willChange: willChange || "transform",
-          minWidth: dimensions.width === "auto" ? "fit-content" : undefined,
+          minWidth: dimensions.width === "fit-content" ? `${currentSize.width}px` : undefined,
+          maxWidth: dimensions.width === "fit-content" ? "500px" : undefined,
           background:
             "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
           backdropFilter: "blur(20px) saturate(180%)",

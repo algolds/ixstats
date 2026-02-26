@@ -481,8 +481,8 @@ export function LaborEmploymentSection({
         errors: [],
         warnings: insights,
         info: [
-          `Working Age Population: ${sectionUtils.formatNumber(workingAgePopulation)} (65% of total)`,
-          `Employed Population: ${sectionUtils.formatNumber(employed)}`,
+          `Working Age Population: ${sectionUtils.formatNumber(workingAgePopulation, 0)} (65% of total)`,
+          `Employed Population: ${sectionUtils.formatNumber(employed, 0)}`,
           `Average Monthly Income: ${sectionUtils.formatCurrency(laborEmployment.averageAnnualIncome / 12, "$", 0)}`,
         ],
       }}

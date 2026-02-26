@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { CulturalExchangeWizard } from "./CulturalExchangeWizard";
 import type { CulturalExchange, CulturalExchangeProgramProps } from "./cultural-exchange-types";
 import { EXCHANGE_TYPES, STATUS_STYLES } from "./cultural-exchange-types";
@@ -22,6 +22,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   primaryCountry,
   exchanges: propExchanges,
 }) => {
+  const notify = useNotify();
   const [selectedExchange, setSelectedExchange] = useState<CulturalExchange | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -55,46 +56,46 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Create exchange mutation
   const createExchangeMutation = api.diplomatic.createCulturalExchange.useMutation({
     onSuccess: () => {
-      toast.success("Cultural exchange created successfully!");
+      notify.success("Cultural exchange created successfully!");
       setShowCreateModal(false);
       refetchExchanges();
     },
     onError: (error) => {
-      toast.error(`Failed to create exchange: ${error.message}`);
+      notify.error(`Failed to create exchange: ${error.message}`);
     },
   });
 
   // Join exchange mutation
   const joinExchangeMutation = api.diplomatic.joinCulturalExchange.useMutation({
     onSuccess: () => {
-      toast.success("Successfully joined cultural exchange!");
+      notify.success("Successfully joined cultural exchange!");
       refetchExchanges();
     },
     onError: (error) => {
-      toast.error(`Failed to join exchange: ${error.message}`);
+      notify.error(`Failed to join exchange: ${error.message}`);
     },
   });
 
   // Vote on exchange mutation
   const voteExchangeMutation = api.diplomatic.voteOnExchange.useMutation({
     onSuccess: () => {
-      toast.success("Vote recorded!");
+      notify.success("Vote recorded!");
       refetchExchanges();
     },
     onError: (error) => {
-      toast.error(`Failed to vote: ${error.message}`);
+      notify.error(`Failed to vote: ${error.message}`);
     },
   });
 
   // Upload artifact mutation
   const uploadArtifactMutation = api.diplomatic.uploadCulturalArtifact.useMutation({
     onSuccess: () => {
-      toast.success("Cultural artifact uploaded successfully!");
+      notify.success("Cultural artifact uploaded successfully!");
       setShowArtifactUpload(false);
       refetchExchanges();
     },
     onError: (error) => {
-      toast.error(`Failed to upload artifact: ${error.message}`);
+      notify.error(`Failed to upload artifact: ${error.message}`);
     },
   });
 
@@ -103,10 +104,10 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
     onSuccess: (data) => {
       setSelectedScenario(data);
       setShowScenarioModal(true);
-      toast.success("Cultural scenario generated!");
+      notify.success("Cultural scenario generated!");
     },
     onError: (error) => {
-      toast.error(`Failed to generate scenario: ${error.message}`);
+      notify.error(`Failed to generate scenario: ${error.message}`);
     },
   });
 
@@ -114,11 +115,11 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const calculateImpactMutation = api.diplomatic.calculateExchangeImpact.useMutation({
     onSuccess: () => {
       setShowImpactVisualization(true);
-      toast.success("Impact calculated successfully!");
+      notify.success("Impact calculated successfully!");
       refetchExchanges();
     },
     onError: (error) => {
-      toast.error(`Failed to calculate impact: ${error.message}`);
+      notify.error(`Failed to calculate impact: ${error.message}`);
     },
   });
 
@@ -136,12 +137,12 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Update exchange mutation
   const updateExchangeMutation = api.diplomatic.updateCulturalExchange.useMutation({
     onSuccess: () => {
-      toast.success("Exchange updated successfully!");
+      notify.success("Exchange updated successfully!");
       setShowEditModal(false);
       refetchExchanges();
     },
     onError: (error) => {
-      toast.error(`Failed to update exchange: ${error.message}`);
+      notify.error(`Failed to update exchange: ${error.message}`);
     },
   });
 
@@ -149,27 +150,23 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const cancelExchangeMutation = api.diplomatic.cancelCulturalExchange.useMutation({
     onSuccess: (data) => {
       const penalties = data.penalties;
-      toast.success("Exchange cancelled", {
-        description: `Reputation: ${penalties.reputationLoss}, Relations: ${penalties.relationshipPenalty}%`,
-      });
+      notify.success("Exchange cancelled", `Reputation: ${penalties.reputationLoss}, Relations: ${penalties.relationshipPenalty}%`);
       setShowDetailsModal(false);
       setSelectedExchange(null);
       refetchExchanges();
     },
     onError: (error) => {
-      toast.error(`Failed to cancel exchange: ${error.message}`);
+      notify.error(`Failed to cancel exchange: ${error.message}`);
     },
   });
 
   // Share to ThinkPages mutation
   const shareToThinkPagesMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
-      toast.success("Shared to ThinkPages!", {
-        description: "Your cultural exchange is now visible on the global feed",
-      });
+      notify.success("Shared to ThinkPages!", "Your cultural exchange is now visible on the global feed");
     },
     onError: (error) => {
-      toast.error(`Failed to share: ${error.message}`);
+      notify.error(`Failed to share: ${error.message}`);
     },
   });
 
@@ -248,7 +245,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
         !wizardData.startDate ||
         !wizardData.endDate
       ) {
-        toast.error("Please fill in all required fields");
+        notify.error("Please fill in all required fields");
         return;
       }
 
@@ -307,7 +304,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const handleVoteExchange = useCallback(
     (exchangeId: string, voteType: "up" | "down") => {
       if (votedExchanges.has(exchangeId)) {
-        toast.info("You have already voted on this exchange");
+        notify.info("You have already voted on this exchange");
         return;
       }
 
@@ -498,7 +495,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
 
   const handleSelectScenarioResponse = useCallback((option: any) => {
     console.log("Selected scenario response:", option);
-    toast.success(`Selected: ${option.label}`);
+    notify.success(`Selected: ${option.label}`);
     setShowScenarioModal(false);
   }, []);
 

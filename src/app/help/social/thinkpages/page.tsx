@@ -1,52 +1,105 @@
 "use client";
 
-import { MessagesSquare, PenSquare, Share2 } from "lucide-react";
-import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+import Link from "next/link";
+import { MessagesSquare, PenSquare, Users } from "lucide-react";
+import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function ThinkPagesArticle() {
   return (
     <ArticleLayout
       title="ThinkPages"
-      description="Share research, updates, and story beats with rich posts and collaborative tools."
+      description="Share news, research, and story updates with the IxStats community through rich posts, wiki lookups, and a live social feed."
       icon={MessagesSquare}
     >
-      <Section title="Features">
-        <ul className="list-disc space-y-2 pl-6">
-          <li>Rich text posts with wiki lookups, embeds, and tags.</li>
-          <li>Live event feed surfaces featured posts across the game world.</li>
-          <li>Integrates with achievements, notifications, and intelligence dashboards.</li>
-        </ul>
-      </Section>
+      <ContentCard>
+        <Section title="What Is ThinkPages?">
+          <p className="mb-3 text-sm text-neutral-600 dark:text-neutral-400">
+            ThinkPages is the social publishing platform built into IxStats. Think of it as your
+            country{"'"}s newsroom — a place to broadcast updates, share analysis, and engage with
+            posts from other players across the game world.
+          </p>
+          <ul className="list-disc space-y-2 pl-6">
+            <li>
+              Compose rich text posts with embedded wiki lookups, images, and tags.
+            </li>
+            <li>
+              The live event feed highlights featured and trending posts so important news reaches
+              everyone.
+            </li>
+            <li>
+              Your posts connect to achievements, notifications, and your intelligence dashboard,
+              keeping everything in one place.
+            </li>
+          </ul>
+        </Section>
 
-      <Section title="Creating Posts">
-        <InfoBox title="Workflow">
-          <ol className="list-decimal space-y-1 pl-6">
-            <li>Open `/thinkpages` and select "Compose".</li>
-            <li>Use the rich editor to add content, references, and media.</li>
-            <li>Publish publicly or to specific ThinkTanks; monitor reactions in the feed.</li>
-          </ol>
-        </InfoBox>
-      </Section>
+        <Section title="Writing a Post">
+          <InfoBox title="How to Compose">
+            <ol className="list-decimal space-y-1 pl-6">
+              <li>
+                Navigate to ThinkPages from the main menu and tap <strong>Compose</strong>.
+              </li>
+              <li>
+                Use the rich editor to write your content. You can search the IxWiki directly from
+                the composer to pull in references and link to articles.
+              </li>
+              <li>
+                Add tags like <strong>#economy</strong>, <strong>#diplomacy</strong>, or{" "}
+                <strong>#military</strong> so other players can discover your post through topic
+                filters.
+              </li>
+              <li>
+                Choose to publish publicly for everyone to see, or share it with a specific{" "}
+                <Link href="/help/social/thinktanks" className="text-blue-600 hover:underline dark:text-blue-400">
+                  ThinkTank
+                </Link>{" "}
+                group.
+              </li>
+              <li>
+                Once published, monitor reactions and replies in your feed.
+              </li>
+            </ol>
+          </InfoBox>
+        </Section>
+      </ContentCard>
 
-      <Section title="Tips">
-        <ul className="list-disc space-y-2 pl-6">
-          <li>Tag posts with topics (`#economy`, `#diplomacy`, etc.) for better discovery.</li>
-          <li>Link to help articles or docs using the wiki search tools.</li>
-          <li>Embed policy proposals or mission reports to keep teams aligned.</li>
-        </ul>
-      </Section>
+      <ContentCard>
+        <Section title="Tips for Great Posts">
+          <ul className="list-disc space-y-2 pl-6">
+            <li>
+              Use topic tags generously — they make your posts searchable and help them surface in
+              other players{"'"} feeds.
+            </li>
+            <li>
+              Link to wiki articles using the built-in search tool to add credibility and context
+              to your writing.
+            </li>
+            <li>
+              Embed policy proposals, mission reports, or diplomatic summaries to keep your allies
+              and team members in the loop.
+            </li>
+          </ul>
+        </Section>
 
-      <InfoBox title="Related Content">
-        <ul className="list-disc space-y-1 pl-6">
-          <li>
-            <PenSquare className="inline h-4 w-4" /> `/help/social/thinkshare` – messaging and
-            follow-up.
-          </li>
-          <li>
-            <Share2 className="inline h-4 w-4" /> `docs/systems/social.md` – architecture overview.
-          </li>
-        </ul>
-      </InfoBox>
+        <Section title="Related Features">
+          <ul className="list-disc space-y-2 pl-6">
+            <li>
+              <PenSquare className="inline h-4 w-4" />{" "}
+              <Link href="/help/social/thinkshare" className="text-blue-600 hover:underline dark:text-blue-400">
+                ThinkShare Messaging
+              </Link>{" "}
+              — follow up on posts with private conversations.
+            </li>
+            <li>
+              <Users className="inline h-4 w-4" />{" "}
+              <Link href="/help/social/thinktanks" className="text-blue-600 hover:underline dark:text-blue-400">
+                ThinkTanks
+              </Link>{" "}
+              — collaborate with groups on shared research and planning.
+            </li>
+          </ul>
+        </Section>
+      </ContentCard>
     </ArticleLayout>
   );
 }

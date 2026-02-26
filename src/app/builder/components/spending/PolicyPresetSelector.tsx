@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Button } from "~/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { POLICY_PRESETS, type PolicyPresetKey } from "../../data/government-spending-policies";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface PolicyPresetSelectorProps {
   onApplyPreset: (policyIds: string[]) => void;
@@ -34,6 +34,7 @@ export function PolicyPresetSelector({
   open,
   onOpenChange,
 }: PolicyPresetSelectorProps) {
+  const notify = useNotify();
   const [isOpen, setIsOpen] = React.useState(open ?? false);
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -48,9 +49,7 @@ export function PolicyPresetSelector({
     onApplyPreset([...preset.policies]);
     handleOpenChange(false);
 
-    toast.success(`Applied ${preset.name} policy preset`, {
-      description: `${preset.policies.length} policies selected`,
-    });
+    notify.success(`Applied ${preset.name} policy preset`, `${preset.policies.length} policies selected`);
   };
 
   return (

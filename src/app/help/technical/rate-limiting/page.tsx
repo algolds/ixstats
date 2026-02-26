@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Shield, Zap, AlertCircle, Database } from "lucide-react";
-import { ArticleLayout, Section, InfoBox, WarningBox } from "../../_components/ArticleLayout";
+import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function RateLimitingArticle() {
   return (
@@ -10,6 +11,7 @@ export default function RateLimitingArticle() {
       description="Understand how Redis-based rate limiting protects the platform from abuse while ensuring fair resource allocation across all users."
       icon={Shield}
     >
+      <ContentCard>
       <Section title="Rate Limiting Overview">
         <ul className="list-disc space-y-2 pl-6">
           <li>
@@ -96,7 +98,9 @@ export default function RateLimitingArticle() {
           </li>
         </ul>
       </Section>
+      </ContentCard>
 
+      <ContentCard>
       <Section title="Security Benefits">
         <InfoBox title="Protection Layers">
           <ul className="list-disc space-y-1 pl-6">
@@ -148,16 +152,16 @@ export default function RateLimitingArticle() {
         <InfoBox title="Production Setup">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <strong>Redis Configuration:</strong> <code>REDIS_URL</code> environment variable for
-              production connection.
+              <strong>Redis Configuration:</strong> Redis connection configured via environment
+              variables for production.
             </li>
             <li>
-              <strong>Custom Limits:</strong> Override defaults via{" "}
-              <code>RATE_LIMIT_STANDARD_READS</code> etc. env vars.
+              <strong>Custom Limits:</strong> Default rate limits can be overridden via environment
+              variables per endpoint category.
             </li>
             <li>
-              <strong>Monitoring:</strong> Track rate limit hits, rejections, Redis health via{" "}
-              <code>/admin/analytics</code>.
+              <strong>Monitoring:</strong> Track rate limit hits, rejections, and Redis health
+              via the admin analytics dashboard.
             </li>
             <li>
               <strong>Logging:</strong> Rate limit violations logged to audit trail with user ID,
@@ -188,17 +192,16 @@ export default function RateLimitingArticle() {
       <InfoBox title="Related Documentation">
         <ul className="list-disc space-y-1 pl-6">
           <li>
-            <code>docs/RATE_LIMITING_GUIDE.md</code> – Complete configuration and troubleshooting
-            guide.
+            <Link href="/help/technical/api" className="text-blue-600 hover:underline dark:text-blue-400">API & tRPC</Link>{" "}
+            — How rate limiting integrates with the API layer.
           </li>
           <li>
-            <code>src/lib/rate-limiter.ts</code> – Rate limiter service implementation.
-          </li>
-          <li>
-            <code>/help/technical/api</code> – tRPC router middleware integration.
+            <Link href="/help/technical/architecture" className="text-blue-600 hover:underline dark:text-blue-400">System Architecture</Link>{" "}
+            — Overall platform architecture and infrastructure.
           </li>
         </ul>
       </InfoBox>
+      </ContentCard>
     </ArticleLayout>
   );
 }

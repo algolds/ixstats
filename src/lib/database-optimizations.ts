@@ -151,7 +151,7 @@ export class OptimizedCountryQueries {
           }),
           _count: {
             select: {
-              dmInputs: true,
+              storytellerEffects: true,
               embassiesHosting: true,
               embassiesGuest: true,
             },

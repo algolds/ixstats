@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { AlertTriangle, Hash, MessageSquare, Newspaper, Users, TrendingUp, Clock, Globe, Shield, Zap, Mail, Trophy, Handshake, Rss, Landmark, BookOpen, MessageCircle, ExternalLink, Flame } from "lucide-react";
+import { AlertTriangle, Newspaper, Users, TrendingUp, Clock, Shield, Zap, Mail, Trophy, Handshake, Rss, Landmark, BookOpen, MessageCircle, ExternalLink, Flame } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { MetricCardGrid } from "~/components/mycountry/primitives/tabs/MetricCardGrid";
@@ -9,7 +9,12 @@ import { staggerContainer, staggerItem } from "~/components/mycountry/primitives
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { formatCurrency } from "~/lib/chart-utils";
+import { formatTimeAgo } from "~/lib/time-utils";
+import { useDashboardSnapshotModals } from "~/hooks/useDashboardSnapshotModals";
+import { InboxPreviewModal } from "~/components/dashboard/modals/InboxPreviewModal";
+import { WorldEventsModal } from "~/components/dashboard/modals/WorldEventsModal";
+import { DiplomaticNetworkModal } from "~/components/dashboard/modals/DiplomaticNetworkModal";
+import { CrisisStatusModal } from "~/components/dashboard/modals/CrisisStatusModal";
 
 const CATEGORY_CONFIG: Record<string, { icon: typeof TrendingUp; bg: string; text: string; label: string; border: string }> = {
   economic:    { icon: TrendingUp,     bg: "bg-emerald-500/10",  text: "text-emerald-500",  label: "Economy",    border: "text-emerald-600 border-emerald-500/30" },
@@ -45,19 +50,28 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
   const { user } = useUser();
   const userId = user?.id ?? "";
 
-  const { data: headlineData } = api.activities.getGlobalHeadlines.useQuery({ limit: 25 });
+  const { data: headlineData } = api.activities.getGlobalHeadlines.useQuery(
+    { limit: 25 },
+    { refetchInterval: 3_600_000 },
+  );
   const { data: activityStats } = api.activities.getActivityStats.useQuery({ timeRange: "24h" });
-  const { data: trendingData } = api.activities.getUnifiedTrending.useQuery({ limit: 8 });
+  const { data: trendingData } = api.activities.getUnifiedTrending.useQuery(
+    { limit: 8 },
+    { refetchInterval: 3_600_000 },
+  );
   const { data: crisisStats } = api.crisisEvents.getStatistics.useQuery({ timeframe: "month" });
   const { data: leaderboard } = api.diplomatic.getInfluenceLeaderboard.useQuery();
   const { data: inboxData } = api.thinkpages.getConversations.useQuery(
     { userId, limit: 20 },
     { enabled: !!userId },
   );
+  const { data: activeCrisisList } = api.crisisEvents.getActive.useQuery({ limit: 10 });
+
+  const { activeModal, openModal, closeModal } = useDashboardSnapshotModals();
 
   const headlines = headlineData?.headlines ?? [];
   const trendingItems = trendingData?.items ?? [];
-  const activeCrises = crisisStats?.activeEvents ?? 0;
+  const activeCrisesCount = crisisStats?.activeEvents ?? 0;
   const totalEmbassies = (leaderboard ?? []).reduce((sum, e) => sum + (e.activeEmbassies ?? 0), 0);
   const totalEvents24h = activityStats?.totalActivities ?? 0;
 
@@ -87,6 +101,7 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
               icon: Mail,
               status: totalUnread > 0 ? "warning" : "success",
               description: `${totalConversations} conversation${totalConversations !== 1 ? "s" : ""}${totalUnread > 0 ? " · tap to view" : ""}`,
+              onClick: () => openModal("inbox"),
             },
             {
               id: "world-events",
@@ -94,6 +109,7 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
               value: totalEvents24h.toLocaleString(),
               icon: Zap,
               description: "Events in last 24h across all nations",
+              onClick: () => openModal("world-events"),
             },
             {
               id: "diplomatic-network",
@@ -101,14 +117,16 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
               value: `${totalEmbassies} embassies`,
               icon: Users,
               description: `${(leaderboard ?? []).length} nations with diplomatic ties`,
+              onClick: () => openModal("diplomatic-network"),
             },
             {
               id: "crisis-status",
               title: "World Stability",
-              value: activeCrises === 0 ? "Stable" : `${activeCrises} ${activeCrises === 1 ? "crisis" : "crises"}`,
+              value: activeCrisesCount === 0 ? "Stable" : `${activeCrisesCount} ${activeCrisesCount === 1 ? "crisis" : "crises"}`,
               icon: Shield,
-              status: activeCrises === 0 ? "success" : activeCrises <= 2 ? "warning" : "error",
-              description: activeCrises === 0 ? "No active crises" : `${crisisStats?.criticalEvents ?? 0} critical`,
+              status: activeCrisesCount === 0 ? "success" : activeCrisesCount <= 2 ? "warning" : "error",
+              description: activeCrisesCount === 0 ? "No active crises" : `${crisisStats?.criticalEvents ?? 0} critical`,
+              onClick: () => openModal("crisis-status"),
             },
           ]}
         />
@@ -176,7 +194,7 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
                           </Badge>
                           <span className="flex items-center gap-0.5">
                             <Clock className="h-2.5 w-2.5" />
-                            {new Date(item.timestamp).toLocaleDateString()}
+                            {formatTimeAgo(new Date(item.timestamp))}
                           </span>
                         </div>
                       </div>
@@ -251,6 +269,37 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
           </div>
         </div>
       </motion.div>
+      {/* Snapshot Modals */}
+      {activeModal === "inbox" && (
+        <InboxPreviewModal
+          isOpen={true}
+          onClose={closeModal}
+          conversations={conversations as any[]}
+          totalUnread={totalUnread}
+        />
+      )}
+      {activeModal === "world-events" && (
+        <WorldEventsModal
+          isOpen={true}
+          onClose={closeModal}
+          headlines={headlines}
+        />
+      )}
+      {activeModal === "diplomatic-network" && (
+        <DiplomaticNetworkModal
+          isOpen={true}
+          onClose={closeModal}
+          leaderboard={(leaderboard ?? []) as any[]}
+        />
+      )}
+      {activeModal === "crisis-status" && (
+        <CrisisStatusModal
+          isOpen={true}
+          onClose={closeModal}
+          crisisStats={crisisStats as any}
+          activeCrises={(activeCrisisList ?? []) as any[]}
+        />
+      )}
     </motion.div>
   );
 }

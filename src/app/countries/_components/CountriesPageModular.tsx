@@ -15,6 +15,7 @@ interface CountriesPageModularProps {
   hasMore?: boolean;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  viewerCountryId?: string;
 }
 
 type SortOption = "random" | "name" | "population" | "gdp" | "gdpPerCapita" | "tier";
@@ -27,6 +28,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   hasMore = false,
   searchQuery = "",
   onSearchChange,
+  viewerCountryId,
 }) => {
   const [hovered, setHovered] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -36,6 +38,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [showDynamicIsland, setShowDynamicIsland] = useState(false);
   const [randomSeed, setRandomSeed] = useState(Date.now());
+  const [continentFilter, setContinentFilter] = useState<string | null>(null);
 
   // Debounced search
   useEffect(() => {
@@ -56,9 +59,14 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   const processedCountries = useMemo(() => {
     let filtered = countries;
 
+    // Apply continent filter
+    if (continentFilter) {
+      filtered = filtered.filter((c) => (c.continent || "Unknown") === continentFilter);
+    }
+
     // Apply filters
     if (filterBy !== "all") {
-      filtered = countries.filter((country) => {
+      filtered = filtered.filter((country) => {
         switch (filterBy) {
           case "developed":
             return ["Developed", "Healthy", "Strong", "Very Strong", "Extravagant"].includes(
@@ -76,10 +84,13 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 
     // Apply search filter
     if (searchQuery) {
+      const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (country) =>
-          country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          country.economicTier.toLowerCase().includes(searchQuery.toLowerCase())
+          country.name.toLowerCase().includes(q) ||
+          country.economicTier.toLowerCase().includes(q) ||
+          (country.continent && country.continent.toLowerCase().includes(q)) ||
+          (country.region && country.region.toLowerCase().includes(q))
       );
     }
 
@@ -120,7 +131,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     }
 
     return filtered;
-  }, [countries, filterBy, searchQuery, sortBy, randomSeed]);
+  }, [countries, continentFilter, filterBy, searchQuery, sortBy, randomSeed]);
 
   // I'm Feeling Lucky function
   const handleImFeelingLucky = () => {
@@ -200,6 +211,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   const handleClearFilters = () => {
     setSearchInput("");
     setFilterBy("all");
+    setContinentFilter(null);
   };
 
   return (
@@ -211,8 +223,12 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
         {/* Stats */}
         <CountriesStats
           countries={processedCountries}
+          allCountries={countries}
           searchQuery={searchQuery}
           filterBy={filterBy}
+          continentFilter={continentFilter}
+          onContinentFilter={setContinentFilter}
+          onCountryClick={handleCountryClick}
         />
 
         {/* Grid */}
@@ -230,6 +246,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
           searchInput={searchInput}
           filterBy={filterBy}
           onClearFilters={handleClearFilters}
+          viewerCountryId={viewerCountryId}
         />
       </div>
 

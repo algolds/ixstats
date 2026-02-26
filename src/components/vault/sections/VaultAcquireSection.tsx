@@ -1,53 +1,29 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence } from "motion/react";
 import {
   Package,
-  Gift,
-  Sparkles,
   ShoppingCart,
-  Zap,
+  Sparkles,
   Star,
-  Info,
-  Percent,
-  Clock,
-  Flame,
-  Filter,
-  ChevronDown,
-  Heart,
-  Gavel,
-  Search,
-  X,
+  Gift,
   Store,
-  Box,
-  BadgeDollarSign,
-  Timer,
-  ArrowRight,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { vaultNotify } from "~/lib/vault-notifications";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
-import { TiltCard } from "~/components/vault/3DTiltCard";
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { useSoundService } from "~/lib/sound-service";
+import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 
 const PackOpeningSequence = dynamic(
   () => import("~/components/cards/pack-opening/PackOpeningSequence").then(m => m.PackOpeningSequence),
   { ssr: false }
 );
-
-type SubTab = "packs" | "market";
-
-const SUB_TABS: { id: SubTab; label: string; icon: typeof Package }[] = [
-  { id: "packs", label: "Card Packs", icon: Package },
-  { id: "market", label: "Market", icon: ShoppingCart },
-];
 
 interface VaultAcquireSectionProps {
   initialTab?: string | null;
@@ -58,227 +34,182 @@ interface VaultAcquireSectionProps {
 const getPackConfig = (packType: string) => {
   const type = packType.toUpperCase();
   if (type.includes("BASIC") || type.includes("STARTER"))
-    return { color: "text-blue-400", borderColor: "border-blue-400/50", glowColor: "shadow-blue-500/40", icon: Package, label: "Basic", tier: 1 };
+    return { color: "text-blue-400", borderColor: "border-blue-400/30", icon: Package, label: "Basic" };
   if (type.includes("ELITE") || type.includes("LEGENDARY"))
-    return { color: "text-purple-400", borderColor: "border-purple-400/50", glowColor: "shadow-purple-500/40", icon: Star, label: "Elite", tier: 3 };
+    return { color: "text-purple-400", borderColor: "border-purple-400/30", icon: Star, label: "Elite" };
   if (type.includes("PREMIUM") || type.includes("GOLD"))
-    return { color: "text-amber-400", borderColor: "border-amber-400/50", glowColor: "shadow-amber-500/40", icon: Sparkles, label: "Premium", tier: 2 };
+    return { color: "text-amber-400", borderColor: "border-amber-400/30", icon: Sparkles, label: "Premium" };
   if (type.includes("EVENT") || type.includes("LIMITED"))
-    return { color: "text-red-400", borderColor: "border-red-400/50", glowColor: "shadow-red-500/40", icon: Zap, label: "Event", tier: 4 };
-  return { color: "text-cyan-400", borderColor: "border-cyan-400/50", glowColor: "shadow-cyan-500/40", icon: Gift, label: "Special", tier: 2 };
+    return { color: "text-red-400", borderColor: "border-red-400/30", icon: Sparkles, label: "Event" };
+  return { color: "text-cyan-400", borderColor: "border-cyan-400/30", icon: Gift, label: "Special" };
 };
 
-// ─── Packs Tab ───────────────────────────────────────────────────
+// ─── Main Section (Packs only) ───────────────────────────────────
 
-function PacksTab() {
-  const [openingPackId, setOpeningPackId] = useState<string | null>(null);
+export function VaultAcquireSection({ initialTab: _initialTab }: VaultAcquireSectionProps) {
+  const [openingPack, setOpeningPack] = useState<{ id: string; packType: string } | null>(null);
   const soundService = useSoundService();
 
-  const { data: availablePacks, isLoading: packsLoading } = api.vault.getAvailablePacks.useQuery();
-  const { data: myPacks, isLoading: myPacksLoading, refetch: refetchMyPacks } = api.vault.getMyPacks.useQuery();
+  const { data: availableData, isLoading: packsLoading } = api.cardPacks.getAvailablePacks.useQuery();
+  const { data: myPacksData, isLoading: myPacksLoading, refetch: refetchMyPacks } = api.cardPacks.getMyPacks.useQuery(
+    { isOpened: false } // Only show unopened packs
+  );
 
-  const purchasePack = api.vault.purchasePack.useMutation({
+  const availablePacks = availableData?.packs;
+  const myPacks = myPacksData?.packs;
+
+  const purchasePack = api.cardPacks.purchasePack.useMutation({
     onSuccess: (data) => {
-      toast.success(`Pack purchased! Opening...`);
+      vaultNotify.packPurchased();
       void refetchMyPacks();
       soundService?.play("pack-open");
+      // Auto-open the newly purchased pack
+      if (data.success && data.userPack) {
+        const packType = (data.userPack as any).pack?.packType ?? "BASIC";
+        setOpeningPack({ id: data.userPack.id, packType });
+      }
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) => vaultNotify.error(error.message),
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* My Packs */}
       <div>
-        <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
-          <Package className="h-5 w-5 text-blue-400" />
+        <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold text-foreground">
+          <Package className="h-3.5 w-3.5 text-blue-400" />
           My Packs
         </h3>
         {myPacksLoading ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-48 rounded-2xl" />)}
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
           </div>
         ) : !myPacks || myPacks.length === 0 ? (
           <Card className="glass-hierarchy-child">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Package className="mb-4 h-12 w-12 text-muted-foreground/40" />
-              <p className="font-bold text-foreground/80 mb-1">No Packs</p>
-              <p className="text-sm text-muted-foreground">Purchase packs from the store below</p>
+            <CardContent className="flex flex-col items-center justify-center py-6">
+              <Package className="mb-2 h-8 w-8 text-muted-foreground/40" />
+              <p className="text-xs font-semibold text-foreground/80">No Packs</p>
+              <p className="text-[0.65rem] text-muted-foreground">Purchase packs from the store below</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {myPacks.map((pack: any) => {
-              const config = getPackConfig(pack.packType);
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {myPacks.map((userPack: any) => {
+              const packData = userPack.pack; // Prisma relation: UserPack.pack -> CardPack
+              const config = getPackConfig(packData?.packType ?? "BASIC");
               const Icon = config.icon;
               return (
-                <TiltCard key={pack.id} glowColor={config.color.includes("blue") ? "cyan" : config.color.includes("purple") ? "purple" : "gold"} className="cursor-pointer">
-                  <div className="p-6 space-y-3">
+                <Card key={userPack.id} className={cn("glass-hierarchy-child border", config.borderColor)}>
+                  <CardContent className="p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className={cn("rounded-full bg-black/40 p-3 ring-2", config.borderColor)}>
-                        <Icon className={cn("h-6 w-6", config.color)} />
+                      <div className="flex items-center gap-2">
+                        <Icon className={cn("h-4 w-4", config.color)} />
+                        <span className="text-xs font-bold">{packData?.name || config.label + " Pack"}</span>
                       </div>
-                      <Badge variant="outline" className={config.color}>{config.label}</Badge>
+                      <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0", config.color)}>
+                        {config.label}
+                      </Badge>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-white">{pack.name || config.label + " Pack"}</h4>
-                      <p className="text-sm text-white/60">{pack.cardsCount || 5} cards</p>
-                    </div>
+                    <p className="text-[0.65rem] text-muted-foreground">{packData?.cardCount || 5} cards</p>
                     <Button
-                      onClick={() => setOpeningPackId(pack.id)}
-                      className="w-full glass-hierarchy-interactive"
+                      onClick={() => setOpeningPack({ id: userPack.id, packType: packData?.packType ?? "BASIC" })}
+                      className="w-full"
                       size="sm"
                     >
-                      <Sparkles className="mr-2 h-4 w-4" /> Open Pack
+                      <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Open Pack
                     </Button>
-                  </div>
-                </TiltCard>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Available Packs Store */}
+      {/* Pack Store */}
       <div>
-        <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
-          <Store className="h-5 w-5 text-amber-400" />
+        <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold text-foreground">
+          <Store className="h-3.5 w-3.5 text-amber-400" />
           Pack Store
         </h3>
         {packsLoading ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 rounded-2xl" />)}
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
           </div>
         ) : !availablePacks || availablePacks.length === 0 ? (
           <Card className="glass-hierarchy-child">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Store className="mb-4 h-12 w-12 text-muted-foreground/40" />
-              <p className="font-bold text-foreground/80 mb-1">No Packs Available</p>
-              <p className="text-sm text-muted-foreground">Check back soon for new packs!</p>
+            <CardContent className="flex flex-col items-center justify-center py-6">
+              <Store className="mb-2 h-8 w-8 text-muted-foreground/40" />
+              <p className="text-xs font-semibold text-foreground/80">No Packs Available</p>
+              <p className="text-[0.65rem] text-muted-foreground">Check back soon for new packs!</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {availablePacks.map((pack: any) => {
               const config = getPackConfig(pack.packType);
               const Icon = config.icon;
               return (
-                <TiltCard key={pack.id} glowColor="gold" className="cursor-pointer">
-                  <div className="p-6 space-y-4">
+                <Card key={pack.id} className={cn("glass-hierarchy-child border overflow-hidden", config.borderColor)}>
+                  {pack.artwork ? (
+                    <div className="relative h-20 w-full">
+                      <img src={pack.artwork} alt={pack.name} className="h-full w-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    </div>
+                  ) : (
+                    <PackHolographicCover
+                      packType={pack.packType}
+                      guaranteedRarity={pack.guaranteedRarity}
+                      packName={pack.name}
+                      size="sm"
+                    />
+                  )}
+                  <CardContent className="p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className={cn("rounded-full bg-black/40 p-3 ring-2", config.borderColor)}>
-                        <Icon className={cn("h-6 w-6", config.color)} />
+                      <div className="flex items-center gap-2">
+                        <Icon className={cn("h-4 w-4", config.color)} />
+                        <span className="text-xs font-bold">{pack.name}</span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-black text-amber-400">{pack.price?.toLocaleString() ?? "?"} IxC</p>
-                      </div>
+                      <span className="text-sm font-bold text-amber-400">{pack.priceCredits?.toLocaleString() ?? "?"} IxC</span>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-white text-lg">{pack.name}</h4>
-                      <p className="text-sm text-white/60">{pack.description || `${pack.cardsPerPack || 5} cards per pack`}</p>
-                    </div>
+                    <p className="text-[0.65rem] text-muted-foreground">
+                      {pack.description || `${pack.cardCount || 5} cards per pack`}
+                    </p>
                     <Button
-                      onClick={() => purchasePack.mutate({ packTypeId: pack.id })}
+                      onClick={() => purchasePack.mutate({ packId: pack.id })}
                       disabled={purchasePack.isPending}
-                      className="w-full glass-hierarchy-interactive"
+                      className="w-full"
+                      size="sm"
                     >
-                      <ShoppingCart className="mr-2 h-4 w-4" /> Purchase
+                      <ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
+                      {purchasePack.isPending ? "Purchasing..." : "Purchase"}
                     </Button>
-                  </div>
-                </TiltCard>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Pack opening overlay */}
-      {openingPackId && (
-        <PackOpeningSequence
-          packId={openingPackId}
-          onClose={() => {
-            setOpeningPackId(null);
-            void refetchMyPacks();
-          }}
-        />
+      {/* Pack opening — fixed full-screen overlay */}
+      {openingPack && (
+        <div className="fixed inset-0 z-50">
+          <PackOpeningSequence
+            userPackId={openingPack.id}
+            packType={openingPack.packType as any}
+            onComplete={() => {
+              setOpeningPack(null);
+              purchasePack.reset();
+              void refetchMyPacks();
+            }}
+            onCancel={() => {
+              setOpeningPack(null);
+              purchasePack.reset();
+            }}
+          />
+        </div>
       )}
-    </div>
-  );
-}
-
-// ─── Market Tab ──────────────────────────────────────────────────
-
-function MarketTab() {
-  return (
-    <div className="space-y-6">
-      <Card className="glass-hierarchy-child">
-        <CardContent className="flex flex-col items-center justify-center py-20">
-          <ShoppingCart className="mb-4 h-16 w-16 text-muted-foreground/40" />
-          <p className="text-xl font-bold text-foreground/80 mb-2">Marketplace</p>
-          <p className="text-muted-foreground text-center max-w-md">
-            Browse live auctions, buy singles, and list your cards for sale.
-          </p>
-          <div className="mt-6 flex gap-3">
-            <Button variant="outline">
-              <Gavel className="mr-2 h-4 w-4" /> Live Auctions
-            </Button>
-            <Button variant="outline">
-              <Store className="mr-2 h-4 w-4" /> Browse Cards
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ─── Main Section Component ──────────────────────────────────────
-
-function resolveInitialTab(initialTab: string | null | undefined): SubTab {
-  if (initialTab === "market") return "market";
-  return "packs";
-}
-
-export function VaultAcquireSection({ initialTab }: VaultAcquireSectionProps) {
-  const [activeTab, setActiveTab] = useState<SubTab>(() => resolveInitialTab(initialTab));
-
-  return (
-    <div className="space-y-6">
-      {/* Tab strip */}
-      <div className="flex gap-1 overflow-x-auto rounded-lg bg-black/20 p-1 backdrop-blur-sm">
-        {SUB_TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 whitespace-nowrap rounded-md px-4 py-2.5 text-sm font-semibold transition-all",
-                isActive
-                  ? "bg-blue-500/20 text-blue-400 shadow-sm"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.15 }}
-        >
-          {activeTab === "packs" && <PacksTab />}
-          {activeTab === "market" && <MarketTab />}
-        </motion.div>
-      </AnimatePresence>
     </div>
   );
 }

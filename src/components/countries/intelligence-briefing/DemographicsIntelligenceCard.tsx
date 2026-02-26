@@ -91,7 +91,7 @@ export const DemographicsIntelligenceCard = React.memo<DemographicsIntelligenceC
                         </div>
                         <div className="text-xs text-green-600 dark:text-green-400">
                           {country.populationDensity
-                            ? `Density: ${country.populationDensity.toFixed(1)}/km²`
+                            ? `Density: ${Math.round(country.populationDensity)}/km²`
                             : "Density N/A"}
                         </div>
                       </div>

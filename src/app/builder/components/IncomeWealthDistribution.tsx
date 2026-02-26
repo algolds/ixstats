@@ -380,7 +380,7 @@ export function IncomeWealthDistribution({
                     <h5 className="font-medium text-[var(--color-text-primary)]">{cls.name}</h5>
                   </div>
                   <div className="text-sm text-[var(--color-text-muted)]">
-                    ~{formatNumber(calculatePopulationInClass(cls.populationPercent), 1, false)}{" "}
+                    ~{formatNumber(calculatePopulationInClass(cls.populationPercent), 0, false)}{" "}
                     people
                   </div>
                 </div>
@@ -594,7 +594,7 @@ export function IncomeWealthDistribution({
                     <div className="mb-1 text-xs text-[var(--color-text-muted)]">Poverty Rate</div>
                     <div className="text-sm font-medium text-[var(--color-text-primary)]">
                       {incomeData.povertyRate.toFixed(1)}% (~
-                      {formatNumber(totalPopulation * (incomeData.povertyRate / 100), 1, false)}{" "}
+                      {formatNumber(totalPopulation * (incomeData.povertyRate / 100), 0, false)}{" "}
                       people)
                     </div>
                   </div>

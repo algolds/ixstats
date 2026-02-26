@@ -39,7 +39,7 @@ import type { ComponentType } from "~/types/government";
 
 // API integration
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 export interface TaxBuilderProps {
   initialData?: Partial<TaxBuilderState>;
@@ -82,6 +82,7 @@ export function TaxBuilder({
   economicData,
   governmentData,
 }: TaxBuilderProps) {
+  const notify = useNotify();
   // Step navigation state
   const [currentStep, setCurrentStep] = useState<
     "atomic" | "configuration" | "exemptions" | "calculator"
@@ -242,10 +243,10 @@ export function TaxBuilder({
         setIsSaving(true);
         try {
           await onSave(submitState as any);
-          toast.success("Tax system saved");
+          notify.success("Tax system saved");
         } catch (error) {
           console.error("Save failed:", error);
-          toast.error("Failed to save tax system");
+          notify.error("Failed to save tax system");
         } finally {
           setIsSaving(false);
         }
@@ -272,10 +273,10 @@ export function TaxBuilder({
               throw updateErr;
             }
           }
-          toast.success("Tax system saved");
+          notify.success("Tax system saved");
         } catch (err) {
           console.error("Save failed:", err);
-          toast.error("Failed to save tax system");
+          notify.error("Failed to save tax system");
         } finally {
           setIsSaving(false);
         }

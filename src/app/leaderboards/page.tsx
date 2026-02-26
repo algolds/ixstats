@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -30,7 +30,7 @@ export default function LeaderboardsPage() {
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Get all countries for leaderboards
-  const { data: allCountries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
+  const { data: allCountries, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
 
   // Get achievements leaderboard
   const { data: achievementsLeaderboard, isLoading: achievementsLoading } =
@@ -48,7 +48,7 @@ export default function LeaderboardsPage() {
     { id: "diplomatic", name: "Diplomatic Influence", icon: Globe },
   ];
 
-  const getLeaderboardData = () => {
+  const leaderboardData = useMemo(() => {
     if (!allCountries || !Array.isArray(allCountries)) return [];
 
     switch (selectedMetric) {
@@ -109,11 +109,12 @@ export default function LeaderboardsPage() {
       default:
         return [];
     }
-  };
+  }, [selectedMetric, allCountries, achievementsLeaderboard, diplomaticLeaderboard]);
 
-  const leaderboardData = getLeaderboardData();
-  const userRank =
-    leaderboardData.findIndex((item: { id: string }) => item.id === userProfile?.countryId) + 1;
+  const userRank = useMemo(
+    () => leaderboardData.findIndex((item: { id: string }) => item.id === userProfile?.countryId) + 1,
+    [leaderboardData, userProfile?.countryId]
+  );
 
   const isLoading =
     selectedMetric === "gdp" || selectedMetric === "gdpPerCapita" || selectedMetric === "population"

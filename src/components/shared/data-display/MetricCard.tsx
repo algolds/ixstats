@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { TrendIndicator as TrendIndicatorUI } from "~/components/ui/trend-indicator";
+import { InlineHelpIcon } from "~/components/ui/help-icon";
 
 export interface MetricCardProps {
   title: string;
@@ -34,6 +35,7 @@ export interface MetricCardProps {
   loading?: boolean;
   actions?: React.ReactNode;
   footer?: React.ReactNode;
+  tooltip?: string;
 }
 
 const statusColors = {
@@ -58,6 +60,7 @@ export function MetricCard({
   loading = false,
   actions,
   footer,
+  tooltip,
 }: MetricCardProps) {
   const CardWrapper = onClick ? motion.div : "div";
   const cardProps = onClick
@@ -99,7 +102,10 @@ export function MetricCard({
               </div>
             )}
             <div className="flex-1">
-              <CardTitle className="text-xs leading-none font-medium">{title}</CardTitle>
+              <CardTitle className="text-xs leading-none font-medium flex items-center">
+                {title}
+                {tooltip && <InlineHelpIcon content={tooltip} />}
+              </CardTitle>
               {description && (
                 <CardDescription className="mt-1 text-xs">{description}</CardDescription>
               )}

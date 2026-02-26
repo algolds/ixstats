@@ -1,7 +1,8 @@
 "use client";
 
-import { FolderTree, Edit, Upload, Download } from "lucide-react";
-import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+import Link from "next/link";
+import { FolderTree, Edit } from "lucide-react";
+import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function ReferenceDataArticle() {
   return (
@@ -10,7 +11,8 @@ export default function ReferenceDataArticle() {
       description="Create, edit, and organize game content catalogs including government components, economic policies, military equipment, and diplomatic scenarios."
       icon={FolderTree}
     >
-      <Section title="Government Components (/admin/government-components)">
+      <ContentCard>
+      <Section title="Government Components">
         <ul className="list-disc space-y-2 pl-6">
           <li>
             <strong>24 Atomic Components:</strong> DEMOCRATIC_PROCESS, FEDERAL_SYSTEM,
@@ -29,12 +31,12 @@ export default function ReferenceDataArticle() {
             cause instability.
           </li>
           <li>
-            Changes immediately reflected in <code>/builder</code> component selector.
+            Changes immediately reflected in the country builder component selector.
           </li>
         </ul>
       </Section>
 
-      <Section title="Economic Components (/admin/economic-components)">
+      <Section title="Economic Components">
         <InfoBox title="40+ Policy Components">
           <ul className="list-disc space-y-1 pl-6">
             <li>
@@ -54,7 +56,7 @@ export default function ReferenceDataArticle() {
         </InfoBox>
       </Section>
 
-      <Section title="Tax System Components (/admin/tax-components)">
+      <Section title="Tax System Components">
         <ul className="list-disc space-y-2 pl-6">
           <li>
             <strong>42 Tax Types:</strong> Income, corporate, VAT, property, capital gains, etc.
@@ -74,7 +76,7 @@ export default function ReferenceDataArticle() {
         </ul>
       </Section>
 
-      <Section title="Diplomatic Scenarios (/admin/diplomatic-scenarios)">
+      <Section title="Diplomatic Scenarios">
         <InfoBox title="100+ Scenario Templates">
           <ul className="list-disc space-y-1 pl-6">
             <li>
@@ -95,7 +97,7 @@ export default function ReferenceDataArticle() {
         </InfoBox>
       </Section>
 
-      <Section title="Military Equipment (/admin/military-equipment)">
+      <Section title="Military Equipment">
         <ul className="list-disc space-y-2 pl-6">
           <li>
             <strong>500+ Equipment Items:</strong> Tanks, aircraft, ships, artillery, small arms.
@@ -113,7 +115,7 @@ export default function ReferenceDataArticle() {
         </ul>
       </Section>
 
-      <Section title="NPC Personalities (/admin/npc-personalities)">
+      <Section title="NPC Personalities">
         <ul className="list-disc space-y-2 pl-6">
           <li>
             <strong>8 Personality Traits:</strong> Assertiveness, cooperativeness, risk tolerance,
@@ -132,12 +134,14 @@ export default function ReferenceDataArticle() {
           </li>
         </ul>
       </Section>
+      </ContentCard>
 
+      <ContentCard>
       <Section title="CRUD Operations">
         <InfoBox title="Standard Admin Workflow">
           <ol className="list-decimal space-y-2 pl-6">
             <li>
-              <strong>Create:</strong> Click "New [Type]" button, fill form, validate, save to
+              <strong>Create:</strong> Click &quot;New [Type]&quot; button, fill form, validate, save to
               database.
             </li>
             <li>
@@ -176,23 +180,21 @@ export default function ReferenceDataArticle() {
         </ul>
       </Section>
 
-      <InfoBox title="Related Documentation">
+      <InfoBox title="Related Articles">
         <ul className="list-disc space-y-1 pl-6">
           <li>
-            <Edit className="inline h-4 w-4" /> <code>/help/admin/cms-overview</code> – Admin
-            system architecture and capabilities.
+            <Edit className="inline h-4 w-4" />{" "}
+            <Link href="/help/admin/cms-overview" className="text-blue-400 underline hover:text-blue-300">
+              Admin CMS Overview
+            </Link>{" "}
+            -- Admin system architecture and capabilities.
           </li>
           <li>
-            <Upload className="inline h-4 w-4" />{" "}
-            <code>docs/systems/admin-cms.md</code> – Complete admin interface reference.
-          </li>
-          <li>
-            <Download className="inline h-4 w-4" />{" "}
-            <code>docs/reference/database.md</code> – Database schema for all content types (131
-            models).
+            The database schema backing all content types spans 209 models across the platform.
           </li>
         </ul>
       </InfoBox>
+      </ContentCard>
     </ArticleLayout>
   );
 }

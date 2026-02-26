@@ -20,13 +20,13 @@ export function formatPopulation(value: number | null | undefined): string {
   const absValue = Math.abs(value);
 
   if (absValue >= 1e12) {
-    return `${(value / 1e12).toFixed(1)}T`;
+    return `${Math.round(value / 1e12)}T`;
   } else if (absValue >= 1e9) {
-    return `${(value / 1e9).toFixed(1)}B`;
+    return `${Math.round(value / 1e9)}B`;
   } else if (absValue >= 1e6) {
-    return `${(value / 1e6).toFixed(1)}M`;
+    return `${Math.round(value / 1e6)}M`;
   } else if (absValue >= 1e3) {
-    return `${(value / 1e3).toFixed(1)}K`;
+    return `${Math.round(value / 1e3)}K`;
   } else {
     return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
   }

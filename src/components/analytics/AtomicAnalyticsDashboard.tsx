@@ -132,7 +132,7 @@ export function AtomicAnalyticsDashboard({
         componentKey: component,
         taxEffectiveness: taxMod ? Math.round((taxMod.collectionEfficiency - 1) * 100) : 0,
         economicEffectiveness: 0, // economicMod is null, so set to 0
-        stabilityContribution: Math.round(Math.random() * 20 - 10), // Simplified for demo
+        stabilityContribution: 0, // Requires historical data for accurate calculation
         overallImpact: Math.round(((taxMod?.collectionEfficiency || 1) + 1) * 50), // Remove economicMod since it's null
       };
     });

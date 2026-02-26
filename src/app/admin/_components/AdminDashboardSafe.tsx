@@ -211,8 +211,8 @@ export function AdminDashboardSafe() {
                           status: "online",
                         },
                         {
-                          name: "DM User",
-                          role: "dm",
+                          name: "Storyteller User",
+                          role: "storyteller",
                           country: "United Kingdom",
                           status: "offline",
                         },

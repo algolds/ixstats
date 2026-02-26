@@ -12,6 +12,7 @@ export type TabTheme =
   | "diplomacy"
   | "intelligence"
   | "defense"
+  | "politics"
   | "detailed"
   | "modeling";
 
@@ -68,6 +69,12 @@ export const MyCountryTabIcons = {
     secondary: "Sword", // Military force
     tertiary: "Target", // Strategic targeting
     accent: "Radio", // Communications/radar
+  },
+  politics: {
+    primary: "Landmark", // Legislature/parliament
+    secondary: "Vote", // Elections/voting
+    tertiary: "Users", // Political parties
+    accent: "Scale", // Balance of power
   },
   detailed: {
     primary: "BarChart4", // Advanced analytics
@@ -151,6 +158,14 @@ export const TabColors = {
     glow: "rgba(220, 38, 38, 0.3)",
     icon: "#B91C1C", // Red-700
   },
+  politics: {
+    primary: "#4F46E5", // Indigo-600
+    secondary: "#6366F1", // Indigo-500
+    accent: "#818CF8", // Indigo-400
+    background: "rgba(79, 70, 229, 0.08)",
+    glow: "rgba(79, 70, 229, 0.3)",
+    icon: "#4338CA", // Indigo-700
+  },
   detailed: {
     primary: "#BE185D", // Pink-700
     secondary: "#EC4899", // Pink-500
@@ -167,6 +182,20 @@ export const TabColors = {
     glow: "rgba(30, 64, 175, 0.3)",
     icon: "#1E3A8A", // Blue-800
   },
+} as const;
+
+/**
+ * Section-level theme classes for MyCountry navigation and headers.
+ * Single source of truth for Tailwind gradient/border/glow classes per section.
+ */
+export const SECTION_THEME_CLASSES = {
+  overview:     { gradient: "from-amber-500 to-yellow-500",   activeGlow: "shadow-amber-500/30",   border: "border-amber-500/30",   darkBorder: "dark:border-amber-500/20",   text: "text-amber-500",   ring: "#f59e0b" },
+  executive:    { gradient: "from-amber-500 to-yellow-500",   activeGlow: "shadow-amber-500/30",   border: "border-amber-500/30",   darkBorder: "dark:border-amber-500/20",   text: "text-amber-500",   ring: "#f59e0b" },
+  diplomacy:    { gradient: "from-cyan-500 to-blue-500",      activeGlow: "shadow-cyan-500/30",    border: "border-cyan-500/30",    darkBorder: "dark:border-cyan-500/20",    text: "text-cyan-500",    ring: "#06b6d4" },
+  intelligence: { gradient: "from-blue-500 to-cyan-500",      activeGlow: "shadow-blue-500/30",    border: "border-blue-500/30",    darkBorder: "dark:border-blue-500/20",    text: "text-blue-500",    ring: "#3b82f6" },
+  defense:      { gradient: "from-red-500 to-orange-500",     activeGlow: "shadow-red-500/30",     border: "border-red-500/30",     darkBorder: "dark:border-red-500/20",     text: "text-red-500",     ring: "#ef4444" },
+  politics:     { gradient: "from-indigo-500 to-violet-500",  activeGlow: "shadow-indigo-500/30",  border: "border-indigo-500/30",  darkBorder: "dark:border-indigo-500/20",  text: "text-indigo-500",  ring: "#6366f1" },
+  "map-editor": { gradient: "from-emerald-500 to-teal-500",   activeGlow: "shadow-emerald-500/30", border: "border-emerald-500/30", darkBorder: "dark:border-emerald-500/20", text: "text-emerald-500", ring: "#10b981" },
 } as const;
 
 /**
@@ -254,6 +283,7 @@ export const getTabAnimationDelay = (theme: TabTheme, index: number = 0) => {
     diplomacy: 450,
     intelligence: 500,
     defense: 550,
+    politics: 575,
     detailed: 600,
     modeling: 700,
   };
@@ -320,6 +350,7 @@ export const getTabTailwindClasses = (theme: TabTheme) => {
 export default {
   TabIcons: MyCountryTabIcons,
   TabColors,
+  SECTION_THEME_CLASSES,
   getTabThemeClasses,
   getTabIcon,
   getTabColors,

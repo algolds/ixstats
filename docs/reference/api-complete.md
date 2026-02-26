@@ -2,7 +2,7 @@
 
 **Last updated:** February 2026
 
-Comprehensive reference for all 61 tRPC routers with 920+ procedures across the IxStats platform.
+Comprehensive reference for all 61 tRPC routers with 927 procedures across the IxStats platform.
 
 ## Quick Navigation
 - [Core Systems](#core-systems) (10 routers, 147 procedures)
@@ -85,12 +85,16 @@ Comprehensive reference for all 61 tRPC routers with 920+ procedures across the 
 | ns-import | 10 | 11 | 21 | NationStates deck import |
 | **ELECTIONS & POLITICS** | | | | |
 | elections | 6 | 7 | 13 | Political parties, elections, legislature |
+| **NATIONAL ISSUES & FORUM** | | | | |
+| nationalIssues | 3 | 4 | 7 | Dynamic national issues engine, consequences |
+| forum | 3 | 2 | 5 | XenForo forum integration, widget embedding |
+| demoMode | 2 | 3 | 5 | Demo country cloning, seed data management |
 | **HISTORICAL** | | | | |
 | historical | 6 | 6 | 12 | Historical time-series data |
 | **AUTOSAVE SYSTEM** | | | | |
 | autosaveHistory | 5 | 0 | 5 | Autosave history, stats, timeline |
 | autosaveMonitoring | 5 | 0 | 5 | Global autosave monitoring (admin) |
-| **TOTAL** | **~460** | **~460** | **~920** | |
+| **TOTAL** | **~477** | **~450** | **~927** | |
 
 **Legend:** Q = Queries, M = Mutations
 

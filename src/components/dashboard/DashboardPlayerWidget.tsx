@@ -127,7 +127,7 @@ export function DashboardPlayerWidget() {
 
   if (isLoading) {
     return (
-      <div className="w-56 space-y-3 rounded-xl border border-white/10 bg-white/60 p-3.5 shadow-sm backdrop-blur-lg dark:bg-white/5">
+      <div className="w-56 space-y-3 rounded-xl border border-border/50 bg-background/80 p-3.5 shadow-sm backdrop-blur-lg">
         <div className="flex items-center gap-2.5">
           <Skeleton className="h-8 w-11 rounded" />
           <div className="flex-1 space-y-1.5">
@@ -151,7 +151,7 @@ export function DashboardPlayerWidget() {
 
   if (!country || !hasCountry) {
     return (
-      <div className="w-56 rounded-xl border border-white/10 bg-white/60 p-3.5 shadow-sm backdrop-blur-lg dark:bg-white/5">
+      <div className="w-56 rounded-xl border border-border/50 bg-background/80 p-3.5 shadow-sm backdrop-blur-lg">
         <p className="text-xs text-muted-foreground text-center py-3">
           No country linked
         </p>
@@ -190,11 +190,11 @@ export function DashboardPlayerWidget() {
     : null;
 
   return (
-    <div className="w-56 space-y-3 rounded-xl border border-white/10 bg-white/60 p-3.5 shadow-sm backdrop-blur-lg dark:bg-white/5">
+    <div className="w-56 space-y-3 rounded-xl border border-border/50 bg-background/80 p-3.5 shadow-sm backdrop-blur-lg">
       {/* Country identity */}
       <Link
         href={createUrl("/mycountry")}
-        className="group flex items-center gap-2.5 rounded-lg px-1 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+        className="group flex items-center gap-2.5 rounded-lg px-1 py-1 transition-colors hover:bg-muted/50"
       >
         <SimpleFlag countryName={country.name} size="md" className="flex-shrink-0" />
         <div className="min-w-0 flex-1">
@@ -306,7 +306,7 @@ export function DashboardPlayerWidget() {
             <Link
               key={link.href}
               href={createUrl(link.href)}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Icon className="h-3.5 w-3.5 flex-shrink-0" />
               <span>{link.label}</span>

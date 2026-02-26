@@ -39,12 +39,27 @@ export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemPr
     { enabled: !!country?.id }
   );
 
-  // TODO: Implement getActiveMissions endpoint in diplomatic router
-  // For now, using empty array until embassy missions API is implemented
-  const missions: any[] = [];
-  const missionsLoading = false;
+  // Fetch active embassy missions
+  const { data: missions = [], isLoading: missionsLoading } = api.diplomatic.getActiveMissions.useQuery(
+    { countryId: country?.id || "" },
+    { enabled: !!country?.id }
+  );
 
   if (!country) return null;
+
+  const pendingEmbassies = embassies?.filter((e: any) => e.status === "PENDING" || e.status === "pending").length ?? 0;
+  const activeMissionCount = missions?.length ?? 0;
+
+  const TabBadge = ({ count, urgent }: { count: number; urgent?: boolean }) => {
+    if (count <= 0) return null;
+    return (
+      <span className={`inline-flex items-center justify-center rounded-full text-[9px] font-bold leading-none min-w-[14px] h-3.5 px-1 ${
+        urgent ? "bg-red-500 text-white" : "bg-amber-500 text-white"
+      }`}>
+        {count}
+      </span>
+    );
+  };
 
   return (
     <Tabs
@@ -56,10 +71,12 @@ export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemPr
         <TabsTrigger value="network" className="flex items-center gap-2">
           <Building2 className="h-4 w-4" />
           <span className="hidden sm:inline">Network</span>
+          <TabBadge count={pendingEmbassies} />
         </TabsTrigger>
         <TabsTrigger value="missions" className="flex items-center gap-2">
           <Calendar className="h-4 w-4" />
           <span className="hidden sm:inline">Missions</span>
+          <TabBadge count={activeMissionCount} />
         </TabsTrigger>
         <TabsTrigger value="communications" className="flex items-center gap-2">
           <Send className="h-4 w-4" />
@@ -172,7 +189,7 @@ export function DiplomacyTabSystem({ variant = "unified" }: DiplomacyTabSystemPr
       {/* Communications Tab */}
       <TabsContent value="communications">
         <ThemedTabContent theme="diplomacy">
-          <SecureCommunications countryId={country.id} countryName={country.name} />
+          <SecureCommunications countryId={country.id} countryName={country.name} clearanceLevel="TOP_SECRET" />
         </ThemedTabContent>
       </TabsContent>
 

@@ -1,36 +1,47 @@
 "use client";
 
+import Link from "next/link";
 import { Sparkles, Compass, Flag } from "lucide-react";
-import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function WelcomeArticle() {
   return (
     <ArticleLayout
       title="Welcome to IxStats"
-      description="Understand what the platform offers and how the major modules fit together."
+      description="Your gateway to building, managing, and growing a nation. Here's everything you need to get started."
       icon={Sparkles}
+      nextLink={{ href: "/help/getting-started/navigation", label: "Finding Your Way Around" }}
     >
-      <Section title="What's New in v1.4">
+      <ContentCard>
+      <Section title="What's New in v2">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            <strong>Crisis Events System:</strong> Handle natural disasters, economic crises,
-            diplomatic incidents with strategic responses.
+            <strong>Faster, Smoother Experience:</strong> Major platform upgrades deliver quicker
+            load times, snappier interactions, and a more polished feel across every page.
           </li>
           <li>
-            <strong>NPC AI Personalities:</strong> NPCs with 8 traits, 6 archetypes, dynamic
-            behavioral prediction.
+            <strong>Cards & Vault:</strong> A full trading card system with pack opening, marketplace
+            auctions, lore cards, and an{" "}
+            <Link href="/help/vault/ixcredits" className="text-blue-600 hover:underline dark:text-blue-400">
+              IxCredits
+            </Link>{" "}
+            economy.
           </li>
           <li>
-            <strong>Vector Tile Maps:</strong> 100-1000x performance improvement with Martin +
-            Redis caching.
+            <strong>Elections & Politics:</strong> Political parties, legislature configuration,
+            and proportional representation elections you can run from your{" "}
+            <Link href="/help/mycountry/politics" className="text-blue-600 hover:underline dark:text-blue-400">
+              Politics
+            </Link>{" "}
+            dashboard.
           </li>
           <li>
-            <strong>Admin CMS:</strong> 17 interfaces for 100% dynamic content management (500+
-            equipment, 100+ scenarios).
+            <strong>National Issues:</strong> Events that appear based on your nation&rsquo;s
+            conditions, each with multiple-choice responses and real consequences for your country.
           </li>
           <li>
-            <strong>Rate Limiting:</strong> Redis-based security protecting against abuse with
-            tiered limits.
+            <strong>Hundreds of Components:</strong> Over 500 pieces of military equipment, 100+
+            diplomatic scenarios, and a fully dynamic content library that keeps growing.
           </li>
         </ul>
       </Section>
@@ -38,38 +49,59 @@ export default function WelcomeArticle() {
       <Section title="Three Things You Can Do Today">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            Claim or create a nation and explore the MyCountry command suite for executive
-            dashboards.
+            Claim or create a nation and explore the{" "}
+            <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
+              MyCountry
+            </Link>{" "}
+            command suite for executive dashboards, intelligence, and diplomacy.
           </li>
           <li>
-            Browse live economic, diplomatic, and social data through `/dashboard`, `/leaderboards`,
-            and ThinkPages.
+            Browse live economic, diplomatic, and social data through the{" "}
+            <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+              Dashboard
+            </Link>,{" "}
+            <Link href="/leaderboards" className="text-blue-600 hover:underline dark:text-blue-400">
+              Leaderboards
+            </Link>, and{" "}
+            <Link href="/thinkpages" className="text-blue-600 hover:underline dark:text-blue-400">
+              ThinkPages
+            </Link>.
           </li>
           <li>
-            Collaborate with teammates using achievements, ThinkShare messaging, and the in-app help
-            center.
+            Collaborate with other players using achievements, ThinkShare messaging, and this
+            in-app help center.
           </li>
         </ul>
       </Section>
+      </ContentCard>
 
+      <ContentCard>
       <Section title="Key Destinations">
         <InfoBox title="Start Exploring">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <strong>MyCountry:</strong> `/mycountry` – live intelligence, compliance, defense, and
-              analytics.
+              <Link href="/mycountry" className="text-blue-600 hover:underline dark:text-blue-400">
+                <strong>MyCountry</strong>
+              </Link>{" "}
+              -- your nation&rsquo;s home base for intelligence, compliance, defense, and analytics.
             </li>
             <li>
-              <strong>Builder:</strong> `/builder` – configure your nation with 106 atomic
-              components (24 gov + 40+ econ + 42 tax).
+              <Link href="/builder" className="text-blue-600 hover:underline dark:text-blue-400">
+                <strong>Country Builder</strong>
+              </Link>{" "}
+              -- configure your nation with over 100 government, economic, and tax components.
             </li>
             <li>
-              <strong>Global Dashboard:</strong> `/dashboard` – leaderboards, global stats, live
-              economic data.
+              <Link href="/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+                <strong>Global Dashboard</strong>
+              </Link>{" "}
+              -- leaderboards, global stats, and live economic data at a glance.
             </li>
             <li>
-              <strong>Documentation:</strong> `docs/README.md` – complete documentation index (52
-              routers, 580+ procedures).
+              <Link href="/help" className="text-blue-600 hover:underline dark:text-blue-400">
+                <strong>Help Center</strong>
+              </Link>{" "}
+              -- guides and articles covering every feature on the platform.
             </li>
           </ul>
         </InfoBox>
@@ -78,15 +110,25 @@ export default function WelcomeArticle() {
       <Section title="Next Steps">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            Visit <strong>Creating Your First Country</strong> to walk through the builder workflow.
+            Visit{" "}
+            <Link href="/help/getting-started/first-country" className="text-blue-600 hover:underline dark:text-blue-400">
+              Creating Your First Country
+            </Link>{" "}
+            to walk through the builder workflow step by step.
           </li>
           <li>
-            Take the <strong>Interface Tour</strong> to understand navigation, quick actions, and
-            live feeds.
+            Take the{" "}
+            <Link href="/help/getting-started/navigation" className="text-blue-600 hover:underline dark:text-blue-400">
+              Interface Tour
+            </Link>{" "}
+            to learn about navigation, quick actions, and live feeds.
           </li>
           <li>
-            Bookmark <strong>/help</strong> – every major module ships with articles that mirror the
-            repository documentation.
+            Bookmark the{" "}
+            <Link href="/help" className="text-blue-600 hover:underline dark:text-blue-400">
+              Help Center
+            </Link>{" "}
+            -- every major feature has its own guide, and new articles are added regularly.
           </li>
         </ul>
       </Section>
@@ -95,7 +137,11 @@ export default function WelcomeArticle() {
         <InfoBox title="Support Channels">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <Compass className="inline h-4 w-4" /> Check the rest of the Getting Started series.
+              <Compass className="inline h-4 w-4" /> Explore the rest of the{" "}
+              <Link href="/help/getting-started/gameplay-overview" className="text-blue-600 hover:underline dark:text-blue-400">
+                Getting Started
+              </Link>{" "}
+              series for gameplay tips and walkthroughs.
             </li>
             <li>
               <Flag className="inline h-4 w-4" /> Reach out to admins via ThinkShare or the project
@@ -104,6 +150,7 @@ export default function WelcomeArticle() {
           </ul>
         </InfoBox>
       </Section>
+      </ContentCard>
     </ArticleLayout>
   );
 }

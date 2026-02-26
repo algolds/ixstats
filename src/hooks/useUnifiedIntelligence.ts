@@ -5,9 +5,11 @@
  * Integrates all intelligence systems with real-time updates and computed analytics.
  */
 
+"use client";
+
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { IntelligenceWebSocketClient } from "~/lib/websocket/intelligence-websocket-client";
 
 // ===== TYPES =====
@@ -134,6 +136,7 @@ export function useUnifiedIntelligence({
   autoRefresh = false,
   refreshInterval = 30000, // 30 seconds
 }: UseUnifiedIntelligenceOptions): UseUnifiedIntelligenceReturn {
+  const notify = useNotify();
   // Local state
   const [activeTab, setActiveTab] = useState<IntelligenceTab>("overview");
   const [filters, setFiltersState] = useState<FilterState>(DEFAULT_FILTERS);
@@ -221,50 +224,42 @@ export function useUnifiedIntelligence({
   // Mutations
   const executeActionMutation = api.unifiedIntelligence.executeAction.useMutation({
     onSuccess: (result) => {
-      toast.success("Action Executed", {
-        description: `${result.message} - ${result.effect}`,
-      });
+      notify.success("Action Executed", `${result.message} - ${result.effect}`);
       void refetchOverview();
       void refetchActions();
     },
     onError: (error) => {
-      toast.error("Action Failed", {
-        description: error.message,
-      });
+      notify.error("Action Failed", error.message);
     },
   });
 
   const acknowledgeAlertMutation = api.unifiedIntelligence.acknowledgeAlert.useMutation({
     onSuccess: () => {
-      toast.success("Alert Acknowledged");
+      notify.success("Alert Acknowledged");
       void refetchOverview();
     },
     onError: (error) => {
-      toast.error("Failed to acknowledge alert", { description: error.message });
+      notify.error("Failed to acknowledge alert", error.message);
     },
   });
 
   const archiveAlertMutation = api.unifiedIntelligence.archiveAlert.useMutation({
     onSuccess: () => {
-      toast.success("Alert archived");
+      notify.success("Alert archived");
       void refetchOverview();
     },
     onError: (error) => {
-      toast.error("Failed to archive alert", { description: error.message });
+      notify.error("Failed to archive alert", error.message);
     },
   });
 
   const sendMessageMutation = api.unifiedIntelligence.sendSecureMessage.useMutation({
     onSuccess: (result) => {
-      toast.success("Message Sent", {
-        description: `Secure message sent to ${result.recipientCount} recipient(s)`,
-      });
+      notify.success("Message Sent", `Secure message sent to ${result.recipientCount} recipient(s)`);
       void refetchChannels();
     },
     onError: (error) => {
-      toast.error("Message Failed", {
-        description: error.message,
-      });
+      notify.error("Message Failed", error.message);
     },
   });
 
@@ -370,7 +365,7 @@ export function useUnifiedIntelligence({
   );
 
   const refreshAll = useCallback(async () => {
-    toast.info("Refreshing Intelligence", { description: "Updating all intelligence data..." });
+    notify.info("Refreshing Intelligence", "Updating all intelligence data...");
     await Promise.all([
       refetchOverview(),
       refetchActions(),
@@ -378,7 +373,7 @@ export function useUnifiedIntelligence({
       refetchAnalytics(),
       refetchChannels(),
     ]);
-    toast.success("Intelligence Updated", { description: "All data has been refreshed" });
+    notify.success("Intelligence Updated", "All data has been refreshed");
   }, [refetchOverview, refetchActions, refetchFeed, refetchAnalytics, refetchChannels]);
 
   const setFilters = useCallback((newFilters: Partial<FilterState>) => {
@@ -450,9 +445,7 @@ export function useUnifiedIntelligence({
       onAlert: (alert) => {
         console.log("[useUnifiedIntelligence] Received WebSocket alert:", alert);
         // Show toast notification for alerts
-        toast.warning(alert.title, {
-          description: alert.description || "New intelligence alert received",
-        });
+        notify.warning(alert.title, alert.description || "New intelligence alert received");
         // Refresh data to show new alert
         stableRefetchOverview();
       },

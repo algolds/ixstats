@@ -30,6 +30,7 @@ import {
 } from "~/lib/holographic-effects";
 import { proxyNSImage } from "~/lib/ns-image-proxy";
 import { useSoundService } from "~/lib/sound-service";
+import { CardHolographicCover } from "./CardHolographicCover";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 
 /**
@@ -245,12 +246,12 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 unoptimized // NS images may not support Next.js optimization
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-                <div className="text-center p-4">
-                  <div className="text-4xl mb-2">🎴</div>
-                  <div className="text-xs text-gray-400">Image unavailable</div>
-                </div>
-              </div>
+              <CardHolographicCover
+                cardType={card.cardType}
+                rarity={card.rarity}
+                wikiSource={card.wikiSource}
+                title={card.title}
+              />
             )}
 
             {/* Metallic gradient overlay for premium feel */}
@@ -396,6 +397,31 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                   {formatMarketValue(card.marketValue)}
                 </motion.span>
               </div>
+
+              {/* Stat bars — always visible compact indicator */}
+              {(stats.economic.value > 0 || stats.diplomatic.value > 0 || stats.military.value > 0 || stats.social.value > 0) && (
+                <div className="flex gap-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1.5">
+                  {Object.entries(stats).map(([key, stat]) => (
+                    <div key={key} className="flex-1 space-y-0.5">
+                      <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${stat.value}%`,
+                            backgroundColor:
+                              key === "economic" ? "#22c55e" :
+                              key === "diplomatic" ? "#3b82f6" :
+                              key === "military" ? "#ef4444" : "#a855f7",
+                          }}
+                        />
+                      </div>
+                      <div className="text-center text-[7px] font-bold text-white/50 leading-none">
+                        {key === "economic" ? "ECO" : key === "diplomatic" ? "DIP" : key === "military" ? "MIL" : "SOC"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Premium stats reveal on hover */}
               <AnimatePresence>

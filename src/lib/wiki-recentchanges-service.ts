@@ -10,6 +10,7 @@ export interface WikiRecentChange {
   user: string;
   timestamp: string; // ISO 8601
   comment: string;
+  minor: boolean;
   newlen: number;
   oldlen: number;
 }
@@ -24,7 +25,7 @@ export interface WikiTrendingPage {
   isNew: boolean;
 }
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 let cached: { data: WikiRecentChange[]; fetchedAt: number } | null = null;
 
 /**
@@ -41,9 +42,9 @@ export async function getWikiRecentChanges(limit = 25): Promise<WikiRecentChange
   url.searchParams.set("action", "query");
   url.searchParams.set("list", "recentchanges");
   url.searchParams.set("rcprop", "user|title|timestamp|comment|sizes|flags");
-  url.searchParams.set("rcshow", "!minor|!bot");
+  url.searchParams.set("rcshow", "!bot");
   url.searchParams.set("rcnamespace", "0"); // Main namespace only
-  url.searchParams.set("rclimit", "25");
+  url.searchParams.set("rclimit", "50");
   url.searchParams.set("format", "json");
   url.searchParams.set("formatversion", "2");
 
@@ -66,7 +67,12 @@ export async function getWikiRecentChanges(limit = 25): Promise<WikiRecentChange
     }
 
     const data = await response.json();
-    const changes: WikiRecentChange[] = data?.query?.recentchanges ?? [];
+    const raw: WikiRecentChange[] = data?.query?.recentchanges ?? [];
+
+    // Keep all non-minor edits + minor edits with >= 1000 bytes changed
+    const changes = raw.filter(
+      (rc) => !rc.minor || Math.abs(rc.newlen - rc.oldlen) >= 1000,
+    );
 
     cached = { data: changes, fetchedAt: Date.now() };
     return changes.slice(0, limit);

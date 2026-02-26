@@ -242,7 +242,10 @@ export function GovernmentSpending({
     .map((cat: SpendingCategory) => {
       // This is a simplified efficiency score - in a real app, you'd use actual metrics
       // Efficiency is higher for categories with higher impact per dollar spent
-      const efficiencyScore = Math.random() * 40 + 60; // Random score between 60-100 for demonstration
+      // Deterministic efficiency score based on category share and policy flags
+      const policyBonus = (performanceBasedBudgeting ? 5 : 0) + (digitalGovernmentInitiative ? 5 : 0);
+      const categoryShare = spendingData.totalSpending > 0 ? (cat.amount / spendingData.totalSpending) * 100 : 0;
+      const efficiencyScore = Math.min(100, 60 + policyBonus + Math.round(categoryShare * 0.5));
       return {
         ...cat,
         efficiency: efficiencyScore,

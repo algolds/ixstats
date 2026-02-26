@@ -57,10 +57,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate card candidate
+    // Generate card candidate (require image)
     const candidate = await wikiLoreCardGenerator.generateCard(
       articleTitle,
-      wikiSource as WikiSource
+      wikiSource as WikiSource,
+      { requireImage: true }
     );
 
     if (!candidate) {

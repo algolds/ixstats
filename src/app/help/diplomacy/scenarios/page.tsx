@@ -1,181 +1,272 @@
 "use client";
 
+import Link from "next/link";
 import { ScrollText, Sparkles, Target, Network } from "lucide-react";
-import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function DiplomaticScenariosArticle() {
   return (
     <ArticleLayout
-      title="Dynamic Diplomatic Scenarios"
-      description="Engage with 100+ dynamic diplomatic scenarios featuring trade negotiations, cultural exchanges, crisis mediation, and alliance formation with NPC personality integration."
+      title="Diplomatic Scenarios"
+      description="Engage with dynamic diplomatic events featuring trade negotiations, cultural exchanges, crisis mediation, and alliance formation — all shaped by NPC personalities."
       icon={ScrollText}
     >
+      <ContentCard>
+      <Section title="What Are Diplomatic Scenarios?">
+        <p className="mb-3 text-slate-700 dark:text-slate-300">
+          Diplomatic scenarios are dynamic events that appear based on world
+          conditions, your relationships, and sometimes pure chance. They present
+          you with a situation &mdash; a trade opportunity, a crisis that needs
+          mediating, an alliance proposal &mdash; and ask you to choose how to
+          respond. Your decisions have real consequences for your relationships,
+          economy, and reputation.
+        </p>
+        <p className="text-slate-700 dark:text-slate-300">
+          Scenarios appear on your{" "}
+          <Link
+            href="/mycountry/diplomacy"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            MyCountry &rarr; Diplomacy
+          </Link>{" "}
+          page when they become available. You will also receive notifications
+          when a new scenario requires your attention.
+        </p>
+      </Section>
+
       <Section title="Scenario Categories">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            <strong>Trade & Economic:</strong> Bilateral agreements, tariff negotiations, investment
-            partnerships, resource sharing, market access deals.
+            <strong>Trade &amp; Economic:</strong> Bilateral trade agreements,
+            tariff negotiations, investment partnerships, resource-sharing deals,
+            and market access opportunities.
           </li>
           <li>
-            <strong>Cultural & Educational:</strong> Student exchanges, cultural festivals, joint
-            research programs, language partnerships, heritage preservation.
+            <strong>Cultural &amp; Educational:</strong> Student exchange
+            programs, cultural festivals, joint research projects, language
+            partnerships, and heritage preservation initiatives.
           </li>
           <li>
-            <strong>Security & Defense:</strong> Intelligence sharing, joint training, base access,
-            defense pacts, crisis response coordination.
+            <strong>Security &amp; Defense:</strong> Intelligence-sharing
+            agreements, joint military training, base access negotiations, defense
+            pacts, and crisis response coordination.
           </li>
           <li>
-            <strong>Crisis Mediation:</strong> Border dispute resolution, refugee assistance,
-            humanitarian relief, conflict de-escalation, peace negotiations.
+            <strong>Crisis Mediation:</strong> Border disputes, refugee
+            assistance, humanitarian relief operations, conflict de-escalation,
+            and peace negotiations.
           </li>
           <li>
-            <strong>Alliance & Coalition:</strong> Regional partnerships, voting blocs, joint
-            initiatives, multilateral frameworks, treaty negotiations.
+            <strong>Alliance &amp; Coalition:</strong> Regional partnerships,
+            voting blocs, joint diplomatic initiatives, multilateral frameworks,
+            and treaty negotiations.
           </li>
         </ul>
       </Section>
+      </ContentCard>
 
-      <Section title="Scenario Lifecycle">
+      <ContentCard>
+      <Section title="How Scenarios Play Out">
         <InfoBox title="From Trigger to Outcome">
           <ol className="list-decimal space-y-2 pl-6">
             <li>
-              <strong>Generation:</strong> Scenarios triggered by events, relations, or random
-              opportunities (5-15% monthly probability).
+              <strong>A Scenario Appears:</strong> Scenarios are triggered by
+              world events, your current relationships, or random opportunities.
+              Each month, there is roughly a 5&ndash;15% chance a new scenario
+              will appear for your country.
             </li>
             <li>
-              <strong>Presentation:</strong> Player receives scenario with context, objectives,
-              available options, and predicted outcomes.
+              <strong>You Review the Situation:</strong> The scenario gives you
+              context about what is happening, who is involved, what is at stake,
+              and what your options are. You will also see predicted outcomes for
+              each choice.
             </li>
             <li>
-              <strong>Decision:</strong> Select from 2-5 response options with varying costs,
-              benefits, and risks.
+              <strong>You Make a Decision:</strong> Choose from 2&ndash;5
+              response options, each with different costs, benefits, and levels of
+              risk. There is rarely a single "right" answer &mdash; it depends on
+              your strategy.
             </li>
             <li>
-              <strong>NPC Response:</strong> Partner country reacts based on personality traits,
-              relationship strength, and national interests.
+              <strong>The Other Country Responds:</strong> The partner country
+              reacts based on their{" "}
+              <Link
+                href="/help/diplomacy/npc-personalities"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                personality traits
+              </Link>
+              , your relationship strength, and their own national interests.
             </li>
             <li>
-              <strong>Resolution:</strong> Outcomes applied to relations, economy, reputation, or
-              resources; logged to history.
+              <strong>Outcomes Are Applied:</strong> The results affect your
+              relationships, economy, reputation, and resources. Everything is
+              logged to your diplomatic history so you can review past decisions.
             </li>
           </ol>
         </InfoBox>
       </Section>
 
-      <Section title="NPC Personality Integration">
+      <Section title="How NPC Personalities Shape Scenarios">
+        <p className="mb-3 text-slate-700 dark:text-slate-300">
+          NPC responses are not random. Every NPC country has{" "}
+          <Link
+            href="/help/diplomacy/npc-personalities"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            8 personality traits
+          </Link>{" "}
+          that determine how they react to your choices, combined with your
+          current relationship strength:
+        </p>
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            NPC responses determined by <strong>8 personality traits</strong> + current relationship
-            strength.
+            <strong>Pragmatists:</strong> Focus on economic benefits. They will
+            accept deals that offer clear mutual gain.
           </li>
           <li>
-            <strong>Pragmatists:</strong> Focus on economic benefits; accept deals with mutual gain.
+            <strong>Idealists:</strong> Prioritize principles. They may reject
+            proposals that conflict with their values, even if economically
+            beneficial.
           </li>
           <li>
-            <strong>Idealists:</strong> Prioritize principles; reject proposals conflicting with
-            values.
+            <strong>Aggressors:</strong> Demand favorable terms and may threaten
+            consequences if you refuse their counter-offers.
           </li>
           <li>
-            <strong>Aggressors:</strong> Demand favorable terms; threaten consequences if refused.
+            <strong>Diplomats:</strong> Seek compromise and often propose
+            creative win-win alternatives you had not considered.
           </li>
           <li>
-            <strong>Diplomats:</strong> Seek compromise; propose win-win alternatives.
+            <strong>Opportunists:</strong> Watch out &mdash; they may exploit
+            crises for their own advantage rather than working toward resolution.
           </li>
           <li>
-            See <code>/help/diplomacy/npc-personalities</code> for trait calculation and behavioral
-            prediction.
+            <strong>Isolationists:</strong> Reluctant participants. Do not expect
+            them to engage enthusiastically, but they can be reliable partners
+            once committed.
           </li>
         </ul>
       </Section>
+      </ContentCard>
 
+      <ContentCard fullWidth>
       <Section title="Scenario Outcomes">
-        <InfoBox title="Impact Types">
+        <InfoBox title="What Can Change">
+          <p className="mb-2">
+            Every scenario decision can produce several types of impact:
+          </p>
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <strong>Relationship Changes:</strong> ±10 to ±30 strength based on proposal quality +
-              NPC acceptance.
+              <strong>Relationship Changes:</strong> Your standing with the
+              involved country can improve or decline significantly based on how
+              your proposal is received.
             </li>
             <li>
-              <strong>Economic Effects:</strong> Trade volume changes, investment flows, market
-              access gains/losses.
+              <strong>Economic Effects:</strong> Trade volume changes, investment
+              flows, and market access gains or losses.
             </li>
             <li>
-              <strong>Reputation Shifts:</strong> Regional influence, diplomatic credibility,
-              leadership status adjustments.
+              <strong>Reputation Shifts:</strong> Your regional influence,
+              diplomatic credibility, and leadership status may be adjusted.
             </li>
             <li>
-              <strong>Resource Transfers:</strong> Aid packages, technology sharing, military
-              assistance, cultural programs.
+              <strong>Resource Transfers:</strong> Aid packages, technology
+              sharing, military assistance, or cultural programs may be
+              exchanged.
             </li>
             <li>
-              <strong>Long-term Agreements:</strong> Treaties, partnerships, and frameworks that
-              persist across IxTime.
+              <strong>Long-term Agreements:</strong> Treaties, partnerships, and
+              frameworks that persist and shape future interactions.
             </li>
           </ul>
         </InfoBox>
       </Section>
 
-      <Section title="API Integration">
+      <WarningBox title="Strategic Tips">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            <code>api.diplomaticScenarios.getActiveScenarios</code> – List available scenarios for
-            player's country.
+            <Sparkles className="inline h-4 w-4" /> Check the other country's{" "}
+            <Link
+              href="/help/diplomacy/npc-personalities"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              personality profile
+            </Link>{" "}
+            before responding. Knowing whether you are dealing with a Pragmatist
+            or an Aggressor changes everything.
           </li>
           <li>
-            <code>api.diplomaticScenarios.respondToScenario</code> – Submit decision with selected
-            option.
+            <Target className="inline h-4 w-4" /> Pay attention to predicted
+            outcomes. The scenario interface shows you likely results for each
+            option, so weigh the risk-reward carefully.
           </li>
           <li>
-            <code>api.diplomaticScenarios.getScenarioHistory</code> – Review past scenarios and
-            outcomes.
-          </li>
-          <li>
-            <code>api.npcPersonalities.predictResponse</code> – Estimate NPC reaction before
-            committing.
-          </li>
-          <li>
-            Router provides 15 procedures (6 queries, 9 mutations) for complete scenario management.
+            <Network className="inline h-4 w-4" /> Think long-term. A
+            short-term sacrifice can lead to a lasting alliance that pays off many
+            times over.
           </li>
         </ul>
+      </WarningBox>
+
+      <Section title="Scenario Management">
+        <p className="text-slate-700 dark:text-slate-300">
+          Diplomatic scenarios are created and balanced by platform administrators.
+          The scenarios you encounter are drawn from a curated library of
+          templates that are regularly updated to keep the diplomatic landscape
+          fresh and engaging. If you have admin access, you can manage scenario
+          templates through the{" "}
+          <Link
+            href="/help/admin/reference-data"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Admin Reference Data
+          </Link>{" "}
+          tools.
+        </p>
       </Section>
 
-      <Section title="Admin Scenario Management">
-        <ul className="list-disc space-y-2 pl-6">
-          <li>
-            <strong>Scenario Editor:</strong> <code>/admin/diplomatic-scenarios</code> – Create,
-            edit, delete scenario templates.
-          </li>
-          <li>
-            <strong>Trigger Configuration:</strong> Set probability weights, prerequisite conditions,
-            cooldown periods.
-          </li>
-          <li>
-            <strong>Outcome Templates:</strong> Define response options with cost/benefit matrices,
-            NPC personality modifiers.
-          </li>
-          <li>
-            All scenarios stored in database; enables dynamic content updates without code
-            deployments.
-          </li>
-        </ul>
-      </Section>
-
-      <InfoBox title="Related Documentation">
+      <InfoBox title="Related Guides">
         <ul className="list-disc space-y-1 pl-6">
           <li>
-            <Sparkles className="inline h-4 w-4" />{" "}
-            <code>/help/diplomacy/npc-personalities</code> – Understanding NPC behavioral AI.
+            <Link
+              href="/help/diplomacy/npc-personalities"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              NPC Personalities
+            </Link>{" "}
+            &mdash; Understanding how NPC traits shape scenario responses.
           </li>
           <li>
-            <Target className="inline h-4 w-4" /> <code>/help/diplomacy/missions</code> – Embassy
-            missions and diplomatic operations.
+            <Link
+              href="/help/diplomacy/missions"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Diplomatic Missions
+            </Link>{" "}
+            &mdash; Targeted operations you can launch alongside scenarios.
           </li>
           <li>
-            <Network className="inline h-4 w-4" />{" "}
-            <code>/help/admin/reference-data</code> – Managing scenario templates via admin CMS.
+            <Link
+              href="/help/diplomacy/embassies"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Embassy Network
+            </Link>{" "}
+            &mdash; The diplomatic infrastructure that enables scenarios.
+          </li>
+          <li>
+            <Link
+              href="/help/admin/reference-data"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Admin Reference Data
+            </Link>{" "}
+            &mdash; Managing scenario templates (admin only).
           </li>
         </ul>
       </InfoBox>
+      </ContentCard>
     </ArticleLayout>
   );
 }

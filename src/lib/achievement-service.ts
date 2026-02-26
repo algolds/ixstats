@@ -147,10 +147,33 @@ export class AchievementService {
       const militarySpendingPercent =
         country.currentTotalGdp > 0 ? (totalMilitaryBudget / country.currentTotalGdp) * 100 : 0;
 
-      // Get diplomatic counts (simplified - these models may not exist yet)
-      const treatyCount = 0; // TODO: Implement treaty counting when model is available
-      const tradePartnerCount = 0; // TODO: Implement trade partnership counting
-      const allianceCount = 0; // TODO: Implement alliance counting
+      // Get diplomatic counts from database
+      const [treatyCount, tradePartnerCount, allianceCount] = await Promise.all([
+        // Count treaties where this country is a party (parties is a JSON/text field containing country IDs)
+        db.treaty.count({
+          where: {
+            parties: { contains: countryId },
+            status: "active",
+          },
+        }).catch(() => 0),
+
+        // Count trade partners via diplomatic relations with non-zero trade volume
+        db.diplomaticRelation.count({
+          where: {
+            OR: [{ country1: countryId }, { country2: countryId }],
+            tradeVolume: { gt: 0 },
+            status: "active",
+          },
+        }).catch(() => 0),
+
+        // Count alliance memberships
+        db.allianceMember.count({
+          where: {
+            countryId,
+            isActive: true,
+          },
+        }).catch(() => 0),
+      ]);
 
       // Build extended achievement data
       const achievementData: ExtendedAchievementData = {
@@ -181,7 +204,12 @@ export class AchievementService {
         governmentType: country.governmentType ?? undefined,
         thinkpageCount,
         followerCount,
-        trendingPostCount: 0, // TODO: Implement trending post detection
+        trendingPostCount: await db.thinkpagesPost.count({
+          where: {
+            account: { clerkUserId: userId },
+            trending: true,
+          },
+        }).catch(() => 0),
         daysActive,
         totalAchievements,
       };

@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   HelpCircle,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { motion } from "motion/react";
 import { GovernmentBuilder } from "~/components/government";
 import { BudgetManagementDashboard } from "~/components/government/BudgetManagementDashboard";
@@ -52,6 +52,7 @@ export function GovernmentBuilderWithPreview({
   governmentData,
   gdpData,
 }: GovernmentBuilderWithPreviewProps) {
+  const notify = useNotify();
   const [activeTab, setActiveTab] = useState("builder");
   const [isSaving, setIsSaving] = useState(false);
   const [currentGovernmentData, setCurrentGovernmentData] = useState<GovernmentBuilderState | null>(
@@ -73,10 +74,10 @@ export function GovernmentBuilderWithPreview({
     setIsSaving(true);
     try {
       await onSave(currentGovernmentData);
-      toast.success("Government structure saved successfully!");
+      notify.success("Government structure saved successfully!");
     } catch (error) {
       console.error("Save failed:", error);
-      toast.error("Failed to save government structure");
+      notify.error("Failed to save government structure");
     } finally {
       setIsSaving(false);
     }

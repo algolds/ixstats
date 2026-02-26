@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { Coins } from "lucide-react";
 import { useUser } from "~/context/auth-context";
-import { useHasRoleLevel } from "~/hooks/usePermissions";
+
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { api } from "~/trpc/react";
 import { VaultSidebarLayout } from "./VaultSidebarLayout";
@@ -21,7 +21,7 @@ const SECTION_TITLES: Record<VaultSection, string> = {
   dashboard: "MyVault",
   cards: "Card Collection",
   acquire: "Acquire Cards",
-  create: "Create & Trade",
+  create: "Trade & Sell",
   import: "NS Import",
 };
 
@@ -77,7 +77,7 @@ function VaultRouterInner() {
 
   // Hero section with vault branding + IxCredits balance
   const heroSection = (
-    <div className="glass-hierarchy-child flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4 dark:bg-black/10">
+    <div className="glass-hierarchy-child flex items-center justify-between rounded-xl border border-border px-4 py-3 sm:px-6 sm:py-4">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-md shadow-purple-500/30">
           <Coins className="h-5 w-5 text-white" />
@@ -95,7 +95,7 @@ function VaultRouterInner() {
         <Coins className="h-4 w-4 text-amber-500" />
         <NumberFlow
           value={balanceData?.credits ?? 0}
-          format="compact"
+          format="default"
           className="text-base font-bold tabular-nums text-amber-500 sm:text-lg"
         />
         <span className="hidden text-xs text-muted-foreground sm:inline">IxC</span>
@@ -142,28 +142,6 @@ function VaultRouterInner() {
 }
 
 export function VaultRouter() {
-  const isAdmin = useHasRoleLevel(10);
-
-  if (!isAdmin) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900 p-4">
-        <div className="glass-hierarchy-parent w-full max-w-md space-y-4 p-8 text-center">
-          <div className="mb-4 text-6xl">🔒</div>
-          <h1 className="text-3xl font-bold text-red-400">Access Restricted</h1>
-          <p className="text-muted-foreground">
-            The IxCards/MyVault system is currently in development and restricted to administrators only.
-          </p>
-          <a
-            href="/dashboard"
-            className="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-3 text-white transition-colors hover:bg-blue-700"
-          >
-            Return to Dashboard
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <AuthenticationGuard redirectPath="/vault">
       <VaultRouterInner />

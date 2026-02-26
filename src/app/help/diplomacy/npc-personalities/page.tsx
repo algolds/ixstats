@@ -1,207 +1,278 @@
 "use client";
 
+import Link from "next/link";
 import { Brain, Users2, TrendingUp, Target } from "lucide-react";
-import { ArticleLayout, Section, InfoBox, WarningBox } from "../../_components/ArticleLayout";
+import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function NPCPersonalitiesArticle() {
   return (
     <ArticleLayout
-      title="NPC Personality & Behavioral AI"
-      description="Understand how NPC countries develop distinct personalities through 8 traits, 6 archetypes, and dynamic behavioral prediction."
+      title="NPC Personalities"
+      description="Every NPC country has a distinct personality shaped by 8 traits and 6 archetypes. Learn how they think so you can predict their moves."
       icon={Brain}
     >
-      <Section title="8 Core Personality Traits (0-100 Scale)">
+      <ContentCard>
+      <Section title="How NPC Personalities Work">
+        <p className="mb-3 text-slate-700 dark:text-slate-300">
+          NPC countries are not random. Each one has a unique personality defined by
+          eight core traits scored on a 0&ndash;100 scale. These traits are
+          calculated automatically based on how the nation actually behaves &mdash;
+          their alliances, trade patterns, conflicts, and diplomatic history all
+          feed into the system. You never set these traits manually; they emerge
+          naturally from the world.
+        </p>
+        <p className="text-slate-700 dark:text-slate-300">
+          Understanding an NPC's personality is key to successful diplomacy. Before
+          you launch a{" "}
+          <Link
+            href="/help/diplomacy/missions"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            diplomatic mission
+          </Link>{" "}
+          or respond to a{" "}
+          <Link
+            href="/help/diplomacy/scenarios"
+            className="text-blue-600 hover:underline dark:text-blue-400"
+          >
+            diplomatic scenario
+          </Link>
+          , checking the other country's personality profile can tell you what kind
+          of approach is most likely to succeed.
+        </p>
+      </Section>
+
+      <Section title="The 8 Core Personality Traits">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            <strong>Assertiveness:</strong> Willingness to take strong diplomatic stances. High =
-            confrontational, Low = accommodating.
+            <strong>Assertiveness:</strong> How willing a country is to take strong
+            stances. High-assertiveness nations are confrontational; low-assertiveness
+            nations are more accommodating.
           </li>
           <li>
-            <strong>Cooperativeness:</strong> Preference for multilateral solutions. High = seeks
-            alliances, Low = unilateral action.
+            <strong>Cooperativeness:</strong> Preference for working with others.
+            High cooperativeness means the nation seeks alliances and joint solutions;
+            low means they act alone.
           </li>
           <li>
-            <strong>Risk Tolerance:</strong> Acceptance of uncertain outcomes. High = bold gambits,
-            Low = cautious approaches.
+            <strong>Risk Tolerance:</strong> Comfort with uncertain outcomes. Bold
+            nations attempt ambitious gambits; cautious ones prefer safe, proven
+            approaches.
           </li>
           <li>
-            <strong>Pragmatism:</strong> Emphasis on practical results over ideology. High =
-            flexible, Low = principled/rigid.
+            <strong>Pragmatism:</strong> Focus on practical results over ideology.
+            Highly pragmatic nations are flexible deal-makers; low-pragmatism nations
+            stick to their principles even when it costs them.
           </li>
           <li>
-            <strong>Transparency:</strong> Openness in communications. High = honest broker, Low =
-            secretive/deceptive.
+            <strong>Transparency:</strong> Openness in communications. Transparent
+            nations are honest brokers you can trust; secretive ones may have hidden
+            agendas.
           </li>
           <li>
-            <strong>Economic Focus:</strong> Priority on economic interests. High = trade-driven,
-            Low = ideology/security focus.
+            <strong>Economic Focus:</strong> How much the nation prioritizes
+            economic interests. Trade-driven countries respond well to economic
+            proposals; others prioritize ideology or security.
           </li>
           <li>
-            <strong>Military Orientation:</strong> Reliance on military power. High = strength-based,
-            Low = diplomatic solutions.
+            <strong>Military Orientation:</strong> Reliance on military power.
+            Strength-based nations respect force and deterrence; diplomatic nations
+            prefer negotiation.
           </li>
           <li>
-            <strong>Cultural Openness:</strong> Receptiveness to foreign influence. High = cosmopolitan,
-            Low = protectionist.
+            <strong>Cultural Openness:</strong> Receptiveness to foreign influence.
+            Cosmopolitan nations welcome cultural exchange; protectionist ones guard
+            their traditions.
           </li>
         </ul>
       </Section>
+      </ContentCard>
 
-      <Section title="6 Personality Archetypes">
+      <ContentCard>
+      <Section title="The 6 Personality Archetypes">
         <InfoBox title="NPC Behavioral Profiles">
+          <p className="mb-3">
+            While every NPC has a unique combination of traits, most fall into one
+            of six recognizable archetypes. Knowing an NPC's archetype gives you a
+            quick read on how they will likely respond to your actions:
+          </p>
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>The Pragmatist:</strong> High pragmatism, medium assertiveness. Focus on deals
-              and practical outcomes.
+              <strong>The Pragmatist:</strong> Focused on deals and practical
+              outcomes. Offer them mutual economic benefits for the best results.
             </li>
             <li>
-              <strong>The Idealist:</strong> Low pragmatism, high cooperativeness. Values principles
-              and multilateral frameworks.
+              <strong>The Idealist:</strong> Values principles and multilateral
+              frameworks. Appeal to shared values and fair processes.
             </li>
             <li>
-              <strong>The Aggressor:</strong> High assertiveness, high military orientation. Seeks
-              dominance through strength.
+              <strong>The Aggressor:</strong> Seeks dominance through strength.
+              Expect tough negotiations and be prepared to show resolve.
             </li>
             <li>
-              <strong>The Diplomat:</strong> High cooperativeness, high transparency. Bridge-builder
-              and mediator.
+              <strong>The Diplomat:</strong> A natural bridge-builder and mediator.
+              They welcome cooperation and seek win-win outcomes.
             </li>
             <li>
-              <strong>The Opportunist:</strong> High risk tolerance, low transparency. Exploits
-              situations for advantage.
+              <strong>The Opportunist:</strong> Exploits situations for advantage.
+              Be cautious &mdash; they may agree to deals they do not intend to honor.
             </li>
             <li>
-              <strong>The Isolationist:</strong> Low cooperativeness, low cultural openness. Prefers
-              self-reliance.
+              <strong>The Isolationist:</strong> Prefers self-reliance and avoids
+              foreign entanglements. Building a relationship takes patience, but once
+              established it tends to be stable.
             </li>
           </ul>
         </InfoBox>
       </Section>
 
-      <Section title="Trait Calculation (Data-Driven)">
+      <Section title="How Traits Are Calculated">
+        <p className="mb-3 text-slate-700 dark:text-slate-300">
+          NPC personality traits are not assigned by hand. They are calculated
+          automatically from a nation's real in-game behavior:
+        </p>
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            All traits calculated from <strong>observable database data</strong> – no manual
-            assignments.
+            A country with many alliances and friendly relationships will naturally
+            score high in <strong>Cooperativeness</strong>.
           </li>
           <li>
-            <strong>Assertiveness:</strong> Hostile relationships (+10 each), weak relationships
-            (+5), conflicts (+2).
+            Frequent conflicts and hostile relationships push{" "}
+            <strong>Assertiveness</strong> and{" "}
+            <strong>Military Orientation</strong> higher.
           </li>
           <li>
-            <strong>Cooperativeness:</strong> Alliances (+15 each), friendly nations (+8), treaties
-            (+5).
+            High trade volume and numerous economic partnerships increase{" "}
+            <strong>Economic Focus</strong>.
           </li>
           <li>
-            <strong>Economic Focus:</strong> Trade volume (×0.02), trade agreements (+8), economic
-            partnerships (+5).
-          </li>
-          <li>
-            Formulas documented in <code>docs/systems/npc-ai.md</code> with step-by-step examples.
+            Active cultural exchange programs and openness to foreign influence
+            raise <strong>Cultural Openness</strong>.
           </li>
         </ul>
+        <p className="mt-3 text-slate-700 dark:text-slate-300">
+          This means that as the world evolves, NPC personalities evolve with it.
+          An Isolationist that starts forming alliances will gradually become more
+          cooperative over time.
+        </p>
       </Section>
+      </ContentCard>
 
-      <Section title="Behavioral Prediction">
-        <InfoBox title="How NPCs Respond">
-          <ul className="list-disc space-y-1 pl-6">
+      <ContentCard fullWidth>
+      <Section title="Using Personalities to Your Advantage">
+        <InfoBox title="Strategic Tips for Each Situation">
+          <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>Diplomatic Proposals:</strong> Acceptance probability = f(assertiveness,
-              cooperativeness, economic benefit).
+              <strong>Diplomatic Proposals:</strong> NPCs weigh your proposals
+              against their personality. A highly cooperative nation is more likely
+              to accept alliance offers, while a pragmatic one wants to see clear
+              economic benefits.
             </li>
             <li>
-              <strong>Crisis Events:</strong> Response strategy selected based on risk tolerance +
-              military orientation.
+              <strong>Crisis Events:</strong> When a{" "}
+              <Link
+                href="/help/diplomacy/scenarios"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                crisis scenario
+              </Link>{" "}
+              hits, NPCs choose their response based on risk tolerance and military
+              orientation. Knowing this helps you predict whether they will
+              escalate or seek compromise.
             </li>
             <li>
-              <strong>Trade Negotiations:</strong> Terms influenced by economic focus + pragmatism
-              scores.
+              <strong>Trade Negotiations:</strong> NPCs with high economic focus
+              and pragmatism are your best trade partners. They evaluate deals on
+              mutual benefit rather than ideology.
             </li>
             <li>
-              <strong>Alliance Decisions:</strong> Cooperativeness + transparency determine
-              partnership willingness.
+              <strong>Alliance Building:</strong> Cooperativeness and transparency
+              determine how willing an NPC is to enter long-term partnerships.
+              Start with trust-building actions before proposing formal alliances
+              with secretive nations.
             </li>
           </ul>
         </InfoBox>
       </Section>
 
       <Section title="Personality Drift">
+        <p className="mb-3 text-slate-700 dark:text-slate-300">
+          NPC personalities are not frozen in place. They gradually shift based on
+          what happens in the world:
+        </p>
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            Traits evolve dynamically based on experiences (max ±2 points per IxTime year).
+            <strong>Successful Diplomacy:</strong> Positive interactions increase
+            cooperativeness and transparency over time.
           </li>
           <li>
-            <strong>Positive Interactions:</strong> Successful diplomacy increases cooperativeness +
-            transparency.
+            <strong>Conflicts &amp; Hostilities:</strong> Failed negotiations or
+            military confrontations push assertiveness and military orientation
+            higher.
           </li>
           <li>
-            <strong>Conflicts:</strong> Failed negotiations or hostilities increase assertiveness +
-            military orientation.
+            <strong>Economic Shocks:</strong> Crises can make a nation more
+            pragmatic and less willing to take risks.
           </li>
           <li>
-            <strong>Economic Shocks:</strong> Crises may increase pragmatism while reducing risk
-            tolerance.
-          </li>
-          <li>
-            Drift system prevents abrupt personality changes; ensures consistent NPC behavior over
-            time.
-          </li>
-        </ul>
-      </Section>
-
-      <Section title="API Integration">
-        <ul className="list-disc space-y-2 pl-6">
-          <li>
-            <code>api.npcPersonalities.getPersonality</code> – Retrieve NPC's 8 traits + archetype
-            classification.
-          </li>
-          <li>
-            <code>api.npcPersonalities.predictResponse</code> – Estimate NPC reaction to proposed
-            action.
-          </li>
-          <li>
-            <code>api.npcPersonalities.getPersonalityHistory</code> – Track trait evolution over
-            time.
-          </li>
-          <li>
-            <code>api.diplomatic.getRelationModifiers</code> – See personality-based relationship
-            adjustments.
+            Personality changes happen gradually &mdash; you will not see a
+            Diplomat suddenly become an Aggressor overnight. This makes long-term
+            relationship strategies viable and rewarding.
           </li>
         </ul>
       </Section>
 
       <WarningBox title="Best Practices">
-        <ul className="list-disc space-y-1 pl-6">
+        <ul className="list-disc space-y-2 pl-6">
           <li>
-            <Users2 className="inline h-4 w-4" /> Review NPC personalities before major diplomatic
-            initiatives to predict outcomes.
+            <Users2 className="inline h-4 w-4" /> Always review a country's
+            personality profile before launching major diplomatic initiatives.
           </li>
           <li>
-            <TrendingUp className="inline h-4 w-4" /> Track personality drift to identify changing
-            NPC attitudes and adjust strategies.
+            <TrendingUp className="inline h-4 w-4" /> Track personality drift
+            over time. If a rival is becoming more cooperative, it may be the
+            right moment to extend an olive branch.
           </li>
           <li>
-            <Target className="inline h-4 w-4" /> Tailor proposals to NPC archetypes (e.g., economic
-            deals for Pragmatists, alliances for Diplomats).
+            <Target className="inline h-4 w-4" /> Tailor your approach to the
+            archetype. Offer economic deals to Pragmatists, propose alliances to
+            Diplomats, and show strength when dealing with Aggressors.
           </li>
         </ul>
       </WarningBox>
 
-      <InfoBox title="Related Documentation">
+      <InfoBox title="Related Guides">
         <ul className="list-disc space-y-1 pl-6">
           <li>
-            <code>docs/systems/npc-ai.md</code> – Complete technical reference with formulas and
-            examples.
+            <Link
+              href="/help/diplomacy/missions"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Diplomatic Missions
+            </Link>{" "}
+            &mdash; Use personality insights to choose the right missions.
           </li>
           <li>
-            <code>/help/diplomacy/missions</code> – Using personality insights in diplomatic
-            missions.
+            <Link
+              href="/help/diplomacy/scenarios"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Diplomatic Scenarios
+            </Link>{" "}
+            &mdash; See how NPC personalities shape scenario outcomes.
           </li>
           <li>
-            <code>/help/diplomacy/scenarios</code> – NPC responses in dynamic scenarios.
+            <Link
+              href="/help/diplomacy/embassies"
+              className="text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Embassy Network
+            </Link>{" "}
+            &mdash; Build the diplomatic infrastructure to engage with NPCs.
           </li>
         </ul>
       </InfoBox>
+      </ContentCard>
     </ArticleLayout>
   );
 }

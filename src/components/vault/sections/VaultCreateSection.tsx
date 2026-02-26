@@ -4,31 +4,46 @@ import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Hammer,
   ArrowRightLeft,
   Plus,
   Inbox,
   Send,
   History,
-  AlertCircle,
   TrendingUp,
+  ShoppingCart,
+  Clock,
+  Layers,
+  Gavel,
+  Store,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
-import { CometCard } from "~/components/ui/comet-card";
+import { Card } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Skeleton } from "~/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { vaultNotify } from "~/lib/vault-notifications";
+import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import type { CardInstance } from "~/types/cards-display";
+import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 
-const CraftingWorkbench = dynamic(
-  () => import("~/components/cards/crafting/CraftingWorkbench").then(m => m.CraftingWorkbench),
-  { ssr: false }
-);
-const RecipeBrowser = dynamic(
-  () => import("~/components/cards/crafting/RecipeBrowser").then(m => m.RecipeBrowser),
-  { ssr: false }
-);
 const TradeOfferModal = dynamic(
   () => import("~/components/cards/trading/TradeOfferModal").then(m => m.TradeOfferModal),
   { ssr: false }
@@ -42,141 +57,510 @@ const TradeHistory = dynamic(
   { ssr: false }
 );
 
-type SubTab = "crafting" | "trading";
+type SubTab = "trading" | "market";
 
-const SUB_TABS: { id: SubTab; label: string; icon: typeof Hammer }[] = [
-  { id: "crafting", label: "Crafting", icon: Hammer },
-  { id: "trading", label: "Trading", icon: ArrowRightLeft },
+const SUB_TABS: { id: SubTab; label: string; icon: typeof ArrowRightLeft }[] = [
+  { id: "market", label: "Marketplace", icon: ShoppingCart },
+  { id: "trading", label: "P2P Trading", icon: ArrowRightLeft },
 ];
 
 interface VaultCreateSectionProps {
   initialTab?: string | null;
 }
 
-// ─── Crafting Tab ────────────────────────────────────────────────
+// ─── Auction Card (compact) ──────────────────────────────────────
 
-function CraftingTab() {
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+function AuctionCard({ auction, onBid, onBuyout, isBidding, isBuyingOut }: {
+  auction: any;
+  onBid: (auctionId: string, amount: number) => void;
+  onBuyout: (auctionId: string) => void;
+  isBidding: boolean;
+  isBuyingOut: boolean;
+}) {
+  const card = auction.CardOwnership?.cards;
+  const title = card?.title ?? "Unknown Card";
+  const rarity = card?.rarity ?? "COMMON";
+  const artwork = card?.artwork;
+  const currentBid = auction.currentBid ?? auction.startingPrice;
+  const bidCount = auction.bidCount ?? auction.AuctionBid?.length ?? 0;
+  const endTime = new Date(auction.endTime);
+  const now = new Date();
+  const msLeft = endTime.getTime() - now.getTime();
+  const minsLeft = Math.max(0, Math.floor(msLeft / 60000));
+  const isUrgent = minsLeft < 10;
 
-  const { data: inventoryData, refetch: refetchInventory } = api.cards.getMyCards.useQuery({ sortBy: "acquired" });
-  const { data: craftingStats } = api.crafting.getCraftingStats.useQuery();
-  const { data: historyData } = api.crafting.getCraftingHistory.useQuery({ limit: 10 });
+  const rarityColor: Record<string, string> = {
+    LEGENDARY: "text-amber-400 border-amber-400/30",
+    EPIC: "text-purple-400 border-purple-400/30",
+    RARE: "text-blue-400 border-blue-400/30",
+    UNCOMMON: "text-green-400 border-green-400/30",
+    COMMON: "text-gray-400 border-gray-400/30",
+  };
+  const colorClass = rarityColor[rarity] ?? "text-cyan-400 border-cyan-400/30";
 
-  const availableCards: CardInstance[] = useMemo(
+  return (
+    <div className={cn("glass-hierarchy-child flex gap-3 rounded-lg border p-3", colorClass.split(" ")[1])}>
+      {/* Artwork thumbnail */}
+      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+        <CardHolographicCover
+          cardType={card?.cardType || "NATION"}
+          rarity={rarity}
+          title={title}
+        />
+        {artwork && (
+          <img
+            src={artwork}
+            alt={title}
+            className="absolute inset-0 h-full w-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-xs font-bold">{title}</span>
+          <Badge variant="outline" className={cn("text-[8px] px-1 py-0 flex-shrink-0", colorClass.split(" ")[0])}>
+            {rarity}
+          </Badge>
+        </div>
+        <div className="mt-0.5 flex items-center gap-3 text-[0.6rem] text-muted-foreground">
+          <span>{bidCount} bid{bidCount !== 1 ? "s" : ""}</span>
+          <span className={cn("flex items-center gap-0.5", isUrgent ? "text-red-400" : "")}>
+            <Clock className="h-2.5 w-2.5" />
+            {minsLeft > 60 ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m` : `${minsLeft}m`}
+          </span>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span className="text-sm font-bold text-amber-400">{currentBid.toLocaleString()} IxC</span>
+          <div className="flex gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 px-2 text-[0.6rem]"
+              onClick={() => onBid(auction.id, currentBid + 1)}
+              disabled={isBidding}
+            >
+              <Gavel className="mr-1 h-2.5 w-2.5" /> Bid
+            </Button>
+            {auction.buyoutPrice && (
+              <Button
+                size="sm"
+                className="h-6 px-2 text-[0.6rem]"
+                onClick={() => onBuyout(auction.id)}
+                disabled={isBuyingOut}
+              >
+                Buy {auction.buyoutPrice.toLocaleString()}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Create Auction Modal ────────────────────────────────────────
+
+function CreateAuctionModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [startingPrice, setStartingPrice] = useState("");
+  const [buyoutPrice, setBuyoutPrice] = useState("");
+  const [duration, setDuration] = useState<"30" | "60">("60");
+
+  const utils = api.useUtils();
+
+  const { data: inventoryData, isLoading: inventoryLoading } = api.cards.getMyCards.useQuery(
+    { sortBy: "value" },
+    { enabled: open }
+  );
+
+  const cards: CardInstance[] = useMemo(
     () =>
       inventoryData?.map((ownership: any) => ({
-        id: ownership.id,
-        title: ownership.cards.title,
-        description: ownership.cards.description || "",
-        artwork: ownership.cards.artwork || "/images/cards/placeholder-nation.png",
-        artworkVariants: ownership.cards.artworkVariants || null,
-        cardType: ownership.cards.cardType,
-        rarity: ownership.cards.rarity,
-        season: ownership.cards.season,
-        nsCardId: ownership.cards.nsCardId || null,
-        nsSeason: ownership.cards.nsSeason || null,
-        nsData: ownership.cards.nsData || null,
-        wikiSource: ownership.cards.wikiSource || null,
-        wikiArticleTitle: ownership.cards.wikiArticleTitle || null,
-        wikiUrl: ownership.cards.wikiUrl || null,
-        countryId: ownership.cards.countryId,
-        stats: ownership.cards.stats || {},
-        marketValue: ownership.cards.marketValue || 0,
-        totalSupply: ownership.cards.totalSupply || 0,
-        level: ownership.level || 1,
-        evolutionStage: ownership.cards.evolutionStage || 0,
-        enhancements: ownership.cards.enhancements || null,
-        createdAt: ownership.cards.createdAt,
-        updatedAt: ownership.cards.updatedAt,
-        lastTrade: ownership.cards.lastTrade || null,
-        country: ownership.cards.country,
-        owners: [],
-      })) || [],
+        id: ownership.cards?.id ?? ownership.id,
+        title: ownership.cards?.title ?? "Unknown",
+        rarity: ownership.cards?.rarity ?? "COMMON",
+        artwork: ownership.cards?.artwork || "/images/cards/placeholder-nation.png",
+        marketValue: ownership.cards?.marketValue || 0,
+        cardType: ownership.cards?.cardType ?? "NS_IMPORT",
+      })) as CardInstance[] || [],
     [inventoryData]
   );
 
-  const history = historyData?.history ?? [];
+  const createAuction = api.cardMarket.createAuction.useMutation({
+    onSuccess: (data) => {
+      vaultNotify.success(data.message ?? "Auction created!");
+      void utils.cardMarket.getActiveAuctions.invalidate();
+      void utils.cardMarket.getMyActiveAuctions.invalidate();
+      handleClose();
+    },
+    onError: (error) => {
+      vaultNotify.error(error.message);
+    },
+  });
 
-  const handleCraftComplete = async (result: any) => {
-    await refetchInventory();
+  const handleClose = () => {
+    setSelectedCardId(null);
+    setStartingPrice("");
+    setBuyoutPrice("");
+    setDuration("60");
+    onClose();
+  };
+
+  const handleSubmit = () => {
+    if (!selectedCardId || !startingPrice) return;
+    const sp = parseInt(startingPrice);
+    const bp = buyoutPrice ? parseInt(buyoutPrice) : undefined;
+    if (isNaN(sp) || sp < 1) return;
+    if (bp !== undefined && (isNaN(bp) || bp <= sp)) {
+      vaultNotify.error("Buyout price must be greater than starting price");
+      return;
+    }
+    createAuction.mutate({
+      cardId: selectedCardId,
+      startingPrice: sp,
+      buyoutPrice: bp,
+      duration,
+    });
+  };
+
+  const rarityColor: Record<string, string> = {
+    LEGENDARY: "text-amber-400",
+    EPIC: "text-purple-400",
+    RARE: "text-blue-400",
+    UNCOMMON: "text-green-400",
+    COMMON: "text-gray-400",
   };
 
   return (
-    <div className="space-y-8">
-      {/* Stats overview */}
-      {craftingStats && (
-        <CometCard className="p-6" glassDepth="parent">
-          <h2 className="text-xl font-black text-foreground mb-4">Crafting Statistics</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-3xl font-black text-purple-400">{craftingStats.totalCrafts}</div>
-              <div className="text-muted-foreground text-sm">Total Crafts</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-black text-green-400">{craftingStats.successfulCrafts}</div>
-              <div className="text-muted-foreground text-sm">Successful</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-black text-yellow-400">{craftingStats.successRate.toFixed(1)}%</div>
-              <div className="text-muted-foreground text-sm">Success Rate</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-black text-blue-400">{craftingStats.uniqueRecipesCrafted}</div>
-              <div className="text-muted-foreground text-sm">Unique Recipes</div>
-            </div>
-          </div>
-        </CometCard>
-      )}
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-sm font-bold">Create Auction Listing</DialogTitle>
+        </DialogHeader>
 
-      {/* Main crafting interface */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <RecipeBrowser selectedRecipeId={selectedRecipeId} onRecipeSelect={setSelectedRecipeId} />
+        <div className="space-y-4">
+          {/* Step 1: Select Card */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">Select Card</label>
+            {inventoryLoading ? (
+              <div className="space-y-1.5">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 rounded-lg" />)}
+              </div>
+            ) : cards.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-3 text-center">No cards in inventory</p>
+            ) : (
+              <div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-white/10 p-1.5">
+                {cards.map((card: any) => (
+                  <button
+                    key={card.id}
+                    onClick={() => setSelectedCardId(card.id)}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left transition-all",
+                      selectedCardId === card.id
+                        ? "bg-emerald-500/20 ring-1 ring-emerald-400/50"
+                        : "hover:bg-white/5"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-muted">
+                        <CardHolographicCover
+                          cardType={card.cardType}
+                          rarity={card.rarity}
+                          title={card.title}
+                        />
+                        {card.artwork && (
+                          <img
+                            src={card.artwork}
+                            alt={card.title}
+                            className="absolute inset-0 h-full w-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold">{card.title}</span>
+                        <span className={cn("ml-2 text-[0.6rem]", rarityColor[card.rarity] || "text-gray-400")}>
+                          {card.rarity}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-amber-400">{(card.marketValue || 0).toLocaleString()} IxC</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Step 2: Pricing */}
+          {selectedCardId && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-muted-foreground">Starting Price (IxC)</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={startingPrice}
+                    onChange={(e) => setStartingPrice(e.target.value)}
+                    placeholder="1"
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-muted-foreground">Buyout Price (optional)</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={buyoutPrice}
+                    onChange={(e) => setBuyoutPrice(e.target.value)}
+                    placeholder="None"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Duration</label>
+                <Select value={duration} onValueChange={(v) => setDuration(v as "30" | "60")}>
+                  <SelectTrigger className="h-8 w-full text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 minutes (Express)</SelectItem>
+                    <SelectItem value="60">60 minutes (Standard)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <p className="text-[0.6rem] text-muted-foreground">
+                Listing fee: 5 IxC • Market fee: 10% on sales over 100 IxC
+              </p>
+            </>
+          )}
         </div>
-        <div className="lg:col-span-2">
-          <CraftingWorkbench recipeId={selectedRecipeId} availableCards={availableCards} onCraftComplete={handleCraftComplete} />
+
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={handleClose} className="text-xs">Cancel</Button>
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={!selectedCardId || !startingPrice || createAuction.isPending}
+            className="text-xs"
+          >
+            {createAuction.isPending ? "Creating..." : "Create Listing"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Market Tab (moved from VaultAcquireSection) ─────────────────
+
+function MarketTab() {
+  const [selectedTab, setSelectedTab] = useState("browse");
+  const [createAuctionOpen, setCreateAuctionOpen] = useState(false);
+
+  const { data: activeData, isLoading: activeLoading } = api.cardMarket.getActiveAuctions.useQuery({ limit: 20, offset: 0 });
+  const { data: endingSoonData, isLoading: endingSoonLoading } = api.cardMarket.getEndingSoon.useQuery({ limit: 10 });
+  const { data: myListingsData, isLoading: myListingsLoading } = api.cardMarket.getMyActiveAuctions.useQuery();
+  const { data: myBidsData, isLoading: myBidsLoading } = api.cardMarket.getMyActiveBids.useQuery();
+
+  const { placeBid, executeBuyout, isBidding, isBuyingOut } = useAuctionBid();
+
+  const activeAuctions = activeData?.auctions ?? [];
+  const endingSoon = endingSoonData?.auctions ?? [];
+  const myListings = myListingsData?.auctions ?? [];
+  const myBids = myBidsData?.auctions ?? [];
+
+  return (
+    <div className="space-y-4">
+      {/* Header with Create Listing button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="h-3.5 w-3.5 text-emerald-400" />
+          <span className="text-xs font-bold">Marketplace</span>
         </div>
+        <Button size="sm" onClick={() => setCreateAuctionOpen(true)} className="glass-hierarchy-interactive text-xs">
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Listing
+        </Button>
       </div>
 
-      {/* History */}
-      <CometCard className="p-6" glassDepth="parent">
-        <h2 className="text-xl font-black text-foreground mb-4">Recent Crafting History</h2>
-        {history.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No crafting history yet. Start crafting to see your results here!
+      {/* Stats strip */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Active Auctions", value: activeAuctions.length, color: "text-cyan-400", icon: Gavel },
+          { label: "My Listings", value: myListings.length, color: "text-amber-400", icon: Store },
+          { label: "My Bids", value: myBids.length, color: "text-blue-400", icon: TrendingUp },
+        ].map((stat) => (
+          <div key={stat.label} className="glass-hierarchy-child flex items-center gap-2.5 rounded-lg p-2.5">
+            <stat.icon className={cn("h-3.5 w-3.5 flex-shrink-0", stat.color)} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[0.65rem] text-muted-foreground truncate">{stat.label}</p>
+              <p className={cn("text-lg font-bold leading-tight", stat.color)}>{stat.value}</p>
+            </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {history.map((entry: any) => (
-              <CometCard key={entry.id} className="p-4" glassDepth="child">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-foreground">{entry.recipe.name}</span>
-                      {entry.success ? (
-                        <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-xs font-semibold">Success</span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold">Failed</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{new Date(entry.craftedAt).toLocaleString()}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-muted-foreground">
-                      <span className="text-yellow-400 font-semibold">-{entry.ixCreditsSpent.toLocaleString()}</span> IxCredits
-                    </div>
-                    {entry.collectorXPGain > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        <span className="text-blue-400 font-semibold">+{entry.collectorXPGain}</span> XP
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <Card className="glass-hierarchy-child p-3">
+        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+          <TabsList className="glass-hierarchy-child mb-3">
+            <TabsTrigger value="browse" className="px-3 py-1.5 text-xs">
+              <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> Browse
+            </TabsTrigger>
+            <TabsTrigger value="ending" className="px-3 py-1.5 text-xs">
+              <Clock className="mr-1.5 h-3.5 w-3.5" /> Ending Soon
+            </TabsTrigger>
+            <TabsTrigger value="listings" className="px-3 py-1.5 text-xs">
+              <Store className="mr-1.5 h-3.5 w-3.5" /> My Listings
+              {myListings.length > 0 && (
+                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-[9px] font-semibold text-white">{myListings.length}</span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="bids" className="px-3 py-1.5 text-xs">
+              <Gavel className="mr-1.5 h-3.5 w-3.5" /> My Bids
+              {myBids.length > 0 && (
+                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-[9px] font-semibold text-white">{myBids.length}</span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Browse */}
+          <TabsContent value="browse" className="space-y-2">
+            {activeLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-lg" />)}
+              </div>
+            ) : activeAuctions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <ShoppingCart className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                <p className="text-xs font-semibold text-foreground/80">No Active Auctions</p>
+                <p className="text-[0.6rem] text-muted-foreground mb-2">Be the first to list a card for sale!</p>
+                <Button size="sm" variant="outline" className="text-xs" onClick={() => setCreateAuctionOpen(true)}>
+                  <Plus className="mr-1.5 h-3 w-3" /> Create Listing
+                </Button>
+              </div>
+            ) : (
+              activeAuctions.map((auction: any) => (
+                <AuctionCard
+                  key={auction.id}
+                  auction={auction}
+                  onBid={placeBid}
+                  onBuyout={executeBuyout}
+                  isBidding={isBidding}
+                  isBuyingOut={isBuyingOut}
+                />
+              ))
+            )}
+          </TabsContent>
+
+          {/* Ending Soon */}
+          <TabsContent value="ending" className="space-y-2">
+            {endingSoonLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-lg" />)}
+              </div>
+            ) : endingSoon.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <Clock className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                <p className="text-xs font-semibold text-foreground/80">No Auctions Ending Soon</p>
+                <p className="text-[0.6rem] text-muted-foreground">Check back in a bit</p>
+              </div>
+            ) : (
+              endingSoon.map((auction: any) => (
+                <AuctionCard
+                  key={auction.id}
+                  auction={auction}
+                  onBid={placeBid}
+                  onBuyout={executeBuyout}
+                  isBidding={isBidding}
+                  isBuyingOut={isBuyingOut}
+                />
+              ))
+            )}
+          </TabsContent>
+
+          {/* My Listings */}
+          <TabsContent value="listings" className="space-y-2">
+            {myListingsLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map(i => <Skeleton key={i} className="h-20 rounded-lg" />)}
+              </div>
+            ) : myListings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <Store className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                <p className="text-xs font-semibold text-foreground/80">No Active Listings</p>
+                <p className="text-[0.6rem] text-muted-foreground mb-2">List your cards for sale on the marketplace</p>
+                <Button size="sm" variant="outline" className="text-xs" onClick={() => setCreateAuctionOpen(true)}>
+                  <Plus className="mr-1.5 h-3 w-3" /> Create Listing
+                </Button>
+              </div>
+            ) : (
+              myListings.map((auction: any) => {
+                const card = auction.CardOwnership?.cards;
+                const currentBid = auction.currentBid ?? auction.startingPrice;
+                const bidCount = auction.AuctionBid?.length ?? 0;
+                return (
+                  <div key={auction.id} className="glass-hierarchy-child flex items-center justify-between rounded-lg border border-amber-400/20 p-3">
+                    <div className="flex items-center gap-2.5">
+                      <Store className="h-3.5 w-3.5 text-amber-400" />
+                      <div>
+                        <span className="text-xs font-bold">{card?.title ?? "Unknown"}</span>
+                        <p className="text-[0.6rem] text-muted-foreground">{bidCount} bid{bidCount !== 1 ? "s" : ""}</p>
                       </div>
-                    )}
+                    </div>
+                    <span className="text-sm font-bold text-amber-400">{currentBid.toLocaleString()} IxC</span>
                   </div>
-                </div>
-              </CometCard>
-            ))}
-          </div>
-        )}
-      </CometCard>
+                );
+              })
+            )}
+          </TabsContent>
+
+          {/* My Bids */}
+          <TabsContent value="bids" className="space-y-2">
+            {myBidsLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map(i => <Skeleton key={i} className="h-20 rounded-lg" />)}
+              </div>
+            ) : myBids.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6">
+                <Gavel className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                <p className="text-xs font-semibold text-foreground/80">No Active Bids</p>
+                <p className="text-[0.6rem] text-muted-foreground">Browse auctions and place your first bid</p>
+              </div>
+            ) : (
+              myBids.map((auction: any) => {
+                const card = auction.CardOwnership?.cards;
+                const currentBid = auction.currentBid ?? auction.startingPrice;
+                const endTime = new Date(auction.endTime);
+                const minsLeft = Math.max(0, Math.floor((endTime.getTime() - Date.now()) / 60000));
+                return (
+                  <div key={auction.id} className="glass-hierarchy-child flex items-center justify-between rounded-lg border border-blue-400/20 p-3">
+                    <div className="flex items-center gap-2.5">
+                      <Gavel className="h-3.5 w-3.5 text-blue-400" />
+                      <div>
+                        <span className="text-xs font-bold">{card?.title ?? "Unknown"}</span>
+                        <p className="text-[0.6rem] text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" />
+                          {minsLeft > 60 ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m` : `${minsLeft}m`} left
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-bold text-blue-400">{currentBid.toLocaleString()} IxC</span>
+                  </div>
+                );
+              })
+            )}
+          </TabsContent>
+        </Tabs>
+      </Card>
+
+      <CreateAuctionModal open={createAuctionOpen} onClose={() => setCreateAuctionOpen(false)} />
     </div>
   );
 }
@@ -199,122 +583,105 @@ function TradingTab() {
   const successRate = totalTrades > 0 ? ((completedTrades / totalTrades) * 100).toFixed(0) : "0";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h3 className="text-xl font-black text-foreground flex items-center gap-3">
-            <ArrowRightLeft className="h-5 w-5 text-blue-400" />
-            Trading Hub
-          </h3>
-          <p className="text-sm text-muted-foreground">Trade cards directly with other players</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ArrowRightLeft className="h-3.5 w-3.5 text-blue-400" />
+          <span className="text-xs font-bold">Trading Hub</span>
         </div>
         <Button onClick={() => setCreateTradeOpen(true)} className="glass-hierarchy-interactive" size="sm">
-          <Plus className="mr-2 h-4 w-4" /> New Trade
+          <Plus className="mr-1.5 h-3.5 w-3.5" /> New Trade
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="glass-hierarchy-child rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-blue-500/20 p-3"><ArrowRightLeft className="h-5 w-5 text-blue-400" /></div>
-            <div>
-              <p className="text-sm text-muted-foreground">Active Trades</p>
-              <p className="text-2xl font-bold text-foreground">{activeTrades?.length || 0}</p>
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Active Trades", value: activeTrades?.length || 0, color: "text-blue-400", icon: ArrowRightLeft },
+          { label: "Completed", value: completedTrades, color: "text-green-400", icon: History },
+          { label: "Success Rate", value: `${successRate}%`, color: "text-amber-400", icon: TrendingUp },
+        ].map((stat) => (
+          <div key={stat.label} className="glass-hierarchy-child flex items-center gap-2.5 rounded-lg p-2.5">
+            <stat.icon className={cn("h-3.5 w-3.5 flex-shrink-0", stat.color)} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[0.65rem] text-muted-foreground truncate">{stat.label}</p>
+              <p className={cn("text-lg font-bold leading-tight", stat.color)}>{stat.value}</p>
             </div>
           </div>
-        </div>
-        <div className="glass-hierarchy-child rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-green-500/20 p-3"><History className="h-5 w-5 text-green-400" /></div>
-            <div>
-              <p className="text-sm text-muted-foreground">Completed</p>
-              <p className="text-2xl font-bold text-foreground">{completedTrades}</p>
-            </div>
-          </div>
-        </div>
-        <div className="glass-hierarchy-child rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-amber-500/20 p-3"><TrendingUp className="h-5 w-5 text-amber-400" /></div>
-            <div>
-              <p className="text-sm text-muted-foreground">Success Rate</p>
-              <p className="text-2xl font-bold text-foreground">{successRate}%</p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Tabs */}
-      <div className="glass-hierarchy-parent rounded-xl p-6">
+      <Card className="glass-hierarchy-child p-3">
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="glass-hierarchy-child mb-6">
-            <TabsTrigger value="active" className="relative px-6 py-3">
-              <ArrowRightLeft className="mr-2 h-4 w-4" /> Active
+          <TabsList className="glass-hierarchy-child mb-3">
+            <TabsTrigger value="active" className="relative px-3 py-1.5 text-xs">
+              <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" /> Active
               {activeTrades && activeTrades.length > 0 && (
-                <span className="ml-2 rounded-full bg-blue-500 px-2 py-0.5 text-xs font-semibold text-white">{activeTrades.length}</span>
+                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-[9px] font-semibold text-white">{activeTrades.length}</span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="incoming" className="relative px-6 py-3">
-              <Inbox className="mr-2 h-4 w-4" /> Incoming
-              {incomingTrades.length > 0 && <span className="ml-2 rounded-full bg-green-500 px-2 py-0.5 text-xs font-semibold text-white">{incomingTrades.length}</span>}
+            <TabsTrigger value="incoming" className="relative px-3 py-1.5 text-xs">
+              <Inbox className="mr-1.5 h-3.5 w-3.5" /> Incoming
+              {incomingTrades.length > 0 && <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-[9px] font-semibold text-white">{incomingTrades.length}</span>}
             </TabsTrigger>
-            <TabsTrigger value="outgoing" className="relative px-6 py-3">
-              <Send className="mr-2 h-4 w-4" /> Outgoing
-              {outgoingTrades.length > 0 && <span className="ml-2 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">{outgoingTrades.length}</span>}
+            <TabsTrigger value="outgoing" className="relative px-3 py-1.5 text-xs">
+              <Send className="mr-1.5 h-3.5 w-3.5" /> Outgoing
+              {outgoingTrades.length > 0 && <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-[9px] font-semibold text-white">{outgoingTrades.length}</span>}
             </TabsTrigger>
-            <TabsTrigger value="history" className="relative px-6 py-3">
-              <History className="mr-2 h-4 w-4" /> History
+            <TabsTrigger value="history" className="relative px-3 py-1.5 text-xs">
+              <History className="mr-1.5 h-3.5 w-3.5" /> History
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="active" className="space-y-4">
+          <TabsContent value="active" className="space-y-3">
             {activeLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+              <div className="flex items-center justify-center py-6">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               </div>
             ) : activeTrades && activeTrades.length > 0 ? (
               activeTrades.map((trade: any) => (
                 <TradeNegotiation key={trade.id} tradeId={trade.id} isRecipient={trade.recipientId === userId} onRefresh={refetchActive} />
               ))
             ) : (
-              <div className="glass-hierarchy-child rounded-lg p-12 text-center">
-                <ArrowRightLeft className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
-                <h3 className="text-xl font-semibold text-foreground/80 mb-2">No Active Trades</h3>
-                <p className="text-muted-foreground mb-6">Start trading by creating a new offer</p>
-                <Button onClick={() => setCreateTradeOpen(true)} className="glass-hierarchy-interactive">
-                  <Plus className="mr-2 h-4 w-4" /> Create Trade Offer
+              <div className="glass-hierarchy-child rounded-lg py-6 text-center">
+                <ArrowRightLeft className="mx-auto h-8 w-8 text-muted-foreground/20 mb-2" />
+                <p className="text-xs font-semibold text-foreground/80 mb-1">No Active Trades</p>
+                <p className="text-[0.65rem] text-muted-foreground mb-3">Start trading by creating a new offer</p>
+                <Button onClick={() => setCreateTradeOpen(true)} size="sm" className="glass-hierarchy-interactive text-xs">
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Trade Offer
                 </Button>
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="incoming" className="space-y-4">
+          <TabsContent value="incoming" className="space-y-3">
             {incomingTrades.length > 0 ? (
               incomingTrades.map((trade: any) => (
                 <TradeNegotiation key={trade.id} tradeId={trade.id} isRecipient={true} onRefresh={refetchActive} />
               ))
             ) : (
-              <div className="glass-hierarchy-child rounded-lg p-12 text-center">
-                <Inbox className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
-                <h3 className="text-xl font-semibold text-foreground/80 mb-2">No Incoming Trades</h3>
-                <p className="text-muted-foreground">You don't have any trade offers to review</p>
+              <div className="glass-hierarchy-child rounded-lg py-6 text-center">
+                <Inbox className="mx-auto h-8 w-8 text-muted-foreground/20 mb-2" />
+                <p className="text-xs font-semibold text-foreground/80 mb-1">No Incoming Trades</p>
+                <p className="text-[0.65rem] text-muted-foreground">You don&apos;t have any trade offers to review</p>
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="outgoing" className="space-y-4">
+          <TabsContent value="outgoing" className="space-y-3">
             {outgoingTrades.length > 0 ? (
               outgoingTrades.map((trade: any) => (
                 <TradeNegotiation key={trade.id} tradeId={trade.id} isRecipient={false} onRefresh={refetchActive} />
               ))
             ) : (
-              <div className="glass-hierarchy-child rounded-lg p-12 text-center">
-                <Send className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
-                <h3 className="text-xl font-semibold text-foreground/80 mb-2">No Outgoing Trades</h3>
-                <p className="text-muted-foreground mb-6">You haven't sent any trade offers yet</p>
-                <Button onClick={() => setCreateTradeOpen(true)} className="glass-hierarchy-interactive">
-                  <Plus className="mr-2 h-4 w-4" /> Create Trade Offer
+              <div className="glass-hierarchy-child rounded-lg py-6 text-center">
+                <Send className="mx-auto h-8 w-8 text-muted-foreground/20 mb-2" />
+                <p className="text-xs font-semibold text-foreground/80 mb-1">No Outgoing Trades</p>
+                <p className="text-[0.65rem] text-muted-foreground mb-3">You haven&apos;t sent any trade offers yet</p>
+                <Button onClick={() => setCreateTradeOpen(true)} size="sm" className="glass-hierarchy-interactive text-xs">
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Trade Offer
                 </Button>
               </div>
             )}
@@ -324,7 +691,7 @@ function TradingTab() {
             <TradeHistory />
           </TabsContent>
         </Tabs>
-      </div>
+      </Card>
 
       <TradeOfferModal open={createTradeOpen} onClose={() => { setCreateTradeOpen(false); refetchActive(); }} />
     </div>
@@ -335,15 +702,15 @@ function TradingTab() {
 
 function resolveInitialTab(initialTab: string | null | undefined): SubTab {
   if (initialTab === "trading") return "trading";
-  return "crafting";
+  return "market";
 }
 
 export function VaultCreateSection({ initialTab }: VaultCreateSectionProps) {
   const [activeTab, setActiveTab] = useState<SubTab>(() => resolveInitialTab(initialTab));
 
   return (
-    <div className="space-y-6">
-      <div className="flex gap-1 overflow-x-auto rounded-lg bg-black/20 p-1 backdrop-blur-sm">
+    <div className="space-y-4">
+      <div className="glass-hierarchy-child flex gap-1 overflow-x-auto rounded-lg p-1">
         {SUB_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -352,7 +719,7 @@ export function VaultCreateSection({ initialTab }: VaultCreateSectionProps) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 whitespace-nowrap rounded-md px-4 py-2.5 text-sm font-semibold transition-all",
+                "flex items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-all",
                 isActive
                   ? "bg-emerald-500/20 text-emerald-400 shadow-sm"
                   : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
@@ -373,7 +740,7 @@ export function VaultCreateSection({ initialTab }: VaultCreateSectionProps) {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.15 }}
         >
-          {activeTab === "crafting" && <CraftingTab />}
+          {activeTab === "market" && <MarketTab />}
           {activeTab === "trading" && <TradingTab />}
         </motion.div>
       </AnimatePresence>

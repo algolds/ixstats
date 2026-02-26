@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 
@@ -9,6 +9,7 @@ interface UseProfileSettingsProps {
 }
 
 export function useProfileSettings({ userProfileCountryId, userId }: UseProfileSettingsProps) {
+  const notify = useNotify();
   const [isEditingCountry, setIsEditingCountry] = useState(false);
   const [newCountryName, setNewCountryName] = useState("");
   const [flagUploadMode, setFlagUploadMode] = useState(false);
@@ -34,10 +35,10 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
       await refetchProfile();
       setIsEditingCountry(false);
       setNewCountryName("");
-      toast.success("Country name updated successfully!");
+      notify.success("Country name updated successfully!");
     } catch (error) {
       console.error("Failed to update country name:", error);
-      toast.error("Failed to update country name");
+      notify.error("Failed to update country name");
     }
   }, [userProfileCountryId, newCountryName, updateCountryNameMutation, refetchProfile]);
 
@@ -54,12 +55,12 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
       "image/svg+xml",
     ];
     if (!validTypes.includes(file.type)) {
-      toast.error("Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)");
+      notify.error("Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB");
+      notify.error("File size must be less than 5MB");
       return;
     }
 
@@ -82,13 +83,13 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
 
       if (result.success && result.url) {
         setUploadedFlagUrl(result.url);
-        toast.success('Image uploaded! Click "Save Flag" to apply.');
+        notify.success('Image uploaded! Click "Save Flag" to apply.');
       } else {
         throw new Error(result.error || "Upload failed");
       }
     } catch (error) {
       console.error("Failed to upload flag:", error);
-      toast.error("Failed to upload image. Please try again.");
+      notify.error("Failed to upload image. Please try again.");
     } finally {
       setIsUploadingFlag(false);
     }
@@ -96,7 +97,7 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
 
   const handleFlagSave = useCallback(async () => {
     if (!userProfileCountryId || !uploadedFlagUrl) {
-      toast.error("No flag to save");
+      notify.error("No flag to save");
       return;
     }
 
@@ -109,10 +110,10 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
       await refetchProfile();
       setFlagUploadMode(false);
       setUploadedFlagUrl(null);
-      toast.success("Flag saved successfully!");
+      notify.success("Flag saved successfully!");
     } catch (error) {
       console.error("Failed to save flag:", error);
-      toast.error("Failed to save flag");
+      notify.error("Failed to save flag");
     }
   }, [userProfileCountryId, uploadedFlagUrl, updateCountryFlagMutation, refetchProfile]);
 

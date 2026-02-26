@@ -187,7 +187,41 @@ export function getRarityVisualHierarchy(rarity: string): {
  * @returns Formatted stats object with labels and colors
  */
 export function formatCardStats(card: CardInstance): FormattedStats {
-  const stats = card.stats as Record<string, number> || {};
+  let stats = card.stats as Record<string, number> || {};
+
+  // For old lore cards: stats were stored in metadata.stats, not the stats column
+  if (Object.keys(stats).length === 0 && card.metadata) {
+    const metaStats = (card.metadata as Record<string, unknown>)?.stats;
+    if (metaStats && typeof metaStats === "object" && !Array.isArray(metaStats)) {
+      stats = metaStats as Record<string, number>;
+    }
+  }
+
+  // Handle legacy lore card stats format (historicalSignificance/culturalImpact/rarity/preserved)
+  if (stats.historicalSignificance !== undefined && stats.economic === undefined) {
+    return {
+      economic: {
+        value: Math.round(Math.min((stats.preserved ?? stats.rarity ?? 0) * 0.3, 100)),
+        label: "Economic",
+        color: "text-emerald-500",
+      },
+      diplomatic: {
+        value: Math.round(Math.min((stats.culturalImpact ?? 0) * 0.5, 100)),
+        label: "Diplomatic",
+        color: "text-blue-500",
+      },
+      military: {
+        value: Math.round(Math.min((stats.rarity ?? 0) * 0.2, 100)),
+        label: "Military",
+        color: "text-red-500",
+      },
+      social: {
+        value: Math.round(Math.min((stats.historicalSignificance ?? 0) * 0.5, 100)),
+        label: "Social",
+        color: "text-purple-500",
+      },
+    };
+  }
 
   return {
     economic: {

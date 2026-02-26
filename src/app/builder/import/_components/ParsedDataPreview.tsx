@@ -120,7 +120,7 @@ export const ParsedDataPreview: React.FC<ParsedDataPreviewProps> = ({
               </span>
             </div>
             <p className="text-lg font-semibold" style={{ color: "var(--color-text-primary)" }}>
-              {formatNumber(parsedData.population)}
+              {formatNumber(parsedData.population, 0)}
             </p>
           </div>
 

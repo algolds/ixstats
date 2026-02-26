@@ -45,6 +45,7 @@ interface ArticleQuality {
 interface LoreCardCandidate {
   title: string;
   description: string;
+  fullExcerpt: string;
   artwork: string;
   rarity: CardRarity;
   wikiSource: string;
@@ -52,13 +53,31 @@ interface LoreCardCandidate {
   wikiUrl: string;
   category: string;
   stats: {
+    economic: number;
+    diplomatic: number;
+    military: number;
+    social: number;
+  };
+  loreStats: {
     historicalSignificance: number;
     culturalImpact: number;
-    rarity: number;
-    preserved: number;
   };
   qualityScore: number;
 }
+
+/**
+ * Category-based stat weights for lore cards.
+ * Each category emphasizes different stats based on thematic relevance.
+ */
+const CATEGORY_STAT_WEIGHTS: Record<string, { economic: number; diplomatic: number; military: number; social: number }> = {
+  [LORE_CATEGORIES.HISTORICAL_FIGURES]: { economic: 0.15, diplomatic: 0.40, military: 0.15, social: 0.30 },
+  [LORE_CATEGORIES.LOCATIONS]:          { economic: 0.40, diplomatic: 0.20, military: 0.15, social: 0.25 },
+  [LORE_CATEGORIES.EVENTS]:             { economic: 0.20, diplomatic: 0.30, military: 0.35, social: 0.15 },
+  [LORE_CATEGORIES.ARTIFACTS]:          { economic: 0.30, diplomatic: 0.20, military: 0.10, social: 0.40 },
+  [LORE_CATEGORIES.CULTURE]:            { economic: 0.20, diplomatic: 0.25, military: 0.10, social: 0.45 },
+  [LORE_CATEGORIES.MYTHOLOGY]:          { economic: 0.15, diplomatic: 0.20, military: 0.25, social: 0.40 },
+  default:                              { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
+};
 
 /**
  * Wiki Lore Card Generator Service
@@ -69,7 +88,8 @@ export class WikiLoreCardGenerator {
    */
   async generateCard(
     articleTitle: string,
-    wikiSource: WikiSource
+    wikiSource: WikiSource,
+    options?: { requireImage?: boolean }
   ): Promise<LoreCardCandidate | null> {
     try {
       console.log(`[Lore Card Generator] Generating card for "${articleTitle}" from ${wikiSource}`);
@@ -78,6 +98,12 @@ export class WikiLoreCardGenerator {
       const articleData = await this.fetchArticleData(articleTitle, wikiSource);
       if (!articleData) {
         console.warn(`[Lore Card Generator] Article "${articleTitle}" not found`);
+        return null;
+      }
+
+      // Check image requirement
+      if (options?.requireImage && !articleData.image) {
+        console.log(`[Lore Card Generator] Skipping "${articleTitle}" — no image found`);
         return null;
       }
 
@@ -101,11 +127,16 @@ export class WikiLoreCardGenerator {
       // Extract image
       const artwork = this.extractArtwork(articleData, wikiSource);
 
-      // Generate summary
-      const description = this.generateSummary(articleData.extract || articleData.text);
+      // Generate summary (short for card face) and full excerpt (for lore tab)
+      const rawExcerpt = articleData.extract || articleData.text || "";
+      const description = this.generateSummary(rawExcerpt);
+      const fullExcerpt = rawExcerpt.slice(0, 2000).trim();
 
-      // Calculate stats
-      const stats = this.calculateStats(quality, qualityScore);
+      // Calculate standard stats (economic/diplomatic/military/social)
+      const stats = this.calculateStats(quality, qualityScore, category);
+
+      // Calculate lore-specific metrics for display
+      const loreStats = this.calculateLoreStats(quality);
 
       // Build wiki URL
       const wikiUrl = this.buildWikiUrl(articleTitle, wikiSource);
@@ -113,6 +144,7 @@ export class WikiLoreCardGenerator {
       const candidate: LoreCardCandidate = {
         title: articleTitle.replace(/_/g, " "),
         description,
+        fullExcerpt,
         artwork,
         rarity,
         wikiSource,
@@ -120,6 +152,7 @@ export class WikiLoreCardGenerator {
         wikiUrl,
         category,
         stats,
+        loreStats,
         qualityScore,
       };
 
@@ -152,7 +185,8 @@ export class WikiLoreCardGenerator {
       url.searchParams.set("format", "json");
       url.searchParams.set("titles", title);
       url.searchParams.set("prop", "extracts|pageimages|info|categories|links|revisions|images");
-      url.searchParams.set("exintro", "1"); // Get intro only for summary
+      url.searchParams.set("exchars", "2000"); // Get first ~2000 chars for full excerpt
+      url.searchParams.set("exlimit", "1");
       url.searchParams.set("explaintext", "1"); // Plain text
       url.searchParams.set("piprop", "original|name"); // Get original image and name
       url.searchParams.set("pithumbsize", "500"); // Thumbnail size
@@ -460,7 +494,7 @@ export class WikiLoreCardGenerator {
   private detectCategory(articleData: any): string {
     const categories = articleData.categories || [];
     const text = (articleData.text || "").toLowerCase();
-    const title = (articleData.title || "").toLowerCase();
+    const _title = (articleData.title || "").toLowerCase();
 
     // Check categories first
     for (const cat of categories) {
@@ -554,7 +588,7 @@ export class WikiLoreCardGenerator {
   /**
    * Extract artwork/image from article
    */
-  private extractArtwork(articleData: any, wikiSource: WikiSource): string {
+  private extractArtwork(articleData: any, _wikiSource: WikiSource): string {
     // Use original image from API if available
     if (articleData.image) {
       return articleData.image;
@@ -585,40 +619,52 @@ export class WikiLoreCardGenerator {
   }
 
   /**
-   * Calculate card stats based on quality
+   * Calculate standard card stats (economic/diplomatic/military/social)
+   * based on article quality metrics and category-specific weighting.
    */
   private calculateStats(
     quality: ArticleQuality,
-    qualityScore: number
+    qualityScore: number,
+    category: string
   ): {
+    economic: number;
+    diplomatic: number;
+    military: number;
+    social: number;
+  } {
+    const basePower = qualityScore;
+    const refPower = Math.min(quality.referenceCount * 8, 100);
+    const linkPower = Math.min(quality.inboundLinks * 5, 100);
+    const featuredBonus = quality.isFeatured ? 20 : 0;
+
+    const weights = CATEGORY_STAT_WEIGHTS[category] ?? CATEGORY_STAT_WEIGHTS.default!;
+
+    return {
+      economic: Math.round(Math.min(basePower * weights.economic + refPower * 0.15 + featuredBonus * 0.1, 100)),
+      diplomatic: Math.round(Math.min(basePower * weights.diplomatic + linkPower * 0.2 + featuredBonus * 0.15, 100)),
+      military: Math.round(Math.min(basePower * weights.military + refPower * 0.1, 100)),
+      social: Math.round(Math.min(basePower * weights.social + linkPower * 0.15 + featuredBonus * 0.2, 100)),
+    };
+  }
+
+  /**
+   * Calculate lore-specific metrics for display in the Lore tab.
+   */
+  private calculateLoreStats(quality: ArticleQuality): {
     historicalSignificance: number;
     culturalImpact: number;
-    rarity: number;
-    preserved: number;
   } {
-    // Historical significance (0-100) - based on references and inbound links
     const historicalSignificance = Math.min(
       (quality.referenceCount * 10 + quality.inboundLinks * 5) / 2,
       100
     );
-
-    // Cultural impact (0-100) - based on inbound links and featured status
     const culturalImpact = Math.min(
       quality.inboundLinks * 10 + (quality.isFeatured ? 50 : 0),
       100
     );
-
-    // Rarity stat matches quality score
-    const rarity = qualityScore;
-
-    // Preserved is always 100 for lore cards
-    const preserved = 100;
-
     return {
       historicalSignificance: Math.round(historicalSignificance),
       culturalImpact: Math.round(culturalImpact),
-      rarity: Math.round(rarity),
-      preserved,
     };
   }
 
@@ -648,9 +694,13 @@ export class WikiLoreCardGenerator {
         season: 1, // TODO: Use current season
         wikiSource: candidate.wikiSource,
         wikiArticleTitle: candidate.wikiArticleTitle,
+        stats: candidate.stats,
         metadata: {
           wikiUrl: candidate.wikiUrl,
-          stats: candidate.stats,
+          category: candidate.category,
+          qualityScore: candidate.qualityScore,
+          loreStats: candidate.loreStats,
+          fullExcerpt: candidate.fullExcerpt,
         },
         totalSupply: 0, // Unlimited for lore cards
         marketValue: this.getBaseMarketValue(candidate.rarity),
@@ -675,6 +725,57 @@ export class WikiLoreCardGenerator {
     };
 
     return baseValues[rarity];
+  }
+
+  /**
+   * Check if a wiki article has a page image
+   */
+  private async checkArticleHasImage(
+    title: string,
+    wikiSource: WikiSource
+  ): Promise<boolean> {
+    try {
+      const apiUrl = getMediaWikiApiUrl(wikiSource);
+      const userAgent = getWikiUserAgent(wikiSource);
+
+      const url = new URL(apiUrl);
+      url.searchParams.set("action", "query");
+      url.searchParams.set("format", "json");
+      url.searchParams.set("titles", title);
+      url.searchParams.set("prop", "pageimages");
+      url.searchParams.set("piprop", "original");
+
+      const response = await fetch(url.toString(), {
+        headers: { "User-Agent": userAgent },
+      });
+      if (!response.ok) return false;
+
+      const data = await response.json();
+      const page = Object.values(data.query?.pages ?? {})[0] as any;
+      return !!page?.original?.source;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Fetch random articles that have images, for lore card generation.
+   * Fetches extra candidates to account for articles without images.
+   */
+  async fetchRandomArticlesWithImages(
+    count: number,
+    wikiSource: WikiSource
+  ): Promise<string[]> {
+    const candidates = await this.fetchRandomArticles(count * 3, wikiSource);
+    const withImages: string[] = [];
+
+    for (const title of candidates) {
+      if (withImages.length >= count) break;
+      const hasImage = await this.checkArticleHasImage(title, wikiSource);
+      if (hasImage) withImages.push(title);
+    }
+
+    return withImages;
   }
 
   /**

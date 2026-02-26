@@ -34,7 +34,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/achievements.md`](systems/achievements.md) – achievement unlock logic, leaderboards, and notifications
 - [`systems/builder.md`](systems/builder.md) – nation creation flows, atomic components, and data ingestion
 - [`systems/help.md`](systems/help.md) – in-app help center architecture and authoring workflow
-- [`systems/admin-cms.md`](systems/admin-cms.md) – 18 admin interfaces, CMS architecture, and role-based access
+- [`systems/admin-cms.md`](systems/admin-cms.md) – 20 admin interfaces, CMS architecture, and role-based access
 - [`systems/calculations.md`](systems/calculations.md) – economic formulas with step-by-step examples
 - [`systems/npc-ai.md`](systems/npc-ai.md) – NPC personality system documentation
 - [`systems/crisis-events.md`](systems/crisis-events.md) – crisis management system guide
@@ -42,6 +42,9 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/card-packs.md`](systems/card-packs.md) – card pack types, rarity, opening flow
 - [`systems/myvault.md`](systems/myvault.md) – MyVault economy, IxCredits
 - [`systems/ns-integration.md`](systems/ns-integration.md) – NationStates integration
+- [`systems/elections.md`](systems/elections.md) – Elections, political parties, and legislature management
+- [`systems/national-issues.md`](systems/national-issues.md) – National issues engine and consequences
+- [`systems/forum.md`](systems/forum.md) – XenForo forum integration and widget embedding
 
 ### Operations
 - [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
@@ -53,7 +56,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`processes/contributing.md`](processes/contributing.md) – coding standards, review expectations, and release management
 
 ### Reference
-- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (920+ endpoints across 61 routers)
+- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (927 endpoints across 61 routers)
 - [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
 - [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
 - [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs

@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface EnhancedAccountManagerProps {
   countryId: string;
@@ -51,12 +51,13 @@ export function EnhancedAccountManager({
   onCreateAccount,
   isOwner,
 }: EnhancedAccountManagerProps) {
+  const notify = useNotify();
   const [filterType, setFilterType] = useState<"all" | "government" | "media" | "citizen">("all");
   const [favoriteAccounts, setFavoriteAccounts] = useState<string[]>([]);
 
   const updateAccountMutation = api.thinkpages.updateAccount.useMutation({
     onSuccess: () => {
-      toast.success("Account visibility updated");
+      notify.success("Account visibility updated");
     },
   });
 

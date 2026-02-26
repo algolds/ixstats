@@ -19,9 +19,10 @@ import {
 } from "lucide-react";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 export function CountryAdminPanel() {
+  const notify = useNotify();
   // Fetch all countries
   const { data, isLoading, error, refetch } = api.countries.getAll.useQuery({ limit: 1000 });
   const [search, setSearch] = useState("");
@@ -98,10 +99,10 @@ export function CountryAdminPanel() {
         countryId,
         [field]: !currentValue,
       });
-      toast.success(`Profile visibility updated`);
+      notify.success("Profile visibility updated");
       void refetch();
     } catch (err: any) {
-      toast.error(`Failed to update: ${err?.message || "Unknown error"}`);
+      notify.error(`Failed to update: ${err?.message || "Unknown error"}`);
     }
   };
 

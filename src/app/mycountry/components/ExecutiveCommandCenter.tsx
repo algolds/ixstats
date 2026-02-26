@@ -43,7 +43,7 @@ import type { CountryWithEconomicData } from "~/types/ixstats";
 import type { EconomyData } from "~/types/economics";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
 import { DiplomaticHealthRing } from "~/components/diplomatic/DiplomaticHealthRing";
 import { DiplomaticMeetingScheduler } from "~/components/executive/DiplomaticMeetingScheduler";
@@ -534,6 +534,7 @@ export function ExecutiveCommandCenter({
   loading = false,
 }: ExecutiveCommandCenterProps) {
   const { user } = useUser();
+  const notify = useNotify();
   const [viewMode, setViewMode] = useState<"overview" | "detailed">("overview");
   const [diplomaticMeetingOpen, setDiplomaticMeetingOpen] = useState(false);
 
@@ -550,11 +551,11 @@ export function ExecutiveCommandCenter({
   // Execute quick action mutation using unified intelligence API
   const executeAction = api.unifiedIntelligence.executeAction.useMutation({
     onSuccess: (result) => {
-      toast.success(`Action executed: ${result.message}`);
+      notify.success(`Action executed: ${result.message}`);
       void refetchActions();
     },
     onError: (error) => {
-      toast.error(`Failed to execute action: ${error.message}`);
+      notify.error(`Failed to execute action: ${error.message}`);
     },
   });
 

@@ -7,13 +7,13 @@
 This status page reflects the current codebase after the v2 migration. All metrics below are derived from the live source tree.
 
 ## Snapshot
-- Next.js 16.1.3 App Router with 118 route entries (`find src/app -name page.tsx`)
+- Next.js 16.1.3 App Router with 124 route entries (`find src/app -name page.tsx`)
 - React 19.1.3 + TypeScript 5.8.3 with granular tsconfig targets for app, components, and server packages
-- tRPC 11.4 API layer: **61 routers / 920+ procedures** (460+ queries, 460+ mutations)
-- Prisma 6.19 ORM with **201 models** defined in `prisma/schema.prisma`
+- tRPC 11.4 API layer: **61 routers / 927 procedures** (477 queries, 450 mutations)
+- Prisma 6.19 ORM with **206 models** defined in `prisma/schema.prisma`
 - Custom server runtime (`server.mjs`) adds layered env loading and Socket.IO realtime feeds
-- Frontend experience composed from 598+ components across `src/components`, 71 custom hooks
-- **Hardcoded Data Migration**: ✅ 100% complete (14,677 lines migrated, 8 phases, 18 admin interfaces)
+- Frontend experience composed from 645+ components across `src/components`, 80 custom hooks
+- **Hardcoded Data Migration**: ✅ 100% complete (14,677 lines migrated, 8 phases, 20 admin interfaces)
 
 ## Maturity Matrix
 | Area | Status | Evidence |
@@ -24,7 +24,7 @@ This status page reflects the current codebase after the v2 migration. All metri
 | Intelligence & Diplomatic Feeds | ✅ Ready | Live routers (`diplomatic-intelligence.ts`, `intelligence.ts`), UI consumption in `LiveDiplomaticFeed.tsx` |
 | Economic Engine & Builder | ✅ Ready | Economic calculations (`economics.ts`, `enhanced-economics.ts`), builder flows in `src/app/builder` |
 | Diplomacy Systems | ✅ Ready | Embassy, missions, cultural exchange data in `diplomatic.ts`, UI in `DiplomaticOperationsHub.tsx`, dynamic scenarios (`diplomaticScenarios.ts`) |
-| Content Management System | ✅ Complete | 18 admin interfaces for reference data management, 920+ API endpoints, 750+ records seeded |
+| Content Management System | ✅ Complete | 20 admin interfaces for reference data management, 927 API endpoints, 750+ records seeded |
 | Social / ThinkPages Platform | ✅ Operational | ThinkPages routes & components (`src/app/thinkpages`, `src/components/thinkshare`), comment/activity APIs |
 | Achievements & Leaderboards | ✅ Ready | Routers (`achievements.ts`, `leaderboards` queries), UI at `/achievements` & `/leaderboards` |
 | Help & Knowledge Base | 🔄 Refreshing | Help hub is live (`src/app/help/page.tsx`); article content rebuilt in this update |
@@ -33,8 +33,8 @@ This status page reflects the current codebase after the v2 migration. All metri
 
 ## Backend Coverage
 ```
-Routers: 61 (60 registered in appRouter)
-Procedures: 920+ (460+ queries / 460+ mutations)
+Routers: 61 (all registered in appRouter)
+Procedures: 927 (477 queries / 450 mutations)
 Key Middleware: rateLimiter, userLoggingMiddleware, Clerk auth context
 Reference Data Routers: 8 (diplomaticOptions, economicArchetypes, governmentComponents,
                          economicComponents, militaryEquipment, diplomaticScenarios,
@@ -46,13 +46,13 @@ Additional Routers (v2): elections, cardImages, vault, cards, cardPacks, loreCar
 Core routers include `countries`, `diplomatic-intelligence`, `economics`, `intelligence`, `notifications`, `policies`, `quickactions`, `sdi`, `unified-intelligence`, `wikiCache`, 8 reference data routers, and 14 additional routers added in v2. Refer to `docs/reference/api-complete.md` for the full index.
 
 ## Data Model Status
-- `prisma/schema.prisma` defines 201 models across economic, diplomatic, social, notification, intelligence, cards/vault, elections, and crafting/trading domains
+- `prisma/schema.prisma` defines 206 models across economic, diplomatic, social, notification, intelligence, cards/vault, elections, national issues, forum, and crafting/trading domains
 - PostgreSQL databases for dev and production
 - Seed, backup, and restore scripts in `scripts/setup`
 - Migrations are linear and applied via `npm run db:migrate`
 
 ## Frontend Coverage
-- 598+ components in `src/components/`, 71 custom hooks in `src/hooks/`, 118 page routes
+- 645+ components in `src/components/`, 80 custom hooks in `src/hooks/`, 124 page routes
 - Single-page router pattern: `MyCountryRouter`, `VaultRouter`, `ThinkPagesRouter`, `DashboardRouter` manage sections via client-side state + `pushState`
 - Sidebar layout system with contextual widgets (`ExecutiveSidebarWidget`, `DiplomacySidebarWidget`, `DefenseSidebarWidget`)
 - Metric detail modals with `BaseMetricDetailsModal` (4-tab drill-down system)
@@ -99,7 +99,7 @@ Between October 26-29, 2025, IxStats completed a comprehensive migration of **14
 
 ### Deliverables
 - **18 Admin Interfaces**: Full CRUD capabilities with Glass Physics design
-- **920+ API Endpoints**: Type-safe tRPC endpoints with audit logging
+- **927 API Endpoints**: Type-safe tRPC endpoints with audit logging
 - **8 Analytics Dashboards**: Real-time insights and usage tracking
 - **750+ Reference Records**: Seeded across all systems
 - **14 Database Models**: Specialized reference data schemas

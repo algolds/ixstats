@@ -83,7 +83,7 @@ export default function SetupPage() {
   const [error, setError] = useState<string | null>(null);
 
   // TRPC Queries
-  const { data: countries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
+  const { data: countries, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
 
   // TRPC Mutations
   const linkCountryMutation = api.users.linkCountry.useMutation();

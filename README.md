@@ -5,9 +5,9 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 ## Platform Overview
 
 - Next.js 16.1.3 App Router with client and server components under `src/app`
-- React 19.1.3 + TypeScript 5.8 with 597+ components in `src/components`
-- tRPC 11.4 API layer (`src/server/api/routers`) with **59 routers** and **900+ typed procedures**
-- Prisma 6.19 ORM (`prisma/schema.prisma`) with **201 models** on PostgreSQL
+- React 19.1.3 + TypeScript 5.8 with 645+ components in `src/components`
+- tRPC 11.4 API layer (`src/server/api/routers`) with **61 routers** and **927 typed procedures**
+- Prisma 6.19 ORM (`prisma/schema.prisma`) with **206 models** on PostgreSQL
 - Custom Node server (`server.mjs`) with layered env loading and Socket.IO realtime feeds
 - In-app help center at `/help` and Markdown docs in `docs/`
 
@@ -23,7 +23,7 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 | **IxCards & MyVault** | Trading card system with 13 card types, pack opening, crafting, P2P trading, marketplace |
 | **Elections & Politics** | D'Hondt/FPTP electoral systems, legislature management, hemicycle visualization |
 | **Crisis Management** | Dynamic natural disasters, economic crises, diplomatic incidents with player responses |
-| **Content Management** | 18 admin interfaces for dynamic content (scenarios, NPC personalities, equipment, archetypes) |
+| **Content Management** | 20 admin interfaces for dynamic content (scenarios, NPC personalities, equipment, archetypes) |
 | **Achievements & Leaderboards** | Global achievement tracking and ranking |
 
 ## Technology Stack
@@ -85,19 +85,19 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 
 ```
 ├── src/
-│   ├── app/                     # Next.js App Router pages (118 routes)
+│   ├── app/                     # Next.js App Router pages (124 routes)
 │   │   ├── mycountry/           # Executive command suite
 │   │   ├── dashboard/           # Signed-in dashboards
 │   │   ├── thinkpages/          # Social knowledge sharing
 │   │   ├── vault/               # IxCards & MyVault
 │   │   ├── help/                # In-app help center
 │   │   └── api/                 # API route handlers
-│   ├── components/              # UI and domain components (597+)
-│   ├── hooks/                   # Custom React hooks (71)
-│   ├── server/api/routers/      # tRPC routers (59)
+│   ├── components/              # UI and domain components (645+)
+│   ├── hooks/                   # Custom React hooks (80)
+│   ├── server/api/routers/      # tRPC routers (61)
 │   ├── lib/                     # Utilities, rate limiter, formatting
 │   └── services/                # Domain services and adapters
-├── prisma/                      # Schema (201 models) and migrations
+├── prisma/                      # Schema (206 models) and migrations
 ├── scripts/                     # Operational utilities
 ├── docs/                        # Documentation (see docs/README.md)
 └── tests/                       # Test setup and utilities
@@ -106,7 +106,7 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 ## API & Data Access
 
 - tRPC context: `src/server/api/trpc.ts` (Clerk auth, rate limiting, user provisioning)
-- Router index: `src/server/api/root.ts` (59 domain routers)
+- Router index: `src/server/api/root.ts` (61 domain routers)
 - Database: Prisma client helpers in `src/server/db`
 - Realtime: Socket.IO events from `src/lib/websocket-server.ts`
 

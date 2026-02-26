@@ -18,6 +18,7 @@ import {
   getCardMarketValue,
 } from "~/lib/card-service";
 import { CardRarity, CardType } from "@prisma/client";
+import { searchForumThreads } from "~/lib/xenforo-service";
 
 /**
  * Cards router for IxCards system
@@ -28,7 +29,7 @@ export const cardsRouter = createTRPCRouter({
    * Get cards with filters and pagination
    * Admin-only endpoint
    */
-  getCards: adminProcedure
+  getCards: protectedProcedure
     .input(
       z.object({
         season: z.number().int().min(1).optional(),
@@ -93,7 +94,7 @@ export const cardsRouter = createTRPCRouter({
    * Get card by ID with full details
    * Admin-only endpoint
    */
-  getCardById: adminProcedure
+  getCardById: protectedProcedure
     .input(
       z.object({
         cardId: z.string().min(1),
@@ -119,7 +120,7 @@ export const cardsRouter = createTRPCRouter({
    * Get authenticated user's card inventory
    * Admin-only endpoint
    */
-  getMyCards: adminProcedure
+  getMyCards: protectedProcedure
     .input(
       z.object({
         sortBy: z.enum(["rarity", "acquired", "value"]).optional().default("acquired"),
@@ -235,7 +236,7 @@ export const cardsRouter = createTRPCRouter({
    * Get card statistics (supply, market value, recent trades)
    * Admin-only endpoint
    */
-  getCardStats: adminProcedure
+  getCardStats: protectedProcedure
     .input(
       z.object({
         cardId: z.string().min(1),
@@ -278,7 +279,7 @@ export const cardsRouter = createTRPCRouter({
    * Get all cards for a specific country
    * Admin-only endpoint
    */
-  getCardsByCountry: adminProcedure
+  getCardsByCountry: protectedProcedure
     .input(
       z.object({
         countryId: z.string().min(1),
@@ -344,7 +345,7 @@ export const cardsRouter = createTRPCRouter({
    * Get featured cards (high rarity, special editions, trending)
    * Admin-only endpoint
    */
-  getFeaturedCards: adminProcedure
+  getFeaturedCards: protectedProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(50).optional().default(10),
@@ -625,7 +626,7 @@ export const cardsRouter = createTRPCRouter({
    * Get card market value
    * Admin-only endpoint
    */
-  getMarketValue: adminProcedure
+  getMarketValue: protectedProcedure
     .input(
       z.object({
         cardId: z.string().min(1),
@@ -645,5 +646,177 @@ export const cardsRouter = createTRPCRouter({
           message: "Failed to calculate market value",
         });
       }
+    }),
+
+  // ─── Collection CRUD ─────────────────────────────────────────────
+
+  createCollection: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(100),
+      description: z.string().max(500).optional(),
+      isPublic: z.boolean().optional().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId;
+      const collection = await ctx.db.cardCollection.create({
+        data: {
+          userId,
+          name: input.name,
+          description: input.description,
+          isPublic: input.isPublic,
+        },
+      });
+      return collection;
+    }),
+
+  getMyCollections: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.auth.userId;
+      return ctx.db.cardCollection.findMany({
+        where: { userId },
+        include: { _count: { select: { items: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+    }),
+
+  getCollectionCards: protectedProcedure
+    .input(z.object({ collectionId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId;
+      // Verify ownership
+      const collection = await ctx.db.cardCollection.findFirst({
+        where: { id: input.collectionId, userId },
+      });
+      if (!collection) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Collection not found" });
+      }
+      return ctx.db.cardCollectionItem.findMany({
+        where: { collectionId: input.collectionId },
+        include: {
+          cardOwnership: {
+            include: {
+              cards: {
+                include: { country: { select: { id: true, name: true, continent: true, region: true, flag: true } } },
+              },
+            },
+          },
+        },
+        orderBy: { addedAt: "desc" },
+      });
+    }),
+
+  addToCollection: protectedProcedure
+    .input(z.object({
+      collectionId: z.string().min(1),
+      cardOwnershipId: z.string().min(1),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId;
+      // Verify collection ownership
+      const collection = await ctx.db.cardCollection.findFirst({
+        where: { id: input.collectionId, userId },
+      });
+      if (!collection) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Collection not found" });
+      }
+      // Verify card ownership
+      const card = await ctx.db.cardOwnership.findFirst({
+        where: { id: input.cardOwnershipId, ownerId: userId },
+      });
+      if (!card) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Card not found in your inventory" });
+      }
+      return ctx.db.cardCollectionItem.create({
+        data: {
+          collectionId: input.collectionId,
+          cardOwnershipId: input.cardOwnershipId,
+        },
+      });
+    }),
+
+  removeFromCollection: protectedProcedure
+    .input(z.object({
+      collectionId: z.string().min(1),
+      cardOwnershipId: z.string().min(1),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId;
+      // Verify collection ownership
+      const collection = await ctx.db.cardCollection.findFirst({
+        where: { id: input.collectionId, userId },
+      });
+      if (!collection) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Collection not found" });
+      }
+      return ctx.db.cardCollectionItem.deleteMany({
+        where: {
+          collectionId: input.collectionId,
+          cardOwnershipId: input.cardOwnershipId,
+        },
+      });
+    }),
+
+  deleteCollection: protectedProcedure
+    .input(z.object({ collectionId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId;
+      const collection = await ctx.db.cardCollection.findFirst({
+        where: { id: input.collectionId, userId },
+      });
+      if (!collection) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Collection not found" });
+      }
+      await ctx.db.cardCollection.delete({ where: { id: input.collectionId } });
+      return { success: true };
+    }),
+
+  /**
+   * Search XenForo forum for threads related to a card/article title
+   */
+  searchForumForCard: protectedProcedure
+    .input(z.object({ query: z.string().min(1).max(200) }))
+    .query(async ({ input }) => {
+      const threads = await searchForumThreads(input.query, 5);
+      return threads;
+    }),
+
+  /**
+   * Fetch wiki article excerpt on-demand for lore cards without stored fullExcerpt
+   */
+  getWikiArticleExcerpt: protectedProcedure
+    .input(z.object({
+      articleTitle: z.string().min(1),
+      wikiSource: z.enum(["ixwiki", "iiwiki"]),
+    }))
+    .query(async ({ input }) => {
+      const { getMediaWikiApiUrl, getWikiUserAgent } = await import("~/lib/mediawiki-config");
+      const apiUrl = getMediaWikiApiUrl(input.wikiSource);
+      const userAgent = getWikiUserAgent(input.wikiSource);
+
+      const url = new URL(apiUrl);
+      url.searchParams.set("action", "query");
+      url.searchParams.set("format", "json");
+      url.searchParams.set("titles", input.articleTitle);
+      url.searchParams.set("prop", "extracts");
+      url.searchParams.set("exchars", "2000");
+      url.searchParams.set("exlimit", "1");
+      url.searchParams.set("explaintext", "1");
+
+      const resp = await fetch(url.toString(), {
+        headers: { "User-Agent": userAgent },
+      });
+
+      if (!resp.ok) {
+        return { extract: null };
+      }
+
+      const data = await resp.json();
+      const pages = data.query?.pages;
+      if (!pages) return { extract: null };
+
+      const page = Object.values(pages)[0] as { extract?: string; missing?: boolean };
+      if (page.missing) return { extract: null };
+
+      return { extract: page.extract || null };
     }),
 });

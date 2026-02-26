@@ -16,6 +16,7 @@
 import { type PrismaClient } from "@prisma/client";
 import { type VaultTransactionType } from "@prisma/client";
 import { budgetVaultCalculator } from "./budget-vault-calculator";
+import { syncUserToForum } from "./xenforo-user-sync";
 
 /**
  * Vault Service
@@ -234,6 +235,9 @@ export class VaultService {
         `[Vault Service] User ${userId} earned ${finalAmount} IxC (${type}) - New balance: ${result.credits}`
       );
 
+      // Sync to forum profile (fire-and-forget)
+      syncUserToForum(userId).catch(() => {});
+
       return { success: true, newBalance: result.credits };
     } catch (error) {
       console.error(`[Vault Service] Failed to earn credits for ${userId}:`, error);
@@ -303,6 +307,9 @@ export class VaultService {
       console.log(
         `[Vault Service] User ${userId} spent ${amount} IxC (${type}) - New balance: ${result.credits}`
       );
+
+      // Sync to forum profile (fire-and-forget)
+      syncUserToForum(userId).catch(() => {});
 
       return { success: true, newBalance: result.credits };
     } catch (error) {

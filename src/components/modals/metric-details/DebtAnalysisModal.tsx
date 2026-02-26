@@ -4,8 +4,6 @@ import React from "react";
 import {
   Landmark,
   DollarSign,
-  TrendingUp,
-  TrendingDown,
   BarChart3,
   LineChart,
   Globe,
@@ -15,6 +13,7 @@ import {
   CreditCard,
   Percent,
 } from "lucide-react";
+import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -66,15 +65,13 @@ export function DebtAnalysisModal({
   countryId,
   countryName,
 }: DebtAnalysisModalProps) {
-  // Fetch country economic data
+  // Fetch country data + mapped economyData
   const {
-    data: countryData,
+    countryData,
+    economyData,
     isLoading: countryLoading,
     refetch,
-  } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: countryId },
-    { enabled: !!countryId && isOpen }
-  );
+  } = useCountryEconomicData(countryId, isOpen);
 
   // Fetch historical data
   const { data: historicalData, isLoading: historicalLoading } =
@@ -90,8 +87,13 @@ export function DebtAnalysisModal({
   const isLoading = countryLoading || historicalLoading || globalLoading;
 
   // Process historical data for charts
+  // Derive debt from GDP using current debt-to-GDP ratio
   const processHistoricalData = (timeRange: TimeRange) => {
     if (!historicalData || historicalData.length === 0) return [];
+
+    const fiscal = economyData?.fiscal;
+    const currentDebtRatio = fiscal?.totalDebtGDPRatio || 50;
+    const currentInterestRate = fiscal?.interestRates || 3.5;
 
     const now = new Date();
     const rangeMap = {
@@ -110,13 +112,18 @@ export function DebtAnalysisModal({
     return historicalData
       .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
       .slice(-100)
-      .map((point: any) => ({
-        date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
-        timestamp: point.ixTimeTimestamp,
-        publicDebt: (point.fiscal?.publicDebt || 0) / 1e12,
-        debtToGdp: point.fiscal?.debtToGdpRatio || 0,
-        interestPayments: (point.fiscal?.interestPayments || 0) / 1e9,
-      }))
+      .map((point: any) => {
+        const gdp = point.totalGdp || 0;
+        const publicDebt = gdp * (currentDebtRatio / 100);
+        const interestPayments = publicDebt * (currentInterestRate / 100);
+        return {
+          date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
+          timestamp: point.ixTimeTimestamp,
+          publicDebt: publicDebt / 1e12,
+          debtToGdp: currentDebtRatio,
+          interestPayments: interestPayments / 1e9,
+        };
+      })
       .sort(
         (a: any, b: any) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -166,9 +173,10 @@ export function DebtAnalysisModal({
       );
     }
 
-    const fiscal = countryData?.economyData?.fiscal;
-    const publicDebt = fiscal?.publicDebt || 0;
-    const debtToGdp = fiscal?.debtToGdpRatio || 0;
+    const fiscal = economyData?.fiscal;
+    const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
+    const gdp = countryData?.currentTotalGdp || 0;
+    const publicDebt = gdp * (debtToGdp / 100);
     const population = countryData?.currentPopulation || 1;
     const riskLevel = getDebtRiskLevel(debtToGdp);
 
@@ -265,27 +273,27 @@ export function DebtAnalysisModal({
             <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
-                  ${((fiscal?.interestPayments || 0) / 1e9).toFixed(1)}B
+                  ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                 </div>
                 <div className="text-muted-foreground text-sm">Annual Interest</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  {((fiscal?.interestPayments || 0) / (countryData?.currentTotalGdp || 1) * 100).toFixed(2)}%
+                  {((fiscal?.debtServiceCosts || 0) / (countryData?.currentTotalGdp || 1) * 100).toFixed(2)}%
                 </div>
                 <div className="text-muted-foreground text-sm">Interest/GDP</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600">
-                  {((fiscal?.interestPayments || 0) / (fiscal?.taxRevenue || 1) * 100).toFixed(1)}%
+                  {((fiscal?.debtServiceCosts || 0) / (fiscal?.governmentRevenueTotal || 1) * 100).toFixed(1)}%
                 </div>
                 <div className="text-muted-foreground text-sm">Interest/Revenue</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-amber-600">
-                  {fiscal?.creditRating || "N/A"}
+                  {riskLevel.label}
                 </div>
-                <div className="text-muted-foreground text-sm">Credit Rating</div>
+                <div className="text-muted-foreground text-sm">Credit Assessment</div>
               </div>
             </div>
           </CardContent>
@@ -380,8 +388,8 @@ export function DebtAnalysisModal({
       );
     }
 
-    const fiscal = countryData?.economyData?.fiscal;
-    const debtToGdp = fiscal?.debtToGdpRatio || 0;
+    const fiscal = economyData?.fiscal;
+    const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
     const globalAvgDebt = 80; // Placeholder
     const riskLevel = getDebtRiskLevel(debtToGdp);
 
@@ -424,17 +432,17 @@ export function DebtAnalysisModal({
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm">Rating</span>
+                <span className="text-sm">Assessment</span>
                 <Badge variant="outline">
-                  {fiscal?.creditRating || "Not Rated"}
+                  {riskLevel.label}
                 </Badge>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
-                  {fiscal?.creditRating || "N/A"}
+                  {debtToGdp < 40 ? "AAA" : debtToGdp < 60 ? "AA" : debtToGdp < 80 ? "A" : debtToGdp < 100 ? "BBB" : "BB"}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Sovereign credit rating
+                  Estimated credit rating
                 </div>
               </div>
             </div>
@@ -476,7 +484,12 @@ export function DebtAnalysisModal({
       return <Skeleton className="h-80" />;
     }
 
-    const fiscal = countryData?.economyData?.fiscal;
+    const fiscal = economyData?.fiscal;
+    const internalPct = fiscal?.internalDebtGDPPercent || 0;
+    const externalPct = fiscal?.externalDebtGDPPercent || 0;
+    const totalPct = internalPct + externalPct;
+    const domesticShare = totalPct > 0 ? (internalPct / totalPct * 100) : 60;
+    const externalShare = totalPct > 0 ? (externalPct / totalPct * 100) : 40;
 
     return (
       <div className="space-y-6">
@@ -489,25 +502,25 @@ export function DebtAnalysisModal({
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="text-center p-4 rounded-lg bg-muted/30">
                 <div className="text-lg font-semibold text-blue-600">
-                  {(fiscal?.domesticDebtPercent || 60).toFixed(0)}%
+                  {domesticShare.toFixed(0)}%
                 </div>
                 <div className="text-xs text-muted-foreground">Domestic Debt</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/30">
                 <div className="text-lg font-semibold text-purple-600">
-                  {(fiscal?.externalDebtPercent || 40).toFixed(0)}%
+                  {externalShare.toFixed(0)}%
                 </div>
                 <div className="text-xs text-muted-foreground">External Debt</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/30">
                 <div className="text-lg font-semibold text-green-600">
-                  {(fiscal?.shortTermDebtPercent || 25).toFixed(0)}%
+                  25%
                 </div>
                 <div className="text-xs text-muted-foreground">Short-Term</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/30">
                 <div className="text-lg font-semibold text-amber-600">
-                  {(fiscal?.longTermDebtPercent || 75).toFixed(0)}%
+                  75%
                 </div>
                 <div className="text-xs text-muted-foreground">Long-Term</div>
               </div>
@@ -524,7 +537,7 @@ export function DebtAnalysisModal({
             <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
               <div className="text-center">
                 <div className="text-lg font-semibold text-red-600">
-                  ${((fiscal?.interestPayments || 0) / 1e9).toFixed(1)}B
+                  ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Annual Interest
@@ -532,7 +545,7 @@ export function DebtAnalysisModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  {(fiscal?.averageInterestRate || 3.5).toFixed(2)}%
+                  {(fiscal?.interestRates || 3.5).toFixed(2)}%
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Average Interest Rate
@@ -540,7 +553,7 @@ export function DebtAnalysisModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
-                  {(fiscal?.averageMaturity || 8.5).toFixed(1)} yrs
+                  8.5 yrs
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Average Maturity

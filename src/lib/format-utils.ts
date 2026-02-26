@@ -732,11 +732,14 @@ export function formatPopulation(population: number | null | undefined, fallback
     return fallback;
   }
   const absPopulation = Math.abs(population);
+  if (absPopulation >= 1e9) {
+    return `${Math.round(population / 1e9)}B`;
+  }
   if (absPopulation >= 1e6) {
-    return `${(population / 1e6).toFixed(1)}M`;
+    return `${Math.round(population / 1e6)}M`;
   }
   if (absPopulation >= 1e3) {
-    return `${(population / 1e3).toFixed(1)}K`;
+    return `${Math.round(population / 1e3)}K`;
   }
-  return population.toFixed(0);
+  return Math.round(population).toString();
 }

@@ -135,8 +135,11 @@ export function useDynamicIslandState() {
   const [isUserInteracting, setIsUserInteracting] = useState(false);
   const [timeDisplayMode, setTimeDisplayMode] = useState<"time" | "date" | "both">("time");
 
-  // Get countries data for search
-  const { data: countriesData } = api.countries.getAll.useQuery({ limit: 200 });
+  // Get countries data for search (use lightweight select list)
+  const { data: countriesData } = api.countries.getSelectList.useQuery(
+    { limit: 500 },
+    { staleTime: 30 * 60 * 1000 }
+  );
 
   // Get user profile for contextual search
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
@@ -190,21 +193,21 @@ export function useDynamicIslandState() {
 
     // Search countries
     if (searchFilter === "all" || searchFilter === "countries") {
-      countriesData?.countries?.forEach((country) => {
+      const countryList = Array.isArray(countriesData) ? countriesData : (countriesData as any)?.countries;
+      countryList?.forEach((country: any) => {
         if (country.name.toLowerCase().includes(query)) {
+          const slug = country.slug ?? country.id;
           results.push({
             id: `country-${country.id}`,
             type: "country",
             title: country.name,
             subtitle: `Economic Tier: ${country.economicTier || "Unknown"}`,
-            description: `Population: ${country.currentPopulation?.toLocaleString() || "Unknown"} | GDP/Capita: $${country.currentGdpPerCapita?.toLocaleString() || "Unknown"}`,
+            description: country.economicTier ? `Tier: ${country.economicTier}` : "View country profile",
             metadata: {
               countryName: country.name,
-              population: country.currentPopulation,
-              gdpPerCapita: country.currentGdpPerCapita,
               economicTier: country.economicTier,
             },
-            action: () => (window.location.href = createAbsoluteUrl(`/countries/${country.slug}`)),
+            action: () => (window.location.href = createAbsoluteUrl(`/countries/${slug}`)),
           });
         }
       });
@@ -671,10 +674,10 @@ export const commands = [
     description: "Administrative tools and controls",
   },
   {
-    name: "DM Dashboard",
+    name: "Storyteller Dashboard",
     path: "/dm-dashboard",
     icon: Settings,
-    description: "Dungeon Master administrative dashboard",
+    description: "Storyteller administrative dashboard",
   },
 
   // Labs & Generators
@@ -907,10 +910,10 @@ export const features = [
     description: "Platform administration and management tools",
   },
   {
-    name: "DM Tools",
+    name: "Storyteller Tools",
     path: "/dm-dashboard",
     icon: Settings,
-    description: "Dungeon Master tools and administrative controls",
+    description: "Storyteller tools and administrative controls",
   },
   {
     name: "IxTime System",

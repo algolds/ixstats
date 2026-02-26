@@ -32,7 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Progress } from "~/components/ui/progress";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import type { SharedDataType, SharedDataCollection } from "~/types/diplomatic-network";
 import { MultiSelect } from "~/components/ui/multi-select";
 
@@ -81,6 +81,7 @@ const DATA_TYPE_CONFIG = {
 } as const;
 
 export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModalProps) {
+  const notify = useNotify();
   const [activeTab, setActiveTab] = useState<SharedDataType | "all" | "overview">("overview");
   const [mounted, setMounted] = useState(false);
   const [isEditingOverview, setIsEditingOverview] = useState(false);
@@ -138,11 +139,11 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   // Mutation for updating embassy profile
   const updateProfileMutation = api.diplomatic.updateEmbassyProfile.useMutation({
     onSuccess: () => {
-      toast.success("Embassy profile updated successfully");
+      notify.success("Embassy profile updated successfully");
       setIsEditingOverview(false);
     },
     onError: (error) => {
-      toast.error(`Failed to update profile: ${error.message}`);
+      notify.error(`Failed to update profile: ${error.message}`);
     },
   });
 
@@ -694,7 +695,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => toast.info("Share new data functionality coming soon")}
+                            onClick={() => notify.info("Share new data functionality coming soon")}
                           >
                             <Share2 className="mr-2 h-4 w-4" />
                             Share New Data

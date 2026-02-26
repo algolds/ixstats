@@ -23,6 +23,7 @@ interface CountryData {
   economicTier: string;
   populationTier?: string | null;
   continent?: string | null;
+  currentPopulation?: number | null;
   analytics?: {
     visits?: number;
   };
@@ -88,7 +89,7 @@ export const DynamicCountryHeader: React.FC<DynamicCountryHeaderProps> = ({
     return tierGradients[economicTier as keyof typeof tierGradients] || tierGradients["Developing"];
   };
 
-  const views = country.analytics?.visits || Math.floor(Math.random() * 1000) + 100;
+  const views = country.analytics?.visits || Math.floor((country.currentPopulation || 10000) / 100);
 
   return (
     <div className={cn("relative w-full overflow-hidden", className)} style={flagThemeCSS}>

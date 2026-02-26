@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
-import type { EconomicYearData, DMInputs } from "~/server/db/schema";
+import type { EconomicYearData, StorytellerEffect } from "~/server/db/schema";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 
 interface ModelingPageProps {
@@ -85,12 +85,12 @@ export default function ModelingPage({ params }: ModelingPageProps) {
                         unemployment: undefined, // Map if available
                       })) as EconomicYearData[])
                     : [],
-                  dmInputs:
-                    country.dmInputs?.[0]?.id && country.dmInputs[0].countryId
+                  storytellerEffects:
+                    country.storytellerEffects?.[0]?.id && country.storytellerEffects[0].countryId
                       ? ({
-                          id: country.dmInputs[0].id,
-                          countryId: country.dmInputs[0].countryId,
-                        } as DMInputs)
+                          id: country.storytellerEffects[0].id,
+                          countryId: country.storytellerEffects[0].countryId,
+                        } as StorytellerEffect)
                       : undefined,
                 }}
               />

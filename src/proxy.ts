@@ -95,12 +95,20 @@ function enhanceResponse(
   const nonce = Buffer.from(requestId).toString("base64");
 
   // Content Security Policy — inject nonce into pre-computed template
-  response.headers.set("Content-Security-Policy", CSP_TEMPLATE.replaceAll("__NONCE__", nonce));
+  const isForumWidget = req.nextUrl.pathname.startsWith("/forum/");
+  let csp = CSP_TEMPLATE.replaceAll("__NONCE__", nonce);
+  if (isForumWidget) {
+    // Allow iframe embedding from forum.ixwiki.com for widget pages
+    csp = csp.replace("frame-ancestors 'none'", "frame-ancestors https://forum.ixwiki.com");
+  }
+  response.headers.set("Content-Security-Policy", csp);
   response.headers.set("X-CSP-Nonce", nonce);
 
   // Security headers
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
+  if (!isForumWidget) {
+    response.headers.set("X-Frame-Options", "DENY");
+  }
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()");

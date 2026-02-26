@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { useCollections } from "~/hooks/vault/useCollections";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 import type { CardInstance } from "~/types/cards-display";
@@ -64,6 +64,7 @@ export default function CollectionDetailPage() {
   const [commentText, setCommentText] = useState("");
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
+  const notify = useNotify();
   const { collections, updateCollection, deleteCollection } = useCollections();
 
   // Find collection by slug
@@ -84,7 +85,7 @@ export default function CollectionDetailPage() {
   // Like mutation
   const likeMutation = api.vault.likeCollection.useMutation({
     onSuccess: () => {
-      toast.success("Collection liked!");
+      notify.success("Collection liked!");
     },
   });
 
@@ -93,7 +94,7 @@ export default function CollectionDetailPage() {
     onSuccess: () => {
       setCommentText("");
       refetchComments();
-      toast.success("Comment added!");
+      notify.success("Comment added!");
     },
   });
 
@@ -136,20 +137,20 @@ export default function CollectionDetailPage() {
       isPublic: editPublic,
     });
     setEditModalOpen(false);
-    toast.success("Collection updated successfully");
+    notify.success("Collection updated successfully");
   };
 
   const handleDelete = async () => {
     await deleteCollection(collection.id);
     setDeleteModalOpen(false);
     router.push("/vault/collections");
-    toast.success("Collection deleted successfully");
+    notify.success("Collection deleted successfully");
   };
 
   const handleShare = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
-    toast.success("Collection link copied to clipboard");
+    notify.success("Collection link copied to clipboard");
   };
 
   const handleLike = () => {

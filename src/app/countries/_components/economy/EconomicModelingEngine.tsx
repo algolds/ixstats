@@ -48,14 +48,14 @@ import {
   ComposedChart,
 } from "recharts";
 import { formatCurrency, formatPercentage, formatPopulation } from "./utils";
-import type { Country, EconomicYearData, DMInputs, EconomicModel } from "~/server/db/schema";
+import type { Country, EconomicYearData, StorytellerEffect, EconomicModel } from "~/server/db/schema";
 import { useEconomicModel, type UseEconomicModelReturn } from "~/hooks/useEconomicModel";
 import type { ModelParameters } from "~/lib/economic-modeling-engine";
 
 interface EconomicModelingEngineProps {
   country: Country & {
     economicYears: EconomicYearData[];
-    dmInputs?: DMInputs | null;
+    storytellerEffects?: StorytellerEffect | null;
     economicModel?: EconomicModel | null;
   };
   onModelUpdate?: (updatedModel: EconomicModel) => void;

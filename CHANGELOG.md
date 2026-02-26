@@ -5,34 +5,206 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-02-26
 
-### Summary of Changes
+### Overview
 
-**Major Features:**
-- ✅ **IxCards Trading Card System** - Complete card system with MyVault, marketplace, pack opening (85+ files, 12,500+ lines)
-- ✅ **Comprehensive Autosave** - All builder sections with monitoring and history (8 new files, 10 new endpoints)
-- ✅ **Admin Responsive Design** - Mobile/tablet support for all admin pages (5 pages updated)
-- ✅ **Critical System Fixes** - PM2, permissions, and file system issues resolved
-- ✅ **Builder UX Improvements** - Text field focus and step navigation fixes
+Major platform upgrade migrating to Next.js 16, React 19, and modern toolchain. Introduces 7 new gameplay systems, refactors all MyCountry subsections into a single-page router architecture, and completes a comprehensive help documentation refresh. Net reduction of ~6,100 lines while adding significant new functionality.
 
-**Breaking Changes:**
-- ⚠️ **Maps System Deprecated** - Complete removal of Martin tile server and map infrastructure (November 13, 2025)
+### Breaking Changes
 
-**Documentation Added:**
-- 15+ new comprehensive guides and summaries
-- Complete API documentation updates
-- User guides and architecture documentation
-- Troubleshooting and deployment guides
+- **Framework Upgrades**: Next.js 15 → 16.1.3, React 18 → 19.1.3, Prisma 5 → 6.19.2, Zod 3 → 4.0.5, Express 4 → 5.1.0, Jest 29 → 30.0.4, ESLint 8 → 9.31.0, tRPC → 11.4.3, Tailwind CSS → 4.1.11
+- **Middleware Renamed**: `src/middleware.ts` → `src/proxy.ts` (Clerk auth + CSP + security headers)
+- **Maps System Removed**: Complete removal of Martin tile server and map infrastructure (~90 files, ~15,000 lines)
+- **Sonner Toast Removed**: Replaced by Dynamic Island toast queue system
+- **Removed Router**: `optimized-countries.ts` consolidated into main countries router
 
-**Code Metrics:**
-- Total new files: 93+
-- Total new lines: ~16,000+
-- New API endpoints: 27+ (17 marketplace + 10 autosave)
-- Modified routers: 9
-- Test pass rate: 100%
+### Added - National Issues Engine (February 2026)
+
+NationStates-inspired decision/event system that dynamically generates contextual national issues.
+
+- **Core Engine** (`src/lib/national-issues-engine.ts`): Builds CountrySnapshot from 50+ metrics, evaluates JSON expression tree triggers (no eval/LLM), applies NPC personality modifiers, lazy evaluation on inbox open
+- **Consequences System** (`src/lib/national-issues-consequences.ts`): Updates Country/GovernmentStructure/InternalStabilityMetrics fields, creates audit trail, chains follow-up issues, awards IxCredits
+- **Components** (`src/components/national-issues/`): IssuesInbox (3 tabs), IssueCard, IssueDetailModal, IssueCountBadge
+- **API**: `national-issues.ts` router with 10+ endpoints for player and admin operations
+- **Admin**: Full CRUD interface at `/admin/national-issues/`
+- **Database**: Prisma seeds with issue templates (`prisma/seeds/national-issue-templates.ts`)
+
+### Added - Elections & Political Parties (February 2026)
+
+Democratic/electoral gameplay with political parties, legislatures, and election simulation.
+
+- **D'Hondt Proportional Representation** and **FPTP** seat allocation algorithms
+- **Components** (`src/components/executive/politics/`): ParliamentHemicycle, PartyManager, ElectionSimulator, LegislatureConfig, LegislativePolicies, LegislativeIssues, LegislaturePanel, PoliticsOverview, GovernmentMetricsEditor
+- **API**: `elections.ts` router for seat allocation and simulation
+- **Page**: `/mycountry/politics/` integrated into MyCountry single-page router
+
+### Added - Demo Mode (February 2026)
+
+Development/testing environment allowing system owners to test with a cloned demo country.
+
+- **Context** (`src/context/DemoModeContext.tsx`): Authenticated context with 30s cache
+- **API** (`src/server/api/routers/demo-mode.ts`): activate, deactivate, reseed, destroy endpoints (system owner only)
+- **Seed Engine** (`src/lib/demo-seed/`): Full country clone with subsystems (6 files)
+- **Admin UI** (`src/app/admin/_components/DemoModeAdmin.tsx`): Activation controls and source country selection
+
+### Added - System Validation Dashboard (February 2026)
+
+Admin tool for auditing system health across database, API, cache, security, and performance.
+
+- **Business Logic** (`src/lib/system-validation.ts`): ValidationCheck/ValidationCategory interfaces, audit summary calculation
+- **Hook** (`src/hooks/useSystemValidation.ts`): Manages audit state with runAudit() trigger
+- **Dashboard** (`src/app/admin/_components/SystemValidationDashboard.tsx`): Progress bar, category breakdowns, status badges
+- **API**: `system-validation.ts` router
+
+### Added - Forum Integration (February 2026)
+
+XenForo forum user sync and embeddable card showcase widgets.
+
+- **API** (`src/server/api/routers/forum.ts`): linkAccount, syncProfile, getLinkStatus, unlinkAccount, setupCustomFields
+- **User Sync** (`src/lib/xenforo-user-sync.ts`): HTTP calls to XenForo API, syncs display name/country/collector level
+- **Widget Routes** (`src/app/(widget)/`): Embeddable card collection pages for forum profiles
+- **Utilities** (`src/lib/forum-widget-utils.ts`): Rarity ranking and formatting helpers
+
+### Added - Toast/Notification Overhaul (February 2026)
+
+Priority-queued Dynamic Island-anchored toast system replacing Sonner.
+
+- **Store** (`src/stores/toastQueueStore.ts`): Zustand store with priority levels (critical/high/medium/low), max 20 queue / 3 visible, pause/resume auto-dismiss
+- **Toast Manager** (`src/components/DynamicIsland/DynamicIslandToastManager.tsx`): Anchored below Dynamic Island, Framer Motion stack animations, "+N more" indicator
+- **Toast Banner** (`src/components/DynamicIsland/ToastBanner.tsx`): Individual banners with hover pause and action buttons
+- **Hook** (`src/hooks/useNotify.ts`): Simplified notification API
+- **Removed**: `src/components/ui/sonner.tsx`, `src/components/ToasterProvider.tsx`
+
+### Changed - MyCountry Architecture (February 2026)
+
+Complete overhaul to single-page router pattern with new Politics section.
+
+- **MyCountryRouter** (`src/components/mycountry/MyCountryRouter.tsx`): Central hub managing 7 sections via `useState`, URL sync via `pushState`, `popstate` listener for back/forward
+- **New Politics Section**: `EnhancedPoliticsContent.tsx` with elections, legislature, party management
+- **Sidebar Widgets**: ExecutiveSidebarWidget (amber), DiplomacySidebarWidget (cyan), DefenseSidebarWidget (red), IntelligenceSidebarWidget
+- **New Primitives**: SectionHeaderBackground, TabHeroBanner
+- **Removed 8 intelligence components**: AreaFilter, BriefingCard, CriticalMetricsDashboard, IntelligenceFeed, MeetingScheduler (x2), PolicyCreator, ViewSelector
+
+### Changed - Intelligence System Refactor (February 2026)
+
+New analysis subsystems with dedicated panels.
+
+- **New Panels**: IntelligenceAnalysisPanel, IntelligenceDashboard, KeyFindingsPanel
+- **New Subsystems**: `diplomatic-analysis/` and `policy-analysis/` component directories
+- **Updated**: AtomicIntelligenceFeed, ForwardLookingIntelligence, ActionDialog
+- **New Hooks**: useDiplomaticAnalytics, usePolicyAnalytics, useInternalStability
+
+### Changed - Diplomacy System Refactor (February 2026)
+
+Sheet-based panel architecture replacing old monolithic panels.
+
+- **New Components**: AllianceCreatorSheet, EmbassiesAndRelationsPanel, EmbassyCreatorSheet, EmbassyDetailSheet, ForeignPolicyCreatorSheet
+- **Removed**: AlliancesPanel, DiplomaticMissionsPanel, EmbassyNetworkPanel, EventsPanel
+
+### Changed - Executive System Refactor (February 2026)
+
+Consolidated panels with sheet-based policy/strategy creation.
+
+- **New Components**: MeetingsAndDecisionsPanel, PoliciesAndStrategyPanel, PolicyCreatorSheet, PolicyDetailSheet
+- **Removed**: DecisionsPanel, ExecutiveOverview, MeetingsPanel, PlansPanel, PoliciesPanel, PoliticsPanel, StrategicPlanningModal
+- **Removed Hooks**: usePolicyCreator
+
+### Changed - Defense System Expansion (February 2026)
+
+New subsystem architecture with dedicated panels.
+
+- **New Components**: DefenseCommandPanel, `command/` directory, `military/` directory, `stability/` directory
+- **New Hooks**: useDefenseBudget, useMilitaryBranches
+- **New Config**: `src/lib/military-config.ts`
+
+### Changed - Admin System Expansion (February 2026)
+
+5+ new admin interfaces for expanded platform management.
+
+- **New Admin Pages**: card-packs, countries, national-issues, platform, reference-data, storyteller, system-validation, users
+- **New Components**: AdminHeader, DemoModeAdmin, SystemValidationDashboard, UpcomingEventsWidget, validation utilities
+- **Updated**: AdminSidebar (new navigation), AdminDashboardSafe, all 20 admin pages
+
+### Changed - Vault & Card System (February 2026)
+
+Holographic effects and expanded card experience.
+
+- **New Card Effects**: CardHolographicCover, LoreCardHolographicCover, PackHolographicCover
+- **New Card Content**: LoreForumSection, LoreWikiExcerpt
+- **Updated**: All pack-opening stages, marketplace, trading, card layouts
+- **Vault Router**: Single-page pattern with Dashboard, Cards, Acquire, Create, Import sections
+
+### Changed - Help System Refresh (February 2026)
+
+Complete documentation overhaul with 10+ new help categories.
+
+- **New Categories**: vault, politics, gameplay, tax-system, gameplay-overview, mycountry/defense, mycountry/diplomacy, mycountry/intelligence, mycountry/overview, mycountry/politics
+- **Rewritten**: 30+ existing help pages with expanded content
+- **Updated**: ArticleLayout, help home page
+
+### Changed - UI & Design System (February 2026)
+
+- **Dynamic Island**: Refactored CompactView, MyCountryCompactView, NotificationsView, hooks
+- **New Components**: ix-time-date display, SectionHeaderBackground, TabHeroBanner
+- **Updated Styles**: animations.css, glass-refraction.css, mycountry-theming.css
+- **Country Cards**: ExpandedCardActions, ExpandedCardContent
+- **Dashboard Modals**: New `src/components/dashboard/modals/` directory
+
+### Changed - Infrastructure & API (February 2026)
+
+- **Database Schema**: 206 Prisma models (up from 124 in v1.0)
+- **tRPC Layer**: 61 routers / 927 endpoints (up from 31 / 304 in v1.0)
+- **New Routers**: national-issues, demo-mode, forum, system-validation
+- **New Hooks**: ~20+ including useCountryEconomicData, useCountryImage, useDashboardSnapshotModals, useDefenseBudget, useDiplomaticAnalytics, useInternalStability, useLocalActions, useMilitaryBranches, useMyCountryNotifications, useNationalIssues, useNotify, useOverviewHealthRings, usePolicyAnalytics, useSystemValidation
+- **New Libraries**: country-image-engine, economy-data-mapper, forum-widget-utils, military-config, national-issues-consequences, national-issues-engine, notification-optimization, system-validation, time-utils, vault-notifications, xenforo-user-sync
+- **Updated**: proxy.ts (middleware), server/db.ts, 15+ existing routers, 20+ existing hooks
+
+### Changed - Documentation (February 2026)
+
+- CLAUDE.md updated for v2 architecture and conventions
+- IMPLEMENTATION_STATUS.md refreshed with v2 metrics
+- README.md updated for v2 structure
+- All docs/ files updated: architecture, reference, systems, overview
+- New: `docs/systems/ixcredits.md`
+
+### Removed (February 2026)
+
+**Deleted Components (19 files):**
+- Intelligence: AreaFilter, BriefingCard, CriticalMetricsDashboard, IntelligenceFeed, MeetingScheduler (x2), PolicyCreator, ViewSelector
+- Diplomacy: AlliancesPanel, DiplomaticMissionsPanel, EmbassyNetworkPanel, EventsPanel
+- Executive: DecisionsPanel, ExecutiveOverview, MeetingsPanel, PlansPanel, PoliciesPanel, PoliticsPanel
+- Modals: StrategicPlanningModal
+- Quick Actions: PolicyCreator
+- UI: sonner.tsx, ToasterProvider.tsx
+
+**Deleted Infrastructure:**
+- `src/server/api/routers/optimized-countries.ts` (consolidated)
+- `src/hooks/usePolicyCreator.ts` (refactored)
+- `src/discord-transcript-.md` (stale)
+
+### Code Metrics (v2.0.0)
+
+| Metric | v1.0.0 | v2.0.0 |
+|--------|--------|--------|
+| Next.js | 15 | 16.1.3 |
+| React | 18 | 19.1.3 |
+| Prisma Models | 124 | 206 |
+| tRPC Routers | 31 | 61 |
+| API Endpoints | 304 | 927 |
+| Components | 100+ | 645+ |
+| Custom Hooks | ~30 | 80+ |
+| Page Routes | ~40 | 124 |
+| Admin Interfaces | 3 | 20 |
+| Files Changed | - | 440+ |
+| Files Deleted | - | 19 |
+| Net Line Change | - | -6,113 |
 
 ---
+
+### Prior Unreleased Changes (November 2025)
+
+The following changes were accumulated before the v2.0.0 release:
 
 ### Removed - Maps System Deprecated (November 13, 2025)
 
@@ -799,50 +971,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Version Strategy
 
 - **v1.0.0**: Production release (October 14, 2025)
-- **v1.1.0**: Documentation update and refactoring roadmap (October 16, 2025)
-- **v1.2.0+**: Future enhancements (see IMPLEMENTATION_STATUS.md for roadmap)
+- **v1.1.x**: Documentation updates, security hardening, refactoring (October 2025)
+- **v1.2.0**: Hardcoded data migration complete (October 29, 2025)
+- **v2.0.0**: Major platform upgrade - framework migration, 7 new systems (February 26, 2026)
 
 ### Version Numbering
-- **Major** (1.x.x): Breaking changes, major feature releases
-- **Minor** (x.1.x): New features, non-breaking changes, documentation updates
+- **Major** (x.0.0): Breaking changes, major framework upgrades
+- **Minor** (x.1.0): New features, non-breaking changes
 - **Patch** (x.x.1): Bug fixes, minor improvements
 
 ---
 
 ## Migration Guides
 
-### Upgrading from v1.0.0 to v1.1.0
+### Upgrading from v1.x to v2.0.0
 
-**No Breaking Changes** - v1.1.0 is a documentation and minor refactoring release.
+**Breaking Changes** - v2.0.0 is a major framework upgrade.
 
-#### What's New
-- Comprehensive documentation covering all systems
-- Refactoring roadmap for future component consolidation
-- Developer onboarding guides
-- API reference documentation
-
-#### Action Required
-- Review new documentation in `/docs/` directory
-- Familiarize yourself with component consolidation roadmap if contributing
-- Update development environment references to v1.1.0
-
----
-
-## Future Roadmap
-
-See [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) for detailed feature roadmap.
-
-### Planned for v1.2.0
-- Component consolidation (ErrorBoundary unification)
-- Shared component library adoption increase
-- Mobile PWA enhancements
-- Advanced monitoring dashboards
-
-### Planned for v2.0.0
-- Strategic Communications (StratComm) system
-- Advanced AI-powered intelligence features
-- Enhanced real-time collaboration features
-- Mobile-native optimizations
+#### Required Actions
+- Update Node.js to support Next.js 16.1.3
+- Run `npm install` to update all dependencies
+- Run `npm run db:setup` to apply new Prisma migrations (206 models)
+- Note: `src/middleware.ts` is now `src/proxy.ts`
+- Note: Tailwind CSS v4 syntax required for all styling
+- Note: Sonner toast removed - use `useNotify()` hook or `toastQueueStore` directly
 
 ---
 
@@ -850,5 +1002,3 @@ See [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) for detailed feature 
 
 - [Documentation Index](./docs/DOCUMENTATION_INDEX.md)
 - [Implementation Status](./IMPLEMENTATION_STATUS.md)
-- [Contributing Guide](./docs/CONTRIBUTING.md)
-- [API Reference](./docs/API_REFERENCE.md)

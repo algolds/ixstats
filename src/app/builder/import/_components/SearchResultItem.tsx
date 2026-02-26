@@ -105,7 +105,7 @@ export const SearchResultItem: React.FC<SearchResultItemProps> = ({
               <div className="flex items-center gap-1">
                 <Users className="h-3 w-3" style={{ color: "var(--color-info)" }} />
                 <span style={{ color: "var(--color-text-muted)" }}>
-                  {formatNumber(result.population)}
+                  {formatNumber(result.population, 0)}
                 </span>
               </div>
             )}

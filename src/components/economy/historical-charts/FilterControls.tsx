@@ -36,7 +36,7 @@ interface FilterControlsProps {
 }
 
 const eventTypes = [
-  { value: "dm_input", label: "DM Input" },
+  { value: "storyteller_effect", label: "Storyteller Effect" },
   { value: "policy_change", label: "Policy Change" },
   { value: "economic_shift", label: "Economic Shift" },
   { value: "external_event", label: "External Event" },

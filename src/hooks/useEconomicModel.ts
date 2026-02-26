@@ -8,10 +8,12 @@
  * @module useEconomicModel
  */
 
+"use client";
+
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
-import type { Country, EconomicYearData, DMInputs, EconomicModel } from "~/server/db/schema";
+import type { Country, EconomicYearData, StorytellerEffect, EconomicModel } from "~/server/db/schema";
 import {
   type ModelParameters,
   type SectorData,
@@ -29,7 +31,7 @@ import {
  */
 interface CountryWithEconomicData extends Country {
   economicYears: EconomicYearData[];
-  dmInputs?: DMInputs | null;
+  storytellerEffects?: StorytellerEffect | null;
   economicModel?: EconomicModel | null;
 }
 
@@ -121,6 +123,7 @@ export function useEconomicModel(
   country: CountryWithEconomicData,
   onModelUpdate?: (updatedModel: EconomicModel) => void
 ): UseEconomicModelReturn {
+  const notify = useNotify();
   const utils = api.useUtils();
 
   // UI State
@@ -171,14 +174,14 @@ export function useEconomicModel(
   // Mutation for saving model to database
   const updateEconomicModelMutation = api.countries.updateEconomicData.useMutation({
     onSuccess: (data) => {
-      toast.success("Economic model updated successfully!");
+      notify.success("Economic model updated successfully!");
       if (data.success && onModelUpdate) {
         void utils.countries.getByIdWithEconomicData.invalidate({ id: country.id });
       }
       setIsLoading(false);
     },
     onError: (error) => {
-      toast.error(`Error updating model: ${error.message}`);
+      notify.error(`Error updating model: ${error.message}`);
       setIsLoading(false);
     },
   });
@@ -252,7 +255,7 @@ export function useEconomicModel(
         const updatedOutputs = sectoralOutputs.filter((_, i) => i !== index);
         setSectoralOutputs(updatedOutputs);
       } else {
-        toast.error("Cannot remove the last sectoral output year.");
+        notify.error("Cannot remove the last sectoral output year.");
       }
     },
     [sectoralOutputs]
@@ -327,7 +330,7 @@ export function useEconomicModel(
     // Simulate for a moment to show loading state
     setTimeout(() => {
       setIsSimulating(false);
-      toast.success("Economic simulation completed!");
+      notify.success("Economic simulation completed!");
     }, 2000);
   }, []);
 

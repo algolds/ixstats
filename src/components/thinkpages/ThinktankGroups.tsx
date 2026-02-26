@@ -29,7 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Dialog,
   DialogContent,
@@ -275,6 +275,7 @@ export function ThinktankGroups({
   userAccounts = [],
   viewOnly = false,
 }: ThinktankGroupsProps) {
+  const notify = useNotify();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [activeTab, setActiveTab] = useState<"discover" | "joined" | "created">(
@@ -388,22 +389,22 @@ export function ThinktankGroups({
   // Mutations
   const createGroupMutation = api.thinkpages.createThinktank.useMutation({
     onSuccess: () => {
-      toast.success("ThinkTank created successfully!");
+      notify.success("ThinkTank created successfully!");
       refetchGroups();
       setShowCreateModal(false);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create ThinkTank");
+      notify.error(error.message || "Failed to create ThinkTank");
     },
   });
 
   const joinGroupMutation = api.thinkpages.joinThinktank.useMutation({
     onSuccess: () => {
-      toast.success("Joined ThinkTank successfully!");
+      notify.success("Joined ThinkTank successfully!");
       refetchGroups();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to join ThinkTank");
+      notify.error(error.message || "Failed to join ThinkTank");
     },
   });
 
@@ -414,7 +415,7 @@ export function ThinktankGroups({
       scrollToBottom();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to send message");
+      notify.error(error.message || "Failed to send message");
     },
   });
 

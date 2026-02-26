@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Grid3x3, Package, Hammer, Download } from "lucide-react";
+import { Home, Grid3x3, Package, ArrowRightLeft, Download } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 export type VaultSection = "dashboard" | "cards" | "acquire" | "create" | "import";
@@ -42,8 +42,8 @@ export const VAULT_NAV_ITEMS: {
   {
     id: "create",
     href: "/vault/create",
-    icon: Hammer,
-    title: "Create",
+    icon: ArrowRightLeft,
+    title: "Trade & Sell",
     gradient: "from-emerald-500 to-teal-500",
     activeGlow: "shadow-emerald-500/30",
   },
@@ -61,36 +61,34 @@ export const VAULT_NAV_ITEMS: {
 export function getSectionFromPathname(pathname: string): VaultSection {
   if (pathname === "/vault" || pathname === "/vault/") return "dashboard";
 
-  // Cards section: /vault/cards, /vault/inventory, /vault/collections, /vault/lore-gallery
+  // Cards section: /vault/cards, /vault/inventory, /vault/collections, /vault/gallery, /vault/lore-gallery, /vault/ns-library
   if (
     pathname.startsWith("/vault/cards") ||
     pathname.startsWith("/vault/inventory") ||
     pathname.startsWith("/vault/collections") ||
-    pathname.startsWith("/vault/lore-gallery")
+    pathname.startsWith("/vault/gallery") ||
+    pathname.startsWith("/vault/lore-gallery") ||
+    pathname.startsWith("/vault/ns-library")
   )
     return "cards";
 
-  // Acquire section: /vault/acquire, /vault/packs, /vault/market
+  // Acquire section: /vault/acquire, /vault/packs
   if (
     pathname.startsWith("/vault/acquire") ||
-    pathname.startsWith("/vault/packs") ||
-    pathname.startsWith("/vault/market")
+    pathname.startsWith("/vault/packs")
   )
     return "acquire";
 
-  // Create section: /vault/create, /vault/crafting, /vault/trading
+  // Trade & Sell section: /vault/create, /vault/trading, /vault/market
   if (
     pathname.startsWith("/vault/create") ||
-    pathname.startsWith("/vault/crafting") ||
-    pathname.startsWith("/vault/trading")
+    pathname.startsWith("/vault/trading") ||
+    pathname.startsWith("/vault/market")
   )
     return "create";
 
-  // Import section: /vault/import, /vault/ns-library
-  if (
-    pathname.startsWith("/vault/import") ||
-    pathname.startsWith("/vault/ns-library")
-  )
+  // Import section: /vault/import
+  if (pathname.startsWith("/vault/import"))
     return "import";
 
   return "dashboard";
@@ -100,19 +98,17 @@ export function getSectionFromPathname(pathname: string): VaultSection {
 export function getSubTabFromPathname(pathname: string): string | null {
   // Cards section sub-tabs
   if (pathname.startsWith("/vault/collections")) return "collections";
-  if (pathname.startsWith("/vault/lore-gallery")) return "lore-gallery";
+  if (pathname.startsWith("/vault/gallery") || pathname.startsWith("/vault/lore-gallery") || pathname.startsWith("/vault/ns-library")) return "gallery";
   if (pathname.startsWith("/vault/inventory") || pathname.startsWith("/vault/cards")) return "inventory";
 
   // Acquire section sub-tabs
-  if (pathname.startsWith("/vault/market")) return "market";
   if (pathname.startsWith("/vault/packs") || pathname.startsWith("/vault/acquire")) return "packs";
 
-  // Create section sub-tabs
-  if (pathname.startsWith("/vault/trading")) return "trading";
-  if (pathname.startsWith("/vault/crafting") || pathname.startsWith("/vault/create")) return "crafting";
+  // Trade & Sell section sub-tabs
+  if (pathname.startsWith("/vault/market")) return "market";
+  if (pathname.startsWith("/vault/trading") || pathname.startsWith("/vault/create")) return "trading";
 
   // Import section sub-tabs
-  if (pathname.startsWith("/vault/ns-library")) return "ns-library";
   if (pathname.startsWith("/vault/import")) return "import-deck";
 
   return null;
@@ -133,7 +129,7 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-md dark:bg-black/10">
+      <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
           {VAULT_NAV_ITEMS.map((item) => {
             const isActive = item.id === activeId;
@@ -142,7 +138,7 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
               "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
               isActive
                 ? cn("bg-gradient-to-r text-white shadow-md", item.gradient)
-                : "text-muted-foreground hover:bg-white/10 hover:text-foreground dark:hover:bg-white/5",
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             );
 
             return isControlled ? (
@@ -164,7 +160,7 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
 
   /* ── Desktop: icon rail with tooltip labels ── */
   return (
-    <nav className="flex flex-col gap-1.5 rounded-xl border border-white/10 bg-white/60 p-1.5 shadow-sm backdrop-blur-lg dark:bg-white/5">
+    <nav className="glass-hierarchy-parent flex flex-col gap-1.5 rounded-xl border border-border p-1.5 shadow-sm">
       {VAULT_NAV_ITEMS.map((item) => {
         const isActive = item.id === activeId;
         const Icon = item.icon;
@@ -175,7 +171,7 @@ export function VaultSidebarNav({ activeSection, onNavigate, variant = "desktop"
               "group/tip relative flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-200",
               isActive
                 ? cn("bg-gradient-to-br text-white shadow-md", item.gradient, item.activeGlow)
-                : "text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10",
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             <Icon className={cn("h-[18px] w-[18px] transition-transform duration-150", !isActive && "group-hover/tip:scale-110")} />

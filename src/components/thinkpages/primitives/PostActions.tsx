@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { cn } from "~/lib/utils";
 import { Heart, MessageCircle, Repeat2, Share } from "lucide-react";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { ReactionPopup } from "../ReactionPopup";
 import { RepostModal } from "../RepostModal";
 
@@ -62,6 +62,7 @@ export function PostActions({
   size = "md",
   className = "",
 }: PostActionsProps) {
+  const notify = useNotify();
   // Debug component initialization
   console.log("🔧 PostActions component initialized:", {
     postId,
@@ -252,11 +253,11 @@ export function PostActions({
       // Show instant feedback
       const dataAny = data as any;
       if ("removed" in dataAny && dataAny.removed) {
-        toast.success("Reaction removed!");
+        notify.success("Reaction removed!");
       } else if ("updated" in dataAny && dataAny.updated) {
-        toast.success("Reaction updated!");
+        notify.success("Reaction updated!");
       } else {
-        toast.success("Reaction added!");
+        notify.success("Reaction added!");
       }
 
       // Force immediate cache invalidation and refetch for all query variations
@@ -294,7 +295,7 @@ export function PostActions({
         utils.thinkpages.getFeed.setData({ filter: "hot" }, () => ctx.previousHotFeed);
       }
 
-      toast.error(error.message || "Failed to add reaction");
+      notify.error(error.message || "Failed to add reaction");
     },
   });
 
@@ -385,7 +386,7 @@ export function PostActions({
         postId,
         accountId: currentUserAccountId,
       });
-      toast.success("Reaction removed!");
+      notify.success("Reaction removed!");
 
       // Force immediate cache invalidation and refetch for all query variations
       utils.thinkpages.getFeed.invalidate();
@@ -422,7 +423,7 @@ export function PostActions({
         utils.thinkpages.getFeed.setData({ filter: "hot" }, () => ctx.previousHotFeed);
       }
 
-      toast.error(error.message || "Failed to remove reaction");
+      notify.error(error.message || "Failed to remove reaction");
     },
   });
 
@@ -437,13 +438,13 @@ export function PostActions({
     });
 
     if (!currentUserAccountId) {
-      toast.error("Please select a ThinkPages account first to like posts");
+      notify.error("Please select a ThinkPages account first to like posts");
       console.warn("No currentUserAccountId provided to heart button");
       return;
     }
 
     if (!postId) {
-      toast.error("Invalid post ID");
+      notify.error("Invalid post ID");
       console.error("No postId provided to heart button");
       return;
     }
@@ -479,7 +480,7 @@ export function PostActions({
       console.log("✅ Heart button action completed successfully");
     } catch (error: any) {
       console.error("❌ Error handling like:", error);
-      toast.error(error.message || "Failed to update reaction");
+      notify.error(error.message || "Failed to update reaction");
     }
   }, [
     postId,
@@ -493,7 +494,7 @@ export function PostActions({
 
   const handleRepost = useCallback(() => {
     if (!currentUserAccountId) {
-      toast.error("Please select an account to interact");
+      notify.error("Please select an account to interact");
       return;
     }
     setShowRepostModal(true);
@@ -512,13 +513,13 @@ export function PostActions({
 
       if (!currentUserAccountId) {
         console.warn("❌ No currentUserAccountId for reaction");
-        toast.error("Please select an account to interact");
+        notify.error("Please select an account to interact");
         return;
       }
 
       if (!postId) {
         console.warn("❌ No postId for reaction");
-        toast.error("Invalid post ID");
+        notify.error("Invalid post ID");
         return;
       }
 
@@ -535,14 +536,14 @@ export function PostActions({
       const isDiscordEmoji = reactionType.startsWith("discord:");
       if (!validReactionTypes.includes(reactionType) && !isDiscordEmoji) {
         console.warn("❌ Invalid reaction type:", reactionType);
-        toast.error("Invalid reaction type");
+        notify.error("Invalid reaction type");
         return;
       }
 
       // Check if already loading
       if (addReactionMutation.isPending || removeReactionMutation.isPending) {
         console.warn("⏳ Reaction already in progress");
-        toast.error("Please wait for the current reaction to complete");
+        notify.error("Please wait for the current reaction to complete");
         return;
       }
 
@@ -617,11 +618,11 @@ export function PostActions({
         .catch(() => {
           // Fallback to clipboard if share fails
           navigator.clipboard.writeText(postUrl);
-          toast.success("Post link copied to clipboard!");
+          notify.success("Post link copied to clipboard!");
         });
     } else {
       navigator.clipboard.writeText(postUrl);
-      toast.success("Post link copied to clipboard!");
+      notify.success("Post link copied to clipboard!");
     }
     onShare?.(postId);
   }, [postId, onShare]);

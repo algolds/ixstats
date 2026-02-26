@@ -7,14 +7,12 @@ import {
   Anchor,
   Swords,
   GraduationCap,
-  Loader2,
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
-import { Badge } from "~/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +30,8 @@ import {
 } from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
+import { useLocalActions } from "~/hooks/useLocalActions";
 
 interface DeploymentWizardProps {
   countryId: string;
@@ -47,6 +47,7 @@ const OP_TYPES = [
 ] as const;
 
 export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps) {
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [operationType, setOperationType] = useState<string>("peacekeeping");
@@ -66,18 +67,36 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
     { enabled: open }
   );
 
-  const createMutation = api.security.createOperation.useMutation({
-    onSuccess: () => {
-      setOpen(false);
-      setName("");
-      setDescription("");
-      setTargetCountryId("");
-      setPersonnel(1000);
-      setSelectedUnitIds([]);
-      setSelectedAssetIds([]);
-      onSuccess?.();
-    },
-  });
+  const { saveAction } = useLocalActions(countryId);
+
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setTargetCountryId("");
+    setPersonnel(1000);
+    setSelectedUnitIds([]);
+    setSelectedAssetIds([]);
+  };
+
+  const handleDeploy = () => {
+    const targetName = targetCountries.find((c) => c.id === targetCountryId)?.name ?? targetCountryId;
+    saveAction("deployment", {
+      name,
+      operationType,
+      description: description || undefined,
+      targetCountryId: targetCountryId || undefined,
+      targetCountryName: targetName || undefined,
+      personnelDeployed: personnel,
+      unitIds: selectedUnitIds,
+      assetIds: selectedAssetIds,
+      estimatedDailyCost,
+      estimatedAnnualCost,
+    });
+    notify.success("Operation launched!", `${name} deployed successfully`);
+    setOpen(false);
+    resetForm();
+    onSuccess?.();
+  };
 
   // Flatten units and assets from branches
   const allUnits = branches?.flatMap((b) => b.units ?? []) ?? [];
@@ -264,36 +283,12 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
           </div>
 
-          {createMutation.error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
-              {createMutation.error.message}
-            </div>
-          )}
-
           <Button
-            onClick={() =>
-              createMutation.mutate({
-                countryId,
-                operationType: operationType as "peacekeeping" | "defense_pact" | "blockade" | "intervention" | "training",
-                name,
-                description: description || undefined,
-                targetCountryId: targetCountryId || undefined,
-                personnelDeployed: personnel,
-                unitIds: selectedUnitIds,
-                assetIds: selectedAssetIds,
-              })
-            }
-            disabled={!name || createMutation.isPending}
+            onClick={handleDeploy}
+            disabled={!name}
             className="w-full"
           >
-            {createMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Deploying...
-              </>
-            ) : (
-              "Launch Operation"
-            )}
+            Launch Operation
           </Button>
         </div>
       </DialogContent>

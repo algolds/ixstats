@@ -120,8 +120,8 @@ export class PolicyEffectService {
       },
     });
 
-    // Create DM input to track policy effects in calculations
-    await this.db.dmInputs.create({
+    // Create storyteller effect to track policy effects in calculations
+    await this.db.storytellerEffect.create({
       data: {
         countryId,
         ixTimeTimestamp: new Date(),

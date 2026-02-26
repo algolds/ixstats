@@ -338,8 +338,12 @@ async function generateRankings(countryId: string): Promise<Ranking[]> {
 
     if (!country) return [];
 
-    // Get all countries for comparative rankings
+    // Get all countries with valid economic data for comparative rankings
     const allCountries = await db.country.findMany({
+      where: {
+        currentPopulation: { gt: 0 },
+        currentGdpPerCapita: { gt: 0 },
+      },
       select: {
         id: true,
         name: true,
@@ -354,31 +358,33 @@ async function generateRankings(countryId: string): Promise<Ranking[]> {
 
     const rankings: Ranking[] = [];
 
-    // Global GDP per capita ranking
-    const gdpRanking =
-      allCountries
-        .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
-        .findIndex((c) => c.id === countryId) + 1;
+    // Safe sort comparator that handles NaN/null
+    const safeSort = (a: number, b: number) => {
+      const aVal = Number.isFinite(a) ? a : 0;
+      const bVal = Number.isFinite(b) ? b : 0;
+      return bVal - aVal;
+    };
+
+    // GDP per capita ranking (use spread to avoid mutating original array)
+    const gdpSorted = [...allCountries].sort((a, b) =>
+      safeSort(a.currentGdpPerCapita, b.currentGdpPerCapita)
+    );
+    const gdpRanking = gdpSorted.findIndex((c) => c.id === countryId) + 1;
+
+    const regionalGdp = gdpSorted.filter((c) => c.region === country.region);
+    const tierGdp = gdpSorted.filter((c) => c.economicTier === country.economicTier);
 
     rankings.push({
       category: "GDP per Capita",
       global: { position: gdpRanking, total: allCountries.length },
       regional: {
-        position:
-          allCountries
-            .filter((c) => c.region === country.region)
-            .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
-            .findIndex((c) => c.id === countryId) + 1,
-        total: allCountries.filter((c) => c.region === country.region).length,
+        position: regionalGdp.findIndex((c) => c.id === countryId) + 1,
+        total: regionalGdp.length,
         region: country.region || "Unknown",
       },
       tier: {
-        position:
-          allCountries
-            .filter((c) => c.economicTier === country.economicTier)
-            .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
-            .findIndex((c) => c.id === countryId) + 1,
-        total: allCountries.filter((c) => c.economicTier === country.economicTier).length,
+        position: tierGdp.findIndex((c) => c.id === countryId) + 1,
+        total: tierGdp.length,
         tier: country.economicTier,
       },
       trend:
@@ -390,31 +396,26 @@ async function generateRankings(countryId: string): Promise<Ranking[]> {
       percentile: Math.round((1 - (gdpRanking - 1) / allCountries.length) * 100),
     });
 
-    // Global population ranking
-    const popRanking =
-      allCountries
-        .sort((a, b) => b.currentPopulation - a.currentPopulation)
-        .findIndex((c) => c.id === countryId) + 1;
+    // Population ranking (separate sorted copy)
+    const popSorted = [...allCountries].sort((a, b) =>
+      safeSort(a.currentPopulation, b.currentPopulation)
+    );
+    const popRanking = popSorted.findIndex((c) => c.id === countryId) + 1;
+
+    const regionalPop = popSorted.filter((c) => c.region === country.region);
+    const tierPop = popSorted.filter((c) => c.populationTier === country.populationTier);
 
     rankings.push({
       category: "Population",
       global: { position: popRanking, total: allCountries.length },
       regional: {
-        position:
-          allCountries
-            .filter((c) => c.region === country.region)
-            .sort((a, b) => b.currentPopulation - a.currentPopulation)
-            .findIndex((c) => c.id === countryId) + 1,
-        total: allCountries.filter((c) => c.region === country.region).length,
+        position: regionalPop.findIndex((c) => c.id === countryId) + 1,
+        total: regionalPop.length,
         region: country.region || "Unknown",
       },
       tier: {
-        position:
-          allCountries
-            .filter((c) => c.populationTier === country.populationTier)
-            .sort((a, b) => b.currentPopulation - a.currentPopulation)
-            .findIndex((c) => c.id === countryId) + 1,
-        total: allCountries.filter((c) => c.populationTier === country.populationTier).length,
+        position: tierPop.findIndex((c) => c.id === countryId) + 1,
+        total: tierPop.length,
         tier: country.populationTier,
       },
       trend: "stable",
@@ -908,8 +909,8 @@ export const myCountryRouter = createTRPCRouter({
       }
 
       try {
-        // Log the action as a DM input with enhanced security information
-        const dmInput = await db.dmInputs.create({
+        // Log the action as a storyteller effect with enhanced security information
+        const effect = await db.storytellerEffect.create({
           data: {
             countryId: input.countryId,
             ixTimeTimestamp: new Date(IxTime.getCurrentIxTime() * 1000),
@@ -938,7 +939,7 @@ export const myCountryRouter = createTRPCRouter({
           category: action.category,
           impact: action.impact,
           timestamp: Date.now(),
-          dmInputId: dmInput.id,
+          effectId: effect.id,
           parameters: sanitizedParameters,
         };
       } catch (error) {

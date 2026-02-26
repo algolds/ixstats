@@ -26,7 +26,7 @@ interface AddEventFormProps {
 }
 
 const eventTypes = [
-  { value: "dm_input", label: "DM Input" },
+  { value: "storyteller_effect", label: "Storyteller Effect" },
   { value: "policy_change", label: "Policy Change" },
   { value: "economic_shift", label: "Economic Shift" },
   { value: "external_event", label: "External Event" },
@@ -53,13 +53,13 @@ export const AddEventForm = React.memo(function AddEventForm({
 }: AddEventFormProps) {
   const [formData, setFormData] = useState<Omit<EconomicEvent, "id">>({
     timestamp: IxTime.getCurrentIxTime(),
-    type: "dm_input",
+    type: "storyteller_effect",
     category: "Economic Policy",
     title: "",
     description: "",
     impact: {},
     severity: "moderate",
-    source: "dm",
+    source: "storyteller",
     isActive: true,
   });
 

@@ -181,7 +181,7 @@ async function generateCardsFromWiki(
 
     try {
       // Fetch random articles
-      const articleTitles = await wikiLoreCardGenerator.fetchRandomArticles(5, wikiSource);
+      const articleTitles = await wikiLoreCardGenerator.fetchRandomArticlesWithImages(5, wikiSource);
 
       if (articleTitles.length === 0) {
         console.warn(`[Lore Card Cron] No random articles returned from ${wikiSource}`);
@@ -195,7 +195,7 @@ async function generateCardsFromWiki(
         try {
           // Generate card with timeout
           const candidate = await Promise.race([
-            wikiLoreCardGenerator.generateCard(articleTitle, wikiSource),
+            wikiLoreCardGenerator.generateCard(articleTitle, wikiSource, { requireImage: true }),
             new Promise<null>((_, reject) =>
               setTimeout(() => reject(new Error("Generation timeout")), GENERATION_CONFIG.generationTimeout)
             ),

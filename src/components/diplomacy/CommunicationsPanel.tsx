@@ -86,6 +86,7 @@ export function CommunicationsPanel({ countryId }: CommunicationsPanelProps) {
       <SecureCommunications
         countryId={countryId}
         countryName={country?.name || "Your Country"}
+        clearanceLevel="TOP_SECRET"
       />
     </div>
   );

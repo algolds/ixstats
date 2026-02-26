@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const serverIP = await getServerIP();
 
     // Proxy the request to iiwiki.com API
-    const iiwikiUrl = `https://iiwiki.com/mediawiki/api.php${queryParams ? `?${queryParams}` : ""}`;
+    const iiwikiUrl = `https://iiwiki.com/api.php${queryParams ? `?${queryParams}` : ""}`;
 
     const requestHeaders = {
       "User-Agent": "IxStats-Builder",

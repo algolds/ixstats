@@ -28,10 +28,10 @@ export enum Permission {
   CREATE_SCENARIOS = "create_scenarios",
   PREDICTIVE_MODELING = "predictive_modeling",
 
-  // DM Controls
-  CREATE_DM_INPUT = "create_dm_input",
-  MANAGE_DM_INPUTS = "manage_dm_inputs",
-  GLOBAL_DM_INPUT = "global_dm_input",
+  // Storyteller Controls
+  CREATE_STORYTELLER_EFFECT = "create_storyteller_effect",
+  MANAGE_STORYTELLER_EFFECTS = "manage_storyteller_effects",
+  GLOBAL_STORYTELLER_EFFECT = "global_storyteller_effect",
 
   // System Administration
   VIEW_ADMIN_PANEL = "view_admin_panel",
@@ -66,7 +66,7 @@ export interface UserAccessProfile {
   limits: {
     maxScenarios: number;
     maxExportsPerDay: number;
-    maxDmInputsPerMonth: number;
+    maxEffectsPerMonth: number;
   };
 }
 
@@ -93,13 +93,13 @@ export class AccessControlManager {
       Permission.ADVANCED_ANALYTICS,
       Permission.CREATE_SCENARIOS,
       Permission.EXPORT_DATA,
-      Permission.CREATE_DM_INPUT,
+      Permission.CREATE_STORYTELLER_EFFECT,
     ],
 
     [UserRole.MODERATOR]: [
       // All country owner permissions plus
       ...AccessControlManager.getRolePermissions(UserRole.COUNTRY_OWNER),
-      Permission.MANAGE_DM_INPUTS,
+      Permission.MANAGE_STORYTELLER_EFFECTS,
       Permission.VIEW_SDI,
       Permission.VIEW_ECI,
       Permission.VIEW_ADMIN_PANEL,
@@ -109,7 +109,7 @@ export class AccessControlManager {
     [UserRole.ADMIN]: [
       // All moderator permissions plus
       ...AccessControlManager.getRolePermissions(UserRole.MODERATOR),
-      Permission.GLOBAL_DM_INPUT,
+      Permission.GLOBAL_STORYTELLER_EFFECT,
       Permission.MANAGE_USERS,
       Permission.SYSTEM_CONFIG,
       Permission.MANAGE_SDI,
@@ -142,7 +142,7 @@ export class AccessControlManager {
       limits: {
         maxScenarios: 100,
         maxExportsPerDay: 1000,
-        maxDmInputsPerMonth: 500,
+        maxEffectsPerMonth: 500,
       },
     },
 
@@ -160,7 +160,7 @@ export class AccessControlManager {
       limits: {
         maxScenarios: 50,
         maxExportsPerDay: 200,
-        maxDmInputsPerMonth: 100,
+        maxEffectsPerMonth: 100,
       },
     },
 
@@ -178,7 +178,7 @@ export class AccessControlManager {
       limits: {
         maxScenarios: 25,
         maxExportsPerDay: 50,
-        maxDmInputsPerMonth: 20,
+        maxEffectsPerMonth: 20,
       },
     },
   };
@@ -223,7 +223,7 @@ export class AccessControlManager {
       limits: {
         maxScenarios: role === UserRole.COUNTRY_OWNER ? 10 : 3,
         maxExportsPerDay: role === UserRole.COUNTRY_OWNER ? 20 : 5,
-        maxDmInputsPerMonth: role === UserRole.COUNTRY_OWNER ? 5 : 0,
+        maxEffectsPerMonth: role === UserRole.COUNTRY_OWNER ? 5 : 0,
       },
     };
   }

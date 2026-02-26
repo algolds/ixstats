@@ -32,6 +32,8 @@ import {
   Network,
   Building2,
   Blocks,
+  Vote,
+  Layers,
 } from "lucide-react";
 
 // Components
@@ -43,7 +45,6 @@ import {
   ATOMIC_COMPONENTS,
   ComponentType,
 } from "~/components/government/atoms/AtomicGovernmentComponents";
-import { PublicVitalityRings } from "~/components/countries/PublicVitalityRings";
 import { ExternalLink } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
 
@@ -58,7 +59,7 @@ function CountryShowcaseCard({ country }: { country: any }) {
     const fetchWikiData = async () => {
       try {
         // Fetch extract and page images
-        const apiUrl = `https://ixwiki.com/w/api.php?action=query&prop=extracts|pageimages&exintro=1&explaintext=1&piprop=original&format=json&titles=${encodeURIComponent(country.name)}`;
+        const apiUrl = `https://ixwiki.com/api.php?action=query&prop=extracts|pageimages&exintro=1&explaintext=1&piprop=original&format=json&titles=${encodeURIComponent(country.name)}`;
         const resp = await fetch(apiUrl, {
           headers: {
             "User-Agent": "IxStats-Platform",
@@ -110,7 +111,7 @@ function CountryShowcaseCard({ country }: { country: any }) {
 
         // Fallback: Try to fetch coat of arms specifically
         if (!coatOfArmsUrl) {
-          const coaApiUrl = `https://ixwiki.com/w/api.php?action=query&prop=images&format=json&titles=${encodeURIComponent(country.name)}`;
+          const coaApiUrl = `https://ixwiki.com/api.php?action=query&prop=images&format=json&titles=${encodeURIComponent(country.name)}`;
           const coaResp = await fetch(coaApiUrl, {
             headers: {
               "User-Agent": "IxStats-Platform",
@@ -155,8 +156,12 @@ function CountryShowcaseCard({ country }: { country: any }) {
   const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
   const ixstatsUrl = `/countries/${country.slug}`;
 
+  const identity = country.nationalIdentity;
+  const growthRate = country.adjustedGdpGrowth ?? 0;
+  const growthPositive = growthRate >= 0;
+
   return (
-    <div className="relative h-full w-full overflow-y-auto p-8">
+    <div className="relative h-full w-full overflow-y-auto p-6 md:p-8">
       {/* Flag background */}
       {flagUrl && (
         <div className="absolute inset-0 opacity-10">
@@ -164,20 +169,31 @@ function CountryShowcaseCard({ country }: { country: any }) {
         </div>
       )}
 
-      <div className="relative z-10 space-y-6">
+      <div className="relative z-10 space-y-5">
         {/* Header with COA */}
         <div className="flex items-start gap-4">
           <div className="flex-1">
-            <h3 className="mb-2 text-4xl font-bold text-white">
-              {country.name.replace(/_/g, " ")}
+            <h3 className="mb-1.5 text-3xl font-bold text-white md:text-4xl">
+              {identity?.officialName || country.name.replace(/_/g, " ")}
             </h3>
-            <Badge className="border border-yellow-500/40 bg-yellow-500/20 text-yellow-300">
-              {country.economicTier}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border border-yellow-500/40 bg-yellow-500/20 text-yellow-300">
+                {country.economicTier}
+              </Badge>
+              {country.governmentType && (
+                <Badge className="border border-purple-500/40 bg-purple-500/20 text-purple-300">
+                  {country.governmentType}
+                </Badge>
+              )}
+              {country.continent && (
+                <Badge className="border border-blue-500/40 bg-blue-500/20 text-blue-300">
+                  {country.continent}
+                </Badge>
+              )}
+            </div>
           </div>
-          {/* Coat of Arms */}
           {coatOfArmsUrl && (
-            <div className="glass-hierarchy-child flex h-20 w-20 items-center justify-center rounded-xl p-2">
+            <div className="glass-hierarchy-child flex h-20 w-20 shrink-0 items-center justify-center rounded-xl p-2">
               <img
                 src={coatOfArmsUrl}
                 alt={`${country.name} coat of arms`}
@@ -187,7 +203,33 @@ function CountryShowcaseCard({ country }: { country: any }) {
           )}
         </div>
 
-        {/* Wiki Intro - First Paragraph and a Half */}
+        {/* National Identity Quick Facts */}
+        {identity && (identity.capitalCity || identity.currency || identity.demonym) && (
+          <div className="glass-hierarchy-child grid grid-cols-3 gap-3 rounded-xl p-3">
+            {identity.capitalCity && (
+              <div className="text-center">
+                <div className="mb-0.5 text-[10px] uppercase tracking-wider text-gray-500">Capital</div>
+                <div className="text-xs font-medium text-gray-200">{identity.capitalCity}</div>
+              </div>
+            )}
+            {identity.currency && (
+              <div className="text-center">
+                <div className="mb-0.5 text-[10px] uppercase tracking-wider text-gray-500">Currency</div>
+                <div className="text-xs font-medium text-gray-200">
+                  {identity.currencySymbol ? `${identity.currency} (${identity.currencySymbol})` : identity.currency}
+                </div>
+              </div>
+            )}
+            {identity.demonym && (
+              <div className="text-center">
+                <div className="mb-0.5 text-[10px] uppercase tracking-wider text-gray-500">Demonym</div>
+                <div className="text-xs font-medium text-gray-200">{identity.demonym}</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Wiki Intro */}
         {wikiIntro && (
           <div className="glass-hierarchy-child space-y-3 rounded-xl p-4">
             <p className="text-sm leading-relaxed whitespace-pre-line text-gray-200">{wikiIntro}</p>
@@ -212,47 +254,169 @@ function CountryShowcaseCard({ country }: { country: any }) {
           </div>
         )}
 
-        {/* Vitality Rings - Using actual component */}
-        <div className="origin-center scale-90">
-          <PublicVitalityRings
-            country={{
-              name: country.name,
-              currentGdpPerCapita: country.currentGdpPerCapita || 0,
-              currentTotalGdp: country.currentTotalGdp || 0,
-              currentPopulation: country.currentPopulation || 0,
-              populationGrowthRate: country.populationGrowthRate,
-              adjustedGdpGrowth: country.adjustedGdpGrowth,
-              economicTier: country.economicTier || "Unknown",
-              populationTier: country.populationTier,
-              populationDensity: country.populationDensity,
-              landArea: country.landArea,
-              continent: country.continent,
-              region: country.region,
-            }}
-          />
+        {/* Economic Dashboard - MyCountry Style */}
+        <div className="space-y-3">
+          {/* Primary Metrics - 2x2 grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="glass-hierarchy-child rounded-xl p-3">
+              <div className="mb-1 flex items-center gap-1.5">
+                <TrendingUp className="h-3 w-3 text-green-400" />
+                <span className="text-[10px] uppercase tracking-wider text-gray-500">Total GDP</span>
+              </div>
+              <div className="text-lg font-bold text-green-400">
+                {formatCurrency(country.currentTotalGdp)}
+              </div>
+            </div>
+            <div className="glass-hierarchy-child rounded-xl p-3">
+              <div className="mb-1 flex items-center gap-1.5">
+                <Users className="h-3 w-3 text-blue-400" />
+                <span className="text-[10px] uppercase tracking-wider text-gray-500">Population</span>
+              </div>
+              <div className="text-lg font-bold text-blue-400">
+                {formatPopulation(country.currentPopulation)}
+              </div>
+            </div>
+            <div className="glass-hierarchy-child rounded-xl p-3">
+              <div className="mb-1 flex items-center gap-1.5">
+                <BarChart3 className="h-3 w-3 text-yellow-400" />
+                <span className="text-[10px] uppercase tracking-wider text-gray-500">Per Capita</span>
+              </div>
+              <div className="text-lg font-bold text-yellow-400">
+                {formatCurrency(country.currentGdpPerCapita)}
+              </div>
+            </div>
+            <div className="glass-hierarchy-child rounded-xl p-3">
+              <div className="mb-1 flex items-center gap-1.5">
+                <Activity className={`h-3 w-3 ${growthPositive ? "text-emerald-400" : "text-red-400"}`} />
+                <span className="text-[10px] uppercase tracking-wider text-gray-500">Growth</span>
+              </div>
+              <div className={`text-lg font-bold ${growthPositive ? "text-emerald-400" : "text-red-400"}`}>
+                {growthPositive ? "+" : ""}{(growthRate * 100).toFixed(2)}%
+              </div>
+            </div>
+          </div>
+
+          {/* Secondary Metrics - horizontal row */}
+          <div className="glass-hierarchy-child grid grid-cols-4 gap-2 rounded-xl p-3">
+            {country.landArea && (
+              <div className="text-center">
+                <div className="text-[10px] text-gray-500">Land Area</div>
+                <div className="text-xs font-semibold text-gray-300">
+                  {country.landArea > 1000000
+                    ? `${(country.landArea / 1000000).toFixed(2)}M km²`
+                    : country.landArea > 1000
+                      ? `${(country.landArea / 1000).toFixed(0)}K km²`
+                      : `${country.landArea.toLocaleString()} km²`}
+                </div>
+              </div>
+            )}
+            {country.populationDensity && (
+              <div className="text-center">
+                <div className="text-[10px] text-gray-500">Density</div>
+                <div className="text-xs font-semibold text-gray-300">
+                  {country.populationDensity.toFixed(0)}/km²
+                </div>
+              </div>
+            )}
+            {country.unemploymentRate != null && (
+              <div className="text-center">
+                <div className="text-[10px] text-gray-500">Unemployment</div>
+                <div className="text-xs font-semibold text-gray-300">
+                  {(country.unemploymentRate * 100).toFixed(1)}%
+                </div>
+              </div>
+            )}
+            {country.lifeExpectancy != null && (
+              <div className="text-center">
+                <div className="text-[10px] text-gray-500">Life Exp.</div>
+                <div className="text-xs font-semibold text-gray-300">
+                  {country.lifeExpectancy.toFixed(1)} yrs
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="glass-hierarchy-child rounded-xl p-3 text-center">
-            <div className="mb-1 text-xs text-gray-400">Total GDP</div>
-            <div className="text-sm font-bold text-green-400">
-              {formatCurrency(country.currentTotalGdp)}
-            </div>
+        {/* Leader & Motto */}
+        {(country.leader || identity?.motto) && (
+          <div className="glass-hierarchy-child rounded-xl p-3">
+            {country.leader && (
+              <div className="flex items-center gap-2">
+                <Crown className="h-3.5 w-3.5 text-yellow-500" />
+                <span className="text-xs text-gray-400">Leader:</span>
+                <span className="text-xs font-medium text-gray-200">{country.leader}</span>
+              </div>
+            )}
+            {identity?.motto && (
+              <div className={`flex items-start gap-2 ${country.leader ? "mt-2" : ""}`}>
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 text-amber-500" />
+                <span className="text-xs italic text-gray-300">&ldquo;{identity.motto}&rdquo;</span>
+              </div>
+            )}
           </div>
-          <div className="glass-hierarchy-child rounded-xl p-3 text-center">
-            <div className="mb-1 text-xs text-gray-400">Population</div>
-            <div className="text-sm font-bold text-blue-400">
-              {formatPopulation(country.currentPopulation)}
+        )}
+
+        {/* Country Health Score */}
+        {(() => {
+          const economicHealth = Math.min(100, ((country.currentGdpPerCapita || 0) / 50000) * 100);
+          const developmentIndex =
+            country.economicTier === "Extravagant" ? 100
+            : country.economicTier === "Very Strong" ? 85
+            : country.economicTier === "Strong" ? 70
+            : country.economicTier === "Healthy" ? 55
+            : country.economicTier === "Developed" ? 40
+            : country.economicTier === "Developing" ? 25 : 10;
+          const economicGrowth = Math.min(100, Math.max(0, (((country.adjustedGdpGrowth ?? 0) * 100 + 3) * 20)));
+          const globalRelevance = Math.min(100, Math.log10((country.currentTotalGdp || 0) / 1000000000 + 1) * 25);
+          const overallHealth = Math.round((economicHealth + developmentIndex + economicGrowth + globalRelevance) / 4);
+          const healthColor = overallHealth >= 70 ? "text-emerald-400" : overallHealth >= 45 ? "text-yellow-400" : "text-red-400";
+          const healthBorder = overallHealth >= 70 ? "border-emerald-500/30" : overallHealth >= 45 ? "border-yellow-500/30" : "border-red-500/30";
+          const healthGrade = overallHealth >= 85 ? "A+" : overallHealth >= 75 ? "A" : overallHealth >= 65 ? "B+" : overallHealth >= 55 ? "B" : overallHealth >= 45 ? "C+" : overallHealth >= 35 ? "C" : "D";
+
+          const indicators = [
+            { label: "Economy", value: economicHealth, color: "text-green-400" },
+            { label: "Development", value: developmentIndex, color: "text-blue-400" },
+            { label: "Growth", value: economicGrowth, color: "text-emerald-400" },
+            { label: "Global Impact", value: globalRelevance, color: "text-amber-400" },
+          ];
+
+          return (
+            <div className={`glass-hierarchy-child rounded-xl border ${healthBorder} p-4`}>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-gray-400">Country Health</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-2xl font-bold ${healthColor}`}>{overallHealth}</span>
+                  <span className="text-xs text-gray-500">/100</span>
+                  <span className={`ml-1.5 rounded-md border ${healthBorder} px-1.5 py-0.5 text-xs font-bold ${healthColor}`}>
+                    {healthGrade}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {indicators.map((ind) => (
+                  <div key={ind.label} className="flex items-center gap-3">
+                    <span className="w-20 text-[10px] text-gray-500">{ind.label}</span>
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, ind.value)}%`,
+                          backgroundColor: ind.value >= 70 ? "#34d399" : ind.value >= 45 ? "#fbbf24" : "#f87171",
+                        }}
+                      />
+                    </div>
+                    <span className={`w-8 text-right text-[10px] font-medium ${ind.color}`}>
+                      {Math.round(ind.value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="glass-hierarchy-child rounded-xl p-3 text-center">
-            <div className="mb-1 text-xs text-gray-400">Per Capita</div>
-            <div className="text-sm font-bold text-yellow-400">
-              {formatCurrency(country.currentGdpPerCapita)}
-            </div>
-          </div>
-        </div>
+          );
+        })()}
       </div>
     </div>
   );
@@ -263,7 +427,7 @@ export function IxStatsSplashPage() {
   const router = useRouter();
 
   // Fetch live data
-  const { data: countriesData } = api.countries.getAll.useQuery();
+  const { data: countriesData } = api.countries.getAll.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
   const { data: globalStats } = api.countries.getGlobalStats.useQuery();
 
   // Prefetch flags for top countries in the background
@@ -433,7 +597,7 @@ export function IxStatsSplashPage() {
               {isValidGlobalStats(globalStats) ? globalStats.totalCountries : 0} Nations Active
             </span>
             <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 px-2 py-0.5 text-xs text-white">
-              v1.4 Preview
+              v2.0
             </Badge>
           </motion.div>
 
@@ -475,7 +639,7 @@ export function IxStatsSplashPage() {
           </p>
 
           <p className="text-muted-foreground/80 mx-auto mb-10 max-w-3xl text-lg">
-            The most comprehensive nation simulation platform. Design your government with total freedom. Roleplay through immersive systems that respond to your choices. Experience a persistent world where economies grow, diplomacy evolves, and every decision shapes history.
+            The most comprehensive nation simulation platform. Design your government with total freedom. Run elections, conduct diplomacy, and collect trading cards. Roleplay through immersive systems that respond to your choices. Experience a persistent world where economies grow, politics shift, and every decision shapes history.
           </p>
 
           {/* Live Global Stats - Dynamic Island Colors */}
@@ -570,7 +734,7 @@ export function IxStatsSplashPage() {
                 Your nation, your rules, your data—all in one command center. Real-time intelligence feeds track threats and opportunities. Dynamic economic projections show where you're headed. Crisis alerts demand immediate decisions. This isn't a dashboard—it's your nation's nerve center.
               </p>
 
-              <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <div className="glass-hierarchy-child rounded-xl border border-yellow-500/20 p-4">
                   <div className="mb-3 flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500">
@@ -623,6 +787,34 @@ export function IxStatsSplashPage() {
                     Real-time alerts, trend analysis, risk assessment, and forward-looking
                     predictions. Vitality scoring across 5 dimensions helps you understand your
                     nation&apos;s health at a glance.
+                  </p>
+                </div>
+
+                <div className="glass-hierarchy-child rounded-xl border border-violet-500/20 p-4">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500">
+                      <Vote className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-base font-semibold">Politics & Elections</h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Run elections with D&apos;Hondt proportional representation or first-past-the-post.
+                    Manage political parties, configure your legislature, and visualize seat
+                    distributions in an interactive hemicycle.
+                  </p>
+                </div>
+
+                <div className="glass-hierarchy-child rounded-xl border border-amber-500/20 p-4">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-yellow-500">
+                      <Layers className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-base font-semibold">IxCards & MyVault</h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Collect nation cards, open packs, and trade with other players. Craft new cards,
+                    bid on the marketplace, and build a vault of lore cards generated from wiki
+                    articles.
                   </p>
                 </div>
               </div>
@@ -901,9 +1093,9 @@ export function IxStatsSplashPage() {
                     <h3 className="text-base font-semibold">Growing Nations</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    Watch your economy grow over months and years. Track meaningful progress as your
-                    GDP increases, your population shifts, and your policies reshape your
-                    nation&apos;s trajectory in realistic ways.
+                    Watch your economy grow over months and years. Face national issues that demand
+                    real decisions with lasting consequences. Track meaningful progress as your
+                    policies reshape your nation&apos;s trajectory.
                   </p>
                 </div>
 
@@ -915,9 +1107,9 @@ export function IxStatsSplashPage() {
                     <h3 className="text-base font-semibold">Real Impact</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    Your choices matter. Trade agreements strengthen partner economies. Diplomatic
-                    missions succeed or fail based on your relationships. Your ThinkPages characters
-                    create narratives others can engage with and build upon.
+                    Your choices matter. Trade agreements strengthen economies. Elections shift
+                    political power. Diplomatic missions succeed or fail based on relationships.
+                    Crisis events demand immediate responses with real consequences.
                   </p>
                 </div>
               </div>
@@ -950,8 +1142,8 @@ export function IxStatsSplashPage() {
 
               <p className="text-muted-foreground mb-8 max-w-3xl text-lg">
                 Build relationships with other nations. Establish embassies, conduct diplomatic
-                missions, exchange culture and knowledge. Navigate the complexities of international
-                relations and forge alliances that shape your region&apos;s story.
+                missions, form alliances, and set foreign policy. Navigate the complexities of
+                international relations and shape your region&apos;s story.
               </p>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -963,7 +1155,7 @@ export function IxStatsSplashPage() {
                     <h3 className="text-base font-semibold">Embassies & Missions</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    Open embassies in other nations and run diplomatic missions - negotiate trade
+                    Open embassies, run diplomatic missions, and form alliances. Negotiate trade
                     deals, organize cultural exchanges, coordinate during crises, or pursue economic
                     cooperation projects.
                   </p>
@@ -991,9 +1183,9 @@ export function IxStatsSplashPage() {
                     <h3 className="text-base font-semibold">Track Relationships</h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    See your diplomatic ties at a glance. Monitor relationship strength with other
-                    nations, review your shared history, and understand the web of alliances shaping
-                    your region.
+                    See your diplomatic ties at a glance. Monitor relationship strength, manage
+                    foreign policy stances, review alliance commitments, and understand the web of
+                    relationships shaping your region.
                   </p>
                 </div>
               </div>
@@ -1013,7 +1205,7 @@ export function IxStatsSplashPage() {
               Join Our Community
             </h2>
             <p className="text-muted-foreground mx-auto mb-6 max-w-2xl text-base md:text-lg">
-              IxStats is in active development. Join our Discord to follow updates, suggest
+              IxStats is live and growing. Join our Discord to follow updates, suggest
               features, and connect with the community.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">

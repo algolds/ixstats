@@ -77,7 +77,7 @@ import type {
 } from "~/types/achievement-constellation";
 import { ACHIEVEMENT_TEMPLATES, calculatePrestigeScore } from "~/types/achievement-constellation";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface DiplomaticIntelligenceProfileProps {
   country: EnhancedCountryProfileData;
@@ -92,6 +92,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
   viewerClearanceLevel = "PUBLIC",
   onSocialAction,
 }) => {
+  const notify = useNotify();
   const [activeIntelSection, setActiveIntelSection] = useState<
     | "command-center"
     | "intelligence-dossier"
@@ -126,7 +127,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
 
   const createConversationMutation = api.thinkpages.createConversation.useMutation({
     onSuccess: (newConversation: any) => {
-      toast.success(`Opening secure channel with ${country.name}...`);
+      notify.success(`Opening secure channel with ${country.name}...`);
       // Redirect to ThinkShare and auto-select the messages view
       const url = new URL("/thinkpages", window.location.origin);
       url.searchParams.set("view", "messages");
@@ -134,7 +135,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
       window.location.href = url.toString();
     },
     onError: (error: any) => {
-      toast.error(`Failed to establish secure communication: ${error.message}`);
+      notify.error(`Failed to establish secure communication: ${error.message}`);
     },
   });
 
@@ -187,7 +188,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
     // Note: getAccountsByCountry is deprecated and returns empty array
     // ThinkPages now uses real User accounts directly
     // This functionality needs to be refactored to use the new User-based system
-    toast.error("Direct messaging is being updated. Please use diplomatic channels for now.");
+    notify.error("Direct messaging is being updated. Please use diplomatic channels for now.");
     return;
 
     // TODO: Refactor this to work with new User-based ThinkPages system
@@ -743,7 +744,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Density:</span>
                               <span className="text-foreground">
-                                {demographicMetrics.populationDensity.toFixed(1)}/km²
+                                {Math.round(demographicMetrics.populationDensity)}/km²
                               </span>
                             </div>
                           )}

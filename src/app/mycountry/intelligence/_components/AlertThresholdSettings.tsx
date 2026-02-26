@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface AlertThresholdSettingsProps {
   countryId: string;
@@ -92,6 +92,7 @@ const METRIC_NAMES: Record<string, { value: string; label: string; unit?: string
 
 export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProps) {
   const { user } = useUser();
+  const notify = useNotify();
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState<ThresholdFormData>({
     alertType: "gdp",
@@ -115,23 +116,23 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
   // Mutations
   const updateMutation = api.unifiedIntelligence.updateAlertThreshold.useMutation({
     onSuccess: () => {
-      toast.success("Alert threshold saved successfully");
+      notify.success("Alert threshold saved successfully");
       void refetch();
       setIsCreating(false);
       resetForm();
     },
     onError: (error) => {
-      toast.error(`Failed to save threshold: ${error.message}`);
+      notify.error(`Failed to save threshold: ${error.message}`);
     },
   });
 
   const deleteMutation = api.unifiedIntelligence.deleteAlertThreshold.useMutation({
     onSuccess: () => {
-      toast.success("Alert threshold deleted successfully");
+      notify.success("Alert threshold deleted successfully");
       void refetch();
     },
     onError: (error) => {
-      toast.error(`Failed to delete threshold: ${error.message}`);
+      notify.error(`Failed to delete threshold: ${error.message}`);
     },
   });
 
@@ -148,7 +149,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
 
   const handleSave = () => {
     if (!user?.id) {
-      toast.error("User not authenticated");
+      notify.error("User not authenticated");
       return;
     }
 

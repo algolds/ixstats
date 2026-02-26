@@ -6,6 +6,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { PackType } from "@prisma/client";
+import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 
 interface PackPurchaseModalProps {
@@ -44,10 +45,12 @@ export const PackPurchaseModal = React.memo<PackPurchaseModalProps>(
     onPurchase,
     onCancel,
   }) => {
+    const { userId } = useAuth();
+
     // Fetch user's vault balance
     const { data: vaultData } = api.vault.getBalance.useQuery(
-      { userId: "" }, // TODO: Pass actual userId
-      { enabled: isOpen }
+      { userId: userId ?? "" },
+      { enabled: isOpen && !!userId }
     );
 
     // Purchase mutation

@@ -128,13 +128,16 @@ export function useMyCountryCompliance() {
       }
       if (!isValueProvided(taxSystem.categories)) {
         missingTaxes.push("Tax categories");
-      } else if (
-        Array.isArray(taxSystem.categories) &&
-        !taxSystem.categories.some(
-          (category: any) => Array.isArray(category.taxBrackets) && category.taxBrackets.length > 0
-        )
-      ) {
-        missingTaxes.push("Tax brackets or rate structure");
+      } else {
+        // Brackets are returned as taxSystem.brackets (keyed by category index)
+        const hasBrackets = taxSystem.brackets
+          && typeof taxSystem.brackets === "object"
+          && Object.values(taxSystem.brackets).some(
+            (arr: any) => Array.isArray(arr) && arr.length > 0
+          );
+        if (!hasBrackets) {
+          missingTaxes.push("Tax brackets or rate structure");
+        }
       }
       if (!isValueProvided(taxSystem.taxSystem.complianceRate)) {
         missingTaxes.push("Compliance rate target");

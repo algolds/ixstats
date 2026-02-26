@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
 
 export function useThinkpagesSettings(user: any) {
+  const notify = useNotify();
   const [isEditingThinkpages, setIsEditingThinkpages] = useState(false);
   const [thinkpagesPostingFrequency, setThinkpagesPostingFrequency] = useState("");
   const [thinkpagesPoliticalLean, setThinkpagesPoliticalLean] = useState("");
@@ -37,11 +38,11 @@ export function useThinkpagesSettings(user: any) {
         politicalLean: thinkpagesPoliticalLean as "left" | "center" | "right",
         personality: thinkpagesPersonality as "serious" | "casual" | "satirical",
       });
-      toast.success("Thinkpages settings updated!");
+      notify.success("Thinkpages settings updated!");
       setIsEditingThinkpages(false);
       refetchThinkpagesAccount();
     } catch (error: any) {
-      toast.error(error.message || "Failed to update Thinkpages settings");
+      notify.error(error.message || "Failed to update Thinkpages settings");
     }
   };
 

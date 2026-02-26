@@ -5,7 +5,7 @@ import { useAchievementUpdates } from "~/hooks/useDiplomaticUpdates";
 import { globalNotificationBridge } from "~/services/GlobalNotificationBridge";
 import { api } from "~/trpc/react";
 import type { LiveIntelligenceUpdate } from "~/lib/diplomatic-websocket";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 export interface AchievementNotificationConfig {
   countryId: string;
@@ -47,6 +47,7 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
     enableNotificationCenter = true,
   } = config;
 
+  const notify = useNotify();
   // Connect to WebSocket for real-time achievement updates
   const { isConnected, recentEvents, actions } = useAchievementUpdates(countryId, enableRealTime);
 
@@ -171,10 +172,7 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
             legendary: "👑",
           };
 
-          toast.success(`${tierEmojis[achievement.tier]} ${achievement.title}`, {
-            description: `${achievement.description} (+${achievement.points} points)`,
-            duration: 5000,
-          });
+          notify.success(`${tierEmojis[achievement.tier]} ${achievement.title}`, `${achievement.description} (+${achievement.points} points)`);
         }
 
         // Play sound effect based on tier
@@ -228,10 +226,7 @@ export function useAchievementNotifications(config: AchievementNotificationConfi
       }
 
       if (enableToast && !enableDynamicIsland) {
-        toast.success(`🏆 ${fullAchievement.title}`, {
-          description: `${fullAchievement.description} (+${fullAchievement.points} points)`,
-          duration: 5000,
-        });
+        notify.success(`${fullAchievement.title}`, `${fullAchievement.description} (+${fullAchievement.points} points)`);
       }
 
       playAchievementSound(fullAchievement.tier);

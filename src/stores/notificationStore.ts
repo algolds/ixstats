@@ -23,6 +23,12 @@ import type {
 
 
 import { generateSafeKey } from "~/app/mycountry/utils/keyValidation";
+import {
+  calculateEnhancedPriority,
+  categorizeNotification,
+  optimizeDeliveryMethod,
+  createSmartBatches,
+} from "~/lib/notification-optimization";
 
 interface NotificationState {
   // Core data
@@ -188,29 +194,29 @@ export const useNotificationStore = create<NotificationStore>()(
           relevanceScore: 50,
         };
 
-        // Apply enhanced priority calculation (async) - temporarily disabled due to type issues
+        // Apply enhanced priority calculation
         try {
-          // const enhancedPriority = await calculateEnhancedPriority(notification, state.notifications, state.userPreferences);
-          // notification.priority = enhancedPriority.finalPriority;
-          // notification.relevanceScore = enhancedPriority.breakdown?.relevance || 50;
+          const enhancedPriority = calculateEnhancedPriority(notification, state.notifications, state.userPreferences);
+          notification.priority = enhancedPriority.finalPriority;
+          notification.relevanceScore = enhancedPriority.relevanceScore;
         } catch (error) {
           console.warn("Enhanced priority calculation failed, using defaults:", error);
         }
 
-        // Apply categorization (async)
+        // Apply categorization
         try {
-          // const categorization = await categorizeNotification(notification);
-          // notification.category = categorization.primary || notification.category;
-          // notification.severity = categorization.severity || notification.severity;
+          const categorization = categorizeNotification(notification);
+          notification.category = categorization.primary || notification.category;
+          notification.severity = categorization.severity || notification.severity;
         } catch (error) {
           console.warn("Notification categorization failed, using defaults:", error);
         }
 
-        // Optimize delivery (async)
+        // Optimize delivery
         try {
-          // const deliveryOptimization = await optimizeDelivery(notification, state.deliveryContext);
-          // notification.deliveryMethod = deliveryOptimization.method || 'dynamic-island';
-          // notification.status = deliveryOptimization.shouldDefer ? 'deferred' : 'delivered';
+          const deliveryResult = optimizeDeliveryMethod(notification, state.deliveryContext);
+          notification.deliveryMethod = deliveryResult.method || "dynamic-island";
+          notification.status = deliveryResult.shouldDefer ? "deferred" : "delivered";
         } catch (error) {
           console.warn("Delivery optimization failed, using defaults:", error);
           notification.status = "delivered";
@@ -292,25 +298,29 @@ export const useNotificationStore = create<NotificationStore>()(
 
       if (pendingNotifications.length === 0) return;
 
-      // const grouped = await groupNotifications(pendingNotifications, state.userPreferences);
-      // const batches = await createSmartBatches(grouped, state.deliveryContext);
-
-      // set({ batches });
+      try {
+        const batches = createSmartBatches(pendingNotifications, state.userPreferences);
+        if (batches.length > 0) {
+          set({ batches });
+        }
+      } catch (error) {
+        console.warn("Smart batching failed, skipping:", error);
+      }
     },
 
     optimizeDelivery: () => {
       const state = get();
       const pendingNotifications = state.notifications.filter((n) => n.status === "pending");
 
+      // Early return: nothing to optimize → no state update needed
+      if (pendingNotifications.length === 0) return;
+
       // Temporarily disable delivery optimization due to runtime errors
-      const optimizedNotifications = pendingNotifications.map((notification) => {
-        // const optimization = optimizeDelivery(notification, state.deliveryContext);
-        return {
-          ...notification,
-          deliveryMethod: "toast" as const, // Default fallback
-          status: "delivered" as const,
-        };
-      });
+      const optimizedNotifications = pendingNotifications.map((notification) => ({
+        ...notification,
+        deliveryMethod: "toast" as const,
+        status: "delivered" as const,
+      }));
 
       set((state) => {
         const updatedNotifications = state.notifications.map((n) => {
@@ -370,8 +380,19 @@ export const useNotificationStore = create<NotificationStore>()(
         };
       });
 
-      // Update user attention based on engagement - temporarily disabled
-      // updateUserAttention(action, get().deliveryContext);
+      // Update user attention score based on engagement action
+      try {
+        const currentScore = get().deliveryContext.userAttentionScore ?? 80;
+        let delta = 0;
+        if (action === "read" || action === "viewed") delta = 5;
+        else if (action === "clicked" || action === "action-taken") delta = 10;
+        else if (action === "dismissed") delta = -2;
+        else if (action === "ignored") delta = -5;
+        const newScore = Math.max(0, Math.min(100, currentScore + delta));
+        get().updateDeliveryContext({ userAttentionScore: newScore });
+      } catch {
+        // Silently ignore attention update failures
+      }
     },
 
     updatePreferences: (preferences) => {

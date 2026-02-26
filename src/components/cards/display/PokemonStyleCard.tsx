@@ -29,6 +29,7 @@ import {
 } from "~/lib/holographic-effects";
 import { proxyNSImage } from "~/lib/ns-image-proxy";
 import { useSoundService } from "~/lib/sound-service";
+import { CardHolographicCover } from "./CardHolographicCover";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 
 /**
@@ -303,12 +304,12 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
                 unoptimized
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-                <div className="text-center p-4">
-                  <div className="text-4xl mb-2">🎴</div>
-                  <div className="text-xs text-gray-400">Image unavailable</div>
-                </div>
-              </div>
+              <CardHolographicCover
+                cardType={card.cardType}
+                rarity={card.rarity}
+                wikiSource={card.wikiSource}
+                title={card.title}
+              />
             )}
 
             {/* Gradient overlay for text readability */}

@@ -186,7 +186,7 @@ export function AllianceDashboard({ allianceId, countryId, myRole, onLeave }: Al
           <p className="text-xs text-muted-foreground">Combined GDP</p>
         </div>
         <div className="rounded-lg border p-2">
-          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalPopulation)}</p>
+          <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalPopulation, 0)}</p>
           <p className="text-xs text-muted-foreground">Total Pop.</p>
         </div>
       </div>

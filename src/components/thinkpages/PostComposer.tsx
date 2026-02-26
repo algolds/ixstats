@@ -20,7 +20,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface PostComposerProps {
   account: {
@@ -68,12 +68,16 @@ export function PostComposer({
   maxLength = 280,
   compact = false,
 }: PostComposerProps) {
+  const notify = useNotify();
   const [content, setContent] = useState(replyTo ? `@${replyTo.account.username} ` : "");
   const [visibility, setVisibility] = useState<"public" | "private" | "unlisted">("public");
   const [showVisibilityMenu, setShowVisibilityMenu] = useState(false);
   const [isExpanded, setIsExpanded] = useState(!!replyTo);
   const [mentionQuery, setMentionQuery] = useState("");
-  const { data: mentionResults, isLoading: isLoadingMentions } = { data: [], isLoading: false }; // Disabled until searchAccounts endpoint exists
+  const { data: mentionResults, isLoading: isLoadingMentions } = api.thinkpages.searchUsers.useQuery(
+    { query: mentionQuery },
+    { enabled: mentionQuery.length >= 1 }
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const createPostMutation = api.thinkpages.createPost.useMutation();
@@ -96,13 +100,13 @@ export function PostComposer({
         mentions,
         hashtags,
       });
-      toast.success("Post created successfully!");
+      notify.success("Post created successfully!");
       onPost(newPost);
       setContent(replyTo ? `@${replyTo.account.username} ` : "");
       setVisibility("public");
       setIsExpanded(false);
     } catch (error: any) {
-      toast.error(error.message || "Failed to create post");
+      notify.error(error.message || "Failed to create post");
     }
   }, [content, visibility, canPost, onPost, replyTo, account.id, createPostMutation]);
 

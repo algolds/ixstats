@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface PostPageProps {
   params: Promise<{
@@ -19,6 +19,7 @@ interface PostPageProps {
 export default function PostPage({ params }: PostPageProps) {
   const { postId } = use(params);
   const { user } = useUser();
+  const notify = useNotify();
 
   // Get user profile to determine current account
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
@@ -44,7 +45,7 @@ export default function PostPage({ params }: PostPageProps) {
 
   const addReactionMutation = api.thinkpages.addReaction.useMutation({
     onSuccess: () => {
-      toast.success("Reaction added!");
+      notify.success("Reaction added!");
     },
   });
 
@@ -110,14 +111,14 @@ export default function PostPage({ params }: PostPageProps) {
                 reactionType: "like",
               });
             } else {
-              toast.error("Please select an account to interact with posts");
+              notify.error("Please select an account to interact with posts");
             }
           }}
           onRepost={(postId) => {
-            toast.info("Repost functionality coming soon!");
+            notify.info("Repost functionality coming soon!");
           }}
           onReply={(postId) => {
-            toast.info("Reply functionality coming soon!");
+            notify.info("Reply functionality coming soon!");
           }}
           onShare={(postId) => {
             const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
@@ -129,7 +130,7 @@ export default function PostPage({ params }: PostPageProps) {
               });
             } else {
               navigator.clipboard.writeText(postUrl);
-              toast.success("Link copied to clipboard!");
+              notify.success("Link copied to clipboard!");
             }
           }}
           onReaction={(postId, reactionType) => {
@@ -140,7 +141,7 @@ export default function PostPage({ params }: PostPageProps) {
                 reactionType: reactionType as any,
               });
             } else {
-              toast.error("Please select an account to react to posts");
+              notify.error("Please select an account to react to posts");
             }
           }}
           showThread={false}
@@ -164,14 +165,14 @@ export default function PostPage({ params }: PostPageProps) {
                         reactionType: "like",
                       });
                     } else {
-                      toast.error("Please select an account to interact with posts");
+                      notify.error("Please select an account to interact with posts");
                     }
                   }}
                   onRepost={(postId) => {
-                    toast.info("Repost functionality coming soon!");
+                    notify.info("Repost functionality coming soon!");
                   }}
                   onReply={(postId) => {
-                    toast.info("Reply functionality coming soon!");
+                    notify.info("Reply functionality coming soon!");
                   }}
                   onShare={(postId) => {
                     const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
@@ -183,7 +184,7 @@ export default function PostPage({ params }: PostPageProps) {
                       });
                     } else {
                       navigator.clipboard.writeText(postUrl);
-                      toast.success("Link copied to clipboard!");
+                      notify.success("Link copied to clipboard!");
                     }
                   }}
                   onReaction={(postId, reactionType) => {
@@ -194,7 +195,7 @@ export default function PostPage({ params }: PostPageProps) {
                         reactionType: reactionType as any,
                       });
                     } else {
-                      toast.error("Please select an account to react to posts");
+                      notify.error("Please select an account to react to posts");
                     }
                   }}
                   showThread={false}

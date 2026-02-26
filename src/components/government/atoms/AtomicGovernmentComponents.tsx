@@ -123,6 +123,8 @@ export function AtomicGovernmentComponents({
     return map;
   }, []);
 
+  const isAllCategoriesSelected = builder.categoryFilter === null;
+
   // Handle template selection
   const handleTemplateSelect = (templateId: string) => {
     const template = GOVERNMENT_TEMPLATES[templateId as keyof typeof GOVERNMENT_TEMPLATES];
@@ -279,6 +281,7 @@ export function AtomicGovernmentComponents({
                 onDeselect={builder.deselectComponent}
                 isReadOnly={isReadOnly}
                 canSelectMore={builder.canSelectMore}
+                enableInlineScroll={isAllCategoriesSelected}
               />
             </CardContent>
           </Card>

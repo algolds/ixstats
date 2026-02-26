@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { Loader2, Check } from "lucide-react";
 import { useInView } from "react-intersection-observer";
@@ -21,6 +21,7 @@ interface WikiSearchProps {
 }
 
 export function WikiSearch({ onImageSelect }: WikiSearchProps) {
+  const notify = useNotify();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [wikiSource, setWikiSource] = useState<"ixwiki" | "iiwiki">("ixwiki");
@@ -38,7 +39,7 @@ export function WikiSearch({ onImageSelect }: WikiSearchProps) {
 
   const handleSearch = () => {
     if (!searchQuery.trim()) {
-      toast.info("Please enter a search query.");
+      notify.info("Please enter a search query.");
       return;
     }
     setActiveQuery(searchQuery);
@@ -54,7 +55,7 @@ export function WikiSearch({ onImageSelect }: WikiSearchProps) {
     setSelectedImage(imageUrl);
     if (onImageSelect) {
       onImageSelect(imageUrl);
-      toast.success("Image selected!");
+      notify.success("Image selected!");
     }
   };
 

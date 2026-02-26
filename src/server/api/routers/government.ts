@@ -846,6 +846,54 @@ export const governmentRouter = createTRPCRouter({
       }
     }),
 
+  updatePoliticalMetrics: protectedProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        politicalStability: z.number().min(0).max(1).optional(),
+        democracyIndex: z.number().min(0).max(100).optional(),
+        politicalPolarization: z.number().min(0).max(100).optional(),
+        governmentEffectiveness: z.number().min(0).max(100).optional(),
+        ruleOfLaw: z.number().min(0).max(100).optional(),
+        corruptionIndex: z.number().min(0).max(100).optional(),
+        electionCycle: z.number().int().min(1).max(20).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { countryId, ...metrics } = input;
+
+      const userProfile = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+      });
+      if (!userProfile || userProfile.countryId !== countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to edit this country.",
+        });
+      }
+
+      const updateData = Object.fromEntries(
+        Object.entries(metrics).filter(([, v]) => v !== undefined)
+      );
+
+      await ctx.db.governmentStructure.upsert({
+        where: { countryId },
+        create: {
+          countryId,
+          governmentName: "National Government",
+          governmentType: "Republic",
+          ...updateData,
+          politicalMetricsUpdated: new Date(),
+        },
+        update: {
+          ...updateData,
+          politicalMetricsUpdated: new Date(),
+        },
+      });
+
+      return { success: true };
+    }),
+
   // Get atomic government components for a country
   getComponents: publicProcedure
     .input(z.object({ countryId: z.string() }))

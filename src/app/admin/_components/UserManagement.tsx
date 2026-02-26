@@ -61,13 +61,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface UserManagementProps {
   className?: string;
 }
 
 export function UserManagement({ className }: UserManagementProps) {
+  const notify = useNotify();
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -120,7 +121,7 @@ export function UserManagement({ className }: UserManagementProps) {
   // API mutations
   const assignUserMutation = api.admin.assignUserToCountry.useMutation({
     onSuccess: () => {
-      toast.success("User assigned to country successfully");
+      notify.success("User assigned to country successfully");
       refetchUsers();
       refetchCountries();
       setIsAssignDialogOpen(false);
@@ -128,18 +129,18 @@ export function UserManagement({ className }: UserManagementProps) {
       setSelectedCountry("");
     },
     onError: (error) => {
-      toast.error(`Failed to assign user: ${error.message}`);
+      notify.error(`Failed to assign user: ${error.message}`);
     },
   });
 
   const unassignUserMutation = api.admin.unassignUserFromCountry.useMutation({
     onSuccess: () => {
-      toast.success("User unlinked from country successfully");
+      notify.success("User unlinked from country successfully");
       refetchUsers();
       refetchCountries();
     },
     onError: (error) => {
-      toast.error(`Failed to unlink user: ${error.message}`);
+      notify.error(`Failed to unlink user: ${error.message}`);
     },
   });
 
@@ -147,10 +148,10 @@ export function UserManagement({ className }: UserManagementProps) {
   const initializeSystem = api.roles.initializeRoleSystem.useMutation({
     onSuccess: () => {
       refetchRoles();
-      toast.success("Role system initialized successfully");
+      notify.success("Role system initialized successfully");
     },
     onError: (error) => {
-      toast.error(`Failed to initialize: ${error.message}`);
+      notify.error(`Failed to initialize: ${error.message}`);
     },
   });
 
@@ -165,10 +166,10 @@ export function UserManagement({ className }: UserManagementProps) {
         permissionIds: [],
       });
       refetchRoles();
-      toast.success("Role created successfully");
+      notify.success("Role created successfully");
     },
     onError: (error) => {
-      toast.error(`Failed to create role: ${error.message}`);
+      notify.error(`Failed to create role: ${error.message}`);
     },
   });
 
@@ -177,30 +178,30 @@ export function UserManagement({ className }: UserManagementProps) {
       setShowUserAssignment(false);
       setUserAssignment({ clerkUserId: "", roleId: "" });
       refetchRoleUsers();
-      toast.success("Role assigned successfully");
+      notify.success("Role assigned successfully");
     },
     onError: (error) => {
-      toast.error(`Failed to assign role: ${error.message}`);
+      notify.error(`Failed to assign role: ${error.message}`);
     },
   });
 
   const removeRole = api.roles.removeUserRole.useMutation({
     onSuccess: () => {
       refetchRoleUsers();
-      toast.success("Role removed successfully");
+      notify.success("Role removed successfully");
     },
     onError: (error) => {
-      toast.error(`Failed to remove role: ${error.message}`);
+      notify.error(`Failed to remove role: ${error.message}`);
     },
   });
 
   const updateMembershipTier = api.users.updateMembershipTier.useMutation({
     onSuccess: (data) => {
       refetchUsers();
-      toast.success(data.message);
+      notify.success(data.message);
     },
     onError: (error) => {
-      toast.error(`Failed to update membership: ${error.message}`);
+      notify.error(`Failed to update membership: ${error.message}`);
     },
   });
 
@@ -214,7 +215,7 @@ export function UserManagement({ className }: UserManagementProps) {
 
   const handleAssignUser = () => {
     if (!selectedUser || !selectedCountry) {
-      toast.error("Please select both a user and a country");
+      notify.error("Please select both a user and a country");
       return;
     }
 

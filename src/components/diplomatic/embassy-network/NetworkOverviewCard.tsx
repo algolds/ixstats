@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { Globe } from "lucide-react";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
@@ -49,50 +49,49 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
 }: NetworkOverviewCardProps) {
   return (
     <Card className="border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-purple-500/10">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-blue-500" />
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
+          <Globe className="h-4 w-4 text-blue-500" />
           Embassy Network Power
           <InlineHelpIcon
             title="Embassy Network"
             content="Your total diplomatic influence calculated from active embassies and atomic government synergies. Shared atomic components between nations amplify economic, diplomatic, and cultural benefits."
           />
         </CardTitle>
-        <CardDescription>Your diplomatic network strength and atomic synergies</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2 pt-0">
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="space-y-1">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+        <div className="grid grid-cols-4 gap-3">
+          <div className="space-y-0.5">
+            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
               {networkMetrics.totalEmbassies}
             </div>
-            <div className="text-muted-foreground text-xs">Active Embassies</div>
+            <div className="text-muted-foreground text-[11px]">Embassies</div>
           </div>
-          <div className="space-y-1">
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <div className="space-y-0.5">
+            <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
               {networkMetrics.networkPower}
             </div>
-            <div className="text-muted-foreground text-xs">Network Power</div>
+            <div className="text-muted-foreground text-[11px]">Power</div>
           </div>
-          <div className="space-y-1">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+          <div className="space-y-0.5">
+            <div className="text-lg font-bold text-green-600 dark:text-green-400">
               {networkMetrics.avgSynergyScore.toFixed(0)}%
             </div>
-            <div className="text-muted-foreground text-xs">Avg Synergy</div>
+            <div className="text-muted-foreground text-[11px]">Synergy</div>
           </div>
-          <div className="space-y-1">
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+          <div className="space-y-0.5">
+            <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
               +{networkMetrics.totalEconomicBonus.toFixed(1)}%
             </div>
-            <div className="text-muted-foreground text-xs">Economic Bonus</div>
+            <div className="text-muted-foreground text-[11px]">Econ Bonus</div>
           </div>
         </div>
 
         {/* Bonus Breakdown with Progress Bars */}
-        <div className="grid grid-cols-3 gap-3 border-t pt-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
+        <div className="grid grid-cols-3 gap-2 border-t pt-2">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">Economic</span>
               <span className="font-semibold text-green-600">
                 +{networkMetrics.totalEconomicBonus.toFixed(1)}%
@@ -100,11 +99,11 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
             </div>
             <Progress
               value={Math.min(100, networkMetrics.totalEconomicBonus * 5)}
-              className="h-2"
+              className="h-1.5"
             />
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">Diplomatic</span>
               <span className="font-semibold text-blue-600">
                 +{networkMetrics.totalDiplomaticBonus.toFixed(1)}%
@@ -112,11 +111,11 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
             </div>
             <Progress
               value={Math.min(100, networkMetrics.totalDiplomaticBonus * 5)}
-              className="h-2"
+              className="h-1.5"
             />
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">Cultural</span>
               <span className="font-semibold text-purple-600">
                 +{networkMetrics.totalCulturalBonus.toFixed(1)}%
@@ -124,7 +123,7 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
             </div>
             <Progress
               value={Math.min(100, networkMetrics.totalCulturalBonus * 5)}
-              className="h-2"
+              className="h-1.5"
             />
           </div>
         </div>

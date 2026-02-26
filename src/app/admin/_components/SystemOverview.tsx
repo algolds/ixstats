@@ -148,7 +148,7 @@ export function SystemOverview() {
                 </div>
                 <div className="mt-2">
                   <p className="text-muted-foreground text-xs">
-                    Active DM Inputs: {systemStatus.activeDmInputs}
+                    Active Storyteller Effects: {systemStatus.activeStorytellerEffects}
                   </p>
                 </div>
               </CardContent>

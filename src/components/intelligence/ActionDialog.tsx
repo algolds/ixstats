@@ -14,6 +14,7 @@ import { Progress } from "~/components/ui/progress";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { IxTimeDate } from "~/components/ui/ix-time-date";
 import {
   AlertTriangle,
   CheckCircle,
@@ -30,7 +31,7 @@ import {
   Info,
   Zap,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import type { ActionableRecommendation } from "~/app/mycountry/types/intelligence";
 import {
   actionQueueManager,
@@ -60,6 +61,7 @@ export function ActionDialog({
   onConfirm,
   onCancel,
 }: ActionDialogProps) {
+  const notify = useNotify();
   const [loading, setLoading] = useState(false);
   const [actionItem, setActionItem] = useState<ActionQueueItem | null>(null);
   const [executionPlan, setExecutionPlan] = useState<ActionExecutionPlan | null>(null);
@@ -84,9 +86,7 @@ export function ActionDialog({
 
         // Show completion toast and close dialog
         if (updated.status === "completed" && actionItem.status !== "completed") {
-          toast.success("Action Completed!", {
-            description: `${recommendation.title} has been successfully completed.`,
-          });
+          notify.success("Action Completed!", `${recommendation.title} has been successfully completed.`);
           setTimeout(() => onOpenChange(false), 2000);
         }
       }
@@ -113,9 +113,7 @@ export function ActionDialog({
       // Confirm and start the action
       actionQueueManager.confirmAction(item.id);
 
-      toast.success("Action Queued", {
-        description: "The action has been added to your action queue and will begin processing.",
-      });
+      notify.success("Action Queued", "The action has been added to your action queue and will begin processing.");
 
       // Switch to monitor view
       setView("monitor");
@@ -124,9 +122,7 @@ export function ActionDialog({
         onConfirm(item.id);
       }
     } catch (error) {
-      toast.error("Error", {
-        description: error instanceof Error ? error.message : "Failed to queue action",
-      });
+      notify.error("Error", error instanceof Error ? error.message : "Failed to queue action");
     } finally {
       setLoading(false);
     }
@@ -138,28 +134,20 @@ export function ActionDialog({
     try {
       if (actionItem.status === "in_progress") {
         actionQueueManager.pauseAction(actionItem.id);
-        toast.info("Action Paused", {
-          description: "The action has been paused. You can resume it anytime.",
-        });
+        notify.info("Action Paused", "The action has been paused. You can resume it anytime.");
       } else if (actionItem.status === "paused") {
         actionQueueManager.resumeAction(actionItem.id);
-        toast.info("Action Resumed", {
-          description: "The action has been resumed and will continue processing.",
-        });
+        notify.info("Action Resumed", "The action has been resumed and will continue processing.");
       }
     } catch (error) {
-      toast.error("Error", {
-        description: error instanceof Error ? error.message : "Failed to pause/resume action",
-      });
+      notify.error("Error", error instanceof Error ? error.message : "Failed to pause/resume action");
     }
   };
 
   const handleCancel = () => {
     if (actionItem) {
       actionQueueManager.cancelAction(actionItem.id);
-      toast.info("Action Cancelled", {
-        description: "The action has been cancelled.",
-      });
+      notify.info("Action Cancelled", "The action has been cancelled.");
     }
 
     if (onCancel) {
@@ -440,7 +428,7 @@ export function ActionDialog({
                         <span className="text-muted-foreground">Started</span>
                         <span>
                           {actionItem.startedAt
-                            ? new Date(actionItem.startedAt).toLocaleString()
+                            ? <IxTimeDate date={actionItem.startedAt} format="datetime" accentColor="indigo" />
                             : "Not yet"}
                         </span>
                       </div>
@@ -448,14 +436,14 @@ export function ActionDialog({
                         <span className="text-muted-foreground">Est. Completion</span>
                         <span>
                           {actionItem.estimatedCompletionAt
-                            ? new Date(actionItem.estimatedCompletionAt).toLocaleString()
+                            ? <IxTimeDate date={actionItem.estimatedCompletionAt} format="datetime" accentColor="indigo" />
                             : "Unknown"}
                         </span>
                       </div>
                       {actionItem.completedAt && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Completed</span>
-                          <span>{new Date(actionItem.completedAt).toLocaleString()}</span>
+                          <span><IxTimeDate date={actionItem.completedAt} format="datetime" accentColor="indigo" /></span>
                         </div>
                       )}
                     </div>

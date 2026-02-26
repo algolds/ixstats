@@ -31,7 +31,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Plus,
   Pencil,
@@ -115,7 +115,7 @@ export default function EconomicArchetypesPage() {
   usePageTitle({ title: "Economic Archetypes Admin" });
 
   const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
@@ -149,58 +149,34 @@ export default function EconomicArchetypesPage() {
   // Mutations
   const createMutation = api.archetypes.createArchetype.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Archetype created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Archetype created successfully");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create archetype",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create archetype");
     },
   });
 
   const updateMutation = api.archetypes.updateArchetype.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Archetype updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Archetype updated successfully");
       refetch();
       setEditingArchetype(null);
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update archetype",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update archetype");
     },
   });
 
   const deleteMutation = api.archetypes.deleteArchetype.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Archetype deactivated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Archetype deactivated successfully");
       refetch();
     },
     onError: (error: { message?: string }) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to deactivate archetype",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to deactivate archetype");
     },
   });
 

@@ -26,6 +26,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
     totalSeats: 100,
     electoralSystem: "proportional" as "proportional" | "fptp" | "mixed",
     termLength: 4,
+    electionCycle: "fixed" as "fixed" | "variable",
   });
   const [saved, setSaved] = useState(false);
 
@@ -42,6 +43,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
         totalSeats: legislature.totalSeats,
         electoralSystem: legislature.electoralSystem as "proportional" | "fptp" | "mixed",
         termLength: legislature.termLength,
+        electionCycle: (legislature.electionCycle as "fixed" | "variable") ?? "fixed",
       });
     }
   }, [legislature]);
@@ -97,7 +99,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <Label>Total Seats</Label>
               <Input
@@ -132,6 +134,20 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 value={formData.termLength}
                 onChange={(e) => setFormData({ ...formData, termLength: Math.max(1, Math.min(10, Number(e.target.value))) })}
               />
+            </div>
+            <div>
+              <Label>Election Cycle</Label>
+              <Select
+                value={formData.electionCycle}
+                onValueChange={(v) => setFormData({ ...formData, electionCycle: v as any })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixed">Fixed Term</SelectItem>
+                  <SelectItem value="variable">Variable (snap elections)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-[10px] text-muted-foreground">Fixed = strict schedule; Variable = parliament may dissolve early</p>
             </div>
           </div>
 

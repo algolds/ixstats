@@ -308,6 +308,7 @@ export class NSApiClient {
       const badge = this.extractTag(xml, "BADGE");
       const trophies = this.extractTag(xml, "TROPHIES");
       const description = this.extractTag(xml, "DESCRIPTION");
+      const marketValue = this.extractTag(xml, "MARKET_VALUE");
 
       // Construct card image URL using season-specific path
       // Cards use /images/cards/s{season}/uploads/ not /images/flags/
@@ -323,7 +324,7 @@ export class NSApiClient {
         console.log(`[NS API] Constructed card image URL: ${flagUrl}`);
       }
 
-      const result = {
+      const result: Partial<NSCard> = {
         name: name || undefined,
         flag: flagUrl,
         region: region || undefined,
@@ -336,6 +337,7 @@ export class NSApiClient {
         badge: badge || undefined,
         trophies: trophies || undefined,
         description: description || undefined,
+        ...(marketValue ? { market_value: marketValue } : {}),
       };
 
       console.log(`[NS API] Parsed card info for ${cardId} S${season}:`, {

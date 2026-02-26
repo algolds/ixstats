@@ -1048,7 +1048,7 @@ export const securityRouter = createTRPCRouter({
         });
       }
 
-      return ctx.db.securityEvent.update({
+      const resolved = await ctx.db.securityEvent.update({
         where: { id: input.id },
         data: {
           status: "resolved",
@@ -1056,6 +1056,24 @@ export const securityRouter = createTRPCRouter({
           resolutionNotes: input.resolutionNotes,
         },
       });
+
+      // Notification: security event resolved (fire-and-forget)
+      try {
+        if (ctx.auth?.userId) {
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            countryId: event.countryId,
+            title: "Threat Resolved",
+            message: "A security event has been successfully resolved",
+            type: "SECURITY",
+            category: "security",
+            priority: "medium",
+            metadata: { eventId: input.id },
+          }, ctx.db);
+        }
+      } catch {}
+
+      return resolved;
     }),
 
   // ===========================
@@ -1779,9 +1797,9 @@ export const securityRouter = createTRPCRouter({
         });
       }
 
-      // Create DmInputs for GDP drain
+      // Create storyteller effects for GDP drain
       if (gdpDrain > 0) {
-        await ctx.db.dmInputs.create({
+        await ctx.db.storytellerEffect.create({
           data: {
             countryId: input.countryId,
             ixTimeTimestamp: new Date(),
@@ -1880,8 +1898,8 @@ export const securityRouter = createTRPCRouter({
         },
       });
 
-      // Deactivate DmInputs for this operation
-      await ctx.db.dmInputs.updateMany({
+      // Deactivate storyteller effects for this operation
+      await ctx.db.storytellerEffect.updateMany({
         where: {
           countryId: operation.countryId,
           description: { contains: operation.name },
@@ -1889,6 +1907,22 @@ export const securityRouter = createTRPCRouter({
         },
         data: { isActive: false },
       });
+
+      // Notification: operation completed (fire-and-forget)
+      try {
+        if (ctx.auth?.userId) {
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            countryId: operation.countryId,
+            title: "Operation Complete",
+            message: `Operation "${operation.name}" ended: ${input.successRating ?? "completed"}`,
+            type: "MILITARY",
+            category: "military",
+            priority: "high",
+            metadata: { operationId: input.operationId, result: input.successRating },
+          }, ctx.db);
+        }
+      } catch {}
 
       return updated;
     }),
@@ -1957,6 +1991,26 @@ export const securityRouter = createTRPCRouter({
         },
       });
 
+      // Notification: notify defender about PvP conflict proposal (fire-and-forget)
+      try {
+        const defenderCountry = await ctx.db.country.findUnique({
+          where: { id: input.defenderId },
+          select: { userId: true, name: true },
+        });
+        if (defenderCountry?.userId) {
+          await notificationAPI.create({
+            userId: defenderCountry.userId,
+            countryId: input.defenderId,
+            title: "Conflict Proposed",
+            message: `${conflict.initiator.name} has proposed a military conflict against your nation`,
+            type: "MILITARY",
+            category: "military",
+            priority: "high",
+            metadata: { conflictId: conflict.id, initiatorId: userProfile.countryId },
+          }, ctx.db);
+        }
+      } catch {}
+
       return conflict;
     }),
 
@@ -1991,13 +2045,35 @@ export const securityRouter = createTRPCRouter({
       }
 
       if (!input.accept) {
-        return ctx.db.militaryConflict.update({
+        const declined = await ctx.db.militaryConflict.update({
           where: { id: input.conflictId },
           data: { status: "resolved", winner: "declined" },
         });
+
+        // Notification: notify initiator of decline (fire-and-forget)
+        try {
+          const initiatorCountry = await ctx.db.country.findUnique({
+            where: { id: conflict.initiatorId },
+            select: { userId: true },
+          });
+          if (initiatorCountry?.userId) {
+            await notificationAPI.create({
+              userId: initiatorCountry.userId,
+              countryId: conflict.initiatorId,
+              title: "Conflict Declined",
+              message: "Your conflict proposal was declined",
+              type: "MILITARY",
+              category: "military",
+              priority: "medium",
+              metadata: { conflictId: input.conflictId },
+            }, ctx.db);
+          }
+        } catch {}
+
+        return declined;
       }
 
-      return ctx.db.militaryConflict.update({
+      const accepted = await ctx.db.militaryConflict.update({
         where: { id: input.conflictId },
         data: {
           defenderApproved: true,
@@ -2009,6 +2085,28 @@ export const securityRouter = createTRPCRouter({
           defender: { select: { id: true, name: true } },
         },
       });
+
+      // Notification: notify initiator of acceptance (fire-and-forget)
+      try {
+        const initiatorCountry = await ctx.db.country.findUnique({
+          where: { id: conflict.initiatorId },
+          select: { userId: true },
+        });
+        if (initiatorCountry?.userId) {
+          await notificationAPI.create({
+            userId: initiatorCountry.userId,
+            countryId: conflict.initiatorId,
+            title: "Conflict Accepted",
+            message: `${accepted.defender.name} has accepted your conflict proposal - hostilities begin`,
+            type: "MILITARY",
+            category: "military",
+            priority: "high",
+            metadata: { conflictId: input.conflictId },
+          }, ctx.db);
+        }
+      } catch {}
+
+      return accepted;
     }),
 
   // Get conflicts involving a country
@@ -2128,8 +2226,8 @@ export const securityRouter = createTRPCRouter({
         },
       });
 
-      // Create DmInputs for economic damage
-      await ctx.db.dmInputs.createMany({
+      // Create storyteller effects for economic damage
+      await ctx.db.storytellerEffect.createMany({
         data: [
           {
             countryId: userProfile.countryId,

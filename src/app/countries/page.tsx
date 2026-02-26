@@ -7,9 +7,13 @@ import { CountriesPageModular } from "./_components/CountriesPageModular";
 import type { CountryCardData } from "~/components/countries/CountryFocusCard";
 import { useBulkFlagCache } from "~/hooks/useBulkFlagCache";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { useUserCountry } from "~/hooks/useUserCountry";
 
 export default function CountriesPage() {
   usePageTitle({ title: "Countries" });
+
+  const { userProfile } = useUserCountry();
+  const viewerCountryId = userProfile?.countryId;
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -63,6 +67,7 @@ export default function CountriesPage() {
       (country): CountryCardData => ({
         id: country.id,
         name: country.name,
+        slug: (country as any).slug || country.name.replace(/\s+/g, "_"),
         currentPopulation: country.currentPopulation || 0,
         currentGdpPerCapita: country.currentGdpPerCapita || 0,
         currentTotalGdp: country.currentTotalGdp || 0,
@@ -75,6 +80,21 @@ export default function CountriesPage() {
         populationGrowthRate: country.populationGrowthRate || undefined,
         // Use cached flag first, then database flag, then undefined
         flagUrl: flagUrls[country.name] || (country as any).flag || undefined,
+        // Identity & Governance
+        continent: (country as any).continent || undefined,
+        region: (country as any).region || undefined,
+        governmentType: (country as any).governmentType || undefined,
+        leader: (country as any).leader || undefined,
+        religion: (country as any).religion || undefined,
+        // Social Indicators
+        lifeExpectancy: (country as any).lifeExpectancy || undefined,
+        literacyRate: (country as any).literacyRate || undefined,
+        unemploymentRate: (country as any).unemploymentRate || undefined,
+        inflationRate: (country as any).inflationRate || undefined,
+        povertyRate: (country as any).povertyRate || undefined,
+        // Fiscal
+        totalDebtGDPRatio: (country as any).totalDebtGDPRatio || undefined,
+        realGDPGrowthRate: (country as any).realGDPGrowthRate || undefined,
       })
     );
   }, [countriesResult, flagUrls]);
@@ -103,6 +123,7 @@ export default function CountriesPage() {
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       hasMore={false}
+      viewerCountryId={viewerCountryId ?? undefined}
     />
   );
 }

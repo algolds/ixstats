@@ -25,7 +25,7 @@ import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { parseWikiText, extractWikiImages, extractWikiLinks } from "~/lib/wikitext-parser";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 interface WikiTextImporterProps {
@@ -35,6 +35,7 @@ interface WikiTextImporterProps {
 }
 
 export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporterProps) {
+  const notify = useNotify();
   const [wikitext, setWikitext] = useState("");
   const [previewHtml, setPreviewHtml] = useState("");
   const [images, setImages] = useState<string[]>([]);
@@ -43,7 +44,7 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
 
   const handleParse = () => {
     if (!wikitext.trim()) {
-      toast.error("Please enter some wiki-text to import");
+      notify.error("Please enter some wiki-text to import");
       return;
     }
 
@@ -67,22 +68,22 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
       // Switch to preview tab
       setActiveTab("preview");
 
-      toast.success("Wiki-text parsed successfully!");
+      notify.success("Wiki-text parsed successfully!");
     } catch (error) {
       console.error("Parse error:", error);
-      toast.error("Failed to parse wiki-text. Please check the syntax.");
+      notify.error("Failed to parse wiki-text. Please check the syntax.");
     }
   };
 
   const handleImport = () => {
     if (!previewHtml) {
-      toast.error("Please parse the wiki-text first");
+      notify.error("Please parse the wiki-text first");
       return;
     }
 
     onImport(previewHtml, wikitext);
     handleClose();
-    toast.success("Wiki-text imported successfully!");
+    notify.success("Wiki-text imported successfully!");
   };
 
   const handleClose = () => {

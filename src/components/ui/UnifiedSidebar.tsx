@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { GlassCard } from "./enhanced-card";
 import { cn } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -80,19 +80,15 @@ export function UnifiedSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
-  // Fetch notifications and unread count from backend
+  // Fetch notifications from backend (single query, derive unread count)
   const { data: notificationsData } = api.unifiedIntelligence.getIntelligenceFeed?.useQuery?.(
     { countryId: countryId || "" },
-    { enabled: !!countryId, refetchInterval: 10000 }
+    { enabled: !!countryId, refetchInterval: 60000, staleTime: 30000 }
   ) || { data: undefined };
-  const { data: unreadCount = 0 } = api.unifiedIntelligence.getIntelligenceFeed?.useQuery?.(
-    { countryId: countryId || "" },
-    {
-      enabled: !!countryId,
-      refetchInterval: 10000,
-      select: (data: any) => data?.filter((n: any) => !n.read).length || 0,
-    }
-  ) || { data: 0 };
+  const unreadCount = useMemo(
+    () => notificationsData?.filter((n: any) => !n.read).length ?? 0,
+    [notificationsData]
+  );
   // Determine activeKey from route if not provided
   let computedActiveKey = activeKey;
   if (!computedActiveKey && links && pathname) {

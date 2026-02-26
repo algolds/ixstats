@@ -226,7 +226,7 @@ export function ActivityPopover({
                       <div className="glass-surface glass-refraction rounded p-3">
                         <span className="text-muted-foreground text-sm">Density</span>
                         <p className="glow-text font-semibold">
-                          {countryData.populationDensity.toFixed(1)}/km²
+                          {Math.round(countryData.populationDensity)}/km²
                         </p>
                       </div>
                     )}

@@ -49,7 +49,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       const apiUrl =
         selectedWikiSource === "ixwiki"
           ? "https://ixwiki.com/api.php"
-          : "https://iiwiki.com/mediawiki/api.php";
+          : "https://iiwiki.com/api.php";
 
       const url = new URL(apiUrl);
       url.searchParams.set("action", "query");

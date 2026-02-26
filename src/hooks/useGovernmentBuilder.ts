@@ -7,8 +7,10 @@
  * @module useGovernmentBuilder
  */
 
+"use client";
+
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { IxTime } from "~/lib/ixtime";
 import {
   validateGovernmentBuilderState,
@@ -104,6 +106,7 @@ export function useGovernmentBuilder(
   initialData: Partial<GovernmentBuilderState> = {},
   options: UseGovernmentBuilderOptions = {}
 ): UseGovernmentBuilderReturn {
+  const notify = useNotify();
   const { countryId, enableAutoSync = false, isReadOnly = false, onSave, onChange } = options;
 
   // ==================== LOCAL STATE ====================
@@ -145,10 +148,10 @@ export function useGovernmentBuilder(
     enabled: enableAutoSync && !!countryId,
     showConflictWarnings: true,
     onSyncSuccess: (result) => {
-      toast.success("Government changes saved");
+      notify.success("Government changes saved");
     },
     onSyncError: (error) => {
-      toast.error(`Failed to save: ${error.message}`);
+      notify.error(`Failed to save: ${error.message}`);
     },
   });
 
@@ -277,7 +280,7 @@ export function useGovernmentBuilder(
       const numDepartments = prev.departments.length;
 
       if (numDepartments === 0) {
-        toast.error("No departments to allocate budget to");
+        notify.error("No departments to allocate budget to");
         return prev;
       }
 
@@ -318,7 +321,7 @@ export function useGovernmentBuilder(
           const expectedAmount = Math.round((totalBudget * (alloc.allocatedPercent || 0)) / 100);
           return { ...alloc, allocatedAmount: expectedAmount };
         });
-        toast.success("Budget allocations synchronized");
+        notify.success("Budget allocations synchronized");
       }
       // Scale existing percentages proportionally
       else if (currentTotalPercent > 0) {
@@ -339,7 +342,7 @@ export function useGovernmentBuilder(
             allocatedAmount: expectedAmount,
           };
         });
-        toast.success(`Budget balanced to 100% across ${numDepartments} departments`);
+        notify.success(`Budget balanced to 100% across ${numDepartments} departments`);
       }
       // Distribute evenly
       else {
@@ -356,7 +359,7 @@ export function useGovernmentBuilder(
             allocatedAmount: expectedAmount,
           };
         });
-        toast.success(`Budget distributed evenly: ${evenPercent.toFixed(1)}% per department`);
+        notify.success(`Budget distributed evenly: ${evenPercent.toFixed(1)}% per department`);
       }
 
       return { ...prev, budgetAllocations: fixedAllocations };
@@ -376,7 +379,7 @@ export function useGovernmentBuilder(
     (taxCategories: TaxCategoryInput[]) => {
       // Import tax categories as revenue sources
       // This is a placeholder - implement conversion logic as needed
-      toast.info("Tax data import: implementation needed");
+      notify.info("Tax data import: implementation needed");
     },
     [setBuilderState]
   );
@@ -437,7 +440,7 @@ export function useGovernmentBuilder(
           revenueAmount: prev.structure.totalBudget * 0.2,
         })),
       }));
-      toast.success(`Applied template: ${template.name}`);
+      notify.success(`Applied template: ${template.name}`);
     },
     [setBuilderState]
   );
@@ -448,7 +451,7 @@ export function useGovernmentBuilder(
     const currentValidation = validateGovernmentBuilderState(builderState);
 
     if (!currentValidation.isValid) {
-      toast.error("Please fix validation errors before saving");
+      notify.error("Please fix validation errors before saving");
       return;
     }
 
@@ -461,10 +464,10 @@ export function useGovernmentBuilder(
           errors: currentValidation.errors,
         };
         await onSave(submission);
-        toast.success("Government saved successfully");
+        notify.success("Government saved successfully");
       } catch (error) {
         console.error("Save failed:", error);
-        toast.error("Failed to save government");
+        notify.error("Failed to save government");
       } finally {
         setIsSaving(false);
       }

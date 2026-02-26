@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { User, Edit3, Save, X } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Select,
   SelectContent,
@@ -20,6 +20,7 @@ export function ThinkPagesSettingsCard({
   updateThinkpagesAccountMutation,
   onRefetch,
 }: ThinkPagesSettingsCardProps) {
+  const notify = useNotify();
   const [isEditing, setIsEditing] = useState(false);
   const [postingFrequency, setPostingFrequency] = useState(
     (thinkpagesAccount as any).postingFrequency || ""
@@ -37,11 +38,11 @@ export function ThinkPagesSettingsCard({
         politicalLean: politicalLean as "left" | "center" | "right",
         personality: personality as "serious" | "casual" | "satirical",
       });
-      toast.success("Thinkpages settings updated!");
+      notify.success("Thinkpages settings updated!");
       setIsEditing(false);
       onRefetch();
     } catch (error: any) {
-      toast.error(error.message || "Failed to update Thinkpages settings");
+      notify.error(error.message || "Failed to update Thinkpages settings");
     }
   };
 

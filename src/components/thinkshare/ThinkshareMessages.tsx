@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { MessageSquare, Plus, Crown, Hash, Globe } from "lucide-react";
+import { MessageSquare, Plus, Crown, Hash, Globe, PanelLeftOpen } from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 
 // Import the new sub-components
@@ -45,9 +45,11 @@ interface ThinkshareConversation {
 // No longer using separate Account interface - using global User accounts
 
 export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMessagesProps) {
+  const notify = useNotify();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewConversationModal, setShowNewConversationModal] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Use the global user ID directly - no longer need thinkpages accounts for ThinkShare
   const currentUserId = userId;
@@ -239,7 +241,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
     console.log("🔧 handleCreateConversation called with:", { participantId, currentUserId });
 
     if (!currentUserId?.trim() || !participantId?.trim()) {
-      toast.error("Invalid user or participant");
+      notify.error("Invalid user or participant");
       return;
     }
 
@@ -259,11 +261,11 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
       setSelectedConversation(result.id);
       setShowNewConversationModal(false);
       setSearchQuery("");
-      toast.success("Conversation created!");
+      notify.success("Conversation created!");
       void refetchConversations();
     } catch (error: any) {
       console.error("❌ Mutation error:", error);
-      toast.error(error.message || "Failed to create conversation");
+      notify.error(error.message || "Failed to create conversation");
     }
   };
 
@@ -272,7 +274,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
   );
 
   const handleAccountChange = (accountId: string) => {
-    toast.info("Account switching is not implemented yet.");
+    notify.info("Account switching is not implemented yet.");
     console.log(`Selected account ID: ${accountId}`);
   };
 
@@ -287,9 +289,13 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
       />
 
       {/* Main Chat Interface */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Conversations List */}
-        <div className="lg:col-span-4">
+      <div className="flex gap-4">
+        {/* Conversations Sidebar */}
+        <div
+          className={`shrink-0 transition-all duration-300 ease-in-out ${
+            sidebarCollapsed ? "w-0 overflow-hidden opacity-0 lg:w-0" : "w-full lg:w-80 xl:w-96"
+          }`}
+        >
           <ConversationList
             conversations={(conversations?.conversations || []) as any}
             isLoadingConversations={isLoadingConversations}
@@ -305,7 +311,7 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
         </div>
 
         {/* Chat Area */}
-        <div className="lg:col-span-8">
+        <div className="min-w-0 flex-1">
           {selectedConv ? (
             <ChatArea
               selectedConversation={selectedConv as any}
@@ -317,6 +323,8 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
               clientState={clientState as any}
               sendTypingIndicator={sendTypingIndicator}
               markMessagesAsReadMutation={markMessagesAsReadMutation as any}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
             />
           ) : (
             <Card className="glass-hierarchy-child flex h-[700px] items-center justify-center">
@@ -326,13 +334,24 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
                 <p className="text-muted-foreground mb-6">
                   Choose a conversation from the sidebar to start ThinkSharing
                 </p>
-                <Button
-                  onClick={() => setShowNewConversationModal(true)}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Start New ThinkShare
-                </Button>
+                <div className="flex items-center justify-center gap-3">
+                  {sidebarCollapsed && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setSidebarCollapsed(false)}
+                    >
+                      <PanelLeftOpen className="mr-2 h-4 w-4" />
+                      Show Conversations
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => setShowNewConversationModal(true)}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Start New ThinkShare
+                  </Button>
+                </div>
               </div>
             </Card>
           )}

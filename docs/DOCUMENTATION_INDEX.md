@@ -42,7 +42,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`systems/achievements.md`](systems/achievements.md) | Achievement unlock logic, leaderboards, notifications, and analytics |
 | [`systems/builder.md`](systems/builder.md) | Nation creation flows, atomic components, wiki importers |
 | [`systems/help.md`](systems/help.md) | Help center architecture, article conventions, and synchronization with `/help` |
-| [`systems/admin-cms.md`](systems/admin-cms.md) | 18 admin interfaces, CMS architecture, dynamic content management |
+| [`systems/admin-cms.md`](systems/admin-cms.md) | 20 admin interfaces, CMS architecture, dynamic content management |
 | [`systems/calculations.md`](systems/calculations.md) | Economic formulas and step-by-step calculation examples |
 | [`systems/npc-ai.md`](systems/npc-ai.md) | NPC personality traits, archetypes, behavioral prediction |
 | [`systems/crisis-events.md`](systems/crisis-events.md) | Crisis event types, player responses, outcome mechanics |
@@ -51,6 +51,9 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`systems/cards.md`](systems/cards.md) | IxCards system, card types (Nation, Lore, NS Import, Special), rarity mechanics, and ownership tracking |
 | [`systems/card-packs.md`](systems/card-packs.md) | Card pack types, rarity distribution, pack opening flow, and bonus mechanics |
 | [`systems/ns-integration.md`](systems/ns-integration.md) | NationStates integration, card dump sync, collection import, and rate limiting compliance |
+| [`systems/elections.md`](systems/elections.md) | Elections & political parties, D'Hondt/FPTP seat allocation, legislature configuration |
+| [`systems/national-issues.md`](systems/national-issues.md) | National issues engine, dynamic decisions, consequences system |
+| [`systems/forum.md`](systems/forum.md) | XenForo forum integration, widget embedding, forum-wiki bridge |
 
 ### Operations & Processes
 | Document | Summary |

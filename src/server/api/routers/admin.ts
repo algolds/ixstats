@@ -31,7 +31,7 @@ import {
 
 export const adminRouter = createTRPCRouter({
   // Internal calculation formulas management
-  getCalculationFormulas: protectedProcedure.query(async ({ ctx }) => {
+  getCalculationFormulas: adminProcedure.query(async ({ ctx }) => {
     const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
     const lastModified = lastCalc?.timestamp ?? new Date();
 
@@ -56,7 +56,7 @@ export const adminRouter = createTRPCRouter({
     };
   }),
   // Get global statistics for SDI interface
-  getGlobalStats: protectedProcedure.query(async ({ ctx }) => {
+  getGlobalStats: adminProcedure.query(async ({ ctx }) => {
     try {
       const totalNations = await ctx.db.country.count();
       const totalGDP = await ctx.db.country.aggregate({
@@ -91,9 +91,9 @@ export const adminRouter = createTRPCRouter({
   // Get system status
   getSystemStatus: adminProcedure.query(async ({ ctx }) => {
     try {
-      const [countryCount, activeDmInputs, lastCalculation] = await Promise.all([
+      const [countryCount, activeStorytellerEffects, lastCalculation] = await Promise.all([
         ctx.db.country.count(),
-        ctx.db.dmInputs.count({ where: { isActive: true } }),
+        ctx.db.storytellerEffect.count({ where: { isActive: true } }),
         ctx.db.calculationLog.findFirst({
           orderBy: { timestamp: "desc" },
         }),
@@ -114,7 +114,7 @@ export const adminRouter = createTRPCRouter({
           botStatus: null, // Will be populated by getBotStatus
         },
         countryCount,
-        activeDmInputs,
+        activeStorytellerEffects,
         lastCalculation: lastCalculation
           ? {
               timestamp: lastCalculation.timestamp.toISOString(),
@@ -770,7 +770,7 @@ export const adminRouter = createTRPCRouter({
       const startTime = Date.now();
       const countries = await ctx.db.country.findMany({
         include: {
-          dmInputs: {
+          storytellerEffects: {
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
           },
@@ -808,12 +808,12 @@ export const adminRouter = createTRPCRouter({
           };
 
           const initialStats = calc.initializeCountryStats(baseCountryData);
-          const dmInputs = country.dmInputs.map((d) => ({
+          const effects= country.storytellerEffects.map((d) => ({
             ...d,
             ixTimeTimestamp: d.ixTimeTimestamp.getTime(),
           }));
 
-          const result = calc.calculateTimeProgression(initialStats, currentIxTime, dmInputs);
+          const result = calc.calculateTimeProgression(initialStats, currentIxTime, effects);
 
           await ctx.db.country.update({
             where: { id: country.id },
@@ -1465,7 +1465,7 @@ export const adminRouter = createTRPCRouter({
         const createdInterventions = [];
 
         for (const intervention of input.interventions) {
-          const created = await ctx.db.dmInputs.create({
+          const created = await ctx.db.storytellerEffect.create({
             data: {
               countryId: intervention.targetCountryId,
               ixTimeTimestamp: new Date(),
@@ -1867,5 +1867,649 @@ export const adminRouter = createTRPCRouter({
           message: "Failed to bulk toggle diplomatic options",
         });
       }
+    }),
+
+  // ============================================================================
+  // PHASE 2: COUNTRY GRID & UPCOMING EVENTS
+  // ============================================================================
+
+  /**
+   * Get all countries with key metrics for the admin country grid.
+   * Supports sorting, filtering, and search.
+   */
+  getCountryGrid: adminProcedure
+    .input(
+      z
+        .object({
+          search: z.string().optional(),
+          sortBy: z
+            .enum([
+              "name",
+              "currentTotalGdp",
+              "currentGdpPerCapita",
+              "realGDPGrowthRate",
+              "currentPopulation",
+              "economicTier",
+              "updatedAt",
+            ])
+            .optional()
+            .default("name"),
+          sortOrder: z.enum(["asc", "desc"]).optional().default("asc"),
+          tierFilter: z.string().optional(),
+          limit: z.number().min(1).max(200).optional().default(100),
+          offset: z.number().min(0).optional().default(0),
+        })
+        .optional()
+        .default({})
+    )
+    .query(async ({ ctx, input }) => {
+      const { search, sortBy, sortOrder, tierFilter, limit, offset } = input;
+
+      const where: Record<string, unknown> = {};
+      if (search) {
+        where.name = { contains: search, mode: "insensitive" };
+      }
+      if (tierFilter) {
+        where.economicTier = tierFilter;
+      }
+
+      const [countries, total, activeStorytellerEffectsByCountry] = await Promise.all([
+        ctx.db.country.findMany({
+          where,
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            flag: true,
+            isDemo: true,
+            // Economic
+            currentTotalGdp: true,
+            currentGdpPerCapita: true,
+            realGDPGrowthRate: true,
+            totalDebtGDPRatio: true,
+            economicTier: true,
+            inflationRate: true,
+            // Population
+            currentPopulation: true,
+            populationGrowthRate: true,
+            // Governance
+            governmentType: true,
+            politicalStability: true,
+            publicApproval: true,
+            // Vitality
+            overallNationalHealth: true,
+            economicVitality: true,
+            // Timestamps
+            lastCalculated: true,
+            updatedAt: true,
+            createdAt: true,
+            // Owner info
+            users: {
+              select: {
+                id: true,
+                clerkUserId: true,
+                isActive: true,
+                updatedAt: true,
+              },
+            },
+            // Count active interventions
+            _count: {
+              select: {
+                storytellerEffects: { where: { isActive: true } },
+              },
+            },
+          },
+          orderBy: { [sortBy]: sortOrder },
+          take: limit,
+          skip: offset,
+        }),
+        ctx.db.country.count({ where }),
+        // Get active storyteller effects count per country for alert badges
+        ctx.db.storytellerEffect.groupBy({
+          by: ["countryId"],
+          where: { isActive: true },
+          _count: true,
+        }),
+      ]);
+
+      // Build a lookup for active interventions
+      const effectsLookup = new Map(
+        activeStorytellerEffectsByCountry
+          .filter((d) => d.countryId)
+          .map((d) => [d.countryId!, d._count])
+      );
+
+      const rows = countries.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        flag: c.flag,
+        isDemo: c.isDemo,
+        // Economic
+        gdp: c.currentTotalGdp,
+        gdpPerCapita: c.currentGdpPerCapita,
+        gdpGrowthRate: c.realGDPGrowthRate,
+        debtToGdpRatio: c.totalDebtGDPRatio,
+        economicTier: c.economicTier,
+        inflationRate: c.inflationRate,
+        // Population
+        population: c.currentPopulation,
+        populationGrowthRate: c.populationGrowthRate,
+        // Governance
+        governmentType: c.governmentType,
+        stability: c.politicalStability,
+        approval: c.publicApproval,
+        // Vitality
+        nationalHealth: c.overallNationalHealth,
+        economicVitality: c.economicVitality,
+        // Timestamps
+        lastCalculated: c.lastCalculated,
+        updatedAt: c.updatedAt,
+        // Owner
+        owner: c.users[0]
+          ? {
+              id: c.users[0].id,
+              clerkUserId: c.users[0].clerkUserId,
+              lastActive: c.users[0].updatedAt,
+            }
+          : null,
+        // Alerts
+        activeInterventions: effectsLookup.get(c.id) ?? c._count.storytellerEffects,
+      }));
+
+      return { rows, total, limit, offset };
+    }),
+
+  /**
+   * Get full detail for a single country (admin drill-down).
+   */
+  getCountryDetail: adminProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        include: {
+          users: {
+            select: {
+              id: true,
+              clerkUserId: true,
+              membershipTier: true,
+              isActive: true,
+              updatedAt: true,
+            },
+          },
+          storytellerEffects: {
+            where: { isActive: true },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+          },
+        },
+      });
+
+      if (!country) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
+      }
+
+      // Get recent audit log entries for this country
+      const auditLogs = await ctx.db.adminAuditLog.findMany({
+        where: { targetId: input.countryId },
+        orderBy: { timestamp: "desc" },
+        take: 10,
+      });
+
+      return { country, auditLogs };
+    }),
+
+  /**
+   * Get upcoming events across all systems for the timeline widget.
+   * Aggregates StorytellerEffects (future), Elections (upcoming), Policies (expiring), and CrisisEvents.
+   */
+  getUpcomingEvents: adminProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().min(1).max(50).optional().default(20),
+        })
+        .optional()
+        .default({})
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+
+      const [futureInterventions, upcomingElections, activeCrises, expiringPolicies, recentAudit] =
+        await Promise.all([
+          // Future StorytellerEffects (scheduled but not yet started)
+          ctx.db.storytellerEffect.findMany({
+            where: {
+              isActive: true,
+              ixTimeTimestamp: { gt: now },
+            },
+            include: {
+              country: { select: { id: true, name: true, flag: true } },
+            },
+            orderBy: { ixTimeTimestamp: "asc" },
+            take: input.limit,
+          }),
+
+          // Upcoming elections
+          ctx.db.election.findMany({
+            where: {
+              status: { in: ["upcoming", "campaigning"] },
+            },
+            include: {
+              country: { select: { id: true, name: true, flag: true } },
+            },
+            orderBy: { scheduledIxTime: "asc" },
+            take: input.limit,
+          }),
+
+          // Active crisis events
+          ctx.db.crisisEvent.findMany({
+            where: {
+              responseStatus: { not: "resolved" },
+            },
+            orderBy: { timestamp: "desc" },
+            take: input.limit,
+          }),
+
+          // Policies expiring soon
+          ctx.db.policy.findMany({
+            where: {
+              status: "active",
+              expiryDate: { not: null, gt: now },
+            },
+            include: {
+              country: { select: { id: true, name: true, flag: true } },
+            },
+            orderBy: { expiryDate: "asc" },
+            take: input.limit,
+          }),
+
+          // Recent admin actions
+          ctx.db.adminAuditLog.findMany({
+            orderBy: { timestamp: "desc" },
+            take: 5,
+          }),
+        ]);
+
+      type TimelineEvent = {
+        type: "intervention" | "election" | "crisis" | "policy_expiry" | "admin_action";
+        id: string;
+        title: string;
+        description: string | null;
+        countryName: string | null;
+        countryFlag: string | null;
+        severity: string | null;
+        scheduledAt: Date;
+      };
+
+      const events: TimelineEvent[] = [
+        ...futureInterventions.map((i) => ({
+          type: "intervention" as const,
+          id: i.id,
+          title: `${i.inputType} intervention`,
+          description: i.description,
+          countryName: i.country?.name ?? "Global",
+          countryFlag: i.country?.flag ?? null,
+          severity: null,
+          scheduledAt: i.ixTimeTimestamp,
+        })),
+        ...upcomingElections.map((e) => ({
+          type: "election" as const,
+          id: e.id,
+          title: e.name,
+          description: `${e.electionType} election - ${e.status}`,
+          countryName: e.country?.name ?? null,
+          countryFlag: e.country?.flag ?? null,
+          severity: null,
+          scheduledAt: new Date(e.scheduledIxTime),
+        })),
+        ...activeCrises.map((c) => ({
+          type: "crisis" as const,
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          countryName: null,
+          countryFlag: null,
+          severity: c.severity,
+          scheduledAt: c.timestamp,
+        })),
+        ...expiringPolicies.map((p) => ({
+          type: "policy_expiry" as const,
+          id: p.id,
+          title: `Policy expiring: ${p.name}`,
+          description: p.description,
+          countryName: p.country?.name ?? null,
+          countryFlag: p.country?.flag ?? null,
+          severity: null,
+          scheduledAt: p.expiryDate!,
+        })),
+      ];
+
+      // Sort all events by scheduled date
+      events.sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+
+      return {
+        events: events.slice(0, input.limit),
+        recentAdminActions: recentAudit,
+        counts: {
+          interventions: futureInterventions.length,
+          elections: upcomingElections.length,
+          crises: activeCrises.length,
+          expiringPolicies: expiringPolicies.length,
+        },
+      };
+    }),
+
+  // ============================================================================
+  // STORYTELLER / WORLD EVENTS
+  // ============================================================================
+
+  getWorldEvents: adminProcedure
+    .input(
+      z.object({
+        activeOnly: z.boolean().optional().default(false),
+        type: z.string().optional(),
+        limit: z.number().optional().default(50),
+        offset: z.number().optional().default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Record<string, unknown> = {};
+      if (input.activeOnly) where.isActive = true;
+      if (input.type) where.type = input.type;
+
+      const [events, total] = await Promise.all([
+        ctx.db.worldEvent.findMany({
+          where,
+          include: {
+            affectedCountries: {
+              include: { country: { select: { id: true, name: true, flag: true } } },
+            },
+            chain: { select: { id: true, name: true } },
+            _count: { select: { storytellerEffects: true } },
+          },
+          orderBy: { startsAt: "desc" },
+          take: input.limit,
+          skip: input.offset,
+        }),
+        ctx.db.worldEvent.count({ where }),
+      ]);
+
+      return { events, total };
+    }),
+
+  getWorldEventDetail: adminProcedure
+    .input(z.object({ eventId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const event = await ctx.db.worldEvent.findUnique({
+        where: { id: input.eventId },
+        include: {
+          affectedCountries: {
+            include: { country: { select: { id: true, name: true, flag: true, currentTotalGdp: true, currentPopulation: true, economicTier: true } } },
+          },
+          storytellerEffects: {
+            include: { country: { select: { id: true, name: true } } },
+            orderBy: { createdAt: "desc" },
+          },
+          chain: true,
+        },
+      });
+      if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "World event not found" });
+      return event;
+    }),
+
+  createWorldEvent: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        type: z.string(),
+        description: z.string().optional(),
+        severity: z.number().min(0).max(1),
+        duration: z.number().optional(),
+        startsAt: z.date(),
+        endsAt: z.date().optional(),
+        chainId: z.string().optional(),
+        chainOrder: z.number().optional(),
+        parameters: z.record(z.unknown()).optional(),
+        affectedCountryIds: z.array(z.string()),
+        generateEffects: z.boolean().optional().default(true),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user?.id;
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+      // Calculate end date from duration if not provided
+      const endsAt = input.endsAt ?? (input.duration
+        ? new Date(input.startsAt.getTime() + input.duration * 365.25 * 24 * 60 * 60 * 1000)
+        : null);
+
+      // Create the world event
+      const event = await ctx.db.worldEvent.create({
+        data: {
+          name: input.name,
+          type: input.type,
+          description: input.description,
+          severity: input.severity,
+          duration: input.duration,
+          startsAt: input.startsAt,
+          endsAt,
+          parameters: input.parameters ?? undefined,
+          chainId: input.chainId,
+          chainOrder: input.chainOrder,
+          createdBy: userId,
+          affectedCountries: {
+            create: input.affectedCountryIds.map((countryId) => ({
+              countryId,
+            })),
+          },
+        },
+        include: {
+          affectedCountries: {
+            include: { country: { select: { id: true, name: true } } },
+          },
+        },
+      });
+
+      // Generate StorytellerEffects for each affected country
+      if (input.generateEffects && input.affectedCountryIds.length > 0) {
+        const effectsData = input.affectedCountryIds.map((countryId) => ({
+          countryId,
+          ixTimeTimestamp: input.startsAt,
+          inputType: input.type,
+          value: input.severity >= 0.5 ? -input.severity : input.severity,
+          description: `[WorldEvent: ${input.name}] ${input.description ?? ""}`.trim(),
+          duration: input.duration ? Math.round(input.duration) : null,
+          isActive: true,
+          createdBy: userId,
+          worldEventId: event.id,
+        }));
+
+        await ctx.db.storytellerEffect.createMany({ data: effectsData });
+      }
+
+      // Audit log
+      await ctx.db.adminAuditLog.create({
+        data: {
+          action: "CREATE_WORLD_EVENT",
+          adminId: userId,
+          adminName: ctx.user?.firstName ?? "Admin",
+          details: JSON.stringify({
+            eventId: event.id,
+            name: input.name,
+            type: input.type,
+            severity: input.severity,
+            affectedCountries: input.affectedCountryIds.length,
+          }),
+          timestamp: new Date(),
+        },
+      });
+
+      return event;
+    }),
+
+  updateWorldEvent: adminProcedure
+    .input(
+      z.object({
+        eventId: z.string(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        severity: z.number().min(0).max(1).optional(),
+        isActive: z.boolean().optional(),
+        startsAt: z.date().optional(),
+        endsAt: z.date().optional(),
+        parameters: z.record(z.unknown()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { eventId, ...data } = input;
+      const event = await ctx.db.worldEvent.update({
+        where: { id: eventId },
+        data: {
+          ...data,
+          parameters: data.parameters ?? undefined,
+        },
+      });
+
+      // If deactivating, also deactivate linked StorytellerEffects
+      if (input.isActive === false) {
+        await ctx.db.storytellerEffect.updateMany({
+          where: { worldEventId: eventId },
+          data: { isActive: false },
+        });
+      }
+
+      return event;
+    }),
+
+  deleteWorldEvent: adminProcedure
+    .input(z.object({ eventId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Deactivate linked StorytellerEffects (don't delete - keep history)
+      await ctx.db.storytellerEffect.updateMany({
+        where: { worldEventId: input.eventId },
+        data: { isActive: false, worldEventId: null },
+      });
+
+      await ctx.db.worldEvent.delete({ where: { id: input.eventId } });
+      return { success: true };
+    }),
+
+  simulateWorldEvent: adminProcedure
+    .input(
+      z.object({
+        type: z.string(),
+        severity: z.number().min(0).max(1),
+        duration: z.number().optional(),
+        affectedCountryIds: z.array(z.string()),
+        parameters: z.record(z.unknown()).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Fetch current state of affected countries
+      const countries = await ctx.db.country.findMany({
+        where: { id: { in: input.affectedCountryIds } },
+        select: {
+          id: true,
+          name: true,
+          flag: true,
+          currentTotalGdp: true,
+          currentGdpPerCapita: true,
+          realGDPGrowthRate: true,
+          currentPopulation: true,
+          populationGrowthRate: true,
+          economicTier: true,
+          publicApproval: true,
+          politicalStability: true,
+          economicVitality: true,
+        },
+      });
+
+      // Project impact based on severity and event type
+      const projectedImpacts = countries.map((c) => {
+        const severityMultiplier = input.severity;
+        // Negative events reduce GDP; positive events (peace, tech) boost it
+        const isNegative = [
+          "economic_crisis", "trade_war", "natural_disaster", "pandemic",
+          "political_upheaval", "global_recession", "currency_crisis",
+          "cyber_attack", "climate_disaster", "financial_crisis",
+        ].includes(input.type);
+
+        const gdpImpactPct = isNegative
+          ? -(severityMultiplier * 0.2) // up to -20% at max severity
+          : severityMultiplier * 0.15;  // up to +15% boost
+
+        const popImpactPct = isNegative
+          ? -(severityMultiplier * 0.02) // up to -2% population impact
+          : severityMultiplier * 0.01;
+
+        const stabilityImpact = isNegative
+          ? -(severityMultiplier * 30) // up to -30 stability points
+          : severityMultiplier * 10;
+
+        const currentGdp = c.currentTotalGdp ?? 0;
+        const currentPop = c.currentPopulation ?? 0;
+
+        return {
+          countryId: c.id,
+          countryName: c.name,
+          countryFlag: c.flag,
+          economicTier: c.economicTier,
+          current: {
+            gdp: currentGdp,
+            gdpPerCapita: c.currentGdpPerCapita,
+            population: currentPop,
+            growthRate: c.realGDPGrowthRate,
+            approval: c.publicApproval,
+            stability: c.politicalStability,
+            vitality: c.economicVitality,
+          },
+          projected: {
+            gdp: currentGdp * (1 + gdpImpactPct),
+            gdpChange: gdpImpactPct,
+            population: currentPop * (1 + popImpactPct),
+            populationChange: popImpactPct,
+            stabilityChange: stabilityImpact,
+          },
+        };
+      });
+
+      return {
+        projectedImpacts,
+        summary: {
+          totalCountriesAffected: countries.length,
+          avgGdpChange: projectedImpacts.reduce((sum, p) => sum + p.projected.gdpChange, 0) / Math.max(projectedImpacts.length, 1),
+          totalGdpAtRisk: projectedImpacts.reduce((sum, p) => sum + Math.abs(p.current.gdp * p.projected.gdpChange), 0),
+        },
+      };
+    }),
+
+  // Event Chains
+  getEventChains: adminProcedure.query(async ({ ctx }) => {
+    return ctx.db.eventChain.findMany({
+      include: {
+        events: {
+          orderBy: { chainOrder: "asc" },
+          select: { id: true, name: true, type: true, severity: true, chainOrder: true, isActive: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }),
+
+  createEventChain: adminProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user?.id;
+      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+      return ctx.db.eventChain.create({
+        data: { name: input.name, description: input.description, createdBy: userId },
+      });
     }),
 });

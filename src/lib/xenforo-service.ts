@@ -49,17 +49,21 @@ export interface ForumThread {
   viewCount: number;
 }
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 let cached: { data: ForumActivityItem[]; fetchedAt: number } | null = null;
 let cachedThreads: { data: ForumThread[]; fetchedAt: number } | null = null;
 
-function getApiKey(): string | undefined {
+export function getXfApiKey(): string | undefined {
   return process.env.XENFORO_API_KEY;
 }
 
-function getApiUrl(): string {
+export function getXfApiUrl(): string {
   return process.env.XENFORO_API_URL || "https://forum.ixwiki.com/api";
 }
+
+// Internal aliases for backward compat within this file
+function getApiKey(): string | undefined { return getXfApiKey(); }
+function getApiUrl(): string { return getXfApiUrl(); }
 
 function stripBBCode(text: string): string {
   return text.replace(/\[\/?\w+(?:=[^\]]*)?]/g, "").trim();
@@ -96,6 +100,46 @@ async function xfFetch<T>(endpoint: string): Promise<T | null> {
 }
 
 /**
+ * POST to XenForo API endpoint.
+ * Used for creating/updating resources (custom fields, user profiles).
+ */
+export async function xfPost<T>(
+  endpoint: string,
+  body: Record<string, string>
+): Promise<T | null> {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(`${getApiUrl()}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "XF-Api-Key": apiKey,
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: new URLSearchParams(body),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`[XenForo] POST HTTP ${response.status} for ${endpoint}`);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    console.error(`[XenForo] Failed to POST ${endpoint}:`, error);
+    return null;
+  }
+}
+
+/**
  * Fetch forum threads with engagement data for trending algorithm.
  */
 export async function getForumTrendingThreads(limit = 15): Promise<ForumThread[]> {
@@ -121,6 +165,30 @@ export async function getForumTrendingThreads(limit = 15): Promise<ForumThread[]
 
   cachedThreads = { data: threads, fetchedAt: Date.now() };
   return threads.slice(0, limit);
+}
+
+/**
+ * Search forum threads by title for card/article tie-in.
+ * Returns matching threads sorted by last post date.
+ */
+export async function searchForumThreads(query: string, limit = 5): Promise<ForumThread[]> {
+  if (!getApiKey()) return [];
+
+  const baseUrl = "https://forum.ixwiki.com";
+  const data = await xfFetch<XFThreadsResponse>(
+    `/threads/?title=${encodeURIComponent(query)}&order=last_post_date&direction=desc&limit=${limit}`
+  );
+
+  return (data?.threads ?? []).map((t) => ({
+    threadId: t.thread_id,
+    title: t.title,
+    author: t.username,
+    timestamp: new Date(t.post_date * 1000),
+    url: `${baseUrl}/threads/${t.thread_id}/`,
+    forumName: t.Forum?.title,
+    replyCount: t.reply_count,
+    viewCount: t.view_count,
+  }));
 }
 
 /**

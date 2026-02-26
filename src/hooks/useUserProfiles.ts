@@ -8,43 +8,41 @@
  * @returns Map of userId to display name (country name or fallback)
  */
 
+import { useMemo } from "react";
 import { api } from "~/trpc/react";
 
 export function useUserProfiles(userIds: string[]) {
-  // Fetch all user profiles in parallel
-  const queries = userIds.map((userId) =>
-    api.users.getProfileById.useQuery(
-      { userId },
-      {
-        enabled: !!userId && userId.trim() !== "",
-        retry: 1,
-        staleTime: 60000, // Cache for 1 minute
-      }
-    )
+  const validIds = useMemo(
+    () => userIds.filter((id) => id && id.trim() !== ""),
+    [userIds]
   );
 
-  // Build a map of userId to display name
-  const userDisplayNames = new Map<string, string>();
-
-  queries.forEach((query, index) => {
-    const userId = userIds[index];
-    if (!userId) return;
-
-    if (query.data?.country?.name) {
-      userDisplayNames.set(userId, query.data.country.name);
-    } else {
-      // Fallback to shortened user ID if no country
-      userDisplayNames.set(userId, `User ${userId.substring(0, 8)}`);
+  const { data, isLoading, error } = api.users.getProfilesByIds.useQuery(
+    { userIds: validIds },
+    {
+      enabled: validIds.length > 0,
+      retry: 1,
+      staleTime: 60000, // Cache for 1 minute
     }
-  });
+  );
 
-  const isLoading = queries.some((q) => q.isLoading);
-  const hasErrors = queries.some((q) => q.error);
+  const userDisplayNames = useMemo(() => {
+    const map = new Map<string, string>();
+    if (data) {
+      for (const profile of data) {
+        map.set(
+          profile.userId,
+          profile.country?.name ?? `User ${profile.userId.substring(0, 8)}`
+        );
+      }
+    }
+    return map;
+  }, [data]);
 
   return {
     userDisplayNames,
     isLoading,
-    hasErrors,
+    hasErrors: !!error,
   };
 }
 

@@ -170,7 +170,7 @@ export function DatabaseExplorer() {
       diskSize: "156 KB",
     },
     {
-      name: "DmInput",
+      name: "StorytellerEffect",
       rowCount: 23,
       columns: [
         { name: "id", type: "String", nullable: false, isPrimaryKey: true, isForeignKey: false },

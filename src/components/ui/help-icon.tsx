@@ -50,7 +50,7 @@ export function HelpIcon({
           <Icon
             className={cn(
               "h-4 w-4",
-              "text-white/40 hover:text-amber-400",
+              "text-gray-400 hover:text-amber-600 dark:text-white/40 dark:hover:text-amber-400",
               "transition-colors duration-200",
               "cursor-help",
               iconClassName
@@ -60,7 +60,7 @@ export function HelpIcon({
       </TooltipTrigger>
       <TooltipContent side={side} sideOffset={8} className="max-w-sm">
         {title && (
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-400">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
             <Icon className="h-3.5 w-3.5" />
             {title}
           </div>
@@ -79,7 +79,7 @@ export function SectionHelpIcon(props: Omit<HelpIconProps, "className" | "iconCl
     <HelpIcon
       {...props}
       className="ml-2"
-      iconClassName="h-4 w-4 text-white/50 hover:text-amber-300"
+      iconClassName="h-4 w-4 text-gray-400 hover:text-amber-600 dark:text-white/50 dark:hover:text-amber-300"
     />
   );
 }
@@ -92,7 +92,7 @@ export function InlineHelpIcon(props: Omit<HelpIconProps, "className" | "iconCla
     <HelpIcon
       {...props}
       className="ml-1.5"
-      iconClassName="h-3.5 w-3.5 text-white/40 hover:text-amber-400"
+      iconClassName="h-3.5 w-3.5 text-gray-400 hover:text-amber-600 dark:text-white/40 dark:hover:text-amber-400"
     />
   );
 }

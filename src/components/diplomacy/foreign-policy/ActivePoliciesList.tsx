@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -144,8 +145,9 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
                       {policy.severity}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground mt-1 text-xs">
+                  <p className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
                     {isInitiator ? "Imposed on" : "Received from"}{" "}
+                    <UnifiedCountryFlag countryName={otherCountry.name} flagUrl={otherCountry.flagUrl} size="xs" showTooltip={false} />
                     <span className="font-medium text-foreground">{otherCountry.name}</span>
                   </p>
                   {policy.reason && (

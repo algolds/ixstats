@@ -120,7 +120,7 @@ interface PremiumFeatures {
 | | | | | |
 | **Administrative** | | | | |
 | → Admin Panel | System administration | Admin Only | Admin Only | Role-based |
-| → Reference Data CMS | 18 admin interfaces | Admin Only | Admin Only | Content management |
+| → Reference Data CMS | 20 admin interfaces | Admin Only | Admin Only | Content management |
 | → Storyteller Panel | DM controls | Admin Only | Admin Only | Game master tools |
 | → User Management | User admin | Admin Only | Admin Only | Super admin only |
 

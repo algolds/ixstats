@@ -38,7 +38,7 @@ import { Label } from "~/components/ui/label";
 import { Separator } from "~/components/ui/separator";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import RichTextEditor, { type RichTextEditorRef } from "../RichTextEditor";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { WikiTextImporter } from "./WikiTextImporter";
@@ -75,6 +75,7 @@ export function CollaborativeDocument({
   members = [],
   className = "",
 }: CollaborativeDocumentProps) {
+  const notify = useNotify();
   const [view, setView] = useState<"list" | "edit">("list");
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -127,7 +128,7 @@ export function CollaborativeDocument({
   // Mutations
   const createDocMutation = api.thinkpages.createThinktankDocument.useMutation({
     onSuccess: (newDoc) => {
-      toast.success("Document created successfully!");
+      notify.success("Document created successfully!");
       refetchDocuments();
       setShowCreateModal(false);
       setNewDocTitle("");
@@ -137,7 +138,7 @@ export function CollaborativeDocument({
       setIsEditing(true);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create document");
+      notify.error(error.message || "Failed to create document");
     },
   });
 
@@ -148,21 +149,21 @@ export function CollaborativeDocument({
       refetchCurrentDocument();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to save document");
+      notify.error(error.message || "Failed to save document");
       setAutoSaveStatus("unsaved");
     },
   });
 
   const deleteDocMutation = api.thinkpages.deleteThinktankDocument.useMutation({
     onSuccess: () => {
-      toast.success("Document deleted successfully!");
+      notify.success("Document deleted successfully!");
       refetchDocuments();
       setShowDeleteConfirm(false);
       setSelectedDocument(null);
       setView("list");
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to delete document");
+      notify.error(error.message || "Failed to delete document");
     },
   });
 
@@ -247,7 +248,7 @@ export function CollaborativeDocument({
   const handleExport = useCallback(
     (format: "html" | "markdown" | "pdf" | "json") => {
       if (!currentDocument?.content) {
-        toast.error("No content to export");
+        notify.error("No content to export");
         return;
       }
 
@@ -351,7 +352,7 @@ export function CollaborativeDocument({
       }
 
       setShowExportModal(false);
-      toast.success(`Exported as ${format.toUpperCase()}`);
+      notify.success(`Exported as ${format.toUpperCase()}`);
     },
     [currentDocument]
   );
@@ -541,11 +542,11 @@ export function CollaborativeDocument({
                 <Button
                   onClick={() => {
                     if (!newDocTitle.trim()) {
-                      toast.error("Please enter a document title");
+                      notify.error("Please enter a document title");
                       return;
                     }
                     if (!currentUserId) {
-                      toast.error("User ID not found. Please try refreshing the page.");
+                      notify.error("User ID not found. Please try refreshing the page.");
                       return;
                     }
                     createDocMutation.mutate({
@@ -728,7 +729,7 @@ export function CollaborativeDocument({
                 if (selectedDocument && typeof window !== "undefined") {
                   const shareUrl = `${window.location.origin}${window.location.pathname}?doc=${selectedDocument.id}`;
                   navigator.clipboard.writeText(shareUrl);
-                  toast.success("Document link copied to clipboard!");
+                  notify.success("Document link copied to clipboard!");
                 }
               }}
               title="Copy Share Link"

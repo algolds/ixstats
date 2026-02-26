@@ -13,7 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import { createUrl } from "~/lib/url-utils";
@@ -35,6 +35,7 @@ export function CountryActionsMenu({
   onClose,
   isOwnCountry = false,
 }: CountryActionsMenuProps) {
+  const notify = useNotify();
   const router = useRouter();
   const [selectedAchievement, setSelectedAchievement] = useState<string>("");
 
@@ -65,51 +66,51 @@ export function CountryActionsMenu({
   // Follow/Unfollow mutation
   const followMutation = api.diplomatic.followCountry.useMutation({
     onSuccess: () => {
-      toast.success(`Now following ${targetCountryName}`);
+      notify.success(`Now following ${targetCountryName}`);
       void refetchFollowStatus();
     },
     onError: (error) => {
-      toast.error(`Failed to follow: ${error.message}`);
+      notify.error(`Failed to follow: ${error.message}`);
     },
   });
 
   const unfollowMutation = api.diplomatic.unfollowCountry.useMutation({
     onSuccess: () => {
-      toast.success(`Unfollowed ${targetCountryName}`);
+      notify.success(`Unfollowed ${targetCountryName}`);
       void refetchFollowStatus();
     },
     onError: (error) => {
-      toast.error(`Failed to unfollow: ${error.message}`);
+      notify.error(`Failed to unfollow: ${error.message}`);
     },
   });
 
   // Embassy establishment mutation
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: () => {
-      toast.success(`Embassy construction initiated with ${targetCountryName}`);
+      notify.success(`Embassy construction initiated with ${targetCountryName}`);
       onClose();
     },
     onError: (error) => {
-      toast.error(`Failed to establish embassy: ${error.message}`);
+      notify.error(`Failed to establish embassy: ${error.message}`);
     },
   });
 
   // Congratulate via ThinkShare mutation
   const congratulateMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
-      toast.success(`Congratulations sent to ${targetCountryName}!`);
+      notify.success(`Congratulations sent to ${targetCountryName}!`);
       setSelectedAchievement("");
       onClose();
     },
     onError: (error) => {
-      toast.error(`Failed to send congratulations: ${error.message}`);
+      notify.error(`Failed to send congratulations: ${error.message}`);
     },
   });
 
   // Handle follow/unfollow toggle
   const handleFollowToggle = useCallback(() => {
     if (!viewerCountryId) {
-      toast.error("You must be logged in to follow countries");
+      notify.error("You must be logged in to follow countries");
       return;
     }
 
@@ -136,7 +137,7 @@ export function CountryActionsMenu({
   // Handle embassy establishment
   const handleEstablishEmbassy = useCallback(() => {
     if (!viewerCountryId) {
-      toast.error("You must be logged in to establish embassies");
+      notify.error("You must be logged in to establish embassies");
       return;
     }
 
@@ -151,12 +152,12 @@ export function CountryActionsMenu({
   // Handle congratulate
   const handleCongratulate = useCallback(() => {
     if (!viewerCountryId) {
-      toast.error("You need to sign in to send congratulations");
+      notify.error("You need to sign in to send congratulations");
       return;
     }
 
     if (!selectedAchievement) {
-      toast.error("Please select an achievement to congratulate");
+      notify.error("Please select an achievement to congratulate");
       return;
     }
 

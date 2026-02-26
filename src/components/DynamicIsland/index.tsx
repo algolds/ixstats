@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   DynamicIsland,
   useDynamicIslandSize,
@@ -7,8 +8,10 @@ import {
 } from "../ui/dynamic-island";
 import { CompactView } from "./CompactView";
 import { ExpandedView } from "./ExpandedView";
+import { DynamicIslandToastManager } from "./DynamicIslandToastManager";
 import { useDynamicIslandState } from "./hooks";
 import { useNotificationStore } from "~/stores/notificationStore";
+import { useToastQueueStore } from "~/stores/toastQueueStore";
 
 // Re-export original dynamic island components for backward compatibility
 export {
@@ -35,6 +38,7 @@ function CommandPaletteContent({
   const { setSize } = useDynamicIslandSize();
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [diPulseClass, setDiPulseClass] = useState("");
 
   // Use shared state management
   const {
@@ -59,17 +63,18 @@ function CommandPaletteContent({
     switchMode,
   } = useDynamicIslandState();
 
-  // Dynamic size based on sticky/collapsed state - optimized for performance
+  // Dynamic size based on sticky/collapsed state
   useEffect(() => {
-    const newSize =
-      isSticky && isCollapsed
-        ? SIZE_PRESETS.COMPACT
-        : mode === "compact" || !isSticky
-          ? SIZE_PRESETS.COMPACT_TALL
-          : SIZE_PRESETS.DEFAULT;
-
+    let newSize: string;
+    if (isSticky && isCollapsed) {
+      newSize = SIZE_PRESETS.COMPACT;        // 200x36 pill
+    } else if (isSticky && !isCollapsed) {
+      newSize = SIZE_PRESETS.COMPACT_LONG;   // 320x40 pill (hover state)
+    } else {
+      newSize = SIZE_PRESETS.COMPACT_TALL;   // 360x44 pill (inline in navbar)
+    }
     setSize(newSize);
-  }, [mode, setSize, isSticky, isCollapsed]);
+  }, [setSize, isSticky, isCollapsed]);
 
   // Initialize notification store
   const initialize = useNotificationStore((state) => state.initialize);
@@ -102,23 +107,83 @@ function CommandPaletteContent({
     };
   }, [isSticky, isUserInteracting, isCollapsed]);
 
+  // Ring + bump animation on any new toast
+  const [ringActive, setRingActive] = useState(false);
+  const toastQueue = useToastQueueStore((s) => s.queue);
+  const prevToastIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const latest = toastQueue[0];
+    if (!latest || latest.id === prevToastIdRef.current) return;
+    prevToastIdRef.current = latest.id;
+
+    // Trigger ring + bump
+    setRingActive(true);
+
+    // Briefly uncollapse sticky DI so the user sees the notification peek
+    if (isSticky && isCollapsed) {
+      setIsCollapsed(false);
+      setIsUserInteracting(true);
+      // Let the auto-collapse timer re-engage after 3s
+      setTimeout(() => setIsUserInteracting(false), 3000);
+    }
+
+    // Also pulse for critical
+    if (latest.priority === "critical") {
+      setDiPulseClass("animate-di-critical");
+      setTimeout(() => setDiPulseClass(""), 1200);
+    }
+
+    const timer = setTimeout(() => setRingActive(false), 600);
+    return () => clearTimeout(timer);
+  }, [toastQueue, isSticky, isCollapsed, setIsUserInteracting]);
+
+  // Callback for DI pill pulse on critical notification (from ToastManager)
+  const handleCriticalNotification = useCallback(() => {
+    setDiPulseClass("animate-di-critical");
+    setTimeout(() => setDiPulseClass(""), 1200);
+  }, []);
+
   if (!mounted) return null;
 
   return (
     <>
-      <DynamicIsland id="command-palette">
-        <CompactView
-          isSticky={isSticky}
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          setIsUserInteracting={setIsUserInteracting}
-          timeDisplayMode={timeDisplayMode}
-          setTimeDisplayMode={setTimeDisplayMode}
-          onSwitchMode={switchMode}
-          scrollY={scrollY}
-          crisisEvents={crisisEvents}
-        />
-      </DynamicIsland>
+      <div className="relative">
+        {/* Expanding ring on new notification */}
+        <AnimatePresence>
+          {ringActive && (
+            <motion.div
+              key="ring"
+              className="pointer-events-none absolute inset-0 rounded-full border-2 border-blue-400/60"
+              initial={{ scale: 1, opacity: 0.8 }}
+              animate={{ scale: 1.35, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* DI pill with scale bump */}
+        <motion.div
+          className={`rounded-full ${diPulseClass}`}
+          animate={{ scale: ringActive ? 1.04 : 1 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20 }}
+        >
+          <DynamicIsland id="command-palette">
+            <CompactView
+              isSticky={isSticky}
+              isCollapsed={isCollapsed}
+              setIsCollapsed={setIsCollapsed}
+              setIsUserInteracting={setIsUserInteracting}
+              timeDisplayMode={timeDisplayMode}
+              setTimeDisplayMode={setTimeDisplayMode}
+              onSwitchMode={switchMode}
+              scrollY={scrollY}
+              crisisEvents={crisisEvents}
+            />
+          </DynamicIsland>
+        </motion.div>
+      </div>
 
       {/* Expanded dropdown content - only on desktop */}
       {isExpanded && (
@@ -135,6 +200,12 @@ function CommandPaletteContent({
           crisisEvents={crisisEvents}
         />
       )}
+
+      {/* Toast banners anchored below DI pill */}
+      <DynamicIslandToastManager
+        isExpanded={isExpanded}
+        onCriticalNotification={handleCriticalNotification}
+      />
     </>
   );
 }
@@ -145,7 +216,7 @@ export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteP
       className={`z-[10000] flex items-center justify-center ${className || ""}`}
       style={{
         width: "100%", // Always use full width for proper centering
-        maxWidth: isSticky ? "600px" : "100%", // Constrain max width when sticky
+        maxWidth: isSticky ? "400px" : "100%",
       }}
     >
       <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>

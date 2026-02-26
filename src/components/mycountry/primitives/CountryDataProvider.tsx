@@ -3,13 +3,14 @@
 import { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import { api } from "~/trpc/react";
-import { generateCountryEconomicData, type CountryProfile } from "~/lib/economic-data-templates";
+import { mapCountryToEconomyData } from "~/lib/economy-data-mapper";
 import { AlertTriangle, Crown } from "lucide-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { useDevCountryView } from "~/context/DevCountryViewContext";
+import { useDemoMode } from "~/context/DemoModeContext";
 
 interface CountryDataContextValue {
   userProfile: any;
@@ -31,83 +32,11 @@ interface CountryDataProviderProps {
   userId: string;
 }
 
-// Helper function to generate economic data
-function generateEconomicDataForCountry(country: any) {
-  if (!country) return undefined;
-
-  const profile: CountryProfile = {
-    population: country.currentPopulation || country.baselinePopulation || 0,
-    gdpPerCapita: country.currentGdpPerCapita || country.baselineGdpPerCapita || 0,
-    totalGdp: country.nominalGDP || country.currentPopulation * country.currentGdpPerCapita || 0,
-    economicTier: country.economicTier || "Developing",
-    landArea: country.landArea,
-    continent: country.continent,
-    region: country.region,
-  };
-
-  const economicData = generateCountryEconomicData(profile);
-
-  // Economic data mapping (debug logs removed for production)
-
-  // CRITICAL FIX: DO NOT use template data! Only use real database values.
-  // If database value is null/undefined, SET IT TO null so UI can show "N/A"
-  // Template data should NEVER be shown as if it's real data!
-
-  // Core economic indicators - use DB value or null
-  economicData.core.realGDPGrowthRate = country.realGDPGrowthRate ?? null;
-  economicData.core.inflationRate = country.inflationRate ?? null;
-  economicData.core.nominalGDP = country.nominalGDP ?? null;
-
-  // Labor market data - use DB value or null (NO TEMPLATE DATA)
-  economicData.labor.unemploymentRate = country.unemploymentRate ?? null;
-  economicData.labor.employmentRate =
-    country.employmentRate ??
-    (country.unemploymentRate !== null && country.unemploymentRate !== undefined
-      ? 100 - country.unemploymentRate
-      : null);
-  economicData.labor.laborForceParticipationRate = country.laborForceParticipationRate ?? null;
-  economicData.labor.totalWorkforce = country.totalWorkforce ?? null;
-  economicData.labor.averageWorkweekHours = country.averageWorkweekHours ?? null;
-  economicData.labor.minimumWage = country.minimumWage ?? null;
-  economicData.labor.averageAnnualIncome = country.averageAnnualIncome ?? null;
-
-  // Fiscal system data - use DB value or null
-  economicData.fiscal.taxRevenueGDPPercent = country.taxRevenueGDPPercent ?? null;
-  economicData.fiscal.governmentRevenueTotal = country.governmentRevenueTotal ?? null;
-  economicData.fiscal.governmentBudgetGDPPercent = country.governmentBudgetGDPPercent ?? null;
-  economicData.fiscal.budgetDeficitSurplus = country.budgetDeficitSurplus ?? null;
-  economicData.fiscal.totalDebtGDPRatio = country.totalDebtGDPRatio ?? null;
-  economicData.fiscal.internalDebtGDPPercent = country.internalDebtGDPPercent ?? null;
-  economicData.fiscal.externalDebtGDPPercent = country.externalDebtGDPPercent ?? null;
-  economicData.fiscal.interestRates = country.interestRates ?? null;
-  economicData.fiscal.debtServiceCosts = country.debtServiceCosts ?? null;
-
-  // Government spending data - use DB value or null
-  economicData.spending.totalSpending = country.totalGovernmentSpending ?? null;
-  economicData.spending.spendingGDPPercent = country.spendingGDPPercent ?? null;
-
-  // Demographics data - use DB value or defaults
-  economicData.demographics.lifeExpectancy = country.lifeExpectancy ?? null;
-  economicData.demographics.literacyRate = country.literacyRate ?? null;
-  economicData.demographics.urbanRuralSplit =
-    country.urbanPopulationPercent !== null &&
-    country.urbanPopulationPercent !== undefined &&
-    country.ruralPopulationPercent !== null &&
-    country.ruralPopulationPercent !== undefined
-      ? {
-          urban: country.urbanPopulationPercent,
-          rural: country.ruralPopulationPercent,
-        }
-      : { urban: 60, rural: 40 }; // Default split if not available
-
-  // Economic data mapping complete
-
-  return economicData;
-}
-
 export function CountryDataProvider({ children, userId }: CountryDataProviderProps) {
   // Dev mode: allow viewing any country
   const { viewCountryId, isViewingOtherCountry } = useDevCountryView();
+  // Demo mode: override with demo country for system owners
+  const { isDemoActive, demoCountryId } = useDemoMode();
 
   const {
     data: userProfile,
@@ -115,8 +44,10 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     error: profileError,
   } = api.users.getProfile.useQuery(undefined, { enabled: !!userId });
 
-  // Use dev view country if set, otherwise use user's actual country
-  const effectiveCountryId = viewCountryId ?? userProfile?.countryId ?? "";
+  // Demo mode takes priority, then dev view, then user's actual country
+  const effectiveCountryId = (isDemoActive && demoCountryId)
+    ? demoCountryId
+    : viewCountryId ?? userProfile?.countryId ?? "";
 
   const {
     data: country,
@@ -139,7 +70,7 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
   const currentIxTime =
     typeof ixTimeData?.currentIxTimeNumber === "number" ? ixTimeData.currentIxTimeNumber : 0;
 
-  const economyData = generateEconomicDataForCountry(country);
+  const economyData = mapCountryToEconomyData(country);
 
   // Construct system status from available data
   const systemStatus = {
@@ -156,20 +87,20 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 animate-pulse rounded-full bg-gray-200"></div>
+            <div className="h-12 w-12 animate-pulse rounded-full bg-muted"></div>
             <div className="space-y-2">
-              <div className="h-8 w-64 animate-pulse rounded bg-gray-200"></div>
-              <div className="h-4 w-48 animate-pulse rounded bg-gray-200"></div>
+              <div className="h-8 w-64 animate-pulse rounded bg-muted"></div>
+              <div className="h-4 w-48 animate-pulse rounded bg-muted"></div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 animate-pulse rounded bg-gray-200"></div>
+              <div key={i} className="h-24 animate-pulse rounded bg-muted"></div>
             ))}
           </div>
 
-          <div className="h-96 animate-pulse rounded bg-gray-200"></div>
+          <div className="h-96 animate-pulse rounded bg-muted"></div>
         </div>
       </div>
     );

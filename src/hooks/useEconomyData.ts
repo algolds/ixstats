@@ -79,6 +79,52 @@ export function useEconomyData(countryId: string) {
       enhancedData = applyRealTimeEffects(baseEconomicData, realTimeEffects);
     }
 
+    // Parse LaborMarket JSON fields from DB
+    const laborMarketDb = countryData.laborMarket as any;
+    const parsedEmploymentBySector = (() => {
+      try {
+        const raw = laborMarketDb?.employmentBySector;
+        if (!raw) return null;
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (parsed && (parsed.agriculture || parsed.industry || parsed.services)) {
+          return {
+            agriculture: Number(parsed.agriculture) || 0,
+            industry: Number(parsed.industry) || 0,
+            services: Number(parsed.services) || 0,
+          };
+        }
+        return null;
+      } catch { return null; }
+    })();
+
+    // Parse EconomicProfile sectorBreakdown as fallback for sector data
+    const sectorFallback = (() => {
+      try {
+        const raw = (countryData.economicProfile as any)?.sectorBreakdown;
+        if (!raw) return null;
+        const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const sectors = parsed?.primarySectors;
+        if (Array.isArray(sectors) && sectors.length > 0) {
+          let agriculture = 0, industry = 0, services = 0;
+          for (const s of sectors) {
+            const pct = Number(s.gdpContribution || s.percentage || 0);
+            const name = (s.name || s.sector || "").toLowerCase();
+            if (name.includes("agri") || name.includes("farm") || name.includes("fish")) agriculture += pct;
+            else if (name.includes("industr") || name.includes("manufactur") || name.includes("mining") || name.includes("construct")) industry += pct;
+            else services += pct;
+          }
+          if (agriculture + industry + services > 0) return { agriculture, industry, services };
+        }
+        return null;
+      } catch { return null; }
+    })();
+
+    const employmentBySector = parsedEmploymentBySector || sectorFallback || {
+      agriculture: 5,
+      industry: 25,
+      services: 70,
+    };
+
     const economyData: EconomyData = {
       core: {
         totalPopulation: enhancedData.enhancedPopulation,
@@ -99,11 +145,7 @@ export function useEconomyData(countryId: string) {
         ),
         averageAnnualIncome:
           countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
-        employmentBySector: {
-          agriculture: 0,
-          industry: 0,
-          services: 0,
-        },
+        employmentBySector,
         employmentByType: {
           fullTime: 0,
           partTime: 0,
@@ -120,12 +162,12 @@ export function useEconomyData(countryId: string) {
           productivityGrowthRate: 0,
         },
         demographicsAndConditions: {
-          youthUnemploymentRate: 0,
-          femaleParticipationRate: 0,
-          genderPayGap: 0,
-          unionizationRate: 0,
-          workplaceSafetyIndex: 0,
-          averageCommutingTime: 0,
+          youthUnemploymentRate: laborMarketDb?.youthUnemploymentRate ?? 0,
+          femaleParticipationRate: laborMarketDb?.femaleParticipationRate ?? 0,
+          genderPayGap: laborMarketDb?.genderPayGap ?? 0,
+          unionizationRate: laborMarketDb?.unionizationRate ?? 0,
+          workplaceSafetyIndex: laborMarketDb?.workplaceSafetyIndex ?? 0,
+          averageCommutingTime: laborMarketDb?.averageCommutingTime ?? 0,
         },
         regionalEmployment: {
           urban: {

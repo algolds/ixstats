@@ -1,24 +1,39 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import { Activity, DollarSign, Users, Shield, Building } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { HealthRing } from "~/components/ui/health-ring";
 
-interface VitalityRingData {
+export interface VitalityRingData {
   economicVitality: number;
   populationWellbeing: number;
   diplomaticStanding: number;
   governmentalEfficiency: number;
 }
 
+export interface RingConfig {
+  key: string;
+  label: string;
+  subtitle: string;
+  color: string;
+  icon: LucideIcon;
+  value: number;
+  target?: number;          // ring fill target (default 100)
+  displayValue?: string;    // custom text (e.g. "5 active", "72/100") — replaces auto "%"
+  onClick?: () => void;
+}
+
 interface VitalityRingsProps {
-  data: VitalityRingData;
+  data?: VitalityRingData;
+  rings?: RingConfig[];
+  title?: string;
   variant?: "sidebar" | "horizontal" | "grid";
   collapsed?: boolean;
 }
 
-const RING_CONFIG = [
+const DEFAULT_RING_CONFIG = [
   {
     key: "economicVitality" as keyof VitalityRingData,
     label: "Economic Health",
@@ -51,38 +66,57 @@ const RING_CONFIG = [
 
 export function VitalityRings({
   data,
+  rings,
+  title = "National Vitality",
   variant = "sidebar",
   collapsed = false,
 }: VitalityRingsProps) {
   if (collapsed && variant === "sidebar") {
-    return null; // Handle collapsed state in parent
+    return null;
   }
 
-  const renderRing = (config: (typeof RING_CONFIG)[0], index: number) => {
-    const value = data[config.key] || 0;
+  // Build unified ring list: custom rings take priority, otherwise derive from data + defaults
+  const resolvedRings: RingConfig[] = rings
+    ? rings
+    : DEFAULT_RING_CONFIG.map((cfg) => ({
+        ...cfg,
+        value: data?.[cfg.key] || 0,
+      }));
+
+  const renderRing = (ring: RingConfig, index: number) => {
+    const value = ring.value || 0;
+    const Icon = ring.icon;
+    const isClickable = !!ring.onClick;
+    const display = ring.displayValue ?? `${value.toFixed(1)}%`;
+    const tooltipText = `${ring.label}: ${display} - ${ring.subtitle}`;
 
     if (variant === "sidebar") {
       return (
         <div
-          key={index}
-          className="group flex cursor-pointer items-center gap-3 rounded-lg border border-white/20 bg-white/30 p-3 backdrop-blur-sm transition-all duration-300 hover:scale-102 dark:border-slate-700/50 dark:bg-slate-800/30"
+          key={ring.key ?? index}
+          className="glass-hierarchy-child group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-all duration-300 hover:scale-102"
+          onClick={ring.onClick}
+          role={isClickable ? "button" : undefined}
+          tabIndex={isClickable ? 0 : undefined}
+          onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") ring.onClick?.(); } : undefined}
         >
           <HealthRing
             value={Number(value)}
             size={48}
-            color={config.color}
+            color={ring.color}
+            target={ring.target}
             className="flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
-            label={config.label}
-            tooltip={`${config.label}: ${value.toFixed(1)}% performance - ${config.subtitle}`}
+            label={ring.label}
+            tooltip={tooltipText}
           />
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center gap-1.5">
-              <config.icon className="h-3 w-3" style={{ color: config.color }} />
-              <span className="text-xs font-medium">{config.label}</span>
+              <Icon className="h-3 w-3" style={{ color: ring.color }} />
+              <span className="text-xs font-medium">{ring.label}</span>
             </div>
-            <div className="text-muted-foreground text-xs">{config.subtitle}</div>
-            <div className="text-sm font-bold" style={{ color: config.color }}>
-              {value.toFixed(1)}%
+            <div className="text-muted-foreground text-xs">{ring.subtitle}</div>
+            <div className="text-sm font-bold" style={{ color: ring.color }}>
+              {display}
             </div>
           </div>
         </div>
@@ -91,21 +125,29 @@ export function VitalityRings({
 
     if (variant === "horizontal") {
       return (
-        <div key={index} className="flex items-center gap-4">
+        <div
+          key={ring.key ?? index}
+          className={`flex items-center gap-4 ${isClickable ? "cursor-pointer" : ""}`}
+          onClick={ring.onClick}
+          role={isClickable ? "button" : undefined}
+          tabIndex={isClickable ? 0 : undefined}
+          onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") ring.onClick?.(); } : undefined}
+        >
           <HealthRing
             value={Number(value)}
             size={80}
-            color={config.color}
+            color={ring.color}
+            target={ring.target}
             className="flex-shrink-0"
-            label={config.label}
-            tooltip={`${config.label}: ${value.toFixed(1)}% performance - ${config.subtitle}`}
+            label={ring.label}
+            tooltip={tooltipText}
           />
           <div className="flex-1">
             <div className="mb-1 flex items-center gap-2">
-              <config.icon className="h-4 w-4" style={{ color: config.color }} />
-              <span className="font-medium">{config.label}</span>
+              <Icon className="h-4 w-4" style={{ color: ring.color }} />
+              <span className="font-medium">{ring.label}</span>
             </div>
-            <div className="text-muted-foreground text-sm">{value.toFixed(1)}% performance</div>
+            <div className="text-muted-foreground text-sm">{display}</div>
           </div>
         </div>
       );
@@ -113,45 +155,53 @@ export function VitalityRings({
 
     // Grid variant — pronounced cards
     return (
-      <div key={index} className="glass-hierarchy-child flex items-center gap-3 rounded-lg p-2.5">
+      <div
+        key={ring.key ?? index}
+        className={`glass-hierarchy-child flex items-center gap-3 rounded-lg p-2.5 transition-all duration-200 ${isClickable ? "cursor-pointer hover:scale-[1.02] hover:ring-1 hover:ring-foreground/20" : ""}`}
+        onClick={ring.onClick}
+        role={isClickable ? "button" : undefined}
+        tabIndex={isClickable ? 0 : undefined}
+        onKeyDown={isClickable ? (e) => { if (e.key === "Enter" || e.key === " ") ring.onClick?.(); } : undefined}
+      >
         <HealthRing
           value={Number(value)}
           size={44}
-          color={config.color}
+          color={ring.color}
+          target={ring.target}
           className="flex-shrink-0"
-          label={config.label}
-          tooltip={`${config.label}: ${value.toFixed(1)}% - ${config.subtitle}`}
+          label={ring.label}
+          tooltip={tooltipText}
         />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <config.icon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: config.color }} />
-            <span className="truncate text-xs font-semibold">{config.label}</span>
+            <Icon className="h-3.5 w-3.5 flex-shrink-0" style={{ color: ring.color }} />
+            <span className="truncate text-xs font-semibold">{ring.label}</span>
           </div>
-          <div className="mt-0.5 text-sm font-bold" style={{ color: config.color }}>{value.toFixed(1)}%</div>
+          <div className="mt-0.5 text-sm font-bold" style={{ color: ring.color }}>{display}</div>
         </div>
       </div>
     );
   };
 
   if (variant === "sidebar") {
-    return <div className="space-y-4">{RING_CONFIG.map(renderRing)}</div>;
+    return <div className="space-y-4">{resolvedRings.map(renderRing)}</div>;
   }
 
   return (
     <Card className="px-3 py-2">
       <div className="flex items-center gap-1 mb-1.5">
         <Activity className="h-3.5 w-3.5 text-blue-500" />
-        <span className="text-xs font-semibold">National Vitality</span>
+        <span className="text-xs font-semibold">{title}</span>
         <Badge variant="outline" className="ml-auto text-[10px] px-1.5 py-0">
           LIVE
         </Badge>
       </div>
       <div
         className={
-          variant === "horizontal" ? "space-y-4" : "grid grid-cols-2 gap-3 xl:grid-cols-4"
+          variant === "horizontal" ? "space-y-4" : `grid grid-cols-2 gap-3 ${resolvedRings.length <= 3 ? "xl:grid-cols-3" : "xl:grid-cols-4"}`
         }
       >
-        {RING_CONFIG.map(renderRing)}
+        {resolvedRings.map(renderRing)}
       </div>
     </Card>
   );

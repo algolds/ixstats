@@ -2,7 +2,7 @@
 
 **Last updated:** February 2026
 
-The frontend is built entirely on the Next.js 16.1.3 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components` (598+ components, 118 page routes).
+The frontend is built entirely on the Next.js 16.1.3 App Router. Client and server components coexist, with domain-specific modules co-located under `src/app` and shared component libraries under `src/components` (645+ components, 124 page routes).
 
 ## Layout Composition
 - **App Router** – Each route folder contains `page.tsx`, optional `layout.tsx`, and feature-specific components. The root layout lives at `src/app/layout.tsx`.
@@ -88,7 +88,7 @@ Major sections use a client-side routing pattern for instant, SPA-like navigatio
 
 ## Hooks Library
 
-71 custom hooks in `src/hooks/` organized by domain:
+80 custom hooks in `src/hooks/` organized by domain:
 - **Builder/Sync**: `useAtomicEconomicBuilder`, `useBuilderAutoSync`, `useGovernmentAutoSync`, `useTaxSystemAutoSync`
 - **Data**: `useEconomicComponentsData`, `useGovernmentComponentsData`, `useEconomyData`, `useFiscalData`
 - **Flags**: `useFlag`, `useSimpleFlag`, `useUnifiedFlags`, `useCountryFlags`, `useBulkFlagCache`

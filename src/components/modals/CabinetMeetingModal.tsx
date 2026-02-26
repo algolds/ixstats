@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "~/lib/utils";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface CabinetMeetingModalProps {
   children: React.ReactNode;
@@ -54,6 +54,7 @@ export function CabinetMeetingModal({
   meetingId,
 }: CabinetMeetingModalProps) {
   const { user } = useUser();
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const [scheduledIxTime, setScheduledIxTime] = useState(
     IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000 // +1 day in IxTime
@@ -83,13 +84,13 @@ export function CabinetMeetingModal({
   // Create meeting mutation
   const createMeeting = api.unifiedIntelligence.createCabinetMeeting.useMutation({
     onSuccess: () => {
-      toast.success("Cabinet meeting scheduled successfully!");
+      notify.success("Cabinet meeting scheduled successfully!");
       setOpen(false);
       resetForm();
       void refetch();
     },
     onError: (error) => {
-      toast.error(`Failed to schedule meeting: ${error.message}`);
+      notify.error(`Failed to schedule meeting: ${error.message}`);
     },
   });
 
@@ -141,9 +142,9 @@ export function CabinetMeetingModal({
         ...prev,
         agenda: [...prev.agenda, item],
       }));
-      toast.success(`Added "${item.label}" to agenda`);
+      notify.success(`Added "${item.label}" to agenda`);
     } else {
-      toast.info("This item is already in the agenda");
+      notify.info("This item is already in the agenda");
     }
   };
 
@@ -158,7 +159,7 @@ export function CabinetMeetingModal({
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error("Please fill in required fields");
+      notify.error("Please fill in required fields");
       return;
     }
 

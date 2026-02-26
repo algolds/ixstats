@@ -37,7 +37,7 @@ import {
   Sparkles,
   Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 
 // Economy Builder Components
@@ -187,6 +187,7 @@ export function EconomyBuilderPage({
   onPersistEconomyBuilder,
   onPersistTaxSystem,
 }: EconomyBuilderPageProps) {
+  const notify = useNotify();
   // Removed auto-save state - using global builder autosave instead
 
   // State Management - Memoized to prevent unnecessary re-renders
@@ -369,7 +370,7 @@ export function EconomyBuilderPage({
       },
       onSyncError: (error) => {
         console.error("[EconomyBuilder] Autosave failed:", error);
-        toast.error("Failed to autosave economy data");
+        notify.error("Failed to autosave economy data");
       },
     }
   );
@@ -597,7 +598,7 @@ export function EconomyBuilderPage({
         );
 
         // User-friendly notification
-        toast.success(
+        notify.success(
           `Auto-selected ${topComponents.length} economic components that synergize with your government structure`,
           { duration: 4000 }
         );
@@ -670,28 +671,28 @@ export function EconomyBuilderPage({
   const saveEconomyMutation = api.economics.saveEconomyBuilderState.useMutation({
     onSuccess: () => {
       setLastSaved(new Date());
-      toast.success("Economy configuration saved successfully!");
+      notify.success("Economy configuration saved successfully!");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to save economy configuration");
+      notify.error(error.message || "Failed to save economy configuration");
     },
   });
 
   const syncGovernmentMutation = api.economics.syncEconomyWithGovernment.useMutation({
     onSuccess: () => {
-      toast.success("Economy synced with government components");
+      notify.success("Economy synced with government components");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to sync with government");
+      notify.error(error.message || "Failed to sync with government");
     },
   });
 
   const syncTaxMutation = api.economics.syncEconomyWithTax.useMutation({
     onSuccess: () => {
-      toast.success("Economy synced with tax system");
+      notify.success("Economy synced with tax system");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to sync with tax system");
+      notify.error(error.message || "Failed to sync with tax system");
     },
   });
 
@@ -764,7 +765,7 @@ export function EconomyBuilderPage({
   // Save Handler - Memoized with tRPC
   const handleSave = useCallback(async () => {
     if (!countryId) {
-      toast.error("No country selected. Please select a country first.");
+      notify.error("No country selected. Please select a country first.");
       return;
     }
 
@@ -773,7 +774,7 @@ export function EconomyBuilderPage({
       // Validate before saving
       const validation = validateEconomyConfiguration();
       if (!validation.isValid) {
-        toast.error(`Validation failed: ${validation.errors.join(", ")}`);
+        notify.error(`Validation failed: ${validation.errors.join(", ")}`);
         setIsSaving(false);
         return;
       }
@@ -1690,7 +1691,7 @@ export function EconomyBuilderPage({
           };
 
           handleEconomyBuilderChange(nextState);
-          toast.success("Economic archetype applied successfully!");
+          notify.success("Economic archetype applied successfully!");
         }}
       />
     </div>

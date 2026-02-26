@@ -25,6 +25,7 @@ import {
   SlidersHorizontal,
   Trophy,
   Users,
+  Vote,
   X,
   Zap,
 } from "lucide-react";
@@ -239,6 +240,12 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
             href: "/mycountry/defense",
             icon: Layers,
             description: "Force posture, stability, and risk mitigations.",
+          },
+          {
+            name: "Politics",
+            href: "/mycountry/politics",
+            icon: Vote,
+            description: "Legislature, parties, and elections.",
           },
         ],
       },
@@ -590,39 +597,6 @@ export function Navigation() {
       requiresAuth: true,
       requiresCountry: true,
       description: "Your national dashboard and executive command center",
-      isDropdown: true,
-      dropdownItems: [
-        {
-          name: "National Overview",
-          href: "/mycountry",
-          icon: Crown,
-          description: " National dashboard and vitality metrics",
-        },
-        {
-          name: "Executive",
-          href: "/mycountry/executive",
-          icon: Command,
-          description: "Meetings, policies, plans, and executive decisions",
-        },
-        {
-          name: "Diplomacy",
-          href: "/mycountry/diplomacy",
-          icon: Globe,
-          description: "Embassy network, missions, and diplomatic relations",
-        },
-        {
-          name: "Intelligence",
-          href: "/mycountry/intelligence",
-          icon: Brain,
-          description: "Data analysis, trends, projections, and data forecasting",
-        },
-        {
-          name: "Defense & Security",
-          href: "/mycountry/defense",
-          icon: Shield,
-          description: "Military readiness, force composition, and stability",
-        },
-      ],
     },
     {
       name: "Maps",
@@ -999,7 +973,7 @@ export function Navigation() {
             </div>
 
             {/* Desktop Command Palette */}
-            <div className="absolute top-1/2 left-1/2 z-[10010] -translate-x-1/2 -translate-y-1/2 transform max-w-[min(400px,calc(100%-320px))]">
+            <div className="absolute top-1/2 left-1/2 z-[10010] -translate-x-1/2 -translate-y-1/2 transform max-w-[400px]">
               <div className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 opacity-60 blur-3xl" />
               {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
             </div>

@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { CheckCircle2, ListTodo, Gavel, Plus, AlertCircle, Sparkles, X } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface MeetingDecisionsModalProps {
   meetingId: string;
@@ -79,6 +79,7 @@ export function MeetingDecisionsModal({
   onOpenChange,
   onComplete,
 }: MeetingDecisionsModalProps) {
+  const notify = useNotify();
   const [activeTab, setActiveTab] = useState("suggested");
   const [notes, setNotes] = useState("");
 
@@ -99,36 +100,36 @@ export function MeetingDecisionsModal({
   // Complete meeting and get suggestions
   const completeMeeting = api.quickActions.completeMeeting.useMutation({
     onSuccess: (result) => {
-      toast.success(result.message);
+      notify.success(result.message);
       // Auto-add suggested decisions
       if (result.suggestedDecisions && result.suggestedDecisions.length > 0) {
         setActiveTab("decisions");
       }
     },
     onError: (error) => {
-      toast.error(`Failed to complete meeting: ${error.message}`);
+      notify.error(`Failed to complete meeting: ${error.message}`);
     },
   });
 
   // Create decisions
   const createDecision = api.quickActions.createDecision.useMutation({
     onSuccess: () => {
-      toast.success("Decision recorded");
+      notify.success("Decision recorded");
     },
     onError: (error) => {
-      toast.error(`Failed to record decision: ${error.message}`);
+      notify.error(`Failed to record decision: ${error.message}`);
     },
   });
 
   // Create action items
   const createActionItems = api.quickActions.createActionItems.useMutation({
     onSuccess: (result) => {
-      toast.success(result.message);
+      notify.success(result.message);
       onOpenChange(false);
       onComplete?.();
     },
     onError: (error) => {
-      toast.error(`Failed to create action items: ${error.message}`);
+      notify.error(`Failed to create action items: ${error.message}`);
     },
   });
 
@@ -141,7 +142,7 @@ export function MeetingDecisionsModal({
 
   const addDecision = () => {
     if (!newDecisionTitle.trim() || !newDecisionDesc.trim()) {
-      toast.error("Decision title and description are required");
+      notify.error("Decision title and description are required");
       return;
     }
 
@@ -162,7 +163,7 @@ export function MeetingDecisionsModal({
 
   const addActionItem = () => {
     if (!newActionTitle.trim()) {
-      toast.error("Action item title is required");
+      notify.error("Action item title is required");
       return;
     }
 
@@ -335,7 +336,7 @@ export function MeetingDecisionsModal({
                                     createPolicy: false,
                                   },
                                 ]);
-                                toast.success("Added to decisions");
+                                notify.success("Added to decisions");
                               }}
                             >
                               <Plus className="h-4 w-4" />

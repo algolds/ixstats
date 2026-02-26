@@ -1971,7 +1971,7 @@ export class IxnayWikiService {
             lastModified: page.revisions?.[0]?.timestamp
               ? new Date(page.revisions[0].timestamp)
               : new Date(),
-            url: page.fullurl || `https://${this.wikiSource === "ixwiki" ? "ixwiki.com" : "iiwiki.us"}/wiki/${encodeURIComponent(page.title)}`,
+            url: page.fullurl || `https://${this.wikiSource === "ixwiki" ? "ixwiki.com" : "iiwiki.com"}/wiki/${encodeURIComponent(page.title)}`,
           };
 
           results.set(page.title, articleData);

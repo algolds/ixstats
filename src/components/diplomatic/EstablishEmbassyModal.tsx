@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +74,7 @@ export function EstablishEmbassyModal({
   guestCountryName,
   onSuccess,
 }: EstablishEmbassyModalProps) {
+  const notify = useNotify();
   const [step, setStep] = useState(1);
   const [hostCountryId, setHostCountryId] = useState<string>("");
   const [hostCountryName, setHostCountryName] = useState<string>("");
@@ -97,15 +98,13 @@ export function EstablishEmbassyModal({
   // Establish embassy mutation
   const establishMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      toast.success("Embassy established successfully!", {
-        description: `${embassyName} is now operational in ${data.hostCountryName}`,
-      });
+      notify.success("Embassy established successfully!", `${embassyName} is now operational in ${data.hostCountryName}`);
       onOpenChange(false);
       resetForm();
       onSuccess?.();
     },
     onError: (error) => {
-      toast.error(`Failed to establish embassy: ${error.message}`);
+      notify.error(`Failed to establish embassy: ${error.message}`);
     },
   });
 
@@ -127,11 +126,11 @@ export function EstablishEmbassyModal({
 
   const handleNext = () => {
     if (step === 1 && !hostCountryId) {
-      toast.error("Please select a host country");
+      notify.error("Please select a host country");
       return;
     }
     if (step === 2 && !embassyName.trim()) {
-      toast.error("Please enter an embassy name");
+      notify.error("Please enter an embassy name");
       return;
     }
     setStep(step + 1);
@@ -143,7 +142,7 @@ export function EstablishEmbassyModal({
 
   const handleSubmit = () => {
     if (!embassyName.trim()) {
-      toast.error("Embassy name is required");
+      notify.error("Embassy name is required");
       return;
     }
 

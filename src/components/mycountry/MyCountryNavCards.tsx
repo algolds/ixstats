@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Brain, Shield, Crown, Users, Map } from "lucide-react";
+import { Brain, Shield, Crown, Users, Map, Vote } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
+import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
 
 interface MyCountryNavCardsProps {
-  currentPage?: "overview" | "executive" | "intelligence" | "defense" | "diplomacy" | "map-editor";
+  currentPage?: "overview" | "executive" | "intelligence" | "defense" | "diplomacy" | "politics" | "map-editor";
   collapsed?: boolean;
 }
 
@@ -18,7 +19,7 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
       icon: Crown,
       title: "Overview",
       description: "Dashboard",
-      gradient: "from-amber-500 to-yellow-500",
+      gradient: SECTION_THEME_CLASSES.overview.gradient,
     },
     {
       id: "executive" as const,
@@ -26,7 +27,7 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
       icon: Crown,
       title: "Executive",
       description: "Command",
-      gradient: "from-amber-500 to-yellow-500",
+      gradient: SECTION_THEME_CLASSES.executive.gradient,
     },
     {
       id: "diplomacy" as const,
@@ -34,7 +35,7 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
       icon: Users,
       title: "Diplomacy",
       description: "Relations",
-      gradient: "from-purple-500 to-pink-500",
+      gradient: SECTION_THEME_CLASSES.diplomacy.gradient,
     },
     {
       id: "intelligence" as const,
@@ -42,7 +43,7 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
       icon: Brain,
       title: "Intelligence",
       description: "Analytics",
-      gradient: "from-blue-500 to-cyan-500",
+      gradient: SECTION_THEME_CLASSES.intelligence.gradient,
     },
     {
       id: "defense" as const,
@@ -50,7 +51,15 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
       icon: Shield,
       title: "Defense",
       description: "Security",
-      gradient: "from-red-500 to-orange-500",
+      gradient: SECTION_THEME_CLASSES.defense.gradient,
+    },
+    {
+      id: "politics" as const,
+      href: "/mycountry/politics",
+      icon: Vote,
+      title: "Politics",
+      description: "Legislature",
+      gradient: SECTION_THEME_CLASSES.politics.gradient,
     },
     {
       id: "map-editor" as const,
@@ -58,7 +67,7 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
       icon: Map,
       title: "Map Editor",
       description: "Territory",
-      gradient: "from-emerald-500 to-teal-500",
+      gradient: SECTION_THEME_CLASSES["map-editor"].gradient,
     },
   ];
 
@@ -102,7 +111,7 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
               <TooltipContent
                 side="bottom"
                 sideOffset={8}
-                className="glass-hierarchy-child"
+                className=""
               >
                 <div className="text-center">
                   <p className="font-semibold text-sm">{card.title}</p>

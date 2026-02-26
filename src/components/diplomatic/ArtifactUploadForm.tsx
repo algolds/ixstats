@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import {
   RiCameraLine,
@@ -26,6 +26,7 @@ interface ArtifactUploadFormProps {
 
 export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
   ({ onSubmit, onCancel, exchangeTitle }) => {
+    const notify = useNotify();
     const [formData, setFormData] = useState({
       title: "",
       type: "photo" as "photo" | "video" | "document" | "artwork" | "recipe" | "music",
@@ -42,7 +43,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (!formData.title.trim() || !formData.file) {
-        toast.error("Please provide a title and file");
+        notify.error("Please provide a title and file");
         return;
       }
 

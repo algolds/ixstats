@@ -527,7 +527,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
       switch (input.actionType) {
         case "infrastructure_boost":
           // Apply temporary GDP growth boost
-          await ctx.db.dmInputs.create({
+          await ctx.db.storytellerEffect.create({
             data: {
               countryId: input.countryId,
               ixTimeTimestamp: new Date(),
@@ -576,7 +576,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
 
         case "education_expansion":
           // Apply long-term productivity boost
-          await ctx.db.dmInputs.create({
+          await ctx.db.storytellerEffect.create({
             data: {
               countryId: input.countryId,
               ixTimeTimestamp: new Date(),
@@ -632,7 +632,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
 
         case "economic_stimulus":
           // Apply economic stimulus
-          await ctx.db.dmInputs.create({
+          await ctx.db.storytellerEffect.create({
             data: {
               countryId: input.countryId,
               ixTimeTimestamp: new Date(),
@@ -672,7 +672,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
 
         case "emergency_response":
           // Emergency response action
-          await ctx.db.dmInputs.create({
+          await ctx.db.storytellerEffect.create({
             data: {
               countryId: input.countryId,
               ixTimeTimestamp: new Date(),
@@ -2955,6 +2955,182 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
               message: "Failed to create security threat",
             });
       }
+    }),
+
+  // ===== KEY FINDINGS =====
+
+  /**
+   * Auto-generate intelligence key findings from live data sources.
+   * Queries economic, diplomatic, security, and network data to produce
+   * 5-7 findings with severity and trend information.
+   */
+  getKeyFindings: protectedProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const findings: Array<{
+        id: string;
+        category: "economic" | "diplomatic" | "security" | "policy" | "network";
+        severity: "info" | "warning" | "critical";
+        title: string;
+        description: string;
+        metric?: { value: number; change: number; unit: string };
+        timestamp: string;
+      }> = [];
+
+      const now = new Date();
+
+      // --- Economic findings ---
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: { gdp: true, gdpGrowth: true, population: true, name: true },
+      });
+
+      if (country) {
+        const gdpGrowth = country.gdpGrowth ?? 0;
+        const severity = gdpGrowth < -2 ? "critical" : gdpGrowth < 0 ? "warning" : "info";
+        findings.push({
+          id: "econ-gdp-growth",
+          category: "economic",
+          severity,
+          title: gdpGrowth >= 0 ? "GDP Growth Positive" : "GDP Growth Declining",
+          description: gdpGrowth >= 0
+            ? `The economy is growing at ${gdpGrowth.toFixed(2)}% annually. Current GDP stands at $${((country.gdp ?? 0) / 1e9).toFixed(1)}B.`
+            : `The economy is contracting at ${gdpGrowth.toFixed(2)}%. Fiscal intervention may be required.`,
+          metric: { value: gdpGrowth, change: gdpGrowth, unit: "% growth" },
+          timestamp: now.toISOString(),
+        });
+      }
+
+      // --- Alert findings ---
+      const alerts = await ctx.db.intelligenceAlert.findMany({
+        where: { countryId: input.countryId, isActive: true, isResolved: false },
+        select: { severity: true },
+      });
+
+      const criticalCount = alerts.filter((a) => a.severity === "CRITICAL").length;
+      const highCount = alerts.filter((a) => a.severity === "HIGH").length;
+      const totalAlerts = alerts.length;
+
+      if (totalAlerts > 0) {
+        findings.push({
+          id: "security-alerts",
+          category: "security",
+          severity: criticalCount > 0 ? "critical" : highCount > 0 ? "warning" : "info",
+          title: criticalCount > 0
+            ? `${criticalCount} Critical Alert${criticalCount > 1 ? "s" : ""} Active`
+            : `${totalAlerts} Active Alert${totalAlerts > 1 ? "s" : ""}`,
+          description: criticalCount > 0
+            ? `There are ${criticalCount} critical and ${highCount} high-severity alerts requiring immediate attention.`
+            : `${totalAlerts} intelligence alert${totalAlerts > 1 ? "s" : ""} currently being monitored, ${highCount} at high severity.`,
+          metric: { value: totalAlerts, change: 0, unit: "alerts" },
+          timestamp: now.toISOString(),
+        });
+      }
+
+      // --- Diplomatic findings ---
+      const embassies = await ctx.db.embassy.findMany({
+        where: { OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }] },
+        select: { status: true, createdAt: true },
+      });
+
+      const activeEmbassies = embassies.filter(
+        (e) => e.status === "ACTIVE" || e.status === "active"
+      ).length;
+      const recentEmbassies = embassies.filter(
+        (e) => e.createdAt > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      ).length;
+
+      findings.push({
+        id: "network-embassies",
+        category: "network",
+        severity: activeEmbassies === 0 ? "warning" : "info",
+        title: activeEmbassies === 0
+          ? "No Active Embassies"
+          : `Embassy Network: ${activeEmbassies} Active`,
+        description: activeEmbassies === 0
+          ? "Your nation has no active embassies. Establishing diplomatic presence abroad improves trade and relations."
+          : `Your diplomatic network spans ${activeEmbassies} active embassies.${recentEmbassies > 0 ? ` ${recentEmbassies} established in the past week.` : ""}`,
+        metric: { value: activeEmbassies, change: recentEmbassies, unit: "embassies" },
+        timestamp: now.toISOString(),
+      });
+
+      // --- Relationship findings ---
+      const relations = await ctx.db.diplomaticRelation.findMany({
+        where: { OR: [{ country1: input.countryId }, { country2: input.countryId }] },
+        select: { strength: true },
+      });
+
+      if (relations.length > 0) {
+        const avgStrength = relations.reduce((s, r) => s + (r.strength ?? 50), 0) / relations.length;
+        findings.push({
+          id: "diplomatic-relations",
+          category: "diplomatic",
+          severity: avgStrength < 30 ? "warning" : "info",
+          title: avgStrength < 30
+            ? "Diplomatic Relations Under Strain"
+            : "Diplomatic Relations Stable",
+          description: `Average relationship strength is ${avgStrength.toFixed(0)}% across ${relations.length} bilateral relations.${avgStrength < 30 ? " Consider diplomatic outreach to improve ties." : ""}`,
+          metric: { value: Math.round(avgStrength), change: 0, unit: "% avg" },
+          timestamp: now.toISOString(),
+        });
+      }
+
+      // --- Policy findings ---
+      const policies = await ctx.db.economicPolicy.findMany({
+        where: { countryId: input.countryId, status: { in: ["approved", "implemented"] } },
+        select: { status: true, category: true },
+      });
+
+      if (policies.length > 0) {
+        const implemented = policies.filter((p) => p.status === "implemented").length;
+        findings.push({
+          id: "policy-status",
+          category: "policy",
+          severity: "info",
+          title: `${implemented} Policies Implemented`,
+          description: `${implemented} of ${policies.length} approved economic policies are currently implemented across ${new Set(policies.map((p) => p.category)).size} categories.`,
+          metric: { value: implemented, change: 0, unit: "policies" },
+          timestamp: now.toISOString(),
+        });
+      }
+
+      // --- Security score finding ---
+      const threats = await ctx.db.systemConfig.findMany({
+        where: {
+          key: { startsWith: `eci_security_threat_${input.countryId}_` },
+        },
+        select: { value: true },
+      });
+
+      const activeThreats = threats.filter((t) => {
+        try {
+          const data = JSON.parse(t.value);
+          return data.status === "active";
+        } catch {
+          return false;
+        }
+      }).length;
+
+      if (activeThreats > 0) {
+        findings.push({
+          id: "security-threats",
+          category: "security",
+          severity: activeThreats > 3 ? "critical" : activeThreats > 1 ? "warning" : "info",
+          title: `${activeThreats} Active Security Threat${activeThreats > 1 ? "s" : ""}`,
+          description: `${activeThreats} security threat${activeThreats > 1 ? "s" : ""} currently tracked. Review the Defense tab for mitigation strategies.`,
+          metric: { value: activeThreats, change: 0, unit: "threats" },
+          timestamp: now.toISOString(),
+        });
+      }
+
+      // Sort: critical first, then warning, then info
+      const severityOrder = { critical: 0, warning: 1, info: 2 };
+      findings.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+      return {
+        findings,
+        generatedAt: now.toISOString(),
+      };
     }),
 });
 

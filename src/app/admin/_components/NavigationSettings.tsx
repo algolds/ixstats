@@ -7,9 +7,10 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Loader2, Navigation, Eye, EyeOff, Save, Check, Shield } from "lucide-react";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 export function NavigationSettings() {
+  const notify = useNotify();
   const [localSettings, setLocalSettings] = useState({
     showWikiTab: true,
     showCardsTab: true,
@@ -39,12 +40,12 @@ export function NavigationSettings() {
   // Mutation to update navigation settings
   const updateSettingsMutation = api.admin.updateNavigationSettings.useMutation({
     onSuccess: () => {
-      toast.success("Navigation settings updated successfully");
+      notify.success("Navigation settings updated successfully");
       refetch();
       setIsSaving(false);
     },
     onError: (error) => {
-      toast.error(`Failed to update settings: ${error.message}`);
+      notify.error(`Failed to update settings: ${error.message}`);
       setIsSaving(false);
     },
   });

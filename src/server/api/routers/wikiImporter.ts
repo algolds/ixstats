@@ -15,12 +15,12 @@ import { parseInfoboxTemplate, mapInfoboxToIxStats } from "~/lib/wiki-infobox-ma
 const WIKI_SOURCES = {
   iiwiki: {
     name: "IIWiki",
-    apiUrl: "https://iiwiki.com/mediawiki/api.php",
+    apiUrl: "https://iiwiki.com/api.php",
     priority: 1,
   },
   ixwiki: {
     name: "IxWiki",
-    apiUrl: "https://ixwiki.com/mediawiki/api.php",
+    apiUrl: "https://ixwiki.com/api.php",
     priority: 2,
   },
   althist: {

@@ -9,10 +9,12 @@ export { BotControlPanel } from "./BotControlPanel";
 export { TimeControlPanel } from "./TimeControlPanel";
 export { EconomicControlPanel } from "./EconomicControlPanel";
 export { ActionPanel } from "./ActionPanel";
-export { CalculationLogs } from "./CalculationLogs"; // Now properly implemented
+export { CalculationLogs } from "./CalculationLogs";
 export { DataImportSection } from "./DataImportSection";
 export { WarningPanel } from "./WarningPanel";
 export { CountryAdminPanel } from "./CountryAdminPanel";
 export { NotificationsAdmin } from "./NotificationsAdmin";
 export { UserManagement } from "./UserManagement";
 export { AdminSidebar } from "./AdminSidebar";
+export { AdminHeader } from "./AdminHeader";
+export { SystemValidationDashboard } from "./SystemValidationDashboard";

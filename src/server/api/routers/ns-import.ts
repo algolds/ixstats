@@ -7,6 +7,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure, adminProcedure } from "../trpc";
 import { nsApiClient, type NSCard } from "~/lib/ns-api-client";
+import { nsImportService } from "~/lib/ns-import-service";
 import { SyncHealthMonitor } from "~/lib/ns-sync-monitor";
 import { checkpointManager } from "~/lib/ns-sync-checkpoint";
 import { TRPCError } from "@trpc/server";
@@ -52,7 +53,7 @@ async function processNationDeck(
       });
 
       if (existing) {
-        const newMarketValue = parseFloat(nsCard.market_value || "0");
+        const newMarketValue = Math.max(1, parseFloat(nsCard.market_value || "0"));
         if (Math.abs(existing.marketValue - newMarketValue) > 0.01) {
           await db.card.update({
             where: { id: existing.id },
@@ -114,7 +115,7 @@ async function processNationDeck(
             importedFrom: `region:${regionName}`,
             importedAt: new Date().toISOString(),
           },
-          marketValue: parseFloat(nsCard.market_value || "0"),
+          marketValue: Math.max(1, parseFloat(nsCard.market_value || "0")),
           totalSupply: 1,
           level: 1,
         },
@@ -638,17 +639,19 @@ export const nsImportRouter = createTRPCRouter({
         });
       }
 
-      const importedCards: string[] = [];
+      const importedCardIds: string[] = [];
+      const importedCardData: { id: string; title: string; artwork: string; rarity: string; season: number; marketValue: number }[] = [];
       const skippedCards: string[] = [];
 
       // Process cards in batches
       for (const nsCard of deckData.cards) {
         try {
-          // Fetch full card info since deck API only provides id, season, rarity, market_value
-          if (!nsCard.name) {
+          // Fetch full card info since deck API may only provide id, season, rarity
+          if (!nsCard.name || !nsCard.market_value || nsCard.market_value === "0" || nsCard.market_value === "0.00") {
             console.log(`[NS Import] Fetching card info for ${nsCard.id} S${nsCard.season}`);
             const cardInfo = await nsApiClient.fetchCardInfo(nsCard.id, nsCard.season);
             if (cardInfo) {
+              // Only overwrite fields that cardInfo actually provides
               Object.assign(nsCard, cardInfo);
             }
           }
@@ -660,6 +663,8 @@ export const nsImportRouter = createTRPCRouter({
             continue;
           }
 
+          const parsedMarketValue = Math.max(1, parseFloat(nsCard.market_value || "0"));
+
           // Check if card definition exists, create if not
           let card = await ctx.db.card.findFirst({
             where: {
@@ -667,6 +672,20 @@ export const nsImportRouter = createTRPCRouter({
               nsSeason: parseInt(nsCard.season),
             },
           });
+
+          // Update existing card if it has stale/zero market value
+          if (card && card.marketValue === 0 && parsedMarketValue > 0) {
+            card = await ctx.db.card.update({
+              where: { id: card.id },
+              data: {
+                marketValue: parsedMarketValue,
+                stats: {
+                  ...((card.stats as Record<string, unknown>) || {}),
+                  marketValue: nsCard.market_value,
+                },
+              },
+            });
+          }
 
           if (!card) {
             // Create new card definition
@@ -726,7 +745,7 @@ export const nsImportRouter = createTRPCRouter({
                   importedFrom: nationName,
                   importedAt: new Date().toISOString(),
                 },
-                marketValue: parseFloat(nsCard.market_value),
+                marketValue: parsedMarketValue,
                 totalSupply: 1,
                 level: 1,
                 enhancements: undefined,
@@ -764,7 +783,15 @@ export const nsImportRouter = createTRPCRouter({
             });
           }
 
-          importedCards.push(card.id);
+          importedCardIds.push(card.id);
+          importedCardData.push({
+            id: card.id,
+            title: card.title,
+            artwork: card.artwork,
+            rarity: card.rarity,
+            season: card.season ?? parseInt(nsCard.season),
+            marketValue: card.marketValue,
+          });
 
           // Update user stats
           await ctx.db.user.update({
@@ -783,7 +810,7 @@ export const nsImportRouter = createTRPCRouter({
       }
 
       // Award bonus IxCredits for import
-      const bonusAmount = Math.min(importedCards.length * 10, 500); // 10 IxC per card, max 500
+      const bonusAmount = Math.min(importedCardIds.length * 10, 500); // 10 IxC per card, max 500
       if (bonusAmount > 0) {
         // Get or create user's vault
         const vault = await ctx.db.myVault.upsert({
@@ -813,7 +840,7 @@ export const nsImportRouter = createTRPCRouter({
             source: "ns_import_bonus",
             metadata: {
               nationName: nationName,
-              cardsImported: importedCards.length,
+              cardsImported: importedCardIds.length,
             },
           },
         });
@@ -821,10 +848,11 @@ export const nsImportRouter = createTRPCRouter({
 
       return {
         success: true,
-        cardsImported: importedCards.length,
+        cardsImported: importedCardIds.length,
         cardsSkipped: skippedCards.length,
         bonusCredits: bonusAmount,
         nation: nationName,
+        cards: importedCardData,
       };
     }),
 
@@ -1620,4 +1648,163 @@ export const nsImportRouter = createTRPCRouter({
         totalScanned: regionData.length,
       };
     }),
+
+  /**
+   * Batch-update gameplay stats (economic/diplomatic/military/social)
+   * for all NS_IMPORT cards that don't have them yet.
+   */
+  batchUpdateCardStats: adminProcedure
+    .input(z.object({
+      forceAll: z.boolean().optional().default(false),
+    }).optional().default({}))
+    .mutation(async ({ ctx, input }) => {
+      const BATCH = 100;
+      let updated = 0;
+      let skipped = 0;
+      let errors = 0;
+
+      // Get all NS_IMPORT cards
+      const cards = await ctx.db.card.findMany({
+        where: { cardType: "NS_IMPORT" },
+        select: { id: true, nsCardId: true, stats: true },
+      });
+
+      console.log(`[NS Import] Batch updating stats for ${cards.length} NS cards (forceAll=${input.forceAll})`);
+
+      for (let i = 0; i < cards.length; i += BATCH) {
+        const batch = cards.slice(i, i + BATCH);
+        const updates = [];
+
+        for (const card of batch) {
+          const existingStats = card.stats as Record<string, unknown> | null;
+          if (!existingStats) { skipped++; continue; }
+
+          // Skip if already has gameplay stats (unless forceAll)
+          if (!input.forceAll && typeof existingStats.economic === "number") {
+            skipped++;
+            continue;
+          }
+
+          const gameplayStats = nsImportService.generateCardStats({
+            govt: existingStats.govt as string | undefined,
+            marketValue: existingStats.marketValue as string | undefined,
+            badge: existingStats.badge as string | undefined,
+            trophies: existingStats.trophies as string | undefined,
+            region: existingStats.region as string | undefined,
+            category: existingStats.category as string | undefined,
+            cardcategory: existingStats.cardcategory as string | undefined,
+          }, card.nsCardId ?? undefined);
+
+          updates.push(
+            ctx.db.card.update({
+              where: { id: card.id },
+              data: {
+                stats: { ...existingStats, ...gameplayStats },
+              },
+            })
+          );
+        }
+
+        if (updates.length > 0) {
+          try {
+            await Promise.all(updates);
+            updated += updates.length;
+          } catch (err) {
+            errors += updates.length;
+            console.error(`[NS Import] Batch error at offset ${i}:`, err);
+          }
+        }
+
+        if ((i + BATCH) % 1000 === 0 || i + BATCH >= cards.length) {
+          console.log(`[NS Import] Progress: ${Math.min(i + BATCH, cards.length)}/${cards.length} (updated: ${updated}, skipped: ${skipped})`);
+        }
+      }
+
+      console.log(`[NS Import] Batch stats complete: ${updated} updated, ${skipped} skipped, ${errors} errors`);
+      return { updated, skipped, errors, total: cards.length };
+    }),
+
+  /**
+   * Refresh market values for user's 0-value NS cards by re-fetching from NS API,
+   * then recalculate deckValue from actual card values.
+   */
+  refreshCardValues: protectedProcedure.mutation(async ({ ctx }) => {
+    // Find all NS_IMPORT cards owned by the current user with 0 market value
+    const ownerships = await ctx.db.cardOwnership.findMany({
+      where: { userId: ctx.user.id },
+      select: {
+        cardId: true,
+        cards: {
+          select: {
+            id: true,
+            nsCardId: true,
+            nsSeason: true,
+            marketValue: true,
+            cardType: true,
+            stats: true,
+          },
+        },
+      },
+    });
+
+    let refreshed = 0;
+    let failed = 0;
+
+    // Fix 0-value NS cards by re-fetching from NS API
+    const zeroValueCards = ownerships.filter(
+      (o) => o.cards.cardType === "NS_IMPORT" && o.cards.marketValue === 0 && o.cards.nsCardId && o.cards.nsSeason
+    );
+
+    for (const ownership of zeroValueCards) {
+      try {
+        const info = await nsApiClient.fetchCardInfo(
+          String(ownership.cards.nsCardId),
+          String(ownership.cards.nsSeason),
+        );
+        if (info?.market_value) {
+          const newValue = Math.max(1, parseFloat(info.market_value));
+          if (newValue > 0) {
+            await ctx.db.card.update({
+              where: { id: ownership.cards.id },
+              data: {
+                marketValue: newValue,
+                stats: {
+                  ...((ownership.cards.stats as Record<string, unknown>) || {}),
+                  marketValue: info.market_value,
+                },
+              },
+            });
+            refreshed++;
+          }
+        }
+      } catch {
+        failed++;
+      }
+    }
+
+    // Recalculate deck value from actual card values
+    const allOwned = await ctx.db.cardOwnership.findMany({
+      where: { userId: ctx.user.id },
+      select: { cards: { select: { marketValue: true } } },
+    });
+
+    const totalDeckValue = allOwned.reduce((sum, o) => sum + Math.max(1, o.cards.marketValue), 0);
+    const totalCards = allOwned.length;
+
+    await ctx.db.user.update({
+      where: { id: ctx.user.id },
+      data: {
+        deckValue: totalDeckValue,
+        totalCards: totalCards,
+      },
+    });
+
+    return {
+      refreshed,
+      failed,
+      totalCards,
+      deckValue: totalDeckValue,
+      zeroValueChecked: zeroValueCards.length,
+    };
+  }),
 });

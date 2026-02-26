@@ -14,7 +14,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import type { ComplianceSectionStatus } from "~/hooks/useMyCountryCompliance";
 
 interface MyCountryComplianceModalProps {
-  open: boolean;
+  isOpen: boolean;
   sections: ComplianceSectionStatus[];
   onReview: () => void;
   onRemindLater: () => void;
@@ -22,7 +22,7 @@ interface MyCountryComplianceModalProps {
 }
 
 export function MyCountryComplianceModal({
-  open,
+  isOpen,
   sections,
   onReview,
   onRemindLater,
@@ -32,7 +32,7 @@ export function MyCountryComplianceModal({
   const allComplete = sections.length > 0 && incompleteSections.length === 0;
 
   return (
-    <Dialog open={open} onOpenChange={(value) => !value && onDismiss?.()}>
+    <Dialog open={isOpen} onOpenChange={(value) => !value && onDismiss?.()}>
       <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-h-[85vh] sm:max-w-3xl">
         <div className="flex h-full min-h-0 flex-col">
           <DialogHeader className="flex-shrink-0 px-4 pt-4 text-left sm:px-6 sm:pt-6">

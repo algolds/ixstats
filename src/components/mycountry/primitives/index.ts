@@ -1,6 +1,6 @@
 export { CountryHeader } from "./CountryHeader";
 export { CountryMetricsGrid } from "./CountryMetricsGrid";
-export { VitalityRings } from "./VitalityRings";
+export { VitalityRings, type VitalityRingData, type RingConfig } from "./VitalityRings";
 export { AuthenticationGuard } from "./AuthenticationGuard";
 export { CountryDataProvider, useCountryData } from "./CountryDataProvider";
 export { useMyCountryUnifiedData } from "./useMyCountryUnifiedData";
@@ -62,6 +62,12 @@ export {
   AnimatedValue,
   type InteractiveMetricProps,
 } from "./tabs";
+
+// Section header background
+export { SectionHeaderBackground } from "./SectionHeaderBackground";
+
+// Tab hero banner
+export { TabHeroBanner } from "./TabHeroBanner";
 
 // Card background image components
 export {

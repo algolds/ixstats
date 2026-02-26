@@ -7,11 +7,13 @@
  * @module useAnalyticsDashboard
  */
 
+"use client";
+
 import { useState, useMemo, useCallback } from "react";
 import { Activity, TrendingUp, Target, Globe, Zap, Building, Users, FileText } from "lucide-react";
 import { api } from "~/trpc/react";
 import { exportDataToCSV, exportChartToPDF, exportDashboardReport } from "~/lib/export-utils";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   transformEconomicChartData,
   generateSectorPerformanceData,
@@ -50,6 +52,7 @@ interface UseAnalyticsDashboardProps {
 // ===== HOOK =====
 
 export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps) {
+  const notify = useNotify();
   // ===== STATE =====
   const [activeSection, setActiveSection] = useState<ActiveSection>("overview");
   const [dateRange, setDateRange] = useState<DateRange>("1year");
@@ -328,10 +331,10 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
         } else {
           exportDataToCSV(data, filename);
         }
-        toast.success(`Exported ${filename}.csv successfully`);
+        notify.success(`Exported ${filename}.csv successfully`);
       } catch (error) {
         console.error("Error exporting to CSV:", error);
-        toast.error("Failed to export CSV");
+        notify.error("Failed to export CSV");
       }
     },
     []
@@ -343,10 +346,10 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
         title: chartName,
         orientation: "landscape",
       });
-      toast.success(`Exported ${chartName} to PDF successfully`);
+      notify.success(`Exported ${chartName} to PDF successfully`);
     } catch (error) {
       console.error("Error exporting to PDF:", error);
-      toast.error("Failed to export PDF");
+      notify.error("Failed to export PDF");
     }
   }, []);
 
@@ -416,7 +419,7 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
       }
 
       if (charts.length === 0) {
-        toast.error("No charts available to export");
+        notify.error("No charts available to export");
         return;
       }
 
@@ -425,10 +428,10 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
         orientation: "landscape",
       });
 
-      toast.success("Exported all charts to PDF successfully");
+      notify.success("Exported all charts to PDF successfully");
     } catch (error) {
       console.error("Error exporting all charts:", error);
-      toast.error("Failed to export report");
+      notify.error("Failed to export report");
     }
   }, [activeSection, dateRange]);
 

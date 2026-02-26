@@ -16,7 +16,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { IxTime } from "~/lib/ixtime";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import type { CountryWithEconomicData } from "~/types/ixstats";
 
 // Define the type for countries that can be compared
@@ -68,6 +68,7 @@ export function CountryComparisonModal({
   availableCountries,
   onCountrySelect,
 }: CountryComparisonModalProps) {
+  const notify = useNotify();
   const [selectedCountries, setSelectedCountries] = useState<ComparisonCountry[]>([]);
   const [countrySearchOpen, setCountrySearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -149,13 +150,13 @@ export function CountryComparisonModal({
         };
 
         setSelectedCountries((prev) => [...prev, newCountry]);
-        toast.success(`${countryData.name || country.name} added to comparison`);
+        notify.success(`${countryData.name || country.name} added to comparison`);
       } else {
         throw new Error("No country data returned");
       }
     } catch (error) {
       console.error("Error fetching country data for comparison:", error);
-      toast.error(`Failed to load data for ${country.name}. Using basic information.`);
+      notify.error(`Failed to load data for ${country.name}. Using basic information.`);
       // Fallback to basic data if API fails
       const fallbackCountry: ComparisonCountry = {
         id: country.id,
@@ -193,7 +194,7 @@ export function CountryComparisonModal({
       }));
     setSelectedCountries(newCountries);
     if (countryToRemove) {
-      toast.success(`${countryToRemove.name} removed from comparison`);
+      notify.success(`${countryToRemove.name} removed from comparison`);
     }
   };
 
@@ -269,7 +270,7 @@ export function CountryComparisonModal({
                 size="sm"
                 onClick={() => {
                   setSelectedCountries([]);
-                  toast.success("All countries cleared from comparison");
+                  notify.success("All countries cleared from comparison");
                 }}
               >
                 Clear All

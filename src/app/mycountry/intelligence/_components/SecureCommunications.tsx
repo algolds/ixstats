@@ -49,7 +49,7 @@ import {
 import { cn } from "~/lib/utils";
 import { IxTime } from "~/lib/ixtime";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Lock,
   Shield,
@@ -155,7 +155,7 @@ const CLASSIFICATION_STYLES = {
 } as const;
 
 const PRIORITY_STYLES = {
-  LOW: { color: "text-gray-400", icon: Circle },
+  LOW: { color: "text-muted-foreground", icon: Circle },
   NORMAL: { color: "text-blue-400", icon: Circle },
   HIGH: { color: "text-orange-400", icon: AlertTriangle },
   URGENT: { color: "text-red-400", icon: AlertTriangle },
@@ -172,6 +172,8 @@ export function SecureCommunications({
   clearanceLevel = "PUBLIC",
   onEncryptionError,
 }: SecureCommunicationsProps) {
+  const notify = useNotify();
+
   // ===== STATE =====
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
   const [showNewChannel, setShowNewChannel] = useState(false);
@@ -207,7 +209,7 @@ export function SecureCommunications({
     },
     {
       enabled: !!countryId,
-      refetchInterval: 15000, // Refresh every 15 seconds
+      refetchInterval: 30000, // Refresh every 30 seconds
     }
   );
 
@@ -246,8 +248,8 @@ export function SecureCommunications({
         unreadCount: conv.unreadCount || 0,
         participants: conv.otherParticipants?.map((p: any) => ({
           countryId: p.userId,
-          countryName: p.userId, // TODO: Resolve country name from userId
-          flagUrl: undefined,
+          countryName: p.account?.displayName || p.userId,
+          flagUrl: p.account?.profileImageUrl || undefined,
           role: p.role?.toUpperCase() || "MEMBER",
         })) || [],
       }));
@@ -266,7 +268,7 @@ export function SecureCommunications({
     },
     {
       enabled: !!activeChannelId && !!countryId,
-      refetchInterval: 5000, // Refresh every 5 seconds
+      refetchInterval: 15000, // Refresh every 15 seconds
     }
   );
 
@@ -278,7 +280,7 @@ export function SecureCommunications({
       id: msg.id,
       from: {
         countryId: msg.userId,
-        countryName: msg.userId, // TODO: Resolve country name from userId
+        countryName: msg.account?.displayName || msg.userId,
       },
       to: null, // ThinkShare conversations don't have explicit "to"
       subject: msg.subject,
@@ -296,9 +298,7 @@ export function SecureCommunications({
 
   const sendMessageMutation = api.thinkpages.sendMessage.useMutation({
     onSuccess: () => {
-      toast.success("Message sent successfully", {
-        description: encryptMessage ? "Message encrypted and delivered" : "Message delivered",
-      });
+      notify.success("Message sent successfully", encryptMessage ? "Message encrypted and delivered" : "Message delivered");
       setMessageContent("");
       setMessageSubject("");
       setShowNewMessage(false);
@@ -306,9 +306,7 @@ export function SecureCommunications({
       void refetchChannels();
     },
     onError: (error) => {
-      toast.error("Failed to send message", {
-        description: error.message,
-      });
+      notify.error("Failed to send message", error.message);
       if (onEncryptionError && encryptMessage) {
         onEncryptionError(error as unknown as Error);
       }
@@ -352,7 +350,7 @@ export function SecureCommunications({
 
   const handleSendMessage = useCallback(() => {
     if (!activeChannelId || !messageContent.trim()) {
-      toast.error("Please enter a message");
+      notify.error("Please enter a message");
       return;
     }
 
@@ -382,12 +380,12 @@ export function SecureCommunications({
 
   const handleCreateChannel = useCallback(() => {
     if (!newChannelName.trim()) {
-      toast.error("Please enter a channel name");
+      notify.error("Please enter a channel name");
       return;
     }
 
     // TODO: Implement channel creation mutation
-    toast.info("Channel creation coming soon");
+    notify.info("Channel creation coming soon");
     setShowNewChannel(false);
   }, [newChannelName, newChannelType, newChannelClassification, newChannelEncrypted]);
 
@@ -818,7 +816,7 @@ export function SecureCommunications({
 
       {/* NEW CHANNEL MODAL */}
       <Dialog open={showNewChannel} onOpenChange={setShowNewChannel}>
-        <DialogContent className="glass-modal">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />

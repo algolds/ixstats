@@ -1,6 +1,6 @@
 # Platform Overview
 
-**Last updated:** October 2025
+**Last updated:** February 2026
 
 IxStats is an alternate-history and nation-simulation platform that brings together strategic planning, collaborative storytelling, and operational dashboards. The codebase balances narrative-first UX with a data-rich backend, letting storytellers, game masters, and analysts all share a consistent source of truth.
 
@@ -13,22 +13,25 @@ IxStats is an alternate-history and nation-simulation platform that brings toget
 ## Audience Personas
 | Persona | Needs | Key Routes |
 | --- | --- | --- |
-| Nation Executive | Real-time intel, compliance, defense posture | `/mycountry`, `/mycountry/intelligence` |
+| Nation Executive | Real-time intel, compliance, defense posture, elections | `/mycountry`, `/mycountry/intelligence`, `/mycountry/politics` |
 | Game Master | Monitoring, audit scripts, environment management | `/admin`, `scripts/audit` |
 | Analyst / Researcher | Economic stats, diplomacy data, exports | `/dashboard`, `/leaderboards`, `/thinkpages` |
+| Collector / Trader | Card packs, trading, vault management, marketplace | `/vault`, `/cards` |
 | New Player | Guided onboarding, documentation, tutorials | `/help`, `/getting-started`, docs in `docs/overview` |
 
 ## Release Cadence & Versioning
-- Codebase version: **1.1.0** (`package.json`)
-- Next major milestone: consolidate realtime upgrades and expand automated testing
+- Codebase version: **v2** (`package.json`)
+- Next.js 16.1.3, React 19.1.3, Prisma 6.19, tRPC 11.4, Tailwind CSS v4
+- 61 tRPC routers, 927 API endpoints, 206 Prisma models, 645+ components
 - Documentation updates must accompany feature work; use this overview and `docs/DOCUMENTATION_INDEX.md` as canonical entry points
 
 ## Domain Pillars
-1. **MyCountry Command Suite** – Executive control, compliance, and analytics
-2. **Intelligence & Diplomacy** – Live feeds, missions, relationships, and crisis tooling
-3. **Economy & Builder** – Economic modeling, projections, and nation creation flows
-4. **Social & Collaboration** – ThinkPages, ThinkShare, messaging, and achievements
-5. **Operations & Help** – Documentation, environment scripts, monitoring, and the `/help` experience
+1. **MyCountry Command Suite** – Executive control, compliance, analytics, and politics
+2. **Intelligence & Diplomacy** – Live feeds, missions, relationships, alliances, and crisis tooling
+3. **Economy & Builder** – Economic modeling, projections, national issues, and nation creation flows
+4. **IxCards & MyVault** – Trading cards, card packs, lore cards, marketplace, crafting, and P2P trading
+5. **Social & Collaboration** – ThinkPages, ThinkShare, messaging, and achievements
+6. **Operations & Help** – Documentation, environment scripts, monitoring, and the `/help` experience
 
 Each pillar has a dedicated guide in `docs/systems`. Cross-cutting architecture details live in `docs/architecture`.
 

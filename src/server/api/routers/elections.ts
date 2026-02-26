@@ -7,6 +7,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
+import { notificationAPI } from "~/lib/notification-api";
 
 // ============================================================
 // Election System Router - Extension of Government Sub-System
@@ -111,6 +112,19 @@ export const electionsRouter = createTRPCRouter({
         },
       });
 
+      try {
+        await notificationAPI.create({
+          title: "Political Party Formed",
+          message: `New political party "${input.name}" has been established`,
+          countryId: input.countryId,
+          category: "governance",
+          priority: "medium",
+          type: "info",
+          source: "elections",
+          href: "/mycountry/politics",
+        });
+      } catch (e) { console.warn("[Notifications] elections.createParty:", e); }
+
       return party;
     }),
 
@@ -188,6 +202,7 @@ export const electionsRouter = createTRPCRouter({
         totalSeats: z.number().int().min(10).max(1000).default(100),
         electoralSystem: z.enum(["proportional", "fptp", "mixed"]).default("proportional"),
         termLength: z.number().int().min(1).max(10).default(4),
+        electionCycle: z.enum(["fixed", "variable"]).default("fixed"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -204,6 +219,7 @@ export const electionsRouter = createTRPCRouter({
           totalSeats: input.totalSeats,
           electoralSystem: input.electoralSystem,
           termLength: input.termLength,
+          electionCycle: input.electionCycle,
         },
         update: {
           name: input.name,
@@ -211,6 +227,7 @@ export const electionsRouter = createTRPCRouter({
           totalSeats: input.totalSeats,
           electoralSystem: input.electoralSystem,
           termLength: input.termLength,
+          electionCycle: input.electionCycle,
         },
       });
 
@@ -309,6 +326,19 @@ export const electionsRouter = createTRPCRouter({
           status: "upcoming",
         },
       });
+
+      try {
+        await notificationAPI.create({
+          title: "Election Scheduled",
+          message: `${input.electionType === "general" ? "General" : input.electionType === "special" ? "Special" : "Referendum"} election "${input.name}" has been scheduled`,
+          countryId: input.countryId,
+          category: "governance",
+          priority: "high",
+          type: "info",
+          source: "elections",
+          href: "/mycountry/politics",
+        });
+      } catch (e) { console.warn("[Notifications] elections.scheduleElection:", e); }
 
       return election;
     }),
@@ -452,8 +482,8 @@ export const electionsRouter = createTRPCRouter({
       }
 
       // Normalize to percentages
-      const totalVotesCast = 1000000; // Simulated vote count
-      const turnout = 55 + Math.random() * 30; // 55-85% turnout
+      const totalVotesCast = Math.floor((country?.currentPopulation || 1000000) * 0.65);
+      const turnout = Math.min(95, 55 + (country?.overallNationalHealth ?? 50) * 0.3);
 
       // Step 3: Allocate seats based on electoral system
       let seatAllocation: Map<string, number>;
@@ -564,11 +594,11 @@ export const electionsRouter = createTRPCRouter({
         });
       }
 
-      // Step 9: Create DmInputs for economic impact
+      // Step 9: Create storyteller effects for economic impact
       // Close elections create uncertainty; decisive ones boost confidence
       const growthModifier = marginOfVictory > 10 ? 0.003 : marginOfVictory > 5 ? 0.001 : -0.003;
 
-      await ctx.db.dmInputs.create({
+      await ctx.db.storytellerEffect.create({
         data: {
           countryId: election.countryId,
           ixTimeTimestamp: new Date(),
@@ -603,6 +633,28 @@ export const electionsRouter = createTRPCRouter({
           seats: topResult.seatsWon,
           percentage: topResult.votePercentage.toFixed(1),
         });
+
+        // Notification: Election results
+        try {
+          await notificationAPI.create({
+            title: "Election Results",
+            message: `${winnerParty?.party?.name ?? "Leading party"} wins with ${topResult.seatsWon} seats (${topResult.votePercentage.toFixed(1)}%). Turnout: ${turnout.toFixed(1)}%`,
+            countryId: election.countryId,
+            category: "governance",
+            priority: "high",
+            type: "success",
+            source: "elections",
+            href: "/mycountry/politics",
+            actionable: true,
+            metadata: {
+              electionId: election.id,
+              winnerParty: winnerParty?.party?.name,
+              seatsWon: topResult.seatsWon,
+              marginOfVictory,
+              turnout,
+            },
+          });
+        } catch (e) { console.warn("[Notifications] elections.simulateElection:", e); }
       }
 
       return ctx.db.election.findUnique({

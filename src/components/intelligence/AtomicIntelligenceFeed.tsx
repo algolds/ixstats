@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
+import { IxTimeDate } from "~/components/ui/ix-time-date";
 import {
   AlertTriangle,
   TrendingUp,
@@ -426,7 +427,7 @@ export function AtomicIntelligenceFeed({
 
                         <div className="mt-3 flex items-center justify-between">
                           <div className="text-muted-foreground text-xs">
-                            {new Date(item.timestamp).toLocaleTimeString()}
+                            <IxTimeDate date={item.timestamp} format="datetime" accentColor="indigo" />
                           </div>
 
                           {item.actionable && (

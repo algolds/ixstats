@@ -415,7 +415,7 @@ export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefing
                       <div>
                         <div className="text-muted-foreground text-xs">Population</div>
                         <div className="font-semibold">
-                          {(country.currentPopulation / 1e6).toFixed(1)}M
+                          {Math.round(country.currentPopulation / 1e6)}M
                         </div>
                       </div>
                       <div>

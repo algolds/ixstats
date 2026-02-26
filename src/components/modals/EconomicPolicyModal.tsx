@@ -48,7 +48,7 @@ import {
   Target,
   LineChart,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import type { PolicyCategory, EconomicPolicy } from "~/types/ixstats";
 
 interface EconomicPolicyModalProps {
@@ -111,6 +111,7 @@ export function EconomicPolicyModal({
   policyId,
 }: EconomicPolicyModalProps) {
   const { user } = useUser();
+  const notify = useNotify();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -149,13 +150,13 @@ export function EconomicPolicyModal({
   // Create policy mutation
   const createPolicy = api.unifiedIntelligence.createEconomicPolicy.useMutation({
     onSuccess: () => {
-      toast.success("Economic policy created successfully!");
+      notify.success("Economic policy created successfully!");
       setOpen(false);
       resetForm();
       void refetch();
     },
     onError: (error) => {
-      toast.error(`Failed to create policy: ${error.message}`);
+      notify.error(`Failed to create policy: ${error.message}`);
     },
   });
 
@@ -181,7 +182,7 @@ export function EconomicPolicyModal({
     e.preventDefault();
 
     if (!formData.title.trim() || !formData.category || !formData.description.trim()) {
-      toast.error("Please fill in required fields");
+      notify.error("Please fill in required fields");
       return;
     }
 

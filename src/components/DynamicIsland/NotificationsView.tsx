@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
 import { useUser } from "~/context/auth-context";
@@ -19,13 +20,70 @@ import {
   Users,
   Building2,
   ChevronDown,
+  ChevronRight,
   Plus,
 } from "lucide-react";
 import type { NotificationsViewProps } from "./types";
 
+// Helper: resolve icon by category/type
+function getNotificationIcon(notification: any): React.ComponentType<{ className?: string }> {
+  const cat = notification.category;
+  if (cat) {
+    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+      economic: TrendingUp, diplomatic: Globe, social: Users,
+      security: AlertTriangle, governance: Building2, achievement: CheckCircle,
+      crisis: AlertCircle, opportunity: TrendingUp, military: AlertTriangle,
+    };
+    return iconMap[cat] ?? Bell;
+  }
+  const typeMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    info: Info, warning: AlertTriangle, success: CheckCircle, error: AlertCircle,
+  };
+  return typeMap[notification.type] ?? Bell;
+}
+
+// Helper: resolve priority/severity color classes
+function getPriorityColors(notification: any): { bg: string; text: string } {
+  const level = notification.priority ?? notification.severity ?? notification.type;
+  const map: Record<string, { bg: string; text: string }> = {
+    critical: { bg: "bg-red-500/20", text: "text-red-600 dark:text-red-400" },
+    high: { bg: "bg-orange-500/20", text: "text-orange-600 dark:text-orange-400" },
+    medium: { bg: "bg-yellow-500/20", text: "text-yellow-600 dark:text-yellow-400" },
+    warning: { bg: "bg-yellow-500/20", text: "text-yellow-600 dark:text-yellow-400" },
+    success: { bg: "bg-green-500/20", text: "text-green-600 dark:text-green-400" },
+    error: { bg: "bg-destructive/20", text: "text-red-600 dark:text-red-400" },
+    info: { bg: "bg-blue-500/20", text: "text-blue-600 dark:text-blue-400" },
+  };
+  return map[level] ?? { bg: "bg-blue-500/20", text: "text-blue-600 dark:text-blue-400" };
+}
+
+// Helper: priority badge color
+function getPriorityBadgeClass(notification: any): string {
+  const level = notification.priority ?? notification.severity;
+  const map: Record<string, string> = {
+    critical: "bg-red-500/10 text-red-600 dark:text-red-400",
+    high: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    medium: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400",
+  };
+  return map[level] ?? "bg-blue-500/10 text-blue-600 dark:text-blue-400";
+}
+
 export function NotificationsView({ onClose }: NotificationsViewProps) {
-  const { toast } = useToast();
+  const notify = useNotify();
   const { user } = useUser();
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  // Close on ESC key
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   // Enhanced notification system integration
   const enhancedNotifications = useNotificationStore((state) => state.notifications);
@@ -67,20 +125,14 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
     onSuccess: () => {
       void refetchNotifications();
-      toast({
-        type: "success",
-        title: "All notifications marked as read",
-      });
+      notify.success("All notifications marked as read");
     },
   });
 
   const createTestNotificationMutation = api.notifications.createNotification.useMutation({
     onSuccess: () => {
       void refetchNotifications();
-      toast({
-        type: "success",
-        title: "Test notification created",
-      });
+      notify.success("Test notification created");
     },
   });
 
@@ -161,14 +213,13 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
               Mark all read
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="ghost"
+          <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 absolute top-6 right-6 px-2 py-2"
+            className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white hover:scale-110 active:scale-95"
+            aria-label="Close notifications"
           >
             <X className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -261,94 +312,96 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
             );
           });
 
-          console.log("Notification Debug:", {
-            standardCount: standardNotifications.length,
-            executiveCount: executiveNotificationsList.length,
-            enhancedCount: enhancedNotificationsList.length,
-            totalCombined: allNotifications.length,
-            groupCount: sortedGroups.length,
-            groups: sortedGroups.map((g: any) => ({
-              title: g.title,
-              count: g.notifications.length,
-            })),
-          });
+          const toggleGroup = (key: string) => {
+            setCollapsedGroups((prev) => {
+              const next = new Set(prev);
+              if (next.has(key)) next.delete(key);
+              else next.add(key);
+              return next;
+            });
+          };
 
           return sortedGroups.length > 0 ? (
             <div className="space-y-4">
-              {sortedGroups.map((group: any, groupIndex: number) => (
-                <div key={`group-${groupIndex}`} className="space-y-2">
-                  {/* Group Header */}
-                  <div className="flex items-center justify-between px-1">
-                    <h4 className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
-                      {group.title}
-                    </h4>
+              {sortedGroups.map((group: any, groupIndex: number) => {
+                const groupKey = `group-${groupIndex}`;
+                const isCollapsed = collapsedGroups.has(groupKey);
+
+                return (
+                <div key={groupKey} className="space-y-2">
+                  {/* Collapsible Group Header */}
+                  <button
+                    onClick={() => toggleGroup(groupKey)}
+                    className="flex w-full items-center justify-between px-1 py-0.5 rounded hover:bg-accent/10 transition-colors"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <motion.div
+                        animate={{ rotate: isCollapsed ? 0 : 90 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
+                      </motion.div>
+                      <h4 className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
+                        {group.title}
+                      </h4>
+                    </div>
                     <Badge variant="secondary" className="bg-muted/40 px-1.5 py-0.5 text-[10px]">
                       {group.notifications.length}
                     </Badge>
-                  </div>
+                  </button>
 
-                  {/* Grouped Notifications */}
-                  <div className="space-y-2">
+                  {/* Grouped Notifications with swipe-to-dismiss */}
+                  <AnimatePresence>
+                    {!isCollapsed && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-2 overflow-hidden"
+                      >
                     {group.notifications.map((notification: any, index: number) => {
-                      // Determine notification type and appropriate handling
                       const isEnhancedNotification = notification.source === "enhanced";
                       const isExecutiveNotification = notification.source === "executive";
-
-                      const IconComponent = isEnhancedNotification
-                        ? (notification as any).category === "economic"
-                          ? TrendingUp
-                          : (notification as any).category === "diplomatic"
-                            ? Globe
-                            : (notification as any).category === "social"
-                              ? Users
-                              : (notification as any).category === "security"
-                                ? AlertTriangle
-                                : (notification as any).category === "governance"
-                                  ? Building2
-                                  : (notification as any).category === "achievement"
-                                    ? CheckCircle
-                                    : (notification as any).category === "crisis"
-                                      ? AlertCircle
-                                      : (notification as any).category === "opportunity"
-                                        ? TrendingUp
-                                        : Bell
-                        : isExecutiveNotification
-                          ? (notification as any).category === "economic"
-                            ? TrendingUp
-                            : (notification as any).category === "diplomatic"
-                              ? Globe
-                              : (notification as any).category === "social"
-                                ? Users
-                                : (notification as any).category === "security"
-                                  ? AlertTriangle
-                                  : (notification as any).category === "governance"
-                                    ? Building2
-                                    : Bell
-                          : (notification as any).type === "info"
-                            ? Info
-                            : (notification as any).type === "warning"
-                              ? AlertTriangle
-                              : (notification as any).type === "success"
-                                ? CheckCircle
-                                : (notification as any).type === "error"
-                                  ? AlertCircle
-                                  : Bell;
+                      const IconComponent = getNotificationIcon(notification);
+                      const colors = getPriorityColors(notification);
+                      const itemKey = notification.id
+                        ? `${notification.source}-${notification.id}`
+                        : `${notification.source}-fallback-${index}`;
 
                       return (
-                        <div
-                          key={
-                            notification.id
-                              ? `${notification.source}-${notification.id}`
-                              : `${notification.source}-fallback-${index}`
-                          }
-                          className={`hover:bg-accent/50 cursor-pointer rounded-lg border p-3 transition-all ${
+                        <motion.div
+                          key={itemKey}
+                          layout
+                          initial={{ opacity: 0, x: 0 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -200, transition: { duration: 0.2 } }}
+                          drag="x"
+                          dragConstraints={{ left: 0, right: 0 }}
+                          dragElastic={0.3}
+                          onDragEnd={(_e, info) => {
+                            if (Math.abs(info.offset.x) > 100 || Math.abs(info.velocity.x) > 500) {
+                              // Swipe to dismiss — mark as read
+                              if (isEnhancedNotification) {
+                                markEnhancedAsRead(notification.id);
+                                recordEngagement(notification.id, "dismiss");
+                              } else if (isExecutiveNotification) {
+                                markExecutiveAsRead(notification.id);
+                              } else if (user?.id) {
+                                markAsReadMutation.mutate({
+                                  notificationId: notification.id,
+                                  userId: user.id,
+                                });
+                              }
+                            }
+                          }}
+                          className={`hover:bg-accent/50 cursor-pointer rounded-lg border p-3 transition-colors ${
                             notification.status === "read" || notification.read
                               ? "bg-muted/20 border-muted/40"
                               : "bg-muted/30 border-muted/60 shadow-sm"
                           }`}
                           onClick={() => {
                             const isRead = notification.status === "read" || notification.read;
-
                             if (!isRead) {
                               if (isEnhancedNotification) {
                                 markEnhancedAsRead(notification.id);
@@ -362,75 +415,17 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                                 });
                               }
                             }
-
                             if ("href" in notification && notification.href) {
                               window.location.href = notification.href;
                             }
-
                             if (isEnhancedNotification) {
                               recordEngagement(notification.id, "click");
                             }
                           }}
                         >
                           <div className="flex items-start gap-4">
-                            <div
-                              className={`flex-shrink-0 rounded-lg p-2 ${
-                                isEnhancedNotification
-                                  ? (notification as any).priority === "critical"
-                                    ? "bg-red-500/20"
-                                    : (notification as any).priority === "high"
-                                      ? "bg-orange-500/20"
-                                      : (notification as any).priority === "medium"
-                                        ? "bg-yellow-500/20"
-                                        : "bg-blue-500/20"
-                                  : isExecutiveNotification
-                                    ? (notification as any).severity === "critical"
-                                      ? "bg-red-500/20"
-                                      : (notification as any).severity === "high"
-                                        ? "bg-orange-500/20"
-                                        : (notification as any).severity === "medium"
-                                          ? "bg-yellow-500/20"
-                                          : "bg-blue-500/20"
-                                    : (notification as any).type === "info"
-                                      ? "bg-blue-500/20"
-                                      : (notification as any).type === "warning"
-                                        ? "bg-yellow-500/20"
-                                        : (notification as any).type === "success"
-                                          ? "bg-green-500/20"
-                                          : (notification as any).type === "error"
-                                            ? "bg-destructive/20"
-                                            : "bg-muted/50"
-                              }`}
-                            >
-                              <IconComponent
-                                className={`h-5 w-5 ${
-                                  isEnhancedNotification
-                                    ? (notification as any).priority === "critical"
-                                      ? "text-red-600 dark:text-red-400"
-                                      : (notification as any).priority === "high"
-                                        ? "text-orange-600 dark:text-orange-400"
-                                        : (notification as any).priority === "medium"
-                                          ? "text-yellow-600 dark:text-yellow-400"
-                                          : "text-blue-600 dark:text-blue-400"
-                                    : isExecutiveNotification
-                                      ? (notification as any).severity === "critical"
-                                        ? "text-red-600 dark:text-red-400"
-                                        : (notification as any).severity === "high"
-                                          ? "text-orange-600 dark:text-orange-400"
-                                          : (notification as any).severity === "medium"
-                                            ? "text-yellow-600 dark:text-yellow-400"
-                                            : "text-blue-600 dark:text-blue-400"
-                                      : (notification as any).type === "info"
-                                        ? "text-blue-600 dark:text-blue-400"
-                                        : (notification as any).type === "warning"
-                                          ? "text-yellow-600 dark:text-yellow-400"
-                                          : (notification as any).type === "success"
-                                            ? "text-green-600 dark:text-green-400"
-                                            : (notification as any).type === "error"
-                                              ? "text-red-600 dark:text-red-400"
-                                              : "text-muted-foreground"
-                                }`}
-                              />
+                            <div className={`flex-shrink-0 rounded-lg p-2 ${colors.bg}`}>
+                              <IconComponent className={`h-5 w-5 ${colors.text}`} />
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-2">
@@ -449,36 +444,18 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                               <div className="mt-3 flex items-center justify-between">
                                 <div className="text-muted-foreground/70 text-xs">
                                   {isEnhancedNotification
-                                    ? `${new Date((notification as any).timestamp).toLocaleString()} • Smart Alert`
+                                    ? `${new Date(notification.timestamp).toLocaleString()} • Smart Alert`
                                     : isExecutiveNotification
-                                      ? `${new Date((notification as any).timestamp).toLocaleString()} • ${(notification as any).source}`
-                                      : new Date((notification as any).createdAt).toLocaleString()}
+                                      ? `${new Date(notification.timestamp).toLocaleString()} • ${notification.source}`
+                                      : new Date(notification.createdAt).toLocaleString()}
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {(isEnhancedNotification || isExecutiveNotification) && (
                                     <Badge
                                       variant="secondary"
-                                      className={`px-2 py-0 text-xs ${
-                                        isEnhancedNotification
-                                          ? (notification as any).priority === "critical"
-                                            ? "bg-red-500/10 text-red-600 dark:text-red-400"
-                                            : (notification as any).priority === "high"
-                                              ? "bg-orange-500/10 text-orange-600 dark:text-orange-400"
-                                              : (notification as any).priority === "medium"
-                                                ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-                                                : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                          : (notification as any).severity === "critical"
-                                            ? "bg-red-500/10 text-red-600 dark:text-red-400"
-                                            : (notification as any).severity === "high"
-                                              ? "bg-orange-500/10 text-orange-600 dark:text-orange-400"
-                                              : (notification as any).severity === "medium"
-                                                ? "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-                                                : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                      }`}
+                                      className={`px-2 py-0 text-xs ${getPriorityBadgeClass(notification)}`}
                                     >
-                                      {isEnhancedNotification
-                                        ? (notification as any).priority
-                                        : (notification as any).severity}
+                                      {notification.priority ?? notification.severity}
                                     </Badge>
                                   )}
                                   {notification.href && (
@@ -491,12 +468,15 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
-                  </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="py-8 text-center">

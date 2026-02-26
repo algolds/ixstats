@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { DynamicContainer } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
+
+import { useToastQueueStore } from "~/stores/toastQueueStore";
 import {
   Clock,
   Calendar,
@@ -33,8 +35,6 @@ import { HealthRing } from "../ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
 import { debugLog } from "~/lib/console-utils";
 import { CrisisIndicator } from "./CrisisIndicator";
-import { MyCountryCompactView } from "./MyCountryCompactView";
-import { usePathname } from "next/navigation";
 
 // Helper functions
 const getGreeting = (ixTime: number): string => {
@@ -67,7 +67,6 @@ function CompactViewComponent({
   crisisEvents,
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
-  const pathname = usePathname();
 
   // Get user role information
   const { user: roleUser, permissions } = usePermissions();
@@ -76,15 +75,6 @@ function CompactViewComponent({
     undefined,
     { enabled: !!user?.id }
   );
-
-  // MyCountry page detection
-  const isMyCountryPage = pathname?.startsWith('/mycountry') || false;
-  const myCountrySection =
-    pathname?.includes('/executive') ? 'executive' :
-    pathname?.includes('/diplomacy') ? 'diplomacy' :
-    pathname?.includes('/intelligence') ? 'intelligence' :
-    pathname?.includes('/defense') ? 'defense' :
-    pathname === '/mycountry' ? 'overview' : null;
 
   // Fetch activity rings data for user's country - use the working endpoint!
   const { data: activityRingsData, isLoading: ringsLoading } =
@@ -108,17 +98,6 @@ function CompactViewComponent({
   const [mounted, setMounted] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
   const previousNotificationCountRef = useRef(0);
-
-  // MyCountry DI preference - use regular DI on MyCountry pages if true
-  const [useRegularDI, setUseRegularDI] = useState(false);
-
-  // Load preference from localStorage on mount
-  useEffect(() => {
-    const preference = localStorage.getItem("dynamicIsland_useRegularOnMyCountry");
-    if (preference === "true") {
-      setUseRegularDI(true);
-    }
-  }, []);
 
   // Current time state
   const [currentTime, setCurrentTime] = useState({
@@ -171,6 +150,26 @@ function CompactViewComponent({
         };
     }
   };
+
+  // ─── Notification Peek: briefly show toast title in the DI pill ───
+  const [peekText, setPeekText] = useState<string | null>(null);
+  const toastQueue = useToastQueueStore((s) => s.queue);
+  const lastSeenToastRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (toastQueue.length === 0) return;
+    const latest = toastQueue[0];
+    if (!latest || latest.id === lastSeenToastRef.current) return;
+    // Only peek for medium+ priority
+    if (latest.priority === "low") {
+      lastSeenToastRef.current = latest.id;
+      return;
+    }
+    lastSeenToastRef.current = latest.id;
+    setPeekText(latest.title);
+    const timer = setTimeout(() => setPeekText(null), 2500);
+    return () => clearTimeout(timer);
+  }, [toastQueue]);
 
   // Enhanced notification system integration
   const enhancedStats = useNotificationStore((state) => state.stats);
@@ -267,30 +266,6 @@ function CompactViewComponent({
 
   if (!mounted) return null;
 
-  // Callback to toggle between MyCountry and regular DI
-  const toggleDIMode = () => {
-    const newValue = !useRegularDI;
-    setUseRegularDI(newValue);
-    localStorage.setItem("dynamicIsland_useRegularOnMyCountry", newValue.toString());
-  };
-
-  // Render MyCountry variant if on MyCountry page (after all hooks are called) and preference allows
-  if (isMyCountryPage && myCountrySection && userProfile?.countryId && !useRegularDI) {
-    return (
-      <MyCountryCompactView
-        section={myCountrySection as "overview" | "executive" | "diplomacy" | "intelligence" | "defense"}
-        isSticky={isSticky || false}
-        isCollapsed={isCollapsed}
-        setIsCollapsed={setIsCollapsed}
-        setIsUserInteracting={setIsUserInteracting}
-        timeDisplayMode={timeDisplayMode}
-        setTimeDisplayMode={setTimeDisplayMode}
-        onSwitchMode={onSwitchMode}
-        onToggleDIMode={toggleDIMode}
-      />
-    );
-  }
-
   return (
     <TooltipProvider>
       <div
@@ -314,9 +289,9 @@ function CompactViewComponent({
           }}
         >
           <DynamicContainer
-            className={`flex h-auto min-h-fit w-full items-center justify-between transition-all duration-300 ${
-              isSticky ? "px-3 py-2" : "px-6 py-6"
-            } ${isSticky ? "w-auto" : "w-full"} ${isFlashing ? "animate-flash-notification" : ""}`}
+            className={`flex w-full items-center justify-between transition-all duration-300 ${
+              isSticky ? "px-3 py-1.5" : "px-4 py-2"
+            } ${isFlashing ? "animate-flash-notification" : ""}`}
           >
             {/* IX Logo - Home Button */}
             <div className="flex items-center justify-center">
@@ -325,7 +300,7 @@ function CompactViewComponent({
                   <button
                     onClick={() => (window.location.href = createAbsoluteUrl("/"))}
                     className={`group relative flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${
-                      isSticky ? "h-8 w-8" : "h-10 w-10"
+                      isSticky ? "h-6 w-6" : "h-7 w-7"
                     }`}
                   >
                     {/* Gradient glow animation - only on hover */}
@@ -335,7 +310,7 @@ function CompactViewComponent({
                     <img
                       src={withBasePath("/images/ix-logo.svg")}
                       alt="IxLogo"
-                      className={`relative z-10 ${isSticky ? "h-6 w-6" : "h-8 w-8"} opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert`}
+                      className={`relative z-10 ${isSticky ? "h-4 w-4" : "h-5 w-5"} opacity-80 brightness-100 filter transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:drop-shadow-lg dark:brightness-0 dark:invert`}
                     />
                   </button>
                 </TooltipTrigger>
@@ -343,10 +318,51 @@ function CompactViewComponent({
               </Tooltip>
             </div>
 
-            {/* Time Display and Greeting - combined section */}
-            <div className="flex flex-1 items-center justify-center" style={{ marginLeft: "10px" }}>
+            {/* Time Display / Notification Peek - horizontal layout */}
+            <div className="flex flex-1 items-center justify-center overflow-hidden">
+              {/* Peek text shows in ALL modes (including sticky) */}
+              {isSticky && peekText && (
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key="sticky-peek"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    className="flex items-center gap-1.5 px-2 py-0.5"
+                  >
+                    <Bell className="h-3 w-3 text-blue-400 animate-pulse" />
+                    <span className="text-foreground/90 text-[11px] font-medium truncate max-w-[160px]">
+                      {peekText}
+                    </span>
+                  </motion.div>
+                </AnimatePresence>
+              )}
               {!isSticky && (
-                <div className="flex flex-col items-center justify-center space-y-1">
+                <AnimatePresence mode="wait">
+                  {peekText ? (
+                    <motion.div
+                      key="peek"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      className="flex items-center gap-1.5 px-2 py-1"
+                    >
+                      <Bell className="h-3 w-3 text-blue-400 animate-pulse" />
+                      <span className="text-foreground/90 text-xs font-medium truncate max-w-[200px]">
+                        {peekText}
+                      </span>
+                    </motion.div>
+                  ) : (
+                <motion.div
+                  key="time"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  className="flex items-center gap-2"
+                >
                   {/* Time Display - cycles through modes */}
                   <button
                     onClick={() => {
@@ -355,7 +371,7 @@ function CompactViewComponent({
                         currentMode === "time" ? "date" : currentMode === "date" ? "both" : "time"
                       );
                     }}
-                    className={`flex items-center justify-center ${isSticky ? "gap-1" : "gap-1.5"} hover:bg-white/10 ${isSticky ? "px-2 py-1" : "px-3 py-2"} cursor-pointer rounded-md transition-colors`}
+                    className="flex items-center gap-1 px-2 py-1 hover:bg-white/10 cursor-pointer rounded-md transition-colors"
                   >
                     {timeDisplayMode === "time" && (
                       <>
@@ -377,51 +393,31 @@ function CompactViewComponent({
                       </>
                     )}
                     {timeDisplayMode === "both" && (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-blue-400 opacity-70" />
-                          <span className="text-foreground/90 text-xs leading-none font-semibold">
-                            {currentTime.timeDisplay}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-2.5 w-2.5 text-blue-400 opacity-60" />
-                          <span className="text-foreground/70 text-[10px] leading-none">
-                            {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3 w-3 text-blue-400 opacity-70" />
+                        <span className="text-foreground/80 text-xs leading-none font-medium">
+                          {currentTime.timeDisplay}
+                        </span>
+                        <span className="text-foreground/30 text-xs">·</span>
+                        <span className="text-foreground/70 text-[10px] leading-none">
+                          {new Date(ixTimeTimestamp).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
                       </div>
                     )}
                   </button>
 
-                  {/* Greeting - only show when NOT sticky */}
-                  {!isSticky && (
-                    <Popover>
-                      <PopoverTrigger>
-                        <div
-                          className={`group relative ${isSticky ? "text-xs" : "text-sm"} text-foreground hover:bg-accent/10 flex min-w-0 cursor-pointer items-center justify-center rounded font-medium transition-colors ${isSticky ? "px-2 py-0.5" : "px-3 py-1"}`}
-                        >
-                          {/* Country flag background blur effect */}
-                          {setupStatus === "complete" && userProfile?.country && (
-                            <div className="absolute inset-0 overflow-hidden rounded opacity-0 transition-opacity duration-300 group-hover:opacity-20">
-                              <SimpleFlag
-                                countryName={userProfile.country.name}
-                                className="absolute inset-0 h-full w-full scale-110 rounded object-cover opacity-30 blur-md"
-                                showPlaceholder={false}
-                              />
-                              <div className="from-background/60 to-background/60 absolute inset-0 rounded bg-gradient-to-r via-transparent" />
-                            </div>
-                          )}
-                          <span className="relative z-10 text-center">
-                            {currentTime.greeting}
-                            {user?.firstName ? `, ${user.firstName}` : ""}
-                          </span>
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent
+                  {/* Greeting */}
+                  <Popover>
+                    <PopoverTrigger>
+                      <span className="text-foreground/70 text-xs font-medium hover:text-foreground/90 cursor-pointer px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 whitespace-nowrap">
+                        {currentTime.greeting}
+                        {user?.firstName ? `, ${user.firstName}` : ""}
+                      </span>
+                    </PopoverTrigger>
+                    <PopoverContent
                         side="bottom"
                         align="center"
                         className="bg-card/95 border-border z-[10002] mt-2 w-96 rounded-xl p-4 shadow-2xl backdrop-blur-xl"
@@ -591,13 +587,14 @@ function CompactViewComponent({
                         )}
                       </PopoverContent>
                     </Popover>
+                </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
               )}
             </div>
 
             {/* Action buttons - icons only with hover tooltips */}
-            <div className={`flex items-center justify-center ${isSticky ? "gap-1" : "gap-2"}`}>
+            <div className={`flex items-center justify-center ${isSticky ? "gap-1" : "gap-1.5"}`}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -605,11 +602,11 @@ function CompactViewComponent({
                     variant="ghost"
                     onClick={() => onSwitchMode("search")}
                     className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
-                      isSticky ? "h-7 w-7 p-0" : "h-8 w-8 p-0"
+                      isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}
                   >
                     <Search
-                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-4 w-4"}`}
+                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
                     />
                   </Button>
                 </TooltipTrigger>
@@ -623,23 +620,30 @@ function CompactViewComponent({
                     variant="ghost"
                     onClick={() => onSwitchMode("notifications")}
                     className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
-                      isSticky && isCollapsed ? "h-8 w-8 p-0" : "h-8 w-8 p-0"
+                      isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}
                   >
                     <Bell
-                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-4 w-4"}`}
+                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
                     />
-                    {totalUnreadCount > 0 && (
-                      <Badge
-                        className={`absolute flex animate-pulse items-center justify-center rounded-full border-0 bg-gradient-to-r from-red-500 to-pink-500 text-[10px] text-white shadow-lg ${
-                          isSticky
-                            ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
-                            : "-top-1 -right-1 h-3 w-3 p-0"
-                        }`}
-                      >
-                        {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
-                      </Badge>
-                    )}
+                    <AnimatePresence>
+                      {totalUnreadCount > 0 && (
+                        <motion.div
+                          key={totalUnreadCount}
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                          className={`absolute flex items-center justify-center rounded-full border-0 bg-gradient-to-r from-red-500 to-pink-500 text-[10px] font-bold text-white shadow-lg ${
+                            isSticky
+                              ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
+                              : "-top-1 -right-1 h-3 w-3 p-0"
+                          }`}
+                        >
+                          {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">Alerts</TooltipContent>
@@ -648,7 +652,7 @@ function CompactViewComponent({
               {crisisEvents && crisisEvents.length > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className={`flex items-center justify-center ${isSticky ? "h-7 w-7" : "h-8 w-8"}`}>
+                    <div className={`flex items-center justify-center ${isSticky ? "h-6 w-6" : "h-7 w-7"}`}>
                       <CrisisIndicator
                         crises={crisisEvents}
                         variant="compact"
@@ -660,27 +664,6 @@ function CompactViewComponent({
                 </Tooltip>
               )}
 
-              {/* Switch to MyCountry Mode (if on MyCountry page with regular DI) */}
-              {isMyCountryPage && userProfile?.countryId && useRegularDI && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={toggleDIMode}
-                      className={`text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 flex items-center justify-center rounded-lg transition-all ${
-                        isSticky ? "h-7 w-7 p-0" : "h-8 w-8 p-0"
-                      }`}
-                    >
-                      <Crown
-                        className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-4 w-4"}`}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Use MyCountry® Dynamic Island</TooltipContent>
-                </Tooltip>
-              )}
-
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -688,11 +671,11 @@ function CompactViewComponent({
                     variant="ghost"
                     onClick={() => onSwitchMode("settings")}
                     className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
-                      isSticky ? "h-7 w-7 p-0" : "h-8 w-8 p-0"
+                      isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}
                   >
                     <Settings
-                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-4 w-4"}`}
+                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
                     />
                   </Button>
                 </TooltipTrigger>

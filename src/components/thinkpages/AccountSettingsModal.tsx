@@ -6,7 +6,7 @@ import { X, Loader2, Verified } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ export function AccountSettingsModal({
   account,
   onAccountUpdate,
 }: AccountSettingsModalProps) {
+  const notify = useNotify();
   const [verified, setVerified] = useState(account.verified);
   const [postingFrequency, setPostingFrequency] = useState(account.postingFrequency);
   const [politicalLean, setPoliticalLean] = useState(account.politicalLean);
@@ -46,11 +47,11 @@ export function AccountSettingsModal({
         politicalLean,
         personality,
       });
-      toast.success("Account updated successfully!");
+      notify.success("Account updated successfully!");
       onAccountUpdate(updatedAccount);
       onClose();
     } catch (error: any) {
-      toast.error(error.message || "Failed to update account");
+      notify.error(error.message || "Failed to update account");
     }
   };
 

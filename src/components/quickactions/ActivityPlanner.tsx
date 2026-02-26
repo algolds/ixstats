@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
 import { MeetingScheduler } from "./MeetingScheduler";
-import { PolicyCreator } from "./PolicyCreator";
 import { MeetingDecisionsModal } from "./MeetingDecisionsModal";
 
 interface ActivityPlannerProps {
@@ -71,7 +70,6 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showMeetingScheduler, setShowMeetingScheduler] = useState(false);
-  const [showPolicyCreator, setShowPolicyCreator] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<{ id: string; title: string } | null>(
     null
   );
@@ -254,7 +252,7 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
                 <Users className="mr-2 h-4 w-4" />
                 Schedule Meeting
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowPolicyCreator(true)}>
+              <Button variant="outline" size="sm" disabled>
                 <FileText className="mr-2 h-4 w-4" />
                 Create Policy
               </Button>
@@ -477,15 +475,6 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
         countryId={countryId}
         open={showMeetingScheduler}
         onOpenChange={setShowMeetingScheduler}
-      />
-
-      <PolicyCreator
-        countryId={countryId}
-        open={showPolicyCreator}
-        onOpenChange={setShowPolicyCreator}
-        onSuccess={() => {
-          void refetch();
-        }}
       />
 
       {selectedMeeting && (

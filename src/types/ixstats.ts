@@ -24,8 +24,8 @@ export enum PopulationTier {
   TIER_X = "X", // 500,000,000+
 }
 
-// DM Input Types
-export enum DmInputType {
+// Storyteller Effect Types
+export enum StorytellerEffectType {
   POPULATION_ADJUSTMENT = "population_adjustment",
   GDP_ADJUSTMENT = "gdp_adjustment",
   GROWTH_RATE_MODIFIER = "growth_rate_modifier",
@@ -119,12 +119,12 @@ export interface HistoricalDataPoint {
   gdpDensity?: number | null;
 }
 
-// DM Input record
-export interface DmInputs {
+// Storyteller Effect record
+export interface StorytellerEffect {
   id?: string;
   countryId?: string | null;
   ixTimeTimestamp: Date | number;
-  inputType: DmInputType | string;
+  inputType: StorytellerEffectType | string;
   value: number; // Should be in decimal form for growth rates
   description?: string | null;
   duration?: number | null;
@@ -267,7 +267,7 @@ export interface AdminPageBotStatusView extends IxTimeState {
 export interface SystemStatus {
   ixTime: IxTimeState;
   countryCount: number;
-  activeDmInputs: number;
+  activeStorytellerEffects: number;
   lastCalculation?: {
     timestamp: string;
     ixTimeTimestamp: string;
@@ -555,7 +555,7 @@ export interface HistoricalData {
   // Add more fields as needed
 }
 
-export interface DMInput {
+export interface StorytellerEffectRecord {
   id: string;
   countryId: string;
   inputType: string;
@@ -679,7 +679,7 @@ export interface CountryWithEconomicData {
   calculatedStats: CalculatedStats;
   projections: Projection[];
   historical: HistoricalData[];
-  dmInputs: DMInput[];
+  storytellerEffects: StorytellerEffectRecord[];
   nominalGDP: number;
   realGDPGrowthRate: number;
   inflationRate: number;

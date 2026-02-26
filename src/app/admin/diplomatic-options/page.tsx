@@ -33,7 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Flag,
   Plus,
@@ -85,7 +85,7 @@ export default function DiplomaticOptionsPage() {
   usePageTitle({ title: "Diplomatic Options Admin" });
 
   const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // State
   const [typeFilter, setTypeFilter] = useState<DiplomaticOptionType | "all">("all");
@@ -123,77 +123,45 @@ export default function DiplomaticOptionsPage() {
   // Mutations
   const createMutation = api.admin.createDiplomaticOption.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Diplomatic option created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Diplomatic option created successfully");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create diplomatic option",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create diplomatic option");
     },
   });
 
   const updateMutation = api.admin.updateDiplomaticOption.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Diplomatic option updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Diplomatic option updated successfully");
       refetch();
       setEditingId(null);
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update diplomatic option",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update diplomatic option");
     },
   });
 
   const deleteMutation = api.admin.deleteDiplomaticOption.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Diplomatic option deleted successfully",
-        type: "success",
-      });
+      notify.success("Success", "Diplomatic option deleted successfully");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete diplomatic option",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to delete diplomatic option");
     },
   });
 
   const bulkToggleMutation = api.admin.bulkToggleDiplomaticOptions.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Bulk operation completed successfully",
-        type: "success",
-      });
+      notify.success("Success", "Bulk operation completed successfully");
       refetch();
       setSelectedIds(new Set());
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to complete bulk operation",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to complete bulk operation");
     },
   });
 
@@ -259,11 +227,7 @@ export default function DiplomaticOptionsPage() {
 
   const handleBulkToggle = (isActive: boolean) => {
     if (selectedIds.size === 0) {
-      toast({
-        title: "No selection",
-        description: "Please select at least one option",
-        type: "warning",
-      });
+      notify.warning("No selection", "Please select at least one option");
       return;
     }
 

@@ -70,7 +70,7 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-white/10 bg-white/5 p-1.5 backdrop-blur-md dark:bg-black/10">
+      <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-border/50 bg-muted/30 p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
           {DASHBOARD_NAV_ITEMS.map((item) => {
             const isActive = item.id === activeId;
@@ -79,7 +79,7 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
               "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
               isActive
                 ? cn("bg-gradient-to-r text-white shadow-md", item.gradient)
-                : "text-muted-foreground hover:bg-white/10 hover:text-foreground dark:hover:bg-white/5",
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             );
 
             return isControlled ? (
@@ -101,7 +101,7 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
 
   /* ── Desktop: expanded sidebar with icon + label ── */
   return (
-    <nav className="flex w-56 flex-col gap-1 rounded-xl border border-white/10 bg-white/60 p-1.5 shadow-sm backdrop-blur-lg dark:bg-white/5">
+    <nav className="flex w-56 flex-col gap-1 rounded-xl border border-border/50 bg-background/80 p-1.5 shadow-sm backdrop-blur-lg">
       {DASHBOARD_NAV_ITEMS.map((item) => {
         const isActive = item.id === activeId;
         const Icon = item.icon;
@@ -112,7 +112,7 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
               "flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all duration-200",
               isActive
                 ? cn("bg-gradient-to-r text-white shadow-md", item.gradient, item.activeGlow)
-                : "text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10",
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             )}
           >
             <Icon className="h-4 w-4 flex-shrink-0" />

@@ -41,7 +41,7 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
         const apiUrl =
           wikiSource === "ixwiki"
             ? "https://ixwiki.com/api.php"
-            : "https://iiwiki.com/mediawiki/api.php";
+            : "https://iiwiki.com/api.php";
 
         const url = new URL(apiUrl);
         url.searchParams.set("action", "opensearch");

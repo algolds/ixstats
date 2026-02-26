@@ -55,13 +55,13 @@ export function UnifiedCountryFlag({
   border = false,
 }: UnifiedCountryFlagProps) {
   // Use external props if provided (for bulk loading scenarios)
-  // Otherwise use individual flag hook
+  // Otherwise use individual flag hook — also falls back when flagUrl is null
   const hookResult = useFlag(
-    externalFlagUrl === undefined && externalIsLoading === undefined ? countryName : undefined
+    !externalFlagUrl && externalIsLoading === undefined ? countryName : undefined
   );
 
-  // Determine which values to use
-  const flagUrl = externalFlagUrl !== undefined ? externalFlagUrl : hookResult.flagUrl;
+  // Determine which values to use (null flagUrl falls through to hook result)
+  const flagUrl = externalFlagUrl || hookResult.flagUrl;
   const isLoading =
     externalLoading || (externalIsLoading !== undefined ? externalIsLoading : hookResult.isLoading);
   const error = !isLoading && !flagUrl;

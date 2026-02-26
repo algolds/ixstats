@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { Users, Briefcase, TrendingUp, TrendingDown, BarChart3, LineChart, Globe, Info, Target, Activity } from "lucide-react";
-import { api } from "~/trpc/react";
+import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
@@ -18,10 +18,10 @@ import {
   Area,
   BarChart,
   Bar,
-  ComposedChart,
   ResponsiveContainer,
 } from "recharts";
 import { format, subMonths } from "date-fns";
+import { api } from "~/trpc/react";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import type { TimeRange, ChartType } from "./types";
 
@@ -54,15 +54,13 @@ export function LaborDetailsModal({
   countryId,
   countryName,
 }: LaborDetailsModalProps) {
-  // Fetch country economic data
+  // Fetch country data + mapped economyData
   const {
-    data: countryData,
+    countryData,
+    economyData,
     isLoading: countryLoading,
     refetch,
-  } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: countryId },
-    { enabled: !!countryId && isOpen }
-  );
+  } = useCountryEconomicData(countryId, isOpen);
 
   // Fetch historical data
   const { data: historicalData, isLoading: historicalLoading } =
@@ -78,8 +76,14 @@ export function LaborDetailsModal({
   const isLoading = countryLoading || historicalLoading || globalLoading;
 
   // Process historical data for charts
+  // HistoricalDataPoint doesn't have labor fields, so derive from population + current ratios
   const processHistoricalData = (timeRange: TimeRange) => {
     if (!historicalData || historicalData.length === 0) return [];
+
+    const labor = economyData?.labor;
+    const currentParticipation = labor?.laborForceParticipationRate || 65;
+    const currentEmploymentRate = labor?.employmentRate || 94;
+    const currentUnemploymentRate = labor?.unemploymentRate || 6;
 
     const now = new Date();
     const rangeMap = {
@@ -98,14 +102,27 @@ export function LaborDetailsModal({
     return historicalData
       .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
       .slice(-100)
-      .map((point: any) => ({
-        date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
-        timestamp: point.ixTimeTimestamp,
-        laborForce: point.labor?.laborForce || 0,
-        employmentRate: point.labor?.employmentRate || 0,
-        unemploymentRate: point.labor?.unemploymentRate || 0,
-        participationRate: point.labor?.laborForceParticipation || 0,
-      }))
+      .map((point: any) => {
+        // Derive labor metrics from population and GDP growth
+        const gdpGrowth = point.gdpGrowthRate || point.gdpGrowth || 0;
+        const workingAgeFraction = 0.65;
+        const laborForce = Math.round(
+          (point.population || 0) * workingAgeFraction * (currentParticipation / 100)
+        );
+        // Small employment adjustment based on GDP growth
+        const empAdj = Math.min(2, Math.max(-2, gdpGrowth * 50));
+        const employmentRate = Math.max(80, Math.min(99, currentEmploymentRate + empAdj));
+        const unemploymentRate = Math.max(1, Math.min(20, currentUnemploymentRate - empAdj));
+
+        return {
+          date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
+          timestamp: point.ixTimeTimestamp,
+          laborForce,
+          employmentRate: parseFloat(employmentRate.toFixed(1)),
+          unemploymentRate: parseFloat(unemploymentRate.toFixed(1)),
+          participationRate: currentParticipation,
+        };
+      })
       .sort(
         (a: any, b: any) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -149,7 +166,7 @@ export function LaborDetailsModal({
       );
     }
 
-    const labor = countryData?.economyData?.labor;
+    const labor = economyData?.labor;
 
     return (
       <div className="space-y-6">
@@ -164,7 +181,7 @@ export function LaborDetailsModal({
                   </p>
                   <p className="text-2xl font-bold text-blue-600">
                     <NumberFlowDisplay
-                      value={labor?.laborForce || 0}
+                      value={labor?.totalWorkforce || 0}
                       decimalPlaces={0}
                     />
                   </p>
@@ -183,7 +200,7 @@ export function LaborDetailsModal({
                   </p>
                   <p className="text-2xl font-bold text-purple-600">
                     <NumberFlowDisplay
-                      value={labor?.laborForceParticipation || 0}
+                      value={labor?.laborForceParticipationRate || 0}
                       decimalPlaces={1}
                     />
                     %
@@ -250,7 +267,7 @@ export function LaborDetailsModal({
             <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  {((labor?.laborForce || 0) / (countryData?.currentPopulation || 1) * 100).toFixed(1)}%
+                  {((labor?.totalWorkforce || 0) / (countryData?.currentPopulation || 1) * 100).toFixed(1)}%
                 </div>
                 <div className="text-muted-foreground text-sm">
                   Of Total Population
@@ -258,21 +275,21 @@ export function LaborDetailsModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600">
-                  {((labor?.employmentRate || 0) * (labor?.laborForce || 0) / 100).toLocaleString()}
+                  {((labor?.employmentRate || 0) * (labor?.totalWorkforce || 0) / 100).toLocaleString()}
                 </div>
                 <div className="text-muted-foreground text-sm">Employed</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-red-600">
-                  {((labor?.unemploymentRate || 0) * (labor?.laborForce || 0) / 100).toLocaleString()}
+                  {((labor?.unemploymentRate || 0) * (labor?.totalWorkforce || 0) / 100).toLocaleString()}
                 </div>
                 <div className="text-muted-foreground text-sm">Unemployed</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
-                  ${(labor?.averageWage || 0).toLocaleString()}
+                  ${(labor?.averageAnnualIncome || 0).toLocaleString()}
                 </div>
-                <div className="text-muted-foreground text-sm">Avg. Wage</div>
+                <div className="text-muted-foreground text-sm">Avg. Income</div>
               </div>
             </div>
           </CardContent>
@@ -392,7 +409,7 @@ export function LaborDetailsModal({
       );
     }
 
-    const labor = countryData?.economyData?.labor;
+    const labor = economyData?.labor;
     const employmentRate = labor?.employmentRate || 0;
     const globalAvgEmployment = globalStats?.averageGdpPerCapita ? 93 : 90; // Placeholder
 
@@ -440,15 +457,15 @@ export function LaborDetailsModal({
                 <span className="text-sm">Workforce Active</span>
                 <Badge
                   variant={
-                    (labor?.laborForceParticipation || 0) >= 60 ? "default" : "secondary"
+                    (labor?.laborForceParticipationRate || 0) >= 60 ? "default" : "secondary"
                   }
                 >
-                  {(labor?.laborForceParticipation || 0) >= 60 ? "Strong" : "Low"}
+                  {(labor?.laborForceParticipationRate || 0) >= 60 ? "Strong" : "Low"}
                 </Badge>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
-                  {(labor?.laborForceParticipation || 0).toFixed(1)}%
+                  {(labor?.laborForceParticipationRate || 0).toFixed(1)}%
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Working-age population in labor force
@@ -505,7 +522,7 @@ export function LaborDetailsModal({
       return <Skeleton className="h-80" />;
     }
 
-    const labor = countryData?.economyData?.labor;
+    const labor = economyData?.labor;
     const sectors = labor?.employmentBySector || {};
 
     return (
@@ -546,7 +563,7 @@ export function LaborDetailsModal({
             <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  ${((countryData?.currentTotalGdp || 0) / (labor?.laborForce || 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  ${((countryData?.currentTotalGdp || 0) / (labor?.totalWorkforce || 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   GDP per Worker
@@ -554,7 +571,7 @@ export function LaborDetailsModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600">
-                  {labor?.productivityIndex?.toFixed(2) || "N/A"}
+                  {labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) || "N/A"}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Productivity Index
@@ -562,10 +579,10 @@ export function LaborDetailsModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
-                  {labor?.workforceSkillLevel || "N/A"}
+                  {labor?.skillsAndProductivity?.averageEducationYears?.toFixed(1) || "N/A"} yrs
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Skill Level
+                  Avg. Education
                 </div>
               </div>
             </div>

@@ -3,9 +3,6 @@
 import React from "react";
 import {
   Heart,
-  Users,
-  TrendingUp,
-  TrendingDown,
   BarChart3,
   LineChart,
   Globe,
@@ -15,6 +12,7 @@ import {
   Clock,
   Stethoscope,
 } from "lucide-react";
+import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -66,15 +64,13 @@ export function DemographicsHealthModal({
   countryId,
   countryName,
 }: DemographicsHealthModalProps) {
-  // Fetch country economic data
+  // Fetch country data + mapped economyData
   const {
-    data: countryData,
+    countryData,
+    economyData,
     isLoading: countryLoading,
     refetch,
-  } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: countryId },
-    { enabled: !!countryId && isOpen }
-  );
+  } = useCountryEconomicData(countryId, isOpen);
 
   // Fetch historical data
   const { data: historicalData, isLoading: historicalLoading } =
@@ -90,8 +86,15 @@ export function DemographicsHealthModal({
   const isLoading = countryLoading || historicalLoading || globalLoading;
 
   // Process historical data for charts
+  // HistoricalDataPoint has population & populationGrowthRate; use current snapshot for other metrics
   const processHistoricalData = (timeRange: TimeRange) => {
     if (!historicalData || historicalData.length === 0) return [];
+
+    const demographics = economyData?.demographics;
+    const currentLifeExpectancy = demographics?.lifeExpectancy || countryData?.lifeExpectancy || 75;
+    const currentBirthRate = demographics?.birthRate || 12;
+    const currentDeathRate = demographics?.deathRate || 8;
+    const currentMedianAge = demographics?.medianAge || countryData?.medianAge || 30;
 
     const now = new Date();
     const rangeMap = {
@@ -113,10 +116,11 @@ export function DemographicsHealthModal({
       .map((point: any) => ({
         date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
         timestamp: point.ixTimeTimestamp,
-        lifeExpectancy: point.demographics?.lifeExpectancy || 0,
-        birthRate: point.demographics?.birthRate || 0,
-        deathRate: point.demographics?.deathRate || 0,
-        medianAge: point.demographics?.medianAge || 0,
+        population: (point.population || 0) / 1e6,
+        lifeExpectancy: currentLifeExpectancy,
+        birthRate: currentBirthRate,
+        deathRate: currentDeathRate,
+        medianAge: currentMedianAge,
       }))
       .sort(
         (a: any, b: any) =>
@@ -129,6 +133,7 @@ export function DemographicsHealthModal({
     birthRate: { label: "Birth Rate", color: "#2563eb" },
     deathRate: { label: "Death Rate", color: "#dc2626" },
     medianAge: { label: "Median Age", color: "#7c3aed" },
+    population: { label: "Population (M)", color: "#f59e0b" },
   };
 
   const getHealthLevel = (lifeExpectancy: number): { label: string; color: string; variant: "default" | "secondary" | "destructive" } => {
@@ -168,7 +173,7 @@ export function DemographicsHealthModal({
       );
     }
 
-    const demographics = countryData?.economyData?.demographics;
+    const demographics = economyData?.demographics;
     const lifeExpectancy = demographics?.lifeExpectancy || countryData?.lifeExpectancy || 0;
     const healthLevel = getHealthLevel(lifeExpectancy);
 
@@ -271,21 +276,21 @@ export function DemographicsHealthModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600">
-                  {(demographics?.naturalGrowthRate || ((demographics?.birthRate || 0) - (demographics?.deathRate || 0))).toFixed(1)}/1k
+                  {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}/1k
                 </div>
                 <div className="text-muted-foreground text-sm">Natural Growth</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  {(demographics?.fertilityRate || 0).toFixed(2)}
+                  {(demographics?.migrationRate || 0).toFixed(1)}/1k
                 </div>
-                <div className="text-muted-foreground text-sm">Fertility Rate</div>
+                <div className="text-muted-foreground text-sm">Migration Rate</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
-                  {(demographics?.infantMortalityRate || 0).toFixed(1)}/1k
+                  {(demographics?.dependencyRatio || 50).toFixed(0)}%
                 </div>
-                <div className="text-muted-foreground text-sm">Infant Mortality</div>
+                <div className="text-muted-foreground text-sm">Dependency Ratio</div>
               </div>
             </div>
           </CardContent>
@@ -319,7 +324,7 @@ export function DemographicsHealthModal({
         <CardHeader>
           <CardTitle>Demographics Trends</CardTitle>
           <CardDescription>
-            Historical life expectancy and vital statistics
+            Historical population and vital statistics
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -333,16 +338,24 @@ export function DemographicsHealthModal({
                 {chartType === "area" ? (
                   <Area
                     type="monotone"
-                    dataKey="lifeExpectancy"
-                    stroke="#16a34a"
-                    fill="#16a34a"
+                    dataKey="population"
+                    stroke="#f59e0b"
+                    fill="#f59e0b"
                     fillOpacity={0.3}
-                    name="Life Expectancy"
+                    name="Population (M)"
                   />
                 ) : chartType === "bar" ? (
-                  <Bar dataKey="lifeExpectancy" fill="#16a34a" name="Life Expectancy" />
+                  <Bar dataKey="population" fill="#f59e0b" name="Population (M)" />
                 ) : (
                   <>
+                    <Line
+                      type="monotone"
+                      dataKey="population"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      dot={false}
+                      name="Population (M)"
+                    />
                     <Line
                       type="monotone"
                       dataKey="lifeExpectancy"
@@ -350,14 +363,6 @@ export function DemographicsHealthModal({
                       strokeWidth={2}
                       dot={false}
                       name="Life Expectancy"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="medianAge"
-                      stroke="#7c3aed"
-                      strokeWidth={2}
-                      dot={false}
-                      name="Median Age"
                     />
                   </>
                 )}
@@ -380,7 +385,7 @@ export function DemographicsHealthModal({
       );
     }
 
-    const demographics = countryData?.economyData?.demographics;
+    const demographics = economyData?.demographics;
     const lifeExpectancy = demographics?.lifeExpectancy || countryData?.lifeExpectancy || 0;
     const globalAvgLife = 73; // Placeholder
     const healthLevel = getHealthLevel(lifeExpectancy);
@@ -486,7 +491,18 @@ export function DemographicsHealthModal({
       return <Skeleton className="h-80" />;
     }
 
-    const demographics = countryData?.economyData?.demographics;
+    const demographics = economyData?.demographics;
+    // Age distribution from mapped data (array of {group, percentage})
+    const ageDistribution = demographics?.ageDistribution;
+    const youthPct = Array.isArray(ageDistribution)
+      ? ageDistribution.find((a: any) => a.group?.includes("0-14"))?.percentage || 25
+      : 25;
+    const workingPct = Array.isArray(ageDistribution)
+      ? ageDistribution.find((a: any) => a.group?.includes("15-64") || a.group?.includes("15-"))?.percentage || 60
+      : 60;
+    const elderlyPct = Array.isArray(ageDistribution)
+      ? ageDistribution.find((a: any) => a.group?.includes("65"))?.percentage || 15
+      : 15;
 
     return (
       <div className="space-y-6">
@@ -499,19 +515,19 @@ export function DemographicsHealthModal({
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="text-center p-4 rounded-lg bg-muted/30">
                 <div className="text-lg font-semibold text-blue-600">
-                  {(demographics?.ageDistribution?.youth || 25).toFixed(0)}%
+                  {youthPct.toFixed(0)}%
                 </div>
                 <div className="text-xs text-muted-foreground">0-14 Years</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/30">
                 <div className="text-lg font-semibold text-green-600">
-                  {(demographics?.ageDistribution?.workingAge || 60).toFixed(0)}%
+                  {workingPct.toFixed(0)}%
                 </div>
                 <div className="text-xs text-muted-foreground">15-64 Years</div>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted/30">
                 <div className="text-lg font-semibold text-purple-600">
-                  {(demographics?.ageDistribution?.elderly || 15).toFixed(0)}%
+                  {elderlyPct.toFixed(0)}%
                 </div>
                 <div className="text-xs text-muted-foreground">65+ Years</div>
               </div>
@@ -527,56 +543,13 @@ export function DemographicsHealthModal({
 
         <Card>
           <CardHeader>
-            <CardTitle>Health Indicators</CardTitle>
-            <CardDescription>Healthcare access and quality metrics</CardDescription>
+            <CardTitle>Education & Literacy</CardTitle>
+            <CardDescription>Population education and knowledge metrics</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
               <div className="text-center">
                 <div className="text-lg font-semibold text-green-600">
-                  {(demographics?.healthcareAccessRate || 85).toFixed(0)}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Healthcare Access
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-blue-600">
-                  {(demographics?.physiciansPerCapita || 2.5).toFixed(1)}/1k
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Physicians per 1k
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-purple-600">
-                  {(demographics?.hospitalBeds || 3.0).toFixed(1)}/1k
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Hospital Beds per 1k
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quality of Life</CardTitle>
-            <CardDescription>Social and wellbeing indicators</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-              <div className="text-center">
-                <div className="text-lg font-semibold text-green-600">
-                  {(demographics?.hdiIndex || 0.75).toFixed(3)}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  HDI Index
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-blue-600">
                   {(demographics?.literacyRate || 95).toFixed(0)}%
                 </div>
                 <div className="text-sm text-muted-foreground">
@@ -584,24 +557,46 @@ export function DemographicsHealthModal({
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-semibold text-purple-600">
-                  {(demographics?.urbanizationRate || 75).toFixed(0)}%
+                <div className="text-lg font-semibold text-blue-600">
+                  {(demographics?.urbanRuralSplit?.urban || 60).toFixed(0)}%
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Urbanization
+                  Urban Population
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-semibold text-amber-600">
-                  {(demographics?.happinessIndex || 6.5).toFixed(1)}/10
+                <div className="text-lg font-semibold text-purple-600">
+                  {(demographics?.urbanRuralSplit?.rural || 40).toFixed(0)}%
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Happiness Index
+                  Rural Population
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Education Levels breakdown if available */}
+        {demographics?.educationLevels && Array.isArray(demographics.educationLevels) && demographics.educationLevels.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Education Levels</CardTitle>
+              <CardDescription>Population by education attainment</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                {demographics.educationLevels.slice(0, 8).map((level: any, i: number) => (
+                  <div key={level.level || i} className="text-center p-3 rounded-lg bg-muted/30">
+                    <div className="text-lg font-semibold" style={{ color: level.color || '#6366f1' }}>
+                      {(level.percentage || level.percent || 0).toFixed(0)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">{level.level}</div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   };

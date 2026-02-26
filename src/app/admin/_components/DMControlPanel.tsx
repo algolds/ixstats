@@ -63,7 +63,7 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 
-// Comprehensive DM Input Categories
+// Comprehensive Storyteller Effect Categories
 const MACRO_ECONOMIC_INPUTS = [
   {
     value: "global_growth_shock",
@@ -268,14 +268,14 @@ const CRISIS_EVENTS = [
   },
 ] as const;
 
-const ALL_DM_INPUTS = [
+const EFFECT_TYPES = [
   ...MACRO_ECONOMIC_INPUTS,
   ...MICRO_ECONOMIC_INPUTS,
   ...SECTORAL_INPUTS,
   ...CRISIS_EVENTS,
 ];
 
-type DmInputType = (typeof ALL_DM_INPUTS)[number]["value"];
+type EffectType = (typeof EFFECT_TYPES)[number]["value"];
 type InputScale = "macro" | "micro" | "sectoral" | "crisis";
 type InputCategory =
   | "global"
@@ -302,7 +302,7 @@ type InputCategory =
   | "environmental"
   | "financial";
 
-interface DmInput {
+interface StorytellerEffectData {
   id: string;
   countryId: string | null;
   ixTimeTimestamp: Date;
@@ -320,9 +320,9 @@ interface DmInput {
   };
 }
 
-interface DmInputFormData {
+interface EffectFormData {
   countryId?: string;
-  inputType: DmInputType;
+  inputType: EffectType;
   value: number;
   description: string;
   duration?: number;
@@ -376,7 +376,7 @@ export function DMControlPanel() {
   const [activeView, setActiveView] = useState<"controls" | "preview" | "flowchart" | "timeline">(
     "controls"
   );
-  const [formData, setFormData] = useState<DmInputFormData>({
+  const [formData, setFormData] = useState<EffectFormData>({
     inputType: "global_growth_shock",
     value: 0,
     description: "",
@@ -394,17 +394,17 @@ export function DMControlPanel() {
   // Queries
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const {
-    data: dmInputs,
-    refetch: refetchDmInputs,
+    data: effects,
+    refetch: refetchEffects,
     isLoading: inputsLoading,
-  } = api.countries.getDmInputs.useQuery({
+  } = api.countries.getStorytellerEffects.useQuery({
     countryId: selectedScope === "global" ? undefined : selectedScope,
   });
 
   // Mutations
-  const addDmInputMutation = api.countries.addDmInput.useMutation({
+  const addEffectMutation = api.countries.addStorytellerEffect.useMutation({
     onSuccess: () => {
-      void refetchDmInputs();
+      void refetchEffects();
       setShowForm(false);
       setFormData({
         inputType: "natural_disaster",
@@ -419,17 +419,17 @@ export function DMControlPanel() {
     },
   });
 
-  const updateDmInputMutation = api.countries.updateDmInput.useMutation({
+  const updateEffectMutation = api.countries.updateStorytellerEffect.useMutation({
     onSuccess: () => {
-      void refetchDmInputs();
+      void refetchEffects();
       setEditingInput(null);
       setShowForm(false);
     },
   });
 
-  const deleteDmInputMutation = api.countries.deleteDmInput.useMutation({
+  const deleteEffectMutation = api.countries.deleteStorytellerEffect.useMutation({
     onSuccess: () => {
-      void refetchDmInputs();
+      void refetchEffects();
     },
   });
 
@@ -490,7 +490,7 @@ export function DMControlPanel() {
     e.preventDefault();
 
     if (editingInput) {
-      updateDmInputMutation.mutate({
+      updateEffectMutation.mutate({
         id: editingInput,
         inputType: formData.inputType,
         value: formData.value,
@@ -498,7 +498,7 @@ export function DMControlPanel() {
         duration: formData.duration,
       });
     } else {
-      addDmInputMutation.mutate({
+      addEffectMutation.mutate({
         countryId: selectedScope === "global" ? undefined : selectedScope,
         inputType: formData.inputType,
         value: formData.value,
@@ -508,12 +508,12 @@ export function DMControlPanel() {
     }
   };
 
-  const handleEdit = (input: DmInput) => {
+  const handleEdit = (input: StorytellerEffectData) => {
     setEditingInput(input.id);
     setSelectedScope(input.countryId || "global");
-    const inputConfig = ALL_DM_INPUTS.find((config) => config.value === input.inputType);
+    const inputConfig = EFFECT_TYPES.find((config) => config.value === input.inputType);
     setFormData({
-      inputType: input.inputType as DmInputType,
+      inputType: input.inputType as EffectType,
       value: input.value,
       description: input.description || "",
       duration: input.duration || undefined,
@@ -527,13 +527,13 @@ export function DMControlPanel() {
   };
 
   const handleDelete = (inputId: string) => {
-    if (confirm("Are you sure you want to delete this DM input?")) {
-      deleteDmInputMutation.mutate({ id: inputId });
+    if (confirm("Are you sure you want to delete this storyteller effect?")) {
+      deleteEffectMutation.mutate({ id: inputId });
     }
   };
 
   const getInputTypeInfo = (type: string) => {
-    return ALL_DM_INPUTS.find((t) => t.value === type) || ALL_DM_INPUTS[0];
+    return EFFECT_TYPES.find((t) => t.value === type) || EFFECT_TYPES[0];
   };
 
   const getValueColor = (value: number) => {
@@ -555,7 +555,7 @@ export function DMControlPanel() {
       title: "Economic Crisis",
       description: "Apply -15% GDP adjustment globally",
       action: () => ({
-        inputType: "global_recession" as DmInputType,
+        inputType: "global_recession" as EffectType,
         value: -0.15,
         description: "Global economic crisis affecting all nations",
         duration: 2,
@@ -572,7 +572,7 @@ export function DMControlPanel() {
       title: "Trade Boom",
       description: "Apply +10% GDP adjustment globally",
       action: () => ({
-        inputType: "global_growth_shock" as DmInputType,
+        inputType: "global_growth_shock" as EffectType,
         value: 0.1,
         description: "Global trade expansion benefiting all economies",
         duration: 1,
@@ -589,7 +589,7 @@ export function DMControlPanel() {
       title: "Tech Revolution",
       description: "Apply +25% growth rate modifier",
       action: () => ({
-        inputType: "tech_revolution" as DmInputType,
+        inputType: "tech_revolution" as EffectType,
         value: 0.25,
         description: "Major technological breakthrough increasing productivity",
         duration: 5,
@@ -606,7 +606,7 @@ export function DMControlPanel() {
       title: "Natural Disaster",
       description: "Apply -20% GDP with recovery",
       action: () => ({
-        inputType: "natural_disaster" as DmInputType,
+        inputType: "natural_disaster" as EffectType,
         value: -0.2,
         description: "Major natural disaster requiring reconstruction",
         duration: 3,
@@ -631,7 +631,7 @@ export function DMControlPanel() {
               <Gamepad2 className="h-8 w-8 text-indigo-500" />
             </div>
             <div>
-              <h2 className="text-foreground text-3xl font-bold">Advanced DM Control Center</h2>
+              <h2 className="text-foreground text-3xl font-bold">Advanced Storyteller Control Center</h2>
               <p className="text-lg text-indigo-700/70 dark:text-indigo-300/70">
                 Granular Economic Manipulation & Impact Analysis
               </p>
@@ -640,7 +640,7 @@ export function DMControlPanel() {
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
               <Activity className="h-4 w-4" />
-              {dmInputs?.length || 0} Active Interventions
+              {effects?.length || 0} Active Interventions
             </Badge>
             <Button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2">
               <Plus className="h-4 w-4" />
@@ -725,7 +725,7 @@ export function DMControlPanel() {
                   />
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {ALL_DM_INPUTS.filter((input) => input.scale === selectedScale)
+                  {EFFECT_TYPES.filter((input) => input.scale === selectedScale)
                     .filter((input) => input.label.toLowerCase().includes(searchTerm.toLowerCase()))
                     .map((input) => {
                       const Icon = input.icon;
@@ -769,9 +769,9 @@ export function DMControlPanel() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {dmInputs && dmInputs.length > 0 ? (
-                  dmInputs.slice(0, 5).map((input) => {
-                    const typeInfo = ALL_DM_INPUTS.find((type) => type.value === input.inputType);
+                {effects && effects.length > 0 ? (
+                  effects.slice(0, 5).map((input) => {
+                    const typeInfo = EFFECT_TYPES.find((type) => type.value === input.inputType);
                     const Icon = typeInfo?.icon || Settings;
                     return (
                       <div
@@ -1044,7 +1044,7 @@ export function DMControlPanel() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                <Label htmlFor="scope">Select target for DM inputs:</Label>
+                <Label htmlFor="scope">Select target for storyteller effects:</Label>
                 <Select value={selectedScope} onValueChange={setSelectedScope}>
                   <SelectTrigger className="w-64">
                     <SelectValue />
@@ -1062,12 +1062,12 @@ export function DMControlPanel() {
             </CardContent>
           </Card>
 
-          {/* DM Input Form */}
+          {/* Storyteller Effect Form */}
           {showForm && (
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {editingInput ? "Edit DM Input" : "Add New DM Input"}
+                  {editingInput ? "Edit Storyteller Effect" : "Add New Storyteller Effect"}
                   {selectedScope !== "global" &&
                   countriesData?.countries.find((c) => c.id === selectedScope)
                     ? ` for ${countriesData.countries.find((c) => c.id === selectedScope)?.name}`
@@ -1082,14 +1082,14 @@ export function DMControlPanel() {
                       <Select
                         value={formData.inputType}
                         onValueChange={(value) =>
-                          setFormData({ ...formData, inputType: value as DmInputType })
+                          setFormData({ ...formData, inputType: value as EffectType })
                         }
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {ALL_DM_INPUTS.map((type) => (
+                          {EFFECT_TYPES.map((type) => (
                             <SelectItem key={type.value} value={type.value}>
                               <div className="flex items-center gap-2">
                                 <type.icon className={`h-4 w-4 text-${type.color}-500`} />
@@ -1190,7 +1190,7 @@ export function DMControlPanel() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={addDmInputMutation.isPending || updateDmInputMutation.isPending}
+                      disabled={addEffectMutation.isPending || updateEffectMutation.isPending}
                     >
                       <Save className="mr-2 h-4 w-4" />
                       {editingInput ? "Update Input" : "Add Input"}
@@ -1201,11 +1201,11 @@ export function DMControlPanel() {
             </Card>
           )}
 
-          {/* Active DM Inputs */}
+          {/* Active Storyteller Effects */}
           <Card>
             <CardHeader>
               <CardTitle>
-                Active DM Inputs{" "}
+                Active Storyteller Effects{" "}
                 {selectedScope === "global"
                   ? "(Global)"
                   : `(${countriesData?.countries.find((c) => c.id === selectedScope)?.name || "..."})`}
@@ -1213,15 +1213,15 @@ export function DMControlPanel() {
               <p className="text-muted-foreground text-sm">
                 {inputsLoading
                   ? "Loading inputs..."
-                  : `${dmInputs?.length || 0} active inputs affecting economic calculations`}
+                  : `${effects?.length || 0} active effects affecting economic calculations`}
               </p>
             </CardHeader>
             <CardContent>
               {inputsLoading ? (
                 <div className="py-8 text-center">Loading inputs...</div>
-              ) : dmInputs && dmInputs.length > 0 ? (
+              ) : effects && effects.length > 0 ? (
                 <div className="space-y-3">
-                  {dmInputs.map((input) => {
+                  {effects.map((input) => {
                     const typeInfo = getInputTypeInfo(input.inputType);
                     const Icon = typeInfo.icon;
 
@@ -1264,7 +1264,7 @@ export function DMControlPanel() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              const inputConfig = ALL_DM_INPUTS.find(
+                              const inputConfig = EFFECT_TYPES.find(
                                 (config) => config.value === input.inputType
                               );
                               const enrichedInput = {
@@ -1293,7 +1293,7 @@ export function DMControlPanel() {
               ) : (
                 <div className="py-12 text-center">
                   <Database className="text-muted-foreground mx-auto h-12 w-12" />
-                  <h3 className="mt-2 text-sm font-medium">No DM inputs</h3>
+                  <h3 className="mt-2 text-sm font-medium">No storyteller effects</h3>
                   <p className="text-muted-foreground mt-1 text-sm">
                     {selectedScope === "global"
                       ? "No global economic modifiers are currently active."
@@ -1348,7 +1348,7 @@ export function DMControlPanel() {
             <CardHeader>
               <CardTitle>Impact Calculator</CardTitle>
               <p className="text-muted-foreground text-sm">
-                Calculate the economic impact of DM inputs before applying them
+                Calculate the economic impact of storyteller effects before applying them
               </p>
             </CardHeader>
             <CardContent>
@@ -1380,7 +1380,7 @@ export function DMControlPanel() {
                           <SelectValue placeholder="Select input type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {ALL_DM_INPUTS.map((type) => (
+                          {EFFECT_TYPES.map((type) => (
                             <SelectItem key={type.value} value={type.value}>
                               {type.label}
                             </SelectItem>
@@ -1469,7 +1469,7 @@ export function DMControlPanel() {
                   </Button>
                   <Button variant="outline" className="flex-1" size="sm">
                     <Save className="mr-2 h-4 w-4" />
-                    Apply DM Input
+                    Apply Storyteller Effect
                   </Button>
                 </div>
               </div>

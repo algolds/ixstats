@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -15,7 +16,7 @@ import {
 } from "~/components/ui/select";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import {
   Bell,
   Plus,
@@ -55,7 +56,8 @@ const NotificationType = [
 const NotificationLevel = ["low", "medium", "high", "critical"] as const;
 
 export function NotificationsAdmin() {
-  const { toast } = useToast();
+  const { userId } = useAuth();
+  const notify = useNotify();
   const [createFormData, setCreateFormData] = useState({
     title: "",
     description: "",
@@ -97,11 +99,7 @@ export function NotificationsAdmin() {
   // Mutations
   const createNotificationMutation = api.notifications.createNotification.useMutation({
     onSuccess: () => {
-      toast({
-        type: "success",
-        title: "Notification created",
-        description: "The notification has been sent successfully.",
-      });
+      notify.success("Notification created", "The notification has been sent successfully.");
       setCreateFormData({
         title: "",
         description: "",
@@ -116,39 +114,24 @@ export function NotificationsAdmin() {
       void refetchStats();
     },
     onError: (error) => {
-      toast({
-        type: "error",
-        title: "Failed to create notification",
-        description: error.message,
-      });
+      notify.error("Failed to create notification", error.message);
     },
   });
 
   const deleteNotificationMutation = api.notifications.deleteNotification.useMutation({
     onSuccess: () => {
-      toast({
-        type: "success",
-        title: "Notification deleted",
-      });
+      notify.success("Notification deleted");
       void refetchNotifications();
       void refetchStats();
     },
     onError: (error) => {
-      toast({
-        type: "error",
-        title: "Failed to delete notification",
-        description: error.message,
-      });
+      notify.error("Failed to delete notification", error.message);
     },
   });
 
   const handleCreateNotification = () => {
     if (!createFormData.title.trim()) {
-      toast({
-        type: "error",
-        title: "Title required",
-        description: "Please enter a notification title.",
-      });
+      notify.error("Title required", "Please enter a notification title.");
       return;
     }
 
@@ -166,7 +149,7 @@ export function NotificationsAdmin() {
         createFormData.scope === "country" && createFormData.countryId
           ? createFormData.countryId
           : undefined,
-      adminUserId: "admin", // TODO: Replace with actual admin user ID
+      adminUserId: userId ?? "",
     };
 
     createNotificationMutation.mutate(notificationData);

@@ -42,7 +42,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import {
   RiSearchLine,
   RiFilterLine,
@@ -88,7 +88,7 @@ interface PersonalityFormData {
 }
 
 export default function NPCPersonalitiesPage() {
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // State management
   const [searchTerm, setSearchTerm] = useState("");
@@ -136,79 +136,47 @@ export default function NPCPersonalitiesPage() {
   // Mutations
   const createMutation = api.npcPersonalities.createPersonality.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Personality created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Personality created successfully");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create personality",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create personality");
     },
   });
 
   const updateMutation = api.npcPersonalities.updatePersonality.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Personality updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Personality updated successfully");
       refetch();
       setEditingPersonality(null);
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update personality",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update personality");
     },
   });
 
   const deleteMutation = api.npcPersonalities.deletePersonality.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Personality deleted successfully",
-        type: "success",
-      });
+      notify.success("Success", "Personality deleted successfully");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete personality",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to delete personality");
     },
   });
 
   const assignMutation = api.npcPersonalities.assignPersonalityToCountry.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Personality assigned to country successfully",
-        type: "success",
-      });
+      notify.success("Success", "Personality assigned to country successfully");
       setIsAssignDialogOpen(false);
       setAssigningPersonality(null);
       setAssignCountryId("");
       setAssignReason("");
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to assign personality",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to assign personality");
     },
   });
 
@@ -235,11 +203,7 @@ export default function NPCPersonalitiesPage() {
 
   const handleCreate = () => {
     if (!formData.name) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a name for the personality",
-        type: "error",
-      });
+      notify.error("Validation Error", "Please enter a name for the personality");
       return;
     }
 
@@ -363,11 +327,7 @@ export default function NPCPersonalitiesPage() {
 
   const handleAssignSubmit = () => {
     if (!assigningPersonality || !assignCountryId) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a country ID",
-        type: "error",
-      });
+      notify.error("Validation Error", "Please enter a country ID");
       return;
     }
 

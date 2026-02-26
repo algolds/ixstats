@@ -114,7 +114,7 @@ function TrendIcon({
     <span
       className={cn(
         "inline-flex items-center gap-1 text-xs font-medium",
-        positive ? "text-green-500" : direction === "stable" ? "text-gray-400" : "text-red-500"
+        positive ? "text-green-600 dark:text-green-500" : direction === "stable" ? "text-muted-foreground" : "text-red-600 dark:text-red-500"
       )}
     >
       <Icon className="h-3 w-3" />
@@ -159,10 +159,10 @@ function ComparisonRow({
       <span className="flex items-center gap-1.5 text-xs font-medium">
         {value}
         {indicator === "better" && (
-          <ArrowUpRight className="h-3 w-3 text-green-500" />
+          <ArrowUpRight className="h-3 w-3 text-green-600 dark:text-green-500" />
         )}
         {indicator === "worse" && (
-          <ArrowDownRight className="h-3 w-3 text-red-500" />
+          <ArrowDownRight className="h-3 w-3 text-red-600 dark:text-red-500" />
         )}
       </span>
     </div>

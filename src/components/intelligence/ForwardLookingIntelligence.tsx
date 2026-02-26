@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { predictiveAnalyticsEngine } from "~/lib/predictive-analytics-engine";
 import { useOptimizedIntelligenceData } from "~/hooks/useOptimizedIntelligenceData";
+import { IxTimeDate } from "~/components/ui/ix-time-date";
 // PerformanceUtils import removed - doesn't exist in performance-monitor
 // ForwardIntelligence type - using local definition since it's not exported
 interface ForwardIntelligence {
@@ -137,7 +138,7 @@ const ForwardLookingIntelligence: FC<ForwardLookingIntelligenceProps> = memo(
               </div>
               <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 <Clock className="h-3 w-3" />
-                <span>Generated {formatTimeAgo(forwardIntelligence.generated)}</span>
+                <span>Generated <IxTimeDate date={forwardIntelligence.generated} format="relative" accentColor="indigo" /></span>
               </div>
             </div>
 
@@ -647,7 +648,7 @@ const MilestoneTimeline: FC<MilestoneTimelineProps> = ({ milestones }) => {
             </div>
             <div>
               <div className="text-lg font-medium">
-                {formatDate(milestones.tierProgressions.estimatedDate)}
+                <IxTimeDate date={milestones.tierProgressions.estimatedDate} accentColor="indigo" />
               </div>
               <div className="text-muted-foreground text-sm">Estimated date</div>
             </div>
@@ -704,7 +705,7 @@ const MilestoneTimeline: FC<MilestoneTimelineProps> = ({ milestones }) => {
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium">
-                        {formatDate(milestone.estimatedDate)}
+                        <IxTimeDate date={milestone.estimatedDate} accentColor="indigo" />
                       </div>
                       <div className="text-muted-foreground text-xs">
                         {Math.round((milestone.confidence || 0) * 100)}% confident
@@ -858,32 +859,12 @@ function generateMockHistoricalData(country: any) {
   return data;
 }
 
-function formatTimeAgo(timestamp: number): string {
-  const now = Date.now();
-  const diffMs = now - timestamp;
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${Math.floor(diffHours / 24)}d ago`;
-}
-
 function formatLargeNumber(num: number): string {
   if (num >= 1e12) return `${(num / 1e12).toFixed(1)}T`;
   if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
   if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
   if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
   return num.toLocaleString();
-}
-
-function formatDate(timestamp: number): string {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(timestamp));
 }
 
 function formatBenchmarkValue(value: number, metric: string): string {

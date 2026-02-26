@@ -4,17 +4,15 @@ import React from "react";
 import {
   Building,
   DollarSign,
-  TrendingUp,
-  TrendingDown,
   BarChart3,
   LineChart,
   Globe,
-  Info,
   PieChart,
   Wallet,
   Scale,
   Landmark,
 } from "lucide-react";
+import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -78,15 +76,13 @@ export function GovernmentSpendingModal({
   countryId,
   countryName,
 }: GovernmentSpendingModalProps) {
-  // Fetch country economic data
+  // Fetch country data + mapped economyData
   const {
-    data: countryData,
+    countryData,
+    economyData,
     isLoading: countryLoading,
     refetch,
-  } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: countryId },
-    { enabled: !!countryId && isOpen }
-  );
+  } = useCountryEconomicData(countryId, isOpen);
 
   // Fetch government structure
   const { data: governmentData, isLoading: govLoading } =
@@ -109,8 +105,14 @@ export function GovernmentSpendingModal({
   const isLoading = countryLoading || govLoading || historicalLoading || globalLoading;
 
   // Process historical data for charts
+  // Derive spending from GDP using current spending-to-GDP ratio
   const processHistoricalData = (timeRange: TimeRange) => {
     if (!historicalData || historicalData.length === 0) return [];
+
+    const spending = economyData?.spending;
+    const fiscal = economyData?.fiscal;
+    const currentSpendingPct = spending?.spendingGDPPercent || fiscal?.governmentBudgetGDPPercent || 30;
+    const currentRevenuePct = fiscal?.taxRevenueGDPPercent || 25;
 
     const now = new Date();
     const rangeMap = {
@@ -129,13 +131,18 @@ export function GovernmentSpendingModal({
     return historicalData
       .filter((point: any) => new Date(point.ixTimeTimestamp) >= cutoffDate)
       .slice(-100)
-      .map((point: any) => ({
-        date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
-        timestamp: point.ixTimeTimestamp,
-        totalSpending: (point.fiscal?.governmentSpending || 0) / 1e9,
-        spendingGdpPercent: point.fiscal?.spendingGdpPercent || 0,
-        budgetBalance: (point.fiscal?.budgetBalance || 0) / 1e9,
-      }))
+      .map((point: any) => {
+        const gdp = point.totalGdp || 0;
+        const totalSpending = gdp * (currentSpendingPct / 100);
+        const totalRevenue = gdp * (currentRevenuePct / 100);
+        return {
+          date: format(new Date(point.ixTimeTimestamp), "MMM yyyy"),
+          timestamp: point.ixTimeTimestamp,
+          totalSpending: totalSpending / 1e9,
+          spendingGdpPercent: currentSpendingPct,
+          budgetBalance: (totalRevenue - totalSpending) / 1e9,
+        };
+      })
       .sort(
         (a: any, b: any) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
@@ -178,11 +185,12 @@ export function GovernmentSpendingModal({
       );
     }
 
-    const fiscal = countryData?.economyData?.fiscal;
-    const spending = countryData?.economyData?.spending;
-    const totalBudget = governmentData?.totalBudget || fiscal?.governmentSpending || 0;
+    const fiscal = economyData?.fiscal;
+    const spending = economyData?.spending;
+    const totalBudget = governmentData?.totalBudget || spending?.totalSpending || 0;
     const gdp = countryData?.currentTotalGdp || 1;
-    const spendingGdpPercent = (totalBudget / gdp) * 100;
+    const spendingGdpPercent = spending?.spendingGDPPercent || (totalBudget / gdp) * 100;
+    const budgetBalance = fiscal?.budgetDeficitSurplus || 0;
 
     return (
       <div className="space-y-6">
@@ -233,10 +241,10 @@ export function GovernmentSpendingModal({
                   <p className="text-muted-foreground text-sm font-medium">
                     Budget Balance
                   </p>
-                  <p className={`text-2xl font-bold ${(fiscal?.budgetBalance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {(fiscal?.budgetBalance || 0) >= 0 ? '+' : ''}
+                  <p className={`text-2xl font-bold ${budgetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {budgetBalance >= 0 ? '+' : ''}
                     $<NumberFlowDisplay
-                      value={Math.abs(fiscal?.budgetBalance || 0) / 1e9}
+                      value={Math.abs(budgetBalance) / 1e9}
                       decimalPlaces={1}
                     />B
                   </p>
@@ -281,7 +289,7 @@ export function GovernmentSpendingModal({
             <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
-                  ${((fiscal?.taxRevenue || 0) / 1e9).toFixed(1)}B
+                  ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
                 </div>
                 <div className="text-muted-foreground text-sm">Tax Revenue</div>
               </div>
@@ -293,13 +301,13 @@ export function GovernmentSpendingModal({
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-purple-600">
-                  ${((fiscal?.publicDebt || 0) / 1e9).toFixed(1)}B
+                  ${(((fiscal?.totalDebtGDPRatio || 0) / 100 * (countryData?.currentTotalGdp || 0)) / 1e9).toFixed(1)}B
                 </div>
                 <div className="text-muted-foreground text-sm">Public Debt</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-red-600">
-                  {(fiscal?.debtToGdpRatio || 0).toFixed(1)}%
+                  {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
                 </div>
                 <div className="text-muted-foreground text-sm">Debt to GDP</div>
               </div>
@@ -396,9 +404,12 @@ export function GovernmentSpendingModal({
       );
     }
 
-    const fiscal = countryData?.economyData?.fiscal;
-    const spendingGdpPercent = ((governmentData?.totalBudget || fiscal?.governmentSpending || 0) / (countryData?.currentTotalGdp || 1)) * 100;
+    const fiscal = economyData?.fiscal;
+    const spending = economyData?.spending;
+    const spendingGdpPercent = spending?.spendingGDPPercent || ((governmentData?.totalBudget || spending?.totalSpending || 0) / (countryData?.currentTotalGdp || 1)) * 100;
     const globalAvgSpending = 35; // Placeholder
+    const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
+    const budgetBalance = fiscal?.budgetDeficitSurplus || 0;
 
     return (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -444,23 +455,23 @@ export function GovernmentSpendingModal({
                 <span className="text-sm">Debt-to-GDP</span>
                 <Badge
                   variant={
-                    (fiscal?.debtToGdpRatio || 0) < 60
+                    debtToGdp < 60
                       ? "default"
-                      : (fiscal?.debtToGdpRatio || 0) < 100
+                      : debtToGdp < 100
                       ? "secondary"
                       : "destructive"
                   }
                 >
-                  {(fiscal?.debtToGdpRatio || 0) < 60
+                  {debtToGdp < 60
                     ? "Healthy"
-                    : (fiscal?.debtToGdpRatio || 0) < 100
+                    : debtToGdp < 100
                     ? "Moderate"
                     : "High"}
                 </Badge>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
-                  {(fiscal?.debtToGdpRatio || 0).toFixed(1)}%
+                  {debtToGdp.toFixed(1)}%
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Public debt ratio
@@ -482,14 +493,14 @@ export function GovernmentSpendingModal({
               <div className="flex items-center justify-between">
                 <span className="text-sm">Balance</span>
                 <Badge
-                  variant={(fiscal?.budgetBalance || 0) >= 0 ? "default" : "destructive"}
+                  variant={budgetBalance >= 0 ? "default" : "destructive"}
                 >
-                  {(fiscal?.budgetBalance || 0) >= 0 ? "Surplus" : "Deficit"}
+                  {budgetBalance >= 0 ? "Surplus" : "Deficit"}
                 </Badge>
               </div>
               <div className="text-center">
-                <div className={`text-3xl font-bold ${(fiscal?.budgetBalance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {(fiscal?.budgetBalance || 0) >= 0 ? '+' : ''}{((fiscal?.budgetBalance || 0) / 1e9).toFixed(1)}B
+                <div className={`text-3xl font-bold ${budgetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {budgetBalance >= 0 ? '+' : ''}{(budgetBalance / 1e9).toFixed(1)}B
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Annual balance
@@ -507,15 +518,20 @@ export function GovernmentSpendingModal({
       return <Skeleton className="h-80" />;
     }
 
-    const spending = countryData?.economyData?.spending;
-    const categories = [
-      { name: "Education", value: spending?.education || 15, color: SPENDING_COLORS[0] },
-      { name: "Healthcare", value: spending?.healthcare || 12, color: SPENDING_COLORS[1] },
-      { name: "Defense", value: spending?.defense || 10, color: SPENDING_COLORS[2] },
-      { name: "Social Safety", value: spending?.socialSafety || 20, color: SPENDING_COLORS[3] },
-      { name: "Infrastructure", value: spending?.infrastructure || 8, color: SPENDING_COLORS[4] },
-      { name: "Other", value: spending?.other || 35, color: SPENDING_COLORS[5] },
-    ];
+    const spending = economyData?.spending;
+    // Build categories from spendingCategories array or use named fields
+    const spendingCategories = spending?.spendingCategories;
+    const categories = spendingCategories && spendingCategories.length > 0
+      ? spendingCategories.slice(0, 6).map((cat: any, i: number) => ({
+          name: cat.category,
+          value: cat.percent || cat.gdpPercent || 0,
+          color: SPENDING_COLORS[i % SPENDING_COLORS.length],
+        }))
+      : [
+          { name: "Education", value: spending?.education ? (spending.education / (spending?.totalSpending || 1) * 100) : 15, color: SPENDING_COLORS[0] },
+          { name: "Healthcare", value: spending?.healthcare ? (spending.healthcare / (spending?.totalSpending || 1) * 100) : 12, color: SPENDING_COLORS[1] },
+          { name: "Social Safety", value: spending?.socialSafety ? (spending.socialSafety / (spending?.totalSpending || 1) * 100) : 20, color: SPENDING_COLORS[3] },
+        ];
 
     return (
       <div className="space-y-6">
@@ -539,7 +555,7 @@ export function GovernmentSpendingModal({
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {categories.map((entry, index) => (
+                      {categories.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -549,7 +565,7 @@ export function GovernmentSpendingModal({
 
               {/* Category List */}
               <div className="space-y-3">
-                {categories.map((category) => (
+                {categories.map((category: any) => (
                   <div key={category.name} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div

@@ -6,25 +6,13 @@
 import React from "react";
 import { motion } from "motion/react";
 import type { PackType } from "@prisma/client";
+import { PackHolographicCover } from "./PackHolographicCover";
 
 interface Stage1_PackRevealProps {
   packType: PackType;
   packArtwork?: string;
   onTap: () => void;
 }
-
-/**
- * Pack type artwork mapping
- * TODO: Replace with actual pack artwork URLs
- */
-const PACK_ARTWORK: Record<PackType, string> = {
-  BASIC: "/images/packs/basic-pack.png",
-  PREMIUM: "/images/packs/premium-pack.png",
-  ELITE: "/images/packs/elite-pack.png",
-  THEMED: "/images/packs/themed-pack.png",
-  SEASONAL: "/images/packs/seasonal-pack.png",
-  EVENT: "/images/packs/event-pack.png",
-};
 
 /**
  * Pack type glow colors
@@ -50,7 +38,6 @@ const PACK_GLOW_COLORS: Record<PackType, string> = {
 export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
   ({ packType, packArtwork, onTap }) => {
     const glowColor = PACK_GLOW_COLORS[packType] ?? PACK_GLOW_COLORS.BASIC;
-    const defaultArtwork = PACK_ARTWORK[packType] ?? PACK_ARTWORK.BASIC;
 
     return (
       <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
@@ -117,31 +104,22 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
             <div className="h-full w-full rounded-xl bg-gradient-to-br from-white/5 to-transparent p-4">
               {/* Pack artwork */}
               <div className="relative h-full w-full overflow-hidden rounded-lg">
-                {/* Placeholder for pack artwork */}
-                <div
-                  className="h-full w-full bg-gradient-to-br from-blue-500/20 to-violet-500/20"
-                  style={{
-                    backgroundImage: packArtwork || defaultArtwork
-                      ? `url(${packArtwork || defaultArtwork})`
-                      : undefined,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                >
-                  {/* Fallback pack type text */}
-                  {!packArtwork && !defaultArtwork && (
-                    <div className="flex h-full items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-4xl font-bold text-white/80">
-                          {packType}
-                        </div>
-                        <div className="mt-2 text-sm text-white/60">
-                          Card Pack
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {packArtwork ? (
+                  <div
+                    className="h-full w-full"
+                    style={{
+                      backgroundImage: `url(${packArtwork})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  />
+                ) : (
+                  <PackHolographicCover
+                    packType={packType}
+                    size="lg"
+                    className="rounded-lg"
+                  />
+                )}
 
                 {/* Shine effect */}
                 <motion.div

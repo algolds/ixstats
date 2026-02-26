@@ -220,7 +220,7 @@ export const CountryPreview: React.FC<CountryPreviewProps> = ({
                           className="text-sm font-semibold"
                           style={{ color: "var(--color-text-primary)" }}
                         >
-                          {formatNumber(selectedResult.population)}
+                          {formatNumber(selectedResult.population, 0)}
                         </p>
                       </motion.div>
                     )}

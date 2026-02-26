@@ -53,24 +53,24 @@ export class IxStatsDataService {
     return initialized;
   }
 
-  updateCountryToCurrentTime(countryStats: CountryStats, dmInputs: any[] = []): CountryStats {
+  updateCountryToCurrentTime(countryStats: CountryStats, effects: any[] = []): CountryStats {
     const currentTime = IxTime.getCurrentIxTime();
-    const result = this.calculator.calculateTimeProgression(countryStats, currentTime, dmInputs);
+    const result = this.calculator.calculateTimeProgression(countryStats, currentTime, effects);
     return result.newStats;
   }
 
   calculateCountryAtTime(
     countryStats: CountryStats,
     targetTime: number,
-    dmInputs: any[] = []
+    effects: any[] = []
   ): CountryStats {
-    const result = this.calculator.calculateTimeProgression(countryStats, targetTime, dmInputs);
+    const result = this.calculator.calculateTimeProgression(countryStats, targetTime, effects);
     return result.newStats;
   }
 
-  createForecast(countryStats: CountryStats, years: number, dmInputs: any[] = []): CountryStats {
+  createForecast(countryStats: CountryStats, years: number, effects: any[] = []): CountryStats {
     const targetTime = IxTime.addYears(IxTime.getCurrentIxTime(), years);
-    return this.calculateCountryAtTime(countryStats, targetTime, dmInputs);
+    return this.calculateCountryAtTime(countryStats, targetTime, effects);
   }
 
   generateTimeSeries(
@@ -78,7 +78,7 @@ export class IxStatsDataService {
     startTime: number,
     endTime: number,
     steps = 10,
-    dmInputs: any[] = []
+    effects: any[] = []
   ): Array<{
     time: number;
     formattedTime: string;
@@ -90,7 +90,7 @@ export class IxStatsDataService {
     const series = [];
     for (let i = 0; i < steps; i++) {
       const targetTime = startTime + timeStep * i;
-      const stats = this.calculateCountryAtTime(countryStats, targetTime, dmInputs);
+      const stats = this.calculateCountryAtTime(countryStats, targetTime, effects);
       series.push({
         time: targetTime,
         formattedTime: IxTime.formatIxTime(targetTime),

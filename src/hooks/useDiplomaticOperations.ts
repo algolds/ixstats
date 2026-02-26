@@ -7,9 +7,11 @@
  * @module hooks/useDiplomaticOperations
  */
 
+"use client";
+
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   calculateNetworkMetrics,
   filterMissionsByStatus,
@@ -176,6 +178,8 @@ export function useDiplomaticOperations({
   countryId,
   countryName,
 }: UseDiplomaticOperationsProps): UseDiplomaticOperationsReturn {
+  const notify = useNotify();
+
   // Tab state
   const [activeTab, setActiveTab] = useState<TabType>("embassy-network");
   const [expandedEmbassy, setExpandedEmbassy] = useState<string | null>(null);
@@ -377,30 +381,26 @@ export function useDiplomaticOperations({
   // Mutations
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      toast.success("Embassy Established", {
-        description: `Your embassy is now active in ${(data as any).hostCountryName || "the host nation"}.`,
-      });
+      notify.success("Embassy Established", `Your embassy is now active in ${(data as any).hostCountryName || "the host nation"}.`);
       setEstablishEmbassyOpen(false);
       setNewEmbassyData({ hostCountry: "", name: "", location: "", ambassador: "" });
       void refetchEmbassies();
     },
     onError: (error) => {
-      toast.error("Failed to Establish Embassy", { description: error.message });
+      notify.error("Failed to Establish Embassy", error.message);
     },
   });
 
   const startMissionMutation = api.diplomatic.startMission.useMutation({
     onSuccess: () => {
-      toast.success("Mission Started", {
-        description: "Your diplomatic mission has been initiated!",
-      });
+      notify.success("Mission Started", "Your diplomatic mission has been initiated!");
       setStartMissionOpen(false);
       setNewMissionData({ type: "trade_negotiation", staff: 1, priority: "normal" });
       refetchMissions();
       refetchEmbassies();
     },
     onError: (error) => {
-      toast.error("Failed to Start Mission", { description: error.message });
+      notify.error("Failed to Start Mission", error.message);
     },
   });
 
@@ -409,20 +409,22 @@ export function useDiplomaticOperations({
       const message = data.success
         ? `Mission successful! Earned +${data.rewards.experience} XP and +${data.rewards.influence.toFixed(0)} influence.`
         : "Mission failed. Better luck next time.";
-      toast[data.success ? "success" : "warning"]("Mission Complete", { description: message });
+      if (data.success) {
+        notify.success("Mission Complete", message);
+      } else {
+        notify.warning("Mission Complete", message);
+      }
       refetchMissions();
       refetchEmbassies();
     },
     onError: (error) => {
-      toast.error("Failed to Complete Mission", { description: error.message });
+      notify.error("Failed to Complete Mission", error.message);
     },
   });
 
   const createExchangeMutation = api.diplomatic.createCulturalExchange.useMutation({
     onSuccess: () => {
-      toast.success("Cultural Exchange Created", {
-        description: "Your cultural exchange program has been created!",
-      });
+      notify.success("Cultural Exchange Created", "Your cultural exchange program has been created!");
       setCreateExchangeOpen(false);
       setNewExchangeData({
         title: "",
@@ -434,35 +436,31 @@ export function useDiplomaticOperations({
       refetchExchanges();
     },
     onError: (error) => {
-      toast.error("Failed to Create Exchange", { description: error.message });
+      notify.error("Failed to Create Exchange", error.message);
     },
   });
 
   const allocateBudgetMutation = api.diplomatic.allocateBudget.useMutation({
     onSuccess: () => {
-      toast.success("Budget Allocated", {
-        description: `$${budgetAmount.toLocaleString()} has been allocated to the embassy.`,
-      });
+      notify.success("Budget Allocated", `$${budgetAmount.toLocaleString()} has been allocated to the embassy.`);
       setAllocateBudgetOpen(false);
       setBudgetAmount(10000);
       refetchEmbassies();
     },
     onError: (error) => {
-      toast.error("Failed to Allocate Budget", { description: error.message });
+      notify.error("Failed to Allocate Budget", error.message);
     },
   });
 
   const upgradeEmbassyMutation = api.diplomatic.upgradeEmbassy.useMutation({
     onSuccess: (upgrade) => {
-      toast.success("Upgrade Initiated", {
-        description: `${upgrade.name || "Embassy upgrade"} will complete in ${upgrade.duration} days.`,
-      });
+      notify.success("Upgrade Initiated", `${upgrade.name || "Embassy upgrade"} will complete in ${upgrade.duration} days.`);
       setUpgradeEmbassyOpen(false);
       setSelectedUpgradeType("staff_expansion");
       refetchEmbassies();
     },
     onError: (error) => {
-      toast.error("Failed to upgrade embassy", { description: error.message });
+      notify.error("Failed to upgrade embassy", error.message);
     },
   });
 
@@ -586,7 +584,7 @@ export function useDiplomaticOperations({
   // Action handlers
   const handleEstablishEmbassy = useCallback(() => {
     if (!newEmbassyData.hostCountry) {
-      toast.error("Missing Information", { description: "Please select a host country." });
+      notify.error("Missing Information", "Please select a host country.");
       return;
     }
 
@@ -602,9 +600,7 @@ export function useDiplomaticOperations({
           : "";
 
     if (!embassyName) {
-      toast.error("Missing Information", {
-        description: "Please provide host country and embassy name.",
-      });
+      notify.error("Missing Information", "Please provide host country and embassy name.");
       return;
     }
 
@@ -619,7 +615,7 @@ export function useDiplomaticOperations({
 
   const handleStartMission = useCallback(() => {
     if (!selectedEmbassy) {
-      toast.error("No Embassy Selected", { description: "Please select an embassy first." });
+      notify.error("No Embassy Selected", "Please select an embassy first.");
       return;
     }
 
@@ -640,7 +636,7 @@ export function useDiplomaticOperations({
 
   const handleCreateExchange = useCallback(() => {
     if (!newExchangeData.title || !newExchangeData.description) {
-      toast.error("Missing Information", { description: "Please provide title and description." });
+      notify.error("Missing Information", "Please provide title and description.");
       return;
     }
 
@@ -658,7 +654,7 @@ export function useDiplomaticOperations({
 
   const handleAllocateBudget = useCallback(() => {
     if (!selectedEmbassy) {
-      toast.error("No Embassy Selected", { description: "Please select an embassy first." });
+      notify.error("No Embassy Selected", "Please select an embassy first.");
       return;
     }
 
@@ -670,7 +666,7 @@ export function useDiplomaticOperations({
 
   const handleUpgradeEmbassy = useCallback(() => {
     if (!selectedEmbassy) {
-      toast.error("No Embassy Selected", { description: "Please select an embassy to upgrade." });
+      notify.error("No Embassy Selected", "Please select an embassy to upgrade.");
       return;
     }
 
@@ -678,9 +674,7 @@ export function useDiplomaticOperations({
       (option: any) => option?.upgradeType === selectedUpgradeType
     );
     if (!upgrade) {
-      toast.error("Upgrade Unavailable", {
-        description: "No upgrades available for this embassy.",
-      });
+      notify.error("Upgrade Unavailable", "No upgrades available for this embassy.");
       return;
     }
 

@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import { FileText, Plus, Pencil, Trash2, Eye, ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
 
@@ -60,7 +60,7 @@ export default function IntelligenceTemplatesPage() {
   usePageTitle({ title: "Intelligence Templates Admin" });
 
   const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // State
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -79,57 +79,33 @@ export default function IntelligenceTemplatesPage() {
   // Mutations
   const createMutation = api.intelligence.createTemplate.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Intelligence template created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Intelligence template created successfully");
       setIsAddDialogOpen(false);
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create template",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create template");
     },
   });
 
   const updateMutation = api.intelligence.updateTemplate.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Intelligence template updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Intelligence template updated successfully");
       setEditingTemplate(null);
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update template",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update template");
     },
   });
 
   const deleteMutation = api.intelligence.deleteTemplate.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Intelligence template deleted successfully",
-        type: "success",
-      });
+      notify.success("Success", "Intelligence template deleted successfully");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete template",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to delete template");
     },
   });
 

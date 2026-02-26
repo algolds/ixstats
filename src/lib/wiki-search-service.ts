@@ -9,6 +9,32 @@ export interface WikiConfig {
   searchNamespace?: number[];
 }
 
+/**
+ * Check if a fetch response is a Cloudflare challenge page instead of valid JSON.
+ * Throws a descriptive error if Cloudflare is blocking the request.
+ */
+async function assertNotCloudflareChallenge(
+  response: Response,
+  site: string
+): Promise<void> {
+  const contentType = response.headers.get("content-type") || "";
+  if (
+    !response.ok &&
+    contentType.includes("text/html")
+  ) {
+    const body = await response.text();
+    if (
+      body.includes("Just a moment") ||
+      body.includes("cf_chl_opt") ||
+      body.includes("challenge-platform")
+    ) {
+      throw new Error(
+        `CLOUDFLARE_BLOCKED: ${site} is currently blocking automated requests via Cloudflare protection. The iiwiki administrator may need to whitelist IxStats access.`
+      );
+    }
+  }
+}
+
 // Helper function to get the base URL for API requests
 function getApiBaseUrl(): string {
   const normalizedBasePath = BASE_PATH
@@ -51,7 +77,7 @@ function getWikiConfigs(): Record<string, WikiConfig> {
     },
     iiwiki: {
       // Access iiwiki directly - proxy gets blocked by Cloudflare
-      baseUrl: "https://iiwiki.com/mediawiki",
+      baseUrl: "https://iiwiki.com",
       apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },
@@ -129,6 +155,7 @@ export async function searchWiki(
     );
 
     if (!response.ok) {
+      await assertNotCloudflareChallenge(response, site);
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
@@ -234,7 +261,7 @@ async function searchFilesFulltext(
     const url = `${config.baseUrl}${config.apiEndpoint}?${params.toString()}`;
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "IxStats-Builder/1.0",
+        "User-Agent": "IxStats-Builder",
       },
     });
 
@@ -447,6 +474,7 @@ async function getAllCategoryMembers(categoryFilter: string, config: WikiConfig)
     });
 
     if (!response.ok) {
+      await assertNotCloudflareChallenge(response, config.baseUrl);
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
@@ -499,6 +527,7 @@ async function getCategorySubcategories(
     });
 
     if (!response.ok) {
+      await assertNotCloudflareChallenge(response, config.baseUrl);
       console.warn(`Failed to get subcategories for ${categoryFilter}: ${response.status}`);
       break;
     }
@@ -607,6 +636,7 @@ async function performTargetedSearch(
     });
 
     if (!response.ok) {
+      await assertNotCloudflareChallenge(response, config.baseUrl);
       return [];
     }
 
@@ -736,6 +766,7 @@ async function getPageWikitext(pageName: string, config: WikiConfig): Promise<st
   });
 
   if (!response.ok) {
+    await assertNotCloudflareChallenge(response, config.baseUrl);
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 

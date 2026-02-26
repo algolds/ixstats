@@ -41,7 +41,7 @@ import { Progress } from "~/components/ui/progress";
 import { Separator } from "~/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import {
   DEFENSE_MANUFACTURERS,
   MILITARY_ERAS,
@@ -92,37 +92,39 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
   const [filterType, setFilterType] = useState<string>("all");
   const [viewingImage, setViewingImage] = useState<{ url: string; name: string } | null>(null);
 
+  const notify = useNotify();
+
   const createAsset = api.security.createMilitaryAsset.useMutation({
     onSuccess: () => {
-      toast.success("Asset created successfully");
+      notify.success("Asset created successfully");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
     },
     onError: (error) => {
-      toast.error(`Failed to create asset: ${error.message}`);
+      notify.error(`Failed to create asset: ${error.message}`);
     },
   });
 
   const updateAsset = api.security.updateMilitaryAsset.useMutation({
     onSuccess: () => {
-      toast.success("Asset updated successfully");
+      notify.success("Asset updated successfully");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
     },
     onError: (error) => {
-      toast.error(`Failed to update asset: ${error.message}`);
+      notify.error(`Failed to update asset: ${error.message}`);
     },
   });
 
   const deleteAsset = api.security.deleteMilitaryAsset.useMutation({
     onSuccess: () => {
-      toast.success("Asset deleted successfully");
+      notify.success("Asset deleted successfully");
       onRefetch();
     },
     onError: (error) => {
-      toast.error(`Failed to delete asset: ${error.message}`);
+      notify.error(`Failed to delete asset: ${error.message}`);
     },
   });
 
@@ -417,6 +419,7 @@ function AssetDialog({
   onCreate,
   onUpdate,
 }: AssetDialogProps) {
+  const notify = useNotify();
   const [activeTab, setActiveTab] = useState("manual");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEra, setSelectedEra] = useState<string>("all");
@@ -449,7 +452,7 @@ function AssetDialog({
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast.error("Asset name is required");
+      notify.error("Asset name is required");
       return;
     }
 
@@ -475,7 +478,7 @@ function AssetDialog({
       imageUrl: equipment.imageUrl || "",
     });
     setActiveTab("manual");
-    toast.success("Equipment template loaded" + (equipment.imageUrl ? " with image" : ""));
+    notify.success("Equipment template loaded" + (equipment.imageUrl ? " with image" : ""));
   };
 
   // Filter equipment database - now includes all 150+ items from expanded database

@@ -110,7 +110,7 @@ function GlobalStatsIslandContent() {
   const { data: globalStatsData, isLoading: globalStatsLoading } =
     api.countries.getGlobalStats.useQuery();
 
-  const { data: countriesData } = api.countries.getAll.useQuery();
+  const { data: countriesData } = api.countries.getAll.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
 
   // Fetch activity rings data for user's country - use the working endpoint!
   const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(

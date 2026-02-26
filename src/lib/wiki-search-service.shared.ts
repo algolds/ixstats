@@ -28,12 +28,12 @@ export function getWikiConfigs(): Record<string, WikiConfig> {
     // Server-side: use direct URLs
     return {
       ixwiki: {
-        baseUrl: "https://ixwiki.com/w/api.php",
+        baseUrl: "https://ixwiki.com/api.php",
         apiEndpoint: "",
         searchNamespace: [0, 6],
       },
       iiwiki: {
-        baseUrl: "https://iiwiki.com/mediawiki/api.php",
+        baseUrl: "https://iiwiki.com/api.php",
         apiEndpoint: "",
         searchNamespace: [0, 6],
       },
@@ -45,7 +45,7 @@ export function getWikiConfigs(): Record<string, WikiConfig> {
     };
   }
 
-  // Client-side: use proxy URLs
+  // Client-side: use proxy URLs (except iiwiki which must be direct - Cloudflare blocks proxy)
   const baseUrl = getApiBaseUrl(); // This will be '' on the client
   return {
     ixwiki: {
@@ -54,8 +54,9 @@ export function getWikiConfigs(): Record<string, WikiConfig> {
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     iiwiki: {
-      baseUrl: `${baseUrl}/api/iiwiki-proxy/mediawiki/api.php`,
-      apiEndpoint: "",
+      // Access iiwiki directly - proxy gets blocked by Cloudflare
+      baseUrl: "https://iiwiki.com",
+      apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     althistory: {

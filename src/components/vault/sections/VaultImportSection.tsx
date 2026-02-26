@@ -1,66 +1,35 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-import dynamic from "next/dynamic";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Download,
   Globe,
-  Search,
-  Filter,
-  TrendingUp,
-  Layers,
-  Award,
-  Trophy,
-  MapPin,
-  Tag,
-  ChevronDown,
-  X,
-  AlertCircle,
-  Star,
   Sparkles,
   Loader2,
   CheckCircle,
-  XCircle,
   ExternalLink,
   ShieldCheck,
   ArrowRight,
   ArrowLeft,
   Info,
   Package,
-  Copy,
   Check,
   Clock,
   Coins,
+  Layers,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { useNotify } from "~/hooks/useNotify";
+import { vaultNotify } from "~/lib/vault-notifications";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
-import { Progress } from "~/components/ui/progress";
-import { Skeleton } from "~/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import NumberFlow from "~/components/ui/number-flow";
-import type { CardInstance } from "~/types/cards-display";
-import type { CardRarity } from "@prisma/client";
-
-type SubTab = "import" | "ns-library";
-
-const SUB_TABS: { id: SubTab; label: string; icon: typeof Download }[] = [
-  { id: "import", label: "Import Deck", icon: Download },
-  { id: "ns-library", label: "NS Library", icon: Globe },
-];
+import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -137,16 +106,18 @@ function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
 }
 
 function ImportDeckTab() {
+  const notify = useNotify();
   const [currentStep, setCurrentStep] = useState<WizardStep>("intro");
   const [nationName, setNationName] = useState("");
   const [verificationId, setVerificationId] = useState("");
   const [verificationUrl, setVerificationUrl] = useState("");
-  const [codeCopied, setCodeCopied] = useState(false);
+  const [checksum, setChecksum] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [importResult, setImportResult] = useState<{
     cardsImported: number;
     bonusCredits: number;
     nation: string;
+    cards: { id: string; title: string; artwork: string; rarity: string; season: number; marketValue: number }[];
   } | null>(null);
 
   const { data: importStats } = api.nsImport.getImportStats.useQuery();
@@ -157,11 +128,11 @@ function ImportDeckTab() {
       setVerificationId(data.verificationId);
       setVerificationUrl(data.verificationUrl);
       setCurrentStep("verify");
-      toast.success("Verification request created");
+      notify.success("Verification request created");
     },
     onError: (error) => {
       setErrorMessage(error.message);
-      toast.error("Failed to request verification");
+      vaultNotify.error("Failed to request verification");
     },
   });
 
@@ -169,19 +140,19 @@ function ImportDeckTab() {
     onSuccess: (data) => {
       if (data.verified) {
         setCurrentStep("preview");
-        toast.success("Nation verified!");
+        vaultNotify.nationVerified(nationName);
       } else {
         setErrorMessage("Verification failed. Please check your code and try again.");
-        toast.error("Verification failed");
+        vaultNotify.error("Verification failed");
       }
     },
     onError: (error) => {
       setErrorMessage(error.message);
-      toast.error("Verification error");
+      vaultNotify.error("Verification error");
     },
   });
 
-  const { data: deckPreview, refetch: refetchPreview } = api.nsImport.previewDeck.useQuery(
+  const { refetch: _refetchPreview } = api.nsImport.previewDeck.useQuery(
     { nationName },
     { enabled: false }
   );
@@ -192,22 +163,16 @@ function ImportDeckTab() {
         cardsImported: data.cardsImported,
         bonusCredits: data.bonusCredits,
         nation: data.nation,
+        cards: data.cards ?? [],
       });
       setCurrentStep("complete");
-      toast.success(`Imported ${data.cardsImported} cards!`);
+      vaultNotify.cardsImported(data.cardsImported, data.nation);
     },
     onError: (error) => {
       setErrorMessage(error.message);
-      toast.error("Import failed");
+      vaultNotify.error(error.message);
     },
   });
-
-  const handleCopyCode = useCallback(() => {
-    navigator.clipboard.writeText(verificationId);
-    setCodeCopied(true);
-    toast.success("Code copied to clipboard");
-    setTimeout(() => setCodeCopied(false), 2000);
-  }, [verificationId]);
 
   return (
     <div className="space-y-6">
@@ -321,13 +286,13 @@ function ImportDeckTab() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       {[
                         { step: "1", title: "Enter Nation", desc: "Type your NationStates nation name", icon: Globe, color: "rose" },
-                        { step: "2", title: "Add Code", desc: "Place a verification code in your nation's description", icon: ShieldCheck, color: "amber" },
-                        { step: "3", title: "Verify", desc: "We confirm you own the nation", icon: CheckCircle, color: "green" },
+                        { step: "2", title: "Visit NS Link", desc: "Open a NationStates verification page", icon: ExternalLink, color: "amber" },
+                        { step: "3", title: "Paste Code", desc: "Copy the code NS gives you and paste it here", icon: ShieldCheck, color: "green" },
                         { step: "4", title: "Import", desc: "Your NS trading cards are imported", icon: Download, color: "purple" },
                       ].map((item) => (
                         <div
                           key={item.step}
-                          className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-4"
+                          className="glass-hierarchy-child flex items-start gap-3 rounded-xl border border-border p-4"
                         >
                           <div className={cn(
                             "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-xs font-black text-white",
@@ -347,7 +312,7 @@ function ImportDeckTab() {
                     </div>
 
                     {/* Nation name input */}
-                    <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-5">
+                    <div className="glass-hierarchy-child space-y-3 rounded-xl border border-border p-5">
                       <label className="text-sm font-semibold text-foreground">Your Nation Name</label>
                       <div className="relative">
                         <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -390,62 +355,62 @@ function ImportDeckTab() {
                     <div className="text-center">
                       <h2 className="text-xl font-black text-foreground">Verify Ownership</h2>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Prove you own <span className="font-semibold text-rose-400">{nationName}</span> by adding this code to your nation
+                        Prove you own <span className="font-semibold text-rose-400">{nationName}</span> via NationStates login verification
                       </p>
                     </div>
 
-                    {/* Verification code card */}
-                    <div className="overflow-hidden rounded-xl border border-amber-400/20 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
-                      <div className="flex items-center justify-between border-b border-amber-400/10 px-5 py-3">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-amber-400/70">Verification Code</span>
-                        <button
-                          onClick={handleCopyCode}
-                          className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold text-amber-400 transition-colors hover:bg-amber-400/10"
-                        >
-                          {codeCopied ? (
-                            <><Check className="h-3.5 w-3.5" /> Copied</>
-                          ) : (
-                            <><Copy className="h-3.5 w-3.5" /> Copy</>
-                          )}
-                        </button>
-                      </div>
-                      <div className="px-5 py-4">
-                        <code className="block break-all rounded-lg bg-black/30 px-4 py-3 font-mono text-sm leading-relaxed text-amber-300 selection:bg-amber-400/30">
-                          {verificationId}
-                        </code>
-                      </div>
-                    </div>
-
                     {/* Instructions */}
-                    <div className="space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-5">
+                    <div className="glass-hierarchy-child space-y-3 rounded-xl border border-border p-5">
                       <h4 className="text-sm font-bold text-foreground">Instructions</h4>
                       <ol className="list-inside space-y-2.5 text-sm text-muted-foreground">
                         <li className="flex items-start gap-2">
                           <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold">1</span>
-                          Copy the verification code above
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold">2</span>
                           <span>
-                            Go to{" "}
-                            {verificationUrl ? (
-                              <a href={verificationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-blue-400 hover:underline">
-                                your nation's settings <ExternalLink className="h-3 w-3" />
-                              </a>
-                            ) : (
-                              "your nation's settings on NationStates"
-                            )}
+                            Click the link below to open NationStates verification.{" "}
+                            <strong className="text-foreground/80">Log in if prompted.</strong>
                           </span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold">3</span>
-                          Paste the code into your nation's description field and save
+                          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold">2</span>
+                          NationStates will display a verification code
                         </li>
                         <li className="flex items-start gap-2">
-                          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold">4</span>
-                          Click "Check Verification" below
+                          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold">3</span>
+                          Copy that code and paste it in the field below
                         </li>
                       </ol>
+                    </div>
+
+                    {/* NS verification link */}
+                    {verificationUrl && (
+                      <a
+                        href={verificationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/10 px-5 py-3.5 text-sm font-bold text-blue-400 transition-colors hover:bg-blue-500/20"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Open NationStates Verification Page
+                      </a>
+                    )}
+
+                    {/* Code input */}
+                    <div className="space-y-2 rounded-xl border border-amber-400/20 bg-gradient-to-br from-amber-500/5 to-orange-500/5 p-5">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-amber-400/70">
+                        Paste Verification Code from NationStates
+                      </label>
+                      <Input
+                        value={checksum}
+                        onChange={(e) => setChecksum(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && checksum.trim()) {
+                            setErrorMessage("");
+                            checkVerification.mutate({ verificationId, checksum });
+                          }
+                        }}
+                        placeholder="Paste the code NationStates gave you..."
+                        className="h-12 font-mono text-base glass-hierarchy-interactive"
+                      />
                     </div>
 
                     {/* Actions */}
@@ -456,9 +421,9 @@ function ImportDeckTab() {
                       <Button
                         onClick={() => {
                           setErrorMessage("");
-                          checkVerification.mutate({ verificationId, nationName });
+                          checkVerification.mutate({ verificationId, checksum });
                         }}
-                        disabled={checkVerification.isPending}
+                        disabled={!checksum.trim() || checkVerification.isPending}
                         className="flex-1 bg-gradient-to-r from-rose-500 to-orange-500 text-white font-bold hover:from-rose-600 hover:to-orange-600 shadow-lg shadow-rose-500/20"
                       >
                         {checkVerification.isPending ? (
@@ -466,7 +431,7 @@ function ImportDeckTab() {
                         ) : (
                           <ShieldCheck className="mr-2 h-4 w-4" />
                         )}
-                        Check Verification
+                        Verify Ownership
                       </Button>
                     </div>
                   </div>
@@ -495,7 +460,7 @@ function ImportDeckTab() {
                         <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-400" />
                         <div className="text-sm text-muted-foreground">
                           <p className="mb-1 font-semibold text-foreground">Ready to import</p>
-                          <p>This will fetch your NationStates trading card deck and create IxCards versions. The process takes a few seconds depending on deck size. You can remove the verification code from your nation's description after importing.</p>
+                          <p>This will fetch your NationStates trading card deck and create IxCards versions. The process takes a few seconds depending on deck size.</p>
                         </div>
                       </div>
                     </div>
@@ -651,13 +616,69 @@ function ImportDeckTab() {
                       </div>
                     </motion.div>
 
+                    {/* Imported cards preview */}
+                    {importResult.cards.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.55 }}
+                        className="space-y-2"
+                      >
+                        <p className="text-xs font-semibold text-muted-foreground">Your Cards</p>
+                        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                          {importResult.cards.slice(0, 12).map((card, idx) => (
+                            <motion.div
+                              key={card.id}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.6 + idx * 0.05 }}
+                              className={cn(
+                                "relative overflow-hidden rounded-lg border bg-gradient-to-b p-1.5",
+                                card.rarity === "LEGENDARY" && "border-amber-400/40 from-amber-500/10 to-amber-600/5",
+                                card.rarity === "EPIC" && "border-purple-400/40 from-purple-500/10 to-purple-600/5",
+                                card.rarity === "ULTRA_RARE" && "border-red-400/40 from-red-500/10 to-red-600/5",
+                                card.rarity === "RARE" && "border-blue-400/40 from-blue-500/10 to-blue-600/5",
+                                card.rarity === "UNCOMMON" && "border-green-400/40 from-green-500/10 to-green-600/5",
+                                (!card.rarity || card.rarity === "COMMON") && "border-white/10 from-white/5 to-white/[0.02]",
+                              )}
+                            >
+                              <div className="relative mx-auto mb-1 h-10 w-10 overflow-hidden rounded">
+                                <CardHolographicCover
+                                  cardType="NS_IMPORT"
+                                  rarity={card.rarity || "COMMON"}
+                                  title={card.title}
+                                />
+                                {card.artwork && card.artwork !== "/images/cards/placeholder-nation.png" && (
+                                  <img
+                                    src={card.artwork}
+                                    alt={card.title}
+                                    className="absolute inset-0 h-full w-full object-cover"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                  />
+                                )}
+                              </div>
+                              <p className="truncate text-center text-[9px] font-bold leading-tight">{card.title}</p>
+                              <p className="text-center text-[8px] text-muted-foreground">
+                                S{card.season} · {card.marketValue > 0 ? `${card.marketValue.toFixed(2)} MV` : card.rarity?.toLowerCase() ?? "common"}
+                              </p>
+                            </motion.div>
+                          ))}
+                        </div>
+                        {importResult.cards.length > 12 && (
+                          <p className="text-center text-[10px] text-muted-foreground">
+                            +{importResult.cards.length - 12} more cards
+                          </p>
+                        )}
+                      </motion.div>
+                    )}
+
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.6 }}
+                      transition={{ delay: 0.7 }}
                     >
                       <Button
-                        onClick={() => { setCurrentStep("intro"); setNationName(""); setImportResult(null); setErrorMessage(""); }}
+                        onClick={() => { setCurrentStep("intro"); setNationName(""); setChecksum(""); setImportResult(null); setErrorMessage(""); }}
                         variant="outline"
                         className="w-full border-white/10"
                       >
@@ -679,7 +700,7 @@ function ImportDeckTab() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="glass-hierarchy-child border border-white/5">
+          <Card className="glass-hierarchy-child border border-border">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Clock className="h-4 w-4 text-muted-foreground" />
@@ -694,7 +715,7 @@ function ImportDeckTab() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-3 transition-colors hover:bg-white/[0.04]"
+                    className="glass-hierarchy-interactive flex items-center justify-between rounded-lg border border-border p-3"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10">
@@ -719,280 +740,9 @@ function ImportDeckTab() {
   );
 }
 
-// ─── NS Library Tab ──────────────────────────────────────────────
-
-interface NSLibraryFilters {
-  search: string;
-  season: number | "all";
-  rarity: CardRarity | "all";
-  region: string;
-  sortBy: "rarity" | "marketValue" | "recent" | "name";
-}
-
-const PAGE_SIZE = 50;
-
-function NSLibraryTab() {
-  const [filters, setFilters] = useState<NSLibraryFilters>({
-    search: "",
-    season: "all",
-    rarity: "all",
-    region: "",
-    sortBy: "rarity",
-  });
-  const [offset, setOffset] = useState(0);
-  const [allCards, setAllCards] = useState<any[]>([]);
-
-  const queryInput = useMemo(() => ({
-    limit: PAGE_SIZE,
-    offset,
-    search: filters.search || undefined,
-    season: filters.season !== "all" ? filters.season : undefined,
-    rarity: filters.rarity !== "all" ? filters.rarity : undefined,
-    region: filters.region || undefined,
-    sortBy: filters.sortBy,
-  }), [filters, offset]);
-
-  const { data: nsCardsData, isLoading, isFetching } = api.cards.getNSCards.useQuery(queryInput);
-  const { data: libraryStats } = api.cards.getNSLibraryStats.useQuery();
-
-  // Accumulate cards for "Load More" pagination
-  const displayCards = useMemo(() => {
-    if (!nsCardsData) return allCards;
-    if (offset === 0) return nsCardsData.cards;
-    // Append new page to accumulated cards
-    const existingIds = new Set(allCards.map((c: any) => c.id));
-    const newCards = nsCardsData.cards.filter((c: any) => !existingIds.has(c.id));
-    return [...allCards, ...newCards];
-  }, [nsCardsData, offset, allCards]);
-
-  // Sync display cards into allCards state when data changes
-  useEffect(() => {
-    if (nsCardsData) {
-      if (offset === 0) {
-        setAllCards(nsCardsData.cards);
-      } else {
-        setAllCards(prev => {
-          const existingIds = new Set(prev.map((c: any) => c.id));
-          const newCards = nsCardsData.cards.filter((c: any) => !existingIds.has(c.id));
-          return [...prev, ...newCards];
-        });
-      }
-    }
-  }, [nsCardsData, offset]);
-
-  // Reset pagination when filters change
-  const handleFilterChange = useCallback((update: Partial<NSLibraryFilters>) => {
-    setOffset(0);
-    setAllCards([]);
-    setFilters(prev => ({ ...prev, ...update }));
-  }, []);
-
-  return (
-    <div className="space-y-6">
-      {/* Library stats banner */}
-      {libraryStats && libraryStats.totalCards > 0 && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-purple-400/20 bg-gradient-to-r from-purple-500/5 to-blue-500/5 px-5 py-3">
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-purple-400" />
-            <span className="text-sm font-bold text-purple-400">
-              <NumberFlow value={libraryStats.totalCards} />
-            </span>
-            <span className="text-xs text-muted-foreground">cards in library</span>
-          </div>
-          {libraryStats.cardsByRegion.length > 0 && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                Top: <span className="font-semibold text-foreground/80">{libraryStats.cardsByRegion[0]?.region}</span>
-                {" "}({libraryStats.cardsByRegion[0]?.count.toLocaleString()})
-              </span>
-            </div>
-          )}
-          {libraryStats.lastSync && (
-            <div className="flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                Last sync: {new Date(libraryStats.lastSync.at).toLocaleDateString()}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Filters */}
-      <Card className="glass-hierarchy-child">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={filters.search}
-                onChange={(e) => handleFilterChange({ search: e.target.value })}
-                placeholder="Search by nation name..."
-                className="pl-10 glass-hierarchy-interactive"
-              />
-            </div>
-            <Select value={filters.season.toString()} onValueChange={(v) => handleFilterChange({ season: v === "all" ? "all" : parseInt(v) })}>
-              <SelectTrigger className="w-[140px] glass-hierarchy-interactive">
-                <SelectValue placeholder="Season" />
-              </SelectTrigger>
-              <SelectContent className="glass-hierarchy-modal">
-                <SelectItem value="all">All Seasons</SelectItem>
-                <SelectItem value="1">Season 1</SelectItem>
-                <SelectItem value="2">Season 2</SelectItem>
-                <SelectItem value="3">Season 3</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filters.rarity} onValueChange={(v) => handleFilterChange({ rarity: v as CardRarity | "all" })}>
-              <SelectTrigger className="w-[160px] glass-hierarchy-interactive">
-                <SelectValue placeholder="Rarity" />
-              </SelectTrigger>
-              <SelectContent className="glass-hierarchy-modal">
-                <SelectItem value="all">All Rarities</SelectItem>
-                <SelectItem value="COMMON">Common</SelectItem>
-                <SelectItem value="UNCOMMON">Uncommon</SelectItem>
-                <SelectItem value="RARE">Rare</SelectItem>
-                <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
-                <SelectItem value="EPIC">Epic</SelectItem>
-                <SelectItem value="LEGENDARY">Legendary</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filters.sortBy} onValueChange={(v) => handleFilterChange({ sortBy: v as NSLibraryFilters["sortBy"] })}>
-              <SelectTrigger className="w-[160px] glass-hierarchy-interactive">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent className="glass-hierarchy-modal">
-                <SelectItem value="rarity">Rarity</SelectItem>
-                <SelectItem value="marketValue">Market Value</SelectItem>
-                <SelectItem value="recent">Recent</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Region filter row */}
-          <div className="mt-3 flex items-center gap-3">
-            <div className="relative flex-1 max-w-xs">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                value={filters.region}
-                onChange={(e) => handleFilterChange({ region: e.target.value })}
-                placeholder="Filter by region..."
-                className="h-9 pl-9 text-xs glass-hierarchy-interactive"
-              />
-            </div>
-            {(filters.search || filters.rarity !== "all" || filters.season !== "all" || filters.region) && (
-              <button
-                onClick={() => handleFilterChange({ search: "", season: "all", rarity: "all", region: "", sortBy: "rarity" })}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="h-3 w-3" /> Clear filters
-              </button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cards grid */}
-      {isLoading && offset === 0 ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Skeleton key={i} className="h-80 rounded-2xl" />
-          ))}
-        </div>
-      ) : displayCards.length === 0 ? (
-        <Card className="glass-hierarchy-child">
-          <CardContent className="flex flex-col items-center justify-center py-20">
-            <Globe className="mb-4 h-16 w-16 text-muted-foreground/40" />
-            <p className="text-xl font-bold text-foreground/80 mb-2">No NS Cards Found</p>
-            <p className="text-muted-foreground text-center max-w-md">
-              {filters.search || filters.rarity !== "all" || filters.season !== "all" || filters.region
-                ? "Try adjusting your filters"
-                : "No NS cards have been imported yet. Use the admin panel to fetch region cards or import a season dump."}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {displayCards.map((card: any) => (
-              <CardDisplay key={card.id} card={card} size="medium" />
-            ))}
-          </div>
-
-          {/* Load More + count */}
-          <div className="flex flex-col items-center gap-3 pt-2">
-            <p className="text-xs text-muted-foreground">
-              Showing {displayCards.length} of {nsCardsData?.total.toLocaleString() ?? "..."} cards
-            </p>
-            {nsCardsData?.hasMore && (
-              <Button
-                variant="outline"
-                onClick={() => setOffset(prev => prev + PAGE_SIZE)}
-                disabled={isFetching}
-                className="border-white/10"
-              >
-                {isFetching ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ChevronDown className="mr-2 h-4 w-4" />
-                )}
-                Load More
-              </Button>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 // ─── Main Section Component ──────────────────────────────────────
 
-function resolveInitialTab(initialTab: string | null | undefined): SubTab {
-  if (initialTab === "ns-library") return "ns-library";
-  return "import";
+export function VaultImportSection({ initialTab: _initialTab }: VaultImportSectionProps) {
+  return <ImportDeckTab />;
 }
 
-export function VaultImportSection({ initialTab }: VaultImportSectionProps) {
-  const [activeTab, setActiveTab] = useState<SubTab>(() => resolveInitialTab(initialTab));
-
-  return (
-    <div className="space-y-6">
-      <div className="flex gap-1 overflow-x-auto rounded-lg bg-black/20 p-1 backdrop-blur-sm">
-        {SUB_TABS.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 whitespace-nowrap rounded-md px-4 py-2.5 text-sm font-semibold transition-all",
-                isActive
-                  ? "bg-rose-500/20 text-rose-400 shadow-sm"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.15 }}
-        >
-          {activeTab === "import" && <ImportDeckTab />}
-          {activeTab === "ns-library" && <NSLibraryTab />}
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
-}

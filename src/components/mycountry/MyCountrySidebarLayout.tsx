@@ -15,6 +15,8 @@ interface MyCountrySidebarLayoutProps {
   activeSection?: MyCountrySection;
   /** Controlled mode: callback for sidebar nav clicks (instant switching) */
   onNavigate?: (section: MyCountrySection) => void;
+  /** Notification counts per section for sidebar nav indicators */
+  notifications?: Partial<Record<string, number>>;
 }
 
 export function MyCountrySidebarLayout({
@@ -24,6 +26,7 @@ export function MyCountrySidebarLayout({
   sidebarExtra,
   activeSection,
   onNavigate,
+  notifications,
 }: MyCountrySidebarLayoutProps) {
   return (
     <div className="space-y-0">
@@ -47,6 +50,7 @@ export function MyCountrySidebarLayout({
                 activeSection={activeSection}
                 onNavigate={onNavigate}
                 variant={sidebarExtra ? "expanded" : "desktop"}
+                notifications={notifications}
               />
               {sidebarExtra}
             </div>
@@ -60,6 +64,7 @@ export function MyCountrySidebarLayout({
                 activeSection={activeSection}
                 onNavigate={onNavigate}
                 variant="mobile"
+                notifications={notifications}
               />
             </div>
 

@@ -20,6 +20,7 @@ import {
   BarChart3,
   Info,
   Sparkles,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
@@ -40,6 +41,9 @@ import {
 } from "~/lib/card-display-utils";
 import { proxyNSImage } from "~/lib/ns-image-proxy";
 import type { CardInstance } from "~/types/cards-display";
+import { CardHolographicCover } from "./CardHolographicCover";
+import { LoreForumSection } from "./LoreForumSection";
+import { LoreWikiExcerpt } from "./LoreWikiExcerpt";
 
 /**
  * CardDetailsModal component props
@@ -113,6 +117,18 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
       () => (comparisonCard ? formatCardStats(comparisonCard) : null),
       [comparisonCard]
     );
+
+    // Resolve wiki URL from metadata or construct from source + title
+    const wikiUrl = useMemo(() => {
+      if (!card) return null;
+      const metaUrl = (card.metadata as Record<string, unknown>)?.wikiUrl as string | undefined;
+      if (metaUrl) return metaUrl;
+      if (card.wikiSource && card.wikiArticleTitle) {
+        const base = card.wikiSource === "ixwiki" ? "https://ixwiki.com/wiki" : "https://iiwiki.com/wiki";
+        return `${base}/${encodeURIComponent(card.wikiArticleTitle)}`;
+      }
+      return card.wikiUrl;
+    }, [card]);
 
     // Handle share action
     const handleShare = () => {
@@ -259,6 +275,20 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
                 Stats
               </TabsTrigger>
+              {card.cardType === "LORE" && (
+                <TabsTrigger
+                  value="lore"
+                  className={cn(
+                    "rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                    activeTab === "lore"
+                      ? "glass-hierarchy-interactive text-white"
+                      : "text-white/60 hover:text-white/80"
+                  )}
+                >
+                  <ScrollText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                  Lore
+                </TabsTrigger>
+              )}
               {comparisonCard && (
                 <TabsTrigger
                   value="compare"
@@ -296,6 +326,12 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                         }}
                       />
                       <div className="relative w-full h-[300px] sm:h-[400px]">
+                        <CardHolographicCover
+                          cardType={card.cardType}
+                          rarity={card.rarity}
+                          wikiSource={card.wikiSource}
+                          title={card.title}
+                        />
                         <Image
                           src={proxyNSImage(card.artwork)}
                           alt={card.title}
@@ -304,6 +340,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           priority
                           sizes="(max-width: 768px) 90vw, 400px"
                           unoptimized
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       </div>
                       {/* Rarity glow */}
@@ -553,6 +590,88 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   </div>
                 </motion.div>
               </TabsContent>
+
+              {/* Lore Tab — only for LORE cards */}
+              {card.cardType === "LORE" && (
+                <TabsContent value="lore" className="space-y-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {/* Wiki source + category badges */}
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span
+                        className={cn(
+                          "px-3 py-1 rounded-md font-bold text-sm border",
+                          card.wikiSource === "ixwiki"
+                            ? "bg-blue-600/80 text-white border-blue-400/50"
+                            : card.wikiSource === "iiwiki"
+                            ? "bg-green-600/80 text-white border-green-400/50"
+                            : "bg-gray-600/80 text-white border-gray-400/50"
+                        )}
+                      >
+                        {card.wikiSource === "ixwiki"
+                          ? "IxWiki"
+                          : card.wikiSource === "iiwiki"
+                          ? "IIWiki"
+                          : "Wiki"}
+                      </span>
+                      {(card.metadata as Record<string, unknown>)?.category && (
+                        <span className="px-3 py-1 rounded-md text-sm bg-purple-600/50 text-purple-200 border border-purple-400/30">
+                          {String((card.metadata as Record<string, unknown>).category)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Wiki article excerpt (full paragraphs) */}
+                    <LoreWikiExcerpt card={card} wikiUrl={wikiUrl} />
+
+                    {/* Lore-specific historical metrics */}
+                    {(() => {
+                      const meta = card.metadata as Record<string, any> | undefined;
+                      const loreStats = meta?.loreStats as { historicalSignificance?: number; culturalImpact?: number } | undefined;
+                      if (!loreStats) return null;
+                      return (
+                        <div className="glass-hierarchy-child rounded-lg p-4 mb-4">
+                          <h4 className="text-sm font-semibold text-white mb-3">
+                            Historical Metrics
+                          </h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-white/60">
+                                Historical Significance
+                              </div>
+                              <div className="text-xl font-bold text-amber-400">
+                                {loreStats.historicalSignificance ?? 0}/100
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-white/60">
+                                Cultural Impact
+                              </div>
+                              <div className="text-xl font-bold text-purple-400">
+                                {loreStats.culturalImpact ?? 0}/100
+                              </div>
+                            </div>
+                          </div>
+                          {meta?.qualityScore != null && (
+                            <div className="mt-3 text-xs text-white/50">
+                              Article Quality Score:{" "}
+                              {Math.round(Number(meta.qualityScore))}/100
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Forum discussions */}
+                    <LoreForumSection
+                      articleTitle={card.wikiArticleTitle || card.title}
+                    />
+                  </motion.div>
+                </TabsContent>
+              )}
 
               {/* Compare Tab */}
               {comparisonCard && comparisonStats && (

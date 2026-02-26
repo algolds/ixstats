@@ -13,9 +13,11 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
+  protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
 import { auctionService } from "~/lib/auction-service";
+import { notificationAPI } from "~/lib/notification-api";
 
 /**
  * Card Market Router
@@ -26,7 +28,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Create new auction
    * Admin-only endpoint
    */
-  createAuction: adminProcedure
+  createAuction: protectedProcedure
     .input(
       z.object({
         cardId: z.string().min(1, "Card ID is required"),
@@ -65,6 +67,19 @@ export const cardMarketRouter = createTRPCRouter({
           ctx.db
         );
 
+        // Notification: auction listed (fire-and-forget)
+        try {
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            title: "Auction Listed",
+            message: `Your card is now up for auction. Ends in ${input.duration} minutes.`,
+            type: "CARD",
+            category: "economic",
+            priority: "low",
+            metadata: { auctionId: auction.id },
+          }, ctx.db);
+        } catch {}
+
         return {
           success: true,
           auction,
@@ -86,7 +101,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Place bid on auction
    * Admin-only endpoint
    */
-  placeBid: adminProcedure
+  placeBid: protectedProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),
@@ -111,6 +126,25 @@ export const cardMarketRouter = createTRPCRouter({
           ctx.db
         );
 
+        // Notification: notify auction seller about new bid (fire-and-forget)
+        try {
+          const auction = await ctx.db.cardAuction.findUnique({
+            where: { id: input.auctionId },
+            select: { sellerId: true },
+          });
+          if (auction && auction.sellerId !== ctx.auth.userId) {
+            await notificationAPI.create({
+              userId: auction.sellerId,
+              title: "New Bid on Your Auction",
+              message: `Someone bid ${input.amount} IxC on your auction`,
+              type: "CARD",
+              category: "economic",
+              priority: "medium",
+              metadata: { auctionId: input.auctionId, amount: input.amount },
+            }, ctx.db);
+          }
+        } catch {}
+
         return {
           success: true,
           message: `Bid of ${input.amount} IxC placed successfully!`,
@@ -131,7 +165,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Execute buyout (instant purchase)
    * Admin-only endpoint
    */
-  executeBuyout: adminProcedure
+  executeBuyout: protectedProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),
@@ -154,6 +188,25 @@ export const cardMarketRouter = createTRPCRouter({
           ctx.db
         );
 
+        // Notification: notify seller about buyout (fire-and-forget)
+        try {
+          const auction = await ctx.db.cardAuction.findUnique({
+            where: { id: input.auctionId },
+            select: { sellerId: true, buyoutPrice: true },
+          });
+          if (auction && auction.sellerId !== ctx.auth.userId) {
+            await notificationAPI.create({
+              userId: auction.sellerId,
+              title: "Card Sold!",
+              message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxC`,
+              type: "CARD",
+              category: "economic",
+              priority: "high",
+              metadata: { auctionId: input.auctionId },
+            }, ctx.db);
+          }
+        } catch {}
+
         return {
           success: true,
           message: "Card purchased successfully!",
@@ -174,7 +227,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Cancel auction (only if no bids)
    * Admin-only endpoint
    */
-  cancelAuction: adminProcedure
+  cancelAuction: protectedProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),
@@ -189,6 +242,16 @@ export const cardMarketRouter = createTRPCRouter({
           });
         }
 
+        // Get bidder before cancellation (fire-and-forget notification)
+        let currentBidderId: string | null = null;
+        try {
+          const auction = await ctx.db.cardAuction.findUnique({
+            where: { id: input.auctionId },
+            select: { currentBidderId: true },
+          });
+          currentBidderId = auction?.currentBidderId ?? null;
+        } catch {}
+
         await auctionService.cancelAuction(
           {
             userId: ctx.auth.userId,
@@ -196,6 +259,21 @@ export const cardMarketRouter = createTRPCRouter({
           },
           ctx.db
         );
+
+        // Notification: notify current bidder about cancellation
+        try {
+          if (currentBidderId && currentBidderId !== ctx.auth.userId) {
+            await notificationAPI.create({
+              userId: currentBidderId,
+              title: "Auction Cancelled",
+              message: "An auction you bid on has been cancelled",
+              type: "CARD",
+              category: "economic",
+              priority: "medium",
+              metadata: { auctionId: input.auctionId },
+            }, ctx.db);
+          }
+        } catch {}
 
         return {
           success: true,
@@ -217,7 +295,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get active auctions with filters and pagination
    * Admin-only endpoint
    */
-  getActiveAuctions: adminProcedure
+  getActiveAuctions: protectedProcedure
     .input(
       z.object({
         cardId: z.string().optional(),
@@ -254,7 +332,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get auction by ID with full details
    * Admin-only endpoint
    */
-  getAuctionById: adminProcedure
+  getAuctionById: protectedProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),
@@ -327,7 +405,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get bid history for an auction
    * Admin-only endpoint
    */
-  getBidHistory: adminProcedure
+  getBidHistory: protectedProcedure
     .input(
       z.object({
         auctionId: z.string().min(1, "Auction ID is required"),
@@ -364,7 +442,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get user's active auctions (selling)
    * Admin-only endpoint
    */
-  getMyActiveAuctions: adminProcedure.query(async ({ ctx }) => {
+  getMyActiveAuctions: protectedProcedure.query(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new TRPCError({
@@ -416,7 +494,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get user's active bids
    * Admin-only endpoint
    */
-  getMyActiveBids: adminProcedure.query(async ({ ctx }) => {
+  getMyActiveBids: protectedProcedure.query(async ({ ctx }) => {
     try {
       if (!ctx.auth?.userId) {
         throw new TRPCError({
@@ -471,7 +549,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get auction history (completed/cancelled)
    * Admin-only endpoint
    */
-  getAuctionHistory: adminProcedure
+  getAuctionHistory: protectedProcedure
     .input(
       z.object({
         cardId: z.string().optional(),
@@ -535,7 +613,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get market trends and analytics
    * Admin-only endpoint
    */
-  getMarketTrends: adminProcedure
+  getMarketTrends: protectedProcedure
     .input(
       z.object({
         cardId: z.string().optional(),
@@ -566,7 +644,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get featured auctions (premium listings)
    * Admin-only endpoint
    */
-  getFeaturedAuctions: adminProcedure
+  getFeaturedAuctions: protectedProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(50).optional().default(10),
@@ -619,7 +697,7 @@ export const cardMarketRouter = createTRPCRouter({
    * Get ending soon auctions
    * Admin-only endpoint
    */
-  getEndingSoon: adminProcedure
+  getEndingSoon: protectedProcedure
     .input(
       z.object({
         limit: z.number().int().min(1).max(50).optional().default(10),
@@ -671,4 +749,91 @@ export const cardMarketRouter = createTRPCRouter({
         });
       }
     }),
+
+  /**
+   * Seed demo auctions for marketplace demonstration
+   * Admin-only endpoint — creates sample cards, ownership, and auction records
+   */
+  seedDemoAuctions: adminProcedure.mutation(async ({ ctx }) => {
+    const adminUserId = ctx.user?.id;
+    if (!adminUserId) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found" });
+    }
+
+    // Find or verify admin user record
+    const adminUser = await ctx.db.user.findUnique({ where: { id: adminUserId } });
+    if (!adminUser) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Admin user record not found in DB" });
+    }
+
+    const now = new Date();
+    const demoCards = [
+      { title: "History of Ixnay", rarity: "RARE", cardType: "LORE", marketValue: 250, description: "A comprehensive overview of the history of Ixnay, the primary continent." },
+      { title: "Battle of Corumm", rarity: "EPIC", cardType: "LORE", marketValue: 800, description: "The decisive battle that shaped the geopolitical landscape of the modern era." },
+      { title: "Treaty of Kiro", rarity: "UNCOMMON", cardType: "LORE", marketValue: 120, description: "The landmark treaty establishing diplomatic relations between major powers." },
+      { title: "The Great Migration", rarity: "ULTRA_RARE", cardType: "LORE", marketValue: 1500, description: "A rare account of the mass migration that populated the southern territories." },
+      { title: "Cathedral of Stars", rarity: "LEGENDARY", cardType: "LORE", marketValue: 5000, description: "The legendary cathedral, said to hold the secrets of the ancient world." },
+      { title: "Port of Alkharsis", rarity: "COMMON", cardType: "LORE", marketValue: 50, description: "The bustling trade port that connects the eastern and western regions." },
+    ];
+
+    const createdAuctions = [];
+
+    for (let i = 0; i < demoCards.length; i++) {
+      const demo = demoCards[i]!;
+      const uid = `demo_${Date.now()}_${i}`;
+
+      // Create card
+      const card = await ctx.db.card.create({
+        data: {
+          title: demo.title,
+          description: demo.description,
+          rarity: demo.rarity,
+          cardType: demo.cardType,
+          marketValue: demo.marketValue,
+          season: 1,
+          wikiSource: "ixwiki",
+        },
+      });
+
+      // Create ownership
+      const ownership = await ctx.db.cardOwnership.create({
+        data: {
+          id: `own_${uid}`,
+          cardId: card.id,
+          userId: adminUserId,
+          ownerId: adminUserId,
+          serialNumber: i + 1,
+          isLocked: true, // Locked because listed
+        },
+      });
+
+      // Create auction with staggered end times (30-120 min from now)
+      const endMinutes = 30 + i * 18;
+      const endTime = new Date(now.getTime() + endMinutes * 60 * 1000);
+      const startingPrice = Math.max(10, Math.round(demo.marketValue * 0.3));
+      const buyoutPrice = Math.round(demo.marketValue * 1.2);
+
+      const auction = await ctx.db.cardAuction.create({
+        data: {
+          id: `auc_${uid}`,
+          cardInstanceId: ownership.id,
+          sellerId: adminUserId,
+          startingPrice,
+          currentBid: startingPrice,
+          buyoutPrice,
+          status: "ACTIVE",
+          isFeatured: i < 2, // First 2 are featured
+          endTime,
+        },
+      });
+
+      createdAuctions.push({ card: card.title, auctionId: auction.id });
+    }
+
+    return {
+      success: true,
+      message: `Created ${createdAuctions.length} demo auctions`,
+      auctions: createdAuctions,
+    };
+  }),
 });

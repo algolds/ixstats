@@ -99,35 +99,34 @@ const prepareBaseCountryData = (country: any): BaseCountryData => ({
   localGrowthFactor: country.localGrowthFactor || 1.0,
 });
 
-// FIXED: Helper function to safely include relations that may not exist
+// Helper function to safely include relations that may not exist
+// Cached at module scope since schema doesn't change at runtime
+let _cachedRelations: Record<string, boolean> | null = null;
+
 const safelyIncludeRelations = async (db: any) => {
-  const availableRelations: any = {};
+  if (_cachedRelations !== null) return _cachedRelations;
 
-  try {
-    // Test if each relation exists in the database
-    const testQueries = [
-      { name: "economicProfile", test: () => db.economicProfile.findFirst() },
-      { name: "laborMarket", test: () => db.laborMarket.findFirst() },
-      { name: "fiscalSystem", test: () => db.fiscalSystem.findFirst() },
-      { name: "incomeDistribution", test: () => db.incomeDistribution.findFirst() },
-      { name: "governmentBudget", test: () => db.governmentBudget.findFirst() },
-      { name: "demographics", test: () => db.demographics.findFirst() },
-      { name: "nationalIdentity", test: () => db.nationalIdentity.findFirst() },
-    ];
+  const availableRelations: Record<string, boolean> = {};
+  const modelNames = [
+    "economicProfile",
+    "laborMarket",
+    "fiscalSystem",
+    "incomeDistribution",
+    "governmentBudget",
+    "demographics",
+    "nationalIdentity",
+  ];
 
-    for (const { name, test } of testQueries) {
-      try {
-        await test();
-        availableRelations[name] = true;
-      } catch (error) {
-        console.warn(`[Countries API] Relation '${name}' not available in database, skipping`);
-        availableRelations[name] = false;
-      }
+  for (const name of modelNames) {
+    try {
+      await (db as any)[name].findFirst({ take: 1 });
+      availableRelations[name] = true;
+    } catch {
+      availableRelations[name] = false;
     }
-  } catch (error) {
-    console.warn("[Countries API] Could not test relations, proceeding without optional relations");
   }
 
+  _cachedRelations = availableRelations;
   return availableRelations;
 };
 
@@ -189,14 +188,13 @@ const countriesRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const where = input?.search
-        ? {
-            OR: [
-              { name: { contains: input.search, mode: "insensitive" as const } },
-              { slug: { contains: input.search, mode: "insensitive" as const } },
-            ],
-          }
-        : undefined;
+      const where: any = { isDemo: false };
+      if (input?.search) {
+        where.OR = [
+          { name: { contains: input.search, mode: "insensitive" as const } },
+          { slug: { contains: input.search, mode: "insensitive" as const } },
+        ];
+      }
 
       const countries = await ctx.db.country.findMany({
         where,
@@ -237,7 +235,7 @@ const countriesRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      const where: Record<string, unknown> = {};
+      const where: Record<string, unknown> = { isDemo: false };
       if (input?.search) {
         where.name = { contains: input.search, mode: "insensitive" };
       }
@@ -255,11 +253,6 @@ const countriesRouter = createTRPCRouter({
           skip: input?.offset,
           orderBy: { name: "asc" },
           include: {
-            dmInputs: {
-              where: { isActive: true },
-              orderBy: { ixTimeTimestamp: "desc" },
-              take: 50,
-            },
             nationalIdentity: true,
           },
         }),
@@ -356,8 +349,8 @@ const countriesRouter = createTRPCRouter({
         },
         projections: [], // Will be calculated when needed
         historical: [], // Will be calculated when needed
-        dmInputs: country.dmInputs
-          ? country.dmInputs.map((dm: any) => ({
+        storytellerEffects: country.storytellerEffects
+          ? country.storytellerEffects.map((dm: any) => ({
               id: dm.id,
               countryId: dm.countryId,
               inputType: dm.inputType,
@@ -385,7 +378,7 @@ const countriesRouter = createTRPCRouter({
       return { countries, total };
     }),
 
-  getByIdWithEconomicData: publicProcedure
+  getByIdWithEconomicData: rateLimitedPublicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -400,7 +393,7 @@ const countriesRouter = createTRPCRouter({
       const availableRelations = await safelyIncludeRelations(ctx.db);
 
       const includeObject: any = {
-        dmInputs: {
+        storytellerEffects: {
           where: { isActive: true },
           orderBy: { ixTimeTimestamp: "desc" },
         },
@@ -441,7 +434,7 @@ const countriesRouter = createTRPCRouter({
             OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
           },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -461,16 +454,16 @@ const countriesRouter = createTRPCRouter({
 
       const baselineStats = calc.initializeCountryStats(base);
 
-      const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+      const effects = (country.storytellerEffects as any[]).map((i: any) => ({
         ...i,
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
 
-      const result = calc.calculateTimeProgression(baselineStats, targetTime, dmInputs);
+      const result = calc.calculateTimeProgression(baselineStats, targetTime, effects);
       const projections = [];
       for (let i = 1; i <= 5; i++) {
         const futureTime = targetTime + i * ONE_YEAR_MS;
-        const proj = calc.calculateTimeProgression(baselineStats, futureTime, dmInputs);
+        const proj = calc.calculateTimeProgression(baselineStats, futureTime, effects);
         projections.push({
           yearOffset: i,
           ixTime: futureTime,
@@ -492,7 +485,7 @@ const countriesRouter = createTRPCRouter({
         historical = [];
         for (let i = 5; i >= 1; i--) {
           const pastTime = targetTime - i * ONE_YEAR_MS;
-          const hist = calc.calculateTimeProgression(baselineStats, pastTime, dmInputs);
+          const hist = calc.calculateTimeProgression(baselineStats, pastTime, effects);
           historical.push({
             id: "",
             createdAt: new Date(pastTime),
@@ -643,7 +636,7 @@ const countriesRouter = createTRPCRouter({
           gdp: h.totalGdp,
           population: h.population,
         })),
-        dmInputs: (country.dmInputs as any[]).map((dm: any) => ({
+        storytellerEffects: (country.storytellerEffects as any[]).map((dm: any) => ({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime(),
         })),
@@ -682,7 +675,7 @@ const countriesRouter = createTRPCRouter({
 
   // Lightweight endpoint for basic country data (optimized for map info windows)
   // Client-side usage: api.countries.getByIdBasic.useQuery({ id }, { staleTime: 300000 }) // 5 min cache
-  getByIdBasic: publicProcedure
+  getByIdBasic: rateLimitedPublicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findFirst({
@@ -965,7 +958,7 @@ const countriesRouter = createTRPCRouter({
       const countryFromDb = await ctx.db.country.findUnique({
         where: { id: input.id },
         include: {
-          dmInputs: {
+          storytellerEffects: {
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
           },
@@ -1026,12 +1019,12 @@ const countriesRouter = createTRPCRouter({
         const base = prepareBaseCountryData(countryFromDb);
         const initialStats = calc.initializeCountryStats(base);
 
-        const dmInputs = (countryFromDb.dmInputs as any[]).map((i: any) => ({
+        const effects = (countryFromDb.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
 
-        const result = calc.calculateTimeProgression(initialStats, targetTime, dmInputs);
+        const result = calc.calculateTimeProgression(initialStats, targetTime, effects);
 
         calculatedStats = {
           ...result.newStats,
@@ -1114,11 +1107,13 @@ const countriesRouter = createTRPCRouter({
         baselineDate: countryFromDb.baselineDate,
         lastCalculated: countryFromDb.lastCalculated,
         calculatedStats,
-        dmInputs: (countryFromDb.dmInputs as any[]).map((dm: any) => ({
+        storytellerEffects: (countryFromDb.storytellerEffects as any[]).map((dm: any) => ({
           ...dm,
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime(),
         })),
         nationalIdentity: countryFromDb.nationalIdentity,
+        laborMarket: (countryFromDb as any).laborMarket ?? null,
+        economicProfile: (countryFromDb as any).economicProfile ?? null,
         // Map navigation coordinates (extracted from centroid)
         centerLng,
         centerLat,
@@ -1166,7 +1161,7 @@ const countriesRouter = createTRPCRouter({
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
         include: {
-          dmInputs: {
+          storytellerEffects: {
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
           },
@@ -1190,7 +1185,7 @@ const countriesRouter = createTRPCRouter({
       const base = prepareBaseCountryData(country);
       const baselineStats = calc.initializeCountryStats(base);
 
-      const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+      const effects = (country.storytellerEffects as any[]).map((i: any) => ({
         ...i,
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
@@ -1201,7 +1196,7 @@ const countriesRouter = createTRPCRouter({
         t <= input.endTime && dataPoints.length < input.limit;
         t += intervalMs
       ) {
-        const res = calc.calculateTimeProgression(baselineStats, t, dmInputs);
+        const res = calc.calculateTimeProgression(baselineStats, t, effects);
         dataPoints.push({
           ixTimeTimestamp: t,
           population: validateNumber(res.newStats.currentPopulation, 1e11),
@@ -1234,7 +1229,7 @@ const countriesRouter = createTRPCRouter({
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
         include: {
-          dmInputs: {
+          storytellerEffects: {
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
           },
@@ -1264,7 +1259,7 @@ const countriesRouter = createTRPCRouter({
       const base = prepareBaseCountryData(country);
       const baselineStats = calc.initializeCountryStats(base);
 
-      const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+      const effects = (country.storytellerEffects as any[]).map((i: any) => ({
         ...i,
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
@@ -1278,7 +1273,7 @@ const countriesRouter = createTRPCRouter({
         }
         if (forecastTime > input.endTime && i < input.points) break;
 
-        const res = calc.calculateTimeProgression(baselineStats, forecastTime, dmInputs);
+        const res = calc.calculateTimeProgression(baselineStats, forecastTime, effects);
 
         dataPoints.push({
           ixTime: forecastTime,
@@ -1321,7 +1316,7 @@ const countriesRouter = createTRPCRouter({
       const countriesFromDb = await ctx.db.country.findMany({
         where: { id: { in: input.ids } },
         include: {
-          dmInputs: {
+          storytellerEffects: {
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
           },
@@ -1336,12 +1331,12 @@ const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
 
-        const res = calc.calculateTimeProgression(baselineStats, targetTime, dmInputs);
+        const res = calc.calculateTimeProgression(baselineStats, targetTime, effects);
 
         const calculatedCountryStats: CountryStats = {
           ...res.newStats,
@@ -1382,7 +1377,7 @@ const countriesRouter = createTRPCRouter({
           continent: country.continent,
           region: country.region,
           calculatedStats: calculatedCountryStats,
-          dmInputs: (country.dmInputs as any[]).map((dm: any) => ({
+          storytellerEffects: (country.storytellerEffects as any[]).map((dm: any) => ({
             ...dm,
             ixTimeTimestamp: dm.ixTimeTimestamp.getTime(),
           })),
@@ -1490,7 +1485,7 @@ const countriesRouter = createTRPCRouter({
         const c = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -1502,11 +1497,11 @@ const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, c.baselineDate.getTime());
         const base = prepareBaseCountryData(c);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = (c.dmInputs as any[]).map((i: any) => ({
+        const effects = (c.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
-        const res = calc.calculateTimeProgression(baselineStats, now, dmInputs);
+        const res = calc.calculateTimeProgression(baselineStats, now, effects);
 
         // Check for tier changes and milestones before update
         const oldEconomicTier = c.economicTier;
@@ -1717,9 +1712,10 @@ const countriesRouter = createTRPCRouter({
       }
 
       const all = await ctx.db.country.findMany({
+        where: { isDemo: false },
         take: 250,
         include: {
-          dmInputs: {
+          storytellerEffects: {
             where: { isActive: true },
             orderBy: { ixTimeTimestamp: "desc" },
             take: 50,
@@ -1728,23 +1724,32 @@ const countriesRouter = createTRPCRouter({
       });
 
       const start = Date.now();
-      const results = [];
-      const historicalPointsToCreate = [];
+      const historicalPointsToCreate: any[] = [];
       let activitiesCreated = 0;
+
+      // Pre-fetch all users in one query instead of per-country lookups
+      const allUsers = await ctx.db.user.findMany({
+        where: { countryId: { in: all.map((c: any) => c.id) } },
+        select: { countryId: true, clerkUserId: true },
+      });
+      const userByCountryId = new Map(allUsers.map((u: any) => [u.countryId, u.clerkUserId]));
+
+      // Calculate all updates in memory first, then batch write
+      const updateOperations: any[] = [];
+      const activityPromises: Promise<void>[] = [];
 
       for (const c of all) {
         const calc = new IxStatsCalculator(econCfg, c.baselineDate.getTime());
         const base = prepareBaseCountryData(c);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = (c.dmInputs as any[]).map((i: any) => ({
+        const effects = (c.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
-        const res = calc.calculateTimeProgression(baselineStats, now, dmInputs);
+        const res = calc.calculateTimeProgression(baselineStats, now, effects);
 
         // Store old values for comparison
         const oldEconomicTier = c.economicTier;
-        const oldPopulationTier = c.populationTier;
         const oldGdp = c.currentTotalGdp || 0;
         const oldPopulation = c.currentPopulation || 0;
 
@@ -1778,7 +1783,6 @@ const countriesRouter = createTRPCRouter({
           adjustedGdpGrowth: updatedCountryData.adjustedGdpGrowth,
           actualGdpGrowth: updatedCountryData.actualGdpGrowth,
           populationGrowthRate: updatedCountryData.populationGrowthRate,
-          // Update vitality scores
           economicVitality: vitalityScores.economicVitality,
           populationWellbeing: vitalityScores.populationWellbeing,
           diplomaticStanding: vitalityScores.diplomaticStanding,
@@ -1787,58 +1791,45 @@ const countriesRouter = createTRPCRouter({
           lastCalculated: new Date(now),
         };
 
-        const updated = await ctx.db.country.update({
-          where: { id: c.id },
-          data: updateData,
-        });
-        results.push(updated);
+        updateOperations.push(
+          ctx.db.country.update({ where: { id: c.id }, data: updateData })
+        );
 
-        // Generate activities for significant changes (batch updates are less frequent, so we're more selective)
-        try {
-          // Get userId if country is claimed
-          const user = await ctx.db.user.findFirst({
-            where: { countryId: c.id },
-            select: { clerkUserId: true },
-          });
-          const userId = user?.clerkUserId;
+        // Collect activity generation promises (run in parallel after batch update)
+        const userId = userByCountryId.get(c.id);
+        const countryId = c.id;
+        const newTier = res.newStats.economicTier.toString();
+        const newGdp = res.newStats.currentTotalGdp;
+        const newPopulation = res.newStats.currentPopulation;
 
-          // Only create activities for significant tier changes
-          if (oldEconomicTier !== res.newStats.economicTier.toString()) {
-            await ActivityGenerator.createTierChange(
-              c.id,
-              "economic",
-              oldEconomicTier,
-              res.newStats.economicTier.toString(),
-              userId
-            );
-            activitiesCreated++;
-          }
-
-          // Only create activities for major milestones (larger thresholds for batch updates)
-          const newGdp = res.newStats.currentTotalGdp;
-          const majorGdpMilestones = [500e9, 1e12, 5e12, 10e12]; // 500B, 1T, 5T, 10T
-          for (const milestone of majorGdpMilestones) {
-            if (oldGdp < milestone && newGdp >= milestone) {
-              await ActivityGenerator.createEconomicMilestone(c.id, "Total GDP", milestone, userId);
-              activitiesCreated++;
-              break;
+        activityPromises.push(
+          (async () => {
+            try {
+              if (oldEconomicTier !== newTier) {
+                await ActivityGenerator.createTierChange(countryId, "economic", oldEconomicTier, newTier, userId);
+                activitiesCreated++;
+              }
+              const majorGdpMilestones = [500e9, 1e12, 5e12, 10e12];
+              for (const milestone of majorGdpMilestones) {
+                if (oldGdp < milestone && newGdp >= milestone) {
+                  await ActivityGenerator.createEconomicMilestone(countryId, "Total GDP", milestone, userId);
+                  activitiesCreated++;
+                  break;
+                }
+              }
+              const majorPopulationMilestones = [50e6, 100e6, 500e6];
+              for (const milestone of majorPopulationMilestones) {
+                if (oldPopulation < milestone && newPopulation >= milestone) {
+                  await ActivityGenerator.createPopulationMilestone(countryId, milestone, userId);
+                  activitiesCreated++;
+                  break;
+                }
+              }
+            } catch (activityError) {
+              // Don't interrupt the batch process
             }
-          }
-
-          // Major population milestones only
-          const newPopulation = res.newStats.currentPopulation;
-          const majorPopulationMilestones = [50e6, 100e6, 500e6]; // 50M, 100M, 500M
-          for (const milestone of majorPopulationMilestones) {
-            if (oldPopulation < milestone && newPopulation >= milestone) {
-              await ActivityGenerator.createPopulationMilestone(c.id, milestone, userId);
-              activitiesCreated++;
-              break;
-            }
-          }
-        } catch (activityError) {
-          console.warn("Failed to generate activity for country", c.id, ":", activityError);
-          // Don't interrupt the batch process
-        }
+          })()
+        );
 
         historicalPointsToCreate.push({
           countryId: c.id,
@@ -1858,20 +1849,33 @@ const countriesRouter = createTRPCRouter({
         });
       }
 
+      // Execute all country updates in a single transaction
+      const results = await ctx.db.$transaction(updateOperations);
+
+      // Run activity generation in parallel (non-blocking)
+      await Promise.allSettled(activityPromises);
+
+      // Persist historical data points and calculation log
       if (historicalPointsToCreate.length > 0) {
         try {
-          await ctx.db.calculationLog.create({
-            data: {
-              timestamp: new Date(),
-              ixTimeTimestamp: new Date(now),
-              countriesUpdated: results.length,
-              executionTimeMs: Date.now() - start,
-              globalGrowthFactor: econCfg.globalGrowthFactor,
-              notes: "Bulk update triggered manually or by schedule",
-            },
-          });
+          await ctx.db.$transaction([
+            ctx.db.historicalDataPoint.createMany({
+              data: historicalPointsToCreate,
+              skipDuplicates: true,
+            }),
+            ctx.db.calculationLog.create({
+              data: {
+                timestamp: new Date(),
+                ixTimeTimestamp: new Date(now),
+                countriesUpdated: results.length,
+                executionTimeMs: Date.now() - start,
+                globalGrowthFactor: econCfg.globalGrowthFactor,
+                notes: "Bulk update triggered manually or by schedule",
+              },
+            }),
+          ]);
         } catch (error) {
-          console.warn("Failed to create calculation log:", error);
+          console.warn("Failed to persist historical data:", error);
         }
       }
 
@@ -1882,7 +1886,7 @@ const countriesRouter = createTRPCRouter({
       };
     }),
 
-  getDmInputs: publicProcedure
+  getStorytellerEffects: publicProcedure
     .input(
       z.object({
         countryId: z.string().optional(),
@@ -1894,7 +1898,7 @@ const countriesRouter = createTRPCRouter({
           ? { countryId: input.countryId, isActive: true }
           : { isActive: true };
 
-        const dmInputs = await ctx.db.dmInputs.findMany({
+        const effects = await ctx.db.storytellerEffect.findMany({
           where: whereClause,
           orderBy: { ixTimeTimestamp: "desc" },
           include: {
@@ -1904,14 +1908,14 @@ const countriesRouter = createTRPCRouter({
           },
         });
 
-        return dmInputs;
+        return effects;
       } catch (error) {
-        console.error("Failed to get DM inputs:", error);
-        throw new Error("Failed to retrieve DM inputs");
+        console.error("Failed to get storyteller effects:", error);
+        throw new Error("Failed to retrieve storyteller effects");
       }
     }),
 
-  addDmInput: executiveProcedure
+  addStorytellerEffect: executiveProcedure
     .input(
       z.object({
         countryId: z.string().optional(),
@@ -1923,7 +1927,7 @@ const countriesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const dmInput = await ctx.db.dmInputs.create({
+        const effect = await ctx.db.storytellerEffect.create({
           data: {
             countryId: input.countryId || null,
             ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
@@ -1932,18 +1936,18 @@ const countriesRouter = createTRPCRouter({
             description: input.description,
             duration: input.duration || null,
             isActive: true,
-            createdBy: ctx.user?.id ?? "system", // Use authenticated user ID
+            createdBy: ctx.user?.id ?? "system",
           },
         });
 
-        return dmInput;
+        return effect;
       } catch (error) {
-        console.error("Failed to add DM input:", error);
-        throw new Error("Failed to add DM input");
+        console.error("Failed to add storyteller effect:", error);
+        throw new Error("Failed to add storyteller effect");
       }
     }),
 
-  updateDmInput: executiveProcedure
+  updateStorytellerEffect: executiveProcedure
     .input(
       z.object({
         id: z.string(),
@@ -1955,7 +1959,7 @@ const countriesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const dmInput = await ctx.db.dmInputs.update({
+        const effect = await ctx.db.storytellerEffect.update({
           where: { id: input.id },
           data: {
             inputType: input.inputType,
@@ -1966,14 +1970,14 @@ const countriesRouter = createTRPCRouter({
           },
         });
 
-        return dmInput;
+        return effect;
       } catch (error) {
-        console.error("Failed to update DM input:", error);
-        throw new Error("Failed to update DM input");
+        console.error("Failed to update storyteller effect:", error);
+        throw new Error("Failed to update storyteller effect");
       }
     }),
 
-  deleteDmInput: executiveProcedure
+  deleteStorytellerEffect: executiveProcedure
     .input(
       z.object({
         id: z.string(),
@@ -1981,7 +1985,7 @@ const countriesRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const dmInput = await ctx.db.dmInputs.update({
+        const effect = await ctx.db.storytellerEffect.update({
           where: { id: input.id },
           data: {
             isActive: false,
@@ -1989,10 +1993,10 @@ const countriesRouter = createTRPCRouter({
           },
         });
 
-        return dmInput;
+        return effect;
       } catch (error) {
-        console.error("Failed to delete DM input:", error);
-        throw new Error("Failed to delete DM input");
+        console.error("Failed to delete storyteller effect:", error);
+        throw new Error("Failed to delete storyteller effect");
       }
     }),
 
@@ -2233,7 +2237,7 @@ const countriesRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -2250,7 +2254,7 @@ const countriesRouter = createTRPCRouter({
         const base = prepareBaseCountryData(country);
         const baselineStats = calc.initializeCountryStats(base);
 
-        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
@@ -2260,7 +2264,7 @@ const countriesRouter = createTRPCRouter({
 
         for (let i = 0; i < input.limit; i++) {
           const timePoint = now - SIX_MONTHS_MS + i * intervalMs;
-          const res = calc.calculateTimeProgression(baselineStats, timePoint, dmInputs);
+          const res = calc.calculateTimeProgression(baselineStats, timePoint, effects);
 
           dataPoints.push({
             ixTimeTimestamp: timePoint,
@@ -2299,6 +2303,11 @@ const countriesRouter = createTRPCRouter({
         if (cached) return cached;
 
         const countries = await ctx.db.country.findMany({
+          where: {
+            isDemo: false,
+            currentGdpPerCapita: { gt: 0 },
+            currentPopulation: { gt: 0 },
+          },
           select: {
             id: true,
             name: true,
@@ -2340,6 +2349,11 @@ const countriesRouter = createTRPCRouter({
         if (cached) return cached;
 
         const countries = await ctx.db.country.findMany({
+          where: {
+            isDemo: false,
+            currentPopulation: { gt: 0 },
+            currentGdpPerCapita: { gt: 0 },
+          },
           select: {
             id: true,
             name: true,
@@ -2385,7 +2399,7 @@ const countriesRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -2403,12 +2417,12 @@ const countriesRouter = createTRPCRouter({
         const baselineStats = calc.initializeCountryStats(base);
         const currentTime = IxTime.getCurrentIxTime();
 
-        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
 
-        const result = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+        const result = calc.calculateTimeProgression(baselineStats, currentTime, effects);
 
         const economicData = {
           id: country.id,
@@ -2515,7 +2529,7 @@ const countriesRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
               take: 10,
@@ -2551,11 +2565,11 @@ const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
-        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, effects);
 
         const briefings: any[] = [];
 
@@ -2626,7 +2640,7 @@ const countriesRouter = createTRPCRouter({
         const riskFactors = [];
         if (gdpChange < -3) riskFactors.push("Economic decline detected");
         if (popGrowthRate < 0.005) riskFactors.push("Low population growth");
-        if (country.dmInputs.length > 5) riskFactors.push("High external influence activity");
+        if (country.storytellerEffects.length > 5) riskFactors.push("High external influence activity");
 
         if (riskFactors.length > 0) {
           briefings.push({
@@ -2666,7 +2680,7 @@ const countriesRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -2683,11 +2697,11 @@ const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
-        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, effects);
 
         const economicHealthScore = Math.min(
           100,
@@ -2804,7 +2818,7 @@ const countriesRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
             },
@@ -2821,11 +2835,11 @@ const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
-        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, effects);
 
         // Use stored vitality scores from database, with live calculation fallback
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
@@ -2957,7 +2971,7 @@ const countriesRouter = createTRPCRouter({
         const country = await ctx.db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               where: { isActive: true },
               orderBy: { ixTimeTimestamp: "desc" },
               take: 10,
@@ -2977,11 +2991,11 @@ const countriesRouter = createTRPCRouter({
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
         const baselineStats = calc.initializeCountryStats(base);
-        const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
+        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
-        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, effects);
 
         let notificationId = 1;
 
@@ -3036,8 +3050,8 @@ const countriesRouter = createTRPCRouter({
           });
         }
 
-        if (country.dmInputs.length > 0) {
-          const recentInput = country.dmInputs[0];
+        if (country.storytellerEffects.length > 0) {
+          const recentInput = country.storytellerEffects[0];
           if (recentInput) {
             const inputAge = currentTime - recentInput.ixTimeTimestamp.getTime();
             const oneWeek = 7 * 24 * 60 * 60 * 1000;
@@ -3605,6 +3619,7 @@ const countriesRouter = createTRPCRouter({
       if (input.requireAll) {
         // For AND logic, we need to check that all components exist
         countries = await ctx.db.country.findMany({
+          where: { isDemo: false },
           include: {
             governmentComponents: {
               where: { isActive: true },
@@ -3624,6 +3639,7 @@ const countriesRouter = createTRPCRouter({
         // For OR logic, use Prisma's some query
         countries = await ctx.db.country.findMany({
           where: {
+            isDemo: false,
             governmentComponents: {
               some: {
                 componentType: { in: input.componentTypes },
@@ -5231,6 +5247,7 @@ const countriesRouter = createTRPCRouter({
   getGlobalAnalytics: cachedPublicProcedure.query(async ({ ctx }) => {
     // Get all countries
     const countries = await ctx.db.country.findMany({
+      where: { isDemo: false },
       take: 500,
       select: {
         id: true,

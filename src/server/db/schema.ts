@@ -14,7 +14,7 @@ export type EconomicYearData = {
   unemployment?: number;
 };
 
-export type DMInputs = {
+export type StorytellerEffect = {
   id: string;
   countryId: string;
 };

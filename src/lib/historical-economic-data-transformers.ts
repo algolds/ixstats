@@ -16,7 +16,7 @@ import { IxTime } from "~/lib/ixtime";
 export interface EconomicEvent {
   id: string;
   timestamp: number;
-  type: "dm_input" | "policy_change" | "economic_shift" | "external_event";
+  type: "storyteller_effect" | "policy_change" | "economic_shift" | "external_event";
   category: string;
   title: string;
   description: string;
@@ -28,7 +28,7 @@ export interface EconomicEvent {
   };
   duration?: number;
   severity: "minor" | "moderate" | "major" | "critical";
-  source: "dm" | "system" | "player";
+  source: "storyteller" | "system" | "player";
   isActive: boolean;
 }
 

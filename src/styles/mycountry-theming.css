@@ -52,13 +52,29 @@
   --tab-demographics-glow: rgba(8, 145, 178, 0.3);
   --tab-demographics-icon: #0E7490;
 
+  /* Diplomacy Tab - International Relations */
+  --tab-diplomacy-primary: #0891B2;
+  --tab-diplomacy-secondary: #06B6D4;
+  --tab-diplomacy-accent: #22D3EE;
+  --tab-diplomacy-bg: rgba(8, 145, 178, 0.08);
+  --tab-diplomacy-glow: rgba(8, 145, 178, 0.3);
+  --tab-diplomacy-icon: #0E7490;
+
   /* Intelligence Tab - Security & Intelligence */
-  --tab-intelligence-primary: #1F2937;
-  --tab-intelligence-secondary: #374151;
-  --tab-intelligence-accent: #6B7280;
-  --tab-intelligence-bg: rgba(31, 41, 55, 0.08);
-  --tab-intelligence-glow: rgba(31, 41, 55, 0.3);
-  --tab-intelligence-icon: #111827;
+  --tab-intelligence-primary: #2563EB;
+  --tab-intelligence-secondary: #3B82F6;
+  --tab-intelligence-accent: #06B6D4;
+  --tab-intelligence-bg: rgba(37, 99, 235, 0.08);
+  --tab-intelligence-glow: rgba(37, 99, 235, 0.3);
+  --tab-intelligence-icon: #1E40AF;
+
+  /* Defense Tab - Military & Security */
+  --tab-defense-primary: #DC2626;
+  --tab-defense-secondary: #EF4444;
+  --tab-defense-accent: #F97316;
+  --tab-defense-bg: rgba(220, 38, 38, 0.08);
+  --tab-defense-glow: rgba(220, 38, 38, 0.3);
+  --tab-defense-icon: #B91C1C;
 
   /* Detailed Tab - Analysis & Insights */
   --tab-detailed-primary: #BE185D;
@@ -75,6 +91,14 @@
   --tab-modeling-bg: rgba(30, 64, 175, 0.08);
   --tab-modeling-glow: rgba(30, 64, 175, 0.3);
   --tab-modeling-icon: #1E3A8A;
+
+  /* Politics Tab - Legislature & Elections */
+  --tab-politics-primary: #4F46E5;
+  --tab-politics-secondary: #6366F1;
+  --tab-politics-accent: #818CF8;
+  --tab-politics-bg: rgba(79, 70, 229, 0.08);
+  --tab-politics-glow: rgba(79, 70, 229, 0.3);
+  --tab-politics-icon: #4338CA;
 
   /* Typography Scale */
   --font-size-exec-title: 2.5rem;
@@ -150,6 +174,15 @@
   --current-tab-icon: var(--tab-demographics-icon);
 }
 
+.tab-content-diplomacy {
+  --current-tab-primary: var(--tab-diplomacy-primary);
+  --current-tab-secondary: var(--tab-diplomacy-secondary);
+  --current-tab-accent: var(--tab-diplomacy-accent);
+  --current-tab-bg: var(--tab-diplomacy-bg);
+  --current-tab-glow: var(--tab-diplomacy-glow);
+  --current-tab-icon: var(--tab-diplomacy-icon);
+}
+
 .tab-content-intelligence {
   --current-tab-primary: var(--tab-intelligence-primary);
   --current-tab-secondary: var(--tab-intelligence-secondary);
@@ -157,6 +190,24 @@
   --current-tab-bg: var(--tab-intelligence-bg);
   --current-tab-glow: var(--tab-intelligence-glow);
   --current-tab-icon: var(--tab-intelligence-icon);
+}
+
+.tab-content-defense {
+  --current-tab-primary: var(--tab-defense-primary);
+  --current-tab-secondary: var(--tab-defense-secondary);
+  --current-tab-accent: var(--tab-defense-accent);
+  --current-tab-bg: var(--tab-defense-bg);
+  --current-tab-glow: var(--tab-defense-glow);
+  --current-tab-icon: var(--tab-defense-icon);
+}
+
+.tab-content-politics {
+  --current-tab-primary: var(--tab-politics-primary);
+  --current-tab-secondary: var(--tab-politics-secondary);
+  --current-tab-accent: var(--tab-politics-accent);
+  --current-tab-bg: var(--tab-politics-bg);
+  --current-tab-glow: var(--tab-politics-glow);
+  --current-tab-icon: var(--tab-politics-icon);
 }
 
 .tab-content-detailed {
@@ -401,17 +452,23 @@
   --tab-labor-glow: rgba(220, 38, 38, 0.5);
   --tab-government-glow: rgba(124, 58, 237, 0.5);
   --tab-demographics-glow: rgba(8, 145, 178, 0.5);
-  --tab-intelligence-glow: rgba(31, 41, 55, 0.5);
+  --tab-diplomacy-glow: rgba(8, 145, 178, 0.5);
+  --tab-intelligence-glow: rgba(37, 99, 235, 0.5);
+  --tab-defense-glow: rgba(220, 38, 38, 0.5);
+  --tab-politics-glow: rgba(79, 70, 229, 0.5);
   --tab-detailed-glow: rgba(190, 24, 93, 0.5);
   --tab-modeling-glow: rgba(30, 64, 175, 0.5);
-  
+
   /* Enhanced background opacity */
   --tab-executive-bg: rgba(180, 83, 9, 0.15);
   --tab-economy-bg: rgba(5, 150, 105, 0.15);
   --tab-labor-bg: rgba(220, 38, 38, 0.15);
   --tab-government-bg: rgba(124, 58, 237, 0.15);
   --tab-demographics-bg: rgba(8, 145, 178, 0.15);
-  --tab-intelligence-bg: rgba(31, 41, 55, 0.15);
+  --tab-diplomacy-bg: rgba(8, 145, 178, 0.15);
+  --tab-intelligence-bg: rgba(37, 99, 235, 0.15);
+  --tab-defense-bg: rgba(220, 38, 38, 0.15);
+  --tab-politics-bg: rgba(79, 70, 229, 0.15);
   --tab-detailed-bg: rgba(190, 24, 93, 0.15);
   --tab-modeling-bg: rgba(30, 64, 175, 0.15);
 }
@@ -438,17 +495,23 @@
   --tab-labor-bg: rgba(220, 38, 38, 0.06);
   --tab-government-bg: rgba(124, 58, 237, 0.06);
   --tab-demographics-bg: rgba(8, 145, 178, 0.06);
-  --tab-intelligence-bg: rgba(31, 41, 55, 0.06);
+  --tab-diplomacy-bg: rgba(8, 145, 178, 0.06);
+  --tab-intelligence-bg: rgba(37, 99, 235, 0.06);
+  --tab-defense-bg: rgba(220, 38, 38, 0.06);
+  --tab-politics-bg: rgba(79, 70, 229, 0.06);
   --tab-detailed-bg: rgba(190, 24, 93, 0.06);
   --tab-modeling-bg: rgba(30, 64, 175, 0.06);
-  
+
   /* Reduced glow for light mode */
   --tab-executive-glow: rgba(180, 83, 9, 0.25);
   --tab-economy-glow: rgba(5, 150, 105, 0.25);
   --tab-labor-glow: rgba(220, 38, 38, 0.25);
   --tab-government-glow: rgba(124, 58, 237, 0.25);
   --tab-demographics-glow: rgba(8, 145, 178, 0.25);
-  --tab-intelligence-glow: rgba(31, 41, 55, 0.25);
+  --tab-diplomacy-glow: rgba(8, 145, 178, 0.25);
+  --tab-intelligence-glow: rgba(37, 99, 235, 0.25);
+  --tab-defense-glow: rgba(220, 38, 38, 0.25);
+  --tab-politics-glow: rgba(79, 70, 229, 0.25);
   --tab-detailed-glow: rgba(190, 24, 93, 0.25);
   --tab-modeling-glow: rgba(30, 64, 175, 0.25);
 }
@@ -594,6 +657,39 @@
   border-bottom: 2px solid var(--tab-modeling-primary);
 }
 
+.tab-trigger-diplomacy:hover {
+  background: var(--tab-diplomacy-bg);
+  color: var(--tab-diplomacy-primary);
+}
+
+.tab-trigger-diplomacy[data-state="active"] {
+  background: var(--tab-diplomacy-bg);
+  color: var(--tab-diplomacy-primary);
+  border-bottom: 2px solid var(--tab-diplomacy-primary);
+}
+
+.tab-trigger-defense:hover {
+  background: var(--tab-defense-bg);
+  color: var(--tab-defense-primary);
+}
+
+.tab-trigger-defense[data-state="active"] {
+  background: var(--tab-defense-bg);
+  color: var(--tab-defense-primary);
+  border-bottom: 2px solid var(--tab-defense-primary);
+}
+
+.tab-trigger-politics:hover {
+  background: var(--tab-politics-bg);
+  color: var(--tab-politics-primary);
+}
+
+.tab-trigger-politics[data-state="active"] {
+  background: var(--tab-politics-bg);
+  color: var(--tab-politics-primary);
+  border-bottom: 2px solid var(--tab-politics-primary);
+}
+
 /* === SUB-TAB PILL STYLING === */
 /* Modern pill-style nested tabs for Economy and Government sections */
 
@@ -686,6 +782,46 @@
   background: linear-gradient(135deg, var(--tab-government-primary), var(--tab-government-secondary));
   color: white;
   box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* Themed pill variants - Labor */
+.subtab-pills-labor {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.dark .subtab-pills-labor {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.subtab-pill-labor:hover {
+  background: var(--tab-labor-bg);
+  color: var(--tab-labor-primary);
+}
+
+.subtab-pill-labor[data-state="active"] {
+  background: linear-gradient(135deg, var(--tab-labor-primary), var(--tab-labor-secondary));
+  color: white;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+/* Themed pill variants - Demographics */
+.subtab-pills-demographics {
+  background: rgba(8, 145, 178, 0.06);
+}
+
+.dark .subtab-pills-demographics {
+  background: rgba(6, 182, 212, 0.08);
+}
+
+.subtab-pill-demographics:hover {
+  background: var(--tab-demographics-bg);
+  color: var(--tab-demographics-primary);
+}
+
+.subtab-pill-demographics[data-state="active"] {
+  background: linear-gradient(135deg, var(--tab-demographics-primary), var(--tab-demographics-secondary));
+  color: white;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
 }
 
 /* Pill icon styling */
@@ -793,6 +929,33 @@
   --current-tab-bg: var(--tab-intelligence-bg);
   --current-tab-glow: var(--tab-intelligence-glow);
   --current-tab-icon: var(--tab-intelligence-icon);
+}
+
+.mycountry-diplomacy {
+  --current-tab-primary: var(--tab-diplomacy-primary);
+  --current-tab-secondary: var(--tab-diplomacy-secondary);
+  --current-tab-accent: var(--tab-diplomacy-accent);
+  --current-tab-bg: var(--tab-diplomacy-bg);
+  --current-tab-glow: var(--tab-diplomacy-glow);
+  --current-tab-icon: var(--tab-diplomacy-icon);
+}
+
+.mycountry-defense {
+  --current-tab-primary: var(--tab-defense-primary);
+  --current-tab-secondary: var(--tab-defense-secondary);
+  --current-tab-accent: var(--tab-defense-accent);
+  --current-tab-bg: var(--tab-defense-bg);
+  --current-tab-glow: var(--tab-defense-glow);
+  --current-tab-icon: var(--tab-defense-icon);
+}
+
+.mycountry-politics {
+  --current-tab-primary: var(--tab-politics-primary);
+  --current-tab-secondary: var(--tab-politics-secondary);
+  --current-tab-accent: var(--tab-politics-accent);
+  --current-tab-bg: var(--tab-politics-bg);
+  --current-tab-glow: var(--tab-politics-glow);
+  --current-tab-icon: var(--tab-politics-icon);
 }
 
 .mycountry-detailed {

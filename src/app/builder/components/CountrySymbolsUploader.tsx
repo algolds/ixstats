@@ -15,7 +15,7 @@ import {
   type ExtractedColors,
 } from "~/lib/image-color-extractor";
 import { getFlagColors } from "~/lib/flag-color-extractor";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
 
 interface CountrySymbolsUploaderProps {
@@ -43,6 +43,7 @@ export function CountrySymbolsUploader({
   onFlagUrlChange,
   onCoatOfArmsUrlChange,
 }: CountrySymbolsUploaderProps) {
+  const notify = useNotify();
   const [isOpen, setIsOpen] = useState(false);
   const [extractedColors, setExtractedColors] = useState<ExtractedColors | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -138,13 +139,13 @@ export function CountrySymbolsUploader({
       "image/svg+xml",
     ];
     if (!validTypes.includes(file.type)) {
-      toast.error("Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)");
+      notify.error("Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)");
       return;
     }
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB");
+      notify.error("File size must be less than 5MB");
       return;
     }
 
@@ -168,13 +169,13 @@ export function CountrySymbolsUploader({
 
       if (result.success && result.url) {
         onFlagUrlChange?.(result.url);
-        toast.success("Flag uploaded successfully!");
+        notify.success("Flag uploaded successfully!");
       } else {
         throw new Error(result.error || "Upload failed");
       }
     } catch (error) {
       console.error("Failed to upload flag:", error);
-      toast.error("Failed to upload image. Please try again.");
+      notify.error("Failed to upload image. Please try again.");
     } finally {
       setIsUploadingFlag(false);
     }
@@ -195,13 +196,13 @@ export function CountrySymbolsUploader({
       "image/svg+xml",
     ];
     if (!validTypes.includes(file.type)) {
-      toast.error("Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)");
+      notify.error("Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)");
       return;
     }
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB");
+      notify.error("File size must be less than 5MB");
       return;
     }
 
@@ -225,13 +226,13 @@ export function CountrySymbolsUploader({
 
       if (result.success && result.url) {
         onCoatOfArmsUrlChange?.(result.url);
-        toast.success("Coat of arms uploaded successfully!");
+        notify.success("Coat of arms uploaded successfully!");
       } else {
         throw new Error(result.error || "Upload failed");
       }
     } catch (error) {
       console.error("Failed to upload coat of arms:", error);
-      toast.error("Failed to upload image. Please try again.");
+      notify.error("Failed to upload image. Please try again.");
     } finally {
       setIsUploadingCoA(false);
     }

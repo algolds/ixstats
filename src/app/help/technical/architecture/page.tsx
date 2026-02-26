@@ -1,7 +1,8 @@
 "use client";
 
-import { Layers, FolderTree, Server } from "lucide-react";
-import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+import Link from "next/link";
+import { Layers } from "lucide-react";
+import { ArticleLayout, Section, InfoBox, ContentCard } from "../../_components/ArticleLayout";
 
 export default function TechnicalArchitectureArticle() {
   return (
@@ -10,68 +11,63 @@ export default function TechnicalArchitectureArticle() {
       description="High-level overview of the Next.js, tRPC, and Prisma stack that powers IxStats."
       icon={Layers}
     >
-      <Section title="Key Layers">
-        <ul className="list-disc space-y-2 pl-6">
-          <li>
-            <strong>Frontend:</strong> Next.js 15 App Router + React 19 (`src/app`, `src/components`,
-            485 total components).
-          </li>
-          <li>
-            <strong>API:</strong> 52 tRPC routers (580+ procedures) in `src/server/api/routers` with
-            rate limiting middleware.
-          </li>
-          <li>
-            <strong>Data:</strong> Prisma schema (131 models) with SQLite (dev) / PostgreSQL + PostGIS
-            (production).
-          </li>
-          <li>
-            <strong>Caching:</strong> Redis for rate limiting, vector tile cache, session management.
-          </li>
-          <li>
-            <strong>Maps:</strong> Martin tile server + PostGIS for high-performance vector tiles.
-          </li>
-          <li>
-            <strong>Realtime:</strong> Custom WebSocket server in `src/lib/websocket-server.ts`
-            (production).
-          </li>
-        </ul>
-      </Section>
-
-      <Section title="Repository Map">
-        <InfoBox title="Where Things Live">
-          <ul className="list-disc space-y-1 pl-6">
-            <li>`docs/overview/feature-map.md` – high-level inventory.</li>
+      <ContentCard>
+        <Section title="Key Layers">
+          <ul className="list-disc space-y-2 pl-6">
             <li>
-              `docs/architecture/frontend.md` / `backend.md` / `data.md` – deep dives per layer.
+              <strong>Frontend:</strong> Next.js 16.1.3 App Router + React 19.1.3 with 640+ total
+              components across the application.
             </li>
-            <li>`src/lib` & `src/services` – shared utilities and orchestration services.</li>
+            <li>
+              <strong>API:</strong> 61 tRPC routers (927 endpoints) with rate limiting middleware.
+            </li>
+            <li>
+              <strong>Data:</strong> Prisma 6.19 schema (209 models) with PostgreSQL + PostGIS
+              in all environments.
+            </li>
+            <li>
+              <strong>Caching:</strong> Redis for rate limiting and session management.
+            </li>
+            <li>
+              <strong>Realtime:</strong> Custom WebSocket server for live updates in production.
+            </li>
           </ul>
-        </InfoBox>
-      </Section>
+        </Section>
 
-      <Section title="Extending the Architecture">
-        <ul className="list-disc space-y-2 pl-6">
-          <li>
-            Add new features by co-locating UI, routers, and docs; ensure tests cover new behaviour.
-          </li>
-          <li>
-            Update `/help/technical/api` and `/help/technical/database` when APIs or schema change.
-          </li>
-          <li>Keep legacy docs in `docs/archive/v1` for historical reference.</li>
-        </ul>
-      </Section>
+        <Section title="Layer Overview">
+          <InfoBox title="How the Layers Connect">
+            <ul className="list-disc space-y-1 pl-6">
+              <li>The frontend communicates with the API layer exclusively through type-safe tRPC hooks.</li>
+              <li>
+                The API layer handles authentication, rate limiting, and business logic before
+                accessing the database through Prisma.
+              </li>
+              <li>Shared utilities and orchestration services coordinate cross-cutting concerns.</li>
+            </ul>
+          </InfoBox>
+        </Section>
+      </ContentCard>
 
-      <InfoBox title="Related Documentation">
-        <ul className="list-disc space-y-1 pl-6">
-          <li>
-            <FolderTree className="inline h-4 w-4" /> `README.md` – quick start & project structure.
-          </li>
-          <li>
-            <Server className="inline h-4 w-4" /> `docs/operations/deployment.md` – production
-            guidance.
-          </li>
-        </ul>
-      </InfoBox>
+      <ContentCard>
+        <Section title="Extending the Architecture">
+          <ul className="list-disc space-y-2 pl-6">
+            <li>
+              Add new features by co-locating UI, routers, and documentation; ensure tests cover new behaviour.
+            </li>
+            <li>
+              Update the{" "}
+              <Link href="/help/technical/api" className="text-blue-400 underline hover:text-blue-300">
+                API reference
+              </Link>{" "}
+              and{" "}
+              <Link href="/help/technical/database" className="text-blue-400 underline hover:text-blue-300">
+                database schema
+              </Link>{" "}
+              articles when APIs or schema change.
+            </li>
+          </ul>
+        </Section>
+      </ContentCard>
     </ArticleLayout>
   );
 }

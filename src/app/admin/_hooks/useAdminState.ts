@@ -80,14 +80,6 @@ export function useAdminState() {
     lastBotSync: null,
   });
 
-  const [selectedSection, setSelectedSection] = useState("overview");
-
-  const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({
-    temporal: false,
-    discord: false,
-    cache: false,
-  });
-
   return {
     config,
     setConfig,
@@ -97,9 +89,5 @@ export function useAdminState() {
     setImportState,
     actionState,
     setActionState,
-    selectedSection,
-    setSelectedSection,
-    collapsedCards,
-    setCollapsedCards,
   };
 }

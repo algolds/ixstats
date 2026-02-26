@@ -11,7 +11,7 @@
 
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { type VaultTransactionType } from "@prisma/client";
 
 interface EarnCreditsOptions {
@@ -24,6 +24,7 @@ interface EarnCreditsOptions {
 }
 
 export function useEarnCredits() {
+  const notify = useNotify();
   const { userId } = useAuth();
   const utils = api.useUtils();
 
@@ -58,12 +59,10 @@ export function useEarnCredits() {
           context.previousBalance
         );
       }
-      toast.error(err.message || "Failed to earn credits");
+      notify.error(err.message || "Failed to earn credits");
     },
     onSuccess: (data, variables) => {
-      toast.success(`Earned ${variables.amount} IxCredits!`, {
-        description: data.message,
-      });
+      notify.success(`Earned ${variables.amount} IxCredits!`, data.message);
     },
     onSettled: () => {
       // Always refetch after mutation settles
@@ -74,7 +73,7 @@ export function useEarnCredits() {
 
   const earn = (options: EarnCreditsOptions) => {
     if (!userId) {
-      toast.error("You must be logged in to earn credits");
+      notify.error("You must be logged in to earn credits");
       return;
     }
 

@@ -20,7 +20,6 @@ import {
   Clock,
 } from "lucide-react";
 import { CabinetMeetingModal } from "~/components/modals/CabinetMeetingModal";
-import { PolicyCreator } from "~/components/quickactions/PolicyCreator";
 import { DefenseModal } from "~/components/quickactions/DefenseModal";
 import { TrendRiskAnalyticsModal } from "~/components/modals/TrendRiskAnalyticsModal";
 
@@ -36,8 +35,7 @@ interface CabinetMeeting {
   // Add other fields as needed
 }
 
-export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveSectionProps) {
-  const [showPolicyCreator, setShowPolicyCreator] = React.useState(false);
+export function CountryExecutiveSection({ countryId, userId: _userId }: CountryExecutiveSectionProps) {
   const [showDefenseModal, setShowDefenseModal] = React.useState(false);
 
   // Get unified intelligence data for this country
@@ -375,7 +373,7 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
                 variant="outline"
                 className="h-auto w-full justify-start px-3 py-2 text-left transition-all duration-200 hover:scale-105"
                 size="sm"
-                onClick={() => setShowPolicyCreator(true)}
+                onClick={() => window.location.href = "/mycountry/executive"}
               >
                 <FileText className="mr-2 h-4 w-4 flex-shrink-0" />
                 <span className="truncate">Create Policy</span>
@@ -421,15 +419,6 @@ export function CountryExecutiveSection({ countryId, userId }: CountryExecutiveS
           for comprehensive management tools.
         </AlertDescription>
       </Alert>
-
-      {/* Policy Creator Modal */}
-      {userId && (
-        <PolicyCreator
-          countryId={countryId}
-          open={showPolicyCreator}
-          onOpenChange={setShowPolicyCreator}
-        />
-      )}
 
       {/* Defense Modal */}
       <DefenseModal

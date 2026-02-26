@@ -19,13 +19,22 @@ export interface ComponentLibraryProps {
   onDeselect: (componentType: ComponentType) => void;
   isReadOnly?: boolean;
   canSelectMore?: boolean;
+  enableInlineScroll?: boolean;
 }
 
 /**
  * Grid library displaying all available government components
  */
 export const ComponentLibrary = React.memo<ComponentLibraryProps>(
-  ({ components, selectedIds, onSelect, onDeselect, isReadOnly = false, canSelectMore = true }) => {
+  ({
+    components,
+    selectedIds,
+    onSelect,
+    onDeselect,
+    isReadOnly = false,
+    canSelectMore = true,
+    enableInlineScroll = false,
+  }) => {
     const componentEntries = Object.entries(components).filter(
       ([, comp]) => comp !== undefined
     ) as [string, AtomicGovernmentComponent][];
@@ -41,18 +50,20 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
     }
 
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {componentEntries.map(([type, component]) => (
-          <ComponentCard
-            key={component.id}
-            component={component}
-            isSelected={selectedIds.includes(type as ComponentType)}
-            onSelect={() => onSelect(type as ComponentType)}
-            onDeselect={() => onDeselect(type as ComponentType)}
-            isReadOnly={isReadOnly}
-            canSelectMore={canSelectMore}
-          />
-        ))}
+      <div className={enableInlineScroll ? "max-h-[60vh] overflow-y-auto pr-1" : undefined}>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {componentEntries.map(([type, component]) => (
+            <ComponentCard
+              key={component.id}
+              component={component}
+              isSelected={selectedIds.includes(type as ComponentType)}
+              onSelect={() => onSelect(type as ComponentType)}
+              onDeselect={() => onDeselect(type as ComponentType)}
+              isReadOnly={isReadOnly}
+              canSelectMore={canSelectMore}
+            />
+          ))}
+        </div>
       </div>
     );
   }

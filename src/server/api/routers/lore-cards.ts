@@ -460,10 +460,11 @@ export const loreCardsRouter = createTRPCRouter({
           });
         }
 
-        // Generate lore card
+        // Generate lore card (require image for production cards)
         const candidate = await wikiLoreCardGenerator.generateCard(
           request.articleTitle,
-          request.wikiSource as WikiSource
+          request.wikiSource as WikiSource,
+          { requireImage: true }
         );
 
         if (!candidate) {

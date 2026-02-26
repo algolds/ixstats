@@ -51,7 +51,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { MultiSelect } from "~/components/ui/multi-select";
 import {
@@ -208,7 +208,7 @@ export default function MilitaryEquipmentPage() {
   usePageTitle({ title: "Military Equipment Admin" });
 
   const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // Main tab state
   const [activeMainTab, setActiveMainTab] = useState("catalog");
@@ -360,118 +360,70 @@ export default function MilitaryEquipmentPage() {
   // Mutations - Equipment Catalog
   const createMutation = api.militaryEquipment.createCatalogEquipment.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Equipment created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Equipment created successfully");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create equipment",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create equipment");
     },
   });
 
   const updateMutation = api.militaryEquipment.updateCatalogEquipment.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Equipment updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Equipment updated successfully");
       refetch();
       setEditingEquipment(null);
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update equipment",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update equipment");
     },
   });
 
   const deleteMutation = api.militaryEquipment.deleteCatalogEquipment.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Equipment deactivated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Equipment deactivated successfully");
       refetch();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to deactivate equipment",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to deactivate equipment");
     },
   });
 
   const bulkToggleMutation = api.militaryEquipment.bulkToggleEquipment.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Bulk operation completed successfully",
-        type: "success",
-      });
+      notify.success("Success", "Bulk operation completed successfully");
       refetch();
       setSelectedIds(new Set());
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to complete bulk operation",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to complete bulk operation");
     },
   });
 
   // Mutations - Manufacturers
   const createManufacturerMutation = api.militaryEquipment.createManufacturer.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Manufacturer created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Manufacturer created successfully");
       refetchManufacturers();
       setIsManufacturerDialogOpen(false);
       resetManufacturerForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create manufacturer",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create manufacturer");
     },
   });
 
   const updateManufacturerMutation = api.militaryEquipment.updateManufacturer.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Manufacturer updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Manufacturer updated successfully");
       refetchManufacturers();
       setEditingManufacturerId(null);
       resetManufacturerForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update manufacturer",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update manufacturer");
     },
   });
 
@@ -702,11 +654,7 @@ export default function MilitaryEquipmentPage() {
 
   const handleBulkToggle = (isActive: boolean) => {
     if (selectedIds.size === 0) {
-      toast({
-        title: "No selection",
-        description: "Please select at least one equipment item",
-        type: "warning",
-      });
+      notify.warning("No selection", "Please select at least one equipment item");
       return;
     }
 
@@ -737,11 +685,7 @@ export default function MilitaryEquipmentPage() {
   // Manufacturers handlers
   const handleCreateManufacturer = () => {
     if (!manufacturerFormData.name || !manufacturerFormData.country) {
-      toast({
-        title: "Validation Error",
-        description: "Name and country are required",
-        type: "error",
-      });
+      notify.error("Validation Error", "Name and country are required");
       return;
     }
 
@@ -772,11 +716,7 @@ export default function MilitaryEquipmentPage() {
 
   const handleUpdateManufacturer = () => {
     if (!editingManufacturerId || !manufacturerFormData.name || !manufacturerFormData.country) {
-      toast({
-        title: "Validation Error",
-        description: "Name and country are required",
-        type: "error",
-      });
+      notify.error("Validation Error", "Name and country are required");
       return;
     }
 

@@ -19,7 +19,7 @@ import { Button } from "~/components/ui/button";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { processImageSelection, isExternalImageUrl } from "~/lib/image-download-service";
 import type { BaseImageResult, WikiImageResult } from "~/types/media-search";
 import { withBasePath } from "~/lib/base-path";
@@ -37,6 +37,7 @@ export function MediaSearchModal({
   onImageSelect,
   onFileUpload,
 }: MediaSearchModalProps) {
+  const notify = useNotify();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"repository" | "wiki-commons" | "wiki" | "upload">(
@@ -201,7 +202,7 @@ export function MediaSearchModal({
 
   const handleSelectImage = async () => {
     if (!selectedImage) {
-      toast.error("Please select an image first.");
+      notify.error("Please select an image first.");
       return;
     }
 
@@ -209,14 +210,14 @@ export function MediaSearchModal({
       // Check if image needs to be downloaded
       if (isExternalImageUrl(selectedImage)) {
         setIsDownloading(true);
-        toast.info("Downloading image...");
+        notify.info("Downloading image...");
 
         const processedUrl = await processImageSelection(selectedImage, {
           onProgress: (message) => console.log("[MediaSearchModal]", message),
           onError: (error) => console.error("[MediaSearchModal]", error),
         });
 
-        toast.success("Image downloaded and ready to use!");
+        notify.success("Image downloaded and ready to use!");
         onImageSelect(processedUrl);
       } else {
         // Already a data URL or local path
@@ -234,50 +235,49 @@ export function MediaSearchModal({
 
         switch (errorCode) {
           case "CLOUDFLARE_BLOCKED":
-            toast.error(
-              `Unable to download image: ${errorSite || "This source"} is protected by Cloudflare. Please try a different wiki source or use the Repository/Wiki Commons tabs.`,
-              { duration: 6000 }
+            notify.error(
+              "Unable to download image",
+              `${errorSite || "This source"} is protected by Cloudflare. Please try a different wiki source or use the Repository/Wiki Commons tabs.`
             );
             break;
 
           case "NETWORK_ERROR":
-            toast.error(
-              `Network error: Failed to connect to ${errorSite || "the image source"}. Please check your connection and try again.`,
-              { duration: 5000 }
+            notify.error(
+              "Network error",
+              `Failed to connect to ${errorSite || "the image source"}. Please check your connection and try again.`
             );
             break;
 
           case "SERVER_ERROR":
-            toast.error(
-              "Server error while downloading image. Please try again or use a different image.",
-              { duration: 5000 }
+            notify.error(
+              "Server error",
+              "Server error while downloading image. Please try again or use a different image."
             );
             break;
 
           case "INVALID_RESPONSE":
-            toast.error(
-              "Received invalid response from download service. Please try again.",
-              { duration: 5000 }
+            notify.error(
+              "Invalid response",
+              "Received invalid response from download service. Please try again."
             );
             break;
 
           case "SEARCH_ERROR":
-            toast.error(
-              `Search failed: ${error.message}. Please try a different search term.`,
-              { duration: 5000 }
+            notify.error(
+              "Search failed",
+              `${error.message}. Please try a different search term.`
             );
             break;
 
           default:
             // Generic error message with details if available
             const message = error.message || "Failed to download image";
-            toast.error(
-              message.length > 100 ? message.substring(0, 100) + "..." : message,
-              { duration: 5000 }
+            notify.error(
+              message.length > 100 ? message.substring(0, 100) + "..." : message
             );
         }
       } else {
-        toast.error("Failed to download image. Please try again.");
+        notify.error("Failed to download image. Please try again.");
       }
     } finally {
       setIsDownloading(false);
@@ -747,7 +747,7 @@ export function MediaSearchModal({
 
                           // Validate file size
                           if (file.size > 5 * 1024 * 1024) {
-                            toast.error("File size exceeds 5MB limit");
+                            notify.error("File size exceeds 5MB limit");
                             return;
                           }
 
@@ -761,7 +761,7 @@ export function MediaSearchModal({
                             "image/svg+xml",
                           ];
                           if (!allowedTypes.includes(file.type)) {
-                            toast.error(
+                            notify.error(
                               "Invalid file type. Please upload PNG, JPG, GIF, WEBP, or SVG"
                             );
                             return;
@@ -782,13 +782,13 @@ export function MediaSearchModal({
                             if (result.success) {
                               onImageSelect(result.url);
                               onClose();
-                              toast.success("Image uploaded successfully");
+                              notify.success("Image uploaded successfully");
                             } else {
-                              toast.error(result.error || "Failed to upload image");
+                              notify.error(result.error || "Failed to upload image");
                             }
                           } catch (error) {
                             console.error("Upload error:", error);
-                            toast.error("Failed to upload image");
+                            notify.error("Failed to upload image");
                           } finally {
                             setIsUploading(false);
                             // Reset file input

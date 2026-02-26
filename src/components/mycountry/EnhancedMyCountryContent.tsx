@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Settings, Zap } from "lucide-react";
-import { Badge } from "~/components/ui/badge";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import { CountryMetricsGrid, VitalityRings, useCountryData, HeroSection } from "./primitives";
 import { useFlag } from "~/hooks/useFlag";
+import { useOverviewHealthRings } from "~/hooks/useOverviewHealthRings";
 
 // Dynamic import — MyCountryTabSystem is 2,496 lines with heavy recharts/modal imports.
 // Lazy-loading it saves ~200KB from the initial bundle and reduces dev memory pressure.
 const MyCountryTabSystem = dynamic(
   () => import("./MyCountryTabSystem").then((m) => ({ default: m.MyCountryTabSystem })),
+  { ssr: false }
+);
+const OverviewIssuesBanner = dynamic(
+  () => import("./MyCountryTabSystem").then((m) => ({ default: m.OverviewIssuesBanner })),
   { ssr: false }
 );
 import { api } from "~/trpc/react";
@@ -21,19 +22,23 @@ import type { MyCountrySection } from "./MyCountrySidebarNav";
 
 interface EnhancedMyCountryContentProps {
   variant?: "unified" | "standard" | "premium";
-  title?: string;
   activeSection?: MyCountrySection;
   onNavigate?: (section: MyCountrySection) => void;
+  notifications?: Partial<Record<string, number>>;
 }
 
 export function EnhancedMyCountryContent({
   variant = "unified",
-  title,
   activeSection,
   onNavigate,
+  notifications,
 }: EnhancedMyCountryContentProps) {
-  const { country, activityRingsData, isLoading } = useCountryData();
+  const { country, isLoading } = useCountryData();
   const { flagUrl } = useFlag(country?.name || "");
+  const { rings: healthRings } = useOverviewHealthRings({
+    countryId: country?.id,
+    onNavigate,
+  });
 
   // Fetch existing government components
   const { data: existingComponents } = api.government.getComponents.useQuery(
@@ -47,28 +52,15 @@ export function EnhancedMyCountryContent({
     { enabled: !!country?.id }
   );
 
-  useEffect(() => {
-    if (title) {
-      document.title = title;
-    }
-  }, [title]);
-
   if (isLoading || !country) {
     return null; // Loading handled by AuthenticationGuard
   }
-
-  const vitalityData = activityRingsData || {
-    economicVitality: 0,
-    populationWellbeing: 0,
-    diplomaticStanding: 0,
-    governmentalEfficiency: 0,
-  };
 
   // Prepare metrics for the grid
   const metrics = [
     {
       label: "Population",
-      value: `${((country.currentPopulation || 0) / 1000000).toFixed(1)}M`,
+      value: `${Math.round((country.currentPopulation || 0) / 1000000)}M`,
       subtext: `${(country.currentPopulation || 0).toLocaleString()} citizens`,
       colorClass: "bg-blue-50 dark:bg-blue-950/50 text-blue-600",
       tooltip: {
@@ -176,29 +168,6 @@ export function EnhancedMyCountryContent({
     });
   }
 
-  const governmentAlert = existingComponents && existingComponents.length > 0 ? (
-    <Alert className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-2.5 sm:p-3">
-      <Settings className="h-4 w-4 flex-shrink-0" />
-      <AlertDescription>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-          <div className="text-xs sm:text-sm">
-            <strong>Atomic Government System Active:</strong> {existingComponents.length}{" "}
-            components deployed with{" "}
-            {(
-              existingComponents.reduce((sum, c) => sum + c.effectivenessScore, 0) /
-              existingComponents.length
-            ).toFixed(0)}
-            % average effectiveness.
-          </div>
-          <Badge variant="secondary" className="sm:ml-2 w-fit flex-shrink-0">
-            <Zap className="mr-1 h-3 w-3" />
-            <span className="text-xs">Enhanced Analytics</span>
-          </Badge>
-        </div>
-      </AlertDescription>
-    </Alert>
-  ) : null;
-
   return (
     <MyCountrySidebarLayout
       heroSection={
@@ -220,14 +189,17 @@ export function EnhancedMyCountryContent({
           showEditButton={true}
         />
       }
-      alerts={governmentAlert}
       sidebarExtra={variant === "unified" ? <VaultWidget /> : undefined}
       activeSection={activeSection}
       onNavigate={onNavigate}
+      notifications={notifications}
     >
-      {/* National Vitality Index */}
-      {variant === "unified" && activityRingsData && (
-        <VitalityRings data={vitalityData} variant="grid" />
+      {/* Section Health Rings + Pending Issues */}
+      {variant === "unified" && (
+        <>
+          <VitalityRings rings={healthRings} title="Country Health" variant="grid" />
+          <OverviewIssuesBanner countryId={country.id} />
+        </>
       )}
 
       {/* Metrics Grid for non-unified variants */}
@@ -239,8 +211,8 @@ export function EnhancedMyCountryContent({
       )}
 
       {/* Vitality Rings for non-unified variants */}
-      {variant !== "unified" && activityRingsData && (
-        <VitalityRings data={vitalityData} variant="grid" />
+      {variant !== "unified" && (
+        <VitalityRings rings={healthRings} title="Section Health" variant="grid" />
       )}
 
       {/* Tab System */}

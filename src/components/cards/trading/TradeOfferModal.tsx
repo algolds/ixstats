@@ -23,7 +23,9 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
+import { vaultNotify } from "~/lib/vault-notifications";
+import { CardHolographicCover } from "../display/CardHolographicCover";
 
 /**
  * TradeOfferModal component props
@@ -64,6 +66,7 @@ export interface TradeOfferModalProps {
  */
 export const TradeOfferModal = React.memo<TradeOfferModalProps>(
   ({ open, onClose, recipientId, recipientName, initialYourCards = [] }) => {
+    const notify = useNotify();
     const [step, setStep] = useState<"your-cards" | "their-cards" | "review">("your-cards");
     const [selectedYourCards, setSelectedYourCards] = useState<string[]>(
       initialYourCards.map((c) => c.id)
@@ -150,12 +153,12 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
     // Create trade mutation
     const createTrade = api.trading.createtradeOffer.useMutation({
       onSuccess: () => {
-        toast.success("Trade offer sent successfully!");
+        vaultNotify.tradeCompleted("Trade offer sent successfully!");
         onClose();
         resetForm();
       },
       onError: (error: any) => {
-        toast.error(error.message || "Failed to create trade offer");
+        vaultNotify.error(error.message || "Failed to create trade offer");
       },
     });
 
@@ -190,15 +193,15 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
     const handleSubmit = () => {
       if (!searchRecipient) {
-        toast.error("Please select a recipient");
+        notify.error("Please select a recipient");
         return;
       }
       if (selectedYourCards.length === 0) {
-        toast.error("Please select at least one card to offer");
+        notify.error("Please select at least one card to offer");
         return;
       }
       if (selectedTheirCards.length === 0) {
-        toast.error("Please select at least one card to request");
+        notify.error("Please select at least one card to request");
         return;
       }
 
@@ -228,7 +231,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
       <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
         <DialogContent
           className={cn(
-            "glass-modal z-[100] max-w-[95vw] sm:max-w-4xl lg:max-w-6xl p-0",
+            "glass-modal max-w-[95vw] sm:max-w-4xl lg:max-w-6xl p-0",
             "w-[98vw] max-h-[90vh] overflow-hidden"
           )}
         >
@@ -298,12 +301,19 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                           )}
                         >
                           <div className="aspect-[2.5/3.5] relative">
+                            <CardHolographicCover
+                              cardType={card.cardType}
+                              rarity={card.rarity}
+                              wikiSource={card.wikiSource}
+                              title={card.title}
+                            />
                             <Image
                               src={card.artwork}
                               alt={card.title}
                               fill
                               className="object-cover"
                               unoptimized
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                             />
                           </div>
                           {isSelected && (
@@ -397,12 +407,19 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               )}
                             >
                               <div className="aspect-[2.5/3.5] relative">
+                                <CardHolographicCover
+                                  cardType={card.cardType}
+                                  rarity={card.rarity}
+                                  wikiSource={card.wikiSource}
+                                  title={card.title}
+                                />
                                 <Image
                                   src={card.artwork}
                                   alt={card.title}
                                   fill
                                   className="object-cover"
                                   unoptimized
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                                 />
                               </div>
                               {isSelected && (

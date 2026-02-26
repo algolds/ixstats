@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { api } from "~/trpc/react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { WikiSearch } from "./WikiSearch";
 
 // Dynamic import for heavy media search modal
@@ -90,6 +90,7 @@ export function AccountCreationModal({
   existingAccountCount,
   maxAccounts = 25,
 }: AccountCreationModalProps) {
+  const notify = useNotify();
   const [step, setStep] = useState<"type" | "details">("type");
   const [formData, setFormData] = useState<ThinkpagesAccountInput>({
     accountType: "citizen",
@@ -203,7 +204,7 @@ export function AccountCreationModal({
   const handleImageSelected = (imageUrl: string) => {
     setFormData((prev) => ({ ...prev, profileImageUrl: imageUrl }));
     setShowUnsplashSearch(false);
-    toast.success("Profile picture selected!");
+    notify.success("Profile picture selected!");
   };
 
   const validateForm = (): boolean => {
@@ -233,11 +234,11 @@ export function AccountCreationModal({
         ...formData,
         countryId,
       });
-      toast.success("Account created successfully!");
+      notify.success("Account created successfully!");
       onAccountCreated(newAccount);
       onClose();
     } catch (error: any) {
-      toast.error(error.message || "Failed to create account");
+      notify.error(error.message || "Failed to create account");
     }
   };
 
@@ -569,7 +570,7 @@ export function AccountCreationModal({
 
                                     // Validate file size (max 5MB)
                                     if (file.size > 5 * 1024 * 1024) {
-                                      toast.error("Image must be smaller than 5MB");
+                                      notify.error("Image must be smaller than 5MB");
                                       return;
                                     }
 
@@ -583,7 +584,7 @@ export function AccountCreationModal({
                                       "image/svg+xml",
                                     ];
                                     if (!validTypes.includes(file.type)) {
-                                      toast.error(
+                                      notify.error(
                                         "Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)"
                                       );
                                       return;
@@ -597,16 +598,16 @@ export function AccountCreationModal({
                                       reader.onload = (event) => {
                                         const dataUrl = event.target?.result as string;
                                         handleImageSelected(dataUrl);
-                                        toast.success("Image uploaded successfully!");
+                                        notify.success("Image uploaded successfully!");
                                         setIsUploadingImage(false);
                                       };
                                       reader.onerror = () => {
-                                        toast.error("Failed to read image file");
+                                        notify.error("Failed to read image file");
                                         setIsUploadingImage(false);
                                       };
                                       reader.readAsDataURL(file);
                                     } catch (error) {
-                                      toast.error("Failed to upload image");
+                                      notify.error("Failed to upload image");
                                       setIsUploadingImage(false);
                                     }
                                   }}

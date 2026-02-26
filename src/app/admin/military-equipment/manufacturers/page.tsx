@@ -34,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { useToast } from "~/components/ui/toast";
+import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import {
   Factory,
@@ -100,7 +100,7 @@ export default function ManufacturersPage() {
   usePageTitle({ title: "Defense Manufacturers Admin" });
 
   const { user, isLoaded } = useUser();
-  const { toast } = useToast();
+  const notify = useNotify();
 
   // State
   const [countryFilter, setCountryFilter] = useState<string>("all");
@@ -149,41 +149,25 @@ export default function ManufacturersPage() {
   // Mutations
   const createMutation = api.militaryEquipment.createManufacturer.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Manufacturer created successfully",
-        type: "success",
-      });
+      notify.success("Success", "Manufacturer created successfully");
       refetch();
       setIsAddDialogOpen(false);
       resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create manufacturer",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to create manufacturer");
     },
   });
 
   const updateMutation = api.militaryEquipment.updateManufacturer.useMutation({
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Manufacturer updated successfully",
-        type: "success",
-      });
+      notify.success("Success", "Manufacturer updated successfully");
       refetch();
       setEditingId(null);
       resetForm();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update manufacturer",
-        type: "error",
-      });
+      notify.error("Error", error.message || "Failed to update manufacturer");
     },
   });
 
@@ -260,11 +244,7 @@ export default function ManufacturersPage() {
 
   const handleCreate = () => {
     if (!formData.name || !formData.country) {
-      toast({
-        title: "Validation Error",
-        description: "Name and country are required",
-        type: "error",
-      });
+      notify.error("Validation Error", "Name and country are required");
       return;
     }
 
@@ -295,11 +275,7 @@ export default function ManufacturersPage() {
 
   const handleUpdate = () => {
     if (!editingId || !formData.name || !formData.country) {
-      toast({
-        title: "Validation Error",
-        description: "Name and country are required",
-        type: "error",
-      });
+      notify.error("Validation Error", "Name and country are required");
       return;
     }
 

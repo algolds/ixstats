@@ -69,7 +69,7 @@ export class OptimizedQueryService {
         include: {
           _count: {
             select: {
-              dmInputs: true,
+              storytellerEffects: true,
             },
           },
         },
@@ -209,13 +209,13 @@ export class OptimizedQueryService {
             id: { in: uncachedIds },
           },
           include: {
-            dmInputs: {
+            storytellerEffects: {
               orderBy: { ixTimeTimestamp: "desc" },
               take: 1,
             },
             _count: {
               select: {
-                dmInputs: true,
+                storytellerEffects: true,
               },
             },
           },
@@ -280,7 +280,7 @@ export class OptimizedQueryService {
       const country = await db.country.findUnique({
         where: { id: countryId },
         include: {
-          dmInputs: {
+          storytellerEffects: {
             orderBy: { ixTimeTimestamp: "desc" },
             take: 2,
           },

@@ -86,28 +86,42 @@ export const diplomaticRouter = createTRPCRouter({
           orderBy: [{ strength: "desc" }, { lastContact: "desc" }],
         });
 
+        // Batch-lookup country names and flags for all referenced countries
+        const allCountryIds = [...new Set(relations.flatMap((r) => [r.country1, r.country2]))];
+        const countries = await ctx.db.country.findMany({
+          where: { id: { in: allCountryIds } },
+          select: { id: true, name: true, flag: true },
+        });
+        const countryMap = new Map(countries.map((c) => [c.id, c]));
+
         // Transform relations to match expected format
-        const transformedRelations = relations.map((relation) => ({
-          id: relation.id,
-          targetCountry:
-            relation.country1 === input.countryId ? relation.country2 : relation.country1,
-          targetCountryId:
-            relation.country1 === input.countryId ? relation.country2 : relation.country1,
-          relationship: relation.relationship,
-          strength: relation.strength,
-          treaties: relation.treaties ? JSON.parse(relation.treaties) : [],
-          lastContact: relation.lastContact.toISOString(),
-          status: relation.status,
-          diplomaticChannels: relation.diplomaticChannels
-            ? JSON.parse(relation.diplomaticChannels)
-            : [],
-          tradeVolume: relation.tradeVolume || 0,
-          culturalExchange: relation.culturalExchange || "Medium",
-          recentActivity: relation.recentActivity,
-          economicTier: relation.economicTier,
-          flagUrl: relation.flagUrl,
-          establishedAt: relation.establishedAt.toISOString(),
-        }));
+        const transformedRelations = relations.map((relation) => {
+          const targetId =
+            relation.country1 === input.countryId ? relation.country2 : relation.country1;
+          const targetInfo = countryMap.get(targetId);
+
+          return {
+            id: relation.id,
+            targetCountry: targetInfo?.name ?? targetId,
+            targetCountryId: targetId,
+            targetCountryName: targetInfo?.name ?? targetId,
+            targetCountryFlag: targetInfo?.flag ?? null,
+            relationship: relation.relationship,
+            strength: relation.strength,
+            treaties: relation.treaties ? JSON.parse(relation.treaties) : [],
+            lastContact: relation.lastContact.toISOString(),
+            status: relation.status,
+            diplomaticChannels: relation.diplomaticChannels
+              ? JSON.parse(relation.diplomaticChannels)
+              : [],
+            tradeVolume: relation.tradeVolume || 0,
+            culturalExchange: relation.culturalExchange || "Medium",
+            recentActivity: relation.recentActivity,
+            economicTier: relation.economicTier,
+            flagUrl: relation.flagUrl,
+            establishedAt: relation.establishedAt.toISOString(),
+          };
+        });
 
         return transformedRelations;
       } catch (error) {
@@ -4999,10 +5013,10 @@ export const diplomaticRouter = createTRPCRouter({
         },
       });
 
-      // Create DmInputs for BOTH countries — economic engine auto-processes
+      // Create storyteller effects for BOTH countries — economic engine auto-processes
       const actionDescription = `Foreign policy: ${input.actionType} (${input.severity}) ${input.actionType === "free_trade" || input.actionType === "military_alliance" ? "with" : "against"} ${target.name}`;
 
-      await ctx.db.dmInputs.createMany({
+      await ctx.db.storytellerEffect.createMany({
         data: [
           {
             countryId: initiatorId,
@@ -5163,8 +5177,8 @@ export const diplomaticRouter = createTRPCRouter({
         }
       }
 
-      // Deactivate associated DmInputs to stop economic drain
-      await ctx.db.dmInputs.updateMany({
+      // Deactivate associated storyteller effects to stop economic drain
+      await ctx.db.storytellerEffect.updateMany({
         where: {
           description: { contains: action.actionType },
           countryId: { in: [action.initiatorId, action.targetId] },
@@ -5324,6 +5338,22 @@ export const diplomaticRouter = createTRPCRouter({
         countryName: founderCountry?.name ?? "Unknown",
       });
 
+      // Notification: alliance formed (fire-and-forget)
+      try {
+        if (ctx.auth?.userId) {
+          await notificationAPI.create({
+            userId: ctx.auth.userId,
+            countryId: ctx.user.countryId,
+            title: "Alliance Formed",
+            message: `You founded the ${input.name} alliance`,
+            type: "DIPLOMATIC",
+            category: "diplomatic",
+            priority: "high",
+            metadata: { allianceId: alliance.id, allianceName: input.name },
+          }, ctx.db);
+        }
+      } catch {}
+
       return alliance;
     }),
 
@@ -5397,6 +5427,30 @@ export const diplomaticRouter = createTRPCRouter({
         where: { id: input.allianceId },
         data: { memberCount: count },
       });
+
+      // Notification: notify invited country (fire-and-forget)
+      try {
+        const targetCountry = await ctx.db.country.findUnique({
+          where: { id: input.targetCountryId },
+          select: { userId: true },
+        });
+        const alliance = await ctx.db.alliance.findUnique({
+          where: { id: input.allianceId },
+          select: { name: true },
+        });
+        if (targetCountry?.userId) {
+          await notificationAPI.create({
+            userId: targetCountry.userId,
+            countryId: input.targetCountryId,
+            title: "Alliance Invitation",
+            message: `You've been invited to join ${alliance?.name ?? "an alliance"}`,
+            type: "DIPLOMATIC",
+            category: "diplomatic",
+            priority: "high",
+            metadata: { allianceId: input.allianceId },
+          }, ctx.db);
+        }
+      } catch {}
 
       return { success: true };
     }),
@@ -5715,6 +5769,38 @@ export const diplomaticRouter = createTRPCRouter({
       });
 
       return docs;
+    }),
+
+  // Get active embassy missions for a country
+  getActiveMissions: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const missions = await ctx.db.embassyMission.findMany({
+        where: {
+          embassy: {
+            OR: [
+              { hostCountryId: input.countryId },
+              { guestCountryId: input.countryId },
+            ],
+          },
+          status: { in: ["active", "pending", "in_progress"] },
+        },
+        include: {
+          embassy: {
+            select: {
+              id: true,
+              name: true,
+              hostCountryId: true,
+              guestCountryId: true,
+              hostCountry: { select: { id: true, name: true, flag: true } },
+              guestCountry: { select: { id: true, name: true, flag: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      });
+      return missions;
     }),
 });
 

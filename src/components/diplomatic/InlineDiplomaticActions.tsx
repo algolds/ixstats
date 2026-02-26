@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Textarea } from "~/components/ui/textarea";
 import { FileText, Gift, Plane, Handshake, Send, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
@@ -29,6 +29,7 @@ export function InlineDiplomaticActions({
   isOpen,
   onClose,
 }: InlineDiplomaticActionsProps) {
+  const notify = useNotify();
   const [selectedAction, setSelectedAction] = useState<"treaty" | "gift" | "mission" | null>(null);
   const [selectedTreatyType, setSelectedTreatyType] = useState<string>("");
   const [selectedGiftType, setSelectedGiftType] = useState<string>("");
@@ -141,30 +142,30 @@ export function InlineDiplomaticActions({
   // Create conversation mutation using country IDs
   const createConversationMutation = api.thinkpages.createConversationByCountries.useMutation({
     onSuccess: () => {
-      toast.success("Secure diplomatic channel created!");
+      notify.success("Secure diplomatic channel created!");
       onClose();
     },
     onError: (error) => {
-      toast.error(`Failed to create channel: ${error.message}`);
+      notify.error(`Failed to create channel: ${error.message}`);
     },
   });
 
   // Send initial message mutation
   const sendInitialMessageMutation = api.thinkpages.sendMessage.useMutation({
     onSuccess: () => {
-      toast.success("Diplomatic action sent via secure channel!");
+      notify.success("Diplomatic action sent via secure channel!");
     },
   });
 
   // Handle Propose Treaty
   const handleProposeTreaty = async () => {
     if (!viewerCountryId || !viewerUserId) {
-      toast.error("Unable to initiate diplomatic channel - please log in");
+      notify.error("Unable to initiate diplomatic channel - please log in");
       return;
     }
 
     if (!selectedTreatyType) {
-      toast.error("Please select a treaty type");
+      notify.error("Please select a treaty type");
       return;
     }
 
@@ -203,12 +204,12 @@ export function InlineDiplomaticActions({
   // Handle Send Gift
   const handleSendGift = async () => {
     if (!viewerCountryId || !viewerUserId) {
-      toast.error("Unable to initiate diplomatic channel - please log in");
+      notify.error("Unable to initiate diplomatic channel - please log in");
       return;
     }
 
     if (!selectedGiftType) {
-      toast.error("Please select a gift");
+      notify.error("Please select a gift");
       return;
     }
 
@@ -247,12 +248,12 @@ export function InlineDiplomaticActions({
   // Handle Propose Mission
   const handleProposeMission = async () => {
     if (!viewerCountryId || !viewerUserId) {
-      toast.error("Unable to initiate diplomatic channel - please log in");
+      notify.error("Unable to initiate diplomatic channel - please log in");
       return;
     }
 
     if (!missionDescription.trim()) {
-      toast.error("Please describe the mission purpose");
+      notify.error("Please describe the mission purpose");
       return;
     }
 

@@ -17,7 +17,7 @@ import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { builderTutorialSteps, quickStartSteps } from "../../data/onboarding-tutorial";
 import { safeGetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
 import { ComponentType as PrismaComponentType } from "@prisma/client";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 
 // Import modular architecture
 import { BuilderStateProvider, useBuilderContext } from "./context/BuilderStateContext";
@@ -81,6 +81,7 @@ function AtomicBuilderPageInner({
 }: AtomicBuilderPageProps) {
   const { user } = useUser();
   const router = useRouter();
+  const notify = useNotify();
   const { builderState, setBuilderState, clearDraft, mode: contextMode, syncAllNow } = useBuilderContext();
   const isEditMode = mode === "edit";
 
@@ -270,10 +271,7 @@ function AtomicBuilderPageInner({
       console.log("[Builder] Country created successfully:", country.name);
 
       // Show success toast
-      toast.success("Nation Created Successfully!", {
-        description: `Welcome to ${country.name}! Redirecting to your country dashboard...`,
-        duration: 3000,
-      });
+      notify.success("Nation Created Successfully!", `Welcome to ${country.name}! Redirecting to your country dashboard...`);
 
       // Keep submission lock active during navigation to prevent double-clicks
       setTimeout(() => {
@@ -287,20 +285,11 @@ function AtomicBuilderPageInner({
 
       // Show error toast with helpful guidance
       if (errorMessage.includes("already exists")) {
-        toast.error("Country Already Exists", {
-          description: "A country with this name already exists. Please choose a different name.",
-          duration: 5000,
-        });
+        notify.error("Country Already Exists", "A country with this name already exists. Please choose a different name.");
       } else if (errorMessage.includes("no assigned role")) {
-        toast.error("Account Setup Required", {
-          description: "Your account needs to be configured. Please sign out and sign in again, or contact support.",
-          duration: 6000,
-        });
+        notify.error("Account Setup Required", "Your account needs to be configured. Please sign out and sign in again, or contact support.");
       } else {
-        toast.error("Failed to Create Nation", {
-          description: errorMessage,
-          duration: 5000,
-        });
+        notify.error("Failed to Create Nation", errorMessage);
       }
 
       // Release submission lock on error
@@ -351,37 +340,22 @@ function AtomicBuilderPageInner({
 
         if (syncResults.failed > 0) {
           console.warn("[Builder] Some sections failed to sync:", syncResults.errors);
-          toast.warning("Partially Saved", {
-            description: `${syncResults.success} section(s) saved. ${syncResults.failed} section(s) failed to sync to database.`,
-            duration: 4000,
-          });
+          notify.warning("Partially Saved", `${syncResults.success} section(s) saved. ${syncResults.failed} section(s) failed to sync to database.`);
         } else if (syncResults.success > 0) {
-          toast.success("All Changes Saved!", {
-            description: `Successfully saved ${syncResults.success} section(s) to database.`,
-            duration: 2000,
-          });
+          notify.success("All Changes Saved!", `Successfully saved ${syncResults.success} section(s) to database.`);
         } else {
           // No sections registered for sync (likely in create mode or no changes)
-          toast.success("Progress Saved!", {
-            description: "All builder data has been saved locally.",
-            duration: 2000,
-          });
+          notify.success("Progress Saved!", "All builder data has been saved locally.");
         }
       } else {
         // Create mode - only localStorage
-        toast.success("Progress Saved!", {
-          description: "All builder data has been saved locally.",
-          duration: 2000,
-        });
+        notify.success("Progress Saved!", "All builder data has been saved locally.");
       }
 
       console.log("[Builder] Manual save completed successfully");
     } catch (error) {
       console.error("[Builder] Manual save failed:", error);
-      toast.error("Save Failed", {
-        description: "Failed to save builder data. Please try again.",
-        duration: 3000,
-      });
+      notify.error("Save Failed", "Failed to save builder data. Please try again.");
     } finally {
       setIsManualSaving(false);
     }
@@ -391,20 +365,14 @@ function AtomicBuilderPageInner({
     // Prevent double-submit with ref-based lock
     if (submissionLockRef.current || isSubmitting) {
       console.warn("[Builder] Country creation already in progress, ignoring duplicate request");
-      toast.warning("Creation In Progress", {
-        description: "Please wait while your nation is being created...",
-        duration: 2000,
-      });
+      notify.warning("Creation In Progress", "Please wait while your nation is being created...");
       return;
     }
 
     if (!builderState.economicInputs || !user) {
       const errorMsg = "Missing required data for country creation";
       setError(errorMsg);
-      toast.error("Incomplete Data", {
-        description: "Please complete all required fields before creating your nation.",
-        duration: 4000,
-      });
+      notify.error("Incomplete Data", "Please complete all required fields before creating your nation.");
       return;
     }
 
@@ -416,10 +384,7 @@ function AtomicBuilderPageInner({
       console.log("[Builder] Creating country:", builderState.economicInputs.countryName);
 
       // Show initial progress toast
-      toast.info("Creating Your Nation", {
-        description: "Setting up your country, government, and economic systems...",
-        duration: 2000,
-      });
+      notify.info("Creating Your Nation", "Setting up your country, government, and economic systems...");
 
       await createCountryMutation.mutateAsync({
         name: builderState.economicInputs.countryName || "New Nation",

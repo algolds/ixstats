@@ -59,6 +59,10 @@ import { craftingRouter } from "./routers/crafting";
 import { tradingRouter } from "./routers/trading";
 import { cardImagesRouter } from "./routers/cardImages";
 import { electionsRouter } from "./routers/elections";
+import { forumRouter } from "./routers/forum";
+import { nationalIssuesRouter } from "./routers/national-issues";
+import { demoModeRouter } from "./routers/demo-mode";
+import { systemValidationRouter } from "./routers/system-validation";
 
 /**
  * This is the primary router for your server.
@@ -124,6 +128,10 @@ export const appRouter = createTRPCRouter({
   trading: tradingRouter, // P2P card trading system (Phase 3 - Trading System)
   cardImages: cardImagesRouter, // Card background image management for MyCountry UI customization
   elections: electionsRouter, // Election system: parties, legislature, elections, hemicycle visualization
+  forum: forumRouter, // XenForo forum integration (profile sync, account linking)
+  nationalIssues: nationalIssuesRouter, // National Issues Engine - dynamic decision/event generation system
+  demoMode: demoModeRouter, // Demo mode management - clone country with seeded data for live demos
+  systemValidation: systemValidationRouter, // System validation dashboard for admin health checks
 });
 
 // export type definition of API

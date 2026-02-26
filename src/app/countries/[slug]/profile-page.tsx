@@ -143,7 +143,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
           economicTier: country.economicTier,
           populationTier: country.populationTier,
           continent: country.continent,
-          analytics: { visits: Math.floor(Math.random() * 1000) + 100 },
+          analytics: { visits: Math.floor((country.currentPopulation || 10000) / 100) },
         }}
         isOwnCountry={isOwnCountry}
       />

@@ -31,7 +31,7 @@ import {
 import { type RouterOutputs } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
 
-const DM_INPUT_TYPES = [
+const EFFECT_TYPES = [
   { value: "population_adjustment", label: "Population Adjustment", icon: Users, color: "blue" },
   { value: "gdp_adjustment", label: "GDP Adjustment", icon: TrendingUp, color: "green" },
   { value: "growth_rate_modifier", label: "Growth Rate Modifier", icon: Activity, color: "purple" },
@@ -41,7 +41,7 @@ const DM_INPUT_TYPES = [
   { value: "economic_policy", label: "Economic Policy", icon: TrendingDown, color: "orange" },
 ] as const;
 
-type DmInputType = (typeof DM_INPUT_TYPES)[number]["value"];
+type EffectType = (typeof EFFECT_TYPES)[number]["value"];
 
 // Mapping for dynamic tailwind classes
 const colorClasses = {
@@ -87,16 +87,16 @@ const colorClasses = {
   },
 };
 
-interface DmInputFormData {
+interface EffectFormData {
   countryId?: string;
-  inputType: DmInputType;
+  inputType: EffectType;
   value: number;
   description: string;
   duration?: number;
 }
 
 // Match the Prisma type exactly
-interface DmInput {
+interface StorytellerEffectData {
   id: string;
   countryId: string | null; // Prisma returns null, not undefined
   ixTimeTimestamp: Date;
@@ -114,7 +114,7 @@ function DmDashboardContent() {
   const [showForm, setShowForm] = useState(false);
   const [editingInput, setEditingInput] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string>("global");
-  const [formData, setFormData] = useState<DmInputFormData>({
+  const [formData, setFormData] = useState<EffectFormData>({
     inputType: "population_adjustment",
     value: 0,
     description: "",
@@ -123,17 +123,17 @@ function DmDashboardContent() {
   // Queries
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getAll.useQuery();
   const {
-    data: dmInputs,
-    refetch: refetchDmInputs,
+    data: effects,
+    refetch: refetchEffects,
     isLoading: inputsLoading,
-  } = api.countries.getDmInputs.useQuery({
+  } = api.countries.getStorytellerEffects.useQuery({
     countryId: selectedCountry === "global" ? undefined : selectedCountry,
   });
 
   // Mutations
-  const addDmInputMutation = api.countries.addDmInput.useMutation({
+  const addStorytellerEffectMutation = api.countries.addStorytellerEffect.useMutation({
     onSuccess: () => {
-      void refetchDmInputs();
+      void refetchEffects();
       setShowForm(false);
       setFormData({
         inputType: "population_adjustment",
@@ -144,18 +144,18 @@ function DmDashboardContent() {
     onError: (error: any) => alert(`Error adding input: ${error.message}`),
   });
 
-  const updateDmInputMutation = api.countries.updateDmInput.useMutation({
+  const updateStorytellerEffectMutation = api.countries.updateStorytellerEffect.useMutation({
     onSuccess: () => {
-      void refetchDmInputs();
+      void refetchEffects();
       setEditingInput(null);
       setShowForm(false);
     },
     onError: (error: any) => alert(`Error updating input: ${error.message}`),
   });
 
-  const deleteDmInputMutation = api.countries.deleteDmInput.useMutation({
+  const deleteStorytellerEffectMutation = api.countries.deleteStorytellerEffect.useMutation({
     onSuccess: () => {
-      void refetchDmInputs();
+      void refetchEffects();
     },
     onError: (error: any) => alert(`Error deleting input: ${error.message}`),
   });
@@ -164,7 +164,7 @@ function DmDashboardContent() {
     e.preventDefault();
 
     if (editingInput) {
-      updateDmInputMutation.mutate({
+      updateStorytellerEffectMutation.mutate({
         id: editingInput,
         inputType: formData.inputType,
         value: formData.value,
@@ -172,7 +172,7 @@ function DmDashboardContent() {
         duration: formData.duration,
       });
     } else {
-      addDmInputMutation.mutate({
+      addStorytellerEffectMutation.mutate({
         countryId: selectedCountry === "global" ? undefined : selectedCountry,
         inputType: formData.inputType,
         value: formData.value,
@@ -182,11 +182,11 @@ function DmDashboardContent() {
     }
   };
 
-  const handleEdit = (input: DmInput) => {
+  const handleEdit = (input: StorytellerEffectData) => {
     setEditingInput(input.id);
     setSelectedCountry(input.countryId || "global"); // Convert null to "global"
     setFormData({
-      inputType: input.inputType as DmInputType,
+      inputType: input.inputType as EffectType,
       value: input.value,
       description: input.description || "", // Convert null to empty string
       duration: input.duration || undefined, // Convert null to undefined
@@ -197,15 +197,15 @@ function DmDashboardContent() {
   const handleDelete = (inputId: string) => {
     if (
       confirm(
-        "Are you sure you want to delete this DM input? This action is reversible by an admin."
+        "Are you sure you want to delete this storyteller effect? This action is reversible by an admin."
       )
     ) {
-      deleteDmInputMutation.mutate({ id: inputId });
+      deleteStorytellerEffectMutation.mutate({ id: inputId });
     }
   };
 
   const getInputTypeInfo = (type: string) => {
-    return DM_INPUT_TYPES.find((t) => t.value === type) || DM_INPUT_TYPES[0];
+    return EFFECT_TYPES.find((t) => t.value === type) || EFFECT_TYPES[0];
   };
 
   const getValueColor = (value: number) => {
@@ -230,7 +230,7 @@ function DmDashboardContent() {
             <div className="mb-8">
               <h1 className="flex items-center text-3xl font-bold text-gray-900 dark:text-white">
                 <Database className="mr-3 h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-                DM Control Dashboard
+                Storyteller Control Dashboard
               </h1>
               <p className="mt-2 text-gray-600 dark:text-gray-400">
                 Manage global economic variables and country-specific adjustments
@@ -281,16 +281,16 @@ function DmDashboardContent() {
                   className="flex items-center rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Add DM Input
+                  Add Storyteller Effect
                 </button>
               </div>
             </div>
 
-            {/* DM Input Form */}
+            {/* Storyteller Effect Form */}
             {showForm && (
               <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                  {editingInput ? "Edit DM Input" : "Add New DM Input"}
+                  {editingInput ? "Edit Storyteller Effect" : "Add New Storyteller Effect"}
                   {editingInput && countriesData?.countries.find((c) => c.id === formData.countryId)
                     ? ` for ${countriesData?.countries.find((c) => c.id === formData.countryId)?.name}`
                     : selectedCountry !== "global" &&
@@ -312,12 +312,12 @@ function DmDashboardContent() {
                         id="inputType"
                         value={formData.inputType}
                         onChange={(e) =>
-                          setFormData({ ...formData, inputType: e.target.value as DmInputType })
+                          setFormData({ ...formData, inputType: e.target.value as EffectType })
                         }
                         className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
                         required
                       >
-                        {DM_INPUT_TYPES.map((type) => (
+                        {EFFECT_TYPES.map((type) => (
                           <option key={type.value} value={type.value}>
                             {type.label}
                           </option>
@@ -424,7 +424,7 @@ function DmDashboardContent() {
                     </button>
                     <button
                       type="submit"
-                      disabled={addDmInputMutation.isPending || updateDmInputMutation.isPending}
+                      disabled={addStorytellerEffectMutation.isPending || updateStorytellerEffectMutation.isPending}
                       className="flex items-center rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                     >
                       <Save className="mr-2 h-4 w-4" />
@@ -435,11 +435,11 @@ function DmDashboardContent() {
               </div>
             )}
 
-            {/* Active DM Inputs */}
+            {/* Active Storyteller Effects */}
             <div className="rounded-lg border border-gray-200 bg-white shadow-md dark:border-gray-700 dark:bg-gray-800">
               <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Active DM Inputs{" "}
+                  Active Storyteller Effects{" "}
                   {selectedCountry === "global"
                     ? "(Global)"
                     : `(${countriesData?.countries.find((c) => c.id === selectedCountry)?.name || "..."})`}
@@ -447,7 +447,7 @@ function DmDashboardContent() {
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                   {inputsLoading
                     ? "Loading inputs..."
-                    : `${dmInputs?.length || 0} active inputs affecting economic calculations`}
+                    : `${effects?.length || 0} active inputs affecting economic calculations`}
                 </p>
               </div>
 
@@ -457,7 +457,7 @@ function DmDashboardContent() {
                     Loading inputs...
                   </div>
                 )}
-                {!inputsLoading && dmInputs && dmInputs.length > 0 ? (
+                {!inputsLoading && effects && effects.length > 0 ? (
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="dark:bg-gray-850 bg-gray-50">
                       <tr>
@@ -482,7 +482,7 @@ function DmDashboardContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                      {dmInputs.map((input: DmInput) => {
+                      {effects.map((input: StorytellerEffectData) => {
                         const typeInfo = getInputTypeInfo(input.inputType);
                         const Icon = typeInfo.icon;
 
@@ -551,7 +551,7 @@ function DmDashboardContent() {
                     <div className="py-12 text-center">
                       <Database className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
                       <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-                        No DM inputs
+                        No storyteller effects
                       </h3>
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         {selectedCountry === "global"
@@ -657,7 +657,7 @@ export default function DmDashboard() {
             Authentication Not Configured
           </h1>
           <p className="mb-6 text-gray-600 dark:text-gray-300">
-            User authentication is not set up for this application. The DM Dashboard requires
+            User authentication is not set up for this application. The Storyteller Dashboard requires
             authentication to access administrative features.
           </p>
           <div className="flex justify-center gap-4">

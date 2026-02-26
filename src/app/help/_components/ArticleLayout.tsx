@@ -25,7 +25,7 @@ export function ArticleLayout({
 }: ArticleLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <Link
           href="/help"
           className="mb-6 inline-flex items-center gap-2 text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
@@ -42,10 +42,8 @@ export function ArticleLayout({
           <p className="text-xl text-slate-600 dark:text-slate-300">{description}</p>
         </div>
 
-        <div className="prose prose-slate dark:prose-invert prose-blue max-w-none">
-          <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-8 backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
-            {children}
-          </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {children}
         </div>
 
         <div className="mt-8 flex items-center justify-between">
@@ -102,5 +100,14 @@ export function Section({ title, children }: { title?: string; children: React.R
       {title && <h2 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">{title}</h2>}
       {children}
     </section>
+  );
+}
+
+export function ContentCard({ title, children, fullWidth }: { title?: string; children: React.ReactNode; fullWidth?: boolean }) {
+  return (
+    <div className={`prose prose-slate dark:prose-invert prose-blue max-w-none rounded-xl border border-slate-200 bg-white p-6 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-8 ${fullWidth ? "lg:col-span-2" : ""}`}>
+      {title && <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">{title}</h2>}
+      <div className="space-y-6">{children}</div>
+    </div>
   );
 }

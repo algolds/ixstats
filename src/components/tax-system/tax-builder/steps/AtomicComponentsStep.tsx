@@ -15,7 +15,7 @@ import { TaxSystemForm } from "../../atoms/TaxSystemForm";
 import { AtomicTaxComponentSelector } from "../../atoms/AtomicTaxComponents";
 import { UnifiedTaxEffectivenessDisplay } from "../../UnifiedTaxEffectivenessDisplay";
 import { TaxEconomySyncDisplay } from "../../TaxEconomySyncDisplay";
-import { toast } from "sonner";
+import { useNotify } from "~/hooks/useNotify";
 import type { TaxSystemInput, TaxSystem } from "~/types/tax-system";
 import type { ComponentType } from "~/types/government";
 
@@ -64,6 +64,7 @@ export const AtomicComponentsStep = React.memo<AtomicComponentsStepProps>(
     countryId,
     previewTaxSystem,
   }) => {
+    const notify = useNotify();
     return (
       <Tabs defaultValue="basic" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -149,7 +150,7 @@ export const AtomicComponentsStep = React.memo<AtomicComponentsStepProps>(
               taxSystem={previewTaxSystem}
               economicData={{ core: economicData as any }}
               onOptimize={() => {
-                toast.info("Tax optimization recommendations applied");
+                notify.info("Tax optimization recommendations applied");
               }}
             />
           ) : (

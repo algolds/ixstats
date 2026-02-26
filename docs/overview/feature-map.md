@@ -41,7 +41,7 @@ This document inventories the primary code areas. Use it when auditing coverage,
 - Services under `src/app/mycountry/services`, `src/services`, and `src/lib` encapsulate data fetches, caching, and job orchestration
 
 ## tRPC Routers (`src/server/api/routers`)
-**61 routers / 920+ procedures**. Key files:
+**61 routers / 927 procedures**. Key files:
 ```
 achievements.ts        activities.ts        admin.ts
 archetypes.ts          atomicEconomic.ts    atomicGovernment.ts
@@ -60,12 +60,13 @@ card-analytics.ts      cardImages.ts       crafting.ts
 trading.ts             lore-cards.ts       elections.ts
 ns-import.ts           historical.ts       crisis-events.ts
 autosaveHistory.ts     autosaveMonitoring.ts
+nationalIssues.ts      forum.ts            demoMode.ts
 ```
 - Auth-aware context lives in `src/server/api/trpc.ts`
 - Middleware: rate limiting (`~/lib/rate-limiter`), user logging (`~/lib/user-logging-middleware`)
 
 ## Database & Data Flow
-- Prisma schema: `prisma/schema.prisma` (201 models)
+- Prisma schema: `prisma/schema.prisma` (206 models)
 - Seed scripts: `scripts/setup/`
 - ETL & audits: `scripts/audit/` (wiring verifier, CRUD sweeps, economic calculators)
 - PostgreSQL database: `localhost:5433/ixstats` (migrated from SQLite in October 2025)

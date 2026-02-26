@@ -275,6 +275,61 @@
   animation: holographic-shimmer 2s linear infinite;
 }
 
+/* ── Pack Holographic Cover Animations ── */
+
+@keyframes holo-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes foil-sweep {
+  0% { transform: translateX(-100%) skewX(-20deg); }
+  100% { transform: translateX(320%) skewX(-20deg); }
+}
+
+@keyframes geo-spin {
+  from { rotate: 0deg; }
+  to { rotate: 360deg; }
+}
+
+@keyframes lore-ink-flow {
+  0%, 100% { background-position: 0% 0%; opacity: 0.3; }
+  50% { background-position: 100% 100%; opacity: 0.6; }
+}
+
+/* ── Dynamic Island Toast Pulse Animations ── */
+
+@keyframes di-pulse-glow {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+  40% { box-shadow: 0 0 20px 4px rgba(59, 130, 246, 0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+@keyframes di-critical-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); transform: scale(1); }
+  20% { box-shadow: 0 0 25px 6px rgba(239, 68, 68, 0.4); transform: scale(1.02); }
+  50% { box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.15); transform: scale(1); }
+  70% { box-shadow: 0 0 18px 4px rgba(239, 68, 68, 0.3); transform: scale(1.01); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); }
+}
+
+@keyframes di-success-flash {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  40% { box-shadow: 0 0 16px 3px rgba(34, 197, 94, 0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@keyframes di-warning-flash {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+  40% { box-shadow: 0 0 16px 3px rgba(245, 158, 11, 0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.animate-di-pulse { animation: di-pulse-glow 0.8s ease-out; }
+.animate-di-critical { animation: di-critical-pulse 1.2s ease-in-out; }
+.animate-di-success { animation: di-success-flash 0.6s ease-out; }
+.animate-di-warning { animation: di-warning-flash 0.7s ease-out; }
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .marquee-content,
@@ -284,7 +339,15 @@
   .flag-drift-left,
   .flag-drift-right,
   .flip-card,
-  .holographic-shimmer {
+  .holographic-shimmer,
+  .pack-holo-drift,
+  .pack-foil-sweep,
+  .pack-geo-spin,
+  .lore-ink-flow,
+  .animate-di-pulse,
+  .animate-di-critical,
+  .animate-di-success,
+  .animate-di-warning {
     animation: none;
   }
   

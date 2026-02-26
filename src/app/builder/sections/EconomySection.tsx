@@ -624,8 +624,8 @@ export function EconomySection({
           info: [
             `Economic Health Score: ${economicHealthScore.toFixed(0)}/100`,
             `Sustainability Score: ${sustainabilityScore.toFixed(0)}/100`,
-            `Working Age Population: ${sectionUtils.formatNumber(workingAgePopulation)}`,
-            `Total Labor Force: ${sectionUtils.formatNumber(laborForce)}`,
+            `Working Age Population: ${sectionUtils.formatNumber(workingAgePopulation, 0)}`,
+            `Total Labor Force: ${sectionUtils.formatNumber(laborForce, 0)}`,
           ],
         }}
         className={className}

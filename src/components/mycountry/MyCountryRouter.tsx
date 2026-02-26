@@ -1,20 +1,57 @@
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { AuthenticationGuard, CountryDataProvider, useCountryData } from "./primitives";
 import { AtomicStateProvider } from "~/components/atomic/AtomicStateProvider";
 import { MobileOptimized } from "~/app/mycountry/components/MobileOptimizations";
-import { getSectionFromPathname, NAV_ITEMS, type MyCountrySection } from "./MyCountrySidebarNav";
-import { EnhancedMyCountryContent } from "./EnhancedMyCountryContent";
-import { EnhancedExecutiveContent } from "./EnhancedExecutiveContent";
-import { EnhancedDiplomacyContent } from "./EnhancedDiplomacyContent";
-import { EnhancedIntelligenceContent } from "./EnhancedIntelligenceContent";
-import { EnhancedDefenseContent } from "./EnhancedDefenseContent";
+import { getSectionFromPathname, type MyCountrySection } from "./MyCountrySidebarNav";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "./MyCountryComplianceModal";
+import { useMyCountryNotifications } from "~/hooks/useMyCountryNotifications";
 import { useRouter } from "next/navigation";
+
+// Loading skeleton for dynamically loaded sections
+function SectionSkeleton() {
+  return (
+    <div className="animate-pulse space-y-4 p-6">
+      <div className="h-8 w-48 rounded bg-white/5" />
+      <div className="h-64 rounded-xl bg-white/5" />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="h-32 rounded-lg bg-white/5" />
+        <div className="h-32 rounded-lg bg-white/5" />
+      </div>
+    </div>
+  );
+}
+
+// Dynamic imports - only load the active section's code
+const EnhancedMyCountryContent = dynamic(
+  () => import("./EnhancedMyCountryContent").then(m => ({ default: m.EnhancedMyCountryContent })),
+  { loading: () => <SectionSkeleton /> }
+);
+const EnhancedExecutiveContent = dynamic(
+  () => import("./EnhancedExecutiveContent").then(m => ({ default: m.EnhancedExecutiveContent })),
+  { loading: () => <SectionSkeleton /> }
+);
+const EnhancedDiplomacyContent = dynamic(
+  () => import("./EnhancedDiplomacyContent").then(m => ({ default: m.EnhancedDiplomacyContent })),
+  { loading: () => <SectionSkeleton /> }
+);
+const EnhancedIntelligenceContent = dynamic(
+  () => import("./EnhancedIntelligenceContent").then(m => ({ default: m.EnhancedIntelligenceContent })),
+  { loading: () => <SectionSkeleton /> }
+);
+const EnhancedDefenseContent = dynamic(
+  () => import("./EnhancedDefenseContent").then(m => ({ default: m.EnhancedDefenseContent })),
+  { loading: () => <SectionSkeleton /> }
+);
+const EnhancedPoliticsContent = dynamic(
+  () => import("./EnhancedPoliticsContent").then(m => ({ default: m.EnhancedPoliticsContent })),
+  { loading: () => <SectionSkeleton /> }
+);
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
   overview: "MyCountry®",
@@ -22,6 +59,7 @@ const SECTION_TITLES: Record<MyCountrySection, string> = {
   diplomacy: "Diplomatic Operations",
   intelligence: "Intelligence Dashboard",
   defense: "Defense & Security",
+  politics: "Political Landscape",
   "map-editor": "Map Editor",
 };
 
@@ -33,7 +71,6 @@ const SECTION_TITLES: Record<MyCountrySection, string> = {
  * history.pushState for deep linking and back/forward support.
  */
 function MyCountryRouterInner() {
-  const { user } = useUser();
   const { country } = useCountryData();
   const pathname = usePathname();
   const router = useRouter();
@@ -42,6 +79,9 @@ function MyCountryRouterInner() {
   const [activeSection, setActiveSection] = useState<MyCountrySection>(
     () => getSectionFromPathname(pathname)
   );
+
+  // Notification counts for sidebar indicators
+  const notifications = useMyCountryNotifications(country?.id);
 
   // Compliance modal (overview only)
   const { sections: complianceSections, isCompliant, loading: complianceLoading, countryId } = useMyCountryCompliance();
@@ -128,42 +168,47 @@ function MyCountryRouterInner() {
             variant="unified"
             activeSection={activeSection}
             onNavigate={handleNavigate}
+            notifications={notifications}
           />
         );
       case "executive":
         return (
           <EnhancedExecutiveContent
-            variant="unified"
             activeSection={activeSection}
             onNavigate={handleNavigate}
+            notifications={notifications}
           />
         );
       case "diplomacy":
         return (
           <EnhancedDiplomacyContent
-            variant="unified"
             activeSection={activeSection}
             onNavigate={handleNavigate}
+            notifications={notifications}
           />
         );
       case "intelligence":
         return (
           <EnhancedIntelligenceContent
-            variant="unified"
             activeSection={activeSection}
             onNavigate={handleNavigate}
+            notifications={notifications}
           />
         );
       case "defense":
-        // Defense needs props-based data, we pass from context
-        if (!user || !country) return null;
         return (
           <EnhancedDefenseContent
-            user={user}
-            userProfile={{ countryId: country.id }}
-            country={country}
             activeSection={activeSection}
             onNavigate={handleNavigate}
+            notifications={notifications}
+          />
+        );
+      case "politics":
+        return (
+          <EnhancedPoliticsContent
+            activeSection={activeSection}
+            onNavigate={handleNavigate}
+            notifications={notifications}
           />
         );
       case "map-editor":
@@ -180,7 +225,7 @@ function MyCountryRouterInner() {
       {renderSection()}
       {activeSection === "overview" && country?.id && complianceSections.length > 0 && (
         <MyCountryComplianceModal
-          open={showComplianceModal}
+          isOpen={showComplianceModal}
           sections={complianceSections}
           onReview={handleReview}
           onRemindLater={handleRemindLater}
