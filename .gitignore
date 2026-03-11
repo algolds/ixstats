@@ -101,6 +101,18 @@ cypress/videos/
 .hextaui
 
 # --------------------------------------------------------------------------------
+# Project Config Files (keep on disk, not in repo)
+# --------------------------------------------------------------------------------
+.npmrc
+components.json
+docker-compose.yml
+docker/
+ecosystem.config.cjs
+ecosystem.ixworld.config.cjs
+postcss.config.js
+prettier.config.js
+
+# --------------------------------------------------------------------------------
 # Runtime Logs & Reports
 # --------------------------------------------------------------------------------
 logs/
