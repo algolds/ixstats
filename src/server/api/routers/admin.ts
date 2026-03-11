@@ -10,7 +10,7 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { isSystemOwner } from "~/lib/system-owner-constants";
-import { CONFIG_CONSTANTS, getDefaultEconomicConfig } from "~/lib/config-service";
+import { CONFIG_CONSTANTS, getDefaultEconomicConfig, getEconomicConfigFromDB, invalidateConfigCache } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
 import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
@@ -175,18 +175,24 @@ export const adminRouter = createTRPCRouter({
     }
   }),
 
-  // Get system configuration
+  // Get system configuration (includes all economic control parameters)
   getConfig: adminProcedure.query(async ({ ctx }) => {
+    const ALL_CONFIG_KEYS = [
+      "globalGrowthFactor", "autoUpdate", "botSyncEnabled", "timeMultiplier",
+      "baseInflationRate",
+      "tierGrowthModifier_Impoverished", "tierGrowthModifier_Developing",
+      "tierGrowthModifier_Developed", "tierGrowthModifier_Healthy",
+      "tierGrowthModifier_Strong", "tierGrowthModifier_VeryStrong",
+      "tierGrowthModifier_Extravagant",
+      "diminishingReturnsThreshold", "diminishingReturnsFactor", "minGrowthFloor",
+    ];
+
     try {
       const configs = await ctx.db.systemConfig.findMany({
-        where: {
-          key: {
-            in: ["globalGrowthFactor", "autoUpdate", "botSyncEnabled", "timeMultiplier"],
-          },
-        },
+        where: { key: { in: ALL_CONFIG_KEYS } },
       });
 
-      const configMap = configs.reduce(
+      const m = configs.reduce(
         (acc, config) => {
           acc[config.key] = config.value;
           return acc;
@@ -196,25 +202,45 @@ export const adminRouter = createTRPCRouter({
 
       return {
         globalGrowthFactor: parseFloat(
-          configMap.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR.toString()
+          m.globalGrowthFactor || CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR.toString()
         ),
-        autoUpdate: configMap.autoUpdate === "true",
-        botSyncEnabled: configMap.botSyncEnabled === "true",
-        timeMultiplier: parseFloat(configMap.timeMultiplier || "2.0"),
+        autoUpdate: m.autoUpdate !== undefined ? m.autoUpdate === "true" : true,
+        botSyncEnabled: m.botSyncEnabled !== undefined ? m.botSyncEnabled === "true" : true,
+        timeMultiplier: parseFloat(m.timeMultiplier || "2.0"),
+        baseInflationRate: parseFloat(m.baseInflationRate || "0.02"),
+        tierGrowthModifiers: {
+          Impoverished: parseFloat(m.tierGrowthModifier_Impoverished || "1.0"),
+          Developing: parseFloat(m.tierGrowthModifier_Developing || "1.0"),
+          Developed: parseFloat(m.tierGrowthModifier_Developed || "1.0"),
+          Healthy: parseFloat(m.tierGrowthModifier_Healthy || "1.0"),
+          Strong: parseFloat(m.tierGrowthModifier_Strong || "1.0"),
+          "Very Strong": parseFloat(m.tierGrowthModifier_VeryStrong || "1.0"),
+          Extravagant: parseFloat(m.tierGrowthModifier_Extravagant || "1.0"),
+        },
+        diminishingReturnsThreshold: parseFloat(m.diminishingReturnsThreshold || "60000"),
+        diminishingReturnsFactor: parseFloat(m.diminishingReturnsFactor || "0.5"),
+        minGrowthFloor: parseFloat(m.minGrowthFloor || "-0.1"),
       };
     } catch (error) {
       console.error("Failed to get config:", error);
-      // Return defaults if database fails
       return {
         globalGrowthFactor: CONFIG_CONSTANTS.GLOBAL_GROWTH_FACTOR,
         autoUpdate: true,
         botSyncEnabled: true,
         timeMultiplier: 2.0,
+        baseInflationRate: 0.02,
+        tierGrowthModifiers: {
+          Impoverished: 1.0, Developing: 1.0, Developed: 1.0, Healthy: 1.0,
+          Strong: 1.0, "Very Strong": 1.0, Extravagant: 1.0,
+        },
+        diminishingReturnsThreshold: 60000,
+        diminishingReturnsFactor: 0.5,
+        minGrowthFloor: -0.1,
       };
     }
   }),
 
-  // Save system configuration
+  // Save system configuration (all economic control parameters)
   saveConfig: adminProcedure
     .input(
       z.object({
@@ -222,18 +248,53 @@ export const adminRouter = createTRPCRouter({
         autoUpdate: z.boolean(),
         botSyncEnabled: z.boolean(),
         timeMultiplier: z.number().min(0).max(10),
+        baseInflationRate: z.number().min(0).max(0.1).optional(),
+        tierGrowthModifiers: z.record(z.string(), z.number().min(0.5).max(2.0)).optional(),
+        diminishingReturnsThreshold: z.number().min(40000).max(100000).optional(),
+        diminishingReturnsFactor: z.number().min(0.1).max(1.0).optional(),
+        minGrowthFloor: z.number().min(-0.2).max(0).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const configUpdates = [
+        const configUpdates: { key: string; value: string }[] = [
           { key: "globalGrowthFactor", value: input.globalGrowthFactor.toString() },
           { key: "autoUpdate", value: input.autoUpdate.toString() },
           { key: "botSyncEnabled", value: input.botSyncEnabled.toString() },
           { key: "timeMultiplier", value: input.timeMultiplier.toString() },
         ];
 
-        // Batch upserts using transaction for better performance (avoids N+1 pattern)
+        // Add optional economic control parameters
+        if (input.baseInflationRate !== undefined) {
+          configUpdates.push({ key: "baseInflationRate", value: input.baseInflationRate.toString() });
+        }
+        if (input.tierGrowthModifiers) {
+          const tierKeyMap: Record<string, string> = {
+            Impoverished: "tierGrowthModifier_Impoverished",
+            Developing: "tierGrowthModifier_Developing",
+            Developed: "tierGrowthModifier_Developed",
+            Healthy: "tierGrowthModifier_Healthy",
+            Strong: "tierGrowthModifier_Strong",
+            "Very Strong": "tierGrowthModifier_VeryStrong",
+            Extravagant: "tierGrowthModifier_Extravagant",
+          };
+          for (const [tier, value] of Object.entries(input.tierGrowthModifiers)) {
+            const dbKey = tierKeyMap[tier];
+            if (dbKey) {
+              configUpdates.push({ key: dbKey, value: value.toString() });
+            }
+          }
+        }
+        if (input.diminishingReturnsThreshold !== undefined) {
+          configUpdates.push({ key: "diminishingReturnsThreshold", value: input.diminishingReturnsThreshold.toString() });
+        }
+        if (input.diminishingReturnsFactor !== undefined) {
+          configUpdates.push({ key: "diminishingReturnsFactor", value: input.diminishingReturnsFactor.toString() });
+        }
+        if (input.minGrowthFloor !== undefined) {
+          configUpdates.push({ key: "minGrowthFloor", value: input.minGrowthFloor.toString() });
+        }
+
         await ctx.db.$transaction(
           configUpdates.map((config) =>
             ctx.db.systemConfig.upsert({
@@ -247,6 +308,9 @@ export const adminRouter = createTRPCRouter({
             })
           )
         );
+
+        // Invalidate config cache so next calculation uses fresh values
+        invalidateConfigCache();
 
         return { success: true, message: "Configuration saved successfully" };
       } catch (error) {
@@ -599,8 +663,8 @@ export const adminRouter = createTRPCRouter({
                   projected2040GdpPerCapita: country.projected2040GdpPerCapita,
                   actualGdpGrowth: country.actualGdpGrowth,
                   localGrowthFactor: country.localGrowthFactor,
-                  baselineDate: new Date(IxTime.getInGameEpoch()),
-                  lastCalculated: new Date(IxTime.getInGameEpoch()),
+                  baselineDate: new Date(IxTime.getCurrentIxTime()),
+                  lastCalculated: new Date(IxTime.getCurrentIxTime()),
                   currentPopulation,
                   currentGdpPerCapita,
                   currentTotalGdp,
@@ -686,7 +750,7 @@ export const adminRouter = createTRPCRouter({
             ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
             countriesUpdated: created + updated,
             executionTimeMs: 0,
-            globalGrowthFactor: getDefaultEconomicConfig().globalGrowthFactor,
+            globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
             notes: `Import: ${created} created, ${updated} updated, ${skipped} skipped, ${errors.length} errors.`,
           },
         });
@@ -744,7 +808,7 @@ export const adminRouter = createTRPCRouter({
             ixTimeTimestamp: new Date(input.targetEpoch),
             countriesUpdated: updateResult.count,
             executionTimeMs: 0,
-            globalGrowthFactor: getDefaultEconomicConfig().globalGrowthFactor,
+            globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
             notes: `Epoch sync: ${yearsDifference.toFixed(1)} years adjustment. ${updateResult.count} countries updated. ${input.reason || "Manual epoch sync"}.`,
           },
         });
@@ -777,7 +841,7 @@ export const adminRouter = createTRPCRouter({
         },
       });
 
-      const econConfig = getDefaultEconomicConfig();
+      const econConfig = await getEconomicConfigFromDB(ctx.db);
       const currentIxTime = IxTime.getCurrentIxTime();
 
       let updatedCount = 0;
@@ -1939,6 +2003,8 @@ export const adminRouter = createTRPCRouter({
             // Vitality
             overallNationalHealth: true,
             economicVitality: true,
+            // Map linkage
+            landArea: true,
             // Timestamps
             lastCalculated: true,
             updatedAt: true,
@@ -2002,6 +2068,8 @@ export const adminRouter = createTRPCRouter({
         // Vitality
         nationalHealth: c.overallNationalHealth,
         economicVitality: c.economicVitality,
+        // Map
+        hasMap: c.landArea != null && c.landArea > 0,
         // Timestamps
         lastCalculated: c.lastCalculated,
         updatedAt: c.updatedAt,

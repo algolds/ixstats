@@ -29,6 +29,13 @@ import {
 import { vaultService } from "~/lib/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 
+/** Normalize a flag URL — bare filenames get prefixed with the wiki file path. */
+function normalizeFlagUrl(flag: string | null | undefined): string | undefined {
+  if (!flag) return undefined;
+  if (flag.startsWith("http") || flag.startsWith("data:") || flag.startsWith("/")) return flag;
+  return `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(flag)}`;
+}
+
 // Helper functions for cultural exchange <-> embassy mission integration
 
 /**
@@ -105,7 +112,7 @@ export const diplomaticRouter = createTRPCRouter({
             targetCountry: targetInfo?.name ?? targetId,
             targetCountryId: targetId,
             targetCountryName: targetInfo?.name ?? targetId,
-            targetCountryFlag: targetInfo?.flag ?? null,
+            targetCountryFlag: normalizeFlagUrl(targetInfo?.flag) ?? null,
             relationship: relation.relationship,
             strength: relation.strength,
             treaties: relation.treaties ? JSON.parse(relation.treaties) : [],
@@ -506,14 +513,14 @@ export const diplomaticRouter = createTRPCRouter({
           hostCountryId: embassy.hostCountryId,
           guestCountryId: embassy.guestCountryId,
           hostCountry: embassy.hostCountry?.name ?? "Unknown",
-          hostCountryFlag: embassy.hostCountry?.flag ?? null,
+          hostCountryFlag: normalizeFlagUrl(embassy.hostCountry?.flag) ?? null,
           hostCountrySlug: embassy.hostCountry?.slug ?? null,
           guestCountry: embassy.guestCountry?.name ?? "Unknown",
-          guestCountryFlag: embassy.guestCountry?.flag ?? null,
+          guestCountryFlag: normalizeFlagUrl(embassy.guestCountry?.flag) ?? null,
           guestCountrySlug: embassy.guestCountry?.slug ?? null,
           countryId: partnerCountry?.id ?? null,
           country: partnerCountry?.name ?? "Unknown",
-          countryFlag: partnerCountry?.flag ?? null,
+          countryFlag: normalizeFlagUrl(partnerCountry?.flag) ?? null,
           countrySlug: partnerCountry?.slug ?? null,
           status: embassy.status,
           strength: Math.floor(
@@ -1089,7 +1096,7 @@ export const diplomaticRouter = createTRPCRouter({
               exchangeId: exchange.id,
               countryId: input.participantCountryId,
               countryName: participantCountry.name,
-              flagUrl: participantCountry.flag,
+              flagUrl: normalizeFlagUrl(participantCountry.flag),
               role: "participant",
             },
           });
@@ -3734,7 +3741,7 @@ export const diplomaticRouter = createTRPCRouter({
             name: sourceCountry.name,
             economicTier: sourceCountry.economicTier,
             continent: sourceCountry.continent || undefined,
-            flagUrl: sourceCountry.flag || undefined,
+            flagUrl: normalizeFlagUrl(sourceCountry.flag),
           };
 
           const country2Info: CountryBasicInfo = {
@@ -3742,7 +3749,7 @@ export const diplomaticRouter = createTRPCRouter({
             name: targetCountry.name,
             economicTier: targetCountry.economicTier,
             continent: targetCountry.continent || undefined,
-            flagUrl: targetCountry.flag || undefined,
+            flagUrl: normalizeFlagUrl(targetCountry.flag),
           };
 
           const diplomaticRel: DiplomaticRelationship | undefined = relation
@@ -3773,7 +3780,7 @@ export const diplomaticRouter = createTRPCRouter({
           return {
             targetCountryId: targetCountry.id,
             targetCountryName: targetCountry.name,
-            flagUrl: targetCountry.flag || "",
+            flagUrl: normalizeFlagUrl(targetCountry.flag) || "",
             compatibilityScore: compatibility.score,
             level: compatibility.level,
             diplomaticStatus: relation?.relationship || "none",
@@ -3861,7 +3868,7 @@ export const diplomaticRouter = createTRPCRouter({
             name: sourceCountry.name,
             economicTier: sourceCountry.economicTier,
             continent: sourceCountry.continent || undefined,
-            flagUrl: sourceCountry.flag || undefined,
+            flagUrl: normalizeFlagUrl(sourceCountry.flag),
           };
 
           const country2Info: CountryBasicInfo = {
@@ -3869,7 +3876,7 @@ export const diplomaticRouter = createTRPCRouter({
             name: targetCountry.name,
             economicTier: targetCountry.economicTier,
             continent: targetCountry.continent || undefined,
-            flagUrl: targetCountry.flag || undefined,
+            flagUrl: normalizeFlagUrl(targetCountry.flag),
           };
 
           const diplomaticRel: DiplomaticRelationship | undefined = relation
@@ -3900,7 +3907,7 @@ export const diplomaticRouter = createTRPCRouter({
           return {
             targetCountryId: targetCountry.id,
             targetCountryName: targetCountry.name,
-            flagUrl: targetCountry.flag || "",
+            flagUrl: normalizeFlagUrl(targetCountry.flag) || "",
             compatibilityScore: compatibility.score,
             level: compatibility.level,
             diplomaticStatus: relation?.relationship || "none",

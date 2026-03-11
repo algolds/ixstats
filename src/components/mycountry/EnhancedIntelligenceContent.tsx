@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
+import dynamic from "next/dynamic";
 import { Brain, Eye, BarChart3, FileText, Settings, Shield, AlertTriangle, Globe } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -23,6 +24,11 @@ import { api } from "~/trpc/react";
 import { IntelligenceDashboard } from "~/components/intelligence/IntelligenceDashboard";
 import { IntelligenceAnalysisPanel } from "~/components/intelligence/IntelligenceAnalysisPanel";
 import { KeyFindingsPanel } from "~/components/intelligence/KeyFindingsPanel";
+
+const IntelligenceMapWidget = dynamic(
+  () => import("~/components/maps/widgets/IntelligenceMapWidget").then((m) => ({ default: m.IntelligenceMapWidget })),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted" /> }
+);
 
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
@@ -137,6 +143,9 @@ export function EnhancedIntelligenceContent({
         onNavigate={onNavigate}
         notifications={notifications}
       >
+        {/* Geopolitical Map */}
+        <IntelligenceMapWidget countryId={country.id} countryName={country.name} />
+
         {/* Intelligence Status Rings */}
         <VitalityRings rings={intelligenceRings} title="Intelligence Overview" variant="grid" />
 

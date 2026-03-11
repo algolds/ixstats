@@ -52,6 +52,10 @@ const EnhancedPoliticsContent = dynamic(
   () => import("./EnhancedPoliticsContent").then(m => ({ default: m.EnhancedPoliticsContent })),
   { loading: () => <SectionSkeleton /> }
 );
+const EnhancedMapEditorContent = dynamic(
+  () => import("./EnhancedMapEditorContent").then(m => ({ default: m.EnhancedMapEditorContent })),
+  { loading: () => <SectionSkeleton /> }
+);
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
   overview: "MyCountry®",
@@ -212,9 +216,13 @@ function MyCountryRouterInner() {
           />
         );
       case "map-editor":
-        // Map editor still uses its own route
-        router.push("/mycountry/editor");
-        return null;
+        return (
+          <EnhancedMapEditorContent
+            activeSection={activeSection}
+            onNavigate={handleNavigate}
+            notifications={notifications}
+          />
+        );
       default:
         return null;
     }

@@ -43,9 +43,9 @@ export default function BatchLoreCardGeneratorPage() {
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
-          <h1 className="mb-4 text-2xl font-bold text-red-600 dark:text-red-400">Access Denied</h1>
-          <p className="mb-6 text-gray-700 dark:text-gray-300">
+        <div className="rounded-lg border border-border bg-card p-8 text-center shadow-lg">
+          <h1 className="mb-4 text-2xl font-bold text-red-600">Access Denied</h1>
+          <p className="mb-6 text-muted-foreground">
             You do not have permission to view this page.
           </p>
         </div>

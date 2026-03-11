@@ -31,14 +31,14 @@ export function WarningPanel({ systemStatus }: WarningPanelProps) {
   if (!hasIsPaused(ixTime) || !ixTime.isPaused) return null;
 
   return (
-    <div className="mt-6 rounded-lg border border-red-300 bg-red-100 p-4 dark:border-red-700 dark:bg-red-900">
+    <div className="mt-6 rounded-lg border border-red-500/20 bg-red-500/10 p-4">
       <div className="flex">
-        <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
+        <AlertTriangle className="h-5 w-5 text-red-500" />
         <div className="ml-3">
-          <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+          <h3 className="text-sm font-medium text-red-700">
             IxTime is currently paused
           </h3>
-          <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+          <p className="mt-1 text-sm text-red-600">
             Economic calculations and time progression have been suspended. Countries will not
             update automatically.
           </p>

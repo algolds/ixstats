@@ -13,6 +13,7 @@ interface UnifiedCountryFlagProps {
   countryName: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
+  fitContainer?: boolean;
   showPlaceholder?: boolean;
   showTooltip?: boolean;
   loading?: boolean;
@@ -45,6 +46,7 @@ export function UnifiedCountryFlag({
   countryName,
   size = "md",
   className = "",
+  fitContainer = false,
   showPlaceholder = true,
   showTooltip = true,
   loading: externalLoading,
@@ -68,9 +70,11 @@ export function UnifiedCountryFlag({
   const isLocal = flagUrl ? hookResult.isLocal : false;
   const isPlaceholder = flagUrl ? hookResult.isPlaceholder : false;
 
+  const dimensionsClass = fitContainer ? "h-full w-full" : sizeClasses[size];
+
   // Build CSS classes
   const flagClasses = cn(
-    sizeClasses[size],
+    dimensionsClass,
     "object-contain transition-all duration-200",
     rounded && "rounded",
     shadow && "shadow-sm",
@@ -80,7 +84,7 @@ export function UnifiedCountryFlag({
   );
 
   const placeholderClasses = cn(
-    sizeClasses[size],
+    dimensionsClass,
     placeholderTextSize[size],
     "bg-gradient-to-br from-gray-100 to-gray-200",
     "flex items-center justify-center",
@@ -96,7 +100,7 @@ export function UnifiedCountryFlag({
   if (isLoading) {
     return (
       <div className="relative">
-        <Skeleton className={cn(sizeClasses[size], rounded && "rounded", className)} />
+        <Skeleton className={cn(dimensionsClass, rounded && "rounded", className)} />
         {showTooltip && <span className="sr-only">Loading flag for {countryName}</span>}
       </div>
     );

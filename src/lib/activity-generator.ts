@@ -366,7 +366,7 @@ export class ActivityGenerator {
   /**
    * Core method to create activity in database
    */
-  private static async createActivity(activityData: ActivityData): Promise<void> {
+  static async createActivity(activityData: ActivityData): Promise<void> {
     try {
       await db.activityFeed.create({
         data: {

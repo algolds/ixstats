@@ -120,8 +120,16 @@ const createPrismaClient = () => {
     // ThinkTank groups (seeded by demo seed system)
     "ThinktankGroup", "ThinktankMember", "ThinktankMessage",
     "ThinktankInvite", "CollaborativeDoc",
+    // Sovereignty / dependency relationships (admin map management)
+    "CountrySovereignty",
+    // SVG upload pipeline (admin map management)
+    "SvgUpload", "MapLayer", "MapEditRequest",
+    // Border editor, world templates, procedural generation
+    "MapEditorSession", "WorldTemplate", "ProceduralWorld",
     // Activity feed & achievements (seeded/cleaned by demo seed system)
     "ActivityFeed", "UserAchievement",
+    // Wiki cache (written by WikiCacheService for 3-layer caching)
+    "WikiCache",
   ]);
 
   // In read-only mode, extend the client to block write operations

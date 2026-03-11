@@ -78,16 +78,17 @@ export function HeroSection({
       <div className="relative container mx-auto flex h-full flex-col justify-end px-4 pb-4 md:pb-6">
         <div className="flex items-end gap-3 md:gap-4">
           {/* Flag */}
-          <div className="mb-2 flex-shrink-0">
+          <div className="mb-2 h-16 w-16 flex-shrink-0 md:h-20 md:w-20 lg:h-24 lg:w-24">
             <UnifiedCountryFlag
               countryName={country.name}
               size="xl"
               flagUrl={flagUrl}
               isLoading={flagLoading}
+              fitContainer={true}
               rounded={true}
               shadow={true}
               border={true}
-              className="h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24"
+              className="h-full w-full"
             />
           </div>
 

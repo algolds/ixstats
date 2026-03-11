@@ -1,0 +1,187 @@
+"use client";
+
+/**
+ * FeatureInfoPanel - Slide-out panel for map markers (cities, POIs, capitals).
+ *
+ * Desktop: Right-side panel. Mobile: Bottom sheet.
+ * Shows feature data, wiki intro (fetched on demand), and action links.
+ */
+
+import { X, MapPin, Users, BookOpen, Landmark, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { api } from "~/trpc/react";
+import type { SelectedFeature } from "./IxWorldMap";
+import { SwipeableBottomSheet } from "./SwipeableBottomSheet";
+
+interface FeatureInfoPanelProps {
+  feature: SelectedFeature;
+  onClose: () => void;
+}
+
+function formatPopulation(n: number | null | undefined): string {
+  if (n == null) return "\u2014";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+  return n.toLocaleString();
+}
+
+export function FeatureInfoPanel({ feature, onClose }: FeatureInfoPanelProps) {
+  // Fetch wiki intro on demand (only if wikiPageTitle is set)
+  const { data: wikiIntro, isLoading: wikiLoading } =
+    api.geo.getFeatureWikiIntro.useQuery(
+      { wikiPageTitle: feature.wikiPageTitle! },
+      {
+        enabled: !!feature.wikiPageTitle,
+        staleTime: 5 * 60_000,
+        gcTime: 30 * 60_000,
+      }
+    );
+
+  const isCity =
+    feature.featureType === "city" || feature.featureType === "capital";
+
+  const panelContent = (
+    <>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          <div
+            className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+              isCity ? "bg-blue-100" : "bg-amber-100"
+            }`}
+          >
+            {isCity ? (
+              <MapPin
+                className={`h-4 w-4 ${feature.isCapital ? "text-amber-600" : "text-blue-600"}`}
+              />
+            ) : (
+              <Landmark className="h-4 w-4 text-amber-600" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold text-foreground">
+              {feature.name}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {isCity
+                ? (feature.cityType ?? "City")
+                    .charAt(0)
+                    .toUpperCase() +
+                  (feature.cityType ?? "city").slice(1)
+                : (feature.category ?? "Landmark")
+                    .charAt(0)
+                    .toUpperCase() +
+                  (feature.category ?? "landmark").slice(1)}
+              {" \u00B7 "}
+              {feature.countryName}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div
+        className="overflow-y-auto p-4"
+        style={{ maxHeight: "calc(100% - 56px)" }}
+      >
+        {/* Wiki intro loading skeleton */}
+        {wikiLoading && feature.wikiPageTitle && (
+          <div className="mb-3 space-y-1.5">
+            <div className="h-3 w-full animate-pulse rounded bg-muted" />
+            <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />
+          </div>
+        )}
+
+        {/* Wiki intro text */}
+        {wikiIntro?.extract && (
+          <div className="mb-3">
+            <p className="line-clamp-5 text-xs leading-relaxed text-foreground/80">
+              {wikiIntro.extract}
+            </p>
+          </div>
+        )}
+
+        {/* City population */}
+        {isCity && feature.population != null && (
+          <div className="rounded-lg bg-muted px-3 py-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <Users className="h-3 w-3" />
+              Population
+            </div>
+            <div className="mt-0.5 text-sm font-semibold text-foreground">
+              {formatPopulation(feature.population)}
+            </div>
+          </div>
+        )}
+
+        {/* POI description */}
+        {!isCity && feature.description && (
+          <div className="rounded-lg bg-muted px-3 py-2">
+            <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Description
+            </div>
+            <p className="mt-0.5 text-xs leading-relaxed text-foreground">
+              {feature.description}
+            </p>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="mt-4 flex flex-col gap-2">
+          {wikiIntro?.wikiUrl && (
+            <a
+              href={wikiIntro.wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+            >
+              <BookOpen className="h-3 w-3" />
+              Read on{" "}
+              {wikiIntro.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
+            </a>
+          )}
+          {feature.countrySlug && (
+            <Link
+              href={`/countries/${feature.countrySlug}`}
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
+            >
+              View {feature.countryName}
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop: Right-side panel */}
+      <div
+        className="absolute right-0 top-0 z-20 hidden h-full w-96 sm:block"
+        style={{ animation: "slideInRight 0.25s ease-out" }}
+      >
+        <div className="h-full bg-card shadow-xl">{panelContent}</div>
+      </div>
+
+      {/* Mobile: Swipeable bottom sheet */}
+      <SwipeableBottomSheet onClose={onClose}>
+        {panelContent}
+      </SwipeableBottomSheet>
+
+      <style jsx>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+      `}</style>
+    </>
+  );
+}

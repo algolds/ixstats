@@ -24,6 +24,7 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  Map,
 } from "lucide-react";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 
@@ -201,6 +202,7 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
                   </button>
                 </th>
               ))}
+              <th className="px-3 py-2.5 text-left font-medium">Map</th>
               <th className="px-3 py-2.5 text-left font-medium">Owner</th>
               <th className="px-3 py-2.5 text-left font-medium">Alerts</th>
             </tr>
@@ -209,7 +211,7 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
             {isLoading ? (
               Array.from({ length: 10 }).map((_, i) => (
                 <tr key={i} className="border-b border-border/30">
-                  {Array.from({ length: 9 }).map((_, j) => (
+                  {Array.from({ length: 10 }).map((_, j) => (
                     <td key={j} className="px-3 py-2.5">
                       <Skeleton className="h-5 w-full" />
                     </td>
@@ -218,7 +220,7 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
               ))
             ) : data?.rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-muted-foreground px-3 py-8 text-center">
+                <td colSpan={10} className="text-muted-foreground px-3 py-8 text-center">
                   No countries found
                 </td>
               </tr>
@@ -293,6 +295,15 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
                       {row.updatedAt
                         ? new Date(row.updatedAt).toLocaleDateString()
                         : "Never"}
+                    </td>
+
+                    {/* Map */}
+                    <td className="px-3 py-2.5">
+                      {row.hasMap ? (
+                        <Map className="h-4 w-4 text-emerald-500" />
+                      ) : (
+                        <Map className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+                      )}
                     </td>
 
                     {/* Owner */}

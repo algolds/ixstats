@@ -45,6 +45,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`systems/elections.md`](systems/elections.md) – Elections, political parties, and legislature management
 - [`systems/national-issues.md`](systems/national-issues.md) – National issues engine and consequences
 - [`systems/forum.md`](systems/forum.md) – XenForo forum integration and widget embedding
+- [`systems/maps.md`](systems/maps.md) – IxWorld interactive map, MapLibre GL JS, procedural world generation, border editor
 
 ### Operations
 - [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
@@ -74,7 +75,11 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`TAX_SYSTEM_FRONTEND_EXAMPLE.md`](TAX_SYSTEM_FRONTEND_EXAMPLE.md) – tax system frontend integration examples
 - [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) – complete tax system implementation summary
 
-### Map Editor & Vector Tiles Reference (DEPRECATED - Maps removed November 2025)
+### Maps & World Visualization
+- [`systems/maps.md`](systems/maps.md) – IxWorld map system: MapLibre GL JS, 7 layers, geo API (70 endpoints), procedural world generation, border editor
+- [`IXWORLD_OCEANOGRAPHY_REPORT.md`](IXWORLD_OCEANOGRAPHY_REPORT.md) – ocean basins, seas, currents, shipping routes, and marine ecology
+
+#### Legacy Map References (v1 — vector tiles, Martin tile server)
 - [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md) – comprehensive vector tiles implementation guide
 - [`VECTOR_TILES_API.md`](VECTOR_TILES_API.md) – vector tiles API reference and endpoints
 - [`VECTOR_TILES_IMPLEMENTATION.md`](VECTOR_TILES_IMPLEMENTATION.md) – vector tiles technical implementation details

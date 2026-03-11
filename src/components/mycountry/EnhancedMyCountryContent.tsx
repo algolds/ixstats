@@ -20,6 +20,11 @@ import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
 import { VaultWidget } from "./VaultWidget";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
+const CountryMapWidget = dynamic(
+  () => import("~/components/maps/widgets/CountryMapWidget").then((m) => ({ default: m.CountryMapWidget })),
+  { ssr: false, loading: () => <div className="h-48 animate-pulse rounded-xl bg-muted" /> }
+);
+
 interface EnhancedMyCountryContentProps {
   variant?: "unified" | "standard" | "premium";
   activeSection?: MyCountrySection;
@@ -189,7 +194,17 @@ export function EnhancedMyCountryContent({
           showEditButton={true}
         />
       }
-      sidebarExtra={variant === "unified" ? <VaultWidget /> : undefined}
+      sidebarExtra={variant === "unified" ? (
+        <>
+          <VaultWidget />
+          <CountryMapWidget
+            countryId={country.id}
+            countryName={country.name}
+            borderColor="border-amber-500/15"
+            fullMapUrl={`/maps?country=${country.id}`}
+          />
+        </>
+      ) : undefined}
       activeSection={activeSection}
       onNavigate={onNavigate}
       notifications={notifications}

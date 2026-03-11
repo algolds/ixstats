@@ -167,22 +167,30 @@ export class IxTimeSyncManager {
     this.syncStatuses.delete(targetId);
   }
 
+  private get isBrowser(): boolean {
+    return typeof window !== "undefined";
+  }
+
   public async start(): Promise<void> {
     if (this.isRunning) return;
 
     console.log("[IxTime Sync] Starting synchronization manager...");
     this.isRunning = true;
 
-    // Update master state
+    // Update master state (works in both browser and server)
     await this.updateMasterState();
 
-    // Perform initial sync of all targets
-    await this.syncAllTargets();
+    // Network sync only works server-side (localhost targets aren't reachable from browser)
+    if (!this.isBrowser) {
+      await this.syncAllTargets();
+    }
 
-    // Start periodic sync
+    // Start periodic refresh
     this.syncInterval = setInterval(async () => {
       await this.updateMasterState();
-      await this.syncAllTargets();
+      if (!this.isBrowser) {
+        await this.syncAllTargets();
+      }
     }, 15000); // Check every 15 seconds
 
     console.log("[IxTime Sync] Synchronization manager started");

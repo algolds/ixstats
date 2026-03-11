@@ -183,21 +183,21 @@ const FIELD_MAPPINGS: ExcelFieldMapping[] = [
     dbField: "projected2040Population",
     required: false, // Not in standardized headers, will calculate defaults
     type: "number",
-    aliases: ["2040 Pop", "Projected Population"],
+    aliases: ["2040 Pop", "Projected Population", "2041 Population", "2041 Pop"],
   },
   {
     excelHeader: "2040 GDP",
     dbField: "projected2040Gdp",
     required: false, // Not in standardized headers, will calculate defaults
     type: "number",
-    aliases: ["Projected GDP"],
+    aliases: ["Projected GDP", "2041 GDP"],
   },
   {
     excelHeader: "2040 GDP PC",
     dbField: "projected2040GdpPerCapita",
     required: false, // Not in standardized headers, will calculate defaults
     type: "number",
-    aliases: ["2040 GDPPC", "Projected GDPPC"],
+    aliases: ["2040 GDPPC", "Projected GDPPC", "2041 GDPPC", "2041 GDP PC"],
   },
   {
     excelHeader: "Actual GDP Growth",
@@ -484,24 +484,24 @@ export class IxStatsExcelHandler {
       // Calculate default values for missing required fields (that aren't in standard headers)
       // These are required in the database schema but not in the standardized Excel headers
 
-      // Calculate 2040 Population (12 years from baseline 2028)
+      // Calculate projected population (1 year forward from baseline)
       if (
         countryData.projected2040Population === null ||
         countryData.projected2040Population === undefined
       ) {
-        // Project population 12 years into the future (2028 to 2040)
+        // Project population 1 year forward (spreadsheet data is already ~2040)
         countryData.projected2040Population =
-          countryData.population * Math.pow(1 + countryData.populationGrowthRate, 12);
+          countryData.population * Math.pow(1 + countryData.populationGrowthRate, 1);
       }
 
-      // Calculate 2040 GDP per Capita
+      // Calculate projected GDP per Capita
       if (
         countryData.projected2040GdpPerCapita === null ||
         countryData.projected2040GdpPerCapita === undefined
       ) {
-        // Project GDP per capita 12 years into the future
+        // Project GDP per capita 1 year forward
         countryData.projected2040GdpPerCapita =
-          countryData.gdpPerCapita * Math.pow(1 + countryData.adjustedGdpGrowth, 12);
+          countryData.gdpPerCapita * Math.pow(1 + countryData.adjustedGdpGrowth, 1);
       }
 
       // Calculate 2040 total GDP

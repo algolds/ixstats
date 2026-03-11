@@ -105,6 +105,7 @@ function getBaseUrl() {
 
   if (typeof window !== "undefined") return window.location.origin + basePath;
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}${basePath}`;
-  if (process.env.NODE_ENV === "production") return `https://ixwiki.com${basePath}`;
+  // Server-side: always use localhost to call our own server directly
+  // This ensures IxWorld (port 3002) and IxStats (port 3550) are fully independent
   return `http://localhost:${process.env.PORT ?? 3000}${basePath}`;
 }

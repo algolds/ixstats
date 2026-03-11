@@ -289,13 +289,16 @@ export class IxStatsCalculator {
     const tierMaxRate = this.getTierMaxGrowthRate(tier);
     effectiveGrowthRate = Math.min(effectiveGrowthRate, tierMaxRate);
 
-    // Ensure no extreme negative growth
-    effectiveGrowthRate = Math.max(effectiveGrowthRate, -0.1); // -10% minimum
+    // Ensure no extreme negative growth (configurable floor)
+    const minFloor = this.config.minGrowthFloor ?? -0.1;
+    effectiveGrowthRate = Math.max(effectiveGrowthRate, minFloor);
 
-    // Apply diminishing returns for very high GDP per capita
-    if (yearsFromBaseline > 0 && baselineGdpPerCapita > 60000) {
-      const diminishingFactor = Math.log(baselineGdpPerCapita / 60000 + 1) / Math.log(2);
-      effectiveGrowthRate /= 1 + diminishingFactor * 0.5;
+    // Apply diminishing returns for very high GDP per capita (configurable)
+    const drThreshold = this.config.diminishingReturnsThreshold ?? 60000;
+    const drFactor = this.config.diminishingReturnsFactor ?? 0.5;
+    if (yearsFromBaseline > 0 && baselineGdpPerCapita > drThreshold) {
+      const diminishingFactor = Math.log(baselineGdpPerCapita / drThreshold + 1) / Math.log(2);
+      effectiveGrowthRate /= 1 + diminishingFactor * drFactor;
     }
 
     return baselineGdpPerCapita * Math.pow(1 + effectiveGrowthRate, yearsFromBaseline);

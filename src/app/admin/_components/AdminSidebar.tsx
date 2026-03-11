@@ -7,11 +7,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Shield,
-  ShieldCheck,
   LayoutDashboard,
   Settings,
   Gamepad2,
   Globe,
+  Map,
   Users,
   Database,
   Menu,
@@ -54,6 +54,12 @@ const NAV_ITEMS: NavItem[] = [
     description: "Live Grid & Analytics",
   },
   {
+    label: "Maps",
+    href: "/admin/maps",
+    icon: Map,
+    description: "World Map & Assignments",
+  },
+  {
     label: "Users & Roles",
     href: "/admin/users",
     icon: Users,
@@ -64,12 +70,6 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/reference-data",
     icon: Database,
     description: "Unified Data Manager",
-  },
-  {
-    label: "System Validation",
-    href: "/admin/system-validation",
-    icon: ShieldCheck,
-    description: "Health Checks & Audit",
   },
 ];
 

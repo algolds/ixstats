@@ -59,32 +59,32 @@ export class AdminErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 text-center shadow-lg dark:bg-gray-800">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+          <div className="w-full max-w-md rounded-lg bg-card p-6 text-center shadow-lg">
             <div className="mb-4">
               <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-              <h1 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+              <h1 className="mb-2 text-xl font-bold text-foreground">
                 Admin Dashboard Error
               </h1>
-              <p className="mb-4 text-gray-600 dark:text-gray-400">
+              <p className="mb-4 text-muted-foreground">
                 Something went wrong with the admin dashboard. This error has been logged.
               </p>
             </div>
 
             {this.state.error && (
-              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-left dark:border-red-800 dark:bg-red-900/20">
-                <h3 className="mb-2 text-sm font-medium text-red-800 dark:text-red-200">
+              <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-left">
+                <h3 className="mb-2 text-sm font-medium text-red-700">
                   Error Details:
                 </h3>
-                <p className="font-mono text-xs break-words text-red-700 dark:text-red-300">
+                <p className="font-mono text-xs break-words text-red-600">
                   {this.state.error.message}
                 </p>
                 {process.env.NODE_ENV === "development" && this.state.errorInfo && (
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-xs text-red-600 dark:text-red-400">
+                    <summary className="cursor-pointer text-xs text-red-600">
                       Stack Trace (Dev Mode)
                     </summary>
-                    <pre className="mt-2 max-h-32 overflow-auto text-xs whitespace-pre-wrap text-red-600 dark:text-red-400">
+                    <pre className="mt-2 max-h-32 overflow-auto text-xs whitespace-pre-wrap text-red-600">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   </details>
@@ -103,7 +103,7 @@ export class AdminErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleReload}
-                className="flex w-full items-center justify-center rounded-md bg-gray-600 px-4 py-2 font-medium text-white transition-colors hover:bg-gray-700"
+                className="flex w-full items-center justify-center rounded-md bg-muted px-4 py-2 font-medium text-foreground transition-colors hover:bg-muted/80"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Reload Page
@@ -111,15 +111,15 @@ export class AdminErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleGoHome}
-                className="flex w-full items-center justify-center rounded-md bg-gray-200 px-4 py-2 font-medium text-gray-900 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                className="flex w-full items-center justify-center rounded-md bg-muted px-4 py-2 font-medium text-foreground transition-colors hover:bg-muted/80"
               >
                 <Home className="mr-2 h-4 w-4" />
                 Go to Homepage
               </button>
             </div>
 
-            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="mt-6 border-t border-border pt-4">
+              <p className="text-xs text-muted-foreground">
                 If this problem persists, please contact your system administrator.
               </p>
             </div>
@@ -141,13 +141,13 @@ export function AdminErrorFallback({
   onRetry?: () => void;
 }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/20">
+    <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6">
       <div className="flex items-center">
-        <AlertTriangle className="mr-2 h-5 w-5 text-red-400" />
-        <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Component Error</h3>
+        <AlertTriangle className="mr-2 h-5 w-5 text-red-500" />
+        <h3 className="text-sm font-medium text-red-700">Component Error</h3>
       </div>
       <div className="mt-2">
-        <p className="text-sm text-red-700 dark:text-red-300">
+        <p className="text-sm text-red-600">
           {error?.message || "An unexpected error occurred in this component."}
         </p>
         {onRetry && (

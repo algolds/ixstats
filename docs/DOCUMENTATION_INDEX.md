@@ -12,7 +12,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 - **Tax System Reference** – [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md)
 - **Admin CMS** – [`systems/admin-cms.md`](systems/admin-cms.md)
 - **API Complete** – [`reference/api-complete.md`](reference/api-complete.md)
-- ~~**Map Editor Guide**~~ – DEPRECATED (maps removed November 2025)
+- **Maps System** – [`systems/maps.md`](systems/maps.md)
 - **Rate Limiting Guide** – [`RATE_LIMITING_GUIDE.md`](RATE_LIMITING_GUIDE.md)
 
 ## Category Breakdown
@@ -54,6 +54,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`systems/elections.md`](systems/elections.md) | Elections & political parties, D'Hondt/FPTP seat allocation, legislature configuration |
 | [`systems/national-issues.md`](systems/national-issues.md) | National issues engine, dynamic decisions, consequences system |
 | [`systems/forum.md`](systems/forum.md) | XenForo forum integration, widget embedding, forum-wiki bridge |
+| [`systems/maps.md`](systems/maps.md) | IxWorld map system: MapLibre GL JS, 7 layers, geo router (70 endpoints), procedural world generation, border editor |
 
 ### Operations & Processes
 | Document | Summary |
@@ -85,7 +86,13 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`TAX_SYSTEM_FRONTEND_EXAMPLE.md`](TAX_SYSTEM_FRONTEND_EXAMPLE.md) | Tax system frontend integration examples |
 | [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) | Complete tax system implementation summary |
 
-### Map Editor & Vector Tiles Reference (DEPRECATED - Maps removed November 2025)
+### Maps & World Visualization
+| Document | Summary |
+| --- | --- |
+| [`systems/maps.md`](systems/maps.md) | IxWorld map system: MapLibre GL JS, 7 layers, geo router (70 endpoints), procedural generation, border editor |
+| [`IXWORLD_OCEANOGRAPHY_REPORT.md`](IXWORLD_OCEANOGRAPHY_REPORT.md) | Ocean basins, seas, currents, shipping routes, and marine ecology |
+
+#### Legacy Map References (v1 — vector tiles, Martin tile server)
 | Document | Summary |
 | --- | --- |
 | [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md) | Comprehensive vector tiles implementation guide |

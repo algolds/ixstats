@@ -163,6 +163,11 @@ export interface EconomicConfig {
   tierGrowthModifiers: Record<string, number>;
   calculationIntervalMs: number;
   ixTimeUpdateFrequency: number;
+
+  // Configurable calculation parameters (stored in SystemConfig DB)
+  diminishingReturnsThreshold?: number; // GDP/capita above which growth diminishes (default: 60000)
+  diminishingReturnsFactor?: number; // Strength of diminishing returns (default: 0.5)
+  minGrowthFloor?: number; // Minimum allowed growth rate (default: -0.1 = -10%)
 }
 
 // System configuration

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
+import dynamic from "next/dynamic";
 import { Globe, Eye, Building2, Send, Scale, Handshake, Sparkles } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -14,6 +15,11 @@ import { EmbassiesAndRelationsPanel } from "~/components/diplomacy/EmbassiesAndR
 import { CommunicationsPanel } from "~/components/diplomacy/CommunicationsPanel";
 import { ForeignPolicyPanel } from "~/components/diplomacy/ForeignPolicyPanel";
 import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
+
+const DiplomacyMapWidget = dynamic(
+  () => import("~/components/maps/widgets/DiplomacyMapWidget").then((m) => ({ default: m.DiplomacyMapWidget })),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted" /> }
+);
 
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
@@ -112,6 +118,9 @@ export function EnhancedDiplomacyContent({
       onNavigate={onNavigate}
       notifications={notifications}
     >
+      {/* Embassy Network Map */}
+      <DiplomacyMapWidget countryId={country.id} countryName={country.name} />
+
       {/* Diplomatic Status Rings */}
       <VitalityRings rings={diplomacyRings} title="Diplomatic Status" variant="grid" />
 

@@ -49,6 +49,15 @@ export async function register() {
         );
       }
 
+      // Warm up geo layer cache (pre-load all 7 map layers into memory)
+      try {
+        const { db } = await import("./server/db");
+        const { warmGeoCache } = await import("./server/api/routers/geo");
+        await warmGeoCache(db);
+      } catch (geoError) {
+        console.warn("[Instrumentation] Geo cache warm-up failed (non-fatal):", geoError);
+      }
+
       console.log("[Instrumentation] Production optimizations initialized successfully");
     } catch (error) {
       // Log but don't crash the server

@@ -442,86 +442,80 @@ export class IxnayWikiService {
     }
     return this.getOrCreateRequest(`wikitext_${normName}`, async () => {
       try {
-        return await throttledRequest(async () => {
-          const params = new URLSearchParams({
-            action: "query",
-            prop: "revisions",
-            rvprop: "content",
-            titles: pageName,
-            rvsection: "0",
-            format: "json",
-            formatversion: "2",
-          });
-          const baseUrl = getMediaWikiApiUrl();
-          const apiUrl = `${baseUrl}?${params.toString()}`;
-          console.log(`[MediaWiki] Fetching wikitext for: ${pageName}`);
-
-          // Create an AbortController for timeout
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), MEDIAWIKI_CONFIG.timeout);
-
-          const response = await fetch(apiUrl, {
-            headers: {
-              Accept: "application/json",
-              "User-Agent": this.USER_AGENT,
-            },
-            cache: "no-store",
-            signal: controller.signal,
-          });
-
-          clearTimeout(timeoutId);
-
-          if (!response.ok) {
-            console.error(
-              `[MediaWiki] HTTP Error for ${pageName}: ${response.status} ${response.statusText}`
-            );
-            // Don't cache HTTP errors immediately - let them retry
-            return { error: `[MediaWiki] HTTP Error: ${response.status} ${response.statusText}` };
-          }
-          const data = await response.json();
-          if (data.error) {
-            console.error(`[MediaWiki] API Error for ${pageName}:`, data.error);
-            // Don't cache API errors immediately - let them retry
-            return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
-          }
-          const pages = data.query?.pages;
-          if (!pages || !Array.isArray(pages) || pages.length === 0) {
-            console.warn(`[MediaWiki] No pages found for ${pageName}`);
-            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normName);
-            return { error: `[MediaWiki] No pages found for ${pageName}` };
-          }
-          const page = pages[0];
-          if (!page || page.missing) {
-            console.warn(`[MediaWiki] Page ${pageName} not found or missing`);
-            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normName);
-            return { error: `[MediaWiki] Page ${pageName} not found or missing` };
-          }
-          const revisions = page.revisions;
-          if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
-            console.warn(`[MediaWiki] No revisions found for ${pageName}`);
-            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normName);
-            return { error: `[MediaWiki] No revisions found for ${pageName}` };
-          }
-          const revision = revisions[0];
-          const wikitext = revision?.content;
-          if (!wikitext) {
-            console.warn(`[MediaWiki] No content found in revision for ${pageName}`);
-            this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normName);
-            return { error: `[MediaWiki] No content found in revision for ${pageName}` };
-          }
-          console.log(
-            `[MediaWiki] Successfully fetched wikitext for ${pageName} (${wikitext.length} chars)`
-          );
-          this.setCacheValue(this.WIKITEXT_CACHE, normName, wikitext, this.WIKITEXT_TTL);
-          return wikitext;
+        const params = new URLSearchParams({
+          action: "query",
+          prop: "revisions",
+          rvprop: "content",
+          titles: pageName,
+          rvsection: "0",
+          format: "json",
+          formatversion: "2",
         });
+        const baseUrl = getMediaWikiApiUrl();
+        const apiUrl = `${baseUrl}?${params.toString()}`;
+        console.log(`[MediaWiki] Fetching wikitext for: ${pageName}`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), MEDIAWIKI_CONFIG.timeout);
+
+        const response = await fetch(apiUrl, {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": this.USER_AGENT,
+          },
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          console.error(
+            `[MediaWiki] HTTP Error for ${pageName}: ${response.status} ${response.statusText}`
+          );
+          return { error: `[MediaWiki] HTTP Error: ${response.status} ${response.statusText}` };
+        }
+        const data = await response.json();
+        if (data.error) {
+          console.error(`[MediaWiki] API Error for ${pageName}:`, data.error);
+          return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
+        }
+        const pages = data.query?.pages;
+        if (!pages || !Array.isArray(pages) || pages.length === 0) {
+          console.warn(`[MediaWiki] No pages found for ${pageName}`);
+          this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normName);
+          return { error: `[MediaWiki] No pages found for ${pageName}` };
+        }
+        const page = pages[0];
+        if (!page || page.missing) {
+          console.warn(`[MediaWiki] Page ${pageName} not found or missing`);
+          this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normName);
+          return { error: `[MediaWiki] Page ${pageName} not found or missing` };
+        }
+        const revisions = page.revisions;
+        if (!revisions || !Array.isArray(revisions) || revisions.length === 0) {
+          console.warn(`[MediaWiki] No revisions found for ${pageName}`);
+          this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normName);
+          return { error: `[MediaWiki] No revisions found for ${pageName}` };
+        }
+        const revision = revisions[0];
+        const wikitext = revision?.content;
+        if (!wikitext) {
+          console.warn(`[MediaWiki] No content found in revision for ${pageName}`);
+          this.setCacheValue(this.WIKITEXT_CACHE, normName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normName);
+          return { error: `[MediaWiki] No content found in revision for ${pageName}` };
+        }
+        console.log(
+          `[MediaWiki] Successfully fetched wikitext for ${pageName} (${wikitext.length} chars)`
+        );
+        this.setCacheValue(this.WIKITEXT_CACHE, normName, wikitext, this.WIKITEXT_TTL);
+        return wikitext;
       } catch (error) {
         console.error(`[MediaWiki] Exception getting wikitext for ${pageName}:`, error);
-        // Don't cache exceptions immediately - let them retry
         if (error instanceof Error) {
           if (error.name === "AbortError") {
             return { error: `[MediaWiki] Request timeout for ${pageName}` };
@@ -1677,52 +1671,50 @@ export class IxnayWikiService {
     }
     return this.getOrCreateRequest(`template_${normName}`, async () => {
       try {
-        return await throttledRequest(async () => {
-          const params = new URLSearchParams({
-            action: "query",
-            prop: "revisions",
-            rvprop: "content",
-            titles: templateName,
-            format: "json",
-            formatversion: "2",
-            redirects: "1", // Always follow redirects
-          });
-          const templateUrl = `${this.API_BASE_URL}?${params.toString()}`;
-          const response = await fetch(templateUrl, {
-            headers: {
-              Accept: "application/json",
-              "User-Agent": this.USER_AGENT,
-            },
-            cache: "no-store",
-          });
-          if (!response.ok) {
-            const errMsg = `[MediaWiki] HTTP Error getting template ${templateName}: ${response.status} ${response.statusText}`;
-            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normalizeKey(templateName));
-            return { error: errMsg };
-          }
-          const data = await response.json();
-          if (data.error) {
-            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normalizeKey(templateName));
-            return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
-          }
-          const pages = data.query?.pages;
-          if (!pages || !Array.isArray(pages) || pages.length === 0) {
-            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normalizeKey(templateName));
-            return { error: `[MediaWiki] No pages found for ${templateName}` };
-          }
-          const page = pages[0];
-          if (!page.revisions || !Array.isArray(page.revisions) || page.revisions.length === 0) {
-            this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
-            NOT_FOUND_SET.add(normalizeKey(templateName));
-            return { error: `[MediaWiki] No revisions found for ${templateName}` };
-          }
-          const content = page.revisions[0].content;
-          this.setCacheValue(this.TEMPLATE_CACHE, normName, content, this.TEMPLATE_TTL);
-          return content;
+        const params = new URLSearchParams({
+          action: "query",
+          prop: "revisions",
+          rvprop: "content",
+          titles: templateName,
+          format: "json",
+          formatversion: "2",
+          redirects: "1",
         });
+        const templateUrl = `${this.API_BASE_URL}?${params.toString()}`;
+        const response = await fetch(templateUrl, {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": this.USER_AGENT,
+          },
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          const errMsg = `[MediaWiki] HTTP Error getting template ${templateName}: ${response.status} ${response.statusText}`;
+          this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizeKey(templateName));
+          return { error: errMsg };
+        }
+        const data = await response.json();
+        if (data.error) {
+          this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizeKey(templateName));
+          return { error: `[MediaWiki] API Error: ${JSON.stringify(data.error)}` };
+        }
+        const pages = data.query?.pages;
+        if (!pages || !Array.isArray(pages) || pages.length === 0) {
+          this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizeKey(templateName));
+          return { error: `[MediaWiki] No pages found for ${templateName}` };
+        }
+        const page = pages[0];
+        if (!page.revisions || !Array.isArray(page.revisions) || page.revisions.length === 0) {
+          this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
+          NOT_FOUND_SET.add(normalizeKey(templateName));
+          return { error: `[MediaWiki] No revisions found for ${templateName}` };
+        }
+        const content = page.revisions[0].content;
+        this.setCacheValue(this.TEMPLATE_CACHE, normName, content, this.TEMPLATE_TTL);
+        return content;
       } catch (error) {
         this.setCacheValue(this.TEMPLATE_CACHE, normName, null, ERROR_TTL);
         NOT_FOUND_SET.add(normalizeKey(templateName));
@@ -1757,9 +1749,7 @@ export class IxnayWikiService {
           iilimit: "1",
         });
 
-        const response = await throttledRequest(() =>
-          fetch(`${this.API_BASE_URL}?${params.toString()}`)
-        );
+        const response = await fetch(`${this.API_BASE_URL}?${params.toString()}`);
 
         if (!response.ok) {
           this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);

@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Status & Context (January 2026)
 
 ### ⚠️ **v2 Migration (January 2026)** ⚠️
-- **Maps System Deprecated**: The entire Martin tile server and map infrastructure has been removed (~90 files, ~15,000 lines). Maps system is being redesigned from scratch.
+- **Maps System Rebuilt**: IxWorld maps rebuilt from scratch with MapLibre GL JS (replaced old Leaflet/Martin tile server). Deployed standalone at maps.ixwiki.com and embedded at `/maps`.
 - **Major Framework Upgrades**: Next.js 15 -> 16.1.3, React 18 -> 19.1.3, Prisma 6.19, Zod 4, Express 5, Jest 30
 - **Middleware Renamed**: `src/middleware.ts` -> `src/proxy.ts` (Clerk middleware + CSP + security headers)
 - **Active Branch**: `v2`
@@ -122,6 +122,14 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 **Design System:**
 - UI Components: `/src/components/ui/`
 - Design Documentation: `/docs/DESIGN_SYSTEM.md`
+
+**Maps & IxWorld:**
+- Map config: `/src/lib/map-config.ts`
+- Core map component: `/src/components/maps/core/IxWorldMap.tsx`
+- Geo router: `/src/server/api/routers/geo.ts`
+- Procedural generation: `/src/lib/procedural/`
+- Deploy script: `/scripts/deploy-ixworld.sh`
+- IxWorld PM2 config: `/ecosystem.ixworld.config.cjs`
 
 **Configuration:**
 - Next.js config: `/next.config.js`
@@ -259,6 +267,24 @@ MyCountry, Vault, ThinkPages, and Dashboard all use a **single-page router patte
 
 **News Auto-Generation** (`src/lib/diplomatic-news-generator.ts`):
 - Auto-generates ThinkPages news posts for diplomatic events
+
+### Maps & IxWorld System (v2 — January-March 2026)
+
+**IxWorld** is the interactive world map, deployed standalone at `maps.ixwiki.com` and embedded within IxStats at `/maps`. Built with MapLibre GL JS (replacing the v1 Leaflet system).
+
+**Key Files:**
+- Components: `src/components/maps/` (core/, editor/, widgets/ — 27 files)
+- Hooks: `src/hooks/useMapData.ts`, `useBorderEditor.ts`, `useMapEditor.ts`, `useMapPinInfo.ts`, `useCountryMapEmbed.ts`
+- Lib: `src/lib/map-config.ts`, `border-editor.ts`, `svg-parser.ts`, `map-pipeline.ts`, `map-idb-cache.ts`
+- Procedural: `src/lib/procedural/` (19 files, ~7,400 lines — world generation)
+- API: `src/server/api/routers/geo.ts` (~4,300 lines, 70 endpoints)
+- Pages: `src/app/maps/page.tsx`, `src/app/admin/maps/`, `src/app/mycountry/map-editor/`
+- Deployment: `scripts/deploy-ixworld.sh`, `ecosystem.ixworld.config.cjs`
+- Documentation: `docs/systems/maps.md`, `docs/IXWORLD_OCEANOGRAPHY_REPORT.md`
+
+**Features:** Globe/mercator dual projection, 7 map layers, border editor with undo/redo, pin tool, search overlay, distance measurement, keyboard controls, country info panels, IndexedDB caching, 34 sovereignty types, 12 Trewartha climate zones, 9 elevation zones.
+
+**Deployment:** Built from IxStats source via `scripts/deploy-ixworld.sh`, runs on port 3002 via `ecosystem.ixworld.config.cjs`. Shares database with IxStats.
 
 ### Development Focus Areas (v1.1.3 Status)
 - ✅ **Authentication System**: COMPLETE - 13 security fixes, 8-layer middleware, audit logging

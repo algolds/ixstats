@@ -10,6 +10,12 @@ export interface AdminConfig {
   autoUpdate: boolean;
   botSyncEnabled: boolean;
   timeMultiplier: number;
+  // Economic control parameters
+  baseInflationRate: number;
+  tierGrowthModifiers: Record<string, number>;
+  diminishingReturnsThreshold: number;
+  diminishingReturnsFactor: number;
+  minGrowthFloor: number;
 }
 
 export interface TimeState {
@@ -48,6 +54,19 @@ export function useAdminState() {
     autoUpdate: true,
     botSyncEnabled: true,
     timeMultiplier: 2.0,
+    baseInflationRate: 0.02,
+    tierGrowthModifiers: {
+      Impoverished: 1.0,
+      Developing: 1.0,
+      Developed: 1.0,
+      Healthy: 1.0,
+      Strong: 1.0,
+      "Very Strong": 1.0,
+      Extravagant: 1.0,
+    },
+    diminishingReturnsThreshold: 60000,
+    diminishingReturnsFactor: 0.5,
+    minGrowthFloor: -0.1,
   });
 
   const [timeState, setTimeState] = useState<TimeState>({

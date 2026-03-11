@@ -226,6 +226,13 @@ const config = {
               chunks: "all",
               priority: 30,
             },
+            // Separate maplibre-gl (map rendering engine)
+            maplibre: {
+              test: /[\\/]node_modules[\\/]maplibre-gl[\\/]/,
+              name: "maplibre",
+              chunks: "all",
+              priority: 30,
+            },
             // Group remaining vendor modules
             vendor: {
               test: /[\\/]node_modules[\\/]/,
@@ -325,6 +332,15 @@ const config = {
           {
             key: "Cache-Control",
             value: "public, max-age=86400", // Cache for 1 day
+          },
+        ],
+      },
+      {
+        source: "/api/trpc/geo.:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=300, s-maxage=900, stale-while-revalidate=3600",
           },
         ],
       },

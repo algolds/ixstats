@@ -21,6 +21,7 @@ import {
   Activity,
   Clock,
   AlertTriangle,
+  Map,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -165,6 +166,10 @@ export function CountryDetailSheet({ countryId, onClose }: CountryDetailSheetPro
               />
               <MetricRow label="Leader" value={country.leader} />
 
+              {/* Map Linkage (live check against MapLayer) */}
+              <SectionHeader title="Map Linkage" icon={Map} />
+              <MapLinkageSection countryId={country.id} landArea={country.landArea} areaSqMi={country.areaSqMi} />
+
               {/* Owner */}
               <SectionHeader title="Owner" icon={Users} />
               {country.users.length > 0 ? (
@@ -261,5 +266,64 @@ export function CountryDetailSheet({ countryId, onClose }: CountryDetailSheetPro
         </ScrollArea>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** Live linkage check against the MapLayer table */
+function MapLinkageSection({
+  countryId,
+  landArea,
+  areaSqMi,
+}: {
+  countryId: string;
+  landArea: number | null | undefined;
+  areaSqMi: number | null | undefined;
+}) {
+  const { data: linkage, isLoading } = api.geo.getCountryLinkage.useQuery(
+    { countryId },
+    { staleTime: 10_000 },
+  );
+
+  if (isLoading) {
+    return <Skeleton className="h-16 w-full" />;
+  }
+
+  const linked = linkage?.isLinked ?? false;
+  const desync = linked && !landArea;
+
+  return (
+    <>
+      <MetricRow
+        label="Map Feature"
+        value={linked ? linkage?.featureName ?? linkage?.featureId : "Not linked"}
+        color={linked ? "text-emerald-500" : "text-amber-500"}
+      />
+      <MetricRow
+        label="Link Status"
+        value={linked ? "Linked" : "No MapLayer link"}
+        color={linked ? "text-emerald-500" : "text-red-500"}
+      />
+      {linked && (
+        <MetricRow
+          label="Feature Area"
+          value={linkage?.areaSqKm ? `${Math.round(linkage.areaSqKm).toLocaleString()} km²` : "—"}
+        />
+      )}
+      <MetricRow
+        label="Country.landArea"
+        value={landArea ? `${Math.round(landArea).toLocaleString()} km²` : "null"}
+        color={desync ? "text-red-500" : undefined}
+      />
+      {!linked && landArea && landArea > 0 && (
+        <div className="mt-1 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
+          Country has landArea but no MapLayer link. Use Map Admin → Linkage tab to repair.
+        </div>
+      )}
+      {desync && (
+        <div className="mt-1 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-400">
+          MapLayer linked but Country.landArea is null. Run "Sync All" from Map Admin → Linkage.
+        </div>
+      )}
+    </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
+import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import {
   Shield,
@@ -18,6 +19,11 @@ import { useCountryData, VitalityRings, SectionHeaderBackground, TabHeroBanner }
 import type { RingConfig } from "./primitives";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
+
+const DefenseMapWidget = dynamic(
+  () => import("~/components/maps/widgets/DefenseMapWidget").then((m) => ({ default: m.DefenseMapWidget })),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted" /> }
+);
 
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 
@@ -114,6 +120,9 @@ export function EnhancedDefenseContent({
       onNavigate={onNavigate}
       notifications={notifications}
     >
+      {/* Defense Territory Map */}
+      <DefenseMapWidget countryId={country.id} countryName={country.name} />
+
       {/* Defense Status Rings */}
       <VitalityRings rings={defenseRings} title="Defense Status" variant="grid" />
 

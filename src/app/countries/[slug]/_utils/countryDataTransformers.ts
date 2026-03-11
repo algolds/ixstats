@@ -300,12 +300,12 @@ export function transformCountryMetrics(country: {
     {
       label: "Population",
       value: `${((country.currentPopulation || 0) / 1000000).toFixed(1)}M`,
-      subtext: `${(country.currentPopulation || 0).toLocaleString()} citizens`,
+      subtext: `${Math.round(country.currentPopulation || 0).toLocaleString()} citizens`,
       colorClass: "bg-blue-50 dark:bg-blue-950/50 text-blue-600",
       tooltip: {
         title: "Current Population",
         details: [
-          `Total: ${(country.currentPopulation || 0).toLocaleString()} citizens`,
+          `Total: ${Math.round(country.currentPopulation || 0).toLocaleString()} citizens`,
           `Population Tier: ${country.populationTier || "Unknown"}`,
         ],
       },

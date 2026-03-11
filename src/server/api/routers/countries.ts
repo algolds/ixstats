@@ -17,7 +17,7 @@ import {
 } from "~/server/api/trpc";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { IxTime } from "~/lib/ixtime";
-import { getDefaultEconomicConfig } from "~/lib/config-service";
+import { getDefaultEconomicConfig, getEconomicConfigFromDB } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import {
   calculateCountryDataWithAtomicEnhancement,
@@ -28,6 +28,7 @@ import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessSer
 import { ComponentType } from "@prisma/client";
 import { calculateAllVitalityScores } from "~/lib/vitality-calculator";
 import { notificationAPI } from "~/lib/notification-api";
+import { localWikiFetch } from "~/lib/wiki-local-fetch";
 import { checkComponentSynergy } from "~/lib/government-synergy";
 import type {
   CoreEconomicIndicators,
@@ -177,6 +178,336 @@ const economicDataSchema = z.object({
   literacyRate: z.number().optional(),
 });
 
+/**
+ * Normalize a flag URL stored in the database.
+ * Some entries are bare filenames (e.g. "Halfway.png") from legacy data.
+ * These need to be prefixed with the wiki file path URL to avoid 404s.
+ */
+function normalizeFlagUrl(flag: string | null | undefined): string | undefined {
+  if (!flag) return undefined;
+  if (flag.startsWith("http") || flag.startsWith("data:") || flag.startsWith("/")) return flag;
+  return `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(flag)}`;
+}
+
+/**
+ * Wiki sources for server-side API calls.
+ * ixwiki uses local pool in production (13ms vs 60ms), iiwiki always public.
+ * `publicBase` is always the public URL — used for wiki link hrefs in returned HTML.
+ */
+const WIKI_SOURCES = [
+  { key: "ixwiki" as const, publicBase: "https://ixwiki.com", isLocal: true },
+  { key: "iiwiki" as const, publicBase: "https://iiwiki.com", isLocal: false },
+] as const;
+
+type WikiSource = (typeof WIKI_SOURCES)[number];
+
+/** Fetch from a wiki source, routing ixwiki through localhost in production. */
+async function wikiFetch(source: WikiSource, path: string, timeoutMs = 5000): Promise<Response> {
+  if (source.isLocal) {
+    return localWikiFetch(path, timeoutMs);
+  }
+  return fetch(`${source.publicBase}${path}`, {
+    headers: { "User-Agent": "IxStats-Builder" },
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+}
+
+/** Fetch a single wiki intro from ixwiki or iiwiki fallback. */
+async function fetchWikiIntro(
+  name: string
+): Promise<{ extract: string; wikiSource: "ixwiki" | "iiwiki"; wikiUrl: string } | null> {
+  for (const source of WIKI_SOURCES) {
+    try {
+      const path = `/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exchars=400&format=json&titles=${encodeURIComponent(name)}`;
+      const res = await wikiFetch(source, path);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const pages = data?.query?.pages;
+      if (!pages) continue;
+      const page = Object.values(pages)[0] as { missing?: boolean; extract?: string; title?: string };
+      if (page?.missing || !page?.extract) continue;
+      return {
+        extract: page.extract,
+        wikiSource: source.key,
+        wikiUrl: `${source.publicBase}/wiki/${encodeURIComponent(page.title ?? name)}`,
+      };
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/** Fetch table-of-contents sections from a country's wiki page. */
+async function fetchWikiSections(
+  name: string
+): Promise<Array<{ level: number; line: string; number: string; anchor: string }> | null> {
+  for (const source of WIKI_SOURCES) {
+    try {
+      const path = `/api.php?action=parse&page=${encodeURIComponent(name)}&prop=sections&format=json&redirects=1`;
+      const res = await wikiFetch(source, path);
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (data?.error) continue;
+      const sections = data?.parse?.sections;
+      if (!sections || !Array.isArray(sections)) continue;
+      return sections.map((s: { level: string; line: string; number: string; anchor: string }) => ({
+        level: parseInt(s.level, 10),
+        line: s.line,
+        number: s.number,
+        anchor: s.anchor,
+      }));
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/** Common icon/template image filenames to exclude from media galleries. */
+const EXCLUDED_IMAGE_PATTERNS = [
+  /^File:Flag.icon/i, /^File:Crystal/i, /^File:Nuvola/i,
+  /^File:Commons-logo/i, /^File:Wikisource-logo/i, /^File:Wiktionary-logo/i,
+  /^File:Symbol /i, /^File:Yes ?check/i, /^File:X ?mark/i,
+  /^File:Increase/i, /^File:Decrease/i, /^File:Steady/i,
+  /^File:Green ?arrow/i, /^File:Red ?arrow/i, /\.svg$/i,
+];
+
+/** Fetch images from a country's wiki page with thumbnail URLs. */
+async function fetchWikiPageImages(
+  name: string
+): Promise<Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }> | null> {
+  for (const source of WIKI_SOURCES) {
+    try {
+      // Step 1: Get image titles from the page
+      const listPath = `/api.php?action=query&titles=${encodeURIComponent(name)}&prop=images&imlimit=50&format=json&redirects=1`;
+      const listRes = await wikiFetch(source, listPath);
+      if (!listRes.ok) continue;
+      const listData = await listRes.json();
+      const pages = listData?.query?.pages;
+      if (!pages) continue;
+      const page = Object.values(pages)[0] as { missing?: boolean; images?: Array<{ title: string }> };
+      if (page?.missing || !page?.images?.length) continue;
+
+      // Filter out icons/templates
+      const imageTitles = page.images
+        .map((img) => img.title)
+        .filter((title) => !EXCLUDED_IMAGE_PATTERNS.some((p) => p.test(title)));
+      if (imageTitles.length === 0) continue;
+
+      // Step 2: Resolve image URLs with thumbnails (batch up to 50)
+      const titlesParam = imageTitles.slice(0, 50).map(encodeURIComponent).join("|");
+      const infoPath = `/api.php?action=query&titles=${titlesParam}&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=200&format=json`;
+      const infoRes = await wikiFetch(source, infoPath);
+      if (!infoRes.ok) continue;
+      const infoData = await infoRes.json();
+      const infoPages = infoData?.query?.pages;
+      if (!infoPages) continue;
+
+      const images: Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }> = [];
+      for (const p of Object.values(infoPages) as Array<{
+        title?: string; missing?: boolean;
+        imageinfo?: Array<{ url: string; thumburl?: string; width: number; height: number; mime?: string }>;
+      }>) {
+        if (p?.missing || !p?.imageinfo?.[0]) continue;
+        const info = p.imageinfo[0];
+        // Skip tiny images (icons, bullets)
+        if (info.width < 100 && info.height < 100) continue;
+        // Skip non-image MIME types
+        if (info.mime && !info.mime.startsWith("image/")) continue;
+        images.push({
+          title: p.title ?? "",
+          url: info.url,
+          thumbUrl: info.thumburl ?? info.url,
+          width: info.width,
+          height: info.height,
+        });
+      }
+
+      return images.length > 0 ? images : null;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetch raw wikitext intro, clean it, and convert wiki markup to HTML paragraphs.
+ * This moves the 80-line regex chain from useCountryPageState.ts to the server.
+ */
+async function fetchWikiRichIntro(
+  name: string
+): Promise<{ paragraphs: string[]; wikiUrl: string } | null> {
+  for (const source of WIKI_SOURCES) {
+    try {
+      // Fetch raw wikitext for section 0 (intro)
+      const path = `/api.php?action=query&prop=revisions&rvprop=content&titles=${encodeURIComponent(name)}&rvsection=0&format=json&formatversion=2`;
+      const res = await wikiFetch(source, path);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const pages = data?.query?.pages;
+      if (!pages || !Array.isArray(pages) || pages.length === 0) continue;
+      const page = pages[0] as { missing?: boolean; title?: string; revisions?: Array<{ content?: string }> };
+      if (page?.missing || !page?.revisions?.[0]?.content) continue;
+
+      const wikitext = page.revisions[0].content;
+      const wikiUrl = `${source.publicBase}/wiki/${encodeURIComponent(page.title ?? name)}`;
+
+      // Strip infobox template (match balanced braces)
+      let contentAfterInfobox = wikitext;
+      const infoboxMatch = wikitext.match(/\{\{\s*Infobox/i);
+      if (infoboxMatch) {
+        const startIdx = wikitext.indexOf(infoboxMatch[0]);
+        let depth = 0;
+        let i = startIdx;
+        while (i < wikitext.length - 1) {
+          if (wikitext[i] === "{" && wikitext[i + 1] === "{") { depth++; i += 2; }
+          else if (wikitext[i] === "}" && wikitext[i + 1] === "}") { depth--; i += 2; if (depth === 0) break; }
+          else { i++; }
+        }
+        contentAfterInfobox = wikitext.substring(i).trim();
+      }
+
+      // Take content before first heading (==)
+      const beforeFirstHeading = contentAfterInfobox.split(/^==/m)[0] || contentAfterInfobox;
+
+      // Clean wikitext templates, refs, categories, files
+      const cleanContent = beforeFirstHeading
+        .replace(/\{\{wp\|[^|}]+\|([^}]+)\}\}/g, "$1")
+        .replace(/\{\{wp\|([^}]+)\}\}/g, "$1")
+        .replace(/\{\{lang\|[^|]+\|([^}]+)\}\}/g, "$1")
+        .replace(/\{\{nowrap\|([^}]+)\}\}/g, "$1")
+        .replace(/\{\{convert[^}]*\}\}/gi, "")
+        .replace(/\{\{[^}]+\|([^|}]+)\}\}/g, "$1")
+        .replace(/\{\{[^}]+\}\}/g, "")
+        .replace(/\[\[Template:[^\]]*\]\]/gi, "")
+        .replace(/\[\[Category:[^\]]*\]\]/gi, "")
+        .replace(/\[\[File:[^\]]*\]\]/gi, "")
+        .replace(/\[\[Image:[^\]]*\]\]/gi, "")
+        .replace(/\[\[[a-z]{2,3}:[^\]]*\]\]/gi, "")
+        .replace(/<ref[^>]*>.*?<\/ref>/gi, "")
+        .replace(/<ref[^>]*\/>/gi, "")
+        .replace(/<!--.*?-->/gs, "")
+        .replace(/\{\|.*?\|\}/gs, "")
+        .replace(/__[A-Z_]+__/g, "")
+        .replace(/\n\n+/g, "|||PARA|||")
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n/g, " ")
+        .trim();
+
+      // Convert wiki links to HTML (use publicBase for link hrefs)
+      const linkBase = source.publicBase;
+      const processedContent = cleanContent
+        .replace(/\[\[([^\[\]|]+)\|([^\[\]]+?)\]\]/g, (_, pg: string, display: string) => {
+          if (pg.toLowerCase().includes("template:")) return "";
+          return `<a href="${linkBase}/wiki/${encodeURIComponent(pg)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${display}</a>`;
+        })
+        .replace(/\[\[([^\[\]]+?)\]\]/g, (_, pg: string) => {
+          if (pg.toLowerCase().includes("template:")) return "";
+          return `<a href="${linkBase}/wiki/${encodeURIComponent(pg)}" class="wiki-link text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">${pg}</a>`;
+        })
+        .replace(
+          /\[([^\s\]]+)\s+([^\]]+)\]/g,
+          '<a href="$1" class="external-link text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline" target="_blank">$2</a>'
+        )
+        .replace(/'''([^']*)'''/g, '<strong class="font-semibold text-foreground">$1</strong>')
+        .replace(/''([^']*)''/g, '<em class="italic text-muted-foreground">$1</em>');
+
+      // Split into paragraphs, filter short/empty
+      const paragraphs = processedContent
+        .split("|||PARA|||")
+        .map((p) => p.trim())
+        .filter((p) => p.length > 50)
+        .slice(0, 5);
+
+      if (paragraphs.length > 0) {
+        return { paragraphs, wikiUrl };
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetch wiki infobox server-side using IxnayWikiService singleton.
+ * Reuses its in-memory LRU cache for deduplication.
+ */
+async function fetchWikiInfoboxCached(name: string): Promise<Record<string, unknown> | null> {
+  try {
+    const { ixnayWiki } = await import("~/lib/mediawiki-service");
+    const infobox = await ixnayWiki.getCountryInfobox(name);
+    if (!infobox) return null;
+    // Return as a plain object (strip methods, class instances)
+    // Only include defined string/number values
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(infobox)) {
+      if (value !== undefined && key !== "rawWikitext" && key !== "renderedHtml" && key !== "parsedTemplateData") {
+        result[key] = value;
+      }
+    }
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch wiki sections with plain-text previews for level-2 headers.
+ * Used by the map info panel for richer section display.
+ */
+async function fetchWikiSectionPreviews(
+  name: string
+): Promise<Array<{ level: number; line: string; number: string; anchor: string; preview?: string }> | null> {
+  const sections = await fetchWikiSections(name);
+  if (!sections || sections.length === 0) return null;
+
+  const results = sections.map((s) => ({ ...s, preview: undefined as string | undefined }));
+  const level2Indices = results
+    .map((s, i) => (s.level === 2 ? i : -1))
+    .filter((i) => i >= 0)
+    .slice(0, 10); // Limit to first 10 level-2 sections to avoid excessive API calls
+
+  for (const idx of level2Indices) {
+    const section = results[idx]!;
+    for (const source of WIKI_SOURCES) {
+      try {
+        // Use parse API to get specific section wikitext
+        const path = `/api.php?action=parse&page=${encodeURIComponent(name)}&prop=wikitext&section=${section.number}&format=json&redirects=1`;
+        const res = await wikiFetch(source, path, 3000);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data?.error) continue;
+        const wikitext = data?.parse?.wikitext?.["*"];
+        if (!wikitext) continue;
+
+        // Strip the heading itself and extract first ~200 chars of plain text
+        const cleaned = wikitext
+          .replace(/^==+[^=]+=+\s*/m, "") // Remove section heading
+          .replace(/\{\{[^}]*\}\}/g, "") // Remove templates
+          .replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1") // [[link|text]] → text
+          .replace(/<ref[^>]*>.*?<\/ref>/gi, "") // Remove refs
+          .replace(/<ref[^>]*\/>/gi, "")
+          .replace(/<[^>]+>/g, "") // Remove HTML tags
+          .replace(/\n+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        if (cleaned.length > 20) {
+          section.preview = cleaned.slice(0, 200) + (cleaned.length > 200 ? "..." : "");
+          break; // Got preview from this source
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  return results;
+}
+
 const countriesRouter = createTRPCRouter({
   getSelectList: rateLimitedPublicProcedure
     .input(
@@ -214,7 +545,7 @@ const countriesRouter = createTRPCRouter({
         id: country.id,
         name: country.name,
         slug: country.slug ?? undefined,
-        flagUrl: country.flag ?? undefined,
+        flagUrl: normalizeFlagUrl(country.flag),
         coatOfArmsUrl: country.coatOfArms ?? undefined,
         economicTier: country.economicTier ?? undefined,
       }));
@@ -291,7 +622,7 @@ const countriesRouter = createTRPCRouter({
 
         return {
         ...country,
-        flagUrl: country.flag ?? undefined,
+        flagUrl: normalizeFlagUrl(country.flag),
         // Add bounding box coordinates for map search (fallback)
         ...bounds,
         // Add centroid coordinates for map navigation (primary)
@@ -446,7 +777,7 @@ const countriesRouter = createTRPCRouter({
         throw new Error(`Country with identifier ${input.id} not found`);
       }
 
-      const econCfg = getDefaultEconomicConfig();
+      const econCfg = await getEconomicConfigFromDB(ctx.db);
       const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
 
       const calc = new IxStatsCalculator(econCfg, baselineDate);
@@ -575,7 +906,7 @@ const countriesRouter = createTRPCRouter({
 
       const response = {
         ...country, // All database fields including economic indicators
-        flagUrl: country.flag ?? undefined,
+        flagUrl: normalizeFlagUrl(country.flag),
 
         // Override ONLY the calculated population and GDP fields from calculation engine
         currentPopulation: result.newStats.currentPopulation,
@@ -712,7 +1043,7 @@ const countriesRouter = createTRPCRouter({
         id: country.id,
         name: country.name,
         slug: country.slug,
-        flagUrl: country.flag ?? undefined,
+        flagUrl: normalizeFlagUrl(country.flag),
         continent: country.continent,
         currentPopulation: country.currentPopulation,
         currentGdpPerCapita: country.currentGdpPerCapita,
@@ -1010,10 +1341,10 @@ const countriesRouter = createTRPCRouter({
           populationTier: countryFromDb.populationTier as any,
           populationDensity: countryFromDb.populationDensity,
           gdpDensity: countryFromDb.gdpDensity,
-          globalGrowthFactor: getDefaultEconomicConfig().globalGrowthFactor,
+          globalGrowthFactor: (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor,
         };
       } else {
-        const econCfg = getDefaultEconomicConfig();
+        const econCfg = await getEconomicConfigFromDB(ctx.db);
         const baselineDate = countryFromDb.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(countryFromDb);
@@ -1179,7 +1510,7 @@ const countriesRouter = createTRPCRouter({
             ? 7 * 24 * 60 * 60 * 1000
             : 30 * 24 * 60 * 60 * 1000;
 
-      const econCfg = getDefaultEconomicConfig();
+      const econCfg = await getEconomicConfigFromDB(ctx.db);
       const baselineDate = country.baselineDate.getTime();
       const calc = new IxStatsCalculator(econCfg, baselineDate);
       const base = prepareBaseCountryData(country);
@@ -1253,7 +1584,7 @@ const countriesRouter = createTRPCRouter({
 
       const intervalMs = totalDuration / input.points;
 
-      const econCfg = getDefaultEconomicConfig();
+      const econCfg = await getEconomicConfigFromDB(ctx.db);
       const baselineDate = country.baselineDate.getTime();
       const calc = new IxStatsCalculator(econCfg, baselineDate);
       const base = prepareBaseCountryData(country);
@@ -1323,7 +1654,7 @@ const countriesRouter = createTRPCRouter({
         },
       });
 
-      const econCfg = getDefaultEconomicConfig();
+      const econCfg = await getEconomicConfigFromDB(ctx.db);
       const results = [];
 
       for (const country of countriesFromDb) {
@@ -1450,7 +1781,7 @@ const countriesRouter = createTRPCRouter({
         "5": Number(stats.popTier5Count) || 0,
       };
 
-      const globalGrowthFactor = getDefaultEconomicConfig().globalGrowthFactor;
+      const globalGrowthFactor = (await getEconomicConfigFromDB(ctx.db)).globalGrowthFactor;
       const globalGrowthRate = globalGrowthFactor - 1; // Convert multiplier (1.0321) to rate (0.0321)
 
       const response = {
@@ -1478,7 +1809,7 @@ const countriesRouter = createTRPCRouter({
   updateStats: publicProcedure
     .input(z.object({ countryId: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const econCfg = getDefaultEconomicConfig();
+      const econCfg = await getEconomicConfigFromDB(ctx.db);
       const now = IxTime.getCurrentIxTime();
 
       if (input.countryId) {
@@ -2248,7 +2579,7 @@ const countriesRouter = createTRPCRouter({
           throw new Error(`Country with ID ${input.countryId} not found`);
         }
 
-        const econCfg = getDefaultEconomicConfig();
+        const econCfg = await getEconomicConfigFromDB(ctx.db);
         const baselineDate = country.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
@@ -2384,6 +2715,72 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
+  getTopCountriesByImportance: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        limit: z.number().optional().default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const cacheKey = getCacheKey("topCountriesByImportance", { limit: input.limit });
+        const cached = await getCachedData(cacheKey);
+        if (cached) return cached as string[];
+
+        // Countries that must always appear on the map label layer
+        const ALWAYS_SHOW = ["Tierrador", "Castadilla", "Burgundie", "Daxia", "Nasastan", "Argyea", "Slaconia"];
+        // NPC / placeholder countries that should never appear in the default label set
+        const NEVER_SHOW = ["Ugarit", "Orenstia", "Trade Island 5"];
+
+        const countries = await ctx.db.country.findMany({
+          where: {
+            isDemo: false,
+            currentPopulation: { gt: 0 },
+            currentTotalGdp: { gt: 0 },
+            // Exclude NPC countries (those with an NPC personality assignment)
+            personalityAssignment: { is: null },
+            // Explicit exclusion list
+            name: { notIn: NEVER_SHOW },
+          },
+          select: {
+            name: true,
+            currentPopulation: true,
+            currentTotalGdp: true,
+            currentGdpPerCapita: true,
+          },
+        });
+
+        if (countries.length === 0) return ALWAYS_SHOW;
+
+        // Normalize each metric to [0, 1] range for composite scoring
+        const maxPop = Math.max(...countries.map((c) => c.currentPopulation ?? 0));
+        const maxGdp = Math.max(...countries.map((c) => c.currentTotalGdp ?? 0));
+        const maxGdpPc = Math.max(...countries.map((c) => c.currentGdpPerCapita ?? 0));
+
+        const scored = countries.map((c) => ({
+          name: c.name,
+          score:
+            ((c.currentPopulation ?? 0) / (maxPop || 1)) * 0.4 +
+            ((c.currentTotalGdp ?? 0) / (maxGdp || 1)) * 0.4 +
+            ((c.currentGdpPerCapita ?? 0) / (maxGdpPc || 1)) * 0.2,
+        }));
+
+        scored.sort((a, b) => b.score - a.score);
+        const topNames = scored.slice(0, input.limit).map((c) => c.name);
+
+        // Merge always-show countries (deduplicated)
+        const resultSet = new Set(topNames);
+        for (const name of ALWAYS_SHOW) resultSet.add(name);
+        const result = Array.from(resultSet);
+
+        await setCachedData(cacheKey, result, 5 * 60 * 1000);
+        return result;
+      } catch (error) {
+        console.error("Failed to get top countries by importance:", error);
+        return [] as string[];
+      }
+    }),
+
   getEconomicData: publicProcedure
     .input(
       z.object({
@@ -2410,7 +2807,7 @@ const countriesRouter = createTRPCRouter({
           throw new Error(`Country with ID ${input.countryId} not found`);
         }
 
-        const econCfg = getDefaultEconomicConfig();
+        const econCfg = await getEconomicConfigFromDB(ctx.db);
         const baselineDate = country.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
@@ -2560,7 +2957,7 @@ const countriesRouter = createTRPCRouter({
           take: 30,
         });
 
-        const econCfg = getDefaultEconomicConfig();
+        const econCfg = await getEconomicConfigFromDB(ctx.db);
         const baselineDate = country.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
@@ -2692,7 +3089,7 @@ const countriesRouter = createTRPCRouter({
         }
 
         const currentTime = IxTime.getCurrentIxTime();
-        const econCfg = getDefaultEconomicConfig();
+        const econCfg = await getEconomicConfigFromDB(ctx.db);
         const baselineDate = country.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
@@ -2830,7 +3227,7 @@ const countriesRouter = createTRPCRouter({
         }
 
         const currentTime = IxTime.getCurrentIxTime();
-        const econCfg = getDefaultEconomicConfig();
+        const econCfg = await getEconomicConfigFromDB(ctx.db);
         const baselineDate = country.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
@@ -2986,7 +3383,7 @@ const countriesRouter = createTRPCRouter({
         const currentTime = IxTime.getCurrentIxTime();
         const notifications: any[] = [];
 
-        const econCfg = getDefaultEconomicConfig();
+        const econCfg = await getEconomicConfigFromDB(ctx.db);
         const baselineDate = country.baselineDate.getTime();
         const calc = new IxStatsCalculator(econCfg, baselineDate);
         const base = prepareBaseCountryData(country);
@@ -3565,6 +3962,319 @@ const countriesRouter = createTRPCRouter({
           { country: "Economic Ally", volume: totalVolume * 0.12 },
         ],
       };
+    }),
+
+  // Lightweight summary for map info panel (no calculator overhead)
+  getMapSummary: cachedPublicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const c = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          flag: true,
+          continent: true,
+          region: true,
+          economicTier: true,
+          populationTier: true,
+          currentPopulation: true,
+          currentGdpPerCapita: true,
+          currentTotalGdp: true,
+          adjustedGdpGrowth: true,
+          landArea: true,
+          leader: true,
+          governmentType: true,
+        },
+      });
+      if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
+      return {
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        flagUrl: normalizeFlagUrl(c.flag),
+        continent: c.continent,
+        region: c.region,
+        economicTier: c.economicTier,
+        populationTier: c.populationTier,
+        population: c.currentPopulation,
+        gdpPerCapita: c.currentGdpPerCapita,
+        totalGdp: c.currentTotalGdp,
+        gdpGrowth: c.adjustedGdpGrowth,
+        landArea: c.landArea,
+        leader: c.leader,
+        governmentType: c.governmentType,
+      };
+    }),
+
+  // Wiki intro extract for the map info panel (1hr server cache — wiki text rarely changes)
+  getWikiIntro: cachedStaticProcedure
+    .input(z.object({ countryName: z.string() }))
+    .query(async ({ input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiIntro(name);
+    }),
+
+  /**
+   * Bulk wiki intro fetch — single request fetches intros for up to 50 countries.
+   * Uses MediaWiki's multi-title extracts API (titles=A|B|C) for efficiency.
+   * Cached for 1hr server-side. Used by MapPrefetcher for upfront warming.
+   */
+  getBulkWikiIntros: cachedStaticProcedure
+    .input(z.object({ countryNames: z.array(z.string()).max(50) }))
+    .query(async ({ input }) => {
+      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
+      if (names.length === 0) return {};
+
+      const results: Record<string, { extract: string; wikiSource: string; wikiUrl: string } | null> = {};
+
+      // Track which names still need resolution
+      const remaining = new Set(names);
+
+      for (const source of WIKI_SOURCES) {
+        if (remaining.size === 0) break;
+        try {
+          const titlesParam = [...remaining].map(encodeURIComponent).join("|");
+          const path = `/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exchars=400&format=json&titles=${titlesParam}`;
+          const res = await wikiFetch(source, path, 10000);
+          if (!res.ok) continue;
+          const data = await res.json();
+          const pages = data?.query?.pages;
+          if (!pages) continue;
+
+          // Build a title→name lookup for case-insensitive matching
+          const nameLookup = new Map<string, string>();
+          for (const n of remaining) nameLookup.set(n.toLowerCase(), n);
+
+          for (const page of Object.values(pages) as Array<{ missing?: boolean; extract?: string; title?: string }>) {
+            if (page?.missing || !page?.extract || !page?.title) continue;
+            const matchedName = nameLookup.get(page.title.toLowerCase()) ?? page.title;
+            results[matchedName] = {
+              extract: page.extract,
+              wikiSource: source.key,
+              wikiUrl: `${source.publicBase}/wiki/${encodeURIComponent(page.title)}`,
+            };
+            remaining.delete(matchedName);
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      // Fill remaining with null
+      for (const name of remaining) {
+        results[name] = null;
+      }
+
+      return results;
+    }),
+
+  /**
+   * Bulk map summaries — single DB query for all country stats.
+   * Used by MapPrefetcher for upfront warming instead of staggered individual calls.
+   */
+  getBulkMapSummaries: cachedStaticProcedure
+    .input(z.object({ countryIds: z.array(z.string()).max(200) }))
+    .query(async ({ ctx, input }) => {
+      const ids = input.countryIds.filter(Boolean);
+      if (ids.length === 0) return {};
+      const countries = await ctx.db.country.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          flag: true,
+          continent: true,
+          region: true,
+          economicTier: true,
+          populationTier: true,
+          currentPopulation: true,
+          currentGdpPerCapita: true,
+          currentTotalGdp: true,
+          adjustedGdpGrowth: true,
+          landArea: true,
+          leader: true,
+          governmentType: true,
+        },
+      });
+      const result: Record<string, {
+        id: string; name: string; slug: string; flagUrl: string | null;
+        continent: string | null; region: string | null;
+        economicTier: string | null; populationTier: string | null;
+        population: number | null; gdpPerCapita: number | null;
+        totalGdp: number | null; gdpGrowth: number | null;
+        landArea: number | null; leader: string | null; governmentType: string | null;
+      }> = {};
+      for (const c of countries) {
+        result[c.id] = {
+          id: c.id, name: c.name, slug: c.slug, flagUrl: normalizeFlagUrl(c.flag),
+          continent: c.continent, region: c.region,
+          economicTier: c.economicTier, populationTier: c.populationTier,
+          population: c.currentPopulation, gdpPerCapita: c.currentGdpPerCapita,
+          totalGdp: c.currentTotalGdp, gdpGrowth: c.adjustedGdpGrowth,
+          landArea: c.landArea, leader: c.leader, governmentType: c.governmentType,
+        };
+      }
+      return result;
+    }),
+
+  /**
+   * Wiki sections (table of contents) for a single country page.
+   * Uses MediaWiki action=parse&prop=sections API. 1hr server cache.
+   */
+  getWikiSections: cachedStaticProcedure
+    .input(z.object({ countryName: z.string() }))
+    .query(async ({ input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiSections(name);
+    }),
+
+  /**
+   * Bulk wiki sections — fetches TOC for up to 50 countries.
+   * MediaWiki parse API is single-page, so loops server-side.
+   * Same-server wiki → ~5ms per country.
+   */
+  getBulkWikiSections: cachedStaticProcedure
+    .input(z.object({ countryNames: z.array(z.string()).max(50) }))
+    .query(async ({ input }) => {
+      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiSections>>> = {};
+      for (const name of names) {
+        try {
+          results[name] = await fetchWikiSections(name);
+        } catch {
+          results[name] = null;
+        }
+      }
+      return results;
+    }),
+
+  /**
+   * Wiki page images for a single country.
+   * Fetches all File: references on the page, resolves to thumbnail URLs.
+   */
+  getWikiPageImages: cachedStaticProcedure
+    .input(z.object({ countryName: z.string() }))
+    .query(async ({ input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiPageImages(name);
+    }),
+
+  /**
+   * Bulk wiki page images — fetches images for up to 30 countries.
+   */
+  getBulkWikiPageImages: cachedStaticProcedure
+    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
+    .query(async ({ input }) => {
+      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiPageImages>>> = {};
+      for (const name of names) {
+        try {
+          results[name] = await fetchWikiPageImages(name);
+        } catch {
+          results[name] = null;
+        }
+      }
+      return results;
+    }),
+
+  /**
+   * Rich wiki intro — fetches raw wikitext, cleans it, converts wiki markup to HTML.
+   * Returns ready-to-render HTML paragraphs (moved from client-side useCountryPageState).
+   * 1hr server cache via cachedStaticProcedure.
+   */
+  getWikiRichIntro: cachedStaticProcedure
+    .input(z.object({ countryName: z.string() }))
+    .query(async ({ input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiRichIntro(name);
+    }),
+
+  /**
+   * Bulk rich wiki intros — up to 50 countries.
+   * Sequential server-side fetches (~5ms each on same server).
+   */
+  getBulkWikiRichIntros: cachedStaticProcedure
+    .input(z.object({ countryNames: z.array(z.string()).max(50) }))
+    .query(async ({ input }) => {
+      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiRichIntro>>> = {};
+      for (const name of names) {
+        try {
+          results[name] = await fetchWikiRichIntro(name);
+        } catch {
+          results[name] = null;
+        }
+      }
+      return results;
+    }),
+
+  /**
+   * Cached wiki infobox — wraps IxnayWikiService.getCountryInfobox() server-side.
+   * Returns structured infobox data (government, capital, flag, etc.).
+   * 1hr server cache.
+   */
+  getWikiInfoboxCached: cachedStaticProcedure
+    .input(z.object({ countryName: z.string() }))
+    .query(async ({ input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiInfoboxCached(name);
+    }),
+
+  /**
+   * Bulk wiki infoboxes — up to 30 countries.
+   */
+  getBulkWikiInfoboxes: cachedStaticProcedure
+    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
+    .query(async ({ input }) => {
+      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiInfoboxCached>>> = {};
+      for (const name of names) {
+        try {
+          results[name] = await fetchWikiInfoboxCached(name);
+        } catch {
+          results[name] = null;
+        }
+      }
+      return results;
+    }),
+
+  /**
+   * Wiki section previews — TOC sections with plain-text preview for level-2 headers.
+   * Used by the map info panel for richer wiki sections display.
+   * 1hr server cache.
+   */
+  getWikiSectionPreviews: cachedStaticProcedure
+    .input(z.object({ countryName: z.string() }))
+    .query(async ({ input }) => {
+      const name = input.countryName.trim();
+      if (!name) return null;
+      return fetchWikiSectionPreviews(name);
+    }),
+
+  /**
+   * Bulk wiki section previews — up to 30 countries.
+   */
+  getBulkWikiSectionPreviews: cachedStaticProcedure
+    .input(z.object({ countryNames: z.array(z.string()).max(30) }))
+    .query(async ({ input }) => {
+      const names = input.countryNames.map((n) => n.trim()).filter(Boolean);
+      const results: Record<string, Awaited<ReturnType<typeof fetchWikiSectionPreviews>>> = {};
+      for (const name of names) {
+        try {
+          results[name] = await fetchWikiSectionPreviews(name);
+        } catch {
+          results[name] = null;
+        }
+      }
+      return results;
     }),
 
   // ============ ATOMIC COMPONENTS INTEGRATION ENDPOINTS ============

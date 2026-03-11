@@ -17,7 +17,7 @@ process.env.SKIP_ENV_VALIDATION = "1";
 import { PrismaClient } from "@prisma/client";
 import { IxTime } from "../src/lib/ixtime";
 import { IxStatsCalculator } from "../src/lib/calculations";
-import { getDefaultEconomicConfig } from "../src/lib/config-service";
+import { getDefaultEconomicConfig, getEconomicConfigFromDB } from "../src/lib/config-service";
 import { calculateAllVitalityScores } from "../src/lib/vitality-calculator";
 import type { BaseCountryData } from "../src/types/ixstats";
 
@@ -99,7 +99,7 @@ async function main() {
   const countries = await prisma.country.findMany({
     where: whereClause,
     include: {
-      dmInputs: {
+      storytellerEffects: {
         where: { isActive: true },
         orderBy: { ixTimeTimestamp: "desc" as const },
       },
@@ -114,7 +114,8 @@ async function main() {
 
   console.log(`Found ${countries.length} countries to process.\n`);
 
-  const econCfg = getDefaultEconomicConfig();
+  // Read config from database (live wiring) with fallback to defaults
+  const econCfg = await getEconomicConfigFromDB(prisma);
   const startTime = Date.now();
   let updated = 0;
   let errors = 0;
@@ -125,12 +126,12 @@ async function main() {
       const base = prepareBaseCountryData(c);
       const baselineStats = calc.initializeCountryStats(base);
 
-      const dmInputs = (c.dmInputs as any[]).map((i: any) => ({
+      const effects = (c.storytellerEffects as any[]).map((i: any) => ({
         ...i,
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
 
-      const res = calc.calculateTimeProgression(baselineStats, now, dmInputs);
+      const res = calc.calculateTimeProgression(baselineStats, now, effects);
 
       const newData = {
         currentPopulation: validateNumber(res.newStats.currentPopulation, 1e11),

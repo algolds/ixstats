@@ -1,6 +1,7 @@
 // src/lib/config-service.ts
-// FIXED: Configuration service with proper global growth factor handling
+// Configuration service with DB-backed config reading and proper growth factor handling
 
+import type { PrismaClient } from "@prisma/client";
 import type { EconomicConfig, IxStatsConfig } from "../types/ixstats";
 
 /**
@@ -363,4 +364,97 @@ export function parseGrowthRateFromInput(input: string | number): number {
     // Parse as decimal
     return validateGrowthRate(parseFloat(str));
   }
+}
+
+// ============================================================================
+// DB-backed configuration reader (live wiring)
+// ============================================================================
+
+/** All SystemConfig keys used for economic configuration */
+const ALL_ECONOMIC_CONFIG_KEYS = [
+  "globalGrowthFactor",
+  "baseInflationRate",
+  "tierGrowthModifier_Impoverished",
+  "tierGrowthModifier_Developing",
+  "tierGrowthModifier_Developed",
+  "tierGrowthModifier_Healthy",
+  "tierGrowthModifier_Strong",
+  "tierGrowthModifier_VeryStrong",
+  "tierGrowthModifier_Extravagant",
+  "diminishingReturnsThreshold",
+  "diminishingReturnsFactor",
+  "minGrowthFloor",
+] as const;
+
+/** In-memory cache for DB config to avoid excessive reads during batch ops */
+let configCache: { data: EconomicConfig; expires: number } | null = null;
+const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
+
+/**
+ * Read economic configuration from SystemConfig DB table, merging with defaults.
+ * Cached for 60 seconds to avoid excessive DB reads during batch calculations.
+ */
+export async function getEconomicConfigFromDB(
+  db: PrismaClient
+): Promise<EconomicConfig> {
+  // Return cached value if still fresh
+  if (configCache && Date.now() < configCache.expires) {
+    return configCache.data;
+  }
+
+  const defaults = getDefaultEconomicConfig();
+
+  try {
+    const configs = await db.systemConfig.findMany({
+      where: { key: { in: [...ALL_ECONOMIC_CONFIG_KEYS] } },
+    });
+
+    const m = configs.reduce(
+      (acc, c) => {
+        acc[c.key] = c.value;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+
+    const config: EconomicConfig = {
+      ...defaults,
+      globalGrowthFactor: parseFloat(
+        m.globalGrowthFactor ?? String(defaults.globalGrowthFactor)
+      ),
+      baseInflationRate: parseFloat(
+        m.baseInflationRate ?? String(defaults.baseInflationRate)
+      ),
+      tierGrowthModifiers: {
+        Impoverished: parseFloat(m.tierGrowthModifier_Impoverished ?? "1.0"),
+        Developing: parseFloat(m.tierGrowthModifier_Developing ?? "1.0"),
+        Developed: parseFloat(m.tierGrowthModifier_Developed ?? "1.0"),
+        Healthy: parseFloat(m.tierGrowthModifier_Healthy ?? "1.0"),
+        Strong: parseFloat(m.tierGrowthModifier_Strong ?? "1.0"),
+        "Very Strong": parseFloat(m.tierGrowthModifier_VeryStrong ?? "1.0"),
+        Extravagant: parseFloat(m.tierGrowthModifier_Extravagant ?? "1.0"),
+      },
+      diminishingReturnsThreshold: parseFloat(
+        m.diminishingReturnsThreshold ?? "60000"
+      ),
+      diminishingReturnsFactor: parseFloat(
+        m.diminishingReturnsFactor ?? "0.5"
+      ),
+      minGrowthFloor: parseFloat(m.minGrowthFloor ?? "-0.1"),
+    };
+
+    configCache = { data: config, expires: Date.now() + CONFIG_CACHE_TTL_MS };
+    return config;
+  } catch (error) {
+    console.warn("[Config] Failed to read from DB, using defaults:", error);
+    return defaults;
+  }
+}
+
+/**
+ * Invalidate the in-memory config cache.
+ * Call this after admin.saveConfig to ensure next calculation uses fresh values.
+ */
+export function invalidateConfigCache(): void {
+  configCache = null;
 }

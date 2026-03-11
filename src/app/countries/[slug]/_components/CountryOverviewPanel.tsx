@@ -1,11 +1,14 @@
 "use client";
 
-// Refactored from main CountryPage - displays overview tab content with wiki intro, government, vitality rings
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { VitalityRings } from "~/components/mycountry/primitives/VitalityRings";
+import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
+import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetailsModal";
+import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
 import {
   BookOpen,
   ExternalLink,
@@ -21,13 +24,26 @@ import {
   MessageSquare,
   ArrowRight,
   Clock,
+  DollarSign,
+  Handshake,
+  ChevronRight,
 } from "lucide-react";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { safeFormatCurrency } from "~/lib/format-utils";
+import {
+  formatCompactCurrency,
+  formatPercentWithNormalization as formatPercent,
+} from "~/lib/format-utils";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow } from "date-fns";
 import { CountryActivityModal } from "./CountryActivityModal";
+import { createUrl } from "~/lib/url-utils";
+
+const CountryMapEmbed = dynamic(
+  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
+  { ssr: false, loading: () => <div className="h-56 animate-pulse rounded-b-xl bg-muted" /> }
+);
 
 interface CountryOverviewPanelProps {
   country: {
@@ -36,6 +52,7 @@ interface CountryOverviewPanelProps {
     currentPopulation: number;
     currentTotalGdp: number;
     currentGdpPerCapita: number;
+    adjustedGdpGrowth?: number | null;
     lastCalculated?: Date | number;
     governmentType?: string | null;
     leader?: string | null;
@@ -81,18 +98,105 @@ export function CountryOverviewPanel({
 }: CountryOverviewPanelProps) {
   const [showFullWikiIntro, setShowFullWikiIntro] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
+  const [isPopulationModalOpen, setIsPopulationModalOpen] = useState(false);
+  const [isGdpModalOpen, setIsGdpModalOpen] = useState(false);
+  const [isGdpPerCapitaModalOpen, setIsGdpPerCapitaModalOpen] = useState(false);
 
-  // Fetch recent activity for this country
   const { data: activityData, isLoading: activityLoading } =
     api.activities.getCountryActivity.useQuery({
       countryId: country.id,
       limit: 5,
-      timeRange: "7d",
+      timeRange: "30d",
     });
+
+  const keyMetrics = [
+    {
+      label: "Population",
+      value: Math.round(country.currentPopulation).toLocaleString(),
+      detail: "Total citizens",
+      icon: Users,
+      color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+      onClick: () => setIsPopulationModalOpen(true),
+    },
+    {
+      label: "GDP",
+      value: formatCompactCurrency(country.currentTotalGdp),
+      detail: "Nominal GDP (annual)",
+      icon: DollarSign,
+      color: "bg-green-500/10 text-green-600 dark:text-green-400",
+      onClick: () => setIsGdpModalOpen(true),
+    },
+    {
+      label: "GDP per Capita",
+      value: formatCompactCurrency(country.currentGdpPerCapita),
+      detail: "Average output per citizen",
+      icon: TrendingUp,
+      color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      onClick: () => setIsGdpPerCapitaModalOpen(true),
+    },
+    {
+      label: "Growth",
+      value: formatPercent(country.adjustedGdpGrowth, "N/A", 2),
+      detail: "Adjusted GDP growth rate",
+      icon: Activity,
+      color:
+        (country.adjustedGdpGrowth ?? 0) > 0
+          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          : "bg-red-500/10 text-red-600 dark:text-red-400",
+      onClick: undefined as (() => void) | undefined,
+    },
+  ];
+
+  // Build government fields - first 6 are shown, rest behind "See more"
+  const primaryGovFields: Array<{ label: string; value: string; icon: React.ComponentType<{ className?: string }> }> = [];
+  const hasMoreGovFields = useHasMoreGovFields(governmentStructure, country, wikiInfobox);
+
+  const govName = governmentStructure?.governmentName || country?.nationalIdentity?.officialName;
+  if (govName) primaryGovFields.push({ label: "Government", value: govName, icon: Building });
+
+  const govType = governmentStructure?.governmentType || country?.governmentType || country?.nationalIdentity?.governmentType;
+  if (govType) primaryGovFields.push({ label: "Government Type", value: govType, icon: Crown });
+
+  const hos = governmentStructure?.headOfState || country?.leader;
+  if (hos) primaryGovFields.push({ label: "Head of State", value: hos, icon: Users });
+
+  if (governmentStructure?.headOfGovernment) primaryGovFields.push({ label: "Head of Government", value: governmentStructure.headOfGovernment, icon: Users });
+
+  const capital = country?.nationalIdentity?.capitalCity || wikiInfobox?.capital;
+  if (capital) primaryGovFields.push({ label: "Capital", value: capital, icon: MapPin });
+
+  if (country?.religion) primaryGovFields.push({ label: "Religion", value: country.religion, icon: Heart });
 
   return (
     <>
       <div className="space-y-6">
+        {/* Key Metrics Strip */}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {keyMetrics.map((metric) => {
+            const Icon = metric.icon;
+            return (
+              <button
+                key={metric.label}
+                type="button"
+                onClick={metric.onClick}
+                disabled={!metric.onClick}
+                className="group rounded-xl border border-border/50 bg-card/80 p-4 text-left shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:shadow-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <div className={`rounded-lg p-1.5 ${metric.color}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                    {metric.label}
+                  </p>
+                </div>
+                <p className="mt-2 text-xl font-bold">{metric.value}</p>
+                <p className="text-muted-foreground mt-0.5 text-xs">{metric.detail}</p>
+              </button>
+            );
+          })}
+        </div>
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main Content */}
           <div className="space-y-6 lg:col-span-2">
@@ -108,19 +212,14 @@ export function CountryOverviewPanel({
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    {/* Text content - 2 columns */}
                     <div className="md:col-span-2">
                       <div className="prose prose-sm dark:prose-invert max-w-none">
-                        {/* First paragraph - always visible */}
                         <p
                           className="mb-3 text-sm leading-relaxed"
-                          // SECURITY: Sanitize wiki content to prevent XSS from external data
                           dangerouslySetInnerHTML={{
                             __html: sanitizeWikiContent(wikiIntro[0] ?? ""),
                           }}
                         />
-
-                        {/* Additional paragraphs - collapsible */}
                         {wikiIntro.length > 1 && (
                           <>
                             {showFullWikiIntro && (
@@ -129,7 +228,6 @@ export function CountryOverviewPanel({
                                   <p
                                     key={idx}
                                     className="mb-3 text-sm leading-relaxed"
-                                    // SECURITY: Sanitize wiki content to prevent XSS from external data
                                     dangerouslySetInnerHTML={{
                                       __html: sanitizeWikiContent(paragraph),
                                     }}
@@ -168,13 +266,10 @@ export function CountryOverviewPanel({
                       </div>
                     </div>
 
-                    {/* National Symbols - 1 column */}
                     {wikiInfobox &&
                       (wikiInfobox.image_flag || wikiInfobox.flag || wikiInfobox.image_coat) && (
                         <div className="space-y-4">
-                          <div>
-                            <h3 className="mb-4 text-lg font-semibold">National Symbols</h3>
-                          </div>
+                          <h3 className="mb-4 text-lg font-semibold">National Symbols</h3>
                           {(wikiInfobox.image_flag || wikiInfobox.flag) && (
                             <div className="flex items-center gap-3 rounded-lg bg-blue-500/10 p-3">
                               <img
@@ -218,183 +313,148 @@ export function CountryOverviewPanel({
               </Card>
             )}
 
-            {/* Government & National Identity */}
-            <Card className="bg-card/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Government & National Identity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {(governmentStructure?.governmentName ||
-                    country?.nationalIdentity?.officialName) && (
-                    <div className="flex items-start gap-3">
-                      <Building className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Government</p>
-                        <p className="font-semibold">
-                          {governmentStructure?.governmentName ||
-                            country?.nationalIdentity?.officialName}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {(governmentStructure?.governmentType ||
-                    country?.governmentType ||
-                    country?.nationalIdentity?.governmentType) && (
-                    <div className="flex items-start gap-3">
-                      <Crown className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Government Type</p>
-                        <p className="font-semibold">
-                          {governmentStructure?.governmentType ||
-                            country?.governmentType ||
-                            country?.nationalIdentity?.governmentType}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {(governmentStructure?.headOfState || country?.leader) && (
-                    <div className="flex items-start gap-3">
-                      <Users className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Head of State</p>
-                        <p className="font-semibold">
-                          {governmentStructure?.headOfState || country?.leader}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {governmentStructure?.headOfGovernment && (
-                    <div className="flex items-start gap-3">
-                      <Users className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Head of Government</p>
-                        <p className="font-semibold">{governmentStructure.headOfGovernment}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {(country?.nationalIdentity?.capitalCity || wikiInfobox?.capital) && (
-                    <div className="flex items-start gap-3">
-                      <MapPin className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Capital</p>
-                        <p className="font-semibold">
-                          {country?.nationalIdentity?.capitalCity || wikiInfobox?.capital}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {country?.religion && (
-                    <div className="flex items-start gap-3">
-                      <Heart className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Religion</p>
-                        <p className="font-semibold">{country.religion}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {(country?.nationalIdentity?.currency || wikiInfobox?.currency) && (
-                    <div className="flex items-start gap-3">
-                      <Globe className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Currency</p>
-                        <p className="font-semibold">
-                          {country?.nationalIdentity?.currency || wikiInfobox?.currency}
-                          {country?.nationalIdentity?.currencySymbol
-                            ? ` (${country.nationalIdentity.currencySymbol})`
-                            : ""}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {governmentStructure?.legislatureName && (
-                    <div className="flex items-start gap-3">
-                      <Building className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Legislature</p>
-                        <p className="font-semibold">{governmentStructure.legislatureName}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {governmentStructure?.executiveName && (
-                    <div className="flex items-start gap-3">
-                      <Building className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Executive</p>
-                        <p className="font-semibold">{governmentStructure.executiveName}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {governmentStructure?.judicialName && (
-                    <div className="flex items-start gap-3">
-                      <Building className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Judiciary</p>
-                        <p className="font-semibold">{governmentStructure.judicialName}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {typeof governmentStructure?.totalBudget === "number" && (
-                    <div className="flex items-start gap-3">
-                      <TrendingUp className="text-primary mt-0.5 h-5 w-5" />
-                      <div>
-                        <p className="text-muted-foreground mb-1 text-xs">Total Budget</p>
-                        <p className="font-semibold">
-                          {safeFormatCurrency(
-                            governmentStructure!.totalBudget!,
-                            governmentStructure?.budgetCurrency || "USD",
-                            false,
-                            "USD"
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {(country?.nationalIdentity?.motto || wikiInfobox?.motto) && (
-                  <div className="mt-6 border-t pt-6">
-                    <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
-                      National Motto
-                    </p>
-                    <p className="text-muted-foreground border-primary/30 border-l-4 pl-4 text-base italic">
-                      &ldquo;{country?.nationalIdentity?.motto || wikiInfobox?.motto}&rdquo;
-                    </p>
+            {/* Government & National Identity - Collapsible */}
+            {primaryGovFields.length > 0 && (
+              <Card className="bg-card/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="h-5 w-5" />
+                    Government & National Identity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {primaryGovFields.map((field) => {
+                      const Icon = field.icon;
+                      return (
+                        <div key={field.label} className="flex items-start gap-3">
+                          <Icon className="text-primary mt-0.5 h-5 w-5" />
+                          <div>
+                            <p className="text-muted-foreground mb-1 text-xs">{field.label}</p>
+                            <p className="font-semibold">{field.value}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+
+                  {hasMoreGovFields && (
+                    <div className="mt-4 border-t pt-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onTabChange("mycountry")}
+                        className="text-primary hover:text-primary/80 gap-2"
+                      >
+                        See all details
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick Navigation Card */}
+            <Card className="bg-card/50 border-primary/20 backdrop-blur-sm">
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <h3 className="mb-3 font-semibold">Explore {country.name.replace(/_/g, " ")}</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onTabChange("mycountry")}
+                      className="w-full justify-start"
+                    >
+                      <Crown className="mr-2 h-3 w-3" />
+                      MyCountry
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onTabChange("activity")}
+                      className="w-full justify-start"
+                    >
+                      <Activity className="mr-2 h-3 w-3" />
+                      Activity
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onTabChange("diplomacy")}
+                      className="w-full justify-start"
+                    >
+                      <Handshake className="mr-2 h-3 w-3" />
+                      Diplomacy
+                    </Button>
+                    <a
+                      href={`https://ixwiki.com/wiki/${country.name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full"
+                    >
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <ExternalLink className="mr-2 h-3 w-3" />
+                        Open in Wiki
+                      </Button>
+                    </a>
+                  </div>
+                </div>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Recent Activity Feed - Live Wired */}
+          {/* Sidebar - Geography + Vitality Rings + Recent Activity */}
+          <div className="space-y-6">
+            {/* Geography Map */}
+            <Card className="bg-card/50 overflow-hidden backdrop-blur-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Globe className="h-4 w-4" />
+                  Geography
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <CountryMapEmbed
+                  countryId={country.id}
+                  height="h-56"
+                  showNeighbors={true}
+                  showCities={true}
+                  boundsPadding={50}
+                />
+              </CardContent>
+              <div className="flex items-center justify-between border-t border-border/50 px-4 py-2">
+                <span className="text-xs text-muted-foreground">
+                  {country.currentPopulation
+                    ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
+                    : ""}
+                </span>
+                <a
+                  href={createUrl(`/maps?country=${country.id}`)}
+                  className="text-xs text-blue-500 hover:text-blue-600"
+                >
+                  Open full map
+                </a>
+              </div>
+            </Card>
+
+            <VitalityRings data={vitalityData} variant="sidebar" />
+
+            {/* Recent Activity Feed (moved to sidebar) */}
             <Card className="bg-card/50 backdrop-blur-sm">
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5" />
-                      Recent Activity
-                    </CardTitle>
-                    <CardDescription>Latest developments and milestones</CardDescription>
-                  </div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Activity className="h-4 w-4" />
+                    Recent Activity
+                  </CardTitle>
                   {activityData && activityData.activities.length > 0 && (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowActivityModal(true)}
-                      className="text-xs"
+                      className="h-7 px-2 text-xs"
                     >
                       View All
                       <ArrowRight className="ml-1 h-3 w-3" />
@@ -421,63 +481,53 @@ export function CountryOverviewPanel({
                       const getActivityIcon = () => {
                         switch (activity.type) {
                           case "achievement":
-                            return <Trophy className="h-4 w-4 text-yellow-500" />;
+                            return <Trophy className="h-3.5 w-3.5 text-yellow-500" />;
                           case "economic":
-                            return <TrendingUp className="h-4 w-4 text-blue-500" />;
+                            return <TrendingUp className="h-3.5 w-3.5 text-blue-500" />;
                           case "diplomatic":
-                            return <Users className="h-4 w-4 text-purple-500" />;
+                            return <Users className="h-3.5 w-3.5 text-purple-500" />;
                           case "social":
-                            return <MessageSquare className="h-4 w-4 text-green-500" />;
+                            return <MessageSquare className="h-3.5 w-3.5 text-green-500" />;
                           default:
-                            return <Activity className="text-muted-foreground h-4 w-4" />;
+                            return <Activity className="text-muted-foreground h-3.5 w-3.5" />;
                         }
                       };
 
                       const getActivityColor = () => {
                         switch (activity.type) {
-                          case "achievement":
-                            return "bg-yellow-400";
-                          case "economic":
-                            return "bg-blue-400";
-                          case "diplomatic":
-                            return "bg-purple-400";
-                          case "social":
-                            return "bg-green-400";
-                          default:
-                            return "bg-muted-foreground";
+                          case "achievement": return "bg-yellow-400";
+                          case "economic": return "bg-blue-400";
+                          case "diplomatic": return "bg-purple-400";
+                          case "social": return "bg-green-400";
+                          default: return "bg-muted-foreground";
                         }
                       };
 
                       return (
                         <div
                           key={activity.id}
-                          className={`flex items-start gap-3 ${
+                          className={`flex items-start gap-2.5 ${
                             idx < activityData.activities.length - 1
                               ? "border-border/50 border-b pb-3"
                               : ""
                           }`}
                         >
                           <div
-                            className={`h-2 w-2 rounded-full ${getActivityColor()} mt-2 flex-shrink-0`}
+                            className={`h-2 w-2 rounded-full ${getActivityColor()} mt-1.5 flex-shrink-0`}
                           ></div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex min-w-0 flex-1 items-center gap-2">
-                                {getActivityIcon()}
-                                <p className="truncate text-sm font-medium">{activity.title}</p>
-                              </div>
-                              {activity.source === "thinkpages" && (
-                                <Badge variant="outline" className="flex-shrink-0 text-xs">
-                                  ThinkPages
-                                </Badge>
-                              )}
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              {getActivityIcon()}
+                              <p className="truncate text-xs font-medium">{activity.title}</p>
                             </div>
-                            <p className="text-muted-foreground mt-1 line-clamp-1 text-xs">
-                              {activity.description}
-                            </p>
-                            <div className="text-muted-foreground mt-1 flex items-center gap-3 text-xs">
+                            {activity.source === "thinkpages" && (
+                              <Badge variant="outline" className="mt-1 h-4 text-[10px]">
+                                ThinkPages
+                              </Badge>
+                            )}
+                            <div className="text-muted-foreground mt-1 flex items-center gap-2 text-[10px]">
                               <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
+                                <Clock className="h-2.5 w-2.5" />
                                 {formatDistanceToNow(new Date(activity.timestamp), {
                                   addSuffix: true,
                                 })}
@@ -485,14 +535,14 @@ export function CountryOverviewPanel({
                               {activity.engagement && (
                                 <>
                                   {activity.engagement.likes > 0 && (
-                                    <span className="flex items-center gap-1">
-                                      <Heart className="h-3 w-3" />
+                                    <span className="flex items-center gap-0.5">
+                                      <Heart className="h-2.5 w-2.5" />
                                       {activity.engagement.likes}
                                     </span>
                                   )}
                                   {activity.engagement.comments > 0 && (
-                                    <span className="flex items-center gap-1">
-                                      <MessageSquare className="h-3 w-3" />
+                                    <span className="flex items-center gap-0.5">
+                                      <MessageSquare className="h-2.5 w-2.5" />
                                       {activity.engagement.comments}
                                     </span>
                                   )}
@@ -509,8 +559,8 @@ export function CountryOverviewPanel({
                     <div className="border-border/50 flex items-start gap-3 border-b pb-3">
                       <div className="mt-2 h-2 w-2 rounded-full bg-blue-400"></div>
                       <div className="flex-1">
-                        <p className="text-sm">Economic data updated</p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-xs">Economic data updated</p>
+                        <p className="text-muted-foreground text-[10px]">
                           {country.lastCalculated &&
                             new Date(country.lastCalculated).toLocaleDateString()}
                         </p>
@@ -520,8 +570,8 @@ export function CountryOverviewPanel({
                       <div className="flex items-start gap-3">
                         <div className="mt-2 h-2 w-2 rounded-full bg-green-400"></div>
                         <div className="flex-1">
-                          <p className="text-sm">Wiki profile connected</p>
-                          <p className="text-muted-foreground text-xs">Live data from IxWiki</p>
+                          <p className="text-xs">Wiki profile connected</p>
+                          <p className="text-muted-foreground text-[10px]">Live data from IxWiki</p>
                         </div>
                       </div>
                     )}
@@ -529,60 +579,6 @@ export function CountryOverviewPanel({
                 )}
               </CardContent>
             </Card>
-
-            {/* Quick Navigation Card */}
-            <Card className="bg-card/50 border-primary/20 backdrop-blur-sm">
-              <CardContent className="pt-6">
-                <div className="space-y-3">
-                  <h3 className="mb-3 font-semibold">Explore {country.name.replace(/_/g, " ")}</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onTabChange("mycountry")}
-                      className="w-full justify-start"
-                    >
-                      <Crown className="mr-2 h-3 w-3" />
-                      MyCountry
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onTabChange("lore")}
-                      className="w-full justify-start"
-                    >
-                      <BookOpen className="mr-2 h-3 w-3" />
-                      Lore
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onTabChange("diplomatic")}
-                      className="w-full justify-start"
-                    >
-                      <ExternalLink className="mr-2 h-3 w-3" />
-                      ThinkPages
-                    </Button>
-                    <a
-                      href={`https://ixwiki.com/wiki/${country.name}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full"
-                    >
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <ExternalLink className="mr-2 h-3 w-3" />
-                        Open in Wiki
-                      </Button>
-                    </a>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar - National Vitality Rings */}
-          <div className="space-y-6">
-            <VitalityRings data={vitalityData} variant="sidebar" />
           </div>
         </div>
       </div>
@@ -594,6 +590,43 @@ export function CountryOverviewPanel({
         countryId={country.id}
         countryName={country.name}
       />
+
+      {/* Metric Detail Modals */}
+      <PopulationDetailsModal
+        isOpen={isPopulationModalOpen}
+        onClose={() => setIsPopulationModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+      <GdpDetailsModal
+        isOpen={isGdpModalOpen}
+        onClose={() => setIsGdpModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+      <GdpPerCapitaDetailsModal
+        isOpen={isGdpPerCapitaModalOpen}
+        onClose={() => setIsGdpPerCapitaModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
     </>
   );
 }
+
+function useHasMoreGovFields(
+  governmentStructure: CountryOverviewPanelProps["governmentStructure"],
+  country: CountryOverviewPanelProps["country"],
+  wikiInfobox: CountryOverviewPanelProps["wikiInfobox"],
+): boolean {
+  const currency = country?.nationalIdentity?.currency || wikiInfobox?.currency;
+  const legislature = governmentStructure?.legislatureName;
+  const executive = governmentStructure?.executiveName;
+  const judicial = governmentStructure?.judicialName;
+  const budget = typeof governmentStructure?.totalBudget === "number";
+  const motto = country?.nationalIdentity?.motto || wikiInfobox?.motto;
+
+  return !!(currency || legislature || executive || judicial || budget || motto);
+}
+
+type CountryOverviewPanelProps = Parameters<typeof CountryOverviewPanel>[0];

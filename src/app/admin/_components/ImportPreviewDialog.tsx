@@ -11,9 +11,11 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
-  Loader2, // Added Loader2
+  Loader2,
   Clock,
 } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import type { BaseCountryData } from "~/types/ixstats";
 import { IxTime } from "~/lib/ixtime";
 
@@ -113,9 +115,9 @@ export function ImportPreviewDialog({
             key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
           return (
             <div key={key} className="flex justify-between">
-              <span className="text-gray-500 dark:text-gray-400">{label}:</span>
+              <span className="text-muted-foreground">{label}:</span>
               <span
-                className="truncate text-right font-medium text-gray-800 dark:text-gray-200"
+                className="truncate text-right font-medium text-foreground"
                 title={String(value)}
               >
                 {formatDisplayValue(value, key)}
@@ -128,16 +130,16 @@ export function ImportPreviewDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xl">
-      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-xl border border-white/10 bg-slate-800/95 shadow-2xl backdrop-blur-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-xl border border-border/50 bg-card shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 p-6">
-          <h2 className="text-xl font-semibold text-white">
+        <div className="flex items-center justify-between border-b border-border p-6">
+          <h2 className="text-xl font-semibold text-foreground">
             Import Preview - {changes.length} Countries Found
           </h2>
           <button
             onClick={onClose}
-            className="text-white/60 transition-colors hover:text-white"
+            className="text-muted-foreground transition-colors hover:text-foreground"
             aria-label="Close dialog"
           >
             <X className="h-6 w-6" />
@@ -148,28 +150,28 @@ export function ImportPreviewDialog({
         <div className="scrollbar-thin flex-grow overflow-y-auto p-6">
           {/* Summary */}
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-700 dark:bg-green-900/20">
+            <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4">
               <div className="flex items-center">
-                <Plus className="mr-3 h-6 w-6 text-green-600 dark:text-green-400" />
+                <Plus className="mr-3 h-6 w-6 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                  <p className="text-sm font-medium text-green-700">
                     New Countries to Add
                   </p>
-                  <p className="text-3xl font-bold text-green-900 dark:text-green-100">
+                  <p className="text-3xl font-bold text-green-800">
                     {newCountries.length}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-700 dark:bg-blue-900/20">
+            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
               <div className="flex items-center">
-                <RefreshCw className="mr-3 h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <RefreshCw className="mr-3 h-6 w-6 text-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  <p className="text-sm font-medium text-blue-700">
                     Countries to Update
                   </p>
-                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                  <p className="text-3xl font-bold text-blue-800">
                     {updatedCountries.length}
                   </p>
                 </div>
@@ -180,27 +182,27 @@ export function ImportPreviewDialog({
           {/* New Countries Section */}
           {newCountries.length > 0 && (
             <div className="mb-6">
-              <h3 className="mb-3 flex items-center text-lg font-medium text-gray-900 dark:text-white">
-                <Plus className="mr-2 h-5 w-5 text-green-600 dark:text-green-400" />
+              <h3 className="mb-3 flex items-center text-lg font-medium text-foreground">
+                <Plus className="mr-2 h-5 w-5 text-green-600" />
                 New Countries ({newCountries.length})
               </h3>
               <div className="space-y-3">
                 {newCountries.map((change) => (
                   <div
                     key={change.country.country}
-                    className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/10"
+                    className="rounded-lg border border-green-500/20 bg-green-500/10 p-3"
                   >
                     <button
                       onClick={() => toggleExpandCountry(change.country.country)}
                       className="flex w-full items-center justify-between text-left"
                     >
-                      <span className="font-medium text-green-900 dark:text-green-100">
+                      <span className="font-medium text-green-800">
                         {change.country.country}
                       </span>
                       {expandedCountry === change.country.country ? (
-                        <ChevronUp className="h-4 w-4" />
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       )}
                     </button>
                     {expandedCountry === change.country.country &&
@@ -214,27 +216,27 @@ export function ImportPreviewDialog({
           {/* Updated Countries Section */}
           {updatedCountries.length > 0 && (
             <div className="mb-6">
-              <h3 className="mb-3 flex items-center text-lg font-medium text-gray-900 dark:text-white">
-                <RefreshCw className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <h3 className="mb-3 flex items-center text-lg font-medium text-foreground">
+                <RefreshCw className="mr-2 h-5 w-5 text-blue-600" />
                 Updated Countries ({updatedCountries.length})
               </h3>
               <div className="space-y-3">
                 {updatedCountries.map((change) => (
                   <div
                     key={change.country.country}
-                    className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/10"
+                    className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4"
                   >
                     <button
                       onClick={() => toggleExpandCountry(change.country.country)}
                       className="mb-2 flex w-full items-center justify-between text-left"
                     >
-                      <span className="font-medium text-blue-900 dark:text-blue-100">
+                      <span className="font-medium text-blue-800">
                         {change.country.country}
                       </span>
                       {expandedCountry === change.country.country ? (
-                        <ChevronUp className="h-4 w-4" />
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       )}
                     </button>
                     {expandedCountry === change.country.country && (
@@ -244,21 +246,21 @@ export function ImportPreviewDialog({
                             {change.changes.map((fieldChange, fieldIndex) => (
                               <div key={fieldIndex} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 items-center gap-2">
                                 <span
-                                  className="truncate text-gray-500 dark:text-gray-400"
+                                  className="truncate text-muted-foreground"
                                   title={fieldChange.fieldLabel}
                                 >
                                   {fieldChange.fieldLabel}:
                                 </span>
                                 <span
-                                  className="truncate rounded bg-red-50 p-1 text-gray-600 dark:bg-red-900/20 dark:text-gray-300"
+                                  className="truncate rounded bg-red-500/10 p-1 text-muted-foreground"
                                   title={String(fieldChange.oldValue)}
                                 >
                                   {formatDisplayValue(fieldChange.oldValue, fieldChange.field)}
                                 </span>
                                 <div className="flex items-center">
-                                  <ArrowRight className="mx-1 h-3 w-3 text-gray-400 dark:text-gray-500" />
+                                  <ArrowRight className="mx-1 h-3 w-3 text-muted-foreground" />
                                   <span
-                                    className="truncate rounded bg-green-50 p-1 font-medium text-blue-800 dark:bg-green-900/20 dark:text-blue-200"
+                                    className="truncate rounded bg-green-500/10 p-1 font-medium text-blue-700"
                                     title={String(fieldChange.newValue)}
                                   >
                                     {formatDisplayValue(fieldChange.newValue, fieldChange.field)}
@@ -268,13 +270,13 @@ export function ImportPreviewDialog({
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-muted-foreground">
                             No specific field changes detected, but file data might differ subtly or
                             involve new fields.
                           </p>
                         )}
-                        <div className="mt-3 border-t border-blue-200 pt-2 dark:border-blue-700">
-                          <h4 className="mb-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
+                        <div className="mt-3 border-t border-blue-500/20 pt-2">
+                          <h4 className="mb-1 text-xs font-semibold text-blue-700">
                             Full Proposed Data:
                           </h4>
                           {renderCountryDetails(change.country)}
@@ -288,9 +290,9 @@ export function ImportPreviewDialog({
           )}
           {changes.length === 0 && (
             <div className="py-10 text-center">
-              <Info className="mx-auto mb-2 h-10 w-10 text-gray-400 dark:text-gray-500" />
-              <p className="text-gray-700 dark:text-gray-300">No changes to import.</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <Info className="mx-auto mb-2 h-10 w-10 text-muted-foreground" />
+              <p className="text-foreground">No changes to import.</p>
+              <p className="text-sm text-muted-foreground">
                 The uploaded file does not contain new countries or updates to existing ones based
                 on current data.
               </p>
@@ -299,16 +301,16 @@ export function ImportPreviewDialog({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-900">
+        <div className="border-t border-border bg-muted/50 p-6">
           {/* Epoch Sync Section */}
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-900/20">
+          <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
             <div className="flex items-start space-x-3">
-              <Clock className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <Clock className="mt-0.5 h-5 w-5 text-amber-600" />
               <div className="flex-1">
-                <h4 className="mb-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+                <h4 className="mb-2 text-sm font-medium text-amber-700">
                   Epoch Time Synchronization
                 </h4>
-                <p className="mb-3 text-xs text-amber-700 dark:text-amber-300">
+                <p className="mb-3 text-xs text-amber-600">
                   Sync the game epoch with your imported data to ensure accurate tracking. This
                   aligns the baseline calculation date with your roster data.
                 </p>
@@ -318,16 +320,16 @@ export function ImportPreviewDialog({
                     type="checkbox"
                     checked={syncEpoch}
                     onChange={(e) => setSyncEpoch(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 dark:border-gray-600"
+                    className="h-4 w-4 rounded border-border text-amber-600 focus:ring-amber-500"
                   />
-                  <span className="ml-2 text-sm font-medium text-amber-800 dark:text-amber-200">
+                  <span className="ml-2 text-sm font-medium text-amber-700">
                     Sync epoch time with imported data
                   </span>
                 </label>
 
                 {syncEpoch && (
                   <div className="ml-6 space-y-2">
-                    <div className="text-xs text-amber-700 dark:text-amber-300">
+                    <div className="text-xs text-amber-600">
                       <p>
                         <strong>Current Epoch:</strong>{" "}
                         {IxTime.formatIxTime(IxTime.getInGameEpoch())}
@@ -343,10 +345,10 @@ export function ImportPreviewDialog({
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <label className="text-xs text-amber-700 dark:text-amber-300">
+                      <label className="text-xs text-amber-600">
                         Target Year:
                       </label>
-                      <input
+                      <Input
                         type="number"
                         value={new Date(targetEpoch).getFullYear()}
                         onChange={(e) => {
@@ -356,9 +358,9 @@ export function ImportPreviewDialog({
                             setTargetEpoch(newEpoch);
                           }
                         }}
-                        className="w-20 rounded border border-amber-300 bg-white px-2 py-1 text-xs text-gray-900 dark:border-amber-600 dark:bg-gray-800 dark:text-gray-100"
-                        min="2020"
-                        max="2100"
+                        className="w-20 text-xs"
+                        min={2020}
+                        max={2100}
                       />
                     </div>
                   </div>
@@ -374,9 +376,9 @@ export function ImportPreviewDialog({
                   type="checkbox"
                   checked={confirmReplace}
                   onChange={(e) => setConfirmReplace(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600"
+                  className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500"
                 />
-                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                <span className="ml-2 text-sm text-muted-foreground">
                   Confirm updating {updatedCountries.length} existing countries with new data from
                   the file.
                 </span>
@@ -385,14 +387,10 @@ export function ImportPreviewDialog({
           )}
 
           <div className="flex justify-end space-x-3">
-            <button
-              onClick={onClose}
-              type="button"
-              className="focus-ring rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-            >
+            <Button variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() =>
                 onConfirm(
                   updatedCountries.length > 0 ? confirmReplace : false,
@@ -405,7 +403,6 @@ export function ImportPreviewDialog({
                 (updatedCountries.length > 0 && !confirmReplace) ||
                 changes.length === 0
               }
-              className="focus-ring flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? (
                 <>
@@ -421,7 +418,7 @@ export function ImportPreviewDialog({
                     : "Data"}
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

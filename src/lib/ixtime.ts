@@ -579,6 +579,53 @@ export class IxTime {
     }
   }
 
+  /**
+   * Convert an IxTime timestamp back to the real-world timestamp that produces it.
+   * Inverse of getCurrentIxTime() logic — handles pre/post pivot.
+   */
+  static convertFromIxTime(ixTimestamp: number): number {
+    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
+    const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
+
+    if (ixTimestamp >= PIVOT_POINT_IXTIME) {
+      // Post-pivot: IxTime >= Jan 1, 2040 → real date >= Jul 27, 2025
+      const ixMsFromPivot = ixTimestamp - PIVOT_POINT_IXTIME;
+      const realMsFromPivot = ixMsFromPivot / this.POST_SPEED_CHANGE_MULTIPLIER;
+      return PIVOT_POINT_REAL + realMsFromPivot;
+    } else {
+      // Pre-pivot: IxTime < Jan 1, 2040 → real date < Jul 27, 2025
+      const ixMsFromEpoch = ixTimestamp - this.REAL_WORLD_EPOCH;
+      const realMsFromEpoch = ixMsFromEpoch / this.BASE_TIME_MULTIPLIER;
+      return this.REAL_WORLD_EPOCH + realMsFromEpoch;
+    }
+  }
+
+  /**
+   * Get the real-world timestamp when IxTime reaches Jan 1 of a given game year.
+   */
+  static getRealDateForGameYear(year: number): number {
+    const ixTimestamp = new Date(Date.UTC(year, 0, 1, 0, 0, 0)).getTime();
+    return this.convertFromIxTime(ixTimestamp);
+  }
+
+  /**
+   * Calculate how many IxTime days pass per real day at a given multiplier.
+   */
+  static getIxDaysPerRealDay(multiplier?: number): number {
+    const m = multiplier ?? this.getTimeMultiplier();
+    return m; // 1 real day × multiplier = multiplier IxTime days
+  }
+
+  /**
+   * Predict what IxTime will be after a given number of real hours from now.
+   */
+  static predictIxTimeAfterRealHours(realHours: number, multiplier?: number): number {
+    const m = multiplier ?? this.getTimeMultiplier();
+    const currentIx = this.getCurrentIxTime();
+    const realMs = realHours * 60 * 60 * 1000;
+    return currentIx + realMs * m;
+  }
+
   static dateToTimestamp(date: Date): number {
     return date.getTime();
   }

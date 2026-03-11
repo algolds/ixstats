@@ -22,6 +22,7 @@ import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotif
 import { ToastProvider } from "~/components/ui/toast";
 import { NotificationBadgeProvider } from "~/components/notifications/NotificationBadgeProvider";
 import { withBasePath } from "~/lib/base-path";
+import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -46,6 +47,10 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
+// IxWorld standalone mode: strip navigation chrome for maps.ixwiki.com
+const isStandalone =
+  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
+
 const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const dashboardPath = withBasePath("/dashboard");
   const signInPath = withBasePath("/sign-in");
@@ -60,12 +65,17 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
               <NotificationBadgeProvider>
                 <GlobalNotificationSystem>
                   <WebGLErrorHandler />
-                  <div className="flex min-h-screen flex-col">
-                    <Navigation />
-                    {/* <GlobalActivityMarquee /> */}
-                    <SetupRedirect />
-                    <main className="flex-1">{children}</main>
-                  </div>
+                  <MapPrefetcher />
+                  {isStandalone ? (
+                    <main className="min-h-screen">{children}</main>
+                  ) : (
+                    <div className="flex min-h-screen flex-col">
+                      <Navigation />
+                      {/* <GlobalActivityMarquee /> */}
+                      <SetupRedirect />
+                      <main className="flex-1">{children}</main>
+                    </div>
+                  )}
                 </GlobalNotificationSystem>
               </NotificationBadgeProvider>
             </ToastProvider>

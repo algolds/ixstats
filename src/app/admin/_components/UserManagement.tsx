@@ -59,6 +59,7 @@ import {
   Search,
   Settings,
   Sparkles,
+  Map,
 } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
@@ -814,6 +815,7 @@ export function UserManagement({ className }: UserManagementProps) {
                   <TableHead>User ID</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Country</TableHead>
+                  <TableHead>Map</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Premium</TableHead>
                   <TableHead>Actions</TableHead>
@@ -837,6 +839,13 @@ export function UserManagement({ className }: UserManagementProps) {
                         <span className="text-sm">{user.country.name}</span>
                       ) : (
                         <span className="text-gray-400">No country</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.country ? (
+                        <Map className="h-4 w-4 text-emerald-500" />
+                      ) : (
+                        <span className="text-slate-300 dark:text-slate-600">—</span>
                       )}
                     </TableCell>
                     <TableCell>

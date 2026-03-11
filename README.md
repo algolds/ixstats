@@ -24,6 +24,7 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 | **Elections & Politics** | D'Hondt/FPTP electoral systems, legislature management, hemicycle visualization |
 | **Crisis Management** | Dynamic natural disasters, economic crises, diplomatic incidents with player responses |
 | **Content Management** | 20 admin interfaces for dynamic content (scenarios, NPC personalities, equipment, archetypes) |
+| **IxWorld Maps** | Interactive world globe with MapLibre GL JS, 7 layers, border editor, procedural world generation, deployed at maps.ixwiki.com |
 | **Achievements & Leaderboards** | Global achievement tracking and ranking |
 
 ## Technology Stack
@@ -36,6 +37,7 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 | API Layer | tRPC 11.4 with SuperJSON + Clerk auth context |
 | Database | Prisma 6.19, PostgreSQL (port 5433) |
 | Styling | Tailwind CSS 4, custom glass physics design system, Lucide icons |
+| Mapping | MapLibre GL JS with globe/mercator projection, PostGIS spatial queries |
 | Realtime | Socket.IO via `server.mjs` and `src/lib/websocket-server.ts` |
 
 ## Getting Started
@@ -86,6 +88,7 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 ```
 ├── src/
 │   ├── app/                     # Next.js App Router pages (124 routes)
+│   │   ├── maps/                # World map viewer (IxWorld at maps.ixwiki.com)
 │   │   ├── mycountry/           # Executive command suite
 │   │   ├── dashboard/           # Signed-in dashboards
 │   │   ├── thinkpages/          # Social knowledge sharing
@@ -93,6 +96,7 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 │   │   ├── help/                # In-app help center
 │   │   └── api/                 # API route handlers
 │   ├── components/              # UI and domain components (645+)
+│   │   └── maps/               # Map core, editor, and widget components (27)
 │   ├── hooks/                   # Custom React hooks (80)
 │   ├── server/api/routers/      # tRPC routers (61)
 │   ├── lib/                     # Utilities, rate limiter, formatting

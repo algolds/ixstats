@@ -20,15 +20,15 @@ export function BotStatusBanner({
   if (!botStatus) return null;
 
   const getBotStatusColor = (healthAvailable: boolean, botIsReady?: boolean) => {
-    if (!healthAvailable) return "text-red-600 dark:text-red-400";
-    if (botIsReady === false) return "text-yellow-600 dark:text-yellow-400"; // Bot connected but not ready
-    return "text-green-600 dark:text-green-400"; // Bot connected and ready, or status unknown but health is ok
+    if (!healthAvailable) return "text-red-600";
+    if (botIsReady === false) return "text-yellow-600";
+    return "text-green-600";
   };
 
   const getBannerColor = (healthAvailable: boolean) => {
     return healthAvailable
-      ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
-      : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800";
+      ? "bg-green-500/10 border-green-500/20"
+      : "bg-red-500/10 border-red-500/20";
   };
 
   const botUserDisplay = botStatus.botStatus?.botUser;
@@ -54,7 +54,7 @@ export function BotStatusBanner({
                   : "Connected, Not Ready"
                 : "Disconnected"}
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {botStatus.botHealth.message}
               {botTag && ` • ${botTag}`}
             </p>
@@ -64,14 +64,14 @@ export function BotStatusBanner({
           <button
             onClick={onSync}
             disabled={syncPending || !botStatus.botHealth.available}
-            className="flex items-center rounded-md bg-blue-100 px-3 py-1 text-sm text-blue-700 hover:bg-blue-200 disabled:opacity-50 dark:bg-blue-700 dark:text-blue-100 dark:hover:bg-blue-600"
+            className="flex items-center rounded-md bg-blue-500/10 px-3 py-1 text-sm text-blue-700 hover:bg-blue-500/20 disabled:opacity-50"
           >
             <ArrowLeftRight className={`mr-1 h-4 w-4 ${syncPending ? "animate-spin" : ""}`} />
             Sync
           </button>
           <button
             onClick={onRefresh}
-            className="flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            className="flex items-center rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground hover:bg-muted/80"
           >
             <RefreshCw className="mr-1 h-4 w-4" />
             Refresh

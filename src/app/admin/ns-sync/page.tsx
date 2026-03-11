@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { RefreshCw, Database, AlertCircle, CheckCircle, XCircle, Play, RotateCcw, Clock, TrendingUp, AlertTriangle, Globe, MapPin, Layers, Upload, FileUp, Search, Users, Package, Gavel, BookOpen } from 'lucide-react';
 import { api } from '~/trpc/react';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
 import { CardPacksAdmin } from './CardPacksAdmin';
 import { LoreCardBatchAdmin } from './LoreCardBatchAdmin';
 
@@ -28,14 +30,14 @@ function SeedDemoAuctionsButton() {
           <p className="text-xs text-muted-foreground">Seed sample auctions with lore cards for marketplace testing</p>
         </div>
       </div>
-      <button
+      <Button
         onClick={() => {
           if (confirm('Create 6 demo auctions with sample lore cards?')) {
             seedMutation.mutate();
           }
         }}
         disabled={seedMutation.isPending}
-        className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+        className="bg-amber-500 hover:bg-amber-600"
       >
         {seedMutation.isPending ? (
           <RefreshCw className="h-4 w-4 animate-spin" />
@@ -43,7 +45,7 @@ function SeedDemoAuctionsButton() {
           <Gavel className="h-4 w-4" />
         )}
         Seed Auctions
-      </button>
+      </Button>
     </div>
   );
 }
@@ -176,7 +178,7 @@ export default function NSSyncMonitoringPage() {
       case 'COMPLETED': case 'SUCCESS': return 'text-green-400 bg-green-500/20';
       case 'IN_PROGRESS': return 'text-blue-400 bg-blue-500/20';
       case 'FAILED': return 'text-red-400 bg-red-500/20';
-      default: return 'text-muted-foreground bg-white/10';
+      default: return 'text-muted-foreground bg-muted/50';
     }
   };
 
@@ -230,14 +232,14 @@ export default function NSSyncMonitoringPage() {
                   <option value="10000">Every 10s</option>
                   <option value="30000">Every 30s</option>
                 </select>
-                <button
+                <Button
                   onClick={handleRefreshAll}
                   disabled={loadingHealth}
-                  className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="bg-blue-500 hover:bg-blue-600"
                 >
                   <RefreshCw className={`h-4 w-4 ${loadingHealth ? 'animate-spin' : ''}`} />
                   Refresh
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -299,13 +301,13 @@ export default function NSSyncMonitoringPage() {
               {interruptedJobs.map((job) => {
                 const pct = job.totalNations > 0 ? Math.round((job.nationsProcessed / job.totalNations) * 100) : 0;
                 return (
-                  <div key={job.id} className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-3">
+                  <div key={job.id} className="flex items-center gap-4 rounded-lg border border-border/50 bg-muted/30 p-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-foreground truncate">{job.regionName}</span>
                         <span className="text-xs text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-full">{pct}%</span>
                       </div>
-                      <div className="w-full rounded-full h-1.5 bg-white/10 mb-1">
+                      <div className="w-full rounded-full h-1.5 bg-muted/50 mb-1">
                         <div className="h-1.5 rounded-full bg-amber-500" style={{ width: `${pct}%` }} />
                       </div>
                       <div className="flex gap-4 text-xs text-muted-foreground">
@@ -314,10 +316,10 @@ export default function NSSyncMonitoringPage() {
                         <span>Remaining: {job.totalNations - job.nationsProcessed}</span>
                       </div>
                     </div>
-                    <button
+                    <Button
                       onClick={() => resumeJobMutation.mutate({ syncLogId: job.id })}
                       disabled={resumeJobMutation.isPending}
-                      className="shrink-0 flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="shrink-0 bg-amber-500 hover:bg-amber-600"
                     >
                       {resumeJobMutation.isPending ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -325,7 +327,7 @@ export default function NSSyncMonitoringPage() {
                         <Play className="h-4 w-4" />
                       )}
                       Resume
-                    </button>
+                    </Button>
                   </div>
                 );
               })}
@@ -387,17 +389,17 @@ export default function NSSyncMonitoringPage() {
               Fetch trading cards from all nations in a specific NS region. Each nation&apos;s deck is queried via the API (~800ms per nation).
             </p>
             <div className="flex gap-2 mb-4">
-              <input
+              <Input
                 type="text"
                 value={regionName}
                 onChange={(e) => setRegionName(e.target.value)}
                 placeholder="Region name (e.g. greater_ixnay)"
-                className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground backdrop-blur-sm"
+                className="flex-1"
               />
-              <button
+              <Button
                 onClick={() => fetchRegionMutation.mutate({ regionName })}
                 disabled={!regionName.trim() || fetchRegionMutation.isPending || (!!activeSyncLogId && activeSyncStatus?.status === 'IN_PROGRESS')}
-                className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
+                className="bg-green-500 hover:bg-green-600 whitespace-nowrap"
               >
                 {fetchRegionMutation.isPending ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
@@ -405,12 +407,12 @@ export default function NSSyncMonitoringPage() {
                   <Globe className="h-4 w-4" />
                 )}
                 Fetch Region
-              </button>
+              </Button>
             </div>
 
             {/* Active job progress */}
             {activeSyncStatus && activeSyncStatus.syncType.startsWith('NS_REGION_') && (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4 mt-2">
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-4 mt-2">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-foreground/80">
                     {activeSyncStatus.regionName ?? 'Region Fetch'}
@@ -419,7 +421,7 @@ export default function NSSyncMonitoringPage() {
                     {activeSyncStatus.status}
                   </span>
                 </div>
-                <div className="w-full rounded-full h-2 mb-2 bg-white/10">
+                <div className="w-full rounded-full h-2 mb-2 bg-muted/50">
                   <div
                     className={`h-2 rounded-full transition-all ${
                       activeSyncStatus.status === 'SUCCESS' ? 'bg-green-500' :
@@ -450,10 +452,10 @@ export default function NSSyncMonitoringPage() {
             <p className="text-sm text-muted-foreground mb-4">
               Find the largest NS regions by nation count. More nations = more unique cards to fetch.
             </p>
-            <button
+            <Button
               onClick={() => discoverRegionsMutation.mutate({ limit: 15 })}
               disabled={discoverRegionsMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-purple-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-600 disabled:cursor-not-allowed disabled:opacity-50 mb-4"
+              className="mb-4 bg-purple-500 hover:bg-purple-600"
             >
               {discoverRegionsMutation.isPending ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />
@@ -461,11 +463,11 @@ export default function NSSyncMonitoringPage() {
                 <Search className="h-4 w-4" />
               )}
               {discoverRegionsMutation.isPending ? 'Scanning NS Regions...' : 'Scan Top Regions'}
-            </button>
+            </Button>
 
             {discoveredRegions && (
-              <div className="rounded-lg border border-white/10 bg-white/5 overflow-hidden">
-                <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
+              <div className="rounded-lg border border-border/50 bg-muted/30 overflow-hidden">
+                <div className="px-4 py-2 border-b border-border/50 flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground">
                     Top {discoveredRegions.length} regions by nation count
                   </span>
@@ -473,9 +475,9 @@ export default function NSSyncMonitoringPage() {
                     {discoveredRegions.reduce((sum, r) => sum + r.numnations, 0).toLocaleString()} total nations
                   </span>
                 </div>
-                <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
+                <div className="divide-y divide-border/30 max-h-80 overflow-y-auto">
                   {discoveredRegions.map((region, i) => (
-                    <div key={region.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors">
+                    <div key={region.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-xs font-mono text-muted-foreground w-5 text-right shrink-0">{i + 1}</span>
                         <div className="min-w-0">
@@ -486,7 +488,9 @@ export default function NSSyncMonitoringPage() {
                           </p>
                         </div>
                       </div>
-                      <button
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => {
                           setRegionName(region.id);
                           if (confirm(`Fetch all cards from "${region.name}" (${region.numnations.toLocaleString()} nations)?\n\nThis will take ~${Math.ceil(region.numnations * 0.8 / 60)} minutes.`)) {
@@ -494,11 +498,11 @@ export default function NSSyncMonitoringPage() {
                           }
                         }}
                         disabled={fetchRegionMutation.isPending || (!!activeSyncLogId && activeSyncStatus?.status === 'IN_PROGRESS')}
-                        className="shrink-0 flex items-center gap-1.5 rounded-lg border border-green-500/20 bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-400 transition-colors hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="shrink-0 border-green-500/20 bg-green-500/10 text-xs text-green-500 hover:bg-green-500/20"
                       >
                         <Globe className="h-3.5 w-3.5" />
                         Fetch
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -519,7 +523,7 @@ export default function NSSyncMonitoringPage() {
             {/* Notice about dump availability */}
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 mb-4">
               <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
-              <div className="text-xs text-amber-300/80">
+              <div className="text-xs text-amber-600">
                 <p className="font-medium text-amber-400 mb-1">NS Dump Files Currently Unavailable</p>
                 <p>
                   The official dump files (<code className="text-amber-400/90">cardlist_S*.xml.gz</code>) are unavailable
@@ -534,19 +538,20 @@ export default function NSSyncMonitoringPage() {
                 <select
                   value={dumpSeason}
                   onChange={(e) => setDumpSeason(parseInt(e.target.value))}
-                  className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-foreground backdrop-blur-sm"
+                  className="rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground"
                 >
                   <option value={1}>Season 1</option>
                   <option value={2}>Season 2</option>
                   <option value={3}>Season 3</option>
                 </select>
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-400 transition-colors hover:bg-orange-500/20 whitespace-nowrap"
+                  className="border-orange-500/30 bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 whitespace-nowrap"
                 >
                   <FileUp className="h-4 w-4" />
                   {dumpFile ? dumpFile.name : 'Choose File'}
-                </button>
+                </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -581,7 +586,7 @@ export default function NSSyncMonitoringPage() {
                   </button>
                 </div>
               )}
-              <button
+              <Button
                 onClick={() => {
                   if (!dumpFile) return;
                   if (confirm(`Import ALL cards from Season ${dumpSeason} using "${dumpFile.name}"?`)) {
@@ -593,7 +598,7 @@ export default function NSSyncMonitoringPage() {
                   }
                 }}
                 disabled={!dumpFile || importDumpMutation.isPending || (!!activeSyncLogId && activeSyncStatus?.status === 'IN_PROGRESS')}
-                className="flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full bg-orange-500 hover:bg-orange-600"
               >
                 {importDumpMutation.isPending ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
@@ -601,12 +606,12 @@ export default function NSSyncMonitoringPage() {
                   <Upload className="h-4 w-4" />
                 )}
                 Import Dump
-              </button>
+              </Button>
             </div>
 
             {/* Active job progress */}
             {activeSyncStatus && activeSyncStatus.syncType.startsWith('NS_SEASON_DUMP_') && (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4 mt-2">
+              <div className="rounded-lg border border-border/50 bg-muted/30 p-4 mt-2">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-foreground/80">
                     Season {activeSyncStatus.syncType.replace('NS_SEASON_DUMP_', '')} Dump
@@ -615,7 +620,7 @@ export default function NSSyncMonitoringPage() {
                     {activeSyncStatus.status}
                   </span>
                 </div>
-                <div className="w-full rounded-full h-2 mb-2 bg-white/10">
+                <div className="w-full rounded-full h-2 mb-2 bg-muted/50">
                   <div
                     className={`h-2 rounded-full transition-all ${
                       activeSyncStatus.status === 'SUCCESS' ? 'bg-green-500' :
@@ -694,7 +699,7 @@ export default function NSSyncMonitoringPage() {
             </div>
             <div className="space-y-2">
               {healthStats.alerts.map((alert, idx) => (
-                <div key={idx} className="text-sm text-red-300 ml-8">{alert}</div>
+                <div key={idx} className="text-sm text-red-500 ml-8">{alert}</div>
               ))}
             </div>
           </div>
@@ -721,12 +726,12 @@ export default function NSSyncMonitoringPage() {
                     <span>Progress</span>
                     <span className="font-medium">{seasonData.progress.toFixed(1)}%</span>
                   </div>
-                  <div className="w-full rounded-full h-3 bg-white/10">
+                  <div className="w-full rounded-full h-3 bg-muted/50">
                     <div
                       className={`h-3 rounded-full transition-all ${
                         seasonData.status === 'COMPLETED' ? 'bg-green-500' :
                         seasonData.status === 'IN_PROGRESS' ? 'bg-blue-500' :
-                        seasonData.status === 'FAILED' ? 'bg-red-500' : 'bg-white/20'
+                        seasonData.status === 'FAILED' ? 'bg-red-500' : 'bg-muted'
                       }`}
                       style={{ width: `${seasonData.progress}%` }}
                     />
@@ -755,20 +760,21 @@ export default function NSSyncMonitoringPage() {
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     onClick={() => handleTriggerSync(season)}
                     disabled={seasonData.status === 'IN_PROGRESS' || triggerSyncMutation.isPending}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex-1 bg-blue-500 hover:bg-blue-600"
                   >
                     <Play className="h-4 w-4" /> Trigger Sync
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => setShowResetConfirm(season)}
                     disabled={seasonData.status === 'IN_PROGRESS' || resetSyncMutation.isPending}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-500/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex-1 border-red-500/20 bg-red-500/20 text-red-500 hover:bg-red-500/30"
                   >
                     <RotateCcw className="h-4 w-4" /> Reset
-                  </button>
+                  </Button>
                 </div>
               </div>
             );
@@ -787,9 +793,9 @@ export default function NSSyncMonitoringPage() {
                 <div key={idx} className="p-4 rounded-lg border border-red-500/20 bg-red-500/10">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-red-400">Season {error.season}</span>
-                    <span className="text-sm text-red-300">{new Date(error.timestamp).toLocaleString()}</span>
+                    <span className="text-sm text-red-500">{new Date(error.timestamp).toLocaleString()}</span>
                   </div>
-                  <div className="text-sm text-red-300 font-mono bg-red-500/10 p-2 rounded">{error.error}</div>
+                  <div className="text-sm text-red-500 font-mono bg-red-500/10 p-2 rounded">{error.error}</div>
                   {error.cardsAffected > 0 && (
                     <div className="text-xs text-red-400 mt-2">Cards affected: {error.cardsAffected}</div>
                   )}
@@ -809,7 +815,7 @@ export default function NSSyncMonitoringPage() {
             <select
               value={syncTypeFilter}
               onChange={(e) => setSyncTypeFilter(e.target.value as typeof syncTypeFilter)}
-              className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-sm text-foreground backdrop-blur-sm"
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground"
             >
               <option value="all">All Operations</option>
               <option value="season">Season Syncs</option>
@@ -821,7 +827,7 @@ export default function NSSyncMonitoringPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/10">
+                  <tr className="border-b border-border/50">
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Cards</th>
@@ -833,7 +839,7 @@ export default function NSSyncMonitoringPage() {
                 </thead>
                 <tbody>
                   {syncLogs.map((log) => (
-                    <tr key={log.id} className="border-b border-white/5 transition-colors hover:bg-white/5">
+                    <tr key={log.id} className="border-b border-border/30 transition-colors hover:bg-muted/30">
                       <td className="py-3 px-4 text-sm text-foreground">
                         {log.season ? `Season ${log.season}` : (log as any).syncType || 'Unknown'}
                       </td>
@@ -862,7 +868,7 @@ export default function NSSyncMonitoringPage() {
         {/* Reset Confirmation Dialog */}
         {showResetConfirm !== null && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="glass-card-parent rounded-xl border border-white/10 max-w-md w-full p-6">
+            <div className="glass-card-parent rounded-xl border border-border/50 max-w-md w-full p-6">
               <div className="flex items-center gap-3 mb-4">
                 <AlertCircle className="h-6 w-6 text-red-400" />
                 <h3 className="text-lg font-semibold text-foreground">Reset Season {showResetConfirm} Sync?</h3>
@@ -871,19 +877,19 @@ export default function NSSyncMonitoringPage() {
                 This will clear the checkpoint and sync will start from the beginning. All progress will be lost.
               </p>
               <div className="flex gap-3 justify-end">
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setShowResetConfirm(null)}
-                  className="rounded-lg border border-white/20 px-4 py-2 text-sm text-foreground transition-colors hover:bg-white/5"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleResetSync(showResetConfirm)}
                   disabled={resetSyncMutation.isPending}
-                  className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="bg-red-500 hover:bg-red-600"
                 >
                   {resetSyncMutation.isPending ? 'Resetting...' : 'Reset Sync'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

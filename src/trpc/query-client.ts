@@ -36,7 +36,7 @@ export const createQueryClient = () =>
         // With SSR, we usually want to set some default staleTime
         // above 0 to avoid refetching immediately on the client
         staleTime: 30 * 1000,        // Data is fresh for 30s
-        gcTime: 5 * 60 * 1000,       // Keep in cache for 5 minutes after unmount
+        gcTime: 60 * 60 * 1000,      // Keep in cache for 60 minutes after unmount (critical for prefetch warming)
         // Reduce unnecessary refetches for better performance
         refetchOnWindowFocus: false, // Don't refetch when user returns to tab
         refetchOnReconnect: false,   // Don't refetch on network reconnect

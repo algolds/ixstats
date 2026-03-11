@@ -1,11 +1,10 @@
 "use client";
 
-// Refactored from main CountryPage - handles tab navigation for country profile pages
 import React from "react";
 import { Button } from "~/components/ui/button";
-import { Eye, Crown, BookOpen, Rss, Building } from "lucide-react";
+import { Eye, Crown, Activity, Handshake, BookOpen } from "lucide-react";
 
-type TabType = "overview" | "mycountry" | "lore" | "diplomatic" | "diplomacy";
+export type TabType = "overview" | "mycountry" | "lore" | "activity" | "diplomacy";
 
 interface CountryTabsProps {
   activeTab: TabType;
@@ -37,22 +36,22 @@ export function CountryTabs({ activeTab, onTabChange }: CountryTabsProps) {
         className="min-w-[120px] flex-1"
       >
         <BookOpen className="mr-2 h-4 w-4" />
-        Lore & History
+        Dossier
       </Button>
       <Button
-        variant={activeTab === "diplomatic" ? "default" : "ghost"}
-        onClick={() => onTabChange("diplomatic")}
+        variant={activeTab === "activity" ? "default" : "ghost"}
+        onClick={() => onTabChange("activity")}
         className="min-w-[120px] flex-1"
       >
-        <Rss className="mr-2 h-4 w-4" />
-        ThinkPages
+        <Activity className="mr-2 h-4 w-4" />
+        Activity
       </Button>
       <Button
         variant={activeTab === "diplomacy" ? "default" : "ghost"}
         onClick={() => onTabChange("diplomacy")}
         className="min-w-[120px] flex-1"
       >
-        <Building className="mr-2 h-4 w-4" />
+        <Handshake className="mr-2 h-4 w-4" />
         Diplomacy
       </Button>
     </div>

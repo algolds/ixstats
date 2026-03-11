@@ -1,8 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { DashboardSidebarNav, type DashboardSection } from "./DashboardSidebarNav";
 import { DashboardPlayerWidget } from "./DashboardPlayerWidget";
+import { useUserCountry } from "~/hooks/useUserCountry";
+
+const DashboardMapWidget = dynamic(
+  () => import("~/components/maps/widgets/DashboardMapWidget").then((m) => ({ default: m.DashboardMapWidget })),
+  { ssr: false, loading: () => <div className="h-56 animate-pulse rounded-xl bg-muted" /> }
+);
 
 interface DashboardSidebarLayoutProps {
   children: ReactNode;
@@ -19,6 +26,7 @@ export function DashboardSidebarLayout({
   activeSection,
   onNavigate,
 }: DashboardSidebarLayoutProps) {
+  const { userProfile } = useUserCountry();
   return (
     <div className="space-y-0">
       {/* Hero Section */}
@@ -42,6 +50,7 @@ export function DashboardSidebarLayout({
                 onNavigate={onNavigate}
               />
               <DashboardPlayerWidget />
+              <DashboardMapWidget userCountryId={userProfile?.countryId ?? undefined} />
             </div>
           </div>
 

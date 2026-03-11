@@ -842,19 +842,24 @@ export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);
  */
 
 // Create cache middleware instances
-const standardCacheMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
+// NOTE: tRPC v11 middleware does not expose parsed `input` directly.
+// Use `getRawInput()` to obtain the raw input for cache key generation.
+const standardCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
+  const rawInput = await getRawInput();
   const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.standard);
-  return cacheFactory({ ctx, path, input, next });
+  return cacheFactory({ ctx, path, input: rawInput, next });
 });
 
-const staticCacheMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
+const staticCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
+  const rawInput = await getRawInput();
   const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.static);
-  return cacheFactory({ ctx, path, input, next });
+  return cacheFactory({ ctx, path, input: rawInput, next });
 });
 
-const userSpecificCacheMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
+const userSpecificCacheMiddleware = t.middleware(async ({ ctx, next, path, getRawInput }) => {
+  const rawInput = await getRawInput();
   const cacheFactory = createCacheMiddlewareFactory(cacheConfigs.userSpecific);
-  return cacheFactory({ ctx, path, input, next });
+  return cacheFactory({ ctx, path, input: rawInput, next });
 });
 
 // Cached public procedure (60s cache)

@@ -1,31 +1,33 @@
 // src/app/admin/platform/page.tsx
-// Platform controls: time, economy, bot, system monitor, formulas, data import
+// Platform controls: time, bot, economy, import, system health, formulas, settings
 "use client";
 export const dynamic = "force-dynamic";
 
 import { useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
-import {
-  BotControlPanel,
-  TimeControlPanel,
-  EconomicControlPanel,
-  ActionPanel,
-  CalculationLogs,
-  DataImportSection,
-  ImportPreviewDialog,
-} from "../_components";
-import { SystemOverview } from "../_components/SystemOverview";
+import { ImportPreviewDialog } from "../_components";
 import { CalculationEditor } from "../_components/CalculationEditor";
 import { NavigationSettings } from "../_components/NavigationSettings";
 import { IxTimeVisualizer } from "../_components/IxTimeVisualizer";
 import { FlagCacheManager } from "~/components/FlagCacheManager";
+import { SystemValidationDashboard } from "../_components/SystemValidationDashboard";
+import { SystemLogs } from "../_components/SystemLogs";
+import { DatabaseExplorer } from "../_components/DatabaseExplorer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
 import { useBotSync } from "../_hooks/useBotSync";
-import { Settings } from "lucide-react";
+import { Settings, Clock, TrendingUp, HeartPulse, Wrench } from "lucide-react";
+
+import { TimeControlCard } from "../_components/platform/TimeControlCard";
+import { BotControlCard } from "../_components/platform/BotControlCard";
+import { EconomicControlCard } from "../_components/platform/EconomicControlCard";
+import { SaveConfigCard } from "../_components/platform/SaveConfigCard";
+import { CalculationLogsCard } from "../_components/platform/CalculationLogsCard";
+import { DataImportCard } from "../_components/platform/DataImportCard";
+import { SystemMetricsCard } from "../_components/platform/SystemMetricsCard";
 
 export default function PlatformPage() {
   usePageTitle({ title: "Admin - Platform" });
@@ -89,6 +91,14 @@ export default function PlatformPage() {
         autoUpdate: configData.autoUpdate ?? true,
         botSyncEnabled: configData.botSyncEnabled ?? true,
         timeMultiplier: configData.timeMultiplier || 2.0,
+        baseInflationRate: configData.baseInflationRate ?? 0.02,
+        tierGrowthModifiers: configData.tierGrowthModifiers ?? {
+          Impoverished: 1.0, Developing: 1.0, Developed: 1.0, Healthy: 1.0,
+          Strong: 1.0, "Very Strong": 1.0, Extravagant: 1.0,
+        },
+        diminishingReturnsThreshold: configData.diminishingReturnsThreshold ?? 60000,
+        diminishingReturnsFactor: configData.diminishingReturnsFactor ?? 0.5,
+        minGrowthFloor: configData.minGrowthFloor ?? -0.1,
       });
     }
   }, [configData, setConfig]);
@@ -150,105 +160,112 @@ export default function PlatformPage() {
         description="Time management, economy settings, bot controls, and system monitoring"
       />
 
-      <Tabs defaultValue="time-economy" className="w-full">
+      <Tabs defaultValue="time-bot" className="w-full">
         <TabsList className="mb-4 w-full justify-start overflow-x-auto">
-          <TabsTrigger value="time-economy">Time & Economy</TabsTrigger>
-          <TabsTrigger value="bot-sync">Bot & Sync</TabsTrigger>
-          <TabsTrigger value="system">System Monitor</TabsTrigger>
-          <TabsTrigger value="formulas">Formulas</TabsTrigger>
-          <TabsTrigger value="data-import">Data Import</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="time-bot" className="gap-1.5">
+            <Clock className="h-4 w-4" />
+            Time & Bot
+          </TabsTrigger>
+          <TabsTrigger value="economy-import" className="gap-1.5">
+            <TrendingUp className="h-4 w-4" />
+            Economy & Import
+          </TabsTrigger>
+          <TabsTrigger value="system-health" className="gap-1.5">
+            <HeartPulse className="h-4 w-4" />
+            System Health
+          </TabsTrigger>
+          <TabsTrigger value="formulas-settings" className="gap-1.5">
+            <Wrench className="h-4 w-4" />
+            Formulas & Settings
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="time-economy" className="space-y-6">
+        {/* Tab 1: Time & Bot */}
+        <TabsContent value="time-bot" className="space-y-6">
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div className="glass-card-parent rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-blue-600/5 p-6">
-              <TimeControlPanel
-                timeMultiplier={config.timeMultiplier}
-                customDate={timeState.customDate}
-                customTime={timeState.customTime}
-                botSyncEnabled={config.botSyncEnabled}
-                botStatus={botStatus}
-                onTimeMultiplierChange={handleTimeMultiplierChange}
-                onCustomDateChange={(value) =>
-                  setTimeState((prev) => ({ ...prev, customDate: value }))
-                }
-                onCustomTimeChange={(value) =>
-                  setTimeState((prev) => ({ ...prev, customTime: value }))
-                }
-                onSetCustomTime={handleSetCustomTime}
-                onResetToRealTime={handleResetToRealTime}
-                onSyncEpoch={handleSyncEpoch}
-                onSyncFromBot={handleSyncFromBot}
-                setTimePending={actionState.setTimePending}
-                syncEpochPending={actionState.syncEpochPending}
-                autoSyncPending={actionState.autoSyncPending}
-                lastBotSync={actionState.lastBotSync}
-              />
-            </div>
-            <div className="glass-card-parent rounded-xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/5 to-indigo-600/5 p-6">
-              <EconomicControlPanel
-                globalGrowthFactor={config.globalGrowthFactor}
-                autoUpdate={config.autoUpdate}
-                botSyncEnabled={config.botSyncEnabled}
-                onGlobalGrowthFactorChange={(value) =>
-                  setConfig((prev) => ({ ...prev, globalGrowthFactor: value }))
-                }
-                onAutoUpdateChange={(value) =>
-                  setConfig((prev) => ({ ...prev, autoUpdate: value }))
-                }
-                onBotSyncEnabledChange={(value) =>
-                  setConfig((prev) => ({ ...prev, botSyncEnabled: value }))
-                }
-                onForceCalculation={handleForceCalculation}
-                calculationPending={actionState.calculationPending}
-              />
-            </div>
-          </div>
-          <ActionPanel
-            lastUpdate={actionState.lastUpdate}
-            onSaveConfig={handleSaveConfig}
-            savePending={actionState.savePending}
-          />
-          <IxTimeVisualizer />
-        </TabsContent>
-
-        <TabsContent value="bot-sync" className="space-y-6">
-          <div className="glass-card-parent rounded-xl border border-green-500/20 bg-gradient-to-br from-green-500/5 to-green-600/5 p-6">
-            <BotControlPanel
+            <TimeControlCard
+              timeMultiplier={config.timeMultiplier}
+              customDate={timeState.customDate}
+              customTime={timeState.customTime}
+              onTimeMultiplierChange={handleTimeMultiplierChange}
+              onCustomDateChange={(value) =>
+                setTimeState((prev) => ({ ...prev, customDate: value }))
+              }
+              onCustomTimeChange={(value) =>
+                setTimeState((prev) => ({ ...prev, customTime: value }))
+              }
+              onSetCustomTime={handleSetCustomTime}
+              onResetToRealTime={handleResetToRealTime}
+              setTimePending={actionState.setTimePending}
+            />
+            <BotControlCard
               botStatus={botStatus}
               onPauseBot={handlePauseBot}
               onResumeBot={handleResumeBot}
               onClearOverrides={handleClearOverrides}
+              onSyncFromBot={handleSyncFromBot}
+              onSyncEpoch={handleSyncEpoch}
               pausePending={actionState.pausePending}
               resumePending={actionState.resumePending}
               clearPending={actionState.clearPending}
+              autoSyncPending={actionState.autoSyncPending}
+              syncEpochPending={actionState.syncEpochPending}
+              lastBotSync={actionState.lastBotSync}
             />
           </div>
+          <IxTimeVisualizer />
         </TabsContent>
 
-        <TabsContent value="system" className="space-y-6">
-          <SystemOverview />
-          <CalculationLogs
-            logs={calculationLogs}
-            isLoading={logsLoading}
-            error={logsError?.message}
-          />
-          <FlagCacheManager />
-        </TabsContent>
-
-        <TabsContent value="formulas">
-          <CalculationEditor />
-        </TabsContent>
-
-        <TabsContent value="data-import" className="space-y-6">
-          <DataImportSection
-            onFileSelect={handleFileSelect}
-            isUploading={importState.isUploading}
-            isAnalyzing={importState.isAnalyzing}
-            analyzeError={importState.analyzeError}
-            importError={importState.importError}
-          />
+        {/* Tab 2: Economy & Import */}
+        <TabsContent value="economy-import" className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <EconomicControlCard
+              globalGrowthFactor={config.globalGrowthFactor}
+              autoUpdate={config.autoUpdate}
+              botSyncEnabled={config.botSyncEnabled}
+              onGlobalGrowthFactorChange={(value) =>
+                setConfig((prev) => ({ ...prev, globalGrowthFactor: value }))
+              }
+              onAutoUpdateChange={(value) =>
+                setConfig((prev) => ({ ...prev, autoUpdate: value }))
+              }
+              onBotSyncEnabledChange={(value) =>
+                setConfig((prev) => ({ ...prev, botSyncEnabled: value }))
+              }
+              onForceCalculation={handleForceCalculation}
+              calculationPending={actionState.calculationPending}
+              baseInflationRate={config.baseInflationRate}
+              onBaseInflationRateChange={(value) =>
+                setConfig((prev) => ({ ...prev, baseInflationRate: value }))
+              }
+              tierGrowthModifiers={config.tierGrowthModifiers}
+              onTierGrowthModifierChange={(tier, value) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  tierGrowthModifiers: { ...prev.tierGrowthModifiers, [tier]: value },
+                }))
+              }
+              diminishingReturnsThreshold={config.diminishingReturnsThreshold}
+              onDiminishingReturnsThresholdChange={(value) =>
+                setConfig((prev) => ({ ...prev, diminishingReturnsThreshold: value }))
+              }
+              diminishingReturnsFactor={config.diminishingReturnsFactor}
+              onDiminishingReturnsFactorChange={(value) =>
+                setConfig((prev) => ({ ...prev, diminishingReturnsFactor: value }))
+              }
+              minGrowthFloor={config.minGrowthFloor}
+              onMinGrowthFloorChange={(value) =>
+                setConfig((prev) => ({ ...prev, minGrowthFloor: value }))
+              }
+            />
+            <DataImportCard
+              onFileSelect={handleFileSelect}
+              isUploading={importState.isUploading}
+              isAnalyzing={importState.isAnalyzing}
+              analyzeError={importState.analyzeError}
+              importError={importState.importError}
+            />
+          </div>
           {importState.showPreview && importState.previewData && (
             <ImportPreviewDialog
               isOpen={importState.showPreview}
@@ -258,12 +275,38 @@ export default function PlatformPage() {
               isLoading={importState.isUploading}
             />
           )}
+          <CalculationLogsCard
+            logs={calculationLogs}
+            isLoading={logsLoading}
+            error={logsError?.message}
+          />
         </TabsContent>
 
-        <TabsContent value="settings">
-          <NavigationSettings />
+        {/* Tab 3: System Health */}
+        <TabsContent value="system-health" className="space-y-6">
+          <SystemMetricsCard />
+          <SystemValidationDashboard />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <FlagCacheManager />
+            <SystemLogs />
+          </div>
+        </TabsContent>
+
+        {/* Tab 4: Formulas & Settings */}
+        <TabsContent value="formulas-settings" className="space-y-6">
+          <CalculationEditor />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <NavigationSettings />
+            <DatabaseExplorer />
+          </div>
         </TabsContent>
       </Tabs>
+
+      <SaveConfigCard
+        lastUpdate={actionState.lastUpdate}
+        onSaveConfig={handleSaveConfig}
+        savePending={actionState.savePending}
+      />
     </div>
   );
 }

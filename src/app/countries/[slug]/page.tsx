@@ -1,6 +1,5 @@
 "use client";
 
-// Refactored CountryPage - now uses modular panel components for better maintainability
 import { use, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
@@ -19,21 +18,18 @@ import { createUrl } from "~/lib/url-utils";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { IxTime } from "~/lib/ixtime";
-import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab";
-import { ThinkpagesSocialPlatform } from "~/components/thinkpages/ThinkpagesSocialPlatform";
 import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
 
-// Modular panel components
 import { CountryHeader } from "./_components/CountryHeader";
 import { CountryTabs } from "./_components/CountryTabs";
 import { CountryOverviewPanel } from "./_components/CountryOverviewPanel";
 import { CountryEconomicPanel } from "./_components/CountryEconomicPanel";
+import { CountryActivityPanel } from "./_components/CountryActivityPanel";
 import { CountryDiplomaticPanel } from "./_components/CountryDiplomaticPanel";
+import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab";
 
-// Custom hook for state management
 import { useCountryPageState } from "./_hooks/useCountryPageState";
 
-// Data transformation utilities
 import {
   transformCountryEconomicsData,
   calculateVitalityData,
@@ -47,7 +43,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   const { slug } = use(params);
   const { user, userProfile } = useUserCountry();
 
-  // Data fetching - pass slug directly
   const {
     data: country,
     isLoading,
@@ -60,15 +55,12 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     { enabled: !!country?.id }
   );
 
-  // Set page title based on country name
   usePageTitle({
     title: country ? `${country.name.replace(/_/g, " ")}` : "Country Profile",
   });
 
-  // Flag loading
   const { flagUrl, isLoading: flagLoading } = useFlag(country?.name || "");
 
-  // State management via custom hook
   const {
     activeTab,
     setActiveTab,
@@ -82,19 +74,20 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     wikiInfobox,
     wikiIntro,
     unsplashImageUrl,
+    bannerMode,
+    customBannerUrl,
+    setBannerMode,
   } = useCountryPageState(country);
 
   const currentIxTime = IxTime.getCurrentIxTime();
   const isOwnCountry =
     userProfile?.countryId && country?.id && userProfile.countryId === country.id;
 
-  // Transform country data for economics components
   const economicsData = useMemo(() => {
     if (!country) return null;
     return transformCountryEconomicsData(country);
   }, [country]);
 
-  // Calculate vitality rings data
   const vitalityData = useMemo(() => {
     if (!country) return null;
     return calculateVitalityData({
@@ -105,7 +98,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     });
   }, [country]);
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -122,7 +114,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -139,7 +130,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     );
   }
 
-  // Not found state
   if (!country) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -154,7 +144,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
 
   return (
     <div className="from-background via-background to-muted/20 min-h-screen bg-gradient-to-br">
-      {/* Hero Section with Country Header */}
       <CountryHeader
         country={{
           name: country.name,
@@ -171,13 +160,15 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
         isOwnCountry={!!isOwnCountry}
         showGdpPerCapita={showGdpPerCapita}
         showFullPopulation={showFullPopulation}
+        bannerMode={bannerMode}
+        customBannerUrl={customBannerUrl}
         onToggleGdpDisplay={toggleGdpDisplay}
         onTogglePopulationDisplay={togglePopulationDisplay}
         onCountryActionsClick={() => setShowCountryActions(true)}
+        onBannerModeChange={setBannerMode}
       />
 
       <div className="container mx-auto space-y-6 px-4 py-8">
-        {/* Breadcrumb */}
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -190,10 +181,8 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
           </BreadcrumbList>
         </Breadcrumb>
 
-        {/* Tab Navigation */}
         <CountryTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {/* Tab Content - Modular Panels */}
         {activeTab === "overview" && vitalityData && (
           <CountryOverviewPanel
             country={country}
@@ -226,22 +215,16 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
               currentTotalGdp: country.currentTotalGdp,
               economicTier: country.economicTier,
               continent: country.continent ?? undefined,
-              region: country.region ?? undefined,
               governmentType: country.governmentType ?? undefined,
-              leader: country.leader ?? undefined,
-              religion: country.religion ?? undefined,
             }}
-            viewerClearanceLevel={isOwnCountry ? "CONFIDENTIAL" : "PUBLIC"}
+            viewerClearanceLevel="PUBLIC"
           />
         )}
 
-        {activeTab === "diplomatic" && country && (
-          <ThinkpagesSocialPlatform
+        {activeTab === "activity" && country && (
+          <CountryActivityPanel
             countryId={country.id}
             countryName={country.name}
-            isOwner={!!isOwnCountry}
-            profileMode={true}
-            countryOwnerClerkUserId={(country as any).ownerClerkUserId}
           />
         )}
 
@@ -256,7 +239,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
         )}
       </div>
 
-      {/* Country Actions Menu Modal */}
       {country && (
         <CountryActionsMenu
           targetCountryId={country.id}

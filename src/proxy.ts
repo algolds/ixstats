@@ -26,7 +26,22 @@ const isPublicRoute = createRouteMatcher([
   "/thinkpages/(.*)",
   "/builder",
   "/builder/(.*)",
+  "/maps",
+  "/maps/(.*)",
 ]);
+
+// IxWorld standalone mode: when running as maps.ixwiki.com, restrict routes
+const IXWORLD_STANDALONE =
+  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
+const IXWORLD_ALLOWED_PREFIXES = [
+  "/maps",
+  "/api",
+  "/countries",
+  "/flags",
+  "/_next",
+  "/sign-in",
+  "/sign-up",
+];
 
 // Check if Clerk is configured with valid keys
 const isClerkConfigured = Boolean(
@@ -52,11 +67,17 @@ const isClerkConfigured = Boolean(
 function buildCSPTemplate(): string {
   const isDevelopment = process.env.NODE_ENV === "development";
 
+  // IxWorld standalone: relaxed CSP since nonce propagation doesn't work
+  // in standalone builds and the map viewer is public content only
+  const scriptSrc = isDevelopment
+    ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
+    : IXWORLD_STANDALONE
+      ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://static.cloudflareinsights.com`
+      : `script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`;
+
   const directives = [
     `default-src 'self'`,
-    isDevelopment
-      ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
-      : `script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`,
+    scriptSrc,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https: http:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
@@ -135,6 +156,35 @@ function enhanceResponse(
   return response;
 }
 
+/**
+ * IxWorld standalone route guard.
+ * In standalone mode (maps.ixwiki.com), only maps-related routes are served.
+ * All other routes redirect to the main IxStats instance.
+ */
+function handleStandaloneRouting(req: NextRequest): NextResponse | null {
+  if (!IXWORLD_STANDALONE) return null;
+
+  const pathname = req.nextUrl.pathname;
+
+  // Root → redirect to /maps
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/maps", req.nextUrl.origin));
+  }
+
+  // Allow favicon and allowed route prefixes
+  if (
+    pathname === "/favicon.ico" ||
+    IXWORLD_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))
+  ) {
+    return null;
+  }
+
+  // Everything else → redirect to main IxStats
+  return NextResponse.redirect(
+    `https://ixwiki.com/projects/ixstats${pathname}`
+  );
+}
+
 // If Clerk is not configured, use a simple middleware that doesn't handle auth
 function simpleMiddleware(req: NextRequest) {
   // Block spoofed internal headers (defense in depth for CVE-2025-29927)
@@ -145,6 +195,10 @@ function simpleMiddleware(req: NextRequest) {
     );
     return new NextResponse("Forbidden", { status: 403 });
   }
+
+  // IxWorld standalone route guard
+  const standaloneRedirect = handleStandaloneRouting(req);
+  if (standaloneRedirect) return standaloneRedirect;
 
   const response = NextResponse.next();
   return enhanceResponse(response, req, null);
@@ -160,6 +214,10 @@ export default isClerkConfigured
         );
         return new NextResponse("Forbidden", { status: 403 });
       }
+
+      // IxWorld standalone route guard
+      const standaloneRedirect = handleStandaloneRouting(req);
+      if (standaloneRedirect) return standaloneRedirect;
 
       const { userId, sessionClaims } = await auth();
 

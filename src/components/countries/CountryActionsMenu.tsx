@@ -11,6 +11,17 @@ import {
   X,
   Loader2,
   Sparkles,
+  Handshake,
+  Shield,
+  Scale,
+  BarChart3,
+  Globe,
+  ExternalLink,
+  Share2,
+  Copy,
+  Check,
+  ScrollText,
+  Swords,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -27,6 +38,8 @@ interface CountryActionsMenuProps {
   isOwnCountry?: boolean;
 }
 
+type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
+
 export function CountryActionsMenu({
   targetCountryId,
   targetCountryName,
@@ -38,40 +51,25 @@ export function CountryActionsMenu({
   const notify = useNotify();
   const router = useRouter();
   const [selectedAchievement, setSelectedAchievement] = useState<string>("");
+  const [copiedLink, setCopiedLink] = useState(false);
 
-  // Check if viewer is following target country
   const { data: followStatus, refetch: refetchFollowStatus } =
     api.diplomatic.getFollowStatus.useQuery(
-      {
-        viewerCountryId: viewerCountryId || "",
-        targetCountryId,
-      },
-      {
-        enabled: !!viewerCountryId,
-      }
+      { viewerCountryId: viewerCountryId || "", targetCountryId },
+      { enabled: !!viewerCountryId }
     );
 
-  // Get recent achievements for congratulate dropdown
   const { data: recentAchievements } = api.achievements.getRecentByCountry.useQuery(
     { countryId: targetCountryId, limit: 5 },
     { enabled: isOpen }
   );
 
-  // Get viewer's ThinkPages account for congratulations
-  const { data: viewerAccounts } = api.thinkpages.getAccountsByCountry.useQuery(
-    { countryId: viewerCountryId || "" },
-    { enabled: !!viewerCountryId && isOpen }
-  );
-
-  // Follow/Unfollow mutation
   const followMutation = api.diplomatic.followCountry.useMutation({
     onSuccess: () => {
       notify.success(`Now following ${targetCountryName}`);
       void refetchFollowStatus();
     },
-    onError: (error) => {
-      notify.error(`Failed to follow: ${error.message}`);
-    },
+    onError: (error) => notify.error(`Failed to follow: ${error.message}`),
   });
 
   const unfollowMutation = api.diplomatic.unfollowCountry.useMutation({
@@ -79,121 +77,122 @@ export function CountryActionsMenu({
       notify.success(`Unfollowed ${targetCountryName}`);
       void refetchFollowStatus();
     },
-    onError: (error) => {
-      notify.error(`Failed to unfollow: ${error.message}`);
-    },
+    onError: (error) => notify.error(`Failed to unfollow: ${error.message}`),
   });
 
-  // Embassy establishment mutation
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: () => {
       notify.success(`Embassy construction initiated with ${targetCountryName}`);
       onClose();
     },
-    onError: (error) => {
-      notify.error(`Failed to establish embassy: ${error.message}`);
-    },
+    onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
   });
 
-  // Congratulate via ThinkShare mutation
+  const foreignPolicyMutation = api.diplomatic.proposeForeignPolicyAction.useMutation({
+    onSuccess: (_, variables) => {
+      const labels: Record<string, string> = {
+        free_trade: "Free trade agreement",
+        military_alliance: "Military alliance",
+        sanction: "Sanctions",
+        embargo: "Trade embargo",
+      };
+      notify.success(`${labels[variables.actionType] ?? "Action"} proposed to ${targetCountryName}`);
+      onClose();
+    },
+    onError: (error) => notify.error(`Failed: ${error.message}`),
+  });
+
   const congratulateMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
       notify.success(`Congratulations sent to ${targetCountryName}!`);
       setSelectedAchievement("");
       onClose();
     },
-    onError: (error) => {
-      notify.error(`Failed to send congratulations: ${error.message}`);
-    },
+    onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
   });
 
-  // Handle follow/unfollow toggle
   const handleFollowToggle = useCallback(() => {
     if (!viewerCountryId) {
       notify.error("You must be logged in to follow countries");
       return;
     }
-
     if (followStatus?.isFollowing) {
-      unfollowMutation.mutate({
-        followerCountryId: viewerCountryId,
-        followedCountryId: targetCountryId,
-      });
+      unfollowMutation.mutate({ followerCountryId: viewerCountryId, followedCountryId: targetCountryId });
     } else {
-      followMutation.mutate({
-        followerCountryId: viewerCountryId,
-        followedCountryId: targetCountryId,
-      });
+      followMutation.mutate({ followerCountryId: viewerCountryId, followedCountryId: targetCountryId });
     }
-  }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation]);
+  }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]);
 
-  // Handle diplomatic message - redirect to ThinkShare
   const handleDiplomaticMessage = useCallback(() => {
-    // Simply redirect to ThinkPages messaging with country context
     router.push(createUrl(`/thinkpages?view=messages&country=${targetCountryId}`));
     onClose();
   }, [router, targetCountryId, onClose]);
 
-  // Handle embassy establishment
   const handleEstablishEmbassy = useCallback(() => {
     if (!viewerCountryId) {
       notify.error("You must be logged in to establish embassies");
       return;
     }
-
     establishEmbassyMutation.mutate({
       hostCountryId: targetCountryId,
       guestCountryId: viewerCountryId,
       name: `Embassy in ${targetCountryName}`,
       location: "Capital District",
     });
-  }, [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation]);
+  }, [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation, notify]);
 
-  // Handle congratulate
+  const handleForeignPolicy = useCallback((actionType: ForeignPolicyType) => {
+    if (!viewerCountryId) {
+      notify.error("You must be logged in to propose foreign policy");
+      return;
+    }
+    foreignPolicyMutation.mutate({ targetId: targetCountryId, actionType, severity: "moderate" });
+  }, [viewerCountryId, targetCountryId, foreignPolicyMutation, notify]);
+
   const handleCongratulate = useCallback(() => {
     if (!viewerCountryId) {
       notify.error("You need to sign in to send congratulations");
       return;
     }
-
     if (!selectedAchievement) {
       notify.error("Please select an achievement to congratulate");
       return;
     }
-
-    const achievement = recentAchievements?.find(
-      (a: { id: string }) => a.id === selectedAchievement
-    );
+    const achievement = recentAchievements?.find((a: { id: string }) => a.id === selectedAchievement);
     if (!achievement) return;
 
-    // Note: getAccountsByCountry is deprecated and returns empty array
-    // ThinkPages now uses real User accounts directly
     congratulateMutation.mutate({
-      accountId: viewerCountryId, // Use viewer's country ID directly
+      accountId: viewerCountryId,
       content: `🎉 Congratulations to ${targetCountryName} on achieving: ${achievement.title}! ${achievement.description || "A remarkable accomplishment!"}`,
       visibility: "public" as const,
       hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
     });
-  }, [
-    viewerCountryId,
-    targetCountryId,
-    targetCountryName,
-    selectedAchievement,
-    recentAchievements,
-    congratulateMutation,
-  ]);
+  }, [viewerCountryId, targetCountryName, selectedAchievement, recentAchievements, congratulateMutation, notify]);
+
+  const handleCopyLink = useCallback(() => {
+    const slug = targetCountryName.replace(/\s/g, "_");
+    const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;
+    void navigator.clipboard.writeText(url).then(() => {
+      setCopiedLink(true);
+      notify.success("Link copied to clipboard");
+      setTimeout(() => setCopiedLink(false), 2000);
+    });
+  }, [targetCountryName, notify]);
 
   const isLoading =
     followMutation.isPending ||
     unfollowMutation.isPending ||
     establishEmbassyMutation.isPending ||
-    congratulateMutation.isPending;
+    congratulateMutation.isPending ||
+    foreignPolicyMutation.isPending;
+
+  const actionButtonClass = (colors: string) =>
+    `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-all duration-200 disabled:opacity-50 ${colors}`;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -202,26 +201,23 @@ export function CountryActionsMenu({
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xl"
           />
 
-          {/* Menu Panel - Glassmorphic Design */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed top-1/2 left-1/2 z-50 mx-4 w-full max-w-sm -translate-x-1/2 -translate-y-1/2"
+            className="fixed top-1/2 left-1/2 z-50 mx-4 w-full max-w-md -translate-x-1/2 -translate-y-1/2"
           >
-            <div className="relative rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-2xl backdrop-blur-2xl dark:from-black/40 dark:via-black/20 dark:to-transparent">
-              {/* Glass reflection effect */}
+            <div className="relative max-h-[85vh] overflow-y-auto rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-2xl backdrop-blur-2xl dark:from-black/40 dark:via-black/20 dark:to-transparent">
               <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent dark:from-white/5 dark:to-transparent" />
 
-              {/* Content */}
               <div className="relative z-10">
                 {/* Header */}
                 <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
                   <div>
                     <h3 className="flex items-center gap-2 text-base font-bold text-white">
                       <Sparkles className="h-5 w-5 text-blue-400" />
-                      Country Actions
+                      {isOwnCountry ? "Country Management" : "Country Actions"}
                     </h3>
                     <p className="mt-1 text-sm text-white/60">{targetCountryName}</p>
                   </div>
@@ -234,120 +230,253 @@ export function CountryActionsMenu({
                   </button>
                 </div>
 
-                {/* Actions */}
-                <div className="space-y-2.5">
-                  {/* MyCountry Dashboard (Own Country Only) */}
-                  {isOwnCountry && (
+                {/* Own Country Actions */}
+                {isOwnCountry && (
+                  <div className="space-y-2.5">
+                    <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Management</p>
+
                     <button
-                      onClick={() => {
-                        router.push(createUrl("/mycountry"));
-                        onClose();
-                      }}
-                      className="flex w-full items-center gap-3 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-orange-500/20 px-4 py-3 text-sm font-medium text-amber-300 backdrop-blur-sm transition-all duration-200 hover:from-amber-500/30 hover:to-orange-500/30"
+                      onClick={() => { router.push(createUrl("/mycountry")); onClose(); }}
+                      className={actionButtonClass("border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30")}
                     >
                       <Building2 className="h-4 w-4" />
                       MyCountry Dashboard
                     </button>
-                  )}
 
-                  {/* Follow/Unfollow */}
-                  {!isOwnCountry && (
                     <button
-                      onClick={handleFollowToggle}
-                      disabled={!viewerCountryId || isLoading}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-all duration-200 disabled:opacity-50",
-                        followStatus?.isFollowing
-                          ? "border-red-500/20 bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-300 hover:from-red-500/30 hover:to-pink-500/30"
-                          : "border-blue-500/20 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 hover:from-blue-500/30 hover:to-cyan-500/30"
-                      )}
+                      onClick={() => { router.push(createUrl("/mycountry/executive")); onClose(); }}
+                      className={actionButtonClass("border-indigo-500/20 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-violet-500/30")}
                     >
-                      {followMutation.isPending || unfollowMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : followStatus?.isFollowing ? (
-                        <UserMinus className="h-4 w-4" />
-                      ) : (
-                        <UserPlus className="h-4 w-4" />
-                      )}
-                      {followStatus?.isFollowing ? "Unfollow Nation" : "Follow Nation"}
+                      <ScrollText className="h-4 w-4" />
+                      Executive Actions
                     </button>
-                  )}
 
-                  {/* Diplomatic Message */}
-                  {!isOwnCountry && (
                     <button
-                      onClick={handleDiplomaticMessage}
-                      disabled={!viewerCountryId}
-                      className="flex w-full items-center gap-3 rounded-xl border border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 px-4 py-3 text-sm font-medium text-purple-300 backdrop-blur-sm transition-all duration-200 hover:from-purple-500/30 hover:to-fuchsia-500/30 disabled:opacity-50"
+                      onClick={() => { router.push(createUrl("/mycountry/diplomacy")); onClose(); }}
+                      className={actionButtonClass("border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30")}
                     >
-                      <MessageSquare className="h-4 w-4" />
-                      Secure Message
+                      <Handshake className="h-4 w-4" />
+                      Manage Diplomacy
                     </button>
-                  )}
 
-                  {/* Construct Embassy */}
-                  {!isOwnCountry && (
                     <button
-                      onClick={handleEstablishEmbassy}
-                      disabled={!viewerCountryId || isLoading}
-                      className="flex w-full items-center gap-3 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 px-4 py-3 text-sm font-medium text-amber-300 backdrop-blur-sm transition-all duration-200 hover:from-amber-500/30 hover:to-yellow-500/30 disabled:opacity-50"
+                      onClick={() => { router.push(createUrl("/mycountry/intelligence")); onClose(); }}
+                      className={actionButtonClass("border-cyan-500/20 bg-gradient-to-r from-cyan-500/20 to-sky-500/20 text-cyan-300 hover:from-cyan-500/30 hover:to-sky-500/30")}
                     >
-                      {establishEmbassyMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Building2 className="h-4 w-4" />
-                      )}
-                      Construct Embassy
+                      <BarChart3 className="h-4 w-4" />
+                      Intelligence Center
                     </button>
-                  )}
 
-                  {/* Congratulate */}
-                  {!isOwnCountry && recentAchievements && recentAchievements.length > 0 && (
-                    <div className="group relative">
+                    <button
+                      onClick={() => { router.push(createUrl("/mycountry/defense")); onClose(); }}
+                      className={actionButtonClass("border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30")}
+                    >
+                      <Shield className="h-4 w-4" />
+                      Defense Operations
+                    </button>
+
+                    <button
+                      onClick={() => { router.push(createUrl("/mycountry/politics")); onClose(); }}
+                      className={actionButtonClass("border-teal-500/20 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-300 hover:from-teal-500/30 hover:to-emerald-500/30")}
+                    >
+                      <Scale className="h-4 w-4" />
+                      Politics & Elections
+                    </button>
+                  </div>
+                )}
+
+                {/* Other Country: Social Actions */}
+                {!isOwnCountry && (
+                  <>
+                    <div className="space-y-2.5">
+                      <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Social</p>
+
                       <button
-                        onClick={handleCongratulate}
-                        disabled={!viewerCountryId || isLoading || !selectedAchievement}
-                        className="flex w-full items-center justify-between rounded-xl border border-green-500/20 bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-4 py-3 text-sm font-medium text-green-300 backdrop-blur-sm transition-all duration-200 hover:from-green-500/30 hover:to-emerald-500/30 disabled:opacity-50"
+                        onClick={handleFollowToggle}
+                        disabled={!viewerCountryId || isLoading}
+                        className={cn(
+                          actionButtonClass(""),
+                          followStatus?.isFollowing
+                            ? "border-red-500/20 bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-300 hover:from-red-500/30 hover:to-pink-500/30"
+                            : "border-blue-500/20 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 hover:from-blue-500/30 hover:to-cyan-500/30"
+                        )}
                       >
-                        <div className="flex items-center gap-3">
-                          {congratulateMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Heart className="h-4 w-4" />
-                          )}
-                          <span>Congratulate</span>
+                        {followMutation.isPending || unfollowMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : followStatus?.isFollowing ? (
+                          <UserMinus className="h-4 w-4" />
+                        ) : (
+                          <UserPlus className="h-4 w-4" />
+                        )}
+                        {followStatus?.isFollowing ? "Unfollow Nation" : "Follow Nation"}
+                      </button>
+
+                      <button
+                        onClick={handleDiplomaticMessage}
+                        disabled={!viewerCountryId}
+                        className={actionButtonClass("border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30")}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Secure Message
+                      </button>
+
+                      {recentAchievements && recentAchievements.length > 0 && (
+                        <div className="group relative">
+                          <button
+                            onClick={handleCongratulate}
+                            disabled={!viewerCountryId || isLoading || !selectedAchievement}
+                            className={actionButtonClass("border-green-500/20 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 hover:from-green-500/30 hover:to-emerald-500/30")}
+                          >
+                            <div className="flex items-center gap-3">
+                              {congratulateMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Heart className="h-4 w-4" />
+                              )}
+                              <span>Congratulate</span>
+                            </div>
+                            <select
+                              value={selectedAchievement}
+                              onChange={(e) => setSelectedAchievement(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="min-w-[140px] cursor-pointer rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white/90 backdrop-blur-sm transition-colors hover:bg-white/20 focus:ring-2 focus:ring-green-500/50 focus:outline-none"
+                            >
+                              <option value="" className="bg-gray-800 text-white">Select achievement...</option>
+                              {recentAchievements.map((achievement: { id: string; icon?: string | null; title: string }) => (
+                                <option key={achievement.id} value={achievement.id} className="bg-gray-800 text-white">
+                                  {achievement.icon} {achievement.title}
+                                </option>
+                              ))}
+                            </select>
+                          </button>
                         </div>
-                        <select
-                          value={selectedAchievement}
-                          onChange={(e) => setSelectedAchievement(e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="min-w-[140px] cursor-pointer rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white/90 backdrop-blur-sm transition-colors hover:bg-white/20 focus:ring-2 focus:ring-green-500/50 focus:outline-none"
-                        >
-                          <option value="" className="bg-gray-800 text-white">
-                            Select achievement...
-                          </option>
-                          {recentAchievements.map(
-                            (achievement: { id: string; icon?: string | null; title: string }) => (
-                              <option
-                                key={achievement.id}
-                                value={achievement.id}
-                                className="bg-gray-800 text-white"
-                              >
-                                {achievement.icon} {achievement.title}
-                              </option>
-                            )
-                          )}
-                        </select>
+                      )}
+                    </div>
+
+                    {/* Diplomatic Actions */}
+                    <div className="mt-4 space-y-2.5">
+                      <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Diplomacy</p>
+
+                      <button
+                        onClick={handleEstablishEmbassy}
+                        disabled={!viewerCountryId || isLoading}
+                        className={actionButtonClass("border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 hover:from-amber-500/30 hover:to-yellow-500/30")}
+                      >
+                        {establishEmbassyMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Building2 className="h-4 w-4" />
+                        )}
+                        Construct Embassy
+                      </button>
+
+                      <button
+                        onClick={() => handleForeignPolicy("free_trade")}
+                        disabled={!viewerCountryId || isLoading}
+                        className={actionButtonClass("border-emerald-500/20 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 hover:from-emerald-500/30 hover:to-green-500/30")}
+                      >
+                        {foreignPolicyMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Handshake className="h-4 w-4" />
+                        )}
+                        Propose Free Trade
+                      </button>
+
+                      <button
+                        onClick={() => handleForeignPolicy("military_alliance")}
+                        disabled={!viewerCountryId || isLoading}
+                        className={actionButtonClass("border-sky-500/20 bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 hover:from-sky-500/30 hover:to-blue-500/30")}
+                      >
+                        <Shield className="h-4 w-4" />
+                        Propose Military Alliance
                       </button>
                     </div>
-                  )}
+
+                    {/* Foreign Policy (Adversarial) */}
+                    <div className="mt-4 space-y-2.5">
+                      <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Foreign Policy</p>
+
+                      <button
+                        onClick={() => handleForeignPolicy("sanction")}
+                        disabled={!viewerCountryId || isLoading}
+                        className={actionButtonClass("border-orange-500/20 bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 hover:from-orange-500/30 hover:to-amber-500/30")}
+                      >
+                        <Scale className="h-4 w-4" />
+                        Impose Sanctions
+                      </button>
+
+                      <button
+                        onClick={() => handleForeignPolicy("embargo")}
+                        disabled={!viewerCountryId || isLoading}
+                        className={actionButtonClass("border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30")}
+                      >
+                        <Swords className="h-4 w-4" />
+                        Declare Embargo
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Quick Links (always shown) */}
+                <div className="mt-4 space-y-2.5">
+                  <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Quick Links</p>
+
+                  <button
+                    onClick={() => {
+                      router.push(createUrl(`/countries?compare=${targetCountryId}`));
+                      onClose();
+                    }}
+                    className={actionButtonClass("border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 text-indigo-300 hover:from-indigo-500/20 hover:to-violet-500/20")}
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Compare Countries
+                  </button>
+
+                  <a
+                    href={`https://ixwiki.com/wiki/${targetCountryName.replace(/\s/g, "_")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={actionButtonClass("border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10")}
+                    onClick={onClose}
+                  >
+                    <Globe className="h-4 w-4" />
+                    View on IxWiki
+                    <ExternalLink className="ml-auto h-3.5 w-3.5 text-white/40" />
+                  </a>
+
+                  <button
+                    onClick={handleCopyLink}
+                    className={actionButtonClass("border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10")}
+                  >
+                    {copiedLink ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                    {copiedLink ? "Link Copied!" : "Copy Profile Link"}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const slug = targetCountryName.replace(/\s/g, "_");
+                      const url = `${window.location.origin}${createUrl(`/countries/${slug}`)}`;
+                      if (navigator.share) {
+                        void navigator.share({ title: targetCountryName, url });
+                      } else {
+                        void navigator.clipboard.writeText(url);
+                        notify.success("Link copied");
+                      }
+                      onClose();
+                    }}
+                    className={actionButtonClass("border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10")}
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Share Profile
+                  </button>
                 </div>
 
                 {/* Footer */}
-                {!viewerCountryId && (
+                {!viewerCountryId && !isOwnCountry && (
                   <div className="mt-4 border-t border-white/10 pt-4">
                     <p className="text-center text-xs text-white/50">
-                      Login required to perform actions
+                      Login required to perform diplomatic actions
                     </p>
                   </div>
                 )}

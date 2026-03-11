@@ -42,15 +42,15 @@ interface SystemLog {
 }
 
 const LOG_LEVELS = {
-  DEBUG: { color: "text-gray-500", bg: "bg-gray-100 dark:bg-gray-800", icon: Terminal },
-  INFO: { color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-900/30", icon: Info },
+  DEBUG: { color: "text-muted-foreground", bg: "bg-muted/50", icon: Terminal },
+  INFO: { color: "text-blue-600", bg: "bg-blue-500/10", icon: Info },
   WARN: {
-    color: "text-yellow-600",
-    bg: "bg-yellow-100 dark:bg-yellow-900/30",
+    color: "text-amber-600",
+    bg: "bg-amber-500/10",
     icon: AlertTriangle,
   },
-  ERROR: { color: "text-red-600", bg: "bg-red-100 dark:bg-red-900/30", icon: XCircle },
-  FATAL: { color: "text-red-800", bg: "bg-red-200 dark:bg-red-900/50", icon: XCircle },
+  ERROR: { color: "text-red-600", bg: "bg-red-500/10", icon: XCircle },
+  FATAL: { color: "text-red-600", bg: "bg-red-500/20", icon: XCircle },
 };
 
 const LOG_CATEGORIES = {

@@ -63,6 +63,7 @@ import { forumRouter } from "./routers/forum";
 import { nationalIssuesRouter } from "./routers/national-issues";
 import { demoModeRouter } from "./routers/demo-mode";
 import { systemValidationRouter } from "./routers/system-validation";
+import { geoRouter } from "./routers/geo";
 
 /**
  * This is the primary router for your server.
@@ -132,6 +133,7 @@ export const appRouter = createTRPCRouter({
   nationalIssues: nationalIssuesRouter, // National Issues Engine - dynamic decision/event generation system
   demoMode: demoModeRouter, // Demo mode management - clone country with seeded data for live demos
   systemValidation: systemValidationRouter, // System validation dashboard for admin health checks
+  geo: geoRouter, // IxEarth world map system - geographic data, spatial queries, map editing
 });
 
 // export type definition of API

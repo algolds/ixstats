@@ -50,7 +50,7 @@ const WIKI_SOURCES = [
 
 // Rarity colors
 const RARITY_COLORS: Record<string, string> = {
-  COMMON: "text-gray-400 bg-gray-500/20",
+  COMMON: "text-muted-foreground bg-muted/50",
   UNCOMMON: "text-green-400 bg-green-500/20",
   RARE: "text-blue-400 bg-blue-500/20",
   ULTRA_RARE: "text-purple-400 bg-purple-500/20",
@@ -349,7 +349,7 @@ export function LoreCardBatchAdmin() {
               {generationProgress.current} / {generationProgress.total}
             </span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
             <div
               className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
               style={{ width: `${(generationProgress.current / generationProgress.total) * 100}%` }}
@@ -503,7 +503,7 @@ function ArticlePreviewCard({
             <TrendingUp className="h-3 w-3 text-green-400" />
           </div>
         </div>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
           <div
             className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
             style={{ width: `${article.qualityScore}%` }}

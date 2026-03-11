@@ -24,6 +24,9 @@ This document inventories the primary code areas. Use it when auditing coverage,
 | `/dashboard/feed` | Dashboard activity feed |
 | `/dashboard/trends` | Dashboard trends section |
 | `/thinkpages` | Social knowledge sharing (ThinkPagesRouter) |
+| `/maps` | World map viewer (IxWorld standalone at maps.ixwiki.com) |
+| `/admin/maps` | Admin map management, SVG upload, world generation |
+| `/mycountry/map-editor` | Player border and feature editing |
 | `/wiki` | Wiki integration tools and info |
 | `/setup`, `/sign-in`, `/sign-up` | Onboarding and auth surfaces |
 
@@ -34,10 +37,11 @@ This document inventories the primary code areas. Use it when auditing coverage,
 - `diplomatic/`, `defense/`, `economy/`, `tax-system/` – specialised modules for systems guides
 - `mycountry/` – shell, intelligence tabs, compliance dialogs, quick actions
 - `thinkpages/`, `thinkshare/` – social layouts, feeds, collaboration primitives
+- `maps/core/`, `maps/editor/`, `maps/widgets/` – MapLibre world map, border editor, embedded widgets (27 components)
 - `ui/`, `shared/`, `magicui/`, `controls/` – base UI elements and utility widgets
 
 ## Hooks & Services
-- Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useMyCountryCompliance.ts`, `usePageTitle.ts`)
+- Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useMyCountryCompliance.ts`, `usePageTitle.ts`, `useMapData.ts`, `useBorderEditor.ts`, `useMapEditor.ts`, `useMapPinInfo.ts`, `useCountryMapEmbed.ts`)
 - Services under `src/app/mycountry/services`, `src/services`, and `src/lib` encapsulate data fetches, caching, and job orchestration
 
 ## tRPC Routers (`src/server/api/routers`)
@@ -61,6 +65,7 @@ trading.ts             lore-cards.ts       elections.ts
 ns-import.ts           historical.ts       crisis-events.ts
 autosaveHistory.ts     autosaveMonitoring.ts
 nationalIssues.ts      forum.ts            demoMode.ts
+geo.ts
 ```
 - Auth-aware context lives in `src/server/api/trpc.ts`
 - Middleware: rate limiting (`~/lib/rate-limiter`), user logging (`~/lib/user-logging-middleware`)
