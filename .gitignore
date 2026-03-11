@@ -126,6 +126,7 @@ scripts/world-roster-data.json
 # IDE / Tool Settings
 # --------------------------------------------------------------------------------
 .claude/
+CLAUDE.md
 
 # --------------------------------------------------------------------------------
 # Extra tsconfigs (typecheck commands crash server)
