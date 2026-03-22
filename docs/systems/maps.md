@@ -34,14 +34,44 @@ The IxWorld map system provides interactive visualization of IxEarth, a fictiona
 
 | Component | Lines | Purpose |
 |-----------|-------|---------|
-| `EditorMap.tsx` | ~650 | Country-focused editor for cities, subdivisions, POIs — boundary highlighting, click-to-place |
-| `BorderEditorMap.tsx` | ~500 | Border editing with vertex visualization, neighbor geometries, drag interaction |
-| `BorderEditorToolbar.tsx` | ~200 | Mode selector (select/vertex_edit/freehand/split/merge), undo/redo controls |
-| `BorderEditorPanel.tsx` | ~180 | Feature info display, neighbor listing, merge target toggles |
-| `MapEditorToolbar.tsx` | ~120 | "Add New" dropdown for placing cities, subdivisions, POIs |
-| `FeaturePropertyPanel.tsx` | ~350 | Property editor forms by feature type (cities, subdivisions, POIs) |
-| `FeatureList.tsx` | ~200 | Existing features browser with delete/edit, type icons |
-| `SplitMergeDialog.tsx` | ~180 | Dialogs for splitting or merging territories |
+| `MapEditorOverlay.tsx` | ~800 | Full-screen editor overlay — title bar, tool rail, panel, status bar, error boundaries, loading splash |
+| `EditorMap.tsx` | ~1,500 | MapLibre editor map — country boundary, non-player mask, grid overlay, vertex editing, snap guides, paint mode colors |
+| `MapEditorToolbar.tsx` | ~120 | Vertical tool rail: Select (V), City (C), Region (R), POI (P), Route (T), Import (I), Paint (B) |
+| `EditorPanel.tsx` | ~220 | Right panel with collapsible Properties (top) + Features (bottom) layout |
+| `FeaturePropertyPanel.tsx` | ~700 | Context-sensitive forms: city/region/POI edit, transport panel (route list + generate), paint mode panel |
+| `FeatureList.tsx` | ~200 | Collapsible feature groups (Cities/Regions/POIs) with auto-expand on select, shift-click multi-select |
+| `EditorStatusBar.tsx` | ~120 | Live cursor coordinates, altitude/climate terrain info, mode badge, feature count, zoom |
+| `MobileEditorSheet.tsx` | ~80 | Bottom sheet for mobile property editing |
+| `SimulationPreview.tsx` | ~120 | Geographic profile stats card in editor |
+| `WikiLinkWizard.tsx` | ~200 | Wiki search + infobox parsing for linking features to wiki articles |
+| `SmartPlacement.tsx` | ~150 | Contextual suggestions when placing cities/POIs based on terrain |
+| `BorderConformanceModal.tsx` | ~100 | Province import conformance warning modal |
+
+**Editor Features:**
+- **7 editor tools**: Select, City, Region, POI, Route, Import, Paint
+- **Province Painter (B)**: CK3-style map modes — Population, Development, Resources, Wiki Coverage with color gradients and ranked stats panel
+- **Transport management**: Route list with edit/delete, procedural generation, tabbed interface
+- **Non-player mask**: Semi-transparent overlay dimming areas outside the player's country
+- **Coordinate grid**: Toggleable grid (G) with adaptive spacing and degree labels, focused on country bbox
+- **Layer toggles**: Rivers, Altitude in header bar
+- **Live terrain info**: Debounced altitude + climate under cursor in status bar
+- **Undo/Redo**: History stack with Ctrl+Z / Ctrl+Shift+Z shortcuts
+- **Multi-select**: Shift+click features for bulk delete
+- **Region stats tooltip**: Hover subdivisions for area, population, vertex count
+- **Snapping guide lines**: Cyan dashed lines showing snap targets during vertex drag
+- **Error boundaries**: Map + Panel wrapped independently with retry UI
+- **Loading splash**: Animated loading screen while geometry/features load
+
+### Overlay Components (`src/components/maps/overlays/`)
+
+| Component | Lines | Purpose |
+|-----------|-------|---------|
+| `TransportOverlay.tsx` | ~200 | Transport route lines + hub circles with click handlers for route/hub inspection |
+| `AnalyticsLegend.tsx` | ~100 | Color gradient legend for wealth/population/crisis/transport overlays |
+
+### Route Info Panel (`src/components/maps/core/RouteInfoPanel.tsx`)
+
+Slide-in panel for transport route details — type icon, name, status badge, length, terrain difficulty bar, speed, stops list, edit/delete actions. Supports inline name/status editing.
 
 ### Widget Components (`src/components/maps/widgets/`)
 

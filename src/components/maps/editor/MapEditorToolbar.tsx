@@ -1,128 +1,112 @@
 "use client";
 
 /**
- * MapEditorToolbar - Dropdown "Add New" button for the map editor.
- * Overlays the map (bottom-left). Matches standard map control styling.
+ * MapEditorToolbar — Vertical tool rail (left sidebar).
+ *
+ * Adobe/Photoshop-inspired: thin vertical strip of icon buttons,
+ * grouped by function, with tooltips showing name + keyboard shortcut.
+ *
+ * Groups:
+ * 1. Selection (V) — default pointer mode
+ * 2. Add Features — City (C), Region (R), POI (P)
+ * 3. Import — Province import (I)
+ *
+ * Active tool gets primary color highlight.
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Plus, MapPin, Hexagon, Landmark, X } from "lucide-react";
+import { useCallback } from "react";
+import { MousePointer2, MapPin, Hexagon, Landmark, FileUp, Route, Paintbrush } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 
 interface MapEditorToolbarProps {
   mode: EditorMode;
   onModeChange: (mode: EditorMode) => void;
   disabled?: boolean;
+  /** Horizontal layout for mobile (bottom rail) */
+  horizontal?: boolean;
 }
 
-const ADD_TOOLS: { mode: EditorMode; icon: typeof MapPin; label: string; desc: string }[] = [
-  { mode: "add-city", icon: MapPin, label: "City", desc: "Click map to place" },
-  { mode: "add-subdivision", icon: Hexagon, label: "Region", desc: "Draw polygon boundary" },
-  { mode: "add-poi", icon: Landmark, label: "POI", desc: "Click map to place" },
+interface ToolDef {
+  mode: EditorMode;
+  icon: typeof MapPin;
+  label: string;
+  shortcut: string;
+  group: number;
+}
+
+const TOOLS: ToolDef[] = [
+  { mode: "view", icon: MousePointer2, label: "Select", shortcut: "V", group: 0 },
+  { mode: "add-city", icon: MapPin, label: "City", shortcut: "C", group: 1 },
+  { mode: "add-subdivision", icon: Hexagon, label: "Region", shortcut: "R", group: 1 },
+  { mode: "add-poi", icon: Landmark, label: "POI", shortcut: "P", group: 1 },
+  { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
+  { mode: "import-provinces", icon: FileUp, label: "Import", shortcut: "I", group: 2 },
+  { mode: "paint", icon: Paintbrush, label: "Paint", shortcut: "B", group: 3 },
 ];
 
-export function MapEditorToolbar({ mode, onModeChange, disabled }: MapEditorToolbarProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const isAdding = mode !== "view" && mode !== "edit";
-  const activeTool = ADD_TOOLS.find((t) => t.mode === mode);
-
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open]);
-
-  const handleSelect = useCallback(
+export function MapEditorToolbar({ mode, onModeChange, disabled, horizontal }: MapEditorToolbarProps) {
+  const handleClick = useCallback(
     (toolMode: EditorMode) => {
-      onModeChange(toolMode);
-      setOpen(false);
+      // If clicking the active tool, deactivate to view mode
+      onModeChange(toolMode === mode ? "view" : toolMode);
     },
-    [onModeChange]
+    [mode, onModeChange]
   );
 
-  const handleCancel = useCallback(() => {
-    onModeChange("view");
-    setOpen(false);
-  }, [onModeChange]);
+  // Normalize mode for highlighting (edit-city → view, since edit is panel-based)
+  const activeMode = mode.startsWith("edit-") ? "view" : mode;
+
+  const containerClass = horizontal
+    ? "flex h-10 items-center gap-0.5 border-t border-border bg-card px-1"
+    : "flex w-10 flex-col items-center gap-0.5 border-r border-border bg-card py-1";
+
+  let lastGroup = -1;
 
   return (
-    <div ref={ref} className={`relative ${disabled ? "pointer-events-none opacity-50" : ""}`}>
-      {/* Dropdown menu (opens upward) */}
-      {open && (
-        <div className="absolute bottom-full left-0 mb-1.5 w-48 rounded-lg bg-card p-1 shadow-lg ring-1 ring-border">
-          <div className="mb-1 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Add Feature
-          </div>
-          {ADD_TOOLS.map((tool) => {
-            const Icon = tool.icon;
-            const isActive = mode === tool.mode;
-            return (
-              <button
-                key={tool.mode}
-                onClick={() => handleSelect(tool.mode)}
-                className={`flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-accent"
+    <div className={`${containerClass} ${disabled ? "pointer-events-none opacity-50" : ""}`}>
+      {TOOLS.map((tool) => {
+        const Icon = tool.icon;
+        const isActive = activeMode === tool.mode;
+        const showSep = lastGroup !== -1 && tool.group !== lastGroup;
+        lastGroup = tool.group;
+
+        return (
+          <div key={tool.mode} className={horizontal ? "flex items-center" : ""}>
+            {showSep && (
+              horizontal
+                ? <div className="mx-0.5 h-5 w-px bg-border" />
+                : <div className="my-0.5 h-px w-5 bg-border" />
+            )}
+            <button
+              onClick={() => handleClick(tool.mode)}
+              className={`group relative flex items-center justify-center rounded-md transition-colors ${
+                horizontal ? "h-8 w-8" : "h-9 w-9"
+              } ${
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
+              title={`${tool.label} (${tool.shortcut})`}
+            >
+              <Icon className="h-4 w-4" />
+
+              {/* Tooltip (desktop only, shows on hover to the right / above) */}
+              <div
+                className={`pointer-events-none absolute z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[11px] font-medium text-popover-foreground shadow-md ring-1 ring-border group-hover:block ${
+                  horizontal
+                    ? "bottom-full left-1/2 mb-1.5 -translate-x-1/2"
+                    : "left-full top-1/2 ml-1.5 -translate-y-1/2"
                 }`}
               >
-                <Icon className="h-4 w-4 flex-shrink-0" />
-                <div>
-                  <div className="text-sm font-medium">{tool.label}</div>
-                  <div className={`text-[10px] ${isActive ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                    {tool.desc}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Trigger button */}
-      {isAdding && activeTool ? (
-        <div className="inline-flex items-center gap-0.5 rounded-lg bg-primary p-0.5 shadow-md">
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            <activeTool.icon className="h-3.5 w-3.5" />
-            <span>{activeTool.label}</span>
-          </button>
-          <button
-            onClick={handleCancel}
-            className="rounded p-1.5 text-primary-foreground/70 transition-colors hover:bg-primary/90 hover:text-primary-foreground"
-            title="Cancel"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setOpen((v) => !v)}
-          disabled={disabled}
-          className="flex items-center gap-2 rounded-lg bg-card px-3 py-2 text-sm font-medium text-foreground shadow-md transition-colors hover:bg-accent"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Add New</span>
-        </button>
-      )}
+                {tool.label}
+                <span className="ml-1.5 rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground">
+                  {tool.shortcut}
+                </span>
+              </div>
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

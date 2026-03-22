@@ -126,6 +126,10 @@ const createPrismaClient = () => {
     "SvgUpload", "MapLayer", "MapEditRequest",
     // Border editor, world templates, procedural generation
     "MapEditorSession", "WorldTemplate", "ProceduralWorld",
+    // Transport infrastructure (generated routes, hubs)
+    "TransportRoute", "TransportHub",
+    // Geo analytics profiles & resources
+    "CountryGeoProfile", "GeographicResource",
     // Activity feed & achievements (seeded/cleaned by demo seed system)
     "ActivityFeed", "UserAchievement",
     // Wiki cache (written by WikiCacheService for 3-layer caching)

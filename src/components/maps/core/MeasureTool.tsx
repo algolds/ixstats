@@ -1,12 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Ruler, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
+import { Trash2 } from "lucide-react";
 import type { IxWorldMapRef } from "./IxWorldMap";
+
+export interface MeasureToolRef {
+  toggle: () => void;
+}
 
 interface MeasureToolProps {
   mapRef: React.RefObject<IxWorldMapRef | null>;
   onActiveChange?: (active: boolean) => void;
+  /** When true, hides the inline button (button rendered elsewhere via ref.toggle) */
+  headless?: boolean;
 }
 
 const SOURCE_ID = "measure-source";
@@ -162,7 +168,7 @@ function formatDistance(km: number): string {
 
 // ─── Component ───────────────────────────────────────────────────
 
-export function MeasureTool({ mapRef, onActiveChange }: MeasureToolProps) {
+export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function MeasureTool({ mapRef, onActiveChange, headless = false }, ref) {
   const [active, setActive] = useState(false);
   const [points, setPoints] = useState<[number, number][]>([]);
   const [totalDistance, setTotalDistance] = useState(0);
@@ -485,21 +491,26 @@ export function MeasureTool({ mapRef, onActiveChange }: MeasureToolProps) {
     }
   }, [active, deactivate]);
 
+  // Expose toggle via ref for external control (headless mode)
+  useImperativeHandle(ref, () => ({ toggle: handleToggle }), [handleToggle]);
+
   return (
     <>
-      {/* Inline measure button (rendered inside MapControls toolbar flex row) */}
-      <button
-        onClick={handleToggle}
-        className={`flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium shadow-md transition-colors sm:min-h-0 sm:min-w-0 ${
-          active
-            ? "bg-blue-500 text-white"
-            : "bg-card text-foreground hover:bg-accent"
-        }`}
-        title="Measure distance (M)"
-      >
-        <Ruler className="h-4 w-4" />
-        Measure
-      </button>
+      {/* Inline measure button — hidden in headless mode (button rendered by MapControls) */}
+      {!headless && (
+        <button
+          onClick={handleToggle}
+          className={`flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium shadow-md transition-colors sm:min-h-0 sm:min-w-0 ${
+            active
+              ? "bg-blue-500 text-white"
+              : "bg-card text-foreground hover:bg-accent"
+          }`}
+          title="Measure distance (M)"
+        >
+          <Trash2 className="h-4 w-4" />
+          Measure
+        </button>
+      )}
 
       {/* Distance readout (fixed to map, below toolbar) */}
       {active && points.length >= 2 && (
@@ -521,4 +532,4 @@ export function MeasureTool({ mapRef, onActiveChange }: MeasureToolProps) {
       )}
     </>
   );
-}
+});

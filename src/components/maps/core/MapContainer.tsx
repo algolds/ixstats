@@ -7,18 +7,20 @@
 
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useMapData } from "~/hooks/useMapData";
+import { useMapDataBatched } from "~/hooks/useMapDataBatched";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { api } from "~/trpc/react";
 import { MapControls } from "./MapControls";
 import { CountryInfoPanel } from "./CountryInfoPanel";
 import { FeatureInfoPanel } from "./FeatureInfoPanel";
+import { RouteInfoPanel } from "./RouteInfoPanel";
 import MapPinInfoPanel from "./MapPinInfoPanel";
 import { MapSearchOverlay } from "./MapSearchOverlay";
+import { AnalyticsLegend } from "./AnalyticsLegend";
 import { MeasureTool } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
-import { ProjectionToggle } from "./ProjectionToggle";
+// ProjectionToggle moved into MapSearchOverlay settings panel
 import type { MapLayerType, ProjectionMode } from "~/lib/map-config";
 import type { SelectedCountry, SelectedFeature, HoveredCountry, IxWorldMapRef, OverlayVisibility } from "./IxWorldMap";
 import type { FeatureCollection } from "geojson";
@@ -33,6 +35,16 @@ const IxWorldMap = dynamic(() => import("./IxWorldMap"), {
   loading: () => <div className="absolute inset-0 bg-[#0a1628]" />,
 });
 
+// Fill overlays (wealth/population/crises) are mutually exclusive — they all
+// recolor the same political fill layer via setPaintProperty.
+const FILL_OVERLAY_KEYS: (keyof OverlayVisibility)[] = ["wealth", "population", "crises"];
+
+// Editor overlay — dynamically loaded only when user enters edit mode
+const MapEditorOverlay = dynamic(
+  () => import("~/components/maps/editor/MapEditorOverlay"),
+  { ssr: false }
+);
+
 export interface MapContainerProps {
   className?: string;
   showControls?: boolean;
@@ -41,6 +53,10 @@ export interface MapContainerProps {
   initialLayers?: MapLayerType[];
   /** Country ID to auto-select and fly to on mount (for deep linking) */
   initialCountryId?: string;
+  /** Initial map center [lng, lat] for coordinate deep-linking (e.g. ?lat=X&lng=Y) */
+  initialCenter?: [number, number];
+  /** Initial zoom level for coordinate deep-linking (e.g. ?zoom=Z) */
+  initialZoom?: number;
   onCountrySelect?: (country: SelectedCountry | null) => void;
 }
 
@@ -51,13 +67,16 @@ export function MapContainer({
   showPopup = true,
   initialLayers,
   initialCountryId,
+  initialCenter,
+  initialZoom,
   onCountrySelect,
 }: MapContainerProps) {
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
+  const measureToolRef = useRef<{ toggle: () => void }>(null);
   const [selectedCountry, setSelectedCountry] =
     useState<SelectedCountry | null>(null);
-  const [hoveredCountry, setHoveredCountry] =
+  const [_hoveredCountry, setHoveredCountry] =
     useState<HoveredCountry | null>(null);
   const [selectedFeature, setSelectedFeature] =
     useState<SelectedFeature | null>(null);
@@ -66,6 +85,17 @@ export function MapContainer({
   const handleMapReady = useCallback(() => setMapEngineReady(true), []);
   const [geographyFilter, setGeographyFilter] = useState<{ type: "continent" | "region"; value: string } | null>(null);
   const [projectionMode, setProjectionMode] = useState<ProjectionMode>("dynamic");
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [editingCountryId, setEditingCountryId] = useState<string | null>(null);
+  const [currentZoom, setCurrentZoom] = useState<number | undefined>(undefined);
+
+  // Get user's country for the editor shortcut
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const userCountryId = userProfile?.countryId ?? null;
 
   const {
     mapLayers,
@@ -73,7 +103,9 @@ export function MapContainer({
     visibleLayers,
     isLoading,
     error,
-  } = useMapData(initialLayers);
+    overlayFeatures: batchedOverlayFeatures,
+    capitalsGeoJson: batchedCapitalsGeoJson,
+  } = useMapDataBatched(initialLayers, currentZoom);
 
   const {
     isPinToolActive,
@@ -86,20 +118,69 @@ export function MapContainer({
     clearPin,
   } = useMapPinInfo();
 
-  // Overlay features (cities, POIs, subdivisions)
-  const { data: overlayFeatures } = api.geo.getAllMapFeatures.useQuery(undefined, {
-    staleTime: 10 * 60_000,
-    gcTime: 2 * 60 * 60_000,
-  });
+  // Overlay features come from batched query
+  const overlayFeatures = batchedOverlayFeatures;
 
   const [overlayVisibility, setOverlayVisibility] = useState<OverlayVisibility>({
     cities: true,
     pois: true,
     subdivisions: true,
+    wealth: false,
+    population: false,
+    diplomacy: false,
+    crises: false,
+    transport: false,
   });
 
+  // Analytics overlay data — only fetched when the corresponding toggle is ON
+  const { data: wealthData } = api.geo.getRegionalChoropleth.useQuery(
+    { metric: "gdpPerCapita", groupBy: "country" },
+    { enabled: overlayVisibility.wealth, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const { data: populationData } = api.geo.getRegionalChoropleth.useQuery(
+    { metric: "population", groupBy: "country" },
+    { enabled: overlayVisibility.population, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const { data: crisisData } = api.geo.getCrisisRiskMap.useQuery(
+    {},
+    { enabled: overlayVisibility.crises, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const { data: diplomacyData } = api.geo.getGeopoliticalOverlay.useQuery(
+    undefined,
+    { enabled: overlayVisibility.diplomacy, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const { data: transportData } = api.transport.getAllRoutesGeoJSON.useQuery(
+    {},
+    { enabled: overlayVisibility.transport, staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+
+  const overlayData = useMemo(() => ({
+    wealth: wealthData ?? undefined,
+    population: populationData ?? undefined,
+    crises: crisisData ?? undefined,
+    diplomacy: diplomacyData ? {
+      relations: diplomacyData.relations,
+      conflicts: diplomacyData.conflicts,
+    } : undefined,
+    transport: transportData ?? undefined,
+  }), [wealthData, populationData, crisisData, diplomacyData, transportData]);
+
+  const [labelsVisible, setLabelsVisible] = useState(true);
+  const toggleLabels = useCallback(() => setLabelsVisible((v) => !v), []);
+
+  // Fill overlays are mutually exclusive — they all color the same political layer
+
   const toggleOverlay = useCallback((key: keyof OverlayVisibility) => {
-    setOverlayVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+    setOverlayVisibility((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      // Fill overlays are mutually exclusive — turning one ON turns others OFF
+      if (next[key] && FILL_OVERLAY_KEYS.includes(key)) {
+        for (const k of FILL_OVERLAY_KEYS) {
+          if (k !== key) next[k] = false;
+        }
+      }
+      return next;
+    });
   }, []);
 
   // Build a layer lookup for the pin tool's client-side query
@@ -111,10 +192,8 @@ export function MapContainer({
     return map;
   }, [mapLayers]);
 
-  const { data: capitalsGeoJson } = api.geo.getCapitalCities.useQuery(undefined, {
-    staleTime: 30 * 60_000,
-    gcTime: 2 * 60 * 60_000,
-  });
+  // Capitals come from batched query
+  const capitalsGeoJson = batchedCapitalsGeoJson;
 
   // Top-20 countries by composite importance (population + GDP + GDP/capita)
   const { data: topCountryNames } = api.countries.getTopCountriesByImportance.useQuery(
@@ -241,6 +320,25 @@ export function MapContainer({
     onCountrySelect?.(null);
   }, [onCountrySelect]);
 
+  const handleEditMap = useCallback(() => {
+    if (selectedCountry?.countryId) {
+      setEditingCountryId(selectedCountry.countryId);
+      setIsEditing(true);
+    }
+  }, [selectedCountry]);
+
+  const handleExitEditor = useCallback(() => {
+    setIsEditing(false);
+    setEditingCountryId(null);
+  }, []);
+
+  const handleOpenMyEditor = useCallback(() => {
+    if (userCountryId) {
+      setEditingCountryId(userCountryId);
+      setIsEditing(true);
+    }
+  }, [userCountryId]);
+
   /** Escape key: close panels in priority order */
   const handleEscapePress = useCallback(() => {
     if (isPinToolActive && pinPosition) {
@@ -354,6 +452,12 @@ export function MapContainer({
         geographyFilter={geographyFilter}
         projectionMode={projectionMode}
         topCountryNames={topCountrySet}
+        labelsVisible={labelsVisible}
+        onZoomChange={setCurrentZoom}
+        initialCenter={initialCenter}
+        initialZoom={initialZoom}
+        overlayData={overlayData}
+        onRouteClick={(id) => setSelectedRouteId(id)}
       />
 
       {/* Layer controls + tools toolbar */}
@@ -361,43 +465,34 @@ export function MapContainer({
         <MapControls
           visibleLayers={visibleLayers}
           onToggleLayer={toggleLayer}
-          hoveredCountry={hoveredCountry}
           overlayVisibility={overlayVisibility}
           onToggleOverlay={toggleOverlay}
-        >
-          {toolsVisible && <MeasureTool mapRef={mapRef} onActiveChange={setIsMeasuring} />}
-          {toolsVisible && (
-            <button
-              onClick={togglePinTool}
-              className={`flex min-h-[44px] min-w-[44px] items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium shadow-md transition-colors sm:min-h-0 sm:min-w-0 ${
-                isPinToolActive
-                  ? "bg-blue-500 text-white hover:bg-blue-600"
-                  : "bg-card text-foreground hover:bg-accent"
-              }`}
-              title="Pin Info Tool — click map to inspect location"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Pin
-            </button>
-          )}
-        </MapControls>
+          labelsVisible={labelsVisible}
+          onToggleLabels={toggleLabels}
+          isMeasuring={isMeasuring}
+          onToggleMeasure={() => measureToolRef.current?.toggle()}
+          isPinActive={isPinToolActive}
+          onTogglePin={togglePinTool}
+          toolsVisible={toolsVisible}
+          canEdit={!!userCountryId}
+          onEditMap={handleOpenMyEditor}
+        />
       )}
 
-      {/* Search overlay */}
+      {/* MeasureTool (headless — button is in MapControls, this handles map logic + readout) */}
+      {toolsVisible && <MeasureTool ref={measureToolRef} mapRef={mapRef} onActiveChange={setIsMeasuring} headless />}
+
+      {/* Search overlay (includes settings panel with theme + projection) */}
       {toolsVisible && (
-        <MapSearchOverlay onSelectResult={handleSearchResult} />
-      )}
-
-      {/* Projection toggle (top-right, below NavigationControl) */}
-      {showControls && (
-        <ProjectionToggle
+        <MapSearchOverlay
+          onSelectResult={handleSearchResult}
           projectionMode={projectionMode}
           onProjectionChange={setProjectionMode}
         />
       )}
+
+      {/* Analytics legend (shows when a fill/line overlay is active) */}
+      <AnalyticsLegend overlayVisibility={overlayVisibility} />
 
       {/* Keyboard navigation (always active) */}
       <MapKeyboardControls
@@ -419,26 +514,45 @@ export function MapContainer({
       )}
 
       {/* Country info panel */}
-      {showPopup && selectedCountry && !selectedFeature && !isPinToolActive && (
+      {showPopup && selectedCountry && !selectedFeature && !isPinToolActive && !isEditing && (
         <CountryInfoPanel
           key={selectedCountry.featureId}
           country={selectedCountry}
           onClose={handleClosePanel}
           onNeighborClick={handleNeighborClick}
           onGeographyFilter={setGeographyFilter}
+          onEditMap={handleEditMap}
         />
       )}
 
       {/* Feature info panel (city/POI/capital) */}
-      {showPopup && selectedFeature && !isPinToolActive && (
+      {showPopup && selectedFeature && !isPinToolActive && !isEditing && (
         <FeatureInfoPanel
           feature={selectedFeature}
           onClose={() => setSelectedFeature(null)}
         />
       )}
 
+      {/* Route info panel — shown when a transport route is clicked */}
+      {selectedRouteId && !isEditing && (
+        <RouteInfoPanel
+          routeId={selectedRouteId}
+          onClose={() => setSelectedRouteId(null)}
+          canEdit={!!userCountryId}
+        />
+      )}
+
       {/* Full-screen loading overlay — shows until map data + engine are ready */}
       <MapLoadingScreen isReady={!isLoading && mapEngineReady} />
+
+      {/* Map editor overlay */}
+      {isEditing && editingCountryId && (
+        <MapEditorOverlay
+          countryId={editingCountryId}
+          mapLayers={mapLayers}
+          onExit={handleExitEditor}
+        />
+      )}
     </div>
   );
 }

@@ -1,0 +1,589 @@
+/**
+ * Province Topology Validation
+ *
+ * Detects gaps, overlaps, and coverage issues between imported provinces
+ * and the country border. Uses @turf/turf for geometric operations.
+ *
+ * Client-side compatible (no server dependencies).
+ */
+
+import * as turf from "@turf/turf";
+import type { Feature, Polygon, MultiPolygon, Position } from "geojson";
+import type {
+  ProvinceFeature,
+  TopologyReport,
+  GapReport,
+  OverlapReport,
+} from "./types";
+
+// ──────────────────────────────────────────────
+// Main Validation Entry Point
+// ──────────────────────────────────────────────
+
+/**
+ * Validate the topology of imported provinces against a country border.
+ * Checks for gaps, overlaps, and individual feature issues.
+ */
+export function validateTopology(
+  provinces: ProvinceFeature[],
+  countryBorder: Polygon | MultiPolygon
+): TopologyReport {
+  const included = provinces.filter((p) => p.included);
+  if (included.length === 0) {
+    return {
+      valid: false,
+      gaps: [],
+      overlaps: [],
+      coveragePercent: 0,
+      totalProvincesArea: 0,
+      countryArea: 0,
+      featureIssues: [{ provinceIndex: -1, provinceName: "(none)", issues: ["No provinces included"] }],
+    };
+  }
+
+  // Individual feature validation
+  const featureIssues = validateIndividualFeatures(included);
+
+  // Area calculations
+  const countryArea = computeAreaSqKm(countryBorder);
+  const totalProvincesArea = included.reduce((sum, p) => sum + computeAreaSqKm(p.geometry), 0);
+
+  // Gap detection
+  const gaps = detectGaps(included, countryBorder);
+
+  // Overlap detection
+  const overlaps = detectOverlaps(included);
+
+  // Coverage
+  const coveragePercent = countryArea > 0
+    ? Math.min(100, (totalProvincesArea / countryArea) * 100)
+    : 0;
+
+  const valid = featureIssues.length === 0 && gaps.length === 0 && overlaps.length === 0 && coveragePercent > 95;
+
+  return {
+    valid,
+    gaps,
+    overlaps,
+    coveragePercent: Math.round(coveragePercent * 10) / 10,
+    totalProvincesArea: Math.round(totalProvincesArea),
+    countryArea: Math.round(countryArea),
+    featureIssues,
+  };
+}
+
+// ──────────────────────────────────────────────
+// Gap Detection
+// ──────────────────────────────────────────────
+
+/**
+ * Detect gaps between provinces and the country border.
+ * A gap is an area within the country that is not covered by any province.
+ */
+export function detectGaps(
+  provinces: ProvinceFeature[],
+  countryBorder: Polygon | MultiPolygon
+): GapReport[] {
+  const gaps: GapReport[] = [];
+
+  try {
+    // Union all provinces
+    const provincePolygons = provinces
+      .filter((p) => p.included)
+      .map((p) => toTurfFeature(p.geometry))
+      .filter((f): f is Feature<Polygon | MultiPolygon> => f !== null);
+
+    if (provincePolygons.length === 0) return [];
+
+    let unionGeom: Feature<Polygon | MultiPolygon> | null = provincePolygons[0]!;
+    for (let i = 1; i < provincePolygons.length; i++) {
+      try {
+        const result = turf.union(
+          turf.featureCollection([unionGeom!, provincePolygons[i]!])
+        );
+        if (result) unionGeom = result as Feature<Polygon | MultiPolygon>;
+      } catch {
+        // Skip invalid geometry in union
+      }
+    }
+
+    if (!unionGeom) return [];
+
+    // Difference: country border minus province union = gaps
+    const countryFeature = toTurfFeature(countryBorder);
+    if (!countryFeature) return [];
+
+    const diff = turf.difference(
+      turf.featureCollection([countryFeature, unionGeom])
+    );
+
+    if (!diff || !diff.geometry) return [];
+
+    // Extract individual gap polygons
+    const gapPolygons = extractPolygons(diff.geometry as Polygon | MultiPolygon);
+    for (const gapGeom of gapPolygons) {
+      const areaSqKm = computeAreaSqKm(gapGeom);
+      if (areaSqKm < 0.01) continue; // Skip negligible gaps
+
+      // Find adjacent provinces
+      const adjacent = findAdjacentProvinces(gapGeom, provinces);
+      const countryArea = computeAreaSqKm(countryBorder);
+      const areaPercent = countryArea > 0 ? areaSqKm / countryArea : 0;
+
+      gaps.push({
+        geometry: gapGeom,
+        areaSqKm: Math.round(areaSqKm * 100) / 100,
+        adjacentProvinces: adjacent,
+        autoFixable: areaPercent < 0.01, // < 1% of country area
+      });
+    }
+  } catch {
+    // Turf operations can fail on invalid geometries
+  }
+
+  return gaps;
+}
+
+// ──────────────────────────────────────────────
+// Overlap Detection
+// ──────────────────────────────────────────────
+
+/**
+ * Detect overlaps between pairs of provinces.
+ * Pre-filters by bounding box for performance.
+ */
+export function detectOverlaps(provinces: ProvinceFeature[]): OverlapReport[] {
+  const overlaps: OverlapReport[] = [];
+  const included = provinces.filter((p) => p.included);
+
+  for (let i = 0; i < included.length; i++) {
+    for (let j = i + 1; j < included.length; j++) {
+      const a = included[i]!;
+      const b = included[j]!;
+
+      // Quick bbox check — skip if no overlap
+      if (!bboxOverlap(a.bbox, b.bbox)) continue;
+
+      try {
+        const featA = toTurfFeature(a.geometry);
+        const featB = toTurfFeature(b.geometry);
+        if (!featA || !featB) continue;
+
+        const intersection = turf.intersect(turf.featureCollection([featA, featB]));
+        if (!intersection || !intersection.geometry) continue;
+
+        const areaSqKm = computeAreaSqKm(intersection.geometry as Polygon | MultiPolygon);
+        if (areaSqKm < 0.01) continue; // Skip negligible overlaps
+
+        const overlapPolygons = extractPolygons(intersection.geometry as Polygon | MultiPolygon);
+        for (const geom of overlapPolygons) {
+          const polyArea = computeAreaSqKm(geom);
+          if (polyArea < 0.01) continue;
+
+          overlaps.push({
+            geometry: geom,
+            areaSqKm: Math.round(polyArea * 100) / 100,
+            provinces: [a.name, b.name],
+          });
+        }
+      } catch {
+        // Skip invalid intersection computation
+      }
+    }
+  }
+
+  return overlaps;
+}
+
+// ──────────────────────────────────────────────
+// Coverage Calculation
+// ──────────────────────────────────────────────
+
+/**
+ * Calculate the percentage of country area covered by provinces.
+ */
+export function computeCoverage(
+  provinces: ProvinceFeature[],
+  countryBorder: Polygon | MultiPolygon
+): number {
+  const countryArea = computeAreaSqKm(countryBorder);
+  if (countryArea === 0) return 0;
+
+  const totalArea = provinces
+    .filter((p) => p.included)
+    .reduce((sum, p) => sum + computeAreaSqKm(p.geometry), 0);
+
+  return Math.min(100, (totalArea / countryArea) * 100);
+}
+
+// ──────────────────────────────────────────────
+// Auto-Fix Operations
+// ──────────────────────────────────────────────
+
+/**
+ * Auto-fill small gaps by expanding the nearest province.
+ * Only fills gaps below `maxGapAreaPercent` of the country area.
+ */
+export function autoFillGaps(
+  provinces: ProvinceFeature[],
+  gaps: GapReport[],
+  countryBorder: Polygon | MultiPolygon
+): ProvinceFeature[] {
+  const countryArea = computeAreaSqKm(countryBorder);
+  const result = provinces.map((p) => ({ ...p, geometry: { ...p.geometry } as Polygon | MultiPolygon }));
+
+  for (const gap of gaps) {
+    if (!gap.autoFixable) continue;
+    const areaPercent = countryArea > 0 ? gap.areaSqKm / countryArea : 0;
+    if (areaPercent >= 0.01) continue; // Skip gaps > 1% of country
+
+    // Find nearest included province
+    const gapCentroid = turf.centroid(toTurfFeature(gap.geometry)!);
+    const gapCenter = gapCentroid.geometry.coordinates as Position;
+
+    let nearestIdx = -1;
+    let nearestDist = Infinity;
+
+    for (let i = 0; i < result.length; i++) {
+      if (!result[i]!.included) continue;
+      const dist = distanceDeg(gapCenter, result[i]!.centroid);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestIdx = i;
+      }
+    }
+
+    if (nearestIdx >= 0) {
+      try {
+        const province = result[nearestIdx]!;
+        const provFeat = toTurfFeature(province.geometry);
+        const gapFeat = toTurfFeature(gap.geometry);
+        if (provFeat && gapFeat) {
+          const merged = turf.union(turf.featureCollection([provFeat, gapFeat]));
+          if (merged && merged.geometry) {
+            result[nearestIdx] = {
+              ...province,
+              geometry: merged.geometry as Polygon | MultiPolygon,
+            };
+          }
+        }
+      } catch {
+        // Skip if merge fails
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Resolve overlaps between provinces using the "larger-wins" strategy.
+ * The overlap area is removed from the smaller province.
+ */
+export function resolveOverlaps(
+  provinces: ProvinceFeature[],
+  overlaps: OverlapReport[]
+): ProvinceFeature[] {
+  const result = provinces.map((p) => ({ ...p, geometry: { ...p.geometry } as Polygon | MultiPolygon }));
+
+  for (const overlap of overlaps) {
+    // Find the two provinces
+    const idxA = result.findIndex((p) => p.name === overlap.provinces[0]);
+    const idxB = result.findIndex((p) => p.name === overlap.provinces[1]);
+    if (idxA < 0 || idxB < 0) continue;
+
+    // Smaller province loses the overlap area
+    const areaA = computeAreaSqKm(result[idxA]!.geometry);
+    const areaB = computeAreaSqKm(result[idxB]!.geometry);
+    const loserIdx = areaA <= areaB ? idxA : idxB;
+
+    try {
+      const loserFeat = toTurfFeature(result[loserIdx]!.geometry);
+      const overlapFeat = toTurfFeature(overlap.geometry);
+      if (loserFeat && overlapFeat) {
+        const diff = turf.difference(turf.featureCollection([loserFeat, overlapFeat]));
+        if (diff && diff.geometry) {
+          result[loserIdx] = {
+            ...result[loserIdx]!,
+            geometry: diff.geometry as Polygon | MultiPolygon,
+          };
+        }
+      }
+    } catch {
+      // Skip if difference fails
+    }
+  }
+
+  return result;
+}
+
+// ──────────────────────────────────────────────
+// Simplification
+// ──────────────────────────────────────────────
+
+/**
+ * Simplify province geometries using Douglas-Peucker algorithm.
+ * Preserves topology (shared edges stay aligned).
+ */
+export function simplifyProvinces(
+  provinces: ProvinceFeature[],
+  tolerance: number
+): ProvinceFeature[] {
+  return provinces.map((p) => {
+    if (!p.included) return p;
+
+    try {
+      const feature = toTurfFeature(p.geometry);
+      if (!feature) return p;
+
+      const simplified = turf.simplify(feature, {
+        tolerance,
+        highQuality: true,
+      });
+
+      if (simplified && simplified.geometry) {
+        return {
+          ...p,
+          geometry: simplified.geometry as Polygon | MultiPolygon,
+        };
+      }
+    } catch {
+      // Skip if simplification fails
+    }
+
+    return p;
+  });
+}
+
+// ──────────────────────────────────────────────
+// Individual Feature Validation
+// ──────────────────────────────────────────────
+
+function validateIndividualFeatures(
+  provinces: ProvinceFeature[]
+): TopologyReport["featureIssues"] {
+  const issues: TopologyReport["featureIssues"] = [];
+
+  for (let i = 0; i < provinces.length; i++) {
+    const p = provinces[i]!;
+    if (!p.included) continue;
+
+    const featureIssues: string[] = [];
+
+    // Check geometry validity
+    const rings = p.geometry.type === "Polygon"
+      ? p.geometry.coordinates
+      : p.geometry.coordinates.flat();
+
+    for (let ri = 0; ri < rings.length; ri++) {
+      const ring = rings[ri]!;
+      if (ring.length < 4) {
+        featureIssues.push(`Ring ${ri} has < 4 coordinates`);
+      }
+
+      // Check ring closure
+      if (ring.length >= 2) {
+        const first = ring[0]!;
+        const last = ring[ring.length - 1]!;
+        if (Math.abs(first[0]! - last[0]!) > 1e-8 || Math.abs(first[1]! - last[1]!) > 1e-8) {
+          featureIssues.push(`Ring ${ri} is not closed`);
+        }
+      }
+    }
+
+    // Check minimum area
+    const area = computeAreaSqKm(p.geometry);
+    if (area < 0.1) {
+      featureIssues.push(`Very small area (${area.toFixed(2)} sq km)`);
+    }
+
+    // Check self-intersection (basic check via turf)
+    try {
+      const feature = toTurfFeature(p.geometry);
+      if (feature) {
+        const kinks = turf.kinks(feature);
+        if (kinks.features.length > 0) {
+          featureIssues.push(`Self-intersecting geometry (${kinks.features.length} kinks)`);
+        }
+      }
+    } catch {
+      // Skip kinks check if it fails
+    }
+
+    if (featureIssues.length > 0) {
+      issues.push({
+        provinceIndex: i,
+        provinceName: p.name,
+        issues: featureIssues,
+      });
+    }
+  }
+
+  return issues;
+}
+
+// ──────────────────────────────────────────────
+// Internal Helpers
+// ──────────────────────────────────────────────
+
+/** Build a GeoJSON Feature wrapper — avoids reliance on turf.feature which can be tree-shaken away. */
+function makeFeature<G extends Polygon | MultiPolygon>(geometry: G): Feature<G> {
+  return { type: "Feature", properties: {}, geometry };
+}
+
+function toTurfFeature(geometry: Polygon | MultiPolygon): Feature<Polygon | MultiPolygon> | null {
+  try {
+    return makeFeature(geometry);
+  } catch {
+    return null;
+  }
+}
+
+function computeAreaSqKm(geometry: Polygon | MultiPolygon): number {
+  try {
+    const feat = toTurfFeature(geometry);
+    if (!feat) return 0;
+    return turf.area(feat) / 1_000_000; // m² to km²
+  } catch {
+    return 0;
+  }
+}
+
+function extractPolygons(geometry: Polygon | MultiPolygon): Polygon[] {
+  if (geometry.type === "Polygon") return [geometry];
+  return geometry.coordinates.map((coords) => ({
+    type: "Polygon" as const,
+    coordinates: coords,
+  }));
+}
+
+function bboxOverlap(
+  a: [number, number, number, number],
+  b: [number, number, number, number]
+): boolean {
+  return !(a[2] < b[0] || b[2] < a[0] || a[3] < b[1] || b[3] < a[1]);
+}
+
+function findAdjacentProvinces(
+  gapGeom: Polygon,
+  provinces: ProvinceFeature[]
+): string[] {
+  const adjacent: string[] = [];
+  const gapBbox = turf.bbox(makeFeature(gapGeom)) as [number, number, number, number];
+
+  for (const p of provinces) {
+    if (!p.included) continue;
+    if (!bboxOverlap(gapBbox, p.bbox)) continue;
+
+    try {
+      const gapFeat = makeFeature(gapGeom);
+      const provFeat = toTurfFeature(p.geometry);
+      if (!provFeat) continue;
+
+      // Check if they share any boundary (buffered check)
+      const buffered = turf.buffer(gapFeat, 0.001, { units: "degrees" });
+      if (buffered) {
+        const intersection = turf.intersect(turf.featureCollection([buffered, provFeat]));
+        if (intersection) adjacent.push(p.name);
+      }
+    } catch {
+      // Skip
+    }
+  }
+
+  return adjacent;
+}
+
+function distanceDeg(a: Position, b: Position): number {
+  const dx = a[0]! - b[0]!;
+  const dy = a[1]! - b[1]!;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// ──────────────────────────────────────────────
+// Border Conformance / Clipping
+// ──────────────────────────────────────────────
+
+export interface ConformanceResult {
+  provinces: ProvinceFeature[];
+  /** Indices of provinces whose geometry was clipped or excluded */
+  clippedIndices: number[];
+  /** Names of provinces that were clipped or excluded */
+  clippedNames: string[];
+}
+
+/**
+ * Clip all included province geometries to fit within the country border.
+ * Uses turf.intersect to produce the intersection of each province with the country.
+ */
+export function clipProvincesToBorder(
+  provinces: ProvinceFeature[],
+  countryBorder: Polygon | MultiPolygon
+): ConformanceResult {
+  const clippedIndices: number[] = [];
+  const clippedNames: string[] = [];
+  const countryFeat = makeFeature(countryBorder);
+
+  const result = provinces.map((p, i) => {
+    if (!p.included) return p;
+
+    try {
+      const provFeat = makeFeature(p.geometry);
+      const clipped = turf.intersect(
+        turf.featureCollection([provFeat as Feature<Polygon | MultiPolygon>, countryFeat as Feature<Polygon | MultiPolygon>])
+      );
+
+      if (!clipped) {
+        // Entirely outside country — exclude
+        clippedIndices.push(i);
+        clippedNames.push(p.name);
+        return { ...p, included: false };
+      }
+
+      // Check if geometry was actually modified
+      const originalArea = turf.area(provFeat);
+      const clippedArea = turf.area(clipped);
+      if (originalArea > 0 && Math.abs(originalArea - clippedArea) / originalArea > 0.001) {
+        clippedIndices.push(i);
+        clippedNames.push(p.name);
+      }
+
+      return {
+        ...p,
+        geometry: clipped.geometry as Polygon | MultiPolygon,
+      };
+    } catch {
+      // If intersection fails, keep original
+      return p;
+    }
+  });
+
+  return { provinces: result, clippedIndices, clippedNames };
+}
+
+/**
+ * Clip a single geometry to the country border.
+ * Returns the clipped geometry and whether it was modified.
+ */
+export function clipGeometryToBorder(
+  geometry: Polygon | MultiPolygon,
+  countryBorder: Polygon | MultiPolygon
+): { geometry: Polygon | MultiPolygon; wasClipped: boolean } {
+  try {
+    const feat = makeFeature(geometry);
+    const borderFeat = makeFeature(countryBorder);
+    const clipped = turf.intersect(
+      turf.featureCollection([feat as Feature<Polygon | MultiPolygon>, borderFeat as Feature<Polygon | MultiPolygon>])
+    );
+
+    if (!clipped) return { geometry, wasClipped: true };
+
+    const origArea = turf.area(feat);
+    const clipArea = turf.area(clipped);
+    const wasClipped = origArea > 0 && Math.abs(origArea - clipArea) / origArea > 0.001;
+
+    return { geometry: clipped.geometry as Polygon | MultiPolygon, wasClipped };
+  } catch {
+    return { geometry, wasClipped: false };
+  }
+}

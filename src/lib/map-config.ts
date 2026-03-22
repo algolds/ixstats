@@ -382,3 +382,66 @@ export function buildBaseStyle(): Record<string, unknown> {
     },
   };
 }
+
+// ── Framework: World-aware configuration ────────────────────────────
+
+/**
+ * Resolved world configuration for rendering.
+ * This is the shape that all map components consume.
+ * Currently returns hardcoded IxWorld config; future versions will
+ * read from the WorldConfig database table.
+ */
+export interface WorldMapConfig {
+  worldId: string;
+  name: string;
+  wikiBaseUrl: string | null;
+  wikiApiPath: string;
+  mapProjection: ProjectionMode;
+  defaultCenter: [number, number];
+  defaultZoom: number;
+  layerTypes: MapLayerType[];
+  climateSystem: string;
+  oceanColor: string;
+  countryColors: string[];
+  waterBodyLabels: Array<{ name: string; lng: number; lat: number; minZoom: number }>;
+  layerConfigs: Record<MapLayerType, LayerConfig>;
+  sovereigntyTypes: typeof SOVEREIGNTY_TYPE_MAP;
+  elevationZones: readonly ElevationZoneConfig[];
+}
+
+/**
+ * Load world configuration by worldId.
+ *
+ * Phase 1 (current): Returns hardcoded IxWorld config for "default".
+ * Phase 2 (future): Reads from WorldConfig table, merges with defaults.
+ *
+ * All existing code passes worldId="default" (or omits it), so this
+ * is a no-op refactor that preserves current behavior while establishing
+ * the framework interface.
+ */
+export function loadWorldConfig(worldId: string = "default"): WorldMapConfig {
+  // Currently only "default" (IxWorld) is supported.
+  // Future: fetch from DB and merge with these defaults.
+  return {
+    worldId,
+    name: worldId === "default" ? "IxWorld" : worldId,
+    wikiBaseUrl: "https://ixwiki.com",
+    wikiApiPath: "/api.php",
+    mapProjection: "dynamic",
+    defaultCenter: MAP_DEFAULTS.center,
+    defaultZoom: MAP_DEFAULTS.zoom,
+    layerTypes: [...MAP_LAYER_TYPES],
+    climateSystem: "trewartha",
+    oceanColor: OCEAN_COLOR,
+    countryColors: COUNTRY_COLORS,
+    waterBodyLabels: WATER_BODY_LABELS.map((l) => ({
+      name: l.name,
+      lng: l.lng,
+      lat: l.lat,
+      minZoom: l.minZoom,
+    })),
+    layerConfigs: { ...LAYER_CONFIGS },
+    sovereigntyTypes: SOVEREIGNTY_TYPE_MAP,
+    elevationZones: ELEVATION_ZONES,
+  };
+}

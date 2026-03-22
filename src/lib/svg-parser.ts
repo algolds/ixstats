@@ -14,7 +14,7 @@ import { DOMParser } from "@xmldom/xmldom";
 // svg-path-parser is CJS-only; use createRequire for ESM compatibility
 import { createRequire } from "module";
 
-interface SvgPathCommand {
+export interface SvgPathCommand {
   code: string;
   command: string;
   x?: number;
@@ -561,7 +561,7 @@ export function parseSvgToGeoJson(
  * Each M (moveto) starts a new ring, Z (closepath) closes it.
  * Cubic bezier curves (C) are flattened into line segments.
  */
-function pathCommandsToRings(
+export function pathCommandsToRings(
   commands: SvgPathCommand[],
   bezierSegments: number
 ): [number, number][][] {
@@ -608,7 +608,7 @@ function pathCommandsToRings(
       }
 
       case "C": {
-        // Cubic bezier: flatten into line segments
+        // Cubic bezier: flatten with adaptive segment count
         const x0 = curX;
         const y0 = curY;
         const x1 = cmd.x1 ?? x0;
@@ -618,8 +618,9 @@ function pathCommandsToRings(
         const x3 = cmd.x ?? x2;
         const y3 = cmd.y ?? y2;
 
-        for (let t = 1; t <= bezierSegments; t++) {
-          const frac = t / bezierSegments;
+        const segs = adaptiveCubicSegments(x0, y0, x1, y1, x2, y2, x3, y3, bezierSegments);
+        for (let t = 1; t <= segs; t++) {
+          const frac = t / segs;
           const [bx, by] = cubicBezier(x0, y0, x1, y1, x2, y2, x3, y3, frac);
           currentRing.push([bx, by]);
         }
@@ -629,7 +630,7 @@ function pathCommandsToRings(
       }
 
       case "Q": {
-        // Quadratic bezier: flatten
+        // Quadratic bezier: flatten with adaptive segment count
         const qx0 = curX;
         const qy0 = curY;
         const qx1 = cmd.x1 ?? qx0;
@@ -637,8 +638,9 @@ function pathCommandsToRings(
         const qx2 = cmd.x ?? qx1;
         const qy2 = cmd.y ?? qy1;
 
-        for (let t = 1; t <= bezierSegments; t++) {
-          const frac = t / bezierSegments;
+        const qSegs = adaptiveQuadSegments(qx0, qy0, qx1, qy1, qx2, qy2, bezierSegments);
+        for (let t = 1; t <= qSegs; t++) {
+          const frac = t / qSegs;
           const [bx, by] = quadraticBezier(qx0, qy0, qx1, qy1, qx2, qy2, frac);
           currentRing.push([bx, by]);
         }
@@ -649,7 +651,6 @@ function pathCommandsToRings(
 
       case "S": {
         // Smooth cubic bezier (reflected control point)
-        // x1 = reflection of previous x2 across current point
         const sx0 = curX;
         const sy0 = curY;
         const sx1 = cmd.x0 !== undefined ? 2 * curX - cmd.x0 : curX;
@@ -659,8 +660,9 @@ function pathCommandsToRings(
         const sx3 = cmd.x ?? sx2;
         const sy3 = cmd.y ?? sy2;
 
-        for (let t = 1; t <= bezierSegments; t++) {
-          const frac = t / bezierSegments;
+        const sSegs = adaptiveCubicSegments(sx0, sy0, sx1, sy1, sx2, sy2, sx3, sy3, bezierSegments);
+        for (let t = 1; t <= sSegs; t++) {
+          const frac = t / sSegs;
           const [bx, by] = cubicBezier(sx0, sy0, sx1, sy1, sx2, sy2, sx3, sy3, frac);
           currentRing.push([bx, by]);
         }
@@ -703,7 +705,7 @@ function pathCommandsToRings(
 // Bezier Curves
 // ──────────────────────────────────────────────
 
-function cubicBezier(
+export function cubicBezier(
   x0: number, y0: number,
   x1: number, y1: number,
   x2: number, y2: number,
@@ -719,7 +721,7 @@ function cubicBezier(
   ];
 }
 
-function quadraticBezier(
+export function quadraticBezier(
   x0: number, y0: number,
   x1: number, y1: number,
   x2: number, y2: number,
@@ -733,6 +735,67 @@ function quadraticBezier(
 }
 
 // ──────────────────────────────────────────────
+// Adaptive Bezier Segmentation
+// ──────────────────────────────────────────────
+
+/**
+ * Calculate adaptive segment count for a cubic bezier based on curve "flatness".
+ * Near-straight curves get fewer segments, tight curves get more.
+ *
+ * Flatness is measured by the maximum distance of control points from the
+ * straight line connecting start to end.
+ */
+function adaptiveCubicSegments(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  x3: number, y3: number,
+  maxSegments: number,
+): number {
+  // Distance from control points to the line from (x0,y0) to (x3,y3)
+  const dx = x3 - x0;
+  const dy = y3 - y0;
+  const lineLen = Math.sqrt(dx * dx + dy * dy);
+  if (lineLen < 1e-6) return 2; // degenerate
+
+  // Perpendicular distances of control points from the chord
+  const d1 = Math.abs((x1 - x0) * dy - (y1 - y0) * dx) / lineLen;
+  const d2 = Math.abs((x2 - x0) * dy - (y2 - y0) * dx) / lineLen;
+  const maxDev = Math.max(d1, d2);
+
+  // Flatness ratio: deviation / chord length
+  const flatness = maxDev / lineLen;
+
+  if (flatness < 0.01) return Math.max(2, Math.round(maxSegments * 0.25)); // very flat
+  if (flatness < 0.05) return Math.max(3, Math.round(maxSegments * 0.5));  // mostly flat
+  if (flatness < 0.15) return Math.max(4, Math.round(maxSegments * 0.75)); // moderate
+  return maxSegments; // tight curve — use full segments
+}
+
+/**
+ * Calculate adaptive segment count for a quadratic bezier.
+ */
+function adaptiveQuadSegments(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  maxSegments: number,
+): number {
+  const dx = x2 - x0;
+  const dy = y2 - y0;
+  const lineLen = Math.sqrt(dx * dx + dy * dy);
+  if (lineLen < 1e-6) return 2;
+
+  const d1 = Math.abs((x1 - x0) * dy - (y1 - y0) * dx) / lineLen;
+  const flatness = d1 / lineLen;
+
+  if (flatness < 0.01) return Math.max(2, Math.round(maxSegments * 0.25));
+  if (flatness < 0.05) return Math.max(3, Math.round(maxSegments * 0.5));
+  if (flatness < 0.15) return Math.max(4, Math.round(maxSegments * 0.75));
+  return maxSegments;
+}
+
+// ──────────────────────────────────────────────
 // Color Extraction
 // ──────────────────────────────────────────────
 
@@ -741,7 +804,7 @@ function quadraticBezier(
  * Priority: inline style > fill attribute > inherited from parent groups.
  * Handles hex, rgb(), named colors. Ignores "none" and "url(#...)".
  */
-function extractFillColor(el: Element, style: string): string | undefined {
+export function extractFillColor(el: Element, style: string): string | undefined {
   // 1. Inline style: fill:...
   const styleMatch = style.match(/(?:^|;)\s*fill:\s*([^;]+)/i);
   if (styleMatch) {
@@ -773,7 +836,7 @@ function extractFillColor(el: Element, style: string): string | undefined {
 /**
  * Extract stroke color from an SVG element (same priority as fill).
  */
-function extractStrokeColor(el: Element, style: string): string | undefined {
+export function extractStrokeColor(el: Element, style: string): string | undefined {
   const styleMatch = style.match(/(?:^|;)\s*stroke:\s*([^;]+)/i);
   if (styleMatch) {
     const val = styleMatch[1]!.trim();
@@ -819,7 +882,7 @@ function normalizeColor(val: string): string {
  * Calculate the signed area of a ring (in WGS84 coordinates).
  * Positive = counter-clockwise (outer ring in GeoJSON), negative = clockwise (hole).
  */
-function ringArea(ring: Position[]): number {
+export function ringArea(ring: Position[]): number {
   let area = 0;
   for (let i = 0; i < ring.length - 1; i++) {
     const [x1, y1] = ring[i]!;
@@ -832,7 +895,7 @@ function ringArea(ring: Position[]): number {
 /**
  * Calculate the centroid of a set of rings as simple coordinate average.
  */
-function calculateCentroid(rings: Position[][]): [number, number] {
+export function calculateCentroid(rings: Position[][]): [number, number] {
   let sumLng = 0;
   let sumLat = 0;
   let count = 0;
@@ -852,7 +915,7 @@ function calculateCentroid(rings: Position[][]): [number, number] {
 /**
  * Calculate bounding box [minLng, minLat, maxLng, maxLat].
  */
-function calculateBoundingBox(
+export function calculateBoundingBox(
   rings: Position[][]
 ): [number, number, number, number] {
   let minLng = Infinity;
@@ -877,7 +940,7 @@ function calculateBoundingBox(
  * with a latitude-dependent scaling factor.
  * (Same approach as seed-map-data.ts)
  */
-function calculateApproxArea(rings: Position[][]): number {
+export function calculateApproxArea(rings: Position[][]): number {
   let totalArea = 0;
 
   for (const ring of rings) {
@@ -907,7 +970,7 @@ function calculateApproxArea(rings: Position[][]): number {
 /**
  * Convert feature ID to display name: "New_Harren" → "New Harren"
  */
-function featureIdToDisplayName(id: string): string {
+export function featureIdToDisplayName(id: string): string {
   return id.replace(/_/g, " ").replace(/-/g, " ");
 }
 

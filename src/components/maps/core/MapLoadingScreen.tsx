@@ -88,7 +88,7 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
           <h2
             className="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-white to-purple-300"
           >
-            IxMaps
+            IxMaps™
           </h2>
           <p className="mt-1.5 text-sm text-white/40 tracking-wide">Preparing the world...</p>
         </div>

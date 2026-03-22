@@ -129,6 +129,7 @@ model Country {
   embassiesGuest              Embassy[]                 @relation("GuestCountryEmbassies")
   embassiesHosting            Embassy[]                 @relation("HostCountryEmbassies")
   fiscalPolicies              FiscalPolicy[]            @relation("CountryFiscalPolicies")
+  policies                    Policy[]                  @relation("CountryPolicies")
   fiscalSystem                FiscalSystem?
   governmentBudget            GovernmentBudget?
   governmentComponents        GovernmentComponent[]     @relation("CountryComponents")
@@ -171,6 +172,10 @@ model Country {
   mapEditRequests             MapEditRequest[]             @relation("CountryMapEdits")
   sovereignOf                 CountrySovereignty[]         @relation("SovereignOf")
   subjectOf                   CountrySovereignty[]         @relation("SubjectOf")
+  geoProfile                  CountryGeoProfile?           @relation("CountryGeoProfile")
+  geographicResources         GeographicResource[]         @relation("CountryGeographicResources")
+  transportRoutes             TransportRoute[]              @relation("CountryTransportRoutes")
+  transportHubs               TransportHub[]                @relation("CountryTransportHubs")
 
   @@index([name])
   @@index([economicTier])
@@ -2539,6 +2544,7 @@ model Policy {
   reviewNotes                 String?
   createdAt                   DateTime          @default(now())
   updatedAt                   DateTime          @updatedAt
+  country                     Country?          @relation("CountryPolicies", fields: [countryId], references: [id], onDelete: Cascade)
   policyEffectLog             PolicyEffectLog[]
 
   @@index([countryId])
@@ -3670,6 +3676,7 @@ model Subdivision {
   population      Float?
   capital         String?
   areaSqKm        Float?
+  color           String?
   status          String                   @default("pending")
   submittedBy     String
   reviewedBy      String?
@@ -3711,6 +3718,7 @@ model City {
   geom_postgis         Unsupported("geometry")?
   country              Country                  @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
   subdivision          Subdivision?             @relation("SubdivisionCities", fields: [subdivisionId], references: [id])
+  transportHubs        TransportHub[]           @relation("CityTransportHubs")
 
   @@index([countryId, status])
   @@index([type, isNationalCapital])
@@ -5401,4 +5409,143 @@ model SvgUpload {
   @@index([layerType, createdAt])
   @@index([status])
   @@map("svg_uploads")
+}
+
+/// Cached geographic analysis profile for a country.
+/// Computed from spatial intersection of country geometry with climate/altitude layers.
+/// Used by the economic engine (GDP modifiers), NPC personality drift, and crisis generation.
+model CountryGeoProfile {
+  id                  String   @id @default(cuid())
+  countryId           String   @unique
+  country             Country  @relation("CountryGeoProfile", fields: [countryId], references: [id], onDelete: Cascade)
+  climateDistribution Json     // [{ type, name, percentArea, areaSqKm, agricultureFactor }]
+  elevationProfile    Json     // [{ zone, name, percentArea, areaSqKm, minElev, maxElev }]
+  arableLandPercent   Float
+  coastlineKm         Float    @default(0)
+  isLandlocked        Boolean  @default(false)
+  isIsland            Boolean  @default(false)
+  riverKm             Float    @default(0)
+  lakeAreaSqKm        Float    @default(0)
+  neighborCount       Int      @default(0)
+  dominantClimate     String?
+  dominantElevation   String?
+  meanElevation       Float?
+  terrainRoughness    Float?
+  gdpModifier         Float    @default(1.0)
+  tradeModifier       Float    @default(1.0)
+  infraCostModifier   Float    @default(1.0)
+  lastCalculatedAt    DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([countryId])
+  @@map("country_geo_profiles")
+}
+
+/// Geographic resources procedurally generated from a country's terrain.
+/// Resources are placed based on climate zones, elevation, and hydrography.
+/// Used for trade, economic output, and strategic gameplay.
+model GeographicResource {
+  id               String   @id @default(cuid())
+  countryId        String
+  country          Country  @relation("CountryGeographicResources", fields: [countryId], references: [id], onDelete: Cascade)
+  resourceType     String   // mineral, fishery, forest, oil, gas, freshwater, agricultural
+  name             String
+  coordinates      Json     // [lng, lat]
+  quantity         Float    @default(0.5) // 0-1 abundance scale
+  quality          Float    @default(0.5) // 0-1 grade/purity
+  exploitedPercent Float    @default(0)   // 0-100 exploitation level
+  climateZone      String?
+  elevationZone    String?
+  isDiscovered     Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([resourceType])
+  @@index([countryId, resourceType])
+  @@map("geographic_resources")
+}
+
+/// World configuration for the IxWorld framework.
+/// Allows multiple independent worlds to be hosted on the same instance,
+/// each with their own wiki, map layers, climate system, etc.
+/// The "default" world is IxWorld (IxEarth). Future worlds are created
+/// by other communities licensing the framework.
+model WorldConfig {
+  id               String   @id @default(cuid())
+  worldId          String   @unique // "default" for IxWorld, custom slug for others
+  name             String   // "IxWorld", "MyWorld", etc.
+  description      String?
+  wikiBaseUrl      String?  // "https://ixwiki.com"
+  wikiApiPath      String   @default("/api.php")
+  mapProjection    String   @default("globe") // globe, mercator, dynamic
+  defaultCenter    Json?    // [lng, lat]
+  defaultZoom      Float    @default(2)
+  layerTypes       Json?    // available layer types, e.g. ["background","political","climate"]
+  sovereigntyTypes Json?    // custom sovereignty type definitions
+  climateSystem    String   @default("trewartha") // trewartha, koppen, custom
+  elevationZones   Json?    // custom elevation zone definitions
+  waterBodyLabels  Json?    // ocean/sea label positions [{name, lng, lat, zoom}]
+  countryColors    Json?    // custom palette for political layer
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Data sync authority
+  dataAuthority     Json?    // Per-field authority map: {"population":"stats","capital":"wiki",...}
+  syncEnabled       Boolean  @default(true)
+  syncIntervalMin   Int      @default(60)
+
+  @@map("world_configs")
+}
+
+/// Transport route connecting cities/hubs across terrain.
+/// Generated procedurally from terrain + population data, then editable by users.
+model TransportRoute {
+  id                String   @id @default(cuid())
+  countryId         String?
+  country           Country? @relation("CountryTransportRoutes", fields: [countryId], references: [id], onDelete: SetNull)
+  routeType         String   // rail, highway, road, shipping_lane, air_corridor, canal
+  name              String?
+  geometry          Json     // GeoJSON LineString
+  stops             Json?    // [{cityId, name, coordinates, order}]
+  properties        Json?    // {gauge, speed_kmh, lanes, tonnage, is_electrified}
+  isInternational   Boolean  @default(false)
+  status            String   @default("operational") // planned, under_construction, operational, abandoned
+  builtYear         Int?
+  capacity          Float?   // passengers/yr or tonnes/yr
+  costBillion       Float?   // construction cost estimate
+  terrainDifficulty Float?   // 0-1, computed from elevation changes along route
+  lengthKm          Float?   // total route length
+  worldId           String   @default("default")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([routeType])
+  @@index([worldId, routeType])
+  @@map("transport_routes")
+}
+
+/// Transport hub — station, port, airport, or junction where routes converge.
+model TransportHub {
+  id           String   @id @default(cuid())
+  cityId       String?
+  city         City?    @relation("CityTransportHubs", fields: [cityId], references: [id], onDelete: SetNull)
+  countryId    String
+  country      Country  @relation("CountryTransportHubs", fields: [countryId], references: [id], onDelete: Cascade)
+  hubType      String   // station, port, airport, junction, interchange
+  name         String
+  coordinates  Json     // [lng, lat]
+  throughput   Float?   // annual capacity
+  connections  Int      @default(0) // number of routes through this hub
+  worldId      String   @default("default")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([hubType])
+  @@index([worldId])
+  @@map("transport_hubs")
 }

@@ -9,7 +9,24 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 
-export type EditorMode = "view" | "add-city" | "add-subdivision" | "add-poi" | "edit-city" | "edit-subdivision" | "edit-poi";
+// ── Undo/Redo Types ──
+
+interface EditorAction {
+  type: "create" | "delete" | "update";
+  featureType: FeatureType;
+  featureId: string;
+  /** Data needed to undo (previous state for update/delete, or id for create) */
+  previousData?: Record<string, unknown>;
+  /** Data needed to redo (new state for update/create) */
+  newData?: Record<string, unknown>;
+}
+
+interface EditorHistory {
+  actions: EditorAction[];
+  position: number; // -1 = at base, 0+ = index of last applied action
+}
+
+export type EditorMode = "view" | "add-city" | "add-subdivision" | "add-poi" | "edit-city" | "edit-subdivision" | "edit-poi" | "import-provinces" | "add-route" | "paint";
 
 export type FeatureType = "city" | "subdivision" | "poi";
 
@@ -79,6 +96,35 @@ export function useMapEditor(countryId: string | undefined) {
   const [poiForm, setPOIForm] = useState<POIFormData>(DEFAULT_POI);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const lastSavedTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // ── Multi-Select ──
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelectId = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const clearMultiSelect = useCallback(() => setSelectedIds(new Set()), []);
+
+  // ── Undo/Redo History ──
+  const [history, setHistory] = useState<EditorHistory>({ actions: [], position: -1 });
+
+  const pushAction = useCallback((action: EditorAction) => {
+    setHistory((prev) => {
+      // Truncate any redo entries
+      const actions = prev.actions.slice(0, prev.position + 1);
+      actions.push(action);
+      // Keep max 50 actions
+      if (actions.length > 50) actions.shift();
+      return { actions, position: actions.length - 1 };
+    });
+  }, []);
+
+  const historyCanUndo = history.position >= 0;
+  const historyCanRedo = history.position < history.actions.length - 1;
 
   // Fetch country features
   const {
@@ -349,9 +395,35 @@ export function useMapEditor(countryId: string | undefined) {
     });
   }, [countryId, selectedFeature, poiForm, updatePOI]);
 
+  const updateSubdivisionGeometry = useCallback(
+    async (featureId: string, geometry: object) => {
+      if (!countryId) return;
+      await updateSubdivision.mutateAsync({
+        countryId,
+        subdivisionId: featureId,
+        geometry,
+      });
+    },
+    [countryId, updateSubdivision]
+  );
+
   const handleDeleteFeature = useCallback(
     async (feature: EditorFeature) => {
       if (!countryId) return;
+
+      // Record for undo before deleting
+      pushAction({
+        type: "delete",
+        featureType: feature.type,
+        featureId: feature.id,
+        previousData: {
+          name: feature.name,
+          coordinates: feature.coordinates,
+          geometry: feature.geometry,
+          properties: feature.properties,
+        },
+      });
+
       switch (feature.type) {
         case "city":
           await deleteCity.mutateAsync({ countryId, cityId: feature.id });
@@ -364,7 +436,7 @@ export function useMapEditor(countryId: string | undefined) {
           break;
       }
     },
-    [countryId, deleteCity, deleteSubdivision, deletePOI]
+    [countryId, deleteCity, deleteSubdivision, deletePOI, pushAction]
   );
 
   // Combined feature list for display
@@ -400,6 +472,7 @@ export function useMapEditor(countryId: string | undefined) {
           capital: sub.capital,
           population: sub.population,
           areaSqKm: sub.areaSqKm,
+          color: sub.color,
         },
       });
     }
@@ -421,6 +494,16 @@ export function useMapEditor(countryId: string | undefined) {
 
     return list;
   }, [features]);
+
+  // Bulk delete selected features
+  const bulkDeleteSelected = useCallback(async () => {
+    if (!countryId || selectedIds.size === 0) return;
+    const toDelete = allFeatures.filter((f) => selectedIds.has(f.id));
+    for (const feature of toDelete) {
+      await handleDeleteFeature(feature);
+    }
+    clearMultiSelect();
+  }, [countryId, selectedIds, allFeatures, handleDeleteFeature, clearMultiSelect]);
 
   const isMutating =
     createCity.isPending ||
@@ -482,10 +565,26 @@ export function useMapEditor(countryId: string | undefined) {
     submitEditCity,
     submitEditSubdivision,
     submitEditPOI,
+    updateSubdivisionGeometry,
 
     // Mutation state
     isMutating,
     mutationError,
     lastSavedAt,
+
+    // Refresh
+    refetchFeatures,
+
+    // Undo/Redo
+    historyCanUndo,
+    historyCanRedo,
+    history,
+    pushAction,
+
+    // Multi-Select
+    selectedIds,
+    toggleSelectId,
+    clearMultiSelect,
+    bulkDeleteSelected,
   };
 }

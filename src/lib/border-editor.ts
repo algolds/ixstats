@@ -617,6 +617,76 @@ function getSplitLineSegment(
 }
 
 // ──────────────────────────────────────────────
+// Point-in-Polygon & Clamping
+// ──────────────────────────────────────────────
+
+/** Ray-casting point-in-polygon test against a single polygon (outer ring + holes). */
+export function pointInPolygonRing(point: Position, rings: Position[][]): boolean {
+  const [x, y] = point;
+  // Test outer ring
+  const outer = rings[0];
+  if (!outer) return false;
+  let inside = rayCast(x!, y!, outer);
+  // Exclude holes
+  for (let h = 1; h < rings.length; h++) {
+    if (rayCast(x!, y!, rings[h]!)) inside = !inside;
+  }
+  return inside;
+}
+
+/** Check if a point is inside a Polygon or any polygon of a MultiPolygon. */
+export function pointInGeometry(point: Position, geometry: Polygon | MultiPolygon): boolean {
+  if (geometry.type === "Polygon") {
+    return pointInPolygonRing(point, geometry.coordinates);
+  }
+  for (const poly of geometry.coordinates) {
+    if (pointInPolygonRing(point, poly)) return true;
+  }
+  return false;
+}
+
+/** If point is outside geometry, project it to the nearest point on the outer border. */
+export function clampToGeometry(
+  point: Position,
+  geometry: Polygon | MultiPolygon
+): Position {
+  if (pointInGeometry(point, geometry)) return point;
+
+  // Find nearest point on any outer ring edge
+  const outerRings: Position[][] = geometry.type === "Polygon"
+    ? [geometry.coordinates[0]!]
+    : geometry.coordinates.map((p) => p[0]!);
+
+  let bestDist = Infinity;
+  let bestPoint: Position = point;
+
+  for (const ring of outerRings) {
+    for (let i = 0; i < ring.length - 1; i++) {
+      const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
+      const d = distanceDeg(point, proj);
+      if (d < bestDist) {
+        bestDist = d;
+        bestPoint = proj;
+      }
+    }
+  }
+
+  return bestPoint;
+}
+
+function rayCast(x: number, y: number, ring: Position[]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i]![0]!, yi = ring[i]![1]!;
+    const xj = ring[j]![0]!, yj = ring[j]![1]!;
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// ──────────────────────────────────────────────
 // Altitude Snap
 // ──────────────────────────────────────────────
 
@@ -631,6 +701,390 @@ export interface AltitudeSnapResult {
  * Searches all edges of altitude zone polygons for the closest point
  * to the given position.
  */
+// ──────────────────────────────────────────────
+// Simplification (Douglas-Peucker)
+// ──────────────────────────────────────────────
+
+/** Douglas-Peucker line simplification on a single ring. */
+function douglasPeucker(ring: Position[], tolerance: number): Position[] {
+  if (ring.length <= 2) return ring;
+
+  let maxDist = 0;
+  let maxIdx = 0;
+  const first = ring[0]!;
+  const last = ring[ring.length - 1]!;
+
+  for (let i = 1; i < ring.length - 1; i++) {
+    const d = perpendicularDistance(ring[i]!, first, last);
+    if (d > maxDist) {
+      maxDist = d;
+      maxIdx = i;
+    }
+  }
+
+  if (maxDist > tolerance) {
+    const left = douglasPeucker(ring.slice(0, maxIdx + 1), tolerance);
+    const right = douglasPeucker(ring.slice(maxIdx), tolerance);
+    return [...left.slice(0, -1), ...right];
+  }
+  return [first, last];
+}
+
+function perpendicularDistance(p: Position, a: Position, b: Position): number {
+  const dx = b[0]! - a[0]!;
+  const dy = b[1]! - a[1]!;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq < 1e-20) return distanceDeg(p, a);
+  const t = ((p[0]! - a[0]!) * dx + (p[1]! - a[1]!) * dy) / lenSq;
+  const proj: Position = [a[0]! + t * dx, a[1]! + t * dy];
+  return distanceDeg(p, proj);
+}
+
+/**
+ * Simplify a Polygon or MultiPolygon using Douglas-Peucker.
+ * Tolerance is in degrees (~0.002 ≈ 220m at equator).
+ * Preserves ring closure and minimum vertex count.
+ */
+export function simplifyGeometry(
+  geometry: Polygon | MultiPolygon,
+  tolerance: number = 0.002
+): Polygon | MultiPolygon {
+  const rings = getAllRings(geometry).map((ring) => {
+    const closed = isRingClosed(ring);
+    // Work on open ring for simplification
+    const open = closed ? ring.slice(0, -1) : ring;
+    const simplified = douglasPeucker(open, tolerance);
+    // Ensure minimum 3 unique vertices for a valid polygon ring
+    const result = simplified.length >= 3 ? simplified : open;
+    // Re-close
+    if (result.length > 0 && !coordsEqual(result[0]!, result[result.length - 1]!)) {
+      return [...result, [...result[0]!]];
+    }
+    return result;
+  });
+  return rebuildGeometry(geometry, rings);
+}
+
+/**
+ * Snap a point to the nearest country border edge if within tolerance.
+ * Returns the snapped position or the original if no edge is close enough.
+ */
+export function snapToBorderEdge(
+  point: Position,
+  borderGeometry: Polygon | MultiPolygon,
+  tolerance: number = 0.015 // ~1.7km at equator
+): Position {
+  const rings = getAllRings(borderGeometry);
+  let bestDist = Infinity;
+  let bestProj: Position = point;
+
+  for (const ring of rings) {
+    for (let i = 0; i < ring.length - 1; i++) {
+      const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
+      const d = distanceDeg(point, proj);
+      if (d < bestDist && d <= tolerance) {
+        bestDist = d;
+        bestProj = proj;
+      }
+    }
+  }
+
+  return bestDist <= tolerance ? bestProj : point;
+}
+
+// ──────────────────────────────────────────────
+// Neighbor-aware border snapping
+// ──────────────────────────────────────────────
+
+/**
+ * Snap a region's geometry to neighboring region borders and the country border,
+ * intelligently filling gaps between adjacent regions.
+ *
+ * Algorithm:
+ * 1. For each vertex of the current geometry, find the nearest point on:
+ *    a) Any neighboring region's border (within snapTolerance)
+ *    b) The country border (within snapTolerance)
+ * 2. For edges where BOTH endpoints snapped to the same neighbor, insert
+ *    intermediate vertices along the neighbor's border to fill the gap.
+ * 3. For edges where both endpoints snapped to the country border, insert
+ *    intermediate border vertices (already handled by snapGeometryToBorder).
+ *
+ * This ensures region borders either:
+ * - Share exact vertices with a neighbor (no gaps)
+ * - Follow the country border exactly
+ * - Are interior edges (far from both)
+ */
+export function snapToNeighborBorders(
+  geometry: Polygon | MultiPolygon,
+  neighbors: Array<{ id: string; geometry: Polygon | MultiPolygon }>,
+  countryBorder: Polygon | MultiPolygon,
+  snapTolerance: number = 0.02, // ~2.2km at equator
+): Polygon | MultiPolygon {
+  if (neighbors.length === 0) return geometry;
+
+  const rings = getAllRings(geometry);
+  const newRings: Position[][] = [];
+
+  for (const ring of rings) {
+    const newRing: Position[] = [];
+
+    for (let i = 0; i < ring.length - 1; i++) {
+      const vertex = ring[i]!;
+      const nextVertex = ring[i + 1]!;
+
+      // Snap current vertex to nearest neighbor or country border
+      const snappedVertex = snapPointToNeighborOrBorder(
+        vertex, neighbors, countryBorder, snapTolerance
+      );
+      newRing.push(snappedVertex.position);
+
+      // Check if current and next vertex both snap to the same neighbor
+      const snappedNext = snapPointToNeighborOrBorder(
+        nextVertex, neighbors, countryBorder, snapTolerance
+      );
+
+      if (
+        snappedVertex.neighborId &&
+        snappedVertex.neighborId === snappedNext.neighborId
+      ) {
+        // Both vertices snap to the same neighbor — insert intermediate
+        // vertices along that neighbor's border to fill the gap
+        const neighbor = neighbors.find(n => n.id === snappedVertex.neighborId);
+        if (neighbor) {
+          const intermediates = getIntermediateVertices(
+            snappedVertex.position,
+            snappedNext.position,
+            neighbor.geometry,
+            0.005 // min segment length to insert
+          );
+          for (const pt of intermediates) {
+            newRing.push(pt);
+          }
+        }
+      } else if (
+        snappedVertex.isBorderSnap &&
+        snappedNext.isBorderSnap &&
+        !snappedVertex.neighborId &&
+        !snappedNext.neighborId
+      ) {
+        // Both snap to country border — insert border path vertices
+        const intermediates = getIntermediateVertices(
+          snappedVertex.position,
+          snappedNext.position,
+          countryBorder,
+          0.005
+        );
+        for (const pt of intermediates) {
+          newRing.push(pt);
+        }
+      }
+    }
+
+    // Close the ring
+    if (newRing.length >= 3) {
+      newRing.push([...newRing[0]!]);
+      newRings.push(newRing);
+    }
+  }
+
+  if (newRings.length === 0) return geometry;
+  return rebuildGeometry(geometry, newRings);
+}
+
+interface SnapResult {
+  position: Position;
+  distance: number;
+  neighborId: string | null;
+  isBorderSnap: boolean;
+}
+
+function snapPointToNeighborOrBorder(
+  point: Position,
+  neighbors: Array<{ id: string; geometry: Polygon | MultiPolygon }>,
+  countryBorder: Polygon | MultiPolygon,
+  tolerance: number,
+): SnapResult {
+  let bestDist = Infinity;
+  let bestPos: Position = point;
+  let bestNeighborId: string | null = null;
+  let isBorderSnap = false;
+
+  // Check neighbor borders (higher priority for gap-filling)
+  for (const neighbor of neighbors) {
+    const neighborRings = getAllRings(neighbor.geometry);
+    for (const ring of neighborRings) {
+      for (let i = 0; i < ring.length - 1; i++) {
+        const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
+        const d = distanceDeg(point, proj);
+        if (d < bestDist && d <= tolerance) {
+          bestDist = d;
+          bestPos = proj;
+          bestNeighborId = neighbor.id;
+          isBorderSnap = false;
+        }
+      }
+    }
+  }
+
+  // Check country border (lower priority — only if no neighbor is closer)
+  const borderRings = getAllRings(countryBorder);
+  for (const ring of borderRings) {
+    for (let i = 0; i < ring.length - 1; i++) {
+      const proj = projectPointToSegment(point, ring[i]!, ring[i + 1]!);
+      const d = distanceDeg(point, proj);
+      if (d < bestDist && d <= tolerance) {
+        bestDist = d;
+        bestPos = proj;
+        bestNeighborId = null;
+        isBorderSnap = true;
+      }
+    }
+  }
+
+  return { position: bestPos, distance: bestDist, neighborId: bestNeighborId, isBorderSnap };
+}
+
+/**
+ * Get intermediate vertices along a geometry's border between two points.
+ * Used to insert border-following vertices between two snapped endpoints.
+ */
+function getIntermediateVertices(
+  start: Position,
+  end: Position,
+  geometry: Polygon | MultiPolygon,
+  minSegmentLength: number,
+): Position[] {
+  const rings = getAllRings(geometry);
+  const intermediates: Position[] = [];
+
+  // Find the ring and positions where start/end are closest
+  let bestRing: Position[] | null = null;
+  let bestStartIdx = -1;
+  let bestEndIdx = -1;
+  let bestTotalDist = Infinity;
+
+  for (const ring of rings) {
+    let startIdx = -1;
+    let endIdx = -1;
+    let startDist = Infinity;
+    let endDist = Infinity;
+
+    for (let i = 0; i < ring.length - 1; i++) {
+      const proj = projectPointToSegment(start, ring[i]!, ring[i + 1]!);
+      const d = distanceDeg(start, proj);
+      if (d < startDist) { startDist = d; startIdx = i; }
+
+      const proj2 = projectPointToSegment(end, ring[i]!, ring[i + 1]!);
+      const d2 = distanceDeg(end, proj2);
+      if (d2 < endDist) { endDist = d2; endIdx = i; }
+    }
+
+    const totalDist = startDist + endDist;
+    if (totalDist < bestTotalDist) {
+      bestTotalDist = totalDist;
+      bestRing = ring;
+      bestStartIdx = startIdx;
+      bestEndIdx = endIdx;
+    }
+  }
+
+  if (!bestRing || bestStartIdx === bestEndIdx) return [];
+
+  // Walk along the ring from startIdx to endIdx, collecting vertices
+  const ringLen = bestRing.length - 1; // exclude closing duplicate
+  const forwardDist = (bestEndIdx - bestStartIdx + ringLen) % ringLen;
+  const backwardDist = (bestStartIdx - bestEndIdx + ringLen) % ringLen;
+
+  // Walk the shorter path
+  const step = forwardDist <= backwardDist ? 1 : -1;
+  const count = Math.min(forwardDist, backwardDist);
+
+  let idx = bestStartIdx;
+  for (let i = 1; i < count; i++) {
+    idx = (idx + step + ringLen) % ringLen;
+    const pt = bestRing[idx]!;
+
+    // Skip if too close to start or end
+    if (distanceDeg(pt, start) < minSegmentLength) continue;
+    if (distanceDeg(pt, end) < minSegmentLength) continue;
+
+    intermediates.push(pt);
+  }
+
+  return intermediates;
+}
+
+/**
+ * Validate that a geometry doesn't have self-intersections or excessively
+ * complex shapes (spikes, bowties, etc.).
+ *
+ * Returns a cleaned geometry with issues fixed where possible.
+ */
+export function sanitizeRegionShape(
+  geometry: Polygon | MultiPolygon,
+  countryBorder: Polygon | MultiPolygon,
+): { geometry: Polygon | MultiPolygon; issues: string[] } {
+  const issues: string[] = [];
+  const rings = getAllRings(geometry);
+  const cleanedRings: Position[][] = [];
+
+  for (const ring of rings) {
+    // 1. Remove duplicate consecutive vertices
+    const deduped: Position[] = [ring[0]!];
+    for (let i = 1; i < ring.length; i++) {
+      const prev = deduped[deduped.length - 1]!;
+      if (distanceDeg(prev, ring[i]!) > 0.0001) {
+        deduped.push(ring[i]!);
+      }
+    }
+
+    // 2. Remove near-zero-area spikes (3 consecutive vertices where angle < 5°)
+    const despikeTolerance = 5; // degrees
+    const despiked: Position[] = [deduped[0]!];
+    for (let i = 1; i < deduped.length - 1; i++) {
+      const prev = despiked[despiked.length - 1]!;
+      const curr = deduped[i]!;
+      const next = deduped[i + 1]!;
+
+      const angle = angleBetween(prev, curr, next);
+      if (angle < despikeTolerance) {
+        issues.push(`Removed spike at vertex ${i} (angle ${angle.toFixed(1)}°)`);
+        continue; // skip this vertex (removes the spike)
+      }
+      despiked.push(curr);
+    }
+
+    // Close ring
+    if (despiked.length >= 3) {
+      despiked.push([...despiked[0]!]);
+      cleanedRings.push(despiked);
+    } else {
+      issues.push("Ring with < 3 vertices removed");
+    }
+  }
+
+  if (cleanedRings.length === 0) {
+    return { geometry, issues: ["All rings invalid — returning original"] };
+  }
+
+  return {
+    geometry: rebuildGeometry(geometry, cleanedRings),
+    issues,
+  };
+}
+
+/** Calculate angle (in degrees) at vertex B in triangle A-B-C */
+function angleBetween(a: Position, b: Position, c: Position): number {
+  const ba = [a[0]! - b[0]!, a[1]! - b[1]!] as const;
+  const bc = [c[0]! - b[0]!, c[1]! - b[1]!] as const;
+  const dot = ba[0] * bc[0] + ba[1] * bc[1];
+  const magBA = Math.sqrt(ba[0] ** 2 + ba[1] ** 2);
+  const magBC = Math.sqrt(bc[0] ** 2 + bc[1] ** 2);
+  if (magBA < 1e-10 || magBC < 1e-10) return 0;
+  const cos = Math.max(-1, Math.min(1, dot / (magBA * magBC)));
+  return Math.acos(cos) * (180 / Math.PI);
+}
+
 export function findNearestAltitudeSnap(
   point: Position,
   altitudeFeatures: Array<{ geometry: Polygon | MultiPolygon; properties: { zoneId?: string } }>,

@@ -12,6 +12,7 @@ import { useState, useCallback } from "react";
 import {
   X, ExternalLink, Users, DollarSign, TrendingUp, MapPin, Globe,
   Crown, BookOpen, Shield, Swords, ChevronDown, ChevronRight, Image as ImageIcon,
+  Pencil,
 } from "lucide-react";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/map-config";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
@@ -22,7 +23,7 @@ import { useCountryPanelData } from "~/hooks/useCountryPanelData";
 import { useFlag } from "~/hooks/useFlag";
 import { api } from "~/trpc/react";
 
-// Lazy import modals to avoid bloating the initial map bundle
+// Lazy import modals and geo profile to avoid bloating the initial map bundle
 import dynamic from "next/dynamic";
 const GdpDetailsModal = dynamic(
   () => import("~/components/modals/GdpDetailsModal").then((m) => ({ default: m.GdpDetailsModal })),
@@ -32,12 +33,17 @@ const PopulationDetailsModal = dynamic(
   () => import("~/components/modals/PopulationDetailsModal").then((m) => ({ default: m.PopulationDetailsModal })),
   { ssr: false }
 );
+const GeoProfileContent = dynamic(
+  () => import("./GeoProfileContent").then((m) => ({ default: m.GeoProfileContent })),
+  { ssr: false, loading: () => <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-emerald-500" /></div> }
+);
 
 interface CountryInfoPanelProps {
   country: SelectedCountry;
   onClose: () => void;
   onNeighborClick?: (neighbor: { featureId: string; countryId: string | null; displayName: string; centroidLng?: number; centroidLat?: number }) => void;
   onGeographyFilter?: (filter: { type: "continent" | "region"; value: string } | null) => void;
+  onEditMap?: () => void;
 }
 
 function formatNumber(n: number | null | undefined): string {
@@ -119,7 +125,7 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
-export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeographyFilter }: CountryInfoPanelProps) {
+export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeographyFilter, onEditMap }: CountryInfoPanelProps) {
   const { summary, neighbors, sovereignty, wikiSections, wikiImages, isLoading } = useCountryPanelData(country.countryId, country.displayName);
   // Use summary name for display, but country.displayName for cache-consistent wiki queries
   // (prefetch seeds cache with country.displayName from the GeoJSON layer)
@@ -136,6 +142,16 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
       gcTime: 48 * 60 * 60_000,
     }
   );
+
+  // Check ownership for edit button
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+  });
+  const isOwner = !!(userProfile?.countryId && country.countryId && userProfile.countryId === country.countryId);
+
+  // Tab state — only show Geography tab for claimed countries
+  const [activeTab, setActiveTab] = useState<"overview" | "geography">("overview");
+  const hasGeoTab = !!country.countryId;
 
   // Modal state
   const [activeModal, setActiveModal] = useState<"gdp" | "population" | null>(null);
@@ -185,9 +201,44 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
         </button>
       </div>
 
+      {/* Tab bar — only shown for claimed countries */}
+      {hasGeoTab && (
+        <div className="flex border-b border-border/50 px-4">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`relative px-3 py-2 text-xs font-medium transition-colors ${
+              activeTab === "overview"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Overview
+            {activeTab === "overview" && (
+              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("geography")}
+            className={`relative px-3 py-2 text-xs font-medium transition-colors ${
+              activeTab === "geography"
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Geography
+            {activeTab === "geography" && (
+              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-emerald-500" />
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Body */}
-      <div className="overflow-y-auto p-4" style={{ maxHeight: "calc(100% - 56px)" }}>
-        {!country.countryId ? (
+      <div className="overflow-y-auto p-4" style={{ maxHeight: hasGeoTab ? "calc(100% - 90px)" : "calc(100% - 56px)" }}>
+        {/* Geography tab content */}
+        {activeTab === "geography" && hasGeoTab && country.countryId ? (
+          <GeoProfileContent countryId={country.countryId} countryName={country.displayName} />
+        ) : !country.countryId ? (
           /* Unclaimed territory */
           <div>
             {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
@@ -509,6 +560,15 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
 
             {/* Action buttons */}
             <div className="mt-4 flex flex-col gap-2">
+              {isOwner && onEditMap && (
+                <button
+                  onClick={onEditMap}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50 py-2 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:hover:bg-emerald-950/50"
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit Map
+                </button>
+              )}
               {wikiRichIntro?.wikiUrl && (
                 <a
                   href={wikiRichIntro.wikiUrl}

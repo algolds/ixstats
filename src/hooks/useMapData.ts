@@ -52,7 +52,7 @@ export const MAP_QUERY_OPTIONS = {
   refetchOnReconnect: false,
 } as const;
 
-export function useMapData(initialLayers?: MapLayerType[]) {
+export function useMapData(initialLayers?: MapLayerType[], zoom?: number) {
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
@@ -73,6 +73,14 @@ export function useMapData(initialLayers?: MapLayerType[]) {
     });
   }, []);
 
+  // Compute zoom bucket (0=globe, 1=mid, 2=detail) — only re-fetches on bucket change
+  const zoomBucket = useMemo(() => {
+    if (zoom === undefined) return undefined;
+    if (zoom < 4) return 0;
+    if (zoom < 7) return 1;
+    return 2;
+  }, [zoom]);
+
   // Fetch all layers upfront (pre-fetch climate + lakes for instant toggle)
   const allRequestedLayers = useMemo(() => {
     const layers = new Set([...ALL_PREFETCH_LAYERS, ...visibleLayers]);
@@ -84,7 +92,7 @@ export function useMapData(initialLayers?: MapLayerType[]) {
     isLoading: queryLoading,
     error,
   } = api.geo.getWorldMap.useQuery(
-    { layers: allRequestedLayers },
+    { layers: allRequestedLayers, zoom: zoomBucket !== undefined ? (zoomBucket === 0 ? 2 : zoomBucket === 1 ? 5 : 8) : undefined },
     {
       ...MAP_QUERY_OPTIONS,
       // Use IndexedDB data as placeholder until server responds
@@ -169,19 +177,15 @@ export function useMapPrefetch() {
   const warmedRef = useRef(false);
 
   useEffect(() => {
-    // Fire-and-forget prefetch with same cache key as useMapData
-    utils.geo.getWorldMap.prefetch(
+    // Fire-and-forget prefetch using batched bundle endpoint (single request)
+    utils.geo.getMapBundle.prefetch(
       { layers: ALL_PREFETCH_LAYERS },
       MAP_QUERY_OPTIONS,
     );
-    // Also prefetch overlay features and capital cities (used on map mount)
-    utils.geo.getAllMapFeatures.prefetch(
-      undefined,
-      { staleTime: 10 * 60_000 },
-    );
-    utils.geo.getCapitalCities.prefetch(
-      undefined,
-      { staleTime: 30 * 60_000 },
+    // Also prefetch individual endpoints for backward compatibility with non-batched consumers
+    utils.geo.getWorldMap.prefetch(
+      { layers: ALL_PREFETCH_LAYERS },
+      MAP_QUERY_OPTIONS,
     );
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

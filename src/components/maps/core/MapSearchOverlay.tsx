@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Search, Globe, MapPin, Hexagon, Landmark, X, Loader2, Sun, Moon } from "lucide-react";
+import { Search, Globe, MapPin, Hexagon, Landmark, X, Loader2, Sun, Moon, Settings } from "lucide-react";
+import type { ProjectionMode } from "~/lib/map-config";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useTheme } from "~/context/theme-context";
 import { flagService } from "~/lib/flag-service";
@@ -18,6 +19,8 @@ export interface SearchResult {
 
 interface MapSearchOverlayProps {
   onSelectResult: (result: SearchResult) => void;
+  projectionMode?: ProjectionMode;
+  onProjectionChange?: (mode: ProjectionMode) => void;
 }
 
 const TYPE_META: Record<string, { icon: typeof Globe; label: string }> = {
@@ -48,10 +51,11 @@ function FlagIcon({ name }: { name: string }) {
   );
 }
 
-export function MapSearchOverlay({ onSelectResult }: MapSearchOverlayProps) {
+export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionChange }: MapSearchOverlayProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { effectiveTheme, toggleTheme } = useTheme();
@@ -147,13 +151,13 @@ export function MapSearchOverlay({ onSelectResult }: MapSearchOverlayProps) {
           placeholder="Search countries, cities, places..."
           className={`w-full rounded-xl bg-card py-2.5 pl-9 text-sm text-foreground shadow-lg outline-none ring-1 ring-border transition-shadow placeholder:text-muted-foreground focus:ring-2 focus:ring-blue-400 ${query ? "pr-16" : "pr-9"}`}
         />
-        {/* Theme toggle */}
+        {/* Settings gear */}
         <button
-          onClick={toggleTheme}
-          className={`absolute top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground transition-colors hover:text-foreground ${query ? "right-8" : "right-2.5"}`}
-          title={effectiveTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          onClick={() => { setSettingsOpen((v) => !v); setOpen(false); }}
+          className={`absolute top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground ${query ? "right-8" : "right-2.5"}`}
+          title="Map settings"
         >
-          {effectiveTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          <Settings className="h-3.5 w-3.5" />
         </button>
         {query && (
           <button
@@ -224,6 +228,45 @@ export function MapSearchOverlay({ onSelectResult }: MapSearchOverlayProps) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Settings panel */}
+      {settingsOpen && (
+        <div className="mt-1.5 rounded-xl bg-card p-3 shadow-lg ring-1 ring-border">
+          {/* Theme */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-foreground">Theme</span>
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-accent"
+            >
+              {effectiveTheme === "dark" ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+              {effectiveTheme === "dark" ? "Light" : "Dark"}
+            </button>
+          </div>
+
+          {/* Projection */}
+          {onProjectionChange && (
+            <div className="mt-2.5 flex items-center justify-between">
+              <span className="text-xs font-medium text-foreground">Projection</span>
+              <div className="flex rounded-md bg-muted p-0.5">
+                {(["globe", "mercator", "dynamic"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => onProjectionChange(mode)}
+                    className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                      projectionMode === mode
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {mode === "dynamic" ? "Auto" : mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

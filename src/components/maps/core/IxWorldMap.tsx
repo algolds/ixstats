@@ -30,6 +30,11 @@ import {
   type ProjectionMode,
 } from "~/lib/map-config";
 
+import { ChoroplethOverlay } from "~/components/maps/overlays/ChoroplethOverlay";
+import { RiskHeatmapOverlay } from "~/components/maps/overlays/RiskHeatmapOverlay";
+import { GeopoliticalOverlay } from "~/components/maps/overlays/GeopoliticalOverlay";
+import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
+
 // MapLibre types imported dynamically since the module requires browser APIs
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -66,6 +71,11 @@ const COUNTRY_LABEL_OPACITY: unknown = [
   // zoom 5.5+: everything including demoted
   ["get", "_distFade"],
 ];
+
+/** Escape HTML entities for safe insertion into popup innerHTML */
+function escHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 /** NPC / placeholder countries whose labels only appear at high zoom (not default) */
 const DEMOTED_COUNTRY_LABELS = new Set(["Ugarit", "Orenstia", "Trade Island 5"]);
@@ -169,7 +179,10 @@ export interface MapOverlayFeatures {
 }
 
 /** Which overlays are visible */
-export type OverlayVisibility = Record<"cities" | "pois" | "subdivisions", boolean>;
+export type OverlayVisibility = Record<
+  "cities" | "pois" | "subdivisions" | "wealth" | "population" | "diplomacy" | "crises" | "transport",
+  boolean
+>;
 
 export interface IxWorldMapProps {
   layers: MapLayerData[];
@@ -198,6 +211,26 @@ export interface IxWorldMapProps {
   projectionMode?: ProjectionMode;
   /** Set of top-20 country names by composite importance — always labeled at any zoom */
   topCountryNames?: Set<string>;
+  /** Whether text labels are visible (country names, ocean labels, etc.) */
+  labelsVisible?: boolean;
+  /** Fired when zoom level changes (for LOD-based data loading) */
+  onZoomChange?: (zoom: number) => void;
+  /** GeoJSON data for visualization overlays */
+  overlayData?: {
+    wealth?: import("geojson").FeatureCollection & { metadata?: { minVal: number; maxVal: number } };
+    population?: import("geojson").FeatureCollection & { metadata?: { minVal: number; maxVal: number } };
+    diplomacy?: {
+      relations: import("geojson").FeatureCollection;
+      conflicts: import("geojson").FeatureCollection;
+    };
+    crises?: {
+      riskMap: import("geojson").FeatureCollection;
+      crisisEvents: import("geojson").FeatureCollection;
+    };
+    transport?: import("geojson").FeatureCollection;
+  };
+  /** Called when user clicks a transport route on the map */
+  onRouteClick?: (routeId: string) => void;
 }
 
 export interface IxWorldMapRef {
@@ -264,6 +297,10 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       geographyFilter,
       projectionMode = "dynamic",
       topCountryNames,
+      labelsVisible = true,
+      onZoomChange,
+      overlayData,
+      onRouteClick,
     },
     ref
   ) {
@@ -272,6 +309,10 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
     const [isLoaded, setIsLoaded] = useState(false);
     const [debugError, setDebugError] = useState<string | null>(null);
     const hoveredFeatureIdRef = useRef<number | null>(null);
+    // Lightweight hover tooltip popup (Google Maps–style)
+    const tooltipPopupRef = useRef<import("maplibre-gl").Popup | null>(null);
+    const hoveredOverlayIdRef = useRef<string | null>(null);
+    const hoveredSubdivisionIdRef = useRef<number | null>(null);
     // Store full unfiltered data for progressive layers so we can re-filter on zoom
     const fullLayerDataRef = useRef<Map<string, FeatureCollection>>(new Map());
     // Store base label features for distance-fade updates on camera move
@@ -350,10 +391,8 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             "bottom-right"
           );
 
-          map.addControl(
-            new maplibregl.NavigationControl({ showCompass: true }),
-            "top-right"
-          );
+          // NavigationControl removed — zoom via scroll/pinch/keyboard.
+          // Editor has its own compact zoom control in EditorMap.
 
           mapRef.current = map;
 
@@ -451,6 +490,15 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
                 ] as unknown as number,
               },
               minzoom: 0.5,
+            });
+
+            // Create lightweight hover tooltip popup
+            tooltipPopupRef.current = new maplibregl.Popup({
+              closeButton: false,
+              closeOnClick: false,
+              className: "ixmap-feature-tooltip",
+              offset: 12,
+              maxWidth: "220px",
             });
 
             setIsLoaded(true);
@@ -597,6 +645,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
                 }
 
                 // Relationship label at subject territory centroids
+                // Shows: "Territory Name\nRelationType of SovereignName"
                 if (!map.getLayer("sovereignty-labels")) {
                   map.addLayer({
                     id: "sovereignty-labels",
@@ -604,7 +653,14 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
                     source: sourceId,
                     filter: ["has", "_sovereignId"],
                     layout: {
-                      "text-field": ["get", "_relationLabel"] as any,
+                      "text-field": [
+                        "concat",
+                        ["get", "_displayName"],
+                        "\n",
+                        ["get", "_relationLabel"],
+                        " of ",
+                        ["get", "_sovereignName"],
+                      ] as any,
                       "text-size": 9,
                       "text-offset": [0, 1.5],
                       "text-allow-overlap": false,
@@ -928,11 +984,18 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       map.on("moveend", updateDistanceFade);
       map.on("zoomend", updateDistanceFade);
 
+      // Fire zoom change callback for LOD-based data loading
+      const handleZoomChange = () => {
+        onZoomChange?.(Math.round(map.getZoom() * 10) / 10);
+      };
+      map.on("zoomend", handleZoomChange);
+
       return () => {
         map.off("moveend", updateDistanceFade);
         map.off("zoomend", updateDistanceFade);
+        map.off("zoomend", handleZoomChange);
       };
-    }, [isLoaded]);
+    }, [isLoaded, onZoomChange]);
 
     // Render capital city markers
     useEffect(() => {
@@ -1029,19 +1092,36 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
         if (map.getSource(subSource)) {
           (map.getSource(subSource) as maplibregl.GeoJSONSource).setData(overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON);
         } else {
-          map.addSource(subSource, { type: "geojson", data: overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON });
+          map.addSource(subSource, { type: "geojson", data: overlayFeatures.subdivisions as unknown as GeoJSON.GeoJSON, generateId: true });
           map.addLayer({
             id: subFillId,
             type: "fill",
             source: subSource,
-            paint: { "fill-color": "#a78bfa", "fill-opacity": 0.08 },
+            paint: {
+              "fill-color": "#a78bfa",
+              "fill-opacity": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                0.22,
+                0.08,
+              ] as unknown as number,
+            },
             minzoom: 4,
           });
           map.addLayer({
             id: subStrokeId,
             type: "line",
             source: subSource,
-            paint: { "line-color": "#7c3aed", "line-width": 1.2, "line-dasharray": [3, 2] as unknown as number[] },
+            paint: {
+              "line-color": "#7c3aed",
+              "line-width": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                2.2,
+                1.2,
+              ] as unknown as number,
+              "line-dasharray": [3, 2] as unknown as number[],
+            },
             minzoom: 4,
           });
           map.addLayer({
@@ -1176,6 +1256,29 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       }
     }, [overlayVisibility, isLoaded]);
 
+    // Toggle all text label layers on/off
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded) return;
+
+      const labelLayerIds = [
+        "country-name-labels",
+        "sovereignty-labels",
+        "ocean-labels",
+        "capitals-label",
+        "capitals-star",
+        "overlay-subdivisions-label",
+        "overlay-cities-label",
+        "overlay-pois-label",
+      ];
+
+      for (const id of labelLayerIds) {
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, "visibility", labelsVisible ? "visible" : "none");
+        }
+      }
+    }, [labelsVisible, isLoaded]);
+
     // Check if a screen point is outside the visible globe disc (globe projection only)
     const isOutsideGlobe = useCallback((map: maplibregl.Map, point: { x: number; y: number }): boolean => {
       if (map.getZoom() >= 4) return false; // fully mercator, no globe clipping needed
@@ -1196,7 +1299,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       return radiusSq > 0 && cursorDistSq > radiusSq;
     }, []);
 
-    // Handle country hover
+    // Handle country hover + overlay feature tooltips
     const handleMouseMove = useCallback(
       (e: maplibregl.MapMouseEvent) => {
         const map = mapRef.current;
@@ -1212,10 +1315,102 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             hoveredFeatureIdRef.current = null;
           }
           onCountryHover?.(null);
+          // Hide tooltip and clear subdivision hover
+          if (tooltipPopupRef.current?.isOpen()) tooltipPopupRef.current.remove();
+          hoveredOverlayIdRef.current = null;
+          if (hoveredSubdivisionIdRef.current !== null && map.getSource("source-overlay-subdivisions")) {
+            map.setFeatureState(
+              { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
+              { hover: false }
+            );
+            hoveredSubdivisionIdRef.current = null;
+          }
           if (!isMeasuring) map.getCanvas().style.cursor = "";
           return;
         }
 
+        // --- Overlay feature tooltip (Google Maps–style) ---
+        const overlayLayerIds = [
+          "overlay-cities-circle",
+          "capitals-star",
+          "overlay-pois-circle",
+          "overlay-subdivisions-fill",
+        ].filter((id) => map.getLayer(id));
+
+        let overlayHit: maplibregl.MapGeoJSONFeature | null = null;
+        if (overlayLayerIds.length > 0) {
+          const hits = map.queryRenderedFeatures(e.point, { layers: overlayLayerIds });
+          if (hits.length > 0) overlayHit = hits[0];
+        }
+
+        if (overlayHit) {
+          const props = overlayHit.properties ?? {};
+          const name = String(props.name ?? "");
+          const layerId = overlayHit.layer?.id ?? "";
+          const featureKey = `${layerId}:${props.id ?? name}`;
+
+          // Subdivision hover highlight (feature state)
+          const isSubHover = layerId === "overlay-subdivisions-fill";
+          const subId = isSubHover ? (overlayHit.id as number) : null;
+          if (hoveredSubdivisionIdRef.current !== subId) {
+            if (hoveredSubdivisionIdRef.current !== null && map.getSource("source-overlay-subdivisions")) {
+              map.setFeatureState(
+                { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
+                { hover: false }
+              );
+            }
+            if (subId !== null && map.getSource("source-overlay-subdivisions")) {
+              map.setFeatureState(
+                { source: "source-overlay-subdivisions", id: subId },
+                { hover: true }
+              );
+            }
+            hoveredSubdivisionIdRef.current = subId;
+          }
+
+          // Only update popup if we moved to a different feature
+          if (featureKey !== hoveredOverlayIdRef.current && name) {
+            hoveredOverlayIdRef.current = featureKey;
+
+            // Build label with type hint
+            let typeHint = "";
+            if (layerId === "capitals-star") typeHint = "Capital";
+            else if (layerId === "overlay-cities-circle") typeHint = props.cityType ? String(props.cityType) : "City";
+            else if (layerId === "overlay-pois-circle") typeHint = props.category ? String(props.category) : "POI";
+            else if (layerId === "overlay-subdivisions-fill") typeHint = props.type ? String(props.type) : "Region";
+
+            const safeName = escHtml(name);
+            const safeType = escHtml(typeHint);
+            const popContent = safeType
+              ? `<strong>${safeName}</strong><span class="ixmap-tt-type">${safeType}</span>`
+              : `<strong>${safeName}</strong>`;
+
+            const popup = tooltipPopupRef.current;
+            if (popup) {
+              popup.setLngLat(e.lngLat).setHTML(popContent).addTo(map);
+            }
+          } else if (hoveredOverlayIdRef.current === featureKey) {
+            // Same feature — just reposition for subdivisions (large polygons)
+            tooltipPopupRef.current?.setLngLat(e.lngLat);
+          }
+
+          if (!isMeasuring) map.getCanvas().style.cursor = "pointer";
+        } else {
+          // No overlay hit — hide tooltip and clear subdivision highlight
+          if (hoveredOverlayIdRef.current) {
+            hoveredOverlayIdRef.current = null;
+            tooltipPopupRef.current?.remove();
+          }
+          if (hoveredSubdivisionIdRef.current !== null && map.getSource("source-overlay-subdivisions")) {
+            map.setFeatureState(
+              { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
+              { hover: false }
+            );
+            hoveredSubdivisionIdRef.current = null;
+          }
+        }
+
+        // --- Country hover highlight ---
         const features = map.queryRenderedFeatures(e.point, {
           layers: ["fill-political"],
         });
@@ -1238,7 +1433,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             { hover: true }
           );
 
-          if (!isMeasuring) map.getCanvas().style.cursor = "pointer";
+          if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "pointer";
 
           onCountryHover?.({
             featureId: feature.properties?._id || "",
@@ -1253,25 +1448,10 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
         } else {
           hoveredFeatureIdRef.current = null;
           onCountryHover?.(null);
-
-          // Show pointer cursor when hovering over clickable overlay features
-          const overlayLayerIds = [
-            "overlay-cities-circle",
-            "capitals-star",
-            "overlay-pois-circle",
-          ].filter((id) => map.getLayer(id));
-
-          if (overlayLayerIds.length > 0) {
-            const overlayHits = map.queryRenderedFeatures(e.point, {
-              layers: overlayLayerIds,
-            });
-            if (!isMeasuring) map.getCanvas().style.cursor = overlayHits.length > 0 ? "pointer" : "";
-          } else {
-            if (!isMeasuring) map.getCanvas().style.cursor = "";
-          }
+          if (!isMeasuring && !overlayHit) map.getCanvas().style.cursor = "";
         }
       },
-      [onCountryHover, isOutsideGlobe]
+      [onCountryHover, isOutsideGlobe, isMeasuring]
     );
 
     // Handle country + feature click
@@ -1282,6 +1462,10 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
         // Always fire raw map click with coordinates
         onMapClick?.(e.lngLat.lng, e.lngLat.lat);
+
+        // Hide hover tooltip on click
+        tooltipPopupRef.current?.remove();
+        hoveredOverlayIdRef.current = null;
 
         // In globe mode, ignore clicks outside the visible globe disc
         if (isOutsideGlobe(map, e.point)) return;
@@ -1372,9 +1556,24 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       map.on("mousemove", handleMouseMove);
       map.on("click", handleClick);
 
+      // Clean up tooltip when mouse leaves the map
+      const handleMouseLeave = () => {
+        tooltipPopupRef.current?.remove();
+        hoveredOverlayIdRef.current = null;
+        if (hoveredSubdivisionIdRef.current !== null && map.getSource("source-overlay-subdivisions")) {
+          map.setFeatureState(
+            { source: "source-overlay-subdivisions", id: hoveredSubdivisionIdRef.current },
+            { hover: false }
+          );
+          hoveredSubdivisionIdRef.current = null;
+        }
+      };
+      map.getCanvas().addEventListener("mouseleave", handleMouseLeave);
+
       return () => {
         map.off("mousemove", handleMouseMove);
         map.off("click", handleClick);
+        map.getCanvas().removeEventListener("mouseleave", handleMouseLeave);
       };
     }, [isLoaded, handleMouseMove, handleClick]);
 
@@ -1460,6 +1659,52 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
               <p className="text-sm text-muted-foreground">Loading map...</p>
             </div>
           </div>
+        )}
+
+        {/* Analytics overlay renderers (imperative — manage MapLibre sources/layers) */}
+        {isLoaded && overlayData?.wealth && (
+          <ChoroplethOverlay
+            map={mapRef.current}
+            data={overlayData.wealth}
+            visible={overlayVisibility?.wealth ?? false}
+            layerId="wealth"
+            colorScale="wealth"
+            metadata={overlayData.wealth.metadata}
+          />
+        )}
+        {isLoaded && overlayData?.population && (
+          <ChoroplethOverlay
+            map={mapRef.current}
+            data={overlayData.population}
+            visible={overlayVisibility?.population ?? false}
+            layerId="population"
+            colorScale="population"
+            metadata={overlayData.population.metadata}
+          />
+        )}
+        {isLoaded && overlayData?.crises && (
+          <RiskHeatmapOverlay
+            map={mapRef.current}
+            riskData={overlayData.crises.riskMap}
+            crisisEvents={overlayData.crises.crisisEvents}
+            visible={overlayVisibility?.crises ?? false}
+          />
+        )}
+        {isLoaded && overlayData?.diplomacy && (
+          <GeopoliticalOverlay
+            map={mapRef.current}
+            relations={overlayData.diplomacy.relations}
+            conflicts={overlayData.diplomacy.conflicts}
+            visible={overlayVisibility?.diplomacy ?? false}
+          />
+        )}
+        {isLoaded && overlayData?.transport && (
+          <TransportOverlay
+            map={mapRef.current}
+            routeData={overlayData.transport}
+            visible={overlayVisibility?.transport ?? false}
+            onRouteClick={onRouteClick ? (id) => onRouteClick(id) : undefined}
+          />
         )}
       </div>
     );
