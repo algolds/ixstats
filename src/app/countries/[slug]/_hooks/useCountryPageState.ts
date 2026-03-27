@@ -7,7 +7,7 @@ import type { CountryInfobox } from "~/lib/mediawiki-service";
 import { api } from "~/trpc/react";
 import { getWikiCache, setWikiCache } from "~/lib/wiki-local-cache";
 
-type TabType = "overview" | "mycountry" | "lore" | "activity" | "diplomacy";
+type TabType = "overview" | "lore" | "activity";
 export type BannerMode = "dynamic" | "flag" | "gradient" | "custom";
 
 function getBannerPref(countryId: string): { mode: BannerMode; customUrl?: string } {
@@ -52,7 +52,7 @@ export function useCountryPageState(country: Country | undefined) {
   const infoboxCacheKey = country?.name ? `infobox:${country.name}` : null;
 
   const { data: wikiRichIntro } = api.countries.getWikiRichIntro.useQuery(
-    { countryName: country!.name },
+    { countryName: country?.name ?? "" },
     {
       enabled: !!country?.name,
       staleTime: 24 * 60 * 60_000,
@@ -62,7 +62,7 @@ export function useCountryPageState(country: Country | undefined) {
   );
 
   const { data: wikiInfoboxData } = api.countries.getWikiInfoboxCached.useQuery(
-    { countryName: country!.name },
+    { countryName: country?.name ?? "" },
     {
       enabled: !!country?.name,
       staleTime: 24 * 60 * 60_000,

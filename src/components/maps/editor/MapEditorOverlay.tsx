@@ -27,7 +27,14 @@ import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPa
 import { FeatureList } from "~/components/maps/editor/FeatureList";
 import { EditorPanel } from "~/components/maps/editor/EditorPanel";
 import { EditorStatusBar } from "~/components/maps/editor/EditorStatusBar";
+import { ToolOptionsBar } from "~/components/maps/editor/ToolOptionsBar";
+import { BatchActionsBar } from "~/components/maps/editor/BatchActionsBar";
+import { LayerPanel, type LayerState } from "~/components/maps/editor/LayerPanel";
+import { FeatureContextMenu } from "~/components/maps/editor/FeatureContextMenu";
 import { MobileEditorSheet } from "~/components/maps/editor/MobileEditorSheet";
+import { WikiScannerPanel } from "~/components/maps/editor/WikiScannerPanel";
+import { useWikiScanner } from "~/hooks/useWikiScanner";
+import { MapPin, Hexagon, Landmark, BookMarked, Type as TypeIcon, Route, Globe } from "lucide-react";
 import {
   ProvinceImportWizard,
   ProvincePreviewLayer,
@@ -35,6 +42,7 @@ import {
 import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
+import { KeyboardShortcutSheet } from "~/components/maps/editor/KeyboardShortcutSheet";
 import { api } from "~/trpc/react";
 
 const EditorMap = dynamic(() => import("~/components/maps/editor/EditorMap"), {
@@ -74,6 +82,29 @@ export default function MapEditorOverlay({
     screenPos: { x: number; y: number };
   } | null>(null);
 
+  // Keyboard shortcut sheet
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number; y: number;
+    feature: { id: string; name: string; type: string; wikiPageTitle?: string | null };
+  } | null>(null);
+
+  // Layer panel state
+  const [layerStates, setLayerStates] = useState<Record<string, { visible: boolean; locked: boolean; opacity?: number }>>({
+    border: { visible: true, locked: false },
+    regions: { visible: true, locked: false, opacity: 0.6 },
+    cities: { visible: true, locked: false },
+    pois: { visible: true, locked: false },
+    stories: { visible: true, locked: false },
+    labels: { visible: true, locked: false },
+    routes: { visible: true, locked: false },
+    rivers: { visible: true, locked: false },
+    altitude: { visible: true, locked: false },
+    grid: { visible: false, locked: false },
+  });
+
   // Admin detection for Forge Mode access
   const { user: authUser } = useUser();
   const isAdmin = !!authUser && (
@@ -93,23 +124,52 @@ export default function MapEditorOverlay({
   const editor = useMapEditor(countryId);
   const importer = useProvinceImporter(countryId);
 
+  // Wiki scanner — link features to wiki pages
+  const updateCityWiki = api.geo.updateCity.useMutation({ onSuccess: () => editor.refetchFeatures() });
+  const updatePOIWiki = api.geo.updatePOI.useMutation({ onSuccess: () => editor.refetchFeatures() });
+  const updateStoryPinWiki = api.geo.updateStoryPin.useMutation({ onSuccess: () => editor.refetchFeatures() });
+  const updateMapLabelWiki = api.geo.updateMapLabel.useMutation({ onSuccess: () => editor.refetchFeatures() });
+
+  const handleLinkFeature = useCallback(async (featureId: string, featureType: string, wikiTitle: string) => {
+    if (!countryId) return;
+    switch (featureType) {
+      case "city":
+        await updateCityWiki.mutateAsync({ countryId, cityId: featureId, wikiPageTitle: wikiTitle });
+        break;
+      case "poi":
+        await updatePOIWiki.mutateAsync({ countryId, poiId: featureId, wikiPageTitle: wikiTitle });
+        break;
+      case "storyPin":
+        await updateStoryPinWiki.mutateAsync({ countryId, pinId: featureId, wikiPageTitle: wikiTitle });
+        break;
+      case "mapLabel":
+        await updateMapLabelWiki.mutateAsync({ countryId, labelId: featureId, wikiPageTitle: wikiTitle });
+        break;
+      // subdivision doesn't support wikiPageTitle in its update mutation
+    }
+  }, [countryId, updateCityWiki, updatePOIWiki, updateStoryPinWiki, updateMapLabelWiki]);
+
+  const wikiScanner = useWikiScanner({
+    features: editor.allFeatures,
+    onLinkFeature: handleLinkFeature,
+  });
+
   // Fetch country name for display
   const { data: countryInfo } = api.countries.getByIdBasic.useQuery(
     { id: countryId },
     { staleTime: 5 * 60_000 }
   );
 
-  // Track live map instance for province preview layer
+  // Track live map instance for province preview layer (one-shot, no polling)
   const [mapInstance, setMapInstance] = useState<import("maplibre-gl").Map | null>(null);
   useEffect(() => {
-    const interval = setInterval(() => {
-      const m = mapRef.current?.getMap() ?? null;
-      if (m) {
-        setMapInstance(m);
-        clearInterval(interval);
-      }
-    }, 200);
-    return () => clearInterval(interval);
+    const m = mapRef.current?.getMap() ?? null;
+    if (m) { setMapInstance(m); return; }
+    const timer = setTimeout(() => {
+      const m2 = mapRef.current?.getMap() ?? null;
+      if (m2) setMapInstance(m2);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   // Editor's own layer data — same layers as main map, independent visibility
@@ -241,6 +301,10 @@ export default function MapEditorOverlay({
       case "edit-city": editor.submitEditCity(); break;
       case "edit-subdivision": editor.submitEditSubdivision(); break;
       case "edit-poi": editor.submitEditPOI(); break;
+      case "add-story-pin": editor.submitStoryPin(); break;
+      case "add-label": editor.submitMapLabel(); break;
+      case "edit-story-pin": editor.submitEditStoryPin(); break;
+      case "edit-label": editor.submitEditMapLabel(); break;
     }
   }, [editor]);
 
@@ -257,12 +321,39 @@ export default function MapEditorOverlay({
       // Undo/Redo (works even in input fields)
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
-        // Undo handled by history system — visual indicator only for now
+        editor.undo();
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) {
         e.preventDefault();
-        // Redo handled by history system — visual indicator only for now
+        editor.redo();
+        return;
+      }
+
+      // Ctrl+S: force save
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (editor.mode.startsWith("add-") || editor.mode.startsWith("edit-")) {
+          handleSubmit();
+        }
+        return;
+      }
+
+      // Ctrl+A: select all visible features
+      if ((e.ctrlKey || e.metaKey) && e.key === "a" && !inInput) {
+        e.preventDefault();
+        editor.allFeatures.forEach((f) => {
+          if (!editor.selectedIds.has(f.id)) {
+            editor.toggleSelectId(f.id);
+          }
+        });
+        return;
+      }
+
+      // Ctrl+D: deselect all
+      if ((e.ctrlKey || e.metaKey) && e.key === "d" && !inInput) {
+        e.preventDefault();
+        editor.clearMultiSelect();
         return;
       }
 
@@ -286,6 +377,13 @@ export default function MapEditorOverlay({
         return;
       }
 
+      // ? — show keyboard shortcut sheet
+      if (e.key === "?" && !inInput) {
+        e.preventDefault();
+        setShowShortcuts((v) => !v);
+        return;
+      }
+
       if (inInput || toolsDisabled) return;
 
       switch (e.key.toLowerCase()) {
@@ -298,11 +396,13 @@ export default function MapEditorOverlay({
         case "f": e.preventDefault(); setPanelCollapsed((v) => !v); break;
         case "g": e.preventDefault(); setShowGrid((v) => !v); break;
         case "b": e.preventDefault(); editor.setMode(editor.mode === "paint" ? "view" : "paint"); break;
+        case "s": e.preventDefault(); editor.setMode(editor.mode === "add-story-pin" ? "view" : "add-story-pin"); break;
+        case "l": e.preventDefault(); editor.setMode(editor.mode === "add-label" ? "view" : "add-label"); break;
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [editor, importer, onExit, toolsDisabled, handleDeleteFeature]);
+  }, [editor, importer, onExit, toolsDisabled, handleDeleteFeature, handleSubmit]);
 
   // Track map cursor position + hovered features for status bar & tooltip
   const handleMapMouseMove = useCallback((e: any) => {
@@ -393,10 +493,11 @@ export default function MapEditorOverlay({
           <span>{forgeMode ? "Forge Mode" : "Map Editor"}</span>
         </div>
 
-        {/* Undo/Redo */}
-        <div className="ml-auto flex items-center gap-0.5 mr-1">
+        {/* Undo/Redo — left side after breadcrumb */}
+        <div className="flex items-center gap-0.5 ml-2">
           <button
             disabled={!editor.historyCanUndo}
+            onClick={() => editor.undo()}
             className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
             title="Undo (Ctrl+Z)"
           >
@@ -404,12 +505,23 @@ export default function MapEditorOverlay({
           </button>
           <button
             disabled={!editor.historyCanRedo}
+            onClick={() => editor.redo()}
             className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
             title="Redo (Ctrl+Shift+Z)"
           >
             <Redo2 className="h-3.5 w-3.5" />
           </button>
         </div>
+
+        {/* Save indicator */}
+        {editor.isMutating && (
+          <span className="text-[10px] text-amber-500 animate-pulse">Saving…</span>
+        )}
+        {!editor.isMutating && editor.lastSavedAt && (
+          <span className="text-[10px] text-emerald-500">Saved</span>
+        )}
+
+        <div className="ml-auto" />
 
         <div className="h-4 w-px bg-border" />
 
@@ -488,7 +600,7 @@ export default function MapEditorOverlay({
                 try {
                   const result = await simplifyAll.mutateAsync({
                     countryId,
-                    tolerance: 0.005,
+                    targetVerticesPerProvince: 100,
                   });
                   alert(
                     `Simplified ${result.updated}/${result.total} regions\n` +
@@ -565,6 +677,38 @@ export default function MapEditorOverlay({
         )}
       </div>
 
+      {/* ── Tool Options Bar (Photoshop-style context bar) ── */}
+      <EditorErrorBoundary name="ToolOptions">
+      <ToolOptionsBar
+        mode={editor.mode}
+        cityType={editor.cityForm.cityType}
+        onCityTypeChange={(type) => editor.setCityForm((f) => ({ ...f, cityType: type }))}
+        isNationalCapital={editor.cityForm.isNationalCapital}
+        onCapitalChange={(val) => editor.setCityForm((f) => ({ ...f, isNationalCapital: val }))}
+        subdivisionType={editor.subdivisionForm.type}
+        onSubdivisionTypeChange={(type) => editor.setSubdivisionForm((f) => ({ ...f, type }))}
+        subdivisionLevel={editor.subdivisionForm.level}
+        onSubdivisionLevelChange={(level) => editor.setSubdivisionForm((f) => ({ ...f, level }))}
+        poiCategory={editor.poiForm.category}
+        onPoiCategoryChange={(cat) => editor.setPOIForm((f) => ({ ...f, category: cat }))}
+        storyCategory={editor.storyPinForm.category}
+        onStoryCategoryChange={(cat) => editor.setStoryPinForm((f) => ({ ...f, category: cat }))}
+        labelFontSize={editor.mapLabelForm.fontSize}
+        onLabelFontSizeChange={(size) => editor.setMapLabelForm((f) => ({ ...f, fontSize: size }))}
+        labelColor={editor.mapLabelForm.color}
+        onLabelColorChange={(color) => editor.setMapLabelForm((f) => ({ ...f, color }))}
+        labelBold={editor.mapLabelForm.fontWeight === "bold"}
+        onLabelBoldChange={(bold) => editor.setMapLabelForm((f) => ({ ...f, fontWeight: bold ? "bold" : "normal" }))}
+        paintMode={paintMapMode}
+        onPaintModeChange={(m) => setPaintMapMode(m as any)}
+        selectedCount={editor.selectedIds.size}
+        onDelete={editor.selectedIds.size > 0 ? async () => {
+          if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
+          await editor.bulkDeleteSelected();
+        } : undefined}
+      />
+      </EditorErrorBoundary>
+
       {/* ── Main content: Rail + Canvas + Panel ── */}
       <div className="flex flex-1 min-h-0">
         {/* Left tool rail — desktop only */}
@@ -596,6 +740,15 @@ export default function MapEditorOverlay({
             worldMapLayers={worldMapLayers}
             showGrid={showGrid}
             paintColors={paintColors}
+            routeWaypoints={editor.routeWaypoints}
+            layerVisibility={{
+              regions: layerStates.regions?.visible ?? true,
+              cities: layerStates.cities?.visible ?? true,
+              pois: layerStates.pois?.visible ?? true,
+              stories: layerStates.stories?.visible ?? true,
+              labels: layerStates.labels?.visible ?? true,
+              routes: layerStates.routes?.visible ?? true,
+            }}
           />
 
           {/* Paint mode legend */}
@@ -694,6 +847,7 @@ export default function MapEditorOverlay({
             collapsed={panelCollapsed}
             onToggleCollapse={() => setPanelCollapsed((v) => !v)}
             featureCount={editor.allFeatures.length}
+            featuresLoading={editor.featuresLoading}
             propertiesContent={
               <FeaturePropertyPanel
                 mode={editor.mode}
@@ -703,6 +857,10 @@ export default function MapEditorOverlay({
                 onCityFormChange={editor.setCityForm}
                 onSubdivisionFormChange={editor.setSubdivisionForm}
                 onPOIFormChange={editor.setPOIForm}
+                storyPinForm={editor.storyPinForm}
+                onStoryPinFormChange={editor.setStoryPinForm}
+                mapLabelForm={editor.mapLabelForm}
+                onMapLabelFormChange={editor.setMapLabelForm}
                 pendingCoordinates={editor.pendingCoordinates}
                 pendingGeometry={editor.pendingGeometry}
                 isMutating={editor.isMutating}
@@ -725,8 +883,45 @@ export default function MapEditorOverlay({
                 isLoading={editor.featuresLoading}
                 selectedIds={editor.selectedIds}
                 onToggleSelect={editor.toggleSelectId}
+                collapseAll={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-") || editor.mode === "paint"}
               />
             }
+            layersContent={
+              <LayerPanel
+                layers={[
+                  { id: "border", name: "Country Border", icon: Globe, visible: layerStates.border?.visible ?? true, locked: false },
+                  { id: "regions", name: "Regions", icon: Hexagon, visible: layerStates.regions?.visible ?? true, locked: layerStates.regions?.locked ?? false, opacity: layerStates.regions?.opacity ?? 0.6 },
+                  { id: "cities", name: "Cities", icon: MapPin, visible: layerStates.cities?.visible ?? true, locked: layerStates.cities?.locked ?? false },
+                  { id: "pois", name: "POIs", icon: Landmark, visible: layerStates.pois?.visible ?? true, locked: layerStates.pois?.locked ?? false },
+                  { id: "stories", name: "Story Pins", icon: BookMarked, visible: layerStates.stories?.visible ?? true, locked: layerStates.stories?.locked ?? false },
+                  { id: "labels", name: "Labels", icon: TypeIcon, visible: layerStates.labels?.visible ?? true, locked: layerStates.labels?.locked ?? false },
+                  { id: "routes", name: "Routes", icon: Route, visible: layerStates.routes?.visible ?? true, locked: layerStates.routes?.locked ?? false },
+                  { id: "rivers", name: "Rivers", icon: Droplets, visible: editorVisibleLayers.has("rivers"), locked: false, isBaseLayer: true },
+                  { id: "altitude", name: "Altitude", icon: MountainIcon, visible: editorVisibleLayers.has("altitudes"), locked: false, isBaseLayer: true },
+                  { id: "grid", name: "Grid", icon: Grid3X3, visible: showGrid, locked: false, isBaseLayer: true },
+                ]}
+                onToggleVisibility={(id) => {
+                  if (id === "rivers") { toggleEditorLayer("rivers"); return; }
+                  if (id === "altitude") { toggleEditorLayer("altitudes"); return; }
+                  if (id === "grid") { setShowGrid((v) => !v); return; }
+                  setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, visible: !s[id]?.visible } }));
+                }}
+                onToggleLock={(id) => {
+                  setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, locked: !s[id]?.locked } }));
+                }}
+                onOpacityChange={(id, opacity) => {
+                  setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, opacity } }));
+                }}
+                featureCounts={{
+                  regions: editor.allFeatures.filter((f) => f.type === "subdivision").length,
+                  cities: editor.allFeatures.filter((f) => f.type === "city").length,
+                  pois: editor.allFeatures.filter((f) => f.type === "poi").length,
+                  stories: editor.allFeatures.filter((f) => f.type === "storyPin").length,
+                  labels: editor.allFeatures.filter((f) => f.type === "mapLabel").length,
+                }}
+              />
+            }
+            wikiContent={<WikiScannerPanel scanner={wikiScanner} />}
             importWizardContent={
               editor.mode === "import-provinces" ? (
                 <ProvinceImportWizard
@@ -778,6 +973,18 @@ export default function MapEditorOverlay({
           <MobileEditorSheet
             onClose={() => editor.resetForm()}
             title="Properties"
+            isEditMode={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-") || editor.mode === "paint"}
+            featureListContent={
+              <FeatureList
+                features={editor.allFeatures}
+                selectedFeature={editor.selectedFeature}
+                onSelectFeature={handleSelectFeature}
+                onEditFeature={handleEditFeature}
+                onDeleteFeature={handleDeleteFeature}
+                isLoading={editor.featuresLoading}
+              />
+            }
+            wikiContent={<WikiScannerPanel scanner={wikiScanner} />}
           >
             <FeaturePropertyPanel
               mode={editor.mode}
@@ -787,6 +994,10 @@ export default function MapEditorOverlay({
               onCityFormChange={editor.setCityForm}
               onSubdivisionFormChange={editor.setSubdivisionForm}
               onPOIFormChange={editor.setPOIForm}
+              storyPinForm={editor.storyPinForm}
+              onStoryPinFormChange={editor.setStoryPinForm}
+              mapLabelForm={editor.mapLabelForm}
+              onMapLabelFormChange={editor.setMapLabelForm}
               pendingCoordinates={editor.pendingCoordinates}
               pendingGeometry={editor.pendingGeometry}
               isMutating={editor.isMutating}
@@ -800,6 +1011,54 @@ export default function MapEditorOverlay({
             />
           </MobileEditorSheet>
         </div>
+      )}
+      {/* Batch Actions Bar — shown when multi-select is active */}
+      {editor.selectedIds.size > 1 && (
+        <BatchActionsBar
+          selectedCount={editor.selectedIds.size}
+          onBatchDelete={async () => {
+            if (!confirm(`Delete ${editor.selectedIds.size} selected features?`)) return;
+            await editor.bulkDeleteSelected();
+          }}
+          onDeselectAll={editor.clearMultiSelect}
+          isMutating={editor.isMutating}
+        />
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <FeatureContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          feature={contextMenu.feature}
+          onEdit={() => {
+            const feat = editor.allFeatures.find((f) => f.id === contextMenu.feature.id);
+            if (feat) editor.startEditing(feat);
+            setContextMenu(null);
+          }}
+          onDuplicate={() => { setContextMenu(null); }}
+          onDelete={() => {
+            editor.handleDeleteFeature(contextMenu.feature.id, contextMenu.feature.type as any);
+            setContextMenu(null);
+          }}
+          onCopyCoords={() => {
+            const feat = editor.allFeatures.find((f) => f.id === contextMenu.feature.id);
+            if (feat && "coordinates" in feat && Array.isArray(feat.coordinates)) {
+              navigator.clipboard.writeText(`${feat.coordinates[1]}, ${feat.coordinates[0]}`);
+            }
+            setContextMenu(null);
+          }}
+          onOpenWiki={contextMenu.feature.wikiPageTitle ? () => {
+            window.open(`https://ixwiki.com/wiki/${encodeURIComponent(contextMenu.feature.wikiPageTitle!.replace(/ /g, "_"))}`, "_blank");
+            setContextMenu(null);
+          } : undefined}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {/* Keyboard Shortcut Sheet */}
+      {showShortcuts && (
+        <KeyboardShortcutSheet onClose={() => setShowShortcuts(false)} />
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import React from "react";
 import { ExternalLink, BookOpen, Loader2 } from "lucide-react";
 import { api } from "~/trpc/react";
 import type { CardInstance } from "~/types/cards-display";
+import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 interface LoreWikiExcerptProps {
   card: CardInstance;
@@ -63,16 +64,21 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(
         )}
 
         {wikiUrl && (
-          <a
-            href={wikiUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 mt-3 text-sm text-blue-400 hover:text-blue-300"
+          <WikiLinkPreview
+            title={card.wikiArticleTitle || wikiUrl.split("/wiki/").pop()?.replace(/_/g, " ") || ""}
+            wiki={card.wikiSource as "ixwiki" | "iiwiki" | undefined}
           >
-            <ExternalLink className="h-3.5 w-3.5" />
-            Read full article on{" "}
-            {card.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
-          </a>
+            <a
+              href={wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-3 text-sm text-blue-400 hover:text-blue-300"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Read full article on{" "}
+              {card.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
+            </a>
+          </WikiLinkPreview>
         )}
       </div>
     );

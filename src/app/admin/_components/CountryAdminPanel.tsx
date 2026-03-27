@@ -255,7 +255,7 @@ export function CountryAdminPanel() {
                         onChange={(e) => handleChange("currentPopulation", Number(e.target.value))}
                       />
                     ) : (
-                      country.currentPopulation?.toLocaleString() || "—"
+                      Math.round(country.currentPopulation ?? 0).toLocaleString() || "—"
                     )}
                   </td>
                   <td className="p-2 text-right">

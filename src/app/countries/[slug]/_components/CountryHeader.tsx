@@ -270,7 +270,7 @@ export function CountryHeader({
                 <Camera className="h-3.5 w-3.5" />
                 <span className="hidden text-xs sm:inline">Change Banner</span>
               </PopoverTrigger>
-              <PopoverContent align="end" sideOffset={8} className="glass-off z-50 w-72 rounded-xl border border-border bg-white p-2 shadow-2xl dark:bg-zinc-900">
+              <PopoverContent align="end" sideOffset={8} className="glass-off z-[100011] w-72 rounded-xl border border-border bg-white p-2 shadow-2xl dark:bg-zinc-900">
                 <div className="space-y-1">
                   <p className="text-muted-foreground px-2 py-1.5 text-xs font-semibold">Banner Style</p>
                   {bannerOptions.map((option) => {

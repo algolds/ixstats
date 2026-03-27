@@ -45,28 +45,22 @@ export class VaultService {
         throw new Error(`User not found: ${userIdOrClerkId}`);
       }
 
-      // Now find or create vault using the database User.id
-      let vault = await db.myVault.findUnique({
+      // Find or create vault using upsert to avoid race conditions
+      const vault = await db.myVault.upsert({
         where: { userId: user.id },
+        update: {},
+        create: {
+          userId: user.id,
+          credits: 0,
+          lifetimeEarned: 0,
+          lifetimeSpent: 0,
+          todayEarned: 0,
+          lastDailyReset: new Date(),
+          loginStreak: 0,
+          vaultLevel: 1,
+          vaultXp: 0,
+        },
       });
-
-      if (!vault) {
-        // Create new vault with default values
-        vault = await db.myVault.create({
-          data: {
-            userId: user.id,
-            credits: 0,
-            lifetimeEarned: 0,
-            lifetimeSpent: 0,
-            todayEarned: 0,
-            lastDailyReset: new Date(),
-            loginStreak: 0,
-            vaultLevel: 1,
-            vaultXp: 0,
-          },
-        });
-        console.log(`[Vault Service] Created new vault for user ${user.id} (Clerk: ${user.clerkUserId})`);
-      }
 
       return vault;
     } catch (error) {

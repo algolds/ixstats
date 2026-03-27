@@ -21,7 +21,7 @@ import {
 } from "../svg-parser";
 import { elementToRings, SHAPE_TAGS } from "./svg-element-converter";
 import { getAccumulatedTransform, applyMatrixToRings, isIdentity } from "./svg-transform";
-import { detectProvinceLayer, collectShapeElements } from "./svg-layer-detector";
+import { detectProvinceLayer, collectShapeElements, filterProvinceShapes } from "./svg-layer-detector";
 import { extractAllTextLabels, matchLabelsToProvinces } from "./svg-text-matcher";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -100,14 +100,19 @@ export function parseProvinceSvg(
   log.push(`Top-level layers: ${layersFound.join(", ") || "none"}`);
 
   // Collect all shape elements from the target container
-  const allShapes = collectShapeElements(targetContainer, svgRoot);
+  const rawShapes = collectShapeElements(targetContainer, svgRoot);
+  log.push(`Raw shape elements: ${rawShapes.length}`);
+
+  // Filter to province-like shapes (removes topo fills, water, decorative elements)
+  const allShapes = filterProvinceShapes(rawShapes, svgRoot, log);
+
   const tagCounts = new Map<string, number>();
   for (const s of allShapes) {
     const tag = s.localName ?? s.tagName?.split(":").pop() ?? "";
     tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
   }
   log.push(
-    `Shape elements: ${allShapes.length} (${[...tagCounts.entries()].map(([k, v]) => `${v} ${k}`).join(", ")})`
+    `Filtered shape elements: ${allShapes.length} (${[...tagCounts.entries()].map(([k, v]) => `${v} ${k}`).join(", ")})`
   );
 
   // Parse provinces
@@ -126,6 +131,83 @@ export function parseProvinceSvg(
   }
 
   log.push(`Detected ${provinces.length} provinces from ${allShapes.length} shape elements`);
+
+  if (provinces.length === 0 && allShapes.length === 0 && rawShapes.length === 0) {
+    log.push(
+      "HINT: 0 provinces detected. The SVG appears to have no filled shape elements. " +
+      "Try uploading a different SVG with filled province shapes (path, polygon, or rect elements with fill colors)."
+    );
+  } else if (provinces.length === 0 && allShapes.length === 0 && rawShapes.length > 0) {
+    log.push(
+      "HINT: 0 provinces detected after filtering. The SVG appears to be a line-only map " +
+      "without filled regions, or all shapes were classified as decorative/topo. " +
+      "Try uploading an SVG where provinces have distinct fill colors."
+    );
+  } else if (provinces.length === 0 && allShapes.length > 0) {
+    log.push(
+      "HINT: 0 provinces detected from " + allShapes.length + " shape elements. " +
+      "All shapes may have too few vertices (< 8 points) to be province boundaries."
+    );
+  }
+
+  // Filter out shapes with too few vertices (likely markers/decorations, not boundaries)
+  const preFilterCount = provinces.length;
+  provinces = provinces.filter((p) => {
+    const vertexCount = countGeometryVertices(p.geometry);
+    return vertexCount >= 8; // Real province boundaries have 8+ vertices minimum
+  });
+  if (provinces.length < preFilterCount) {
+    log.push(`Filtered ${preFilterCount - provinces.length} low-vertex shapes (< 8 points)`);
+  }
+
+  // Auto-exclude non-dominant fill colors (likely external/neighboring territory)
+  if (provinces.length > 5) {
+    const colorCounts = new Map<string, number>();
+    for (const p of provinces) {
+      if (p.color) colorCounts.set(p.color, (colorCounts.get(p.color) ?? 0) + 1);
+    }
+    const sorted = [...colorCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const dominantColor = sorted[0];
+    if (dominantColor && sorted.length >= 2) {
+      let excludedCount = 0;
+      const excludedColors: string[] = [];
+
+      // Grey/neutral colors are likely external territory markers
+      const isGreyNeutral = (hex: string) => {
+        const h = hex.replace("#", "").toLowerCase();
+        if (h.length !== 6) return false;
+        const r = parseInt(h.slice(0, 2), 16);
+        const g = parseInt(h.slice(2, 4), 16);
+        const b = parseInt(h.slice(4, 6), 16);
+        const maxC = Math.max(r, g, b);
+        const minC = Math.min(r, g, b);
+        // Grey: low saturation (max-min < 30) AND mid-range brightness (100-240)
+        return (maxC - minC) < 30 && maxC > 100 && maxC < 240;
+      };
+
+      for (const [color, count] of sorted) {
+        if (color === dominantColor[0]) continue;
+
+        // Exclude if: few shapes (<=3) OR grey/neutral color (external territory)
+        const shouldExclude =
+          count <= 3 ||
+          isGreyNeutral(color);
+
+        if (shouldExclude) {
+          for (const p of provinces) {
+            if (p.color === color) {
+              p.included = false;
+              excludedCount++;
+            }
+          }
+          excludedColors.push(`${color}(${count})`);
+        }
+      }
+      if (excludedCount > 0) {
+        log.push(`Auto-excluded ${excludedCount} external territory shapes (colors: ${excludedColors.join(", ")}; dominant: ${dominantColor[0]}, ${dominantColor[1]} shapes)`);
+      }
+    }
+  }
 
   // Merge same-color adjacent provinces (handles multi-path provinces)
   const mergedCount = provinces.length;
@@ -159,13 +241,6 @@ export function parseProvinceSvg(
     if (labels.length > 0) {
       log.push(`Found ${labels.length} text labels for matching`);
 
-      // If transforms are being applied, we need province centroids in the same
-      // coordinate space as the text labels. Text labels use svgRoot as stopAt,
-      // so we need to transform province centroids to svgRoot space too.
-      // However, provinces are already in transformed space if includeTransforms is true.
-      // The text labels are extracted relative to svgRoot, so they should be in
-      // a compatible space already.
-
       const spatialInfo = provinces.map((p) => ({
         centroid: p.centroid,
         bbox: p.bbox,
@@ -174,16 +249,62 @@ export function parseProvinceSvg(
       const matches = matchLabelsToProvinces(labels, spatialInfo);
       let matchCount = 0;
       for (const [idx, labelText] of matches) {
-        if (idx < provinces.length && provinces[idx]!.confidence < 0.7) {
-          provinces[idx]!.name = labelText;
-          provinces[idx]!.confidence = 0.85;
-          matchCount++;
+        if (idx < provinces.length) {
+          // Text labels always override generic names like "Province 1"
+          const isGeneric = /^(Province|Region|District)\s+\d+$/i.test(provinces[idx]!.name);
+          if (provinces[idx]!.confidence < 0.7 || isGeneric) {
+            provinces[idx]!.name = labelText;
+            provinces[idx]!.confidence = 0.85;
+            matchCount++;
+          }
         }
       }
       if (matchCount > 0) {
         log.push(`Matched ${matchCount} text labels to provinces`);
       }
     }
+  }
+
+  // Fallback: if many provinces still have generic names, try extracting names from group IDs
+  const genericCount = provinces.filter(
+    (p) => /^(Province|Region|District)\s+\d+$/i.test(p.name) || p.confidence < 0.4
+  ).length;
+  if (genericCount > provinces.length * 0.5 && provinces.length > 0) {
+    let cleanedCount = 0;
+    for (const p of provinces) {
+      if (/^(Province|Region|District)\s+\d+$/i.test(p.name) || p.confidence < 0.4) {
+        const cleaned = cleanGroupIdToName(p.sourceId);
+        if (cleaned && cleaned !== p.sourceId && !/^(province|group|path|region)\s*\d*$/i.test(cleaned)) {
+          p.name = cleaned;
+          p.confidence = 0.6;
+          cleanedCount++;
+        }
+      }
+    }
+    if (cleanedCount > 0) {
+      log.push(`Extracted ${cleanedCount} province names from group/element IDs`);
+    }
+  }
+
+  // Deduplicate names — if multiple provinces share the same name, append a number.
+  // This commonly happens when all provinces inherit the parent layer name (e.g., "Layer 1").
+  const nameCounts = new Map<string, number>();
+  for (const p of provinces) {
+    nameCounts.set(p.name, (nameCounts.get(p.name) ?? 0) + 1);
+  }
+  for (const [name, count] of nameCounts) {
+    if (count <= 1) continue;
+    // All provinces with this name get numbered, or fallback to "Province N"
+    let idx = 1;
+    const isGenericName = /^(layer|group|svg|g)\s*\d*$/i.test(name);
+    for (const p of provinces) {
+      if (p.name === name) {
+        p.name = isGenericName ? `Province ${idx}` : `${name} ${idx}`;
+        p.confidence = Math.min(p.confidence, 0.3); // Low confidence — user should rename
+        idx++;
+      }
+    }
+    log.push(`Renamed ${count} provinces with duplicate name "${name}" → numbered`);
   }
 
   return { provinces, viewBox, log, layersFound };
@@ -574,8 +695,9 @@ function extractNameFromElement(
  * Expanded to catch more editor-generated patterns.
  */
 function isGenericId(id: string): boolean {
-  return /^(path|rect|g|layer|use|circle|ellipse|line|polygon|polyline|image|text|tspan|svg|defs|clip|mask|_x[0-9A-Fa-f]+_)\d*$/i.test(
-    id
+  // Match SVG auto-generated IDs like "path123", "g45", "Layer 1", "layer1", "rect_2"
+  return /^(path|rect|g|layer|use|circle|ellipse|line|polygon|polyline|image|text|tspan|svg|defs|clip|mask|_x[0-9A-Fa-f]+_)[\s_-]*\d*$/i.test(
+    id.trim()
   );
 }
 
@@ -689,6 +811,17 @@ function sanitizeSvg(svgContent: string): string {
 // ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
+
+/** Count total vertices in a GeoJSON geometry. */
+function countGeometryVertices(geom: Polygon | MultiPolygon): number {
+  if (geom.type === "Polygon") {
+    return geom.coordinates.reduce((sum, ring) => sum + ring.length, 0);
+  }
+  return geom.coordinates.reduce(
+    (sum, poly) => sum + poly.reduce((s, ring) => s + ring.length, 0),
+    0
+  );
+}
 
 function extractViewBox(svgRoot: Element): { width: number; height: number } {
   const viewBoxAttr = svgRoot.getAttribute("viewBox");
@@ -823,6 +956,13 @@ function mergeSameColorProvinces(provinces: ProvinceFeature[]): ProvinceFeature[
       continue;
     }
 
+    // If many shapes share the same color (>8), they're likely distinct provinces
+    // that happen to share a fill color — don't merge them.
+    if (group.length > 8) {
+      result.push(...group);
+      continue;
+    }
+
     // Find clusters of touching/overlapping provinces within this color group
     const clusters = clusterByProximity(group);
 
@@ -946,6 +1086,40 @@ function ringCentroid(ring: [number, number][]): [number, number] {
     sy += ring[i]![1];
   }
   return [sx / n, sy / n];
+}
+
+/**
+ * Clean a group/element ID into a human-readable province name.
+ * Examples:
+ *   "baía-sul-rg"    → "Baía Sul"
+ *   "lusia-wasg"     → "Lusia"
+ *   "satheriana-rg"  → "Satheriana"
+ *   "nova_terra_pb"  → "Nova Terra"
+ *
+ * Removes common trailing abbreviations (rg, av, pb, sr, wasg, etc.)
+ * and cleans separators.
+ */
+export function cleanGroupIdToName(id: string): string {
+  if (!id) return "";
+
+  let cleaned = id
+    // Remove common trailing abbreviations (2-4 char suffixes after separator)
+    .replace(/[-_](rg|av|pb|sr|wasg|dist|prov|reg|cty|adm|sub|div)$/i, "")
+    // Replace dashes and underscores with spaces
+    .replace(/[-_]+/g, " ")
+    // Remove leading/trailing whitespace
+    .trim();
+
+  // Capitalize first letter of each word, preserving accented characters
+  cleaned = cleaned
+    .split(/\s+/)
+    .map((word) => {
+      if (word.length === 0) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+
+  return cleaned;
 }
 
 /** Ray-casting point-in-ring test. */

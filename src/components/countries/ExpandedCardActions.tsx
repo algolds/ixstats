@@ -90,7 +90,7 @@ export const ExpandedCardActions = React.memo<ExpandedCardActionsProps>(
 
     const handleSendMessage = (e: React.MouseEvent) => {
       e.stopPropagation();
-      router.push(createUrl(`/thinkpages?view=messages&country=${countryId}`));
+      router.push(createUrl(`/thinkpages/thinkshare?country=${countryId}`));
     };
 
     const handleDiplomacy = (e: React.MouseEvent) => {

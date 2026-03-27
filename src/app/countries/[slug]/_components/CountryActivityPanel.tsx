@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow } from "date-fns";
+import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 type ActivityFilter = "all" | "posts" | "economic" | "diplomatic" | "milestones" | "events";
 
@@ -445,15 +446,17 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
           {/* Wiki Link */}
           <Card className="bg-card/50 backdrop-blur-sm">
             <CardContent className="pt-6">
-              <a
-                href={`https://ixwiki.com/wiki/${countryName}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary flex items-center gap-2 text-sm hover:underline"
-              >
-                <ExternalLink className="h-4 w-4" />
-                View on IxWiki
-              </a>
+              <WikiLinkPreview title={countryName}>
+                <a
+                  href={`https://ixwiki.com/wiki/${countryName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary flex items-center gap-2 text-sm hover:underline"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View on IxWiki
+                </a>
+              </WikiLinkPreview>
             </CardContent>
           </Card>
         </div>

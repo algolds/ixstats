@@ -28,6 +28,7 @@ import { ThinkPagesSidebarLayout } from "./ThinkPagesSidebarLayout";
 import { ThinkPagesHeader } from "./ThinkPagesHeader";
 import { ThinkPagesFooter } from "./ThinkPagesFooter";
 import { getSectionFromPathname, type ThinkPagesSection } from "./ThinkPagesSidebarNav";
+import { withBasePath } from "~/lib/base-path";
 
 // Dynamically import heavy components to prevent tRPC queries from running until needed
 const ThinktankGroups = dynamic(
@@ -73,9 +74,10 @@ const SECTION_TITLES: Record<ThinkPagesSection, string> = {
 };
 
 function sectionToHref(section: ThinkPagesSection): string {
-  if (section === "feed") return "/thinkpages";
-  if (section === "messages") return "/thinkpages/thinkshare";
-  return `/thinkpages/${section}`;
+  const path = section === "feed" ? "/thinkpages"
+    : section === "messages" ? "/thinkpages/thinkshare"
+    : `/thinkpages/${section}`;
+  return withBasePath(path);
 }
 
 export function ThinkPagesRouter() {

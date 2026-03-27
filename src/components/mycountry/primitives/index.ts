@@ -69,6 +69,9 @@ export { SectionHeaderBackground } from "./SectionHeaderBackground";
 // Tab hero banner
 export { TabHeroBanner } from "./TabHeroBanner";
 
+// Unified section hero for gameplay pillars
+export { SectionHero, type StatusBadgeConfig } from "./SectionHero";
+
 // Card background image components
 export {
   CardBackgroundImage,

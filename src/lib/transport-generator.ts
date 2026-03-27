@@ -93,17 +93,7 @@ export function terrainCost(
 
 // ── Haversine distance ─────────────────────────────────────────────
 
-const DEG2RAD = Math.PI / 180;
-const EARTH_R = 6371;
-
-function haversineKm(a: [number, number], b: [number, number]): number {
-  const dLat = (b[1] - a[1]) * DEG2RAD;
-  const dLng = (b[0] - a[0]) * DEG2RAD;
-  const sinLat = Math.sin(dLat / 2);
-  const sinLng = Math.sin(dLng / 2);
-  const h = sinLat * sinLat + Math.cos(a[1] * DEG2RAD) * Math.cos(b[1] * DEG2RAD) * sinLng * sinLng;
-  return 2 * EARTH_R * Math.asin(Math.sqrt(h));
-}
+import { distanceKm as haversineKm } from "~/lib/geo-math";
 
 // ── Route line generation ──────────────────────────────────────────
 

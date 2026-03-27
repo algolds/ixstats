@@ -147,7 +147,7 @@ const AdvancedSearchDiscoveryComponent: React.FC<AdvancedSearchDiscoveryProps> =
           type: "country" as const,
           title: country.name,
           subtitle: `Leader: ${country.leader}`,
-          description: `Economic Tier: ${country.economicTier}, Population: ${country.currentPopulation.toLocaleString()}`,
+          description: `Economic Tier: ${country.economicTier}, Population: ${Math.round(country.currentPopulation).toLocaleString()}`,
           relevanceScore: country.diplomaticStanding / 100,
           metadata: {
             country: country.name,

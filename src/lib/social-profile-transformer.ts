@@ -660,11 +660,11 @@ export class SocialProfileTransformer {
 
   private static formatPopulation(population: number): string {
     if (population >= 1e9) {
-      return `${(population / 1e9).toFixed(1)}B`;
+      return `${Math.round(population / 1e9)}B`;
     } else if (population >= 1e6) {
-      return `${(population / 1e6).toFixed(1)}M`;
+      return `${Math.round(population / 1e6)}M`;
     } else if (population >= 1e3) {
-      return `${(population / 1e3).toFixed(1)}K`;
+      return `${Math.round(population / 1e3)}K`;
     }
     return population.toLocaleString();
   }

@@ -27,7 +27,7 @@ import {
 } from "~/lib/province-importer/alignment";
 import { validateTopology, autoFillGaps, resolveOverlaps, clipProvincesToBorder, simplifyProvinces } from "~/lib/province-importer/topology";
 import type { ConformanceResult } from "~/lib/province-importer/topology";
-import { snapToNeighborBorders, sanitizeRegionShape } from "~/lib/border-editor";
+import { sanitizeRegionShape } from "~/lib/border-editor";
 import type { Polygon, MultiPolygon } from "geojson";
 
 const STEPS: ImportStep[] = ["upload", "names", "align", "snap", "validate", "commit"];
@@ -218,12 +218,22 @@ export function useProvinceImporter(countryId: string) {
     setRawProvinces((prev) =>
       prev.map((p) => p.sourceId === sourceId ? { ...p, name } : p)
     );
+    // Also update alignedProvinces if they exist
+    setAlignedProvinces((prev) => {
+      if (prev.length === 0) return prev;
+      return prev.map((p) => p.sourceId === sourceId ? { ...p, name } : p);
+    });
   }, []);
 
   const toggleProvinceIncluded = useCallback((sourceId: string) => {
     setRawProvinces((prev) =>
       prev.map((p) => p.sourceId === sourceId ? { ...p, included: !p.included } : p)
     );
+    // Also update alignedProvinces if they exist
+    setAlignedProvinces((prev) => {
+      if (prev.length === 0) return prev;
+      return prev.map((p) => p.sourceId === sourceId ? { ...p, included: !p.included } : p);
+    });
   }, []);
 
   // ── Alignment Step ──
@@ -294,29 +304,11 @@ export function useProvinceImporter(countryId: string) {
     // 2. Snap vertices to country border with multi-ring support
     const snapped = snapProvincesToBorderMultiRing(clipped, countryBorder, snapTolerance);
 
-    // 3. Simplify — Douglas-Peucker to reduce vertex count (50-80% reduction)
-    const simplified = simplifyProvinces(snapped, simplifyTolerance);
+    // 3. Simplify — topology-preserving batch simplification via TopoJSON
+    //    TopoJSON handles shared borders automatically, no neighbor snapping needed.
+    const simplified = simplifyProvinces(snapped, simplifyTolerance, { targetVertices: 100 });
 
-    // 4. Align shared edges between neighboring provinces to prevent gaps
-    const aligned = simplified.map((province, i) => {
-      if (!province.included || !province.geometry) return province;
-
-      const neighbors = simplified
-        .filter((p, j) => j !== i && p.included && p.geometry)
-        .map((p) => ({ id: p.sourceId, geometry: p.geometry as Polygon | MultiPolygon }));
-
-      if (neighbors.length === 0) return province;
-
-      const snappedGeo = snapToNeighborBorders(
-        province.geometry as Polygon | MultiPolygon,
-        neighbors,
-        countryBorder,
-        0.02
-      );
-      return { ...province, geometry: snappedGeo };
-    });
-
-    setAlignedProvinces(aligned);
+    setAlignedProvinces(simplified);
   }, [alignedProvinces, rawProvinces, countryBorder, snapTolerance, simplifyTolerance]);
 
   // ── Validation Step ──
@@ -416,7 +408,7 @@ export function useProvinceImporter(countryId: string) {
     setReferencePoints([]);
     setTransform(null);
     setManualTransform(DEFAULT_MANUAL_TRANSFORM);
-    setSnapTolerance(0.5);
+    setSnapTolerance(1.0);
     setSimplifyTolerance(0.005);
     setValidationReport(null);
     setIsProcessing(false);

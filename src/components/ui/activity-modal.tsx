@@ -102,7 +102,7 @@ export function ActivityPopover({
   if (!open || !selectedData) return null;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+    <div className="fixed inset-0 z-[100011] flex items-center justify-center">
       {/* Backdrop with enhanced blur */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-lg dark:bg-black/60"

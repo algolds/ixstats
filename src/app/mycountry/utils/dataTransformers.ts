@@ -178,7 +178,7 @@ export function transformToVitalityIntelligence(
         {
           id: "population",
           label: "Population",
-          value: `${(country.currentPopulation / 1000000).toFixed(1)}M`,
+          value: `${Math.round(country.currentPopulation / 1000000)}M`,
           trend: (country.populationGrowthRate > 0.01
             ? "up"
             : country.populationGrowthRate < 0

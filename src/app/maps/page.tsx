@@ -8,16 +8,23 @@
  * - Globe projection at low zoom, flat at high zoom
  * - Country click for info popup
  * - Layer toggles (political, climate, altitude, hydrology, ice)
- * - Deep linking: ?country=<countryId> auto-selects and flies to a country
+ * - Deep linking via URL params:
+ *   ?country=<countryId>  — auto-select by database ID
+ *   ?name=<countryName>   — auto-select by country name (wiki-friendly)
+ *   ?lat=X&lng=Y&zoom=Z   — coordinate deep-link
+ *   ?layer=climate         — show a specific layer on load
+ *   ?embed=true            — chromeless mode for iframe embedding (no nav, no controls)
  *
  * When NEXT_PUBLIC_IXWORLD_STANDALONE=true (maps.ixwiki.com), renders full-screen.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MapContainer } from "~/components/maps/core/MapContainer";
 import { usePageTitle } from "~/hooks/usePageTitle";
+import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
+import type { MapLayerType } from "~/lib/map-config";
 
 const isStandalone =
   process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
@@ -25,9 +32,44 @@ const isStandalone =
 export const dynamic = "force-dynamic";
 
 export default function WorldMapPage() {
-  usePageTitle({ title: isStandalone ? "IxWorld Map" : "World Map" });
   const searchParams = useSearchParams();
-  const initialCountryId = searchParams.get("country") || undefined;
+
+  // --- Embed mode: chromeless for wiki iframe embedding ---
+  const isEmbed = searchParams.get("embed") === "true";
+
+  usePageTitle({
+    title: isEmbed
+      ? "IxWorld"
+      : isStandalone
+        ? "IxWorld Map"
+        : "World Map",
+  });
+
+  // --- Country resolution: by ID or by name ---
+  const countryIdParam = searchParams.get("country") || undefined;
+  const countryNameParam = searchParams.get("name") || undefined;
+
+  // If name param provided, resolve to countryId via tRPC
+  const { data: resolvedCountry } = api.countries.getByNameWithAtomic.useQuery(
+    { name: countryNameParam! },
+    { enabled: !!countryNameParam && !countryIdParam },
+  );
+
+  const initialCountryId = countryIdParam || resolvedCountry?.id || undefined;
+
+  // --- Coordinate deep-linking ---
+  const initialLat = searchParams.get("lat") ? parseFloat(searchParams.get("lat")!) : undefined;
+  const initialLng = searchParams.get("lng") ? parseFloat(searchParams.get("lng")!) : undefined;
+  const initialZoom = searchParams.get("zoom") ? parseFloat(searchParams.get("zoom")!) : undefined;
+  const initialCenter = (initialLng !== undefined && initialLat !== undefined && !isNaN(initialLng) && !isNaN(initialLat))
+    ? [initialLng, initialLat] as [number, number]
+    : undefined;
+
+  // --- Layer selection via URL ---
+  const layerParam = searchParams.get("layer") as MapLayerType | null;
+  const initialLayers = layerParam
+    ? ["background", "political", layerParam] as MapLayerType[]
+    : undefined;
 
   const [selectedCountry, setSelectedCountry] =
     useState<SelectedCountry | null>(null);
@@ -39,13 +81,24 @@ export default function WorldMapPage() {
     []
   );
 
+  // In embed mode: hide navigation, controls, use full viewport
+  const containerClass = isEmbed
+    ? "h-dvh w-dvw"
+    : isStandalone
+      ? "h-dvh"
+      : "h-[calc(100dvh-64px)]";
+
   return (
-    <div className={`relative ${isStandalone ? "h-dvh" : "h-[calc(100dvh-64px)]"}`}>
+    <div className={`relative ${containerClass}`}>
       <MapContainer
-        showControls={true}
-        showPopup={true}
+        showControls={!isEmbed}
+        showTools={!isEmbed}
+        showPopup={!isEmbed}
         onCountrySelect={handleCountrySelect}
         initialCountryId={initialCountryId}
+        initialCenter={initialCenter}
+        initialZoom={initialZoom}
+        initialLayers={initialLayers}
       />
     </div>
   );

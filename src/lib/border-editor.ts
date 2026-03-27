@@ -279,7 +279,8 @@ export function calculateArea(geometry: Polygon | MultiPolygon): number {
   }
 
   // Convert from square degrees to approximate sq km
-  // At equator: 1° ≈ 111.32 km. Use cos(centroidLat) correction.
+  // At equator: 1° ≈ 111.32 km. IxEarth scale is baked into the map geometry,
+  // so no additional scale factor is needed (verified: PostGIS matches roster at 0.999).
   const centroid = calculateCentroid(geometry);
   const cosLat = Math.cos((centroid[1] * Math.PI) / 180);
   const degToKm = 111.32;
@@ -365,6 +366,8 @@ export function createUndoStack(): UndoStack {
   return { entries: [], position: -1 };
 }
 
+const MAX_UNDO = 50;
+
 export function pushUndo(
   stack: UndoStack,
   action: BorderEditAction,
@@ -374,6 +377,13 @@ export function pushUndo(
   // Truncate any redo entries
   const entries = stack.entries.slice(0, stack.position + 1);
   entries.push({ action, previousGeometry, resultGeometry: resultGeometry ?? previousGeometry });
+
+  // Cap history to prevent unbounded memory growth with complex polygons
+  if (entries.length > MAX_UNDO) {
+    const excess = entries.length - MAX_UNDO;
+    entries.splice(0, excess);
+  }
+
   return { entries, position: entries.length - 1 };
 }
 
@@ -747,8 +757,27 @@ function perpendicularDistance(p: Position, a: Position, b: Position): number {
  */
 export function simplifyGeometry(
   geometry: Polygon | MultiPolygon,
-  tolerance: number = 0.002
+  tolerance: number = 0.002,
+  neighbors?: Array<{ id: string; geometry: Polygon | MultiPolygon }>
 ): Polygon | MultiPolygon {
+  // When neighbors are provided, use topology-preserving simplification
+  if (neighbors && neighbors.length > 0) {
+    try {
+      const { simplifySingleProvince } = require("~/lib/province-importer/topo-simplify") as typeof import("~/lib/province-importer/topo-simplify");
+      const target = { type: "Feature" as const, properties: {}, geometry };
+      const neighborFeatures = neighbors.map((n) => ({
+        type: "Feature" as const,
+        properties: { id: n.id },
+        geometry: n.geometry,
+      }));
+      const result = simplifySingleProvince(target, neighborFeatures);
+      return result.geometry;
+    } catch {
+      // Fall through to Douglas-Peucker if topo-simplify fails
+    }
+  }
+
+  // Douglas-Peucker fallback (no neighbor awareness)
   const rings = getAllRings(geometry).map((ring) => {
     const closed = isRingClosed(ring);
     // Work on open ring for simplification

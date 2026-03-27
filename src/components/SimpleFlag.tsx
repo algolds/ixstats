@@ -1,8 +1,11 @@
-// Simple flag component - no complex features
+/**
+ * @deprecated Use ~/components/UnifiedCountryFlag instead for new code.
+ * This file is kept for backward compatibility with 11+ consumers.
+ */
 "use client";
 
 import React from "react";
-import { useSimpleFlag } from "~/hooks/useSimpleFlag";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 import { Flag } from "lucide-react";
 
 interface SimpleFlagProps {
@@ -24,27 +27,18 @@ export function SimpleFlag({
   className = "",
   showPlaceholder = true,
 }: SimpleFlagProps) {
-  const { flagUrl, isLoading, error } = useSimpleFlag(countryName);
-
-  const baseClasses = `${sizeClasses[size]} ${className} object-cover rounded border-border`;
+  const { flagUrl, isLoading } = useFlag(countryName);
 
   if (isLoading) {
     return (
-      <div
-        className={`${sizeClasses[size]} ${className} bg-muted border-border animate-pulse rounded`}
-      />
+      <div className={`${sizeClasses[size]} ${className} bg-muted animate-pulse rounded`} />
     );
   }
 
-  if (error || !flagUrl) {
-    if (!showPlaceholder) {
-      return null;
-    }
-
+  if (!flagUrl) {
+    if (!showPlaceholder) return null;
     return (
-      <div
-        className={`${sizeClasses[size]} ${className} bg-muted border-border flex items-center justify-center rounded`}
-      >
+      <div className={`${sizeClasses[size]} ${className} bg-muted flex items-center justify-center rounded`}>
         <Flag className="text-muted-foreground h-3 w-3" />
       </div>
     );
@@ -54,11 +48,8 @@ export function SimpleFlag({
     <img
       src={flagUrl}
       alt={`Flag of ${countryName}`}
-      className={baseClasses}
-      onError={(e) => {
-        console.warn(`[SimpleFlag] Failed to load flag image: ${flagUrl}`);
-        (e.target as HTMLImageElement).style.display = "none";
-      }}
+      className={`${sizeClasses[size]} ${className} object-cover rounded`}
+      loading="lazy"
     />
   );
 }

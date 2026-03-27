@@ -272,6 +272,20 @@ export function formatNumber(num: number, decimals: number = 1): string {
 }
 
 /**
+ * Format a whole-number metric (population, workforce, etc.) — never shows decimals.
+ * Use this for any count of people, items, units, etc.
+ */
+export function formatWholeNumber(num: number | null | undefined, fallback = "N/A"): string {
+  if (num === null || num === undefined || Number.isNaN(num)) return fallback;
+  const absNum = Math.abs(num);
+  if (absNum >= 1e12) return Math.round(num / 1e12) + "T";
+  if (absNum >= 1e9) return Math.round(num / 1e9) + "B";
+  if (absNum >= 1e6) return Math.round(num / 1e6) + "M";
+  if (absNum >= 1e3) return Math.round(num / 1e3) + "K";
+  return Math.round(num).toLocaleString("en-US");
+}
+
+/**
  * Format percentage with optional decimal places
  *
  * @param value - The decimal value (e.g., 0.15 for 15%)

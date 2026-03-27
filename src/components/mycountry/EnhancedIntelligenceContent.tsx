@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
-import { Brain, Eye, BarChart3, FileText, Settings, Shield, AlertTriangle, Globe } from "lucide-react";
+import { Eye, BarChart3, FileText, Settings, Shield, AlertTriangle, Globe, BookOpen } from "lucide-react";
+import { BrainIcon } from "~/components/ui/icons";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -24,6 +25,7 @@ import { api } from "~/trpc/react";
 import { IntelligenceDashboard } from "~/components/intelligence/IntelligenceDashboard";
 import { IntelligenceAnalysisPanel } from "~/components/intelligence/IntelligenceAnalysisPanel";
 import { KeyFindingsPanel } from "~/components/intelligence/KeyFindingsPanel";
+import { WikiLoreBlock } from "./primitives/WikiLoreBlock";
 
 const IntelligenceMapWidget = dynamic(
   () => import("~/components/maps/widgets/IntelligenceMapWidget").then((m) => ({ default: m.IntelligenceMapWidget })),
@@ -38,7 +40,12 @@ interface EnhancedIntelligenceContentProps {
   notifications?: Partial<Record<string, number>>;
 }
 
-type IntelligenceTab = "dashboard" | "analysis" | "reports";
+type IntelligenceTab = "dashboard" | "analysis" | "reports" | "archives";
+
+const WikiArchivesPanel = dynamic(
+  () => import("./intelligence/WikiArchivesPanel").then((m) => ({ default: m.WikiArchivesPanel })),
+  { ssr: false, loading: () => <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />)}</div> }
+);
 
 export function EnhancedIntelligenceContent({
   activeSection,
@@ -91,6 +98,7 @@ export function EnhancedIntelligenceContent({
     { value: "dashboard" as const, icon: Eye, label: "Dashboard", shortLabel: "Dash", badge: 0 },
     { value: "analysis" as const, icon: BarChart3, label: "Analysis", shortLabel: "Analysis", badge: 0 },
     { value: "reports" as const, icon: FileText, label: "Reports", shortLabel: "Reports", badge: criticalAlerts },
+    { value: "archives" as const, icon: BookOpen, label: "Archives", shortLabel: "Lore", badge: 0 },
   ];
 
   const header = (
@@ -107,14 +115,14 @@ export function EnhancedIntelligenceContent({
             </Badge>
             <span className="text-muted-foreground text-sm">→</span>
             <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-              <Brain className="mr-1 h-3 w-3" />
+              <BrainIcon size={12} className="mr-1" />
               Intelligence Center
             </Badge>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 p-2 flex-shrink-0">
-                <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                <BrainIcon size={24} className="text-white" />
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold">{country.name}</h1>
@@ -167,7 +175,7 @@ export function EnhancedIntelligenceContent({
             onValueChange={(value) => setActiveTab(value as IntelligenceTab)}
             className="space-y-3"
           >
-            <TabsList className="grid w-full grid-cols-3 gap-0.5">
+            <TabsList className="grid w-full grid-cols-4 gap-0.5">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.value}
@@ -214,8 +222,16 @@ export function EnhancedIntelligenceContent({
                 <KeyFindingsPanel countryId={country.id} />
               </ThemedTabContent>
             </TabsContent>
+
+            <TabsContent value="archives">
+              <ThemedTabContent theme="intelligence" className="tab-content-enter">
+                <WikiArchivesPanel countryId={country.id} countryName={country.name} />
+              </ThemedTabContent>
+            </TabsContent>
           </Tabs>
         </motion.div>
+
+        <WikiLoreBlock context="intelligence" themeColor="blue" title="Intelligence Lore" />
       </MyCountrySidebarLayout>
 
       {/* Settings Dialog */}

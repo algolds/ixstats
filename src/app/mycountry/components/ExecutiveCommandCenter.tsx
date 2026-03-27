@@ -843,7 +843,7 @@ export function ExecutiveCommandCenter({
                     Access actionable plays from the Intelligence Center via the mobile menu.
                   </p>
                   <Link
-                    href={withBasePath("/mycountry/intelligence")}
+                    href="/mycountry/intelligence"
                     className="text-primary mt-3 inline-flex items-center gap-2 hover:underline"
                   >
                     <Shield className="h-4 w-4" />

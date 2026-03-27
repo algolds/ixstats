@@ -14,7 +14,8 @@ import type { ImportStep } from "~/lib/province-importer/types";
 
 interface ProvinceImportWizardProps {
   importer: ReturnType<typeof useProvinceImporter>;
-  onClose: () => void;
+  onClose?: () => void;
+  onCancel?: () => void;
   onComplete?: () => void;
 }
 
@@ -30,8 +31,10 @@ const STEP_CONFIG: { key: ImportStep; label: string; icon: typeof Upload }[] = [
 export const ProvinceImportWizard = memo(function ProvinceImportWizard({
   importer,
   onClose,
+  onCancel,
   onComplete,
 }: ProvinceImportWizardProps) {
+  const handleClose = onCancel ?? onClose;
 
   const handleCommit = useCallback(async () => {
     const result = await importer.commitImport();
@@ -46,7 +49,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold text-foreground">Import Provinces</h2>
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <X className="h-4 w-4" />

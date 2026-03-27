@@ -10,6 +10,7 @@ import {
   Target,
   Activity,
 } from "lucide-react";
+import { ShieldCheckIcon } from "~/components/ui/icons";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MilitaryCustomizer } from "~/components/defense/MilitaryCustomizer";
@@ -19,6 +20,7 @@ import { useCountryData, VitalityRings, SectionHeaderBackground, TabHeroBanner }
 import type { RingConfig } from "./primitives";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { MyCountrySidebarLayout } from "./MyCountrySidebarLayout";
+import { WikiLoreBlock } from "./primitives/WikiLoreBlock";
 
 const DefenseMapWidget = dynamic(
   () => import("~/components/maps/widgets/DefenseMapWidget").then((m) => ({ default: m.DefenseMapWidget })),
@@ -96,13 +98,13 @@ export function EnhancedDefenseContent({
           </Badge>
           <span className="text-muted-foreground text-sm">→</span>
           <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
-            <Shield className="mr-1 h-3 w-3" />
+            <ShieldCheckIcon size={12} className="mr-1" />
             Defense & Security
           </Badge>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="rounded-full bg-gradient-to-r from-red-500 to-orange-500 p-2 flex-shrink-0">
-            <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+            <ShieldCheckIcon size={24} className="text-white" />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold">{country.name}</h1>
@@ -186,6 +188,8 @@ export function EnhancedDefenseContent({
           </TabsContent>
         </Tabs>
       </motion.div>
+
+      <WikiLoreBlock context="defense" themeColor="red" title="Military Heritage" />
     </MyCountrySidebarLayout>
   );
 }

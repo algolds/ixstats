@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
@@ -17,6 +18,21 @@ import { SimpleFlag } from "~/components/SimpleFlag";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
 import { Skeleton } from "~/components/ui/skeleton";
+import dynamic from "next/dynamic";
+
+const GdpDetailsModal = dynamic(
+  () => import("~/components/modals/GdpDetailsModal").then((m) => ({ default: m.GdpDetailsModal })),
+  { ssr: false }
+);
+const PopulationDetailsModal = dynamic(
+  () => import("~/components/modals/PopulationDetailsModal").then((m) => ({ default: m.PopulationDetailsModal })),
+  { ssr: false }
+);
+
+const CountryMapEmbed = dynamic(
+  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
+  { ssr: false, loading: () => <div className="h-28 animate-pulse rounded-lg bg-muted" /> }
+);
 
 function formatCompact(num: number): string {
   if (num >= 1e12) return `${(num / 1e12).toFixed(1)}T`;
@@ -94,6 +110,7 @@ function GlassVitalityBar({ value, hex, delay }: { value: number; hex: string; d
 }
 
 export function DashboardPlayerWidget() {
+  const [activeModal, setActiveModal] = useState<"gdp" | "population" | null>(null);
   const { user, isSignedIn } = useUser();
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
@@ -206,95 +223,65 @@ export function DashboardPlayerWidget() {
 
       <div className="border-t border-border/40" />
 
-      {/* At-a-glance stats */}
+      {/* At-a-glance stats — clickable for detail modals */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-emerald-500/8 px-2.5 py-2 dark:bg-emerald-500/10">
+        <button onClick={() => setActiveModal("gdp")} className="rounded-lg bg-emerald-500/8 px-2.5 py-2 text-left transition-colors hover:bg-emerald-500/15 cursor-pointer dark:bg-emerald-500/10">
           <p className="text-[10px] text-muted-foreground">GDP/Cap</p>
           <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
             ${formatCompact(stats.gdpPerCapita)}
           </p>
-        </div>
-        <div className="rounded-lg bg-blue-500/8 px-2.5 py-2 dark:bg-blue-500/10">
+        </button>
+        <button onClick={() => setActiveModal("population")} className="rounded-lg bg-blue-500/8 px-2.5 py-2 text-left transition-colors hover:bg-blue-500/15 cursor-pointer dark:bg-blue-500/10">
           <p className="text-[10px] text-muted-foreground">Population</p>
           <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">
             {formatCompact(stats.population)}
           </p>
-        </div>
-        <div className="rounded-lg bg-amber-500/8 px-2.5 py-2 dark:bg-amber-500/10">
+        </button>
+        <button onClick={() => setActiveModal("gdp")} className="rounded-lg bg-amber-500/8 px-2.5 py-2 text-left transition-colors hover:bg-amber-500/15 cursor-pointer dark:bg-amber-500/10">
           <p className="text-[10px] text-muted-foreground">Growth</p>
           <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
             {(stats.growth * 100).toFixed(2)}%
           </p>
-        </div>
-        <div className="rounded-lg bg-indigo-500/8 px-2.5 py-2 dark:bg-indigo-500/10">
+        </button>
+        <button onClick={() => setActiveModal("gdp")} className="rounded-lg bg-indigo-500/8 px-2.5 py-2 text-left transition-colors hover:bg-indigo-500/15 cursor-pointer dark:bg-indigo-500/10">
           <p className="text-[10px] text-muted-foreground">Tier</p>
           <p className="truncate text-xs font-semibold text-indigo-700 dark:text-indigo-400">
             {stats.tier}
           </p>
-        </div>
+        </button>
       </div>
 
-      {/* Rankings */}
-      {(gdpRank || popRank) && (
+      {/* Ranking + Map */}
+      {gdpRank && (
         <>
           <div className="border-t border-border/40" />
-          <div className="space-y-1.5 px-0.5">
-            {gdpRank && (
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground">GDP Rank</span>
-                <span className={cn(
-                  "text-xs font-semibold",
-                  gdpRank.trend === "improving" ? "text-green-600 dark:text-green-400" :
-                  gdpRank.trend === "declining" ? "text-red-600 dark:text-red-400" :
-                  "text-foreground",
-                )}>
-                  #{gdpRank.global.position}
-                  <span className="text-[10px] font-normal text-muted-foreground">/{gdpRank.global.total}</span>
-                </span>
-              </div>
-            )}
-            {popRank && (
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground">Pop Rank</span>
-                <span className={cn(
-                  "text-xs font-semibold",
-                  popRank.trend === "improving" ? "text-green-600 dark:text-green-400" :
-                  popRank.trend === "declining" ? "text-red-600 dark:text-red-400" :
-                  "text-foreground",
-                )}>
-                  #{popRank.global.position}
-                  <span className="text-[10px] font-normal text-muted-foreground">/{popRank.global.total}</span>
-                </span>
-              </div>
-            )}
+          <div className="flex items-center justify-between px-0.5">
+            <span className="text-[10px] text-muted-foreground">Global Ranking</span>
+            <span className={cn(
+              "text-xs font-semibold",
+              gdpRank.trend === "improving" ? "text-green-600 dark:text-green-400" :
+              gdpRank.trend === "declining" ? "text-red-600 dark:text-red-400" :
+              "text-foreground",
+            )}>
+              #{gdpRank.global.position}
+              <span className="text-[10px] font-normal text-muted-foreground">/{gdpRank.global.total}</span>
+            </span>
           </div>
         </>
       )}
 
-      {/* Vitality — liquid glass bars */}
-      {vitality && (
-        <>
-          <div className="border-t border-border/40" />
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] font-medium text-muted-foreground">National Vitality</p>
-              <p className="text-[10px] font-semibold">{vitality.overallScore}</p>
-            </div>
-            {VITALITY_BARS.map((bar, i) => {
-              const val = vitality[bar.key] as number;
-              return (
-                <div key={bar.key} className="space-y-0.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground">{bar.label}</span>
-                    <span className="text-[10px] font-medium">{val}</span>
-                  </div>
-                  <GlassVitalityBar value={val} hex={bar.hex} delay={i * 0.15} />
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+      {/* Country map embed */}
+      <div className="border-t border-border/40" />
+      <div className="overflow-hidden rounded-lg border border-border/30">
+        <CountryMapEmbed
+          countryId={countryId}
+          height="h-28"
+          showNeighbors={true}
+          showCities={false}
+          interactive={true}
+          boundsPadding={30}
+        />
+      </div>
 
       {/* Quick links */}
       <div className="border-t border-border/40" />
@@ -314,6 +301,24 @@ export function DashboardPlayerWidget() {
           );
         })}
       </div>
+
+      {/* Detail modals */}
+      {activeModal === "gdp" && (
+        <GdpDetailsModal
+          isOpen
+          onClose={() => setActiveModal(null)}
+          countryId={countryId}
+          countryName={country.name}
+        />
+      )}
+      {activeModal === "population" && (
+        <PopulationDetailsModal
+          isOpen
+          onClose={() => setActiveModal(null)}
+          countryId={countryId}
+          countryName={country.name}
+        />
+      )}
     </div>
   );
 }

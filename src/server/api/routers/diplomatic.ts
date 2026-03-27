@@ -29,12 +29,7 @@ import {
 import { vaultService } from "~/lib/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomatic-news-generator";
 
-/** Normalize a flag URL — bare filenames get prefixed with the wiki file path. */
-function normalizeFlagUrl(flag: string | null | undefined): string | undefined {
-  if (!flag) return undefined;
-  if (flag.startsWith("http") || flag.startsWith("data:") || flag.startsWith("/")) return flag;
-  return `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(flag)}`;
-}
+import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 
 // Helper functions for cultural exchange <-> embassy mission integration
 

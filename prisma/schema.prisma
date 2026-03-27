@@ -101,6 +101,9 @@ model Country {
   centroid                    Json?
   boundingBox                 Json?
   coastlineKm                 Float?
+  wikiPageTitle               String?
+  wikiSource                  String?                   @default("ixwiki")
+  wikiLastSynced              DateTime?
   usesAtomicGovernment        Boolean                   @default(true)
   hideDiplomaticOps           Boolean                   @default(false)
   hideStratcommIntel          Boolean                   @default(false)
@@ -152,6 +155,9 @@ model Country {
   cardBackgroundImages        CardBackgroundImage[]     @relation("CountryCardImages")
   cities                      City[]                    @relation("CountryCities")
   pointsOfInterest            PointOfInterest[]         @relation("CountryPOIs")
+  storyPins                   StoryPin[]                @relation("CountryStoryPins")
+  storylines                  Storyline[]               @relation("CountryStorylines")
+  mapLabels                   MapLabel[]                @relation("CountryMapLabels")
   subdivisions                Subdivision[]             @relation("CountrySubdivisions")
   territories                 Territory[]
   politicalParties            PoliticalParty[]             @relation("CountryPoliticalParties")
@@ -712,6 +718,9 @@ model UserPreferences {
   diplomaticAlerts   Boolean  @default(false)
   systemAlerts       Boolean  @default(true)
   notificationLevel  String   @default("medium")
+  wikiAutoScan       Boolean  @default(true)
+  wikiSourcePriority String   @default("ixwiki")
+  wikiDisplayMode    String   @default("inline")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -3687,6 +3696,7 @@ model Subdivision {
   geom_postgis    Unsupported("geometry")?
   cities          City[]                   @relation("SubdivisionCities")
   pois            PointOfInterest[]        @relation("SubdivisionPOIs")
+  storyPins       StoryPin[]               @relation("SubdivisionStoryPins")
   country         Country                  @relation("CountrySubdivisions", fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId, status])
@@ -3755,6 +3765,93 @@ model PointOfInterest {
   @@index([status, createdAt])
   @@index([geom_postgis], map: "idx_poi_geom", type: Gist)
   @@map("points_of_interest")
+}
+
+/// Story Pins — Narrative markers placed on the map telling a country's history.
+/// Each pin links to a wiki article and has a category, IxTime year, and rich text.
+model StoryPin {
+  id              String                   @id @default(cuid())
+  countryId       String
+  subdivisionId   String?
+  title           String
+  content         String                   @db.Text
+  contentFormat   String                   @default("plain") // "plain" | "markdown"
+  category        String                   // battle, founding, treaty, cultural, religious, trade, naval, settlement, government, biography, linguistic, upheaval, natural, exploration
+  importance      Int                      @default(0) // 0=normal, 1=major, 2=legendary
+  ixTimeYear      Int?
+  eraLabel        String?
+  coordinates     Json                     // [lng, lat]
+  wikiPageTitle   String?
+  photos          Json?                    // string[] of image URLs
+  thumbnailUrl    String?                  // cached hero image for map preview
+  icon            String?
+  metadata        Json?
+  storylineId     String?
+  storylineOrder  Int?                     // ordering within a storyline
+  status          String                   @default("approved")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  country         Country                  @relation("CountryStoryPins", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision     Subdivision?             @relation("SubdivisionStoryPins", fields: [subdivisionId], references: [id])
+  storyline       Storyline?               @relation("StorylinePins", fields: [storylineId], references: [id])
+
+  @@index([countryId, status, category])
+  @@index([countryId, ixTimeYear])
+  @@index([status, createdAt])
+  @@index([storylineId, storylineOrder])
+  @@map("story_pins")
+}
+
+/// Storylines — Narrative chains connecting story pins into sequential historical arcs.
+/// Each storyline belongs to a country and groups related story pins in order.
+model Storyline {
+  id          String     @id @default(cuid())
+  title       String     @db.VarChar(200)
+  description String?    @db.Text
+  countryId   String
+  color       String?    @db.VarChar(7) // hex color for map connection lines
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  country     Country    @relation("CountryStorylines", fields: [countryId], references: [id], onDelete: Cascade)
+  pins        StoryPin[] @relation("StorylinePins")
+
+  @@index([countryId])
+  @@map("storylines")
+}
+
+/// Map Labels — Custom styled text on the map for geographic feature names.
+/// Mountain ranges, straits, bays, deserts, etc. Rendered as MapLibre text layers.
+model MapLabel {
+  id            String                   @id @default(cuid())
+  countryId     String
+  text          String
+  labelType     String                   // mountain_range, strait, bay, peninsula, plateau, valley, desert, sea, region, historical
+  coordinates   Json                     // [lng, lat] anchor point
+  fontSize      Float                    @default(14)
+  color         String                   @default("#374151")
+  rotation      Float                    @default(0)
+  letterSpacing Float                    @default(0)
+  fontWeight    String                   @default("normal")
+  opacity       Float                    @default(1.0)
+  minZoom       Float                    @default(4)
+  maxZoom       Float                    @default(18)
+  wikiPageTitle String?
+  metadata      Json?
+  status        String                   @default("approved")
+  submittedBy   String
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  country       Country                  @relation("CountryMapLabels", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, status])
+  @@index([status, minZoom])
+  @@map("map_labels")
 }
 
 /// IxMaps - Base map layer storage for GeoJSON features (political, climate, etc.)

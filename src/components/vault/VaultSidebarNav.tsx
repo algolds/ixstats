@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Grid3x3, Package, ArrowRightLeft, Download } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { stripBasePath } from "~/lib/base-path";
 
 export type VaultSection = "dashboard" | "cards" | "acquire" | "create" | "import";
 
@@ -58,7 +59,8 @@ export const VAULT_NAV_ITEMS: {
 ];
 
 /** Map any vault pathname to its parent section + optional sub-tab */
-export function getSectionFromPathname(pathname: string): VaultSection {
+export function getSectionFromPathname(rawPathname: string): VaultSection {
+  const pathname = stripBasePath(rawPathname);
   if (pathname === "/vault" || pathname === "/vault/") return "dashboard";
 
   // Cards section: /vault/cards, /vault/inventory, /vault/collections, /vault/gallery, /vault/lore-gallery, /vault/ns-library
@@ -95,7 +97,8 @@ export function getSectionFromPathname(pathname: string): VaultSection {
 }
 
 /** Map a pathname to the sub-tab within its section */
-export function getSubTabFromPathname(pathname: string): string | null {
+export function getSubTabFromPathname(rawPathname: string): string | null {
+  const pathname = stripBasePath(rawPathname);
   // Cards section sub-tabs
   if (pathname.startsWith("/vault/collections")) return "collections";
   if (pathname.startsWith("/vault/gallery") || pathname.startsWith("/vault/lore-gallery") || pathname.startsWith("/vault/ns-library")) return "gallery";

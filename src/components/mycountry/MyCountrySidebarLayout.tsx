@@ -44,7 +44,7 @@ export function MyCountrySidebarLayout({
         {/* Main Layout — icon rail + content */}
         <div className="flex gap-3 sm:gap-4">
           {/* Desktop: Fixed sidebar column — icon rail (or expanded with labels when sidebarExtra is present) */}
-          <div className={`relative z-30 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-52" : ""}`}>
+          <div className={`relative z-30 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
             <div className="sticky top-6 space-y-3">
               <MyCountrySidebarNav
                 activeSection={activeSection}

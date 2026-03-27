@@ -54,22 +54,28 @@ export class IxTime {
   }
 
   /**
-   * Convert a real-world timestamp to its IxTime equivalent
+   * Convert a real-world timestamp to its IxTime equivalent.
+   * Uses the same pivot-point system as getCurrentIxTime for consistency.
    */
   static convertToIxTime(realWorldTimestamp: number): number {
-    const multiplier = this.getTimeMultiplier();
-    if (multiplier === 0) {
+    if (this.multiplierOverride === 0) {
       return this.timeOverride ?? this.getCurrentIxTimeInternal();
     }
 
-    // Calculate how much real time has elapsed since the real-world epoch
-    const realSecondsElapsed = (realWorldTimestamp - this.REAL_WORLD_EPOCH) / 1000;
+    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
+    const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
 
-    // Apply the time multiplier to get IxTime seconds elapsed
-    const ixSecondsElapsed = realSecondsElapsed * multiplier;
-
-    // Add to the real-world epoch to get current IxTime
-    return this.REAL_WORLD_EPOCH + ixSecondsElapsed * 1000;
+    if (realWorldTimestamp >= PIVOT_POINT_REAL) {
+      // After pivot: 2x from Jan 1, 2040 IxTime
+      const realElapsed = (realWorldTimestamp - PIVOT_POINT_REAL) / 1000;
+      const mult = this.multiplierOverride ?? this.POST_SPEED_CHANGE_MULTIPLIER;
+      return PIVOT_POINT_IXTIME + realElapsed * mult * 1000;
+    } else {
+      // Before pivot: 4x from real-world epoch
+      const realElapsed = (realWorldTimestamp - this.REAL_WORLD_EPOCH) / 1000;
+      const mult = this.multiplierOverride ?? this.BASE_TIME_MULTIPLIER;
+      return this.REAL_WORLD_EPOCH + realElapsed * mult * 1000;
+    }
   }
 
   /**

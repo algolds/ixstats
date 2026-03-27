@@ -34,6 +34,12 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       { enabled, ...MAP_CACHE }
     );
 
+  // Fetch world political layer for neighbor rendering (shared cache with main map)
+  const { data: worldMap } = api.geo.getWorldMap.useQuery(
+    { layers: ["political"] },
+    { enabled, staleTime: 30 * 60_000, gcTime: 2 * 60 * 60_000 }
+  );
+
   return useMemo(() => {
     const cities = features?.cities ?? [];
     const capital = cities.find((c) => c.isNationalCapital) ?? null;
@@ -57,9 +63,12 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       // Neighbors
       neighbors: neighbors ?? [],
 
+      // World political layer for greyed-out neighbor rendering
+      worldPolitical: (worldMap as Record<string, unknown>)?.political as import("geojson").FeatureCollection | undefined,
+
       // State
       isLoading: geoLoading || neighborsLoading || featuresLoading,
       hasGeometry: !!geoData?.geometry,
     };
-  }, [geoData, neighbors, features, geoLoading, neighborsLoading, featuresLoading]);
+  }, [geoData, neighbors, features, worldMap, geoLoading, neighborsLoading, featuresLoading]);
 }

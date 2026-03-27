@@ -1179,6 +1179,7 @@ export const usersRouter = createTRPCRouter({
             sdi: false,
             eci: false,
             intelligence: false,
+            defense: false,
             advancedAnalytics: false,
           },
         };
@@ -1199,6 +1200,7 @@ export const usersRouter = createTRPCRouter({
           sdi: isPremium,
           eci: isPremium,
           intelligence: isPremium,
+          defense: isPremium,
           advancedAnalytics: isPremium,
         },
       };
@@ -1211,6 +1213,7 @@ export const usersRouter = createTRPCRouter({
           sdi: false,
           eci: false,
           intelligence: false,
+          defense: false,
           advancedAnalytics: false,
         },
       };
@@ -1271,5 +1274,32 @@ export const usersRouter = createTRPCRouter({
         console.error("Error updating membership tier:", error);
         throw new Error("Failed to update membership tier");
       }
+    }),
+
+  // ─── Wiki Preferences ────────────────────────────────────────────────
+
+  getPreferences: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.auth.userId;
+    const prefs = await ctx.db.userPreferences.findUnique({ where: { userId } });
+    return prefs ?? {
+      wikiAutoScan: true,
+      wikiSourcePriority: "ixwiki",
+      wikiDisplayMode: "inline",
+    };
+  }),
+
+  updateWikiPreferences: protectedProcedure
+    .input(z.object({
+      wikiAutoScan: z.boolean().optional(),
+      wikiSourcePriority: z.enum(["ixwiki", "iiwiki", "both"]).optional(),
+      wikiDisplayMode: z.enum(["inline", "sidebar", "hidden"]).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.auth.userId;
+      return ctx.db.userPreferences.upsert({
+        where: { userId },
+        create: { userId, ...input },
+        update: input,
+      });
     }),
 });

@@ -45,39 +45,16 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
     setLoadingPreview(true);
 
     try {
-      // Fetch article preview from MediaWiki API
-      const apiUrl =
-        selectedWikiSource === "ixwiki"
-          ? "https://ixwiki.com/api.php"
-          : "https://iiwiki.com/api.php";
+      // Fetch article preview via WikiBridge (tRPC endpoint)
+      const result = await utils.cards.getWikiArticleExcerpt.fetch({
+        articleTitle,
+        wikiSource: selectedWikiSource,
+      });
 
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("titles", articleTitle);
-      url.searchParams.set("prop", "extracts");
-      url.searchParams.set("exintro", "1");
-      url.searchParams.set("explaintext", "1");
-      url.searchParams.set("origin", "*");
-
-      const response = await fetch(url.toString());
-
-      if (!response.ok) {
-        console.error("Failed to fetch article preview");
-        setArticlePreview("Failed to load article preview.");
-        return;
-      }
-
-      const data = await response.json();
-      const pages = data.query?.pages;
-
-      if (pages) {
-        const page = Object.values(pages)[0] as any;
-        if (page.extract) {
-          setArticlePreview(page.extract);
-        } else {
-          setArticlePreview("No preview available for this article.");
-        }
+      if (result?.extract) {
+        setArticlePreview(result.extract);
+      } else {
+        setArticlePreview("No preview available for this article.");
       }
     } catch (error) {
       console.error("Error fetching article preview:", error);

@@ -2,9 +2,42 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Brain, Shield, Crown, Users, Map, LayoutDashboard, Vote } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Brain, Shield, Crown, Users, Map, LayoutDashboard, Vote, Lock } from "lucide-react";
 import { cn } from "~/lib/utils";
+import {
+  LayoutDashboardIcon,
+  CrownIcon,
+  UsersIcon,
+  BrainIcon,
+  ShieldCheckIcon,
+  VoteIcon,
+  MapIcon,
+} from "~/components/ui/icons";
 import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
+import { usePremium } from "~/hooks/usePremium";
+import { stripBasePath } from "~/lib/base-path";
+import { api } from "~/trpc/react";
+
+/** Map section ids to their animated icon counterparts */
+const ANIMATED_NAV_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  overview: LayoutDashboardIcon,
+  executive: CrownIcon,
+  diplomacy: UsersIcon,
+  intelligence: BrainIcon,
+  defense: ShieldCheckIcon,
+  politics: VoteIcon,
+  "map-editor": MapIcon,
+};
+
+/** Renders the animated icon for a section when available, falling back to the lucide icon */
+function NavIcon({ id, fallback: Fallback, className, size = 16 }: { id: string; fallback: LucideIcon; className?: string; size?: number }) {
+  const Animated = ANIMATED_NAV_ICONS[id];
+  if (Animated) return <Animated size={size} className={className} />;
+  return <Fallback className={cn("h-4 w-4", className)} />;
+}
+
+const PREMIUM_GATED_SECTIONS: Set<MyCountrySection> = new Set(["intelligence", "defense"]);
 
 export type MyCountrySection = "overview" | "executive" | "diplomacy" | "intelligence" | "defense" | "politics" | "map-editor";
 
@@ -74,7 +107,8 @@ export const NAV_ITEMS: {
   },
 ];
 
-export function getSectionFromPathname(pathname: string): MyCountrySection {
+export function getSectionFromPathname(rawPathname: string): MyCountrySection {
+  const pathname = stripBasePath(rawPathname);
   if (pathname === "/mycountry" || pathname === "/mycountry/") return "overview";
   for (const item of NAV_ITEMS) {
     if (item.id !== "overview" && pathname.startsWith(item.href)) return item.id;
@@ -95,16 +129,29 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
   const pathname = usePathname();
   const activeId = activeSection ?? getSectionFromPathname(pathname);
   const isControlled = !!onNavigate;
+  const { isPremium } = usePremium();
+
+  // Fetch section visibility settings — hide intelligence/defense when disabled
+  const { data: navSettings } = api.admin.getNavigationSettings.useQuery(undefined, {
+    staleTime: 5 * 60_000,
+  });
+
+  const HIDDEN_SECTIONS = new Set<MyCountrySection>();
+  if (navSettings && !navSettings.showIntelligenceTab) HIDDEN_SECTIONS.add("intelligence");
+  if (navSettings && !navSettings.showDefenseTab) HIDDEN_SECTIONS.add("defense");
+
+  const visibleItems = NAV_ITEMS.filter((item) => !HIDDEN_SECTIONS.has(item.id));
 
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
       <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-border bg-card/60 p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
-          {NAV_ITEMS.map((item) => {
+          {visibleItems.map((item) => {
             const isActive = item.id === activeId;
-            const Icon = item.icon;
+
             const noteCount = notifications?.[item.id] ?? 0;
+            const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
             const cls = cn(
               "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
               isActive
@@ -117,14 +164,16 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
 
             return isControlled ? (
               <button key={item.id} onClick={() => onNavigate(item.id)} className={cls} aria-current={isActive ? "page" : undefined}>
-                <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="flex-shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
+                {isLocked && <Lock className="h-3 w-3 flex-shrink-0 text-yellow-400/70" />}
                 {dot}
               </button>
             ) : (
               <Link key={item.id} href={item.href} className={cls} aria-current={isActive ? "page" : undefined}>
-                <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="flex-shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
+                {isLocked && <Lock className="h-3 w-3 flex-shrink-0 text-yellow-400/70" />}
                 {dot}
               </Link>
             );
@@ -138,10 +187,10 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
   if (variant === "expanded") {
     return (
       <nav className="flex w-full flex-col gap-1 rounded-xl border border-border bg-card/60 p-1.5 shadow-sm backdrop-blur-lg dark:bg-card/40">
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = item.id === activeId;
-          const Icon = item.icon;
           const noteCount = notifications?.[item.id] ?? 0;
+          const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
           const cls = cn(
             "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200",
             isActive
@@ -159,15 +208,17 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
 
           return isControlled ? (
             <button key={item.id} onClick={() => onNavigate(item.id)} className={cls} aria-current={isActive ? "page" : undefined}>
-              <Icon className="h-4 w-4 flex-shrink-0" />
+              <NavIcon id={item.id} fallback={item.icon} size={16} className="flex-shrink-0" />
               <span className="truncate">{item.title}</span>
-              {badge}
+              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-yellow-400/70" />}
+              {!isLocked && badge}
             </button>
           ) : (
             <Link key={item.id} href={item.href} className={cls} aria-current={isActive ? "page" : undefined}>
-              <Icon className="h-4 w-4 flex-shrink-0" />
+              <NavIcon id={item.id} fallback={item.icon} size={16} className="flex-shrink-0" />
               <span className="truncate">{item.title}</span>
-              {badge}
+              {isLocked && <Lock className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-yellow-400/70" />}
+              {!isLocked && badge}
             </Link>
           );
         })}
@@ -178,10 +229,10 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
   /* ── Desktop: icon rail with tooltip labels ── */
   return (
     <nav className="flex flex-col gap-1.5 rounded-xl border border-border bg-card/60 p-1.5 shadow-sm backdrop-blur-lg dark:bg-card/40">
-      {NAV_ITEMS.map((item) => {
+      {visibleItems.map((item) => {
         const isActive = item.id === activeId;
-        const Icon = item.icon;
         const noteCount = notifications?.[item.id] ?? 0;
+        const isLocked = !isPremium && PREMIUM_GATED_SECTIONS.has(item.id);
 
         const iconEl = (
           <div
@@ -192,8 +243,11 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <Icon className={cn("h-[18px] w-[18px] transition-transform duration-150", !isActive && "group-hover/tip:scale-110")} />
-            {noteCount > 0 && !isActive && (
+            <NavIcon id={item.id} fallback={item.icon} size={18} className={cn("transition-transform duration-150", !isActive && "group-hover/tip:scale-110")} />
+            {isLocked && (
+              <Lock className="absolute -bottom-0.5 -right-0.5 h-3 w-3 text-yellow-400 drop-shadow" />
+            )}
+            {noteCount > 0 && !isActive && !isLocked && (
               <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background" />
             )}
 
@@ -201,7 +255,7 @@ export function MyCountrySidebarNav({ activeSection, onNavigate, variant = "desk
             <span
               className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-md bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100"
             >
-              {item.title}
+              {item.title}{isLocked ? " (Premium)" : ""}
               {/* Arrow */}
               <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-popover" />
             </span>

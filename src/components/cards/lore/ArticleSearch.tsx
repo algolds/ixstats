@@ -8,6 +8,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import { debounce } from "lodash";
+import { api } from "~/trpc/react";
 
 interface ArticleSearchProps {
   wikiSource: "ixwiki" | "iiwiki";
@@ -26,7 +27,9 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Debounced search function
+  const utils = api.useUtils();
+
+  // Debounced search — uses WikiBridge via tRPC (direct MySQL for ixwiki)
   const searchArticles = useCallback(
     debounce(async (query: string) => {
       if (!query || query.length < 3) {
@@ -37,40 +40,15 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
       setLoading(true);
 
       try {
-        // Call MediaWiki API for search
-        const apiUrl =
-          wikiSource === "ixwiki"
-            ? "https://ixwiki.com/api.php"
-            : "https://iiwiki.com/api.php";
+        const results = await utils.wiki.searchPages.fetch({
+          query,
+          limit: 10,
+          wiki: wikiSource,
+        });
 
-        const url = new URL(apiUrl);
-        url.searchParams.set("action", "opensearch");
-        url.searchParams.set("format", "json");
-        url.searchParams.set("search", query);
-        url.searchParams.set("limit", "10");
-        url.searchParams.set("namespace", "0"); // Main namespace only
-        url.searchParams.set("origin", "*");
-
-        const response = await fetch(url.toString());
-
-        if (!response.ok) {
-          console.error("Search failed:", response.status);
-          setSuggestions([]);
-          return;
-        }
-
-        const data = await response.json();
-
-        // OpenSearch returns [query, [titles], [descriptions], [urls]]
-        const titles = data[1] || [];
-        const descriptions = data[2] || [];
-
-        const results: ArticleSuggestion[] = titles.map((title: string, idx: number) => ({
-          title,
-          snippet: descriptions[idx] || "",
-        }));
-
-        setSuggestions(results);
+        setSuggestions(
+          results.map((r) => ({ title: r.title, snippet: "" }))
+        );
       } catch (error) {
         console.error("Article search error:", error);
         setSuggestions([]);
@@ -78,7 +56,7 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
         setLoading(false);
       }
     }, 500),
-    [wikiSource]
+    [wikiSource, utils]
   );
 
   useEffect(() => {

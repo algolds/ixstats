@@ -16,6 +16,7 @@ import { staggerContainer, staggerItem } from "~/components/mycountry/primitives
 import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { formatTimeAgo } from "~/lib/time-utils";
+import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 type FeedTab = "all" | "following" | "thinkpages" | "wiki" | "forum";
 
@@ -86,26 +87,82 @@ export function FeedSection() {
     [hasCountry],
   );
 
-  // Unified feed data (for All/Wiki/Forum tabs)
+  // Unified feed data — always fetched, polls every 30s
   const { data: feedData, isLoading: feedLoading } = api.activities.getGlobalFeed.useQuery(
-    { limit: 30 },
-    { enabled: activeTab !== "thinkpages" && activeTab !== "following", refetchInterval: 3_600_000 },
+    { limit: 50 },
+    { refetchInterval: 30_000, refetchOnWindowFocus: true, staleTime: 15_000 },
+  );
+
+  // Direct wiki recent changes — independent query for reliable wiki tab
+  const { data: wikiRecentChanges } = api.wiki.getRecentChanges.useQuery(
+    { limit: 20 },
+    { refetchInterval: 30_000, refetchOnWindowFocus: true, staleTime: 15_000 },
   );
 
   // Following feed data
   const { data: followingData, isLoading: followingLoading } = api.activities.getFollowingFeed.useQuery(
     { limit: 30 },
-    { enabled: activeTab === "following" && hasCountry, refetchInterval: 3_600_000 },
+    { enabled: hasCountry, refetchInterval: 30_000, refetchOnWindowFocus: true, staleTime: 15_000 },
   );
+
+  // Transform wiki recent changes into feed format
+  const wikiAsFeed = useMemo(() => {
+    if (!wikiRecentChanges) return [];
+    return wikiRecentChanges.map((rc: any) => {
+      const sizeChange = (rc.newLen ?? 0) - (rc.oldLen ?? 0);
+      const isNewPage = rc.type === "new";
+      return {
+        id: `wiki-rc-${rc.title}-${rc.timestamp}`,
+        type: "meta",
+        category: "platform",
+        source: "wiki",
+        user: { id: `wiki-user-${rc.user}`, name: rc.user },
+        content: {
+          title: isNewPage ? `New wiki page: ${rc.title}` : `Wiki edit: ${rc.title}`,
+          description: (() => {
+            const sizeStr = `${sizeChange > 0 ? "+" : ""}${sizeChange} bytes`;
+            if (isNewPage) return `Created new page (${sizeStr})`;
+            if (!rc.comment) return `Edited page (${sizeStr})`;
+            const clean = rc.comment.replace(/\/\*.*?\*\/\s*/, "").trim();
+            return clean ? `${clean.slice(0, 100)} (${sizeStr})` : `Edited page (${sizeStr})`;
+          })(),
+          metadata: {
+            source: "ixwiki",
+            pageTitle: rc.title,
+            wikiUrl: `https://ixwiki.com/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
+          },
+        },
+        engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
+        timestamp: new Date(rc.timestamp?.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, "$1-$2-$3T$4:$5:$6Z") ?? 0),
+        priority: isNewPage ? "medium" : "low",
+        visibility: "public",
+      };
+    });
+  }, [wikiRecentChanges]);
 
   const filteredFeed = useMemo(() => {
     if (activeTab === "following") {
       return followingData?.activities ?? [];
     }
+    // For wiki tab, prefer the direct wiki query for reliability
+    if (activeTab === "wiki") {
+      const fromFeed = (feedData?.activities ?? []).filter((a: any) => a.source === "wiki");
+      // Merge: use direct wiki data if feed is empty
+      return fromFeed.length > 0 ? fromFeed : wikiAsFeed;
+    }
     if (!feedData?.activities) return [];
-    if (activeTab === "all") return feedData.activities;
+    if (activeTab === "all") {
+      // Merge direct wiki data into feed if feed has no wiki items
+      const hasWiki = feedData.activities.some((a: any) => a.source === "wiki");
+      if (!hasWiki && wikiAsFeed.length > 0) {
+        const merged = [...feedData.activities, ...wikiAsFeed];
+        merged.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        return merged.slice(0, 50);
+      }
+      return feedData.activities;
+    }
     return feedData.activities.filter((a: any) => a.source === activeTab);
-  }, [feedData, followingData, activeTab]);
+  }, [feedData, followingData, wikiAsFeed, activeTab]);
 
   return (
     <motion.div
@@ -426,19 +483,45 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
               <span>by {activity.user.name}</span>
             )}
             {externalUrl && (
-              <a
-                href={externalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-0.5 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <ExternalLink className="h-3 w-3" />
-                Open
-              </a>
+              <FeedExternalLink url={externalUrl} title={activity.content?.title} />
             )}
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+/** External link with wiki/forum tooltip on hover */
+function FeedExternalLink({ url, title }: { url: string; title?: string }) {
+  const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
+  const iiMatch = url.match(/iiwiki\.com\/wiki\/([^#?]+)/);
+  const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
+
+  const linkEl = (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-0.5 text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <ExternalLink className="h-3 w-3" />
+      Open
+    </a>
+  );
+
+  if (wikiMatch) {
+    const wikiTitle = decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ");
+    return <WikiLinkPreview title={wikiTitle} wiki="ixwiki">{linkEl}</WikiLinkPreview>;
+  }
+  if (iiMatch) {
+    const wikiTitle = decodeURIComponent(iiMatch[1]!).replace(/_/g, " ");
+    return <WikiLinkPreview title={wikiTitle} wiki="iiwiki">{linkEl}</WikiLinkPreview>;
+  }
+  if (forumMatch) {
+    const threadId = parseInt(forumMatch[1]!, 10);
+    return <ForumLinkPreview threadId={threadId}>{linkEl}</ForumLinkPreview>;
+  }
+
+  return linkEl;
 }

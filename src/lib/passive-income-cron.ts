@@ -182,7 +182,7 @@ export async function testPassiveIncomeDistribution() {
       console.log(
         `[TEST] ${country.name}:`,
         `\n  - GDP Per Capita: $${country.currentGdpPerCapita.toLocaleString()}`,
-        `\n  - Population: ${country.currentPopulation.toLocaleString()}`,
+        `\n  - Population: ${Math.round(country.currentPopulation).toLocaleString()}`,
         `\n  - Economic Tier: ${country.economicTier}`,
         `\n  - GDP Growth: ${country.adjustedGdpGrowth?.toFixed(2)}%`,
         `\n  - Daily Passive Income: ${dailyIncome.toFixed(2)} IxC\n`

@@ -171,7 +171,7 @@ export function CountryInformationCard({
             Population
           </label>
           <p className="text-gray-900 dark:text-white">
-            {country.currentPopulation?.toLocaleString() || "N/A"}
+            {Math.round(country.currentPopulation ?? 0).toLocaleString() || "N/A"}
           </p>
         </div>
 

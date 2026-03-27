@@ -11,7 +11,6 @@ import { UpcomingEventsWidget } from "./_components/UpcomingEventsWidget";
 import { RealTimeClock } from "~/components/ui/real-time-clock";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
-import { withBasePath } from "~/lib/base-path";
 import {
   LayoutDashboard,
   Clock,
@@ -175,7 +174,7 @@ export default function AdminDashboardPage() {
           {QUICK_ACTIONS.map((action) => (
             <Link
               key={action.label}
-              href={withBasePath(action.href)}
+              href={action.href}
               className="glass-card-child group rounded-xl border border-border/50 p-4 transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:shadow-md"
             >
               <div className="flex items-center gap-3">

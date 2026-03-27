@@ -1,6 +1,7 @@
 // src/lib/ixtime-economic-utils.ts
 import { IxTime } from "./ixtime";
 import type { CoreEconomicIndicatorsData } from "~/types/economics";
+import type { EconomicGeoModifiers } from "./geo-analytics";
 
 /**
  * Calculate economic growth over time using IxTime
@@ -198,6 +199,30 @@ export function getCurrentEconomicState(
   currentIndicators = applyEconomicEvents(currentIndicators, economicEvents, currentTime);
 
   return currentIndicators;
+}
+
+/**
+ * Apply geographic modifiers to a base GDP growth rate.
+ * Geography affects the effective growth rate through terrain, climate,
+ * trade access, and infrastructure costs.
+ *
+ * @param baseGrowthRate - Annual growth rate as decimal (e.g. 0.03 for 3%)
+ * @param geoModifiers - From CountryGeoProfile (gdpModifier, tradeModifier, infraCostModifier)
+ * @returns Modified growth rate as decimal
+ */
+export function applyGeoModifiers(
+  baseGrowthRate: number,
+  geoModifiers: EconomicGeoModifiers | null | undefined
+): number {
+  if (!geoModifiers) return baseGrowthRate;
+
+  // GDP modifier directly scales the growth rate
+  // Trade modifier has a smaller effect (trade is part of GDP but not all)
+  // Infrastructure cost modifier inversely affects growth (higher costs = lower growth)
+  const tradeFactor = 1 + (geoModifiers.tradeModifier - 1) * 0.3; // 30% weight
+  const infraFactor = 1 + (1 - geoModifiers.infraCostModifier) * 0.2; // 20% weight, inverted
+
+  return baseGrowthRate * geoModifiers.gdpModifier * tradeFactor * infraFactor;
 }
 
 /**

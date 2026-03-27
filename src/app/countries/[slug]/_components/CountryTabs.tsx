@@ -2,9 +2,9 @@
 
 import React from "react";
 import { Button } from "~/components/ui/button";
-import { Eye, Crown, Activity, Handshake, BookOpen } from "lucide-react";
+import { Eye, Activity, BookOpen } from "lucide-react";
 
-export type TabType = "overview" | "mycountry" | "lore" | "activity" | "diplomacy";
+export type TabType = "overview" | "lore" | "activity";
 
 interface CountryTabsProps {
   activeTab: TabType;
@@ -23,14 +23,6 @@ export function CountryTabs({ activeTab, onTabChange }: CountryTabsProps) {
         Overview
       </Button>
       <Button
-        variant={activeTab === "mycountry" ? "default" : "ghost"}
-        onClick={() => onTabChange("mycountry")}
-        className="min-w-[120px] flex-1"
-      >
-        <Crown className="mr-2 h-4 w-4" />
-        MyCountry
-      </Button>
-      <Button
         variant={activeTab === "lore" ? "default" : "ghost"}
         onClick={() => onTabChange("lore")}
         className="min-w-[120px] flex-1"
@@ -45,14 +37,6 @@ export function CountryTabs({ activeTab, onTabChange }: CountryTabsProps) {
       >
         <Activity className="mr-2 h-4 w-4" />
         Activity
-      </Button>
-      <Button
-        variant={activeTab === "diplomacy" ? "default" : "ghost"}
-        onClick={() => onTabChange("diplomacy")}
-        className="min-w-[120px] flex-1"
-      >
-        <Handshake className="mr-2 h-4 w-4" />
-        Diplomacy
       </Button>
     </div>
   );

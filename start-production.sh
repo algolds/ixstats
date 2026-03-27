@@ -88,16 +88,6 @@ fi
 
 echo ""
 
-# Check if port is available
-if netstat -tlnp 2>/dev/null | grep -q ":$PRODUCTION_PORT "; then
-    echo "❌ Error: Port $PRODUCTION_PORT is already in use"
-    echo "   To stop existing service: kill \$(lsof -ti:$PRODUCTION_PORT)"
-    exit 1
-fi
-
-echo "✅ Port $PRODUCTION_PORT is available"
-echo ""
-
 # Verify build exists
 if [ ! -d ".next" ]; then
     echo "❌ Error: Production build not found. Run 'npm run build' first."
@@ -122,4 +112,4 @@ echo "   Press Ctrl+C to stop the server"
 echo ""
 
 # Start Next.js production server
-exec npx next start -p "$PRODUCTION_PORT"
+exec node node_modules/.bin/next start -p "$PRODUCTION_PORT"

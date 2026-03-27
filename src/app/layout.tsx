@@ -23,6 +23,7 @@ import { ToastProvider } from "~/components/ui/toast";
 import { NotificationBadgeProvider } from "~/components/notifications/NotificationBadgeProvider";
 import { withBasePath } from "~/lib/base-path";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
+import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -58,6 +59,7 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   const AppContent = () => (
     <TRPCReactProvider>
+      <GlobalLinkTooltipProvider>
       <ThemeProvider>
         <IxTimeProvider>
           <ExecutiveNotificationProvider>
@@ -82,6 +84,7 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
           </ExecutiveNotificationProvider>
         </IxTimeProvider>
       </ThemeProvider>
+      </GlobalLinkTooltipProvider>
     </TRPCReactProvider>
   );
 

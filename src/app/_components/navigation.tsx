@@ -54,7 +54,7 @@ import { GiCardRandom, GiFamilyTree } from "react-icons/gi";
 import { GiSoapExperiment } from "react-icons/gi";
 import { GiVibratingShield } from "react-icons/gi";
 import { FaTreeCity } from "react-icons/fa6";
-import { withBasePath, stripBasePath } from "~/lib/base-path";
+import { stripBasePath } from "~/lib/base-path";
 import { UserProfileMenu } from "~/components/UserProfileMenu";
 import { useCountryFlag } from "~/hooks/useCountryFlags";
 
@@ -260,19 +260,19 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
         items: [
           {
             name: "Social Feed",
-            href: "/thinkpages?view=feed",
+            href: "/thinkpages",
             icon: Rss,
             description: "Public declarations, diplomatic announcements, and intelligence broadcasts.",
           },
           {
             name: "ThinkTanks",
-            href: "/thinkpages?view=thinktanks",
+            href: "/thinkpages/thinktanks",
             icon: Users,
             description: "Coordinate intelligence networks and diplomatic working groups.",
           },
           {
             name: "ThinkShare Messaging",
-            href: "/thinkpages?view=messages",
+            href: "/thinkpages/thinkshare",
             icon: MessageSquare,
             description: "Secure diplomatic channels and encrypted government communications.",
           },
@@ -615,19 +615,19 @@ export function Navigation() {
       dropdownItems: [
         {
           name: "Social Feed",
-          href: "/thinkpages?view=feed",
+          href: "/thinkpages",
           icon: MessageSquare,
           description: "Public declarations and diplomatic announcements",
         },
         {
           name: "ThinkTanks",
-          href: "/thinkpages?view=thinktanks",
+          href: "/thinkpages/thinktanks",
           icon: Users,
           description: "Intelligence networks and diplomatic working groups",
         },
         {
           name: "ThinkShare Messages",
-          href: "/thinkpages?view=messages",
+          href: "/thinkpages/thinkshare",
           icon: Send,
           description: "Secure diplomatic channels and encrypted communications",
         },
@@ -841,7 +841,7 @@ export function Navigation() {
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
                                       <Link
-                                        href={withBasePath(subItem.href)}
+                                        href={subItem.href}
                                         className="flex cursor-pointer items-center gap-3 px-3 py-3"
                                       >
                                         <SubIcon className="text-muted-foreground h-4 w-4" />
@@ -1027,7 +1027,7 @@ export function Navigation() {
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
                                       <Link
-                                        href={withBasePath(subItem.href)}
+                                        href={subItem.href}
                                         className="flex cursor-pointer items-center gap-3 px-3 py-3"
                                       >
                                         <SubIcon className="text-muted-foreground h-4 w-4" />
@@ -1285,7 +1285,7 @@ export function Navigation() {
                                 return (
                                   <Link
                                     key={subItem.name}
-                                    href={withBasePath(subItem.href)}
+                                    href={subItem.href}
                                     className="text-muted-foreground hover:border-border/60 hover:text-foreground flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm transition-colors min-h-[44px]"
                                     onClick={() => setMobileMenuOpen(false)}
                                   >
@@ -1304,7 +1304,7 @@ export function Navigation() {
                       return (
                         <Link
                           key={item.name}
-                          href={withBasePath(item.href)}
+                          href={item.href}
                           onClick={() => setMobileMenuOpen(false)}
                           className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[60px] ${
                             current
@@ -1367,7 +1367,7 @@ export function Navigation() {
                         return (
                           <Link
                             key={item.name}
-                            href={withBasePath(item.href)}
+                            href={item.href}
                             onClick={() => setMobileMenuOpen(false)}
                             className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[56px] ${
                               active

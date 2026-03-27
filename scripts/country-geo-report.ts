@@ -9,9 +9,11 @@
  *   npx tsx scripts/country-geo-report.ts "Burgundie"
  *   npx tsx scripts/country-geo-report.ts "Burgundie" --json
  *   npx tsx scripts/country-geo-report.ts --list
+ *
+ * Output is always saved to scripts/reports/<country-slug>-geo-report.md (or .json)
  */
 
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import * as turf from "@turf/turf";
 import type {
@@ -41,33 +43,48 @@ const ELEVATION_ZONES = [
   { zoneId: "zone_8", zoneName: "Extreme Alpine", elevationMin: 5000, elevationMax: 9999, color: "#4f4236" },
 ];
 
+// Legacy SVG colors → Trewartha climate types (from geo.ts authoritative mapping)
 const CLIMATE_COLOR_MAP: Record<string, string> = {
-  "#00fd97": "Tropical",
-  "#326500": "Dense Forest",
-  "#fd9833": "Arid",
-  "#659700": "Temperate",
-  "#fc3502": "Desert",
-  "#980000": "Extreme Arid",
-  "#fcfc33": "Subtropical",
-  "#0098fd": "Oceanic",
-  "#9ea7b0": "Subarctic",
-  "#0065ca": "Arctic",
-  "#fecbfe": "Alpine",
+  "#00fd97": "Temperate Oceanic (Do)",
+  "#326500": "Subtropical Humid (Cf)",
+  "#fd9833": "Steppe or Semiarid (Bs)",
+  "#659700": "Subtropical Dry Summer (Cs)",
+  "#fc3502": "Tropical Wet-And-Dry (Aw)",
+  "#980000": "Tropical Wet (Ar)",
+  "#fcfc33": "Desert or Arid (Bw)",
+  "#0098fd": "Temperate Continental (Dc)",
+  "#9ea7b0": "Tundra (Ft)",
+  "#0065ca": "Boreal (E)",
+  "#fecbfe": "Highland (H)",
+  // Canonical Trewartha colors (in case GeoJSON is updated)
+  "#990000": "Tropical Wet (Ar)",
+  "#ff3300": "Tropical Wet-And-Dry (Aw)",
+  "#ffff33": "Desert or Arid (Bw)",
+  "#ff9933": "Steppe or Semiarid (Bs)",
+  "#669900": "Subtropical Dry Summer (Cs)",
+  "#336600": "Subtropical Humid (Cf)",
+  "#00ff99": "Temperate Oceanic (Do)",
+  "#0099ff": "Temperate Continental (Dc)",
+  "#0066cc": "Boreal (E)",
+  "#b9b9b9": "Tundra (Ft)",
+  "#99ffff": "Ice Cap (Fi)",
+  "#ffccff": "Highland (H)",
 };
 
-// Climate type metadata for temperature/precipitation modeling
-const CLIMATE_METADATA: Record<string, { tempModifier: number; precipMmYr: number; description: string }> = {
-  "Tropical":      { tempModifier: 2,   precipMmYr: 2200, description: "Hot and humid year-round with heavy rainfall" },
-  "Dense Forest":  { tempModifier: 0,   precipMmYr: 1800, description: "Heavily forested with consistent moisture" },
-  "Arid":          { tempModifier: 3,   precipMmYr: 350,  description: "Low rainfall with hot daytime temperatures" },
-  "Temperate":     { tempModifier: -2,  precipMmYr: 900,  description: "Moderate temperatures with distinct seasons" },
-  "Desert":        { tempModifier: 5,   precipMmYr: 100,  description: "Extremely dry with intense solar radiation" },
-  "Extreme Arid":  { tempModifier: 6,   precipMmYr: 50,   description: "Virtually no precipitation, extreme temperatures" },
-  "Subtropical":   { tempModifier: 1,   precipMmYr: 1200, description: "Warm with moderate to high precipitation" },
-  "Oceanic":       { tempModifier: -3,  precipMmYr: 1100, description: "Maritime influence with mild, wet conditions" },
-  "Subarctic":     { tempModifier: -10, precipMmYr: 400,  description: "Long cold winters, brief cool summers" },
-  "Arctic":        { tempModifier: -20, precipMmYr: 200,  description: "Permanently cold with minimal precipitation" },
-  "Alpine":        { tempModifier: -12, precipMmYr: 600,  description: "High altitude with cold temperatures and orographic precipitation" },
+// Trewartha climate type metadata for temperature/precipitation modeling
+const CLIMATE_METADATA: Record<string, { tempModifier: number; diurnalRangeC: number; precipMmYr: number; growingSeasonDays: number; description: string; vegetation: string; agricultureFactor: number }> = {
+  "Tropical Wet (Ar)":            { tempModifier: 3,   diurnalRangeC: 8,  precipMmYr: 2200, growingSeasonDays: 365, description: "Hot and humid year-round with heavy rainfall",                agricultureFactor: 0.7,  vegetation: "Tropical rainforest, dense canopy" },
+  "Tropical Wet-And-Dry (Aw)":    { tempModifier: 2,   diurnalRangeC: 11, precipMmYr: 1500, growingSeasonDays: 270, description: "Tropical with distinct wet and dry seasons",                  agricultureFactor: 0.8,  vegetation: "Savanna, tropical grassland, open woodland" },
+  "Desert or Arid (Bw)":          { tempModifier: 5,   diurnalRangeC: 18, precipMmYr: 100,  growingSeasonDays: 60,  description: "Extremely dry with intense solar radiation",                  agricultureFactor: 0.05, vegetation: "Sparse xerophytes, barren sand/rock" },
+  "Steppe or Semiarid (Bs)":      { tempModifier: 3,   diurnalRangeC: 15, precipMmYr: 350,  growingSeasonDays: 150, description: "Low rainfall with hot daytime temperatures",                  agricultureFactor: 0.3,  vegetation: "Short grass steppe, scrubland" },
+  "Subtropical Dry Summer (Cs)":  { tempModifier: 1,   diurnalRangeC: 14, precipMmYr: 600,  growingSeasonDays: 245, description: "Warm with dry summers and mild wet winters",                  agricultureFactor: 0.75, vegetation: "Mediterranean scrub, evergreen woodland" },
+  "Subtropical Humid (Cf)":       { tempModifier: 0,   diurnalRangeC: 10, precipMmYr: 1200, growingSeasonDays: 300, description: "Warm with year-round moisture",                               agricultureFactor: 0.9,  vegetation: "Broadleaf evergreen forest, mixed woodland" },
+  "Temperate Oceanic (Do)":       { tempModifier: -2,  diurnalRangeC: 9,  precipMmYr: 1100, growingSeasonDays: 250, description: "Maritime influence with mild, wet conditions",                 agricultureFactor: 0.85, vegetation: "Deciduous forest, lush grassland" },
+  "Temperate Continental (Dc)":   { tempModifier: -3,  diurnalRangeC: 13, precipMmYr: 700,  growingSeasonDays: 180, description: "Cold winters, warm summers, moderate precipitation",          agricultureFactor: 0.8,  vegetation: "Mixed deciduous-coniferous forest" },
+  "Boreal (E)":                   { tempModifier: -10, diurnalRangeC: 14, precipMmYr: 400,  growingSeasonDays: 100, description: "Long cold winters with brief cool summers",                   agricultureFactor: 0.15, vegetation: "Taiga, coniferous forest" },
+  "Tundra (Ft)":                  { tempModifier: -18, diurnalRangeC: 10, precipMmYr: 250,  growingSeasonDays: 45,  description: "Very cold with minimal vegetation and permafrost",            agricultureFactor: 0.02, vegetation: "Mosses, lichens, dwarf shrubs" },
+  "Ice Cap (Fi)":                 { tempModifier: -25, diurnalRangeC: 8,  precipMmYr: 100,  growingSeasonDays: 0,   description: "Permanently frozen, virtually no precipitation",              agricultureFactor: 0.0,  vegetation: "None (permanent ice)" },
+  "Highland (H)":                 { tempModifier: -12, diurnalRangeC: 12, precipMmYr: 600,  growingSeasonDays: 130, description: "High altitude with cold temps and orographic precipitation",  agricultureFactor: 0.2,  vegetation: "Alpine meadow, montane forest" },
 };
 
 // ─────────────────────────────────────────────
@@ -321,24 +338,27 @@ function analyzeElevation(country: PolyFeature, altitudeFeatures: Feature[], cou
   }
 
   const totalMappedArea = Array.from(zoneAreas.values()).reduce((s, a) => s + a, 0);
+  // Normalize zone areas to sum to actual country area (GeoJSON intersections can inflate totals)
+  const normFactor = totalMappedArea > 0 ? countryAreaKm2 / totalMappedArea : 1;
   const zones: ElevationZoneResult[] = ELEVATION_ZONES
     .filter((z) => zoneAreas.has(z.zoneName))
     .map((z) => ({
       zoneName: z.zoneName,
       elevationMin: z.elevationMin,
       elevationMax: z.elevationMax,
-      areaKm2: zoneAreas.get(z.zoneName)!,
+      areaKm2: zoneAreas.get(z.zoneName)! * normFactor,
       percent: totalMappedArea > 0 ? (zoneAreas.get(z.zoneName)! / totalMappedArea) * 100 : 0,
     }));
 
   let minElev = 9999, maxElev = 0, weightedSum = 0;
+  const normalizedTotal = zones.reduce((s, z) => s + z.areaKm2, 0);
   for (const z of zones) {
     const mid = (z.elevationMin + z.elevationMax) / 2;
     if (z.elevationMin < minElev) minElev = z.elevationMin;
     if (z.elevationMax > maxElev) maxElev = z.elevationMax;
     weightedSum += mid * z.areaKm2;
   }
-  const meanElevation = totalMappedArea > 0 ? weightedSum / totalMappedArea : 0;
+  const meanElevation = normalizedTotal > 0 ? weightedSum / normalizedTotal : 0;
   const terrainRoughness = zones.length / Math.sqrt(countryAreaKm2);
   const dominantTerrain = zones.sort((a, b) => b.areaKm2 - a.areaKm2)[0]?.zoneName ?? "Unknown";
 
@@ -374,6 +394,7 @@ interface ClimateResult {
   estMeanTempF: number;
   estAnnualPrecipMm: number;
   estSeasonalRangeC: number;
+  estDiurnalRangeC: number;
   estSummerHighC: number;
   estWinterLowC: number;
 }
@@ -383,7 +404,8 @@ function analyzeClimate(
   climateFeatures: Feature[],
   countryBbox: turf.BBox,
   centroidLat: number,
-  meanElevation: number
+  meanElevation: number,
+  countryAreaKm2: number
 ): ClimateResult {
   const typeAreas = new Map<string, number>();
   let intersectionWarnings = 0;
@@ -417,10 +439,12 @@ function analyzeClimate(
   }
 
   const totalMappedArea = Array.from(typeAreas.values()).reduce((s, a) => s + a, 0);
+  // Normalize zone areas to sum to actual country area (GeoJSON intersections can inflate totals)
+  const climNormFactor = totalMappedArea > 0 ? countryAreaKm2 / totalMappedArea : 1;
   const zones: ClimateZoneResult[] = Array.from(typeAreas.entries())
     .map(([type, areaKm2]) => ({
       type,
-      areaKm2,
+      areaKm2: areaKm2 * climNormFactor,
       percent: totalMappedArea > 0 ? (areaKm2 / totalMappedArea) * 100 : 0,
       description: CLIMATE_METADATA[type]?.description ?? "",
     }))
@@ -436,25 +460,32 @@ function analyzeClimate(
   }
 
   // Temperature estimation using real-world latitude-based model
-  // Base: 28°C at equator, decreasing 0.7°C per degree latitude
+  // Base: 28°C at equator, decreasing 0.45°C per degree latitude
+  // (validated against Singapore 27°C, Cairns 25°C, Gaborone 20°C, London 11°C)
   const absLat = Math.abs(centroidLat);
-  let baseTempC = 28 - 0.7 * absLat;
+  let baseTempC = 28 - 0.45 * absLat;
 
   // Elevation lapse rate: -6.5°C per 1000m (standard atmospheric lapse rate)
   baseTempC -= 6.5 * (meanElevation / 1000);
 
   // Climate type modifier (area-weighted)
   let climateModifier = 0;
+  let diurnalRange = 0;
   for (const z of zones) {
     const meta = CLIMATE_METADATA[z.type];
-    if (meta) climateModifier += meta.tempModifier * (z.areaKm2 / totalMappedArea);
+    if (meta) {
+      const frac = z.areaKm2 / totalMappedArea;
+      climateModifier += meta.tempModifier * frac;
+      diurnalRange += meta.diurnalRangeC * frac;
+    }
   }
   const estMeanTempC = baseTempC + climateModifier;
 
   // Seasonal range: increases with latitude (continental amplification)
   const estSeasonalRangeC = 5 + 0.35 * absLat;
-  const estSummerHighC = estMeanTempC + estSeasonalRangeC / 2;
-  const estWinterLowC = estMeanTempC - estSeasonalRangeC / 2;
+  // Summer high = warmest-month daily maximum; winter low = coldest-month daily minimum
+  const estSummerHighC = estMeanTempC + estSeasonalRangeC / 2 + diurnalRange / 2;
+  const estWinterLowC = estMeanTempC - estSeasonalRangeC / 2 - diurnalRange / 2;
 
   // Precipitation estimation (area-weighted from climate type)
   let estAnnualPrecipMm = 0;
@@ -474,6 +505,7 @@ function analyzeClimate(
     estMeanTempF: estMeanTempC * 9 / 5 + 32,
     estAnnualPrecipMm,
     estSeasonalRangeC,
+    estDiurnalRangeC: diurnalRange,
     estSummerHighC,
     estWinterLowC,
   };
@@ -852,6 +884,280 @@ function analyzeIcecaps(country: PolyFeature, icecapFeatures: Feature[], country
 }
 
 // ─────────────────────────────────────────────
+// Derived Insights
+// ─────────────────────────────────────────────
+
+interface AgriculturalInsight {
+  arableLandPercent: number;
+  arableLandKm2: number;
+  growingSeasonDays: number;
+  waterAvailability: string;
+  waterScore: number;
+  cropSuitability: string[];
+  overallRating: string;
+}
+
+function analyzeAgriculture(
+  climate: ClimateResult,
+  elevation: ElevationResult,
+  hydro: HydrographyResult,
+  area: AreaResult,
+  centroidLat: number
+): AgriculturalInsight {
+  // Arable land: area-weighted agriculture factor from climate, penalized by high elevation
+  const lowlandPercent = elevation.zones
+    .filter((z) => z.elevationMax <= 999)
+    .reduce((s, z) => s + z.percent, 0) / 100;
+
+  let weightedAgFactor = 0;
+  const totalClimArea = climate.zones.reduce((s, z) => s + z.areaKm2, 0);
+  for (const z of climate.zones) {
+    const meta = CLIMATE_METADATA[z.type];
+    if (meta) weightedAgFactor += meta.agricultureFactor * (z.areaKm2 / totalClimArea);
+  }
+
+  const arableLandPercent = Math.min(95, weightedAgFactor * lowlandPercent * 100);
+  const arableLandKm2 = arableLandPercent / 100 * area.areaKm2;
+
+  // Growing season: area-weighted from climate type data
+  let growingSeasonDays = 0;
+  for (const z of climate.zones) {
+    const meta = CLIMATE_METADATA[z.type];
+    if (meta) growingSeasonDays += meta.growingSeasonDays * (z.areaKm2 / totalClimArea);
+  }
+  growingSeasonDays = Math.round(growingSeasonDays);
+
+  // Water availability
+  const waterScore = Math.min(100, Math.round(
+    (climate.estAnnualPrecipMm / 20) +
+    (hydro.drainageDensity * 30) +
+    (hydro.lakeCount > 0 ? 10 : 0) +
+    Math.min(10, (area.areaKm2 > 0 ? hydro.riverCount / (area.areaKm2 / 100000) : 0) * 3)
+  ));
+  let waterAvailability: string;
+  if (waterScore >= 70) waterAvailability = "Abundant";
+  else if (waterScore >= 50) waterAvailability = "Adequate";
+  else if (waterScore >= 30) waterAvailability = "Limited";
+  else if (waterScore >= 15) waterAvailability = "Scarce";
+  else waterAvailability = "Critical shortage";
+
+  // Crop suitability
+  const crops: string[] = [];
+  for (const z of climate.zones) {
+    if (z.percent < 5) continue;
+    if (z.type.includes("Tropical Wet")) crops.push("Rice", "Sugarcane", "Tropical fruits");
+    else if (z.type.includes("Subtropical Humid")) crops.push("Citrus", "Tea", "Cotton");
+    else if (z.type.includes("Subtropical Dry")) crops.push("Olives", "Grapes", "Wheat");
+    else if (z.type.includes("Temperate Oceanic")) crops.push("Wheat", "Barley", "Root vegetables");
+    else if (z.type.includes("Temperate Continental")) crops.push("Grain", "Potatoes", "Flax");
+    else if (z.type.includes("Steppe")) crops.push("Pastoral grazing", "Millet");
+    else if (z.type.includes("Boreal")) crops.push("Hardy cereals", "Berries");
+  }
+  const uniqueCrops = [...new Set(crops)];
+
+  let overallRating: string;
+  if (arableLandPercent >= 60 && waterScore >= 50) overallRating = "Excellent";
+  else if (arableLandPercent >= 40 && waterScore >= 30) overallRating = "Good";
+  else if (arableLandPercent >= 20 && waterScore >= 20) overallRating = "Moderate";
+  else if (arableLandPercent >= 10) overallRating = "Limited";
+  else overallRating = "Poor";
+
+  return { arableLandPercent, arableLandKm2, growingSeasonDays, waterAvailability, waterScore, cropSuitability: uniqueCrops, overallRating };
+}
+
+interface StrategicInsight {
+  coastlineToAreaRatio: number;
+  maritimeIndex: string;
+  strategicDepthKm: number;
+  borderDefensibility: string;
+  mountainousBorderPercent: number;
+  islandExposure: string;
+  accessPoints: string;
+}
+
+function analyzeStrategic(
+  area: AreaResult,
+  elevation: ElevationResult,
+  coastline: CoastlineResult,
+  neighbors: NeighborResult[],
+  shape: ShapeResult
+): StrategicInsight {
+  const coastlineToAreaRatio = area.areaKm2 > 0 ? (coastline.estimatedCoastlineKm / Math.sqrt(area.areaKm2)) * 100 : 0;
+
+  let maritimeIndex: string;
+  if (coastline.isLandlocked) maritimeIndex = "Landlocked (no maritime access)";
+  else if (coastlineToAreaRatio > 50) maritimeIndex = "Maritime power (extensive coastline)";
+  else if (coastlineToAreaRatio > 20) maritimeIndex = "Strong maritime access";
+  else if (coastlineToAreaRatio > 10) maritimeIndex = "Moderate maritime access";
+  else maritimeIndex = "Limited maritime access";
+
+  const strategicDepthKm = Math.min(area.nsSpanKm, area.ewSpanKm) / 2;
+
+  // Mountainous area as defense factor
+  const mountainPercent = elevation.zones
+    .filter((z) => z.elevationMin >= 1000)
+    .reduce((s, z) => s + z.percent, 0);
+
+  let borderDefensibility: string;
+  if (mountainPercent > 30) borderDefensibility = "Highly defensible (mountainous terrain)";
+  else if (mountainPercent > 15) borderDefensibility = "Defensible (significant highlands)";
+  else if (mountainPercent > 5) borderDefensibility = "Moderate (some elevated terrain)";
+  else borderDefensibility = "Open terrain (few natural barriers)";
+
+  let islandExposure: string;
+  if (shape.islandCount === 0) islandExposure = "Continental (no islands)";
+  else if (shape.islandCount <= 5) islandExposure = `Minor archipelagic (${shape.islandCount} island${shape.islandCount > 1 ? "s" : ""})`;
+  else if (shape.islandCount <= 20) islandExposure = `Archipelagic (${shape.islandCount} islands)`;
+  else islandExposure = `Highly fragmented (${shape.islandCount} islands)`;
+
+  const neighborCount = neighbors.length;
+  let accessPoints: string;
+  if (coastline.isLandlocked && neighborCount <= 2) accessPoints = "Very limited (landlocked, few neighbors)";
+  else if (neighborCount <= 3) accessPoints = "Limited entry points";
+  else if (neighborCount <= 6) accessPoints = "Multiple entry points";
+  else accessPoints = `Extensive exposure (${neighborCount} neighbors)`;
+
+  return { coastlineToAreaRatio, maritimeIndex, strategicDepthKm, borderDefensibility, mountainousBorderPercent: mountainPercent, islandExposure, accessPoints };
+}
+
+interface HabitabilityInsight {
+  score: number;
+  descriptor: string;
+  climateComfort: number;
+  waterAccess: number;
+  terrainAccess: number;
+  factors: string[];
+}
+
+function analyzeHabitability(
+  climate: ClimateResult,
+  elevation: ElevationResult,
+  hydro: HydrographyResult,
+  area: AreaResult
+): HabitabilityInsight {
+  // Climate comfort (0-40 points): reward temperate/subtropical, penalize extremes
+  const comfortScores: Record<string, number> = {
+    "Subtropical Humid (Cf)": 38, "Temperate Oceanic (Do)": 36, "Subtropical Dry Summer (Cs)": 34,
+    "Temperate Continental (Dc)": 32, "Tropical Wet-And-Dry (Aw)": 28, "Tropical Wet (Ar)": 24,
+    "Steppe or Semiarid (Bs)": 18, "Highland (H)": 16, "Boreal (E)": 12,
+    "Desert or Arid (Bw)": 8, "Tundra (Ft)": 5, "Ice Cap (Fi)": 1,
+  };
+  const totalClimArea = climate.zones.reduce((s, z) => s + z.areaKm2, 0);
+  let climateComfort = 0;
+  for (const z of climate.zones) {
+    climateComfort += (comfortScores[z.type] ?? 15) * (z.areaKm2 / totalClimArea);
+  }
+
+  // Water access (0-30 points)
+  let waterAccess = 0;
+  waterAccess += Math.min(15, climate.estAnnualPrecipMm / 100);
+  const riversPer100k = area.areaKm2 > 0 ? hydro.riverCount / (area.areaKm2 / 100000) : 0;
+  waterAccess += Math.min(8, riversPer100k * 2);
+  waterAccess += Math.min(4, (hydro.totalLakeAreaKm2 / area.areaKm2) * 500);
+  waterAccess += hydro.drainageDensity > 0.5 ? 3 : hydro.drainageDensity > 0.1 ? 1.5 : 0;
+
+  // Terrain accessibility (0-30 points): reward lowlands, penalize extremes
+  const lowlandPercent = elevation.zones
+    .filter((z) => z.elevationMax <= 999)
+    .reduce((s, z) => s + z.percent, 0);
+  let terrainAccess = lowlandPercent * 0.3;
+
+  const score = Math.min(100, Math.round(climateComfort + waterAccess + terrainAccess));
+
+  let descriptor: string;
+  if (score >= 80) descriptor = "Highly habitable";
+  else if (score >= 65) descriptor = "Very habitable";
+  else if (score >= 50) descriptor = "Moderately habitable";
+  else if (score >= 35) descriptor = "Challenging";
+  else if (score >= 20) descriptor = "Harsh";
+  else descriptor = "Extremely harsh";
+
+  // Key factors
+  const factors: string[] = [];
+  if (climateComfort >= 30) factors.push("Favorable climate");
+  else if (climateComfort < 15) factors.push("Extreme climate conditions");
+  if (waterAccess >= 20) factors.push("Abundant water resources");
+  else if (waterAccess < 10) factors.push("Water scarcity");
+  if (terrainAccess >= 25) factors.push("Accessible terrain");
+  else if (terrainAccess < 10) factors.push("Rugged terrain limits settlement");
+
+  return { score, descriptor, climateComfort: Math.round(climateComfort), waterAccess: Math.round(waterAccess), terrainAccess: Math.round(terrainAccess), factors };
+}
+
+interface BiomeInsight {
+  summary: string;
+  dominantBiome: string;
+  ecoRegionCount: number;
+  ecologicalDiversity: string;
+}
+
+function analyzeBiome(
+  climate: ClimateResult,
+  elevation: ElevationResult,
+  hydro: HydrographyResult,
+  area: AreaResult,
+  coastline: CoastlineResult
+): BiomeInsight {
+  const totalClimArea = climate.zones.reduce((s, z) => s + z.areaKm2, 0);
+
+  // Dominant biome from top climate
+  const top = climate.zones[0];
+  const dominantBiome = top ? (CLIMATE_METADATA[top.type]?.vegetation ?? "Mixed vegetation") : "Unknown";
+
+  // Ecological diversity from climate × elevation zone cross-product (distinct ecosystem combinations)
+  const ecoRegionCount = climate.zones.length * elevation.zones.length;
+  let ecologicalDiversity: string;
+  if (climate.diversityIndex > 1.8) ecologicalDiversity = "Exceptionally diverse";
+  else if (climate.diversityIndex > 1.4) ecologicalDiversity = "Highly diverse";
+  else if (climate.diversityIndex > 1.0) ecologicalDiversity = "Moderately diverse";
+  else if (climate.diversityIndex > 0.5) ecologicalDiversity = "Low diversity";
+  else ecologicalDiversity = "Homogeneous";
+
+  // Build prose summary
+  const parts: string[] = [];
+
+  // Opening: dominant landscape
+  if (top && top.percent > 50) {
+    parts.push(`The landscape is dominated by ${CLIMATE_METADATA[top.type]?.vegetation?.toLowerCase() ?? "mixed terrain"} (${top.type.split(" (")[0]}), covering over half the country.`);
+  } else if (top) {
+    parts.push(`The country features a mosaic of biomes, with ${CLIMATE_METADATA[top.type]?.vegetation?.toLowerCase() ?? "mixed terrain"} (${top.type.split(" (")[0]}) as the most prevalent.`);
+  }
+
+  // Secondary biomes
+  const secondary = climate.zones.filter((z) => z.percent >= 10 && z !== top);
+  if (secondary.length > 0) {
+    const secondaryNames = secondary.map((z) => {
+      const veg = CLIMATE_METADATA[z.type]?.vegetation?.toLowerCase() ?? z.type;
+      return `${veg} (${z.percent.toFixed(0)}%)`;
+    });
+    parts.push(`Significant areas of ${secondaryNames.join(" and ")} add to the ecological variety.`);
+  }
+
+  // Elevation narrative
+  if (elevation.meanElevation > 1500) {
+    parts.push(`High mean elevation (${formatNumber(elevation.meanElevation)}m) creates alpine conditions across much of the territory.`);
+  } else if (elevation.zones.some((z) => z.elevationMin >= 2000 && z.percent >= 1)) {
+    parts.push(`Mountain ranges above 2,000m provide orographic diversity and distinct highland ecosystems.`);
+  }
+
+  // Hydro narrative
+  if (hydro.riverCount > 20 && hydro.lakeCount > 5) {
+    parts.push(`An extensive river network (${hydro.riverCount} rivers, ${formatNumber(hydro.totalRiverLengthKm)} km) and ${hydro.lakeCount} lakes support riparian ecosystems.`);
+  } else if (hydro.riverCount > 5) {
+    parts.push(`${hydro.riverCount} rivers totaling ${formatNumber(hydro.totalRiverLengthKm)} km provide freshwater corridors.`);
+  }
+
+  // Coastal narrative
+  if (coastline.hasCoastline && coastline.estimatedCoastlineKm > 5000) {
+    parts.push(`Extensive coastline (${formatNumber(coastline.estimatedCoastlineKm)} km) supports rich marine and littoral biomes.`);
+  }
+
+  const summary = parts.join(" ");
+
+  return { summary, dominantBiome, ecoRegionCount, ecologicalDiversity };
+}
+
+// ─────────────────────────────────────────────
 // Output: Console Report
 // ─────────────────────────────────────────────
 
@@ -870,7 +1176,11 @@ function printReport(
   neighbors: NeighborResult[],
   coastline: CoastlineResult,
   shape: ShapeResult,
-  icecaps: IcecapResult
+  icecaps: IcecapResult,
+  agriculture: AgriculturalInsight,
+  strategic: StrategicInsight,
+  habitability: HabitabilityInsight,
+  biome: BiomeInsight
 ) {
   const W = 72;
   const line = "\u2500".repeat(W);
@@ -976,9 +1286,10 @@ function printReport(
     console.log(`  Dominant Climate:      ${climate.dominantType}`);
     console.log(`  Climate Diversity:     ${climate.diversityIndex.toFixed(3)} (Shannon index; higher = more diverse)`);
     console.log(`  Est. Mean Temperature: ${climate.estMeanTempC.toFixed(1)}\u00B0C (${climate.estMeanTempF.toFixed(1)}\u00B0F)`);
-    console.log(`  Est. Summer High:      ${climate.estSummerHighC.toFixed(1)}\u00B0C (${(climate.estSummerHighC * 9 / 5 + 32).toFixed(1)}\u00B0F)`);
-    console.log(`  Est. Winter Low:       ${climate.estWinterLowC.toFixed(1)}\u00B0C (${(climate.estWinterLowC * 9 / 5 + 32).toFixed(1)}\u00B0F)`);
+    console.log(`  Summer Daily High:     ${climate.estSummerHighC.toFixed(1)}\u00B0C (${(climate.estSummerHighC * 9 / 5 + 32).toFixed(1)}\u00B0F)`);
+    console.log(`  Winter Daily Low:      ${climate.estWinterLowC.toFixed(1)}\u00B0C (${(climate.estWinterLowC * 9 / 5 + 32).toFixed(1)}\u00B0F)`);
     console.log(`  Seasonal Range:        \u00B1${(climate.estSeasonalRangeC / 2).toFixed(1)}\u00B0C`);
+    console.log(`  Diurnal Range:         ${climate.estDiurnalRangeC.toFixed(1)}\u00B0C`);
     console.log(`  Est. Annual Precip:    ${formatNumber(climate.estAnnualPrecipMm)} mm/yr`);
 
     // Climate zone descriptions
@@ -997,10 +1308,10 @@ function printReport(
 
   // Drainage classification
   let drainageClass: string;
-  if (hydro.drainageDensity < 0.5) drainageClass = "Low (arid or permeable terrain)";
+  if (hydro.drainageDensity < 0.5) drainageClass = "Low";
   else if (hydro.drainageDensity < 1.0) drainageClass = "Moderate";
-  else if (hydro.drainageDensity < 2.0) drainageClass = "Moderate-High (well-watered)";
-  else drainageClass = "High (impermeable terrain or high precipitation)";
+  else if (hydro.drainageDensity < 2.0) drainageClass = "High";
+  else drainageClass = "Very high";
   console.log(`  Drainage Class:        ${drainageClass}`);
 
   if (hydro.lakeCount > 0 && area.areaKm2 > 0) {
@@ -1060,16 +1371,334 @@ function printReport(
     console.log(`  Mainland Area:         ${formatNumber(shape.mainlandAreaKm2)} km\u00B2 (${((shape.mainlandAreaKm2 / area.areaKm2) * 100).toFixed(1)}%)`);
   }
 
+  // ── AGRICULTURAL POTENTIAL ──
+  console.log(`\n\u2500\u2500\u2500 AGRICULTURAL POTENTIAL ${line.slice(26)}`);
+  console.log(`  Arable Land:           ~${agriculture.arableLandPercent.toFixed(1)}% (${formatNumber(agriculture.arableLandKm2)} km\u00B2)`);
+  console.log(`  Growing Season:        ~${agriculture.growingSeasonDays} days/yr`);
+  console.log(`  Water Availability:    ${agriculture.waterAvailability} (score: ${agriculture.waterScore}/100)`);
+  console.log(`  Overall Rating:        ${agriculture.overallRating}`);
+  if (agriculture.cropSuitability.length > 0) {
+    console.log(`  Crop Suitability:      ${agriculture.cropSuitability.join(", ")}`);
+  }
+
+  // ── STRATEGIC GEOGRAPHY ──
+  console.log(`\n\u2500\u2500\u2500 STRATEGIC GEOGRAPHY ${line.slice(23)}`);
+  console.log(`  Maritime Index:        ${strategic.maritimeIndex}`);
+  console.log(`  Coast/Area Ratio:      ${strategic.coastlineToAreaRatio.toFixed(1)}`);
+  console.log(`  Strategic Depth:       ${formatNumber(strategic.strategicDepthKm)} km`);
+  console.log(`  Border Defensibility:  ${strategic.borderDefensibility}`);
+  console.log(`  Mountain Coverage:     ${strategic.mountainousBorderPercent.toFixed(1)}% (terrain above 1000m)`);
+  console.log(`  Island Exposure:       ${strategic.islandExposure}`);
+  console.log(`  Access Points:         ${strategic.accessPoints}`);
+
+  // ── HABITABILITY INDEX ──
+  console.log(`\n\u2500\u2500\u2500 HABITABILITY INDEX ${line.slice(21)}`);
+  const habBar = progressBar(habitability.score, 20);
+  console.log(`  Overall Score:         ${habitability.score}/100 ${habBar}  ${habitability.descriptor}`);
+  console.log(`  Climate Comfort:       ${habitability.climateComfort}/40`);
+  console.log(`  Water Access:          ${habitability.waterAccess}/30`);
+  console.log(`  Terrain Access:        ${habitability.terrainAccess}/30`);
+  if (habitability.factors.length > 0) {
+    console.log(`  Key Factors:           ${habitability.factors.join("; ")}`);
+  }
+
+  // ── BIOME SUMMARY ──
+  console.log(`\n\u2500\u2500\u2500 BIOME SUMMARY ${line.slice(17)}`);
+  console.log(`  Dominant Biome:        ${biome.dominantBiome}`);
+  console.log(`  Eco-Regions:           ${biome.ecoRegionCount} (climate + elevation zones)`);
+  console.log(`  Ecological Diversity:  ${biome.ecologicalDiversity}`);
+  if (biome.summary) {
+    console.log();
+    // Word-wrap the prose summary at ~72 chars
+    const words = biome.summary.split(" ");
+    let currentLine = "  ";
+    for (const word of words) {
+      if (currentLine.length + word.length + 1 > W) {
+        console.log(currentLine);
+        currentLine = "  " + word;
+      } else {
+        currentLine += (currentLine === "  " ? "" : " ") + word;
+      }
+    }
+    if (currentLine.trim()) console.log(currentLine);
+  }
+
   console.log();
   console.log(`\u2550`.repeat(W + 2));
   console.log();
 }
 
 // ─────────────────────────────────────────────
+// Output: Markdown
+// ─────────────────────────────────────────────
+
+function generateMarkdown(
+  countryName: string,
+  area: AreaResult,
+  elevation: ElevationResult,
+  climate: ClimateResult,
+  hydro: HydrographyResult,
+  position: PositionResult,
+  neighbors: NeighborResult[],
+  coastline: CoastlineResult,
+  shape: ShapeResult,
+  icecaps: IcecapResult,
+  agriculture: AgriculturalInsight,
+  strategic: StrategicInsight,
+  habitability: HabitabilityInsight,
+  biome: BiomeInsight
+): string {
+  const lines: string[] = [];
+  const push = (s = "") => lines.push(s);
+
+  push(`# Geographic Report: ${countryName}`);
+  push();
+  push(`> Generated: ${new Date().toISOString().split("T")[0]}`);
+  push();
+
+  // ── Area & Dimensions ──
+  push(`## Area & Dimensions`);
+  push();
+  push(`| Metric | Value |`);
+  push(`|--------|-------|`);
+  push(`| Total Area | ${formatNumber(area.areaKm2)} km² (${formatNumber(area.areaSqMi)} sq mi) |`);
+  push(`| Bounding Box | ${Math.abs(area.bbox[1]).toFixed(2)}°${area.bbox[1] >= 0 ? "N" : "S"} to ${Math.abs(area.bbox[3]).toFixed(2)}°${area.bbox[3] >= 0 ? "N" : "S"}, ${Math.abs(area.bbox[0]).toFixed(2)}°${area.bbox[0] >= 0 ? "E" : "W"} to ${Math.abs(area.bbox[2]).toFixed(2)}°${area.bbox[2] >= 0 ? "E" : "W"} |`);
+  push(`| North-South Span | ${formatNumber(area.nsSpanKm)} km |`);
+  push(`| East-West Span | ${formatNumber(area.ewSpanKm)} km |`);
+  push(`| Centroid | ${formatCoord(area.centroid[1], area.centroid[0])} |`);
+  push(`| Total Perimeter | ${formatNumber(area.perimeterKm)} km |`);
+
+  const earthLandArea = 148_940_000;
+  const earthPercent = (area.areaKm2 / earthLandArea) * 100;
+  const realCountries = [
+    { name: "Russia", area: 17098242 }, { name: "Canada", area: 9984670 },
+    { name: "United States", area: 9833517 }, { name: "China", area: 9596961 },
+    { name: "Brazil", area: 8515767 }, { name: "Australia", area: 7692024 },
+    { name: "India", area: 3287263 }, { name: "Argentina", area: 2780400 },
+    { name: "Kazakhstan", area: 2724900 }, { name: "Algeria", area: 2381741 },
+    { name: "DR Congo", area: 2344858 }, { name: "Saudi Arabia", area: 2149690 },
+    { name: "Mexico", area: 1964375 }, { name: "Indonesia", area: 1904569 },
+    { name: "Sudan", area: 1861484 }, { name: "Libya", area: 1759540 },
+    { name: "Iran", area: 1648195 }, { name: "Mongolia", area: 1564116 },
+    { name: "Peru", area: 1285216 }, { name: "Chad", area: 1284000 },
+    { name: "Niger", area: 1267000 }, { name: "Angola", area: 1246700 },
+    { name: "Mali", area: 1240192 }, { name: "South Africa", area: 1221037 },
+    { name: "Colombia", area: 1141748 }, { name: "Ethiopia", area: 1104300 },
+    { name: "Bolivia", area: 1098581 }, { name: "Mauritania", area: 1030700 },
+    { name: "Egypt", area: 1002450 }, { name: "Tanzania", area: 945087 },
+    { name: "Nigeria", area: 923768 }, { name: "Venezuela", area: 916445 },
+    { name: "Pakistan", area: 881913 }, { name: "Mozambique", area: 801590 },
+    { name: "Turkey", area: 783562 }, { name: "Chile", area: 756102 },
+    { name: "Zambia", area: 752618 }, { name: "Myanmar", area: 676578 },
+    { name: "Afghanistan", area: 652230 }, { name: "France", area: 640679 },
+    { name: "Somalia", area: 637657 }, { name: "Central African Republic", area: 622984 },
+    { name: "Ukraine", area: 603500 }, { name: "Madagascar", area: 587041 },
+    { name: "Botswana", area: 581730 }, { name: "Kenya", area: 580367 },
+    { name: "Thailand", area: 513120 }, { name: "Spain", area: 505992 },
+    { name: "Turkmenistan", area: 488100 }, { name: "Cameroon", area: 475442 },
+    { name: "Papua New Guinea", area: 462840 }, { name: "Sweden", area: 450295 },
+    { name: "Uzbekistan", area: 447400 }, { name: "Morocco", area: 446550 },
+    { name: "Iraq", area: 438317 }, { name: "Paraguay", area: 406752 },
+    { name: "Zimbabwe", area: 390757 }, { name: "Japan", area: 377975 },
+    { name: "Germany", area: 357022 }, { name: "Philippines", area: 300000 },
+    { name: "Italy", area: 301340 }, { name: "United Kingdom", area: 242495 },
+    { name: "Romania", area: 238391 }, { name: "Ghana", area: 238533 },
+    { name: "Nepal", area: 147181 }, { name: "Greece", area: 131957 },
+    { name: "North Korea", area: 120538 }, { name: "Portugal", area: 92212 },
+    { name: "South Korea", area: 100210 }, { name: "Hungary", area: 93028 },
+    { name: "Austria", area: 83871 }, { name: "Czech Republic", area: 78867 },
+    { name: "Ireland", area: 70273 }, { name: "Sri Lanka", area: 65610 },
+    { name: "Switzerland", area: 41285 }, { name: "Netherlands", area: 41543 },
+    { name: "Belgium", area: 30528 }, { name: "Israel", area: 20770 },
+    { name: "Slovenia", area: 20273 }, { name: "Jamaica", area: 10991 },
+    { name: "Cyprus", area: 9251 }, { name: "Luxembourg", area: 2586 },
+  ];
+  const closest = realCountries.reduce((best, c) => {
+    const ratio = Math.abs(Math.log(c.area / area.areaKm2));
+    return ratio < best.ratio ? { name: c.name, area: c.area, ratio } : best;
+  }, { name: "", area: 0, ratio: Infinity });
+  push(`| Real-World Comparison | ~${earthPercent.toFixed(4)}% of Earth's land (comparable to ${closest.name}: ${formatNumber(closest.area)} km²) |`);
+  push();
+
+  // ── Elevation Profile ──
+  push(`## Elevation Profile`);
+  push();
+  if (elevation.zones.length === 0) {
+    push(`No elevation data available.`);
+  } else {
+    push(`| Zone | Area (km²) | % | Elevation |`);
+    push(`|------|-----------|---|-----------|`);
+    for (const z of elevation.zones) {
+      push(`| ${z.zoneName} | ${formatNumber(z.areaKm2)} | ${z.percent.toFixed(1)}% | ${z.elevationMin}–${z.elevationMax}m |`);
+    }
+    push();
+    push(`- **Elevation Range:** ${formatNumber(elevation.minElevation)}–${formatNumber(elevation.maxElevation)} m`);
+    push(`- **Mean Elevation:** ${formatNumber(elevation.meanElevation)} m`);
+    push(`- **Dominant Terrain:** ${elevation.dominantTerrain}`);
+    push(`- **Terrain Roughness:** ${elevation.terrainRoughness.toFixed(4)} (zones/√km²)`);
+  }
+  push();
+
+  // ── Climate Analysis ──
+  push(`## Climate Analysis`);
+  push();
+  if (climate.zones.length === 0) {
+    push(`No climate data available.`);
+  } else {
+    push(`| Climate Type | Area (km²) | % |`);
+    push(`|-------------|-----------|---|`);
+    for (const z of climate.zones) {
+      push(`| ${z.type} | ${formatNumber(z.areaKm2)} | ${z.percent.toFixed(1)}% |`);
+    }
+    push();
+    push(`- **Dominant Climate:** ${climate.dominantType}`);
+    push(`- **Climate Diversity:** ${climate.diversityIndex.toFixed(3)} (Shannon index)`);
+    push(`- **Est. Mean Temperature:** ${climate.estMeanTempC.toFixed(1)}°C (${climate.estMeanTempF.toFixed(1)}°F)`);
+    push(`- **Summer Daily High:** ${climate.estSummerHighC.toFixed(1)}°C (${(climate.estSummerHighC * 9 / 5 + 32).toFixed(1)}°F)`);
+    push(`- **Winter Daily Low:** ${climate.estWinterLowC.toFixed(1)}°C (${(climate.estWinterLowC * 9 / 5 + 32).toFixed(1)}°F)`);
+    push(`- **Seasonal Range:** ±${(climate.estSeasonalRangeC / 2).toFixed(1)}°C`);
+    push(`- **Diurnal Range:** ${climate.estDiurnalRangeC.toFixed(1)}°C`);
+    push(`- **Est. Annual Precipitation:** ${formatNumber(climate.estAnnualPrecipMm)} mm/yr`);
+    push();
+    push(`### Climate Zone Descriptions`);
+    push();
+    for (const z of climate.zones) {
+      push(`- **${z.type}:** ${z.description}`);
+    }
+  }
+  push();
+
+  // ── Hydrography ──
+  push(`## Hydrography`);
+  push();
+  push(`- **Rivers:** ${hydro.riverCount} (${formatNumber(hydro.totalRiverLengthKm)} km total within borders)`);
+  push(`- **Lakes:** ${hydro.lakeCount} (${formatNumber(hydro.totalLakeAreaKm2, 1)} km² total area)`);
+  push(`- **Drainage Density:** ${hydro.drainageDensity.toFixed(3)} km/km²`);
+  let drainageClass: string;
+  if (hydro.drainageDensity < 0.5) drainageClass = "Low";
+  else if (hydro.drainageDensity < 1.0) drainageClass = "Moderate";
+  else if (hydro.drainageDensity < 2.0) drainageClass = "High";
+  else drainageClass = "Very high";
+  push(`- **Drainage Class:** ${drainageClass}`);
+  if (hydro.lakeCount > 0 && area.areaKm2 > 0) {
+    push(`- **Lake Coverage:** ${((hydro.totalLakeAreaKm2 / area.areaKm2) * 100).toFixed(2)}% of total area`);
+  }
+  push();
+
+  // ── Geographic Position ──
+  push(`## Geographic Position`);
+  push();
+  push(`- **Hemisphere:** ${position.hemisphere}`);
+  push(`- **Latitude Band:** ${position.latitudeBand}`);
+  push(`- **Atmospheric Zone:** ${position.latitudeClassification}`);
+  push(`- **Distance from Equator:** ${formatNumber(position.distanceFromEquatorKm)} km`);
+  push(`- **Approx. Timezone:** ${position.approximateTimezone}`);
+  push();
+
+  // ── Ice Coverage ──
+  if (icecaps.hasIcecaps) {
+    push(`## Ice Coverage`);
+    push();
+    push(`- **Ice Cap Area:** ${formatNumber(icecaps.icecapAreaKm2, 1)} km²`);
+    push(`- **Ice Coverage:** ${icecaps.icecapPercent.toFixed(1)}% of total area`);
+    push();
+  }
+
+  // ── Neighbors ──
+  push(`## Neighbors`);
+  push();
+  if (neighbors.length === 0) {
+    push(`No neighboring countries detected (island nation).`);
+  } else {
+    push(`| Country | Direction | Shared Border |`);
+    push(`|---------|-----------|---------------|`);
+    for (const n of neighbors) {
+      const border = n.estimatedSharedBorderKm > 0 ? `~${formatNumber(n.estimatedSharedBorderKm)} km` : "< 1 km";
+      push(`| ${n.name} | ${n.direction} | ${border} |`);
+    }
+    push();
+    push(`**Total Neighbors:** ${neighbors.length}`);
+  }
+  push();
+
+  // ── Coastline & Maritime ──
+  push(`## Coastline & Maritime`);
+  push();
+  push(`- **Coastal Status:** ${coastline.isLandlocked ? "LANDLOCKED" : "Coastal nation"}`);
+  if (coastline.hasCoastline) {
+    push(`- **Est. Coastline:** ~${formatNumber(coastline.estimatedCoastlineKm)} km`);
+    push(`- **Coastline/Perimeter:** ${coastline.coastlinePercent.toFixed(1)}%`);
+  }
+  push(`- **Total Land Borders:** ~${formatNumber(coastline.totalSharedBorderKm)} km`);
+  push();
+
+  // ── Shape Analysis ──
+  push(`## Shape Analysis`);
+  push();
+  push(`- **Compactness (Polsby-Popper):** ${shape.compactnessRatio.toFixed(3)} (${shape.compactnessDescription})`);
+  push(`- **Elongation Ratio:** ${shape.elongationRatio.toFixed(2)} (${shape.elongationDescription})`);
+  push(`- **Land Fragments:** ${shape.fragmentCount}${shape.islandCount > 0 ? ` (${shape.fragmentCount - shape.islandCount} mainland + ${shape.islandCount} island${shape.islandCount > 1 ? "s" : ""})` : ""}`);
+  if (shape.islandCount > 0) {
+    push(`- **Mainland Area:** ${formatNumber(shape.mainlandAreaKm2)} km² (${((shape.mainlandAreaKm2 / area.areaKm2) * 100).toFixed(1)}%)`);
+  }
+  push();
+
+  // ── Agricultural Potential ──
+  push(`## Agricultural Potential`);
+  push();
+  push(`- **Arable Land:** ~${agriculture.arableLandPercent.toFixed(1)}% (${formatNumber(agriculture.arableLandKm2)} km²)`);
+  push(`- **Growing Season:** ~${agriculture.growingSeasonDays} days/yr`);
+  push(`- **Water Availability:** ${agriculture.waterAvailability} (score: ${agriculture.waterScore}/100)`);
+  push(`- **Overall Rating:** ${agriculture.overallRating}`);
+  if (agriculture.cropSuitability.length > 0) {
+    push(`- **Crop Suitability:** ${agriculture.cropSuitability.join(", ")}`);
+  }
+  push();
+
+  // ── Strategic Geography ──
+  push(`## Strategic Geography`);
+  push();
+  push(`- **Maritime Index:** ${strategic.maritimeIndex}`);
+  push(`- **Coast/Area Ratio:** ${strategic.coastlineToAreaRatio.toFixed(1)}`);
+  push(`- **Strategic Depth:** ${formatNumber(strategic.strategicDepthKm)} km`);
+  push(`- **Border Defensibility:** ${strategic.borderDefensibility}`);
+  push(`- **Mountain Coverage:** ${strategic.mountainousBorderPercent.toFixed(1)}% (terrain above 1000m)`);
+  push(`- **Island Exposure:** ${strategic.islandExposure}`);
+  push(`- **Access Points:** ${strategic.accessPoints}`);
+  push();
+
+  // ── Habitability Index ──
+  push(`## Habitability Index`);
+  push();
+  push(`- **Overall Score:** ${habitability.score}/100 — ${habitability.descriptor}`);
+  push(`- **Climate Comfort:** ${habitability.climateComfort}/40`);
+  push(`- **Water Access:** ${habitability.waterAccess}/30`);
+  push(`- **Terrain Access:** ${habitability.terrainAccess}/30`);
+  if (habitability.factors.length > 0) {
+    push(`- **Key Factors:** ${habitability.factors.join("; ")}`);
+  }
+  push();
+
+  // ── Biome Summary ──
+  push(`## Biome Summary`);
+  push();
+  push(`- **Dominant Biome:** ${biome.dominantBiome}`);
+  push(`- **Eco-Regions:** ${biome.ecoRegionCount} (climate + elevation zones)`);
+  push(`- **Ecological Diversity:** ${biome.ecologicalDiversity}`);
+  if (biome.summary) {
+    push();
+    push(biome.summary);
+  }
+  push();
+
+  return lines.join("\n");
+}
+
+// ─────────────────────────────────────────────
 // Output: JSON
 // ─────────────────────────────────────────────
 
-function printJSON(
+function buildJSONReport(
   countryName: string,
   featureId: string,
   area: AreaResult,
@@ -1080,9 +1709,13 @@ function printJSON(
   neighbors: NeighborResult[],
   coastline: CoastlineResult,
   shape: ShapeResult,
-  icecaps: IcecapResult
+  icecaps: IcecapResult,
+  agriculture: AgriculturalInsight,
+  strategic: StrategicInsight,
+  habitability: HabitabilityInsight,
+  biome: BiomeInsight
 ) {
-  const report = {
+  return {
     country: countryName,
     featureId,
     generatedAt: new Date().toISOString(),
@@ -1126,9 +1759,10 @@ function printJSON(
       temperature: {
         meanC: +climate.estMeanTempC.toFixed(1),
         meanF: +climate.estMeanTempF.toFixed(1),
-        summerHighC: +climate.estSummerHighC.toFixed(1),
-        winterLowC: +climate.estWinterLowC.toFixed(1),
+        summerDailyHighC: +climate.estSummerHighC.toFixed(1),
+        winterDailyLowC: +climate.estWinterLowC.toFixed(1),
         seasonalRangeC: +climate.estSeasonalRangeC.toFixed(1),
+        diurnalRangeC: +climate.estDiurnalRangeC.toFixed(1),
       },
       annualPrecipitationMm: Math.round(climate.estAnnualPrecipMm),
     },
@@ -1171,8 +1805,61 @@ function printJSON(
       areaKm2: Math.round(icecaps.icecapAreaKm2),
       percent: +icecaps.icecapPercent.toFixed(1),
     },
+    insights: {
+      agriculture: {
+        arableLandPercent: +agriculture.arableLandPercent.toFixed(1),
+        arableLandKm2: Math.round(agriculture.arableLandKm2),
+        growingSeasonDays: agriculture.growingSeasonDays,
+        waterAvailability: agriculture.waterAvailability,
+        waterScore: agriculture.waterScore,
+        cropSuitability: agriculture.cropSuitability,
+        overallRating: agriculture.overallRating,
+      },
+      strategic: {
+        maritimeIndex: strategic.maritimeIndex,
+        coastlineToAreaRatio: +strategic.coastlineToAreaRatio.toFixed(1),
+        strategicDepthKm: Math.round(strategic.strategicDepthKm),
+        borderDefensibility: strategic.borderDefensibility,
+        mountainCoveragePercent: +strategic.mountainousBorderPercent.toFixed(1),
+        islandExposure: strategic.islandExposure,
+        accessPoints: strategic.accessPoints,
+      },
+      habitability: {
+        score: habitability.score,
+        descriptor: habitability.descriptor,
+        climateComfort: habitability.climateComfort,
+        waterAccess: habitability.waterAccess,
+        terrainAccess: habitability.terrainAccess,
+        keyFactors: habitability.factors,
+      },
+      biome: {
+        dominantBiome: biome.dominantBiome,
+        ecoRegionCount: biome.ecoRegionCount,
+        ecologicalDiversity: biome.ecologicalDiversity,
+        summary: biome.summary,
+      },
+    },
   };
+}
 
+function printJSON(
+  countryName: string,
+  featureId: string,
+  area: AreaResult,
+  elevation: ElevationResult,
+  climate: ClimateResult,
+  hydro: HydrographyResult,
+  position: PositionResult,
+  neighbors: NeighborResult[],
+  coastline: CoastlineResult,
+  shape: ShapeResult,
+  icecaps: IcecapResult,
+  agriculture: AgriculturalInsight,
+  strategic: StrategicInsight,
+  habitability: HabitabilityInsight,
+  biome: BiomeInsight
+) {
+  const report = buildJSONReport(countryName, featureId, area, elevation, climate, hydro, position, neighbors, coastline, shape, icecaps, agriculture, strategic, habitability, biome);
   console.log(JSON.stringify(report, null, 2));
 }
 
@@ -1240,7 +1927,8 @@ async function main() {
     climateGeo.features,
     area.bbox,
     area.centroid[1],
-    elevation.meanElevation
+    elevation.meanElevation,
+    area.areaKm2
   );
 
   process.stderr.write("  Computing hydrography...\n");
@@ -1277,14 +1965,38 @@ async function main() {
     area.areaKm2
   );
 
+  process.stderr.write("  Computing derived insights...\n");
+  const agriculture = analyzeAgriculture(climate, elevation, hydro, area, area.centroid[1]);
+  const strategic = analyzeStrategic(area, elevation, coastlineResult, neighbors, shape);
+  const habitability = analyzeHabitability(climate, elevation, hydro, area);
+  const biome = analyzeBiome(climate, elevation, hydro, area, coastlineResult);
+
   process.stderr.write("  Done!\n");
 
-  // Output
+  // Output to console
   if (jsonMode) {
-    printJSON(displayName, featureId, area, elevation, climate, hydro, position, neighbors, coastlineResult, shape, icecaps);
+    printJSON(displayName, featureId, area, elevation, climate, hydro, position, neighbors, coastlineResult, shape, icecaps, agriculture, strategic, habitability, biome);
   } else {
-    printReport(displayName, area, elevation, climate, hydro, position, neighbors, coastlineResult, shape, icecaps);
+    printReport(displayName, area, elevation, climate, hydro, position, neighbors, coastlineResult, shape, icecaps, agriculture, strategic, habitability, biome);
   }
+
+  // Save to file
+  const reportsDir = join(process.cwd(), "scripts", "reports");
+  mkdirSync(reportsDir, { recursive: true });
+  const slug = featureId.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  const ext = jsonMode ? "json" : "md";
+  const outPath = join(reportsDir, `${slug}-geo-report.${ext}`);
+
+  if (jsonMode) {
+    // Rebuild JSON object for file (reuse printJSON logic)
+    const report = buildJSONReport(displayName, featureId, area, elevation, climate, hydro, position, neighbors, coastlineResult, shape, icecaps, agriculture, strategic, habitability, biome);
+    writeFileSync(outPath, JSON.stringify(report, null, 2) + "\n", "utf-8");
+  } else {
+    const md = generateMarkdown(displayName, area, elevation, climate, hydro, position, neighbors, coastlineResult, shape, icecaps, agriculture, strategic, habitability, biome);
+    writeFileSync(outPath, md, "utf-8");
+  }
+
+  process.stderr.write(`\n  Saved to: ${outPath}\n`);
 }
 
 main().catch((err) => {

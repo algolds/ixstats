@@ -455,7 +455,7 @@ export function DataMonitoringCenter({
                     <div className="bg-card/50 rounded-lg p-4 text-center">
                       <Users className="mx-auto mb-2 h-6 w-6 text-blue-500" />
                       <div className="text-2xl font-bold">
-                        {(countryData.currentPopulation / 1000000).toFixed(1)}M
+                        {Math.round(countryData.currentPopulation / 1000000)}M
                       </div>
                       <div className="text-muted-foreground text-xs">Population</div>
                     </div>

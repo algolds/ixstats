@@ -14,6 +14,7 @@ import {
   Map,
   Users,
   Database,
+  BookOpen,
   Menu,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
@@ -71,6 +72,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: Database,
     description: "Unified Data Manager",
   },
+  {
+    label: "Wiki Management",
+    href: "/admin/wiki",
+    icon: BookOpen,
+    description: "Wiki Links & Scanning",
+  },
 ];
 
 function isActive(pathname: string, href: string, exact?: boolean): boolean {
@@ -88,7 +95,7 @@ export function AdminSidebar() {
     <div className="flex min-h-full flex-col">
       {/* Header */}
       <div className="border-border/50 border-b p-6">
-        <Link href={withBasePath("/admin")} className="flex items-center gap-3">
+        <Link href="/admin" className="flex items-center gap-3">
           <div className="bg-primary/10 border-primary/20 rounded-xl border p-2">
             <Shield className="text-primary h-6 w-6" />
           </div>
@@ -107,7 +114,7 @@ export function AdminSidebar() {
             return (
               <Link
                 key={item.href}
-                href={withBasePath(item.href)}
+                href={item.href}
                 onClick={() => setIsOpen(false)}
                 className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 transition-all duration-200 ${
                   active

@@ -17,6 +17,7 @@ import {
   forwardRef,
   useImperativeHandle,
   useState,
+  memo,
 } from "react";
 import type { FeatureCollection } from "geojson";
 import {
@@ -30,10 +31,13 @@ import {
   type ProjectionMode,
 } from "~/lib/map-config";
 
-import { ChoroplethOverlay } from "~/components/maps/overlays/ChoroplethOverlay";
-import { RiskHeatmapOverlay } from "~/components/maps/overlays/RiskHeatmapOverlay";
-import { GeopoliticalOverlay } from "~/components/maps/overlays/GeopoliticalOverlay";
-import { TransportOverlay } from "~/components/maps/overlays/TransportOverlay";
+import { lazy, Suspense } from "react";
+
+const ChoroplethOverlay = lazy(() => import("~/components/maps/overlays/ChoroplethOverlay").then(m => ({ default: m.ChoroplethOverlay })));
+const RiskHeatmapOverlay = lazy(() => import("~/components/maps/overlays/RiskHeatmapOverlay").then(m => ({ default: m.RiskHeatmapOverlay })));
+const GeopoliticalOverlay = lazy(() => import("~/components/maps/overlays/GeopoliticalOverlay").then(m => ({ default: m.GeopoliticalOverlay })));
+const TransportOverlay = lazy(() => import("~/components/maps/overlays/TransportOverlay").then(m => ({ default: m.TransportOverlay })));
+import { registerStoryPinIcons } from "~/lib/story-pin-icons";
 
 // MapLibre types imported dynamically since the module requires browser APIs
 type MapLibreMap = import("maplibre-gl").Map;
@@ -129,7 +133,7 @@ export interface SelectedCountry {
 /** Represents a clicked city, POI, or capital marker on the map */
 export interface SelectedFeature {
   id: string;
-  featureType: "city" | "poi" | "capital";
+  featureType: "city" | "poi" | "capital" | "storyPin";
   name: string;
   countryId: string;
   countryName: string;
@@ -143,6 +147,9 @@ export interface SelectedFeature {
   category?: string;
   icon?: string | null;
   description?: string | null;
+  /** Story Pin-specific */
+  ixTimeYear?: number | null;
+  eraLabel?: string | null;
   /** Wiki link */
   wikiPageTitle?: string | null;
 }
@@ -176,11 +183,13 @@ export interface MapOverlayFeatures {
   cities: FeatureCollection;
   pois: FeatureCollection;
   subdivisions: FeatureCollection;
+  storyPins?: FeatureCollection;
+  mapLabels?: FeatureCollection;
 }
 
 /** Which overlays are visible */
 export type OverlayVisibility = Record<
-  "cities" | "pois" | "subdivisions" | "wealth" | "population" | "diplomacy" | "crises" | "transport",
+  "cities" | "pois" | "subdivisions" | "wealth" | "population" | "diplomacy" | "crises" | "transport" | "storyPins" | "mapLabels",
   boolean
 >;
 
@@ -277,7 +286,7 @@ function createStarImage(size: number, fillColor: string, strokeColor: string): 
   return ctx.getImageData(0, 0, size, size);
 }
 
-const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
+const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
   function IxWorldMap(
     {
       layers,
@@ -1100,10 +1109,9 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             paint: {
               "fill-color": "#a78bfa",
               "fill-opacity": [
-                "case",
-                ["boolean", ["feature-state", "hover"], false],
-                0.22,
-                0.08,
+                "interpolate", ["linear"], ["zoom"],
+                4, ["case", ["boolean", ["feature-state", "hover"], false], 0.15, 0.04],
+                7, ["case", ["boolean", ["feature-state", "hover"], false], 0.25, 0.1],
               ] as unknown as number,
             },
             minzoom: 4,
@@ -1115,12 +1123,17 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             paint: {
               "line-color": "#7c3aed",
               "line-width": [
-                "case",
-                ["boolean", ["feature-state", "hover"], false],
-                2.2,
-                1.2,
+                "interpolate", ["linear"], ["zoom"],
+                4, ["case", ["boolean", ["feature-state", "hover"], false], 1.5, 0.6],
+                8, ["case", ["boolean", ["feature-state", "hover"], false], 2.5, 1.4],
               ] as unknown as number,
               "line-dasharray": [3, 2] as unknown as number[],
+              "line-opacity": [
+                "interpolate", ["linear"], ["zoom"],
+                4, 0.5,
+                6, 0.8,
+                8, 1.0,
+              ] as unknown as number,
             },
             minzoom: 4,
           });
@@ -1130,12 +1143,29 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             source: subSource,
             layout: {
               "text-field": ["get", "name"] as unknown as string,
-              "text-size": ["interpolate", ["linear"], ["zoom"], 4, 9, 8, 12] as unknown as number,
+              "text-size": ["interpolate", ["linear"], ["zoom"], 4, 8, 7, 11, 10, 14] as unknown as number,
               "text-allow-overlap": false,
               "text-optional": true,
+              "text-padding": 8 as unknown as number,
+              // Larger regions show labels first via area-based priority
+              "symbol-sort-key": ["case",
+                ["has", "areaSqKm"],
+                ["-", ["get", "areaSqKm"]],
+                0,
+              ] as unknown as number,
             },
-            paint: { "text-color": "#6d28d9", "text-halo-color": "#fff", "text-halo-width": 1.5 },
-            minzoom: 5,
+            paint: {
+              "text-color": "#6d28d9",
+              "text-halo-color": "#fff",
+              "text-halo-width": 1.5,
+              "text-opacity": [
+                "interpolate", ["linear"], ["zoom"],
+                4, 0,
+                5, 0.7,
+                7, 1,
+              ] as unknown as number,
+            },
+            minzoom: 4.5,
           });
         }
       } catch (err) {
@@ -1156,16 +1186,61 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       };
 
       try {
+        const enableCityClustering = nonCapitalCities.features.length > 50;
         if (map.getSource(citySource)) {
           (map.getSource(citySource) as maplibregl.GeoJSONSource).setData(nonCapitalCities as unknown as GeoJSON.GeoJSON);
         } else {
-          map.addSource(citySource, { type: "geojson", data: nonCapitalCities as unknown as GeoJSON.GeoJSON });
+          map.addSource(citySource, {
+            type: "geojson",
+            data: nonCapitalCities as unknown as GeoJSON.GeoJSON,
+            ...(enableCityClustering ? {
+              cluster: true,
+              clusterMaxZoom: 8,
+              clusterRadius: 40,
+            } : {}),
+          });
+
+          if (enableCityClustering) {
+            // Cluster circle layer — shows count when cities overlap at low zoom
+            map.addLayer({
+              id: `${cityCircleId}-cluster`,
+              type: "circle",
+              source: citySource,
+              filter: ["has", "point_count"],
+              paint: {
+                "circle-radius": ["step", ["get", "point_count"], 12, 10, 16, 50, 22] as unknown as number,
+                "circle-color": ["step", ["get", "point_count"], "#93c5fd", 10, "#3b82f6", 50, "#1e40af"] as unknown as string,
+                "circle-stroke-color": "#fff",
+                "circle-stroke-width": 1.5,
+              },
+              minzoom: 3,
+            });
+            map.addLayer({
+              id: `${cityCircleId}-cluster-count`,
+              type: "symbol",
+              source: citySource,
+              filter: ["has", "point_count"],
+              layout: {
+                "text-field": "{point_count_abbreviated}",
+                "text-size": 11,
+              },
+              paint: { "text-color": "#fff" },
+              minzoom: 3,
+            });
+          }
+
+          // Individual city circles (unclustered or all if < 50)
           map.addLayer({
             id: cityCircleId,
             type: "circle",
             source: citySource,
+            ...(enableCityClustering ? { filter: ["!", ["has", "point_count"]] } : {}),
             paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 3, 8, 7] as unknown as number,
+              "circle-radius": [
+                "interpolate", ["linear"], ["zoom"],
+                4, ["case", ["==", ["get", "cityType"], "major"], 4.5, 3],
+                8, ["case", ["==", ["get", "cityType"], "major"], 8, 6],
+              ] as unknown as number,
               "circle-color": "#3b82f6",
               "circle-stroke-color": "#fff",
               "circle-stroke-width": 1.2,
@@ -1176,6 +1251,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             id: cityLabelId,
             type: "symbol",
             source: citySource,
+            ...(enableCityClustering ? { filter: ["!", ["has", "point_count"]] } : {}),
             layout: {
               "text-field": ["get", "name"] as unknown as string,
               "text-size": ["interpolate", ["linear"], ["zoom"], 6, 9, 10, 12] as unknown as number,
@@ -1183,6 +1259,12 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
               "text-anchor": "top" as const,
               "text-allow-overlap": false,
               "text-optional": true,
+              // Priority by population — larger cities get labels first
+              "symbol-sort-key": ["case",
+                ["has", "population"],
+                ["-", ["get", "population"]],
+                0,
+              ] as unknown as number,
             },
             paint: { "text-color": "#1e40af", "text-halo-color": "#fff", "text-halo-width": 1.5 },
             minzoom: 6,
@@ -1198,14 +1280,50 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       const poiLabelId = "overlay-pois-label";
 
       try {
+        const enablePoiClustering = overlayFeatures.pois.features.length > 30;
         if (map.getSource(poiSource)) {
           (map.getSource(poiSource) as maplibregl.GeoJSONSource).setData(overlayFeatures.pois as unknown as GeoJSON.GeoJSON);
         } else {
-          map.addSource(poiSource, { type: "geojson", data: overlayFeatures.pois as unknown as GeoJSON.GeoJSON });
+          map.addSource(poiSource, {
+            type: "geojson",
+            data: overlayFeatures.pois as unknown as GeoJSON.GeoJSON,
+            ...(enablePoiClustering ? {
+              cluster: true,
+              clusterMaxZoom: 10,
+              clusterRadius: 35,
+            } : {}),
+          });
+
+          if (enablePoiClustering) {
+            map.addLayer({
+              id: `${poiCircleId}-cluster`,
+              type: "circle",
+              source: poiSource,
+              filter: ["has", "point_count"],
+              paint: {
+                "circle-radius": ["step", ["get", "point_count"], 10, 5, 14, 20, 18] as unknown as number,
+                "circle-color": ["step", ["get", "point_count"], "#fcd34d", 5, "#f59e0b", 20, "#d97706"] as unknown as string,
+                "circle-stroke-color": "#fff",
+                "circle-stroke-width": 1,
+              },
+              minzoom: 5,
+            });
+            map.addLayer({
+              id: `${poiCircleId}-cluster-count`,
+              type: "symbol",
+              source: poiSource,
+              filter: ["has", "point_count"],
+              layout: { "text-field": "{point_count_abbreviated}", "text-size": 10 },
+              paint: { "text-color": "#78350f" },
+              minzoom: 5,
+            });
+          }
+
           map.addLayer({
             id: poiCircleId,
             type: "circle",
             source: poiSource,
+            ...(enablePoiClustering ? { filter: ["!", ["has", "point_count"]] } : {}),
             paint: {
               "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 2.5, 10, 5] as unknown as number,
               "circle-color": "#f59e0b",
@@ -1218,6 +1336,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             id: poiLabelId,
             type: "symbol",
             source: poiSource,
+            ...(enablePoiClustering ? { filter: ["!", ["has", "point_count"]] } : {}),
             layout: {
               "text-field": ["get", "name"] as unknown as string,
               "text-size": ["interpolate", ["linear"], ["zoom"], 8, 8, 12, 11] as unknown as number,
@@ -1233,6 +1352,207 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       } catch (err) {
         console.warn("[IxWorldMap] overlay POIs error:", err);
       }
+
+      // --- Story Pins (icon-based with glow + clustering) ---
+      if (overlayFeatures.storyPins) {
+        const spSource = "source-story-pins";
+        const spIconId = "story-pins-icon";
+        const spGlowId = "story-pins-glow";
+        const spLabelId = "story-pins-label";
+        const spClusterId = "story-pins-cluster";
+        const spClusterCountId = "story-pins-cluster-count";
+
+        try {
+          // Register category icons (27 variants: 9 categories × 3 importance levels)
+          registerStoryPinIcons(map);
+
+          // Category color expression for fallback/glow/labels
+          const SP_COLORS: Record<string, string> = {
+            battle: "#dc2626", founding: "#2563eb", treaty: "#16a34a",
+            cultural: "#9333ea", religious: "#ca8a04", natural: "#059669",
+            trade: "#ea580c", exploration: "#0891b2", disaster: "#6b7280",
+          };
+          const colorExpr: unknown[] = ["match", ["get", "category"]];
+          for (const [cat, color] of Object.entries(SP_COLORS)) {
+            colorExpr.push(cat, color);
+          }
+          colorExpr.push("#6b7280");
+
+          if (map.getSource(spSource)) {
+            (map.getSource(spSource) as maplibregl.GeoJSONSource).setData(
+              overlayFeatures.storyPins as unknown as GeoJSON.GeoJSON
+            );
+          } else {
+            map.addSource(spSource, {
+              type: "geojson",
+              data: overlayFeatures.storyPins as unknown as GeoJSON.GeoJSON,
+              cluster: true,
+              clusterMaxZoom: 8,
+              clusterRadius: 50,
+            });
+
+            // Cluster circles
+            map.addLayer({
+              id: spClusterId,
+              type: "circle",
+              source: spSource,
+              filter: ["has", "point_count"],
+              paint: {
+                "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 30, 28] as unknown as number,
+                "circle-color": "#7c3aed",
+                "circle-stroke-color": "#fff",
+                "circle-stroke-width": 2,
+                "circle-opacity": 0.85,
+              },
+              minzoom: 3,
+            });
+
+            // Cluster count label
+            map.addLayer({
+              id: spClusterCountId,
+              type: "symbol",
+              source: spSource,
+              filter: ["has", "point_count"],
+              layout: {
+                "text-field": ["get", "point_count_abbreviated"] as unknown as string,
+                "text-size": 12,
+              },
+              paint: {
+                "text-color": "#ffffff",
+              },
+            });
+
+            // Glow layer (behind icons) for major/legendary pins
+            map.addLayer({
+              id: spGlowId,
+              type: "circle",
+              source: spSource,
+              filter: ["all", ["!", ["has", "point_count"]], [">=", ["get", "importance"], 1]],
+              paint: {
+                "circle-radius": [
+                  "interpolate", ["linear"], ["zoom"],
+                  4, ["case", [">=", ["get", "importance"], 2], 18, 14],
+                  8, ["case", [">=", ["get", "importance"], 2], 28, 22],
+                  12, ["case", [">=", ["get", "importance"], 2], 36, 28],
+                ] as unknown as number,
+                "circle-color": colorExpr as unknown as string,
+                "circle-opacity": ["case", [">=", ["get", "importance"], 2], 0.25, 0.15] as unknown as number,
+                "circle-blur": 0.6,
+              },
+              minzoom: 3,
+            });
+
+            // Icon layer (unclustered points)
+            map.addLayer({
+              id: spIconId,
+              type: "symbol",
+              source: spSource,
+              filter: ["!", ["has", "point_count"]],
+              layout: {
+                "icon-image": [
+                  "concat",
+                  "story-pin-",
+                  ["get", "category"],
+                  "-",
+                  ["to-string", ["coalesce", ["get", "importance"], 0]],
+                ] as unknown as string,
+                "icon-size": [
+                  "interpolate", ["linear"], ["zoom"],
+                  3, 0.5,
+                  6, 0.75,
+                  10, 1,
+                ] as unknown as number,
+                "icon-allow-overlap": true,
+                "icon-anchor": "center" as const,
+              },
+              minzoom: 3,
+            });
+
+            // Title label layer
+            map.addLayer({
+              id: spLabelId,
+              type: "symbol",
+              source: spSource,
+              filter: ["!", ["has", "point_count"]],
+              layout: {
+                "text-field": ["get", "title"] as unknown as string,
+                "text-size": [
+                  "interpolate", ["linear"], ["zoom"],
+                  5, 8, 10, 11,
+                ] as unknown as number,
+                "text-offset": [0, 1.8],
+                "text-anchor": "top" as const,
+                "text-allow-overlap": false,
+                "text-optional": true,
+                "text-max-width": 12,
+                "text-font": [
+                  "case",
+                  [">=", ["coalesce", ["get", "importance"], 0], 1],
+                  ["literal", ["DejaVu Sans Bold"]],
+                  ["literal", ["DejaVu Sans"]],
+                ] as unknown as string[],
+              },
+              paint: {
+                "text-color": colorExpr as unknown as string,
+                "text-halo-color": "#fff",
+                "text-halo-width": 1.5,
+              },
+              minzoom: 5,
+            });
+          }
+        } catch (err) {
+          console.warn("[IxWorldMap] story pins error:", err);
+        }
+      }
+
+      // --- Custom Map Labels ---
+      if (overlayFeatures.mapLabels) {
+        const mlSource = "source-map-labels";
+        const mlLayerId = "custom-map-labels";
+
+        try {
+          if (map.getSource(mlSource)) {
+            (map.getSource(mlSource) as maplibregl.GeoJSONSource).setData(
+              overlayFeatures.mapLabels as unknown as GeoJSON.GeoJSON
+            );
+          } else {
+            map.addSource(mlSource, {
+              type: "geojson",
+              data: overlayFeatures.mapLabels as unknown as GeoJSON.GeoJSON,
+            });
+            map.addLayer({
+              id: mlLayerId,
+              type: "symbol",
+              source: mlSource,
+              layout: {
+                "text-field": ["get", "text"] as unknown as string,
+                "text-size": ["get", "fontSize"] as unknown as number,
+                "text-rotate": ["get", "rotation"] as unknown as number,
+                "text-letter-spacing": ["get", "letterSpacing"] as unknown as number,
+                "text-font": [
+                  "case",
+                  ["==", ["get", "fontWeight"], "bold"],
+                  ["literal", ["DejaVu Sans Bold"]],
+                  ["literal", ["DejaVu Sans Regular"]],
+                ] as unknown as string[],
+                "text-allow-overlap": false,
+                "text-optional": true,
+                "text-max-width": 30,
+              },
+              paint: {
+                "text-color": ["get", "color"] as unknown as string,
+                "text-opacity": ["get", "opacity"] as unknown as number,
+                "text-halo-color": "#ffffff",
+                "text-halo-width": 1.5,
+                "text-halo-blur": 0.5,
+              },
+              minzoom: 3,
+            });
+          }
+        } catch (err) {
+          console.warn("[IxWorldMap] map labels error:", err);
+        }
+      }
     }, [overlayFeatures, isLoaded]);
 
     // Update overlay visibility
@@ -1241,9 +1561,20 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
       if (!map || !isLoaded || !overlayVisibility) return;
 
       const overlayLayers: Record<string, string[]> = {
-        cities: ["overlay-cities-circle", "overlay-cities-label"],
-        pois: ["overlay-pois-circle", "overlay-pois-label"],
+        cities: [
+          "overlay-cities-circle", "overlay-cities-label",
+          "overlay-cities-circle-cluster", "overlay-cities-circle-cluster-count",
+        ],
+        pois: [
+          "overlay-pois-circle", "overlay-pois-label",
+          "overlay-pois-circle-cluster", "overlay-pois-circle-cluster-count",
+        ],
         subdivisions: ["overlay-subdivisions-fill", "overlay-subdivisions-stroke", "overlay-subdivisions-label"],
+        storyPins: [
+          "story-pins-icon", "story-pins-glow", "story-pins-label",
+          "story-pins-cluster", "story-pins-cluster-count",
+        ],
+        mapLabels: ["custom-map-labels"],
       };
 
       for (const [key, layerIds] of Object.entries(overlayLayers)) {
@@ -1335,6 +1666,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
           "capitals-star",
           "overlay-pois-circle",
           "overlay-subdivisions-fill",
+          "story-pins-icon",
         ].filter((id) => map.getLayer(id));
 
         let overlayHit: maplibregl.MapGeoJSONFeature | null = null;
@@ -1345,7 +1677,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
         if (overlayHit) {
           const props = overlayHit.properties ?? {};
-          const name = String(props.name ?? "");
+          const name = String(props.name ?? props.title ?? "");
           const layerId = overlayHit.layer?.id ?? "";
           const featureKey = `${layerId}:${props.id ?? name}`;
 
@@ -1378,6 +1710,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             else if (layerId === "overlay-cities-circle") typeHint = props.cityType ? String(props.cityType) : "City";
             else if (layerId === "overlay-pois-circle") typeHint = props.category ? String(props.category) : "POI";
             else if (layerId === "overlay-subdivisions-fill") typeHint = props.type ? String(props.type) : "Region";
+            else if (layerId === "story-pins-icon") typeHint = "Story Pin";
 
             const safeName = escHtml(name);
             const safeType = escHtml(typeHint);
@@ -1475,6 +1808,7 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
           "overlay-cities-circle",
           "capitals-star",
           "overlay-pois-circle",
+          "story-pins-icon",
         ].filter((id) => map.getLayer(id));
 
         if (overlayLayerIds.length > 0) {
@@ -1488,22 +1822,24 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
             const coords = (hit.geometry as GeoJSON.Point).coordinates as [number, number];
             const layerId = hit.layer?.id;
 
-            const featureType: "city" | "poi" | "capital" =
-              layerId === "overlay-pois-circle"
-                ? "poi"
-                : layerId === "capitals-star"
-                  ? "capital"
-                  : "city";
+            const featureType: "city" | "poi" | "capital" | "storyPin" =
+              layerId === "story-pins-icon"
+                ? "storyPin"
+                : layerId === "overlay-pois-circle"
+                  ? "poi"
+                  : layerId === "capitals-star"
+                    ? "capital"
+                    : "city";
 
             const selected: SelectedFeature = {
               id: String(props.id ?? ""),
-              featureType,
-              name: String(props.name ?? ""),
+              featureType: featureType as SelectedFeature["featureType"],
+              name: String(featureType === "storyPin" ? (props.title ?? "") : (props.name ?? "")),
               countryId: String(props.countryId ?? ""),
               countryName: String(props.countryName ?? ""),
               countrySlug: props.countrySlug ? String(props.countrySlug) : null,
               coordinates: coords,
-              ...(featureType !== "poi" && {
+              ...(featureType !== "poi" && featureType !== "storyPin" && {
                 cityType: props.cityType ? String(props.cityType) : undefined,
                 population: props.population != null ? Number(props.population) : null,
                 isCapital: featureType === "capital" || !!props.isCapital,
@@ -1512,6 +1848,11 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
                 category: props.category ? String(props.category) : undefined,
                 icon: props.icon ? String(props.icon) : null,
                 description: props.description ? String(props.description) : null,
+              }),
+              ...(featureType === "storyPin" && {
+                category: props.category ? String(props.category) : undefined,
+                ixTimeYear: props.ixTimeYear != null ? Number(props.ixTimeYear) : null,
+                eraLabel: props.eraLabel ? String(props.eraLabel) : null,
               }),
               wikiPageTitle: props.wikiPageTitle ? String(props.wikiPageTitle) : null,
             };
@@ -1662,53 +2003,55 @@ const IxWorldMap = forwardRef<IxWorldMapRef, IxWorldMapProps>(
         )}
 
         {/* Analytics overlay renderers (imperative — manage MapLibre sources/layers) */}
-        {isLoaded && overlayData?.wealth && (
-          <ChoroplethOverlay
-            map={mapRef.current}
-            data={overlayData.wealth}
-            visible={overlayVisibility?.wealth ?? false}
-            layerId="wealth"
-            colorScale="wealth"
-            metadata={overlayData.wealth.metadata}
-          />
-        )}
-        {isLoaded && overlayData?.population && (
-          <ChoroplethOverlay
-            map={mapRef.current}
-            data={overlayData.population}
-            visible={overlayVisibility?.population ?? false}
-            layerId="population"
-            colorScale="population"
-            metadata={overlayData.population.metadata}
-          />
-        )}
-        {isLoaded && overlayData?.crises && (
-          <RiskHeatmapOverlay
-            map={mapRef.current}
-            riskData={overlayData.crises.riskMap}
-            crisisEvents={overlayData.crises.crisisEvents}
-            visible={overlayVisibility?.crises ?? false}
-          />
-        )}
-        {isLoaded && overlayData?.diplomacy && (
-          <GeopoliticalOverlay
-            map={mapRef.current}
-            relations={overlayData.diplomacy.relations}
-            conflicts={overlayData.diplomacy.conflicts}
-            visible={overlayVisibility?.diplomacy ?? false}
-          />
-        )}
-        {isLoaded && overlayData?.transport && (
-          <TransportOverlay
-            map={mapRef.current}
-            routeData={overlayData.transport}
-            visible={overlayVisibility?.transport ?? false}
-            onRouteClick={onRouteClick ? (id) => onRouteClick(id) : undefined}
-          />
-        )}
+        <Suspense fallback={null}>
+          {isLoaded && overlayData?.wealth && (
+            <ChoroplethOverlay
+              map={mapRef.current}
+              data={overlayData.wealth}
+              visible={overlayVisibility?.wealth ?? false}
+              layerId="wealth"
+              colorScale="wealth"
+              metadata={overlayData.wealth.metadata}
+            />
+          )}
+          {isLoaded && overlayData?.population && (
+            <ChoroplethOverlay
+              map={mapRef.current}
+              data={overlayData.population}
+              visible={overlayVisibility?.population ?? false}
+              layerId="population"
+              colorScale="population"
+              metadata={overlayData.population.metadata}
+            />
+          )}
+          {isLoaded && overlayData?.crises && (
+            <RiskHeatmapOverlay
+              map={mapRef.current}
+              riskData={overlayData.crises.riskMap}
+              crisisEvents={overlayData.crises.crisisEvents}
+              visible={overlayVisibility?.crises ?? false}
+            />
+          )}
+          {isLoaded && overlayData?.diplomacy && (
+            <GeopoliticalOverlay
+              map={mapRef.current}
+              relations={overlayData.diplomacy.relations}
+              conflicts={overlayData.diplomacy.conflicts}
+              visible={overlayVisibility?.diplomacy ?? false}
+            />
+          )}
+          {isLoaded && overlayData?.transport && (
+            <TransportOverlay
+              map={mapRef.current}
+              routeData={overlayData.transport}
+              visible={overlayVisibility?.transport ?? false}
+              onRouteClick={onRouteClick ? (id) => onRouteClick(id) : undefined}
+            />
+          )}
+        </Suspense>
       </div>
     );
   }
-);
+));
 
 export default IxWorldMap;

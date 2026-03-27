@@ -36,6 +36,7 @@ import { proxyNSImage } from "~/lib/ns-image-proxy";
 import { useSoundService } from "~/lib/sound-service";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
+import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 /**
  * LoreCardLayout component props
@@ -404,15 +405,20 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
                       {loreDescription}
                     </div>
                     {wikiUrl && (
-                      <a
-                        href={wikiUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block mt-2 text-purple-400 hover:text-purple-300 underline text-[9px]"
-                        onClick={(e) => e.stopPropagation()}
+                      <WikiLinkPreview
+                        title={wikiArticleTitle || wikiUrl.split("/wiki/").pop()?.replace(/_/g, " ") || ""}
+                        wiki={card.wikiSource as "ixwiki" | "iiwiki" | undefined}
                       >
-                        View on Wiki →
-                      </a>
+                        <a
+                          href={wikiUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block mt-2 text-purple-400 hover:text-purple-300 underline text-[9px]"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          View on Wiki →
+                        </a>
+                      </WikiLinkPreview>
                     )}
                   </motion.div>
                 )}

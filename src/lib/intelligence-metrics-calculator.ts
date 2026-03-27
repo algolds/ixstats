@@ -266,7 +266,7 @@ export const calculateCountryMetrics = (country: {
           {
             id: "density",
             label: "Population Density",
-            value: country.populationDensity.toFixed(1),
+            value: country.populationDensity.toFixed(0),
             unit: "/km²",
             icon: RiMapLine,
             classification: "PUBLIC" as const,

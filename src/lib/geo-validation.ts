@@ -299,7 +299,7 @@ export async function checkNameUniqueness(
   db: PrismaClient,
   countryId: string,
   name: string,
-  featureType: "city" | "subdivision" | "poi",
+  featureType: "city" | "subdivision" | "poi" | "storyPin" | "mapLabel",
   excludeId?: string
 ): Promise<void> {
   const normalizedName = name.trim().toLowerCase();
@@ -333,6 +333,26 @@ export async function checkNameUniqueness(
       },
       select: { id: true, name: true },
     });
+  } else if (featureType === "storyPin") {
+    existing = await db.storyPin.findFirst({
+      where: {
+        countryId,
+        title: { equals: normalizedName, mode: "insensitive" },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true, title: true },
+    }) as { id: string; name: string } | null;
+    if (existing) existing.name = (existing as any).title;
+  } else if (featureType === "mapLabel") {
+    existing = await db.mapLabel.findFirst({
+      where: {
+        countryId,
+        text: { equals: normalizedName, mode: "insensitive" },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+      select: { id: true, text: true },
+    }) as { id: string; name: string } | null;
+    if (existing) existing.name = (existing as any).text;
   }
 
   if (existing) {
@@ -341,7 +361,11 @@ export async function checkNameUniqueness(
         ? "city"
         : featureType === "subdivision"
           ? "subdivision"
-          : "point of interest";
+          : featureType === "storyPin"
+            ? "story pin"
+            : featureType === "mapLabel"
+              ? "map label"
+              : "point of interest";
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: `A ${label} named "${existing.name}" already exists in this country.`,

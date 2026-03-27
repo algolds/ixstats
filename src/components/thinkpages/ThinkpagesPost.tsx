@@ -34,6 +34,7 @@ import { ReactionsDialog } from "./ReactionsDialog";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { formatContentEnhanced, extractHashtags, extractMentions } from "~/lib/text-formatter";
+import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 
 interface ThinkpagesPostProps {
   post: any;
@@ -326,10 +327,9 @@ const ThinkpagesPostComponent = ({
                 @{post.parentPost.account.username}
               </span>
             </div>
-            <div
+            <WikiHtmlContent
+              html={formatContentEnhanced(post.parentPost.content)}
               className="text-muted-foreground line-clamp-3 text-sm"
-              // SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS
-              dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.parentPost.content) }}
             />
           </div>
         </div>
@@ -404,14 +404,10 @@ const ThinkpagesPostComponent = ({
                     @{post.repostOf.account.username}
                   </span>
                 </div>
-                {/* SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS */}
-                <div
-                  dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.repostOf.content) }}
-                />
+                <WikiHtmlContent html={formatContentEnhanced(post.repostOf.content)} />
               </Card>
             ) : (
-              /* SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS */
-              <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.content) }} />
+              <WikiHtmlContent html={formatContentEnhanced(post.content)} />
             )}
           </div>
 

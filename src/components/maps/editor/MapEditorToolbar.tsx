@@ -15,7 +15,8 @@
  */
 
 import { useCallback } from "react";
-import { MousePointer2, MapPin, Hexagon, Landmark, FileUp, Route, Paintbrush } from "lucide-react";
+import { MousePointer2, MapPin, Hexagon, Landmark, FileUp, Route, Paintbrush, BookMarked, Type } from "lucide-react";
+import { MousePointerIcon, MapPinIcon, LandmarkIcon, PaintBrushIcon } from "~/components/ui/icons";
 import type { EditorMode } from "~/hooks/useMapEditor";
 
 interface MapEditorToolbarProps {
@@ -40,9 +41,19 @@ const TOOLS: ToolDef[] = [
   { mode: "add-subdivision", icon: Hexagon, label: "Region", shortcut: "R", group: 1 },
   { mode: "add-poi", icon: Landmark, label: "POI", shortcut: "P", group: 1 },
   { mode: "add-route", icon: Route, label: "Route", shortcut: "T", group: 1 },
+  { mode: "add-story-pin", icon: BookMarked, label: "Story", shortcut: "S", group: 1 },
+  { mode: "add-label", icon: Type, label: "Label", shortcut: "L", group: 1 },
   { mode: "import-provinces", icon: FileUp, label: "Import", shortcut: "I", group: 2 },
   { mode: "paint", icon: Paintbrush, label: "Paint", shortcut: "B", group: 3 },
 ];
+
+/** Animated icon overrides for toolbar tools (only where a good visual match exists) */
+const ANIMATED_TOOL_ICONS: Partial<Record<EditorMode, React.ComponentType<{ size?: number; className?: string }>>> = {
+  view: MousePointerIcon,
+  "add-city": MapPinIcon,
+  "add-poi": LandmarkIcon,
+  paint: PaintBrushIcon,
+};
 
 export function MapEditorToolbar({ mode, onModeChange, disabled, horizontal }: MapEditorToolbarProps) {
   const handleClick = useCallback(
@@ -65,7 +76,8 @@ export function MapEditorToolbar({ mode, onModeChange, disabled, horizontal }: M
   return (
     <div className={`${containerClass} ${disabled ? "pointer-events-none opacity-50" : ""}`}>
       {TOOLS.map((tool) => {
-        const Icon = tool.icon;
+        const AnimatedIcon = ANIMATED_TOOL_ICONS[tool.mode];
+        const FallbackIcon = tool.icon;
         const isActive = activeMode === tool.mode;
         const showSep = lastGroup !== -1 && tool.group !== lastGroup;
         lastGroup = tool.group;
@@ -88,7 +100,7 @@ export function MapEditorToolbar({ mode, onModeChange, disabled, horizontal }: M
               }`}
               title={`${tool.label} (${tool.shortcut})`}
             >
-              <Icon className="h-4 w-4" />
+              {AnimatedIcon ? <AnimatedIcon size={16} /> : <FallbackIcon className="h-4 w-4" />}
 
               {/* Tooltip (desktop only, shows on hover to the right / above) */}
               <div

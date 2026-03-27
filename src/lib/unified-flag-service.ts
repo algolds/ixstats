@@ -1027,3 +1027,13 @@ export default unifiedFlagService;
 export const simpleFlagService = unifiedFlagService;
 export const improvedFlagService = unifiedFlagService;
 export const enhancedFlagCacheManager = unifiedFlagService;
+
+/**
+ * Normalize a flag URL from the database.
+ * Handles bare filenames (legacy data), full URLs, data URIs, and relative paths.
+ */
+export function normalizeFlagUrl(flag: string | null | undefined): string | undefined {
+  if (!flag) return undefined;
+  if (flag.startsWith("http") || flag.startsWith("data:") || flag.startsWith("/")) return flag;
+  return `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(flag)}`;
+}

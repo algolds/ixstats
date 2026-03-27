@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { ThinkPagesIcon } from "./ThinkPagesIcon";
+import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 export function ThinkPagesFooter() {
   return (
@@ -21,7 +22,9 @@ export function ThinkPagesFooter() {
       <div className="text-muted-foreground space-y-2 text-xs">
         <p>
           &copy; 2002-2040{" "}
-          <a href="https://ixwiki.com/wiki/Valtari">Valtari Technologies, Inc.</a>
+          <WikiLinkPreview title="Valtari">
+            <a href="https://ixwiki.com/wiki/Valtari">Valtari Technologies, Inc.</a>
+          </WikiLinkPreview>
         </p>
         <p>Made with ♡ from Hollona and Diorisia</p>
         <p>

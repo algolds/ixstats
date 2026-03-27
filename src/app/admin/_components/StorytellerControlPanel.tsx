@@ -1356,7 +1356,7 @@ function GodModePanel({ countries, selectedCountry, onCountryChange, onEdit }: G
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Population:</span>
                           <span className="font-medium">
-                            {(country.currentPopulation / 1e6).toFixed(2)}M
+                            {Math.round(country.currentPopulation / 1e6)}M
                           </span>
                         </div>
                         <div className="flex justify-between">

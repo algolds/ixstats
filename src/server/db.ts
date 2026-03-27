@@ -128,6 +128,8 @@ const createPrismaClient = () => {
     "MapEditorSession", "WorldTemplate", "ProceduralWorld",
     // Transport infrastructure (generated routes, hubs)
     "TransportRoute", "TransportHub",
+    // Story pins & custom map labels
+    "StoryPin", "MapLabel",
     // Geo analytics profiles & resources
     "CountryGeoProfile", "GeographicResource",
     // Activity feed & achievements (seeded/cleaned by demo seed system)

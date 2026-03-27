@@ -149,7 +149,7 @@ export const WikiIntegrationPanel: React.FC<WikiIntegrationPanelProps> = ({
                 <div className="text-muted-foreground">
                   {country.name} is a {country.governmentType || "sovereign"} nation located in{" "}
                   {country.continent || "an undisclosed region"}. With a population of{" "}
-                  {country.currentPopulation.toLocaleString()} citizens and a GDP per capita of $
+                  {Math.round(country.currentPopulation).toLocaleString()} citizens and a GDP per capita of $
                   {country.currentGdpPerCapita.toLocaleString()}, the country operates as a{" "}
                   {country.economicTier.toLowerCase()}-tier economy.{" "}
                   {country.leader ? `The current leader is ${country.leader}.` : ""}{" "}
@@ -181,7 +181,7 @@ export const WikiIntegrationPanel: React.FC<WikiIntegrationPanelProps> = ({
                         <Textarea
                           value={editorContent}
                           onChange={(e) => setEditorContent(e.target.value)}
-                          placeholder={`${country.name} is located in ${country.continent || "the region"}. With a population of ${country.currentPopulation.toLocaleString()} and a ${country.economicTier.toLowerCase()}-tier economy, the nation...`}
+                          placeholder={`${country.name} is located in ${country.continent || "the region"}. With a population of ${Math.round(country.currentPopulation).toLocaleString()} and a ${country.economicTier.toLowerCase()}-tier economy, the nation...`}
                           className="min-h-[300px] font-mono text-sm"
                           style={{
                             fontFamily: 'ui-monospace, "Cascadia Code", "Roboto Mono", monospace',

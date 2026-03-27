@@ -11,28 +11,51 @@
  * - Smooth drag feedback with translateY
  * - Backdrop tap to close
  * - Safe area padding for iOS home indicator
+ * - Mini tab bar: Properties | Features | Wiki
  */
 
 import { useRef, useCallback, useState } from "react";
+import { Settings2, List, BookOpen } from "lucide-react";
+
+type MobileTab = "properties" | "features" | "wiki";
 
 interface MobileEditorSheetProps {
+  /** Content for the properties tab */
   children: React.ReactNode;
   onClose: () => void;
   title?: string;
   maxHeight?: string;
+  /** Content for the features tab */
+  featureListContent?: React.ReactNode;
+  /** Content for the wiki tab */
+  wikiContent?: React.ReactNode;
+  /** Whether the editor is in an add/edit mode (controls default tab) */
+  isEditMode?: boolean;
 }
 
 const DISMISS_THRESHOLD = 80;
+
+const MOBILE_TABS: { id: MobileTab; label: string; Icon: typeof Settings2 }[] = [
+  { id: "properties", label: "Properties", Icon: Settings2 },
+  { id: "features", label: "Features", Icon: List },
+  { id: "wiki", label: "Wiki", Icon: BookOpen },
+];
 
 export function MobileEditorSheet({
   children,
   onClose,
   title,
   maxHeight = "70vh",
+  featureListContent,
+  wikiContent,
+  isEditMode = true,
 }: MobileEditorSheetProps) {
   const startYRef = useRef(0);
   const [dragDelta, setDragDelta] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeTab, setActiveTab] = useState<MobileTab>(
+    isEditMode ? "properties" : "features"
+  );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
@@ -95,9 +118,33 @@ export function MobileEditorSheet({
             <div className="h-1 w-10 rounded-full bg-border" />
           </div>
 
-          {/* Title bar */}
-          {title && (
-            <div className="px-4 pb-2">
+          {/* Mini tab bar */}
+          <div className="flex h-9 shrink-0 border-b border-border mx-3">
+            {MOBILE_TABS.map((tab) => {
+              // Only show Properties when in add/edit mode
+              if (tab.id === "properties" && !isEditMode) return null;
+
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex flex-1 items-center justify-center gap-1.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "border-b-2 border-primary text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <tab.Icon className="h-3.5 w-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Title bar (only for properties tab) */}
+          {title && activeTab === "properties" && (
+            <div className="px-4 pb-2 pt-2">
               <h3 className="text-sm font-semibold text-foreground">{title}</h3>
             </div>
           )}
@@ -105,9 +152,23 @@ export function MobileEditorSheet({
           {/* Content — scrollable */}
           <div
             className="overflow-y-auto overscroll-contain px-4 pb-8"
-            style={{ maxHeight: `calc(${maxHeight} - 3rem)` }}
+            style={{ maxHeight: `calc(${maxHeight} - 5rem)` }}
           >
-            {children}
+            {activeTab === "properties" && children}
+            {activeTab === "features" && (
+              featureListContent ?? (
+                <div className="py-6 text-center text-xs text-muted-foreground">
+                  No features content available
+                </div>
+              )
+            )}
+            {activeTab === "wiki" && (
+              wikiContent ?? (
+                <div className="py-6 text-center text-xs text-muted-foreground">
+                  Wiki scanner coming soon
+                </div>
+              )
+            )}
           </div>
         </div>
       </div>

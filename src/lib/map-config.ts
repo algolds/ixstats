@@ -331,34 +331,174 @@ export function getClimateLegend(): ClimateLegendEntry[] {
 
 export interface WaterBodyLabel {
   name: string;
-  coordinates: [number, number]; // [lng, lat]
-  type: "ocean" | "sea";
+  coordinates: [number, number]; // [lng, lat] — approximate center
+  type: "ocean" | "sea" | "strait";
   rank: "major" | "medium" | "minor";
+  /** Approximate bounding box [west, south, east, north] in degrees */
+  bounds: [number, number, number, number];
+  /** Approximate area in million km² */
+  areaMKm2: number;
+  /** Average depth in meters (approximate) */
+  avgDepthM: number;
+  /** Maximum depth in meters (approximate) */
+  maxDepthM: number;
+  /** Bordering countries/regions (wiki page names) */
+  borders?: string[];
 }
 
 export const WATER_BODY_LABELS: WaterBodyLabel[] = [
-  // Major oceans
-  { name: "Levantine Ocean",   coordinates: [115, 32],    type: "ocean", rank: "major" },
-  { name: "Ocean of Cathay",   coordinates: [175, -30],   type: "ocean", rank: "major" },
-  { name: "Odoneru Ocean",     coordinates: [-15, 20],    type: "ocean", rank: "major" },
-  { name: "Absurian Ocean",    coordinates: [30, -62],    type: "ocean", rank: "major" },
-  // Seas
-  { name: "Kilikas Sea",       coordinates: [25, 58],     type: "sea",   rank: "medium" },
-  { name: "Sea of Nordska",    coordinates: [98, 52],     type: "sea",   rank: "medium" },
-  { name: "Sea of Capean",    coordinates: [160, 42],    type: "sea",   rank: "medium" },
-  { name: "Sea of Canete",     coordinates: [55, -9],     type: "sea",   rank: "medium" },
-  { name: "Sea of Istroya",    coordinates: [85, -5],     type: "sea",   rank: "medium" },
-  { name: "Tainean Sea",       coordinates: [-10, -12],   type: "sea",   rank: "medium" },
-  { name: "Kindreds Sea",      coordinates: [-8, -28],    type: "sea",   rank: "medium" },
-  { name: "Founders Sea",      coordinates: [80, -40],    type: "sea",   rank: "medium" },
-  { name: "Pukhtun Sea",       coordinates: [145, -25],   type: "sea",   rank: "medium" },
-  { name: "Great Expanse",     coordinates: [168, -5],    type: "sea",   rank: "medium" },
-  { name: "Sea of St. John",   coordinates: [-140, 15],   type: "sea",   rank: "medium" },
-  { name: "Albion Sea",        coordinates: [-58, 55],    type: "sea",   rank: "medium" },
-  { name: "Sea of Orixtal",    coordinates: [-110, -18],   type: "sea",   rank: "medium" },
-  { name: "Polynesian Sea",    coordinates: [-55, -30],   type: "sea",   rank: "medium" },
-  { name: "Okatian Sea",       coordinates: [-70, -45],   type: "sea",   rank: "minor" },
-  { name: "Barbary Straits",   coordinates: [115, 2],     type: "sea",   rank: "minor" },
+  // ── Major Oceans ──
+  {
+    name: "Levantine Ocean",
+    coordinates: [115, 32],
+    type: "ocean", rank: "major",
+    bounds: [70, 5, 165, 60],
+    areaMKm2: 82.4, avgDepthM: 3680, maxDepthM: 10200,
+    borders: ["Daxia", "Oyashima", "Metzetta", "Rusana"],
+  },
+  {
+    name: "Ocean of Cathay",
+    coordinates: [175, -30],
+    type: "ocean", rank: "major",
+    bounds: [140, -65, -140, 5],
+    areaMKm2: 96.5, avgDepthM: 4050, maxDepthM: 11000,
+    borders: ["Oyashima", "Tapakdore"],
+  },
+  {
+    name: "Odoneru Ocean",
+    coordinates: [-15, 20],
+    type: "ocean", rank: "major",
+    bounds: [-60, -30, 30, 55],
+    areaMKm2: 68.8, avgDepthM: 3350, maxDepthM: 8600,
+    borders: ["Cartadania", "Caphiria", "Urcea", "Pelaxia", "Burgundie"],
+  },
+  {
+    name: "Absurian Ocean",
+    coordinates: [30, -62],
+    type: "ocean", rank: "major",
+    bounds: [-30, -80, 90, -45],
+    areaMKm2: 35.2, avgDepthM: 3700, maxDepthM: 7200,
+  },
+
+  // ── Seas ──
+  {
+    name: "Kilikas Sea",
+    coordinates: [25, 58],
+    type: "sea", rank: "medium",
+    bounds: [10, 52, 40, 64],
+    areaMKm2: 1.8, avgDepthM: 180, maxDepthM: 460,
+    borders: ["Urcea", "Burgundie"],
+  },
+  {
+    name: "Sea of Nordska",
+    coordinates: [98, 52],
+    type: "sea", rank: "medium",
+    bounds: [78, 44, 118, 60],
+    areaMKm2: 3.2, avgDepthM: 280, maxDepthM: 1100,
+    borders: ["Daxia", "Rusana"],
+  },
+  {
+    name: "Sea of Capean",
+    coordinates: [160, 42],
+    type: "sea", rank: "medium",
+    bounds: [145, 35, 175, 50],
+    areaMKm2: 2.1, avgDepthM: 350, maxDepthM: 1800,
+  },
+  {
+    name: "Sea of Canete",
+    coordinates: [55, -9],
+    type: "sea", rank: "medium",
+    bounds: [40, -18, 70, 0],
+    areaMKm2: 2.8, avgDepthM: 420, maxDepthM: 2200,
+    borders: ["Caphiria", "Cartadania"],
+  },
+  {
+    name: "Sea of Istroya",
+    coordinates: [85, -5],
+    type: "sea", rank: "medium",
+    bounds: [70, -15, 100, 5],
+    areaMKm2: 2.4, avgDepthM: 380, maxDepthM: 1900,
+    borders: ["Metzetta"],
+  },
+  {
+    name: "Tainean Sea",
+    coordinates: [-10, -12],
+    type: "sea", rank: "medium",
+    bounds: [-25, -20, 5, -4],
+    areaMKm2: 1.6, avgDepthM: 320, maxDepthM: 1400,
+    borders: ["Cartadania", "Pelaxia"],
+  },
+  {
+    name: "Kindreds Sea",
+    coordinates: [-8, -28],
+    type: "sea", rank: "medium",
+    bounds: [-22, -36, 6, -20],
+    areaMKm2: 1.9, avgDepthM: 290, maxDepthM: 1200,
+    borders: ["Cartadania"],
+  },
+  {
+    name: "Founders Sea",
+    coordinates: [80, -40],
+    type: "sea", rank: "medium",
+    bounds: [60, -50, 100, -30],
+    areaMKm2: 3.5, avgDepthM: 450, maxDepthM: 2800,
+  },
+  {
+    name: "Pukhtun Sea",
+    coordinates: [145, -25],
+    type: "sea", rank: "medium",
+    bounds: [130, -35, 160, -15],
+    areaMKm2: 2.6, avgDepthM: 360, maxDepthM: 1600,
+  },
+  {
+    name: "Great Expanse",
+    coordinates: [168, -5],
+    type: "sea", rank: "medium",
+    bounds: [155, -15, 180, 5],
+    areaMKm2: 4.1, avgDepthM: 480, maxDepthM: 3200,
+  },
+  {
+    name: "Sea of St. John",
+    coordinates: [-140, 15],
+    type: "sea", rank: "medium",
+    bounds: [-160, 5, -120, 25],
+    areaMKm2: 3.0, avgDepthM: 400, maxDepthM: 2500,
+  },
+  {
+    name: "Albion Sea",
+    coordinates: [-58, 55],
+    type: "sea", rank: "medium",
+    bounds: [-75, 45, -40, 65],
+    areaMKm2: 2.3, avgDepthM: 250, maxDepthM: 900,
+  },
+  {
+    name: "Sea of Orixtal",
+    coordinates: [-110, -18],
+    type: "sea", rank: "medium",
+    bounds: [-130, -28, -90, -8],
+    areaMKm2: 3.4, avgDepthM: 380, maxDepthM: 2100,
+  },
+  {
+    name: "Polynesian Sea",
+    coordinates: [-55, -30],
+    type: "sea", rank: "medium",
+    bounds: [-70, -40, -40, -20],
+    areaMKm2: 2.0, avgDepthM: 300, maxDepthM: 1300,
+  },
+  {
+    name: "Okatian Sea",
+    coordinates: [-70, -45],
+    type: "sea", rank: "minor",
+    bounds: [-85, -52, -55, -38],
+    areaMKm2: 1.2, avgDepthM: 220, maxDepthM: 800,
+  },
+  {
+    name: "Barbary Straits",
+    coordinates: [115, 2],
+    type: "strait", rank: "minor",
+    bounds: [108, -3, 122, 7],
+    areaMKm2: 0.4, avgDepthM: 80, maxDepthM: 280,
+  },
 ];
 
 /** Build the base MapLibre style with no data sources (added dynamically) */
@@ -403,7 +543,7 @@ export interface WorldMapConfig {
   climateSystem: string;
   oceanColor: string;
   countryColors: string[];
-  waterBodyLabels: Array<{ name: string; lng: number; lat: number; minZoom: number }>;
+  waterBodyLabels: Array<{ name: string; lng: number; lat: number; type: string; areaMKm2: number; avgDepthM: number; maxDepthM: number; borders?: string[] }>;
   layerConfigs: Record<MapLayerType, LayerConfig>;
   sovereigntyTypes: typeof SOVEREIGNTY_TYPE_MAP;
   elevationZones: readonly ElevationZoneConfig[];
@@ -436,9 +576,13 @@ export function loadWorldConfig(worldId: string = "default"): WorldMapConfig {
     countryColors: COUNTRY_COLORS,
     waterBodyLabels: WATER_BODY_LABELS.map((l) => ({
       name: l.name,
-      lng: l.lng,
-      lat: l.lat,
-      minZoom: l.minZoom,
+      lng: l.coordinates[0],
+      lat: l.coordinates[1],
+      type: l.type,
+      areaMKm2: l.areaMKm2,
+      avgDepthM: l.avgDepthM,
+      maxDepthM: l.maxDepthM,
+      borders: l.borders,
     })),
     layerConfigs: { ...LAYER_CONFIGS },
     sovereigntyTypes: SOVEREIGNTY_TYPE_MAP,

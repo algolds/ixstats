@@ -48,22 +48,36 @@ export function extractAllTextLabels(
     const tspans = el.getElementsByTagNameNS(SVG_NS, "tspan");
 
     if (tspans.length > 0) {
-      // Collect text from all tspans
+      // Concatenate all tspan children into a single label.
+      // Multi-line text labels (e.g. "São" + "Paulo") should produce "São Paulo".
+      const parts: string[] = [];
+      let firstX = NaN, firstY = NaN;
+
       for (let j = 0; j < tspans.length; j++) {
         const tspan = tspans[j]!;
         const text = (tspan.textContent || "").trim();
-        if (!text || text.length < 2) continue;
+        if (!text) continue;
 
-        // tspan x/y override parent; fall back to parent's x/y
-        const tx = parseFloat(tspan.getAttribute("x") || el.getAttribute("x") || "0");
-        const ty = parseFloat(tspan.getAttribute("y") || el.getAttribute("y") || "0");
+        if (isNaN(firstX)) {
+          // Use the first tspan's position (or parent's) as the label position
+          const tx = parseFloat(tspan.getAttribute("x") || el.getAttribute("x") || "0");
+          const ty = parseFloat(tspan.getAttribute("y") || el.getAttribute("y") || "0");
+          const dx = parseFloat(tspan.getAttribute("dx") || "0");
+          const dy = parseFloat(tspan.getAttribute("dy") || "0");
 
-        // Handle dx/dy offsets
-        const dx = parseFloat(tspan.getAttribute("dx") || "0");
-        const dy = parseFloat(tspan.getAttribute("dy") || "0");
+          // Accumulate the tspan's own transform if it has one
+          const tspanMatrix = getAccumulatedTransform(tspan, transformRoot);
+          const [rx, ry] = applyMatrixToPoint(tx + dx, ty + dy, tspanMatrix);
+          firstX = rx;
+          firstY = ry;
+        }
 
-        const [rx, ry] = applyMatrixToPoint(tx + dx, ty + dy, matrix);
-        labels.push({ text, x: rx, y: ry });
+        parts.push(text);
+      }
+
+      const combined = parts.join(" ").trim();
+      if (combined.length >= 2 && !isNaN(firstX)) {
+        labels.push({ text: combined, x: firstX, y: firstY });
       }
     } else {
       // No tspan — use <text> element directly
@@ -117,60 +131,60 @@ export function matchLabelsToProvinces(
   avgDiag /= provinces.length;
   const maxDist = avgDiag * 2; // Allow labels up to 2x average bbox diagonal away
 
-  // Score each label → province pair
-  const assignments: { labelIdx: number; provIdx: number; dist: number }[] = [];
+  // Build ALL candidate pairs: label → province with centroid distance
+  // Each label can match any province within range
+  const allPairs: { labelIdx: number; provIdx: number; dist: number; inBbox: boolean }[] = [];
 
   for (let li = 0; li < labels.length; li++) {
     const label = labels[li]!;
 
-    // Find provinces whose bbox contains this label
-    const containing: number[] = [];
     for (let pi = 0; pi < provinces.length; pi++) {
-      const [minX, minY, maxX, maxY] = provinces[pi]!.bbox;
-      if (label.x >= minX && label.x <= maxX && label.y >= minY && label.y <= maxY) {
-        containing.push(pi);
-      }
-    }
+      const prov = provinces[pi]!;
+      const [minX, minY, maxX, maxY] = prov.bbox;
+      const inBbox =
+        label.x >= minX && label.x <= maxX &&
+        label.y >= minY && label.y <= maxY;
+      const c = prov.centroid;
+      const dist = Math.hypot(label.x - c[0], label.y - c[1]);
 
-    if (containing.length > 0) {
-      // Pick the province with centroid closest to the label
-      let bestIdx = containing[0]!;
-      let bestDist = Infinity;
-      for (const pi of containing) {
-        const c = provinces[pi]!.centroid;
-        const d = Math.hypot(label.x - c[0], label.y - c[1]);
-        if (d < bestDist) {
-          bestDist = d;
-          bestIdx = pi;
-        }
-      }
-      assignments.push({ labelIdx: li, provIdx: bestIdx, dist: bestDist });
-    } else {
-      // Fallback: find nearest centroid within threshold
-      let bestIdx = -1;
-      let bestDist = maxDist;
-      for (let pi = 0; pi < provinces.length; pi++) {
-        const c = provinces[pi]!.centroid;
-        const d = Math.hypot(label.x - c[0], label.y - c[1]);
-        if (d < bestDist) {
-          bestDist = d;
-          bestIdx = pi;
-        }
-      }
-      if (bestIdx >= 0) {
-        assignments.push({ labelIdx: li, provIdx: bestIdx, dist: bestDist });
+      if (inBbox || dist < maxDist) {
+        allPairs.push({ labelIdx: li, provIdx: pi, dist, inBbox });
       }
     }
   }
 
-  // Sort by distance (closest first) for greedy assignment
-  assignments.sort((a, b) => a.dist - b.dist);
+  // Sort: bbox containment first (true > false), then by distance
+  allPairs.sort((a, b) => {
+    if (a.inBbox !== b.inBbox) return a.inBbox ? -1 : 1;
+    return a.dist - b.dist;
+  });
 
+  // Pass 1: assign labels that are inside exactly ONE bbox (unambiguous)
   const result = new Map<number, string>();
   const usedProvinces = new Set<number>();
   const usedLabels = new Set<number>();
 
-  for (const { labelIdx, provIdx } of assignments) {
+  const bboxCounts = new Map<number, number[]>(); // labelIdx → provIndices where it's in bbox
+  for (const pair of allPairs) {
+    if (!pair.inBbox) continue;
+    if (!bboxCounts.has(pair.labelIdx)) bboxCounts.set(pair.labelIdx, []);
+    bboxCounts.get(pair.labelIdx)!.push(pair.provIdx);
+  }
+
+  // First assign unique bbox containments (label inside exactly one province)
+  for (const [labelIdx, provIndices] of bboxCounts) {
+    if (provIndices.length === 1) {
+      const provIdx = provIndices[0]!;
+      if (!usedProvinces.has(provIdx) && !usedLabels.has(labelIdx)) {
+        result.set(provIdx, labels[labelIdx]!.text);
+        usedProvinces.add(provIdx);
+        usedLabels.add(labelIdx);
+      }
+    }
+  }
+
+  // Pass 2: assign remaining by closest centroid distance (greedy)
+  for (const { labelIdx, provIdx } of allPairs) {
     if (usedProvinces.has(provIdx) || usedLabels.has(labelIdx)) continue;
     result.set(provIdx, labels[labelIdx]!.text);
     usedProvinces.add(provIdx);

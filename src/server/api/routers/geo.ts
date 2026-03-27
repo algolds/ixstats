@@ -77,12 +77,7 @@ const coordinatesSchema = z
     { message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)" }
   );
 
-/** Normalize a flag URL — bare filenames get prefixed with the wiki file path. */
-function normalizeFlagUrl(flag: string | null | undefined): string | undefined {
-  if (!flag) return undefined;
-  if (flag.startsWith("http") || flag.startsWith("data:") || flag.startsWith("/")) return flag;
-  return `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(flag)}`;
-}
+import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 
 /**
  * Climate color map: maps fill colors to human-readable Trewartha climate names.
@@ -1224,7 +1219,7 @@ export const geoRouter = createTRPCRouter({
   getCountryFeatures: cachedPublicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const [subdivisions, cities, pois] = await Promise.all([
+      const [subdivisions, cities, pois, storyPins, mapLabels] = await Promise.all([
         ctx.db.subdivision.findMany({
           where: { countryId: input.countryId, status: "approved" },
           orderBy: { name: "asc" },
@@ -1237,9 +1232,17 @@ export const geoRouter = createTRPCRouter({
           where: { countryId: input.countryId, status: "approved" },
           orderBy: { name: "asc" },
         }),
+        ctx.db.storyPin.findMany({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { ixTimeYear: "asc" },
+        }),
+        ctx.db.mapLabel.findMany({
+          where: { countryId: input.countryId, status: "approved" },
+          orderBy: { text: "asc" },
+        }),
       ]);
 
-      return { subdivisions, cities, pois };
+      return { subdivisions, cities, pois, storyPins, mapLabels };
     }),
 
   /**
@@ -1385,6 +1388,139 @@ export const geoRouter = createTRPCRouter({
       await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage", "geo.getCountryLinkage"]);
 
       return { featureId: input.featureId, previousCountryId };
+    }),
+
+  /**
+   * Admin: Auto-link all unlinked political map features to Country records.
+   * For each unlinked feature:
+   *   1. Try to match an existing Country by name (case-insensitive)
+   *   2. If no match, auto-create a new Country record
+   * Also auto-detects wiki articles and sets wikiPageTitle.
+   */
+  autoLinkAllCountries: adminProcedure
+    .mutation(async ({ ctx }) => {
+      const unlinked = await ctx.db.mapLayer.findMany({
+        where: { layerType: "political", countryId: null, isActive: true },
+        select: { id: true, featureId: true, displayName: true, geometry: true, areaSqKm: true, centroid: true, boundingBox: true },
+      });
+
+      if (unlinked.length === 0) return { linked: 0, created: 0, failed: [] as string[] };
+
+      // Get all existing countries for name matching
+      const existingCountries = await ctx.db.country.findMany({
+        where: { isDemo: false },
+        select: { id: true, name: true },
+      });
+      const countryByName = new Map(existingCountries.map((c) => [c.name.toLowerCase(), c]));
+
+      // Track which countries are already linked
+      const alreadyLinked = new Set(
+        (await ctx.db.mapLayer.findMany({
+          where: { layerType: "political", countryId: { not: null }, isActive: true },
+          select: { countryId: true },
+        })).map((ml) => ml.countryId)
+      );
+
+      let linked = 0;
+      let created = 0;
+      const failed: string[] = [];
+
+      // Load WikiBridge for auto-detecting wiki articles
+      let wikiBridge: typeof import("~/lib/wiki-bridge") | null = null;
+      try {
+        wikiBridge = await import("~/lib/wiki-bridge");
+      } catch { /* wiki bridge unavailable */ }
+
+      for (const feature of unlinked) {
+        const name = feature.displayName || feature.featureId;
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+        try {
+          // Try to match existing country by name
+          const existing = countryByName.get(name.toLowerCase());
+
+          if (existing && !alreadyLinked.has(existing.id)) {
+            // Link to existing country
+            await ctx.db.mapLayer.update({
+              where: { id: feature.id },
+              data: { countryId: existing.id },
+            });
+            await ctx.db.country.update({
+              where: { id: existing.id },
+              data: {
+                geometry: feature.geometry as object,
+                centroid: feature.centroid as object | undefined,
+                boundingBox: feature.boundingBox as object | undefined,
+                landArea: feature.areaSqKm ?? undefined,
+                areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
+              },
+            });
+            alreadyLinked.add(existing.id);
+            linked++;
+          } else {
+            // Auto-detect wiki article
+            let wikiPageTitle: string | null = null;
+            if (wikiBridge) {
+              const wikiResults = await wikiBridge.searchPages(name, 1, "ixwiki");
+              if (wikiResults.length > 0 && wikiResults[0]!.title.toLowerCase() === name.toLowerCase()) {
+                wikiPageTitle = wikiResults[0]!.title;
+              }
+            }
+
+            // Create new country
+            const newCountry = await ctx.db.country.create({
+              data: {
+                name,
+                slug,
+                geometry: feature.geometry as object,
+                centroid: feature.centroid as object | undefined,
+                boundingBox: feature.boundingBox as object | undefined,
+                landArea: feature.areaSqKm ?? undefined,
+                areaSqMi: feature.areaSqKm ? feature.areaSqKm * 0.386102 : undefined,
+                economicTier: "developing",
+                isDemo: false,
+                wikiPageTitle,
+                wikiSource: wikiPageTitle ? "ixwiki" : undefined,
+              },
+            });
+
+            // Link map feature to new country
+            await ctx.db.mapLayer.update({
+              where: { id: feature.id },
+              data: { countryId: newCountry.id },
+            });
+            alreadyLinked.add(newCountry.id);
+            created++;
+          }
+        } catch (err) {
+          failed.push(`${name}: ${err instanceof Error ? err.message : "Unknown error"}`);
+        }
+      }
+
+      layerCache.delete("political");
+      await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage"]);
+
+      return { linked, created, failed, total: unlinked.length };
+    }),
+
+  /**
+   * Admin: Get system health — linkage completeness and data integrity.
+   */
+  getSystemHealth: cachedPublicProcedure
+    .query(async ({ ctx }) => {
+      const [totalFeatures, linkedFeatures, totalCountries, countriesWithGeo, countriesWithWiki] = await Promise.all([
+        ctx.db.mapLayer.count({ where: { layerType: "political", isActive: true } }),
+        ctx.db.mapLayer.count({ where: { layerType: "political", isActive: true, countryId: { not: null } } }),
+        ctx.db.country.count({ where: { isDemo: false } }),
+        ctx.db.country.count({ where: { isDemo: false, geometry: { not: null } } }),
+        ctx.db.country.count({ where: { isDemo: false, wikiPageTitle: { not: null } } }),
+      ]);
+
+      return {
+        mapFeatures: { total: totalFeatures, linked: linkedFeatures, unlinked: totalFeatures - linkedFeatures },
+        countries: { total: totalCountries, withGeometry: countriesWithGeo, withWiki: countriesWithWiki },
+        linkageHealth: totalFeatures > 0 ? Math.round((linkedFeatures / totalFeatures) * 100) : 0,
+      };
     }),
 
   /**
@@ -2415,7 +2551,7 @@ export const geoRouter = createTRPCRouter({
     .input(
       z.object({
         countryId: z.string(),
-        tolerance: z.number().min(0.0005).max(0.05).default(0.005),
+        targetVerticesPerProvince: z.number().min(30).max(300).default(100),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -2430,53 +2566,42 @@ export const geoRouter = createTRPCRouter({
       });
 
       if (subdivisions.length === 0) {
-        return { updated: 0, verticesBefore: 0, verticesAfter: 0 };
+        return { updated: 0, total: 0, verticesBefore: 0, verticesAfter: 0, reduction: 0 };
       }
 
-      // Count vertices helper
-      const countVerts = (geo: any): number => {
-        if (!geo) return 0;
-        const coords = geo.type === "Polygon" ? geo.coordinates : (geo.coordinates ?? []).flat();
-        return (coords as any[][]).reduce((s: number, ring: any[]) => s + ring.length, 0);
-      };
+      const { simplifyProvinceBatch, countVertices } = await import("~/lib/province-importer/topo-simplify");
 
-      let verticesBefore = 0;
-      let verticesAfter = 0;
+      // Build Feature array from all subdivisions with valid geometry
+      const validSubs = subdivisions.filter((s) => s.geometry);
+      const features = validSubs.map((sub) => ({
+        type: "Feature" as const,
+        properties: { name: sub.name, _dbId: sub.id },
+        geometry: sub.geometry as any,
+      }));
+
+      const verticesBefore = features.reduce((s, f) => s + countVertices(f.geometry), 0);
+
+      const result = simplifyProvinceBatch(features, {
+        targetVerticesPerProvince: input.targetVerticesPerProvince,
+      });
+
+      // Write simplified geometries back to the database
       let updated = 0;
+      for (let i = 0; i < validSubs.length; i++) {
+        const sub = validSubs[i]!;
+        const simplified = result.features[i];
+        if (!simplified?.geometry) continue;
 
-      // Import simplify function dynamically to avoid top-level import
-      const turf = await import("@turf/turf");
+        const beforeCount = countVertices(features[i]!.geometry);
+        const afterCount = countVertices(simplified.geometry);
 
-      for (const sub of subdivisions) {
-        if (!sub.geometry) continue;
-        const geo = sub.geometry as any;
-        const before = countVerts(geo);
-        verticesBefore += before;
-
-        try {
-          const feature = turf.feature(geo);
-          const simplified = turf.simplify(feature, {
-            tolerance: input.tolerance,
-            highQuality: true,
+        // Only update if actually reduced
+        if (afterCount < beforeCount) {
+          await ctx.db.subdivision.update({
+            where: { id: sub.id },
+            data: { geometry: simplified.geometry as any },
           });
-
-          if (simplified?.geometry) {
-            const after = countVerts(simplified.geometry);
-            verticesAfter += after;
-
-            // Only update if actually reduced
-            if (after < before) {
-              await ctx.db.subdivision.update({
-                where: { id: sub.id },
-                data: { geometry: simplified.geometry as any },
-              });
-              updated++;
-            } else {
-              verticesAfter = verticesAfter - after + before; // no change
-            }
-          }
-        } catch {
-          verticesAfter += before; // unchanged on error
+          updated++;
         }
       }
 
@@ -2486,8 +2611,8 @@ export const geoRouter = createTRPCRouter({
         updated,
         total: subdivisions.length,
         verticesBefore,
-        verticesAfter,
-        reduction: verticesBefore > 0 ? Math.round((1 - verticesAfter / verticesBefore) * 100) : 0,
+        verticesAfter: result.totalVerticesAfter,
+        reduction: verticesBefore > 0 ? Math.round((1 - result.totalVerticesAfter / verticesBefore) * 100) : 0,
       };
     }),
 
@@ -2734,6 +2859,505 @@ export const geoRouter = createTRPCRouter({
       await invalidateCache(["geo.getAllMapFeatures"]);
       return { id: input.poiId, deleted: true };
     }),
+
+  // ──────────────────────────────────────────────
+  // Story Pins — Narrative markers on the map
+  // ──────────────────────────────────────────────
+
+  createStoryPin: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        title: z.string().min(1).max(200),
+        content: z.string().min(1).max(15000),
+        contentFormat: z.enum(["plain", "markdown"]).default("plain"),
+        category: z.enum(["battle", "founding", "treaty", "cultural", "religious", "natural", "trade", "exploration", "naval", "settlement", "government", "biography", "linguistic", "upheaval"]),
+        importance: z.number().int().min(0).max(2).default(0),
+        coordinates: coordinatesSchema,
+        ixTimeYear: z.number().int().optional(),
+        eraLabel: z.string().max(100).optional(),
+        wikiPageTitle: z.string().max(200).optional(),
+        photos: z.array(z.string().url()).max(10).optional(),
+        thumbnailUrl: z.string().url().optional(),
+        icon: z.string().optional(),
+        storylineId: z.string().optional(),
+        storylineOrder: z.number().int().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Story pin");
+      await checkNameUniqueness(ctx.db, input.countryId, input.title, "storyPin");
+
+      const pin = await ctx.db.storyPin.create({
+        data: {
+          title: input.title,
+          content: input.content,
+          contentFormat: input.contentFormat,
+          countryId: input.countryId,
+          category: input.category,
+          importance: input.importance,
+          coordinates: input.coordinates,
+          ixTimeYear: input.ixTimeYear,
+          eraLabel: input.eraLabel,
+          wikiPageTitle: input.wikiPageTitle,
+          photos: input.photos ?? [],
+          thumbnailUrl: input.thumbnailUrl,
+          icon: input.icon,
+          storylineId: input.storylineId,
+          storylineOrder: input.storylineOrder,
+          status: "approved",
+          submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+        },
+      });
+      await invalidateCache(["geo.getAllMapFeatures", "geo.getAllStoryPins"]);
+
+      // Auto-generate ThinkPages news for major/legendary story pins
+      if (input.importance >= 1) {
+        import("~/lib/diplomatic-news-generator").then(({ generateStoryPinNews }) => {
+          generateStoryPinNews(ctx.db, input.countryId, pin.title, input.category, input.importance, input.ixTimeYear).catch(() => {});
+        }).catch(() => {});
+      }
+
+      return { id: pin.id, title: pin.title, status: "approved" as const };
+    }),
+
+  updateStoryPin: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        pinId: z.string(),
+        title: z.string().min(1).max(200).optional(),
+        content: z.string().min(1).max(15000).optional(),
+        contentFormat: z.enum(["plain", "markdown"]).optional(),
+        category: z.enum(["battle", "founding", "treaty", "cultural", "religious", "natural", "trade", "exploration", "naval", "settlement", "government", "biography", "linguistic", "upheaval"]).optional(),
+        importance: z.number().int().min(0).max(2).optional(),
+        coordinates: coordinatesSchema.optional(),
+        ixTimeYear: z.number().int().nullable().optional(),
+        eraLabel: z.string().max(100).nullable().optional(),
+        wikiPageTitle: z.string().max(200).nullable().optional(),
+        photos: z.array(z.string().url()).max(10).optional(),
+        thumbnailUrl: z.string().url().nullable().optional(),
+        icon: z.string().nullable().optional(),
+        storylineId: z.string().nullable().optional(),
+        storylineOrder: z.number().int().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      const pin = await ctx.db.storyPin.findFirst({ where: { id: input.pinId, countryId: input.countryId } });
+      if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
+
+      if (input.coordinates) {
+        await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Story pin");
+      }
+      if (input.title) {
+        await checkNameUniqueness(ctx.db, input.countryId, input.title, "storyPin", input.pinId);
+      }
+
+      const updated = await ctx.db.storyPin.update({
+        where: { id: input.pinId },
+        data: {
+          ...(input.title && { title: input.title }),
+          ...(input.content && { content: input.content }),
+          ...(input.contentFormat && { contentFormat: input.contentFormat }),
+          ...(input.category && { category: input.category }),
+          ...(input.importance !== undefined && { importance: input.importance }),
+          ...(input.coordinates && { coordinates: input.coordinates }),
+          ...(input.ixTimeYear !== undefined && { ixTimeYear: input.ixTimeYear }),
+          ...(input.eraLabel !== undefined && { eraLabel: input.eraLabel }),
+          ...(input.wikiPageTitle !== undefined && { wikiPageTitle: input.wikiPageTitle }),
+          ...(input.photos && { photos: input.photos }),
+          ...(input.thumbnailUrl !== undefined && { thumbnailUrl: input.thumbnailUrl }),
+          ...(input.icon !== undefined && { icon: input.icon }),
+          ...(input.storylineId !== undefined && { storylineId: input.storylineId }),
+          ...(input.storylineOrder !== undefined && { storylineOrder: input.storylineOrder }),
+        },
+      });
+      await invalidateCache(["geo.getAllMapFeatures", "geo.getAllStoryPins"]);
+      return { id: updated.id, title: updated.title };
+    }),
+
+  deleteStoryPin: standardMutationCountryOwnerProcedure
+    .input(z.object({ countryId: z.string(), pinId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      const pin = await ctx.db.storyPin.findFirst({ where: { id: input.pinId, countryId: input.countryId } });
+      if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
+      await ctx.db.storyPin.delete({ where: { id: input.pinId } });
+      await invalidateCache(["geo.getAllMapFeatures", "geo.getAllStoryPins"]);
+      return { id: input.pinId, deleted: true };
+    }),
+
+  getStoryPin: cachedPublicProcedure
+    .input(z.object({ pinId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.storyPin.findUnique({
+        where: { id: input.pinId },
+        include: {
+          country: { select: { name: true, slug: true } },
+          storyline: { select: { id: true, title: true, color: true } },
+        },
+      });
+    }),
+
+  /** Full story pin data with wiki enrichment for the modal view. */
+  getStoryPinFull: cachedPublicProcedure
+    .input(z.object({ pinId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const pin = await ctx.db.storyPin.findUnique({
+        where: { id: input.pinId },
+        include: {
+          country: { select: { id: true, name: true, slug: true } },
+          storyline: {
+            select: {
+              id: true, title: true, color: true, description: true,
+              pins: {
+                select: { id: true, title: true, ixTimeYear: true, eraLabel: true, category: true, coordinates: true },
+                where: { status: "approved" },
+                orderBy: [{ storylineOrder: "asc" }, { ixTimeYear: "asc" }],
+              },
+            },
+          },
+        },
+      });
+      if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
+
+      // Fetch wiki enrichment if linked
+      let wikiEnrichment = null;
+      if (pin.wikiPageTitle) {
+        try {
+          const { enrichFromWiki } = await import("~/lib/story-pin-enrichment");
+          wikiEnrichment = await enrichFromWiki(pin.wikiPageTitle);
+        } catch {
+          // Wiki enrichment is best-effort
+        }
+      }
+
+      // Fetch related pins: nearby (same country) and same-era
+      const relatedPins = await ctx.db.storyPin.findMany({
+        where: {
+          countryId: pin.countryId,
+          status: "approved",
+          id: { not: pin.id },
+          ...(pin.ixTimeYear != null ? {
+            ixTimeYear: { gte: pin.ixTimeYear - 50, lte: pin.ixTimeYear + 50 },
+          } : {}),
+        },
+        select: {
+          id: true, title: true, category: true, ixTimeYear: true,
+          eraLabel: true, coordinates: true, thumbnailUrl: true,
+        },
+        take: 10,
+        orderBy: { ixTimeYear: "asc" },
+      });
+
+      return { pin, wikiEnrichment, relatedPins };
+    }),
+
+  getStoryPinsByCountry: cachedPublicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.storyPin.findMany({
+        where: { countryId: input.countryId, status: "approved" },
+        orderBy: { ixTimeYear: "asc" },
+      });
+    }),
+
+  getAllStoryPins: cachedPublicProcedure
+    .input(
+      z.object({
+        category: z.string().optional(),
+        minYear: z.number().int().optional(),
+        maxYear: z.number().int().optional(),
+        storylineId: z.string().optional(),
+      }).optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Record<string, unknown> = { status: "approved" };
+      if (input?.category) where.category = input.category;
+      if (input?.storylineId) where.storylineId = input.storylineId;
+      if (input?.minYear !== undefined || input?.maxYear !== undefined) {
+        where.ixTimeYear = {};
+        if (input?.minYear !== undefined) (where.ixTimeYear as Record<string, unknown>).gte = input.minYear;
+        if (input?.maxYear !== undefined) (where.ixTimeYear as Record<string, unknown>).lte = input.maxYear;
+      }
+      const pins = await ctx.db.storyPin.findMany({
+        where,
+        include: { country: { select: { name: true, slug: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      return {
+        type: "FeatureCollection" as const,
+        features: pins
+          .filter((p) => Array.isArray(p.coordinates) && (p.coordinates as number[]).length >= 2)
+          .map((p) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: p.coordinates as [number, number] },
+            properties: {
+              id: p.id, title: p.title, category: p.category,
+              importance: p.importance, storylineId: p.storylineId,
+              ixTimeYear: p.ixTimeYear, eraLabel: p.eraLabel,
+              wikiPageTitle: p.wikiPageTitle, icon: p.icon,
+              thumbnailUrl: p.thumbnailUrl,
+              countryId: p.countryId, countryName: p.country.name,
+              countrySlug: p.country.slug,
+            },
+          })),
+      };
+    }),
+
+  // ──────────────────────────────────────────────
+  // Storylines — Narrative chains connecting story pins
+  // ──────────────────────────────────────────────
+
+  createStoryline: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        title: z.string().min(1).max(200),
+        description: z.string().max(2000).optional(),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      return ctx.db.storyline.create({
+        data: {
+          title: input.title,
+          description: input.description,
+          countryId: input.countryId,
+          color: input.color ?? "#6366f1",
+        },
+      });
+    }),
+
+  updateStoryline: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        storylineId: z.string(),
+        title: z.string().min(1).max(200).optional(),
+        description: z.string().max(2000).nullable().optional(),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      const sl = await ctx.db.storyline.findFirst({ where: { id: input.storylineId, countryId: input.countryId } });
+      if (!sl) throw new TRPCError({ code: "NOT_FOUND", message: "Storyline not found" });
+      return ctx.db.storyline.update({
+        where: { id: input.storylineId },
+        data: {
+          ...(input.title && { title: input.title }),
+          ...(input.description !== undefined && { description: input.description }),
+          ...(input.color && { color: input.color }),
+        },
+      });
+    }),
+
+  deleteStoryline: standardMutationCountryOwnerProcedure
+    .input(z.object({ countryId: z.string(), storylineId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      const sl = await ctx.db.storyline.findFirst({ where: { id: input.storylineId, countryId: input.countryId } });
+      if (!sl) throw new TRPCError({ code: "NOT_FOUND", message: "Storyline not found" });
+      // Unlink pins before deleting
+      await ctx.db.storyPin.updateMany({
+        where: { storylineId: input.storylineId },
+        data: { storylineId: null, storylineOrder: null },
+      });
+      await ctx.db.storyline.delete({ where: { id: input.storylineId } });
+      return { id: input.storylineId, deleted: true };
+    }),
+
+  getStorylinesByCountry: cachedPublicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.storyline.findMany({
+        where: { countryId: input.countryId },
+        include: { _count: { select: { pins: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+    }),
+
+  getStorylineWithPins: cachedPublicProcedure
+    .input(z.object({ storylineId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const storyline = await ctx.db.storyline.findUnique({
+        where: { id: input.storylineId },
+        include: {
+          pins: {
+            where: { status: "approved" },
+            orderBy: [{ storylineOrder: "asc" }, { ixTimeYear: "asc" }],
+            select: {
+              id: true, title: true, category: true, ixTimeYear: true,
+              eraLabel: true, coordinates: true, importance: true, thumbnailUrl: true,
+            },
+          },
+          country: { select: { name: true, slug: true } },
+        },
+      });
+      if (!storyline) throw new TRPCError({ code: "NOT_FOUND", message: "Storyline not found" });
+      return storyline;
+    }),
+
+  // ──────────────────────────────────────────────
+  // Map Labels — Custom styled text on the map
+  // ──────────────────────────────────────────────
+
+  createMapLabel: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        text: z.string().min(1).max(100),
+        labelType: z.enum(["mountain_range", "strait", "bay", "peninsula", "plateau", "valley", "desert", "sea", "region", "historical"]),
+        coordinates: coordinatesSchema,
+        fontSize: z.number().min(8).max(48).default(14),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#374151"),
+        rotation: z.number().min(-180).max(180).default(0),
+        letterSpacing: z.number().min(0).max(1).default(0),
+        fontWeight: z.enum(["normal", "bold"]).default("normal"),
+        opacity: z.number().min(0.1).max(1).default(1),
+        minZoom: z.number().min(0).max(18).default(4),
+        maxZoom: z.number().min(0).max(22).default(18),
+        wikiPageTitle: z.string().max(200).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Map label");
+
+      const label = await ctx.db.mapLabel.create({
+        data: {
+          text: input.text,
+          countryId: input.countryId,
+          labelType: input.labelType,
+          coordinates: input.coordinates,
+          fontSize: input.fontSize,
+          color: input.color,
+          rotation: input.rotation,
+          letterSpacing: input.letterSpacing,
+          fontWeight: input.fontWeight,
+          opacity: input.opacity,
+          minZoom: input.minZoom,
+          maxZoom: input.maxZoom,
+          wikiPageTitle: input.wikiPageTitle,
+          status: "approved",
+          submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
+        },
+      });
+      await invalidateCache(["geo.getAllMapFeatures", "geo.getAllMapLabels"]);
+      return { id: label.id, text: label.text, status: "approved" as const };
+    }),
+
+  updateMapLabel: standardMutationCountryOwnerProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        labelId: z.string(),
+        text: z.string().min(1).max(100).optional(),
+        labelType: z.enum(["mountain_range", "strait", "bay", "peninsula", "plateau", "valley", "desert", "sea", "region", "historical"]).optional(),
+        coordinates: coordinatesSchema.optional(),
+        fontSize: z.number().min(8).max(48).optional(),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        rotation: z.number().min(-180).max(180).optional(),
+        letterSpacing: z.number().min(0).max(1).optional(),
+        fontWeight: z.enum(["normal", "bold"]).optional(),
+        opacity: z.number().min(0.1).max(1).optional(),
+        minZoom: z.number().min(0).max(18).optional(),
+        maxZoom: z.number().min(0).max(22).optional(),
+        wikiPageTitle: z.string().max(200).nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      const label = await ctx.db.mapLabel.findFirst({ where: { id: input.labelId, countryId: input.countryId } });
+      if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
+
+      if (input.coordinates) {
+        await validatePointContainment(ctx.db, input.countryId, input.coordinates[0], input.coordinates[1], "Map label");
+      }
+
+      const { countryId: _, labelId: __, ...updateData } = input;
+      const updated = await ctx.db.mapLabel.update({
+        where: { id: input.labelId },
+        data: Object.fromEntries(Object.entries(updateData).filter(([, v]) => v !== undefined)),
+      });
+      await invalidateCache(["geo.getAllMapFeatures", "geo.getAllMapLabels"]);
+      return { id: updated.id, text: updated.text };
+    }),
+
+  deleteMapLabel: standardMutationCountryOwnerProcedure
+    .input(z.object({ countryId: z.string(), labelId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own country" });
+      }
+      const label = await ctx.db.mapLabel.findFirst({ where: { id: input.labelId, countryId: input.countryId } });
+      if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
+      await ctx.db.mapLabel.delete({ where: { id: input.labelId } });
+      await invalidateCache(["geo.getAllMapFeatures", "geo.getAllMapLabels"]);
+      return { id: input.labelId, deleted: true };
+    }),
+
+  getMapLabelsByCountry: cachedPublicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.mapLabel.findMany({
+        where: { countryId: input.countryId, status: "approved" },
+        orderBy: { text: "asc" },
+      });
+    }),
+
+  getAllMapLabels: cachedPublicProcedure.query(async ({ ctx }) => {
+    const labels = await ctx.db.mapLabel.findMany({
+      where: { status: "approved" },
+      include: { country: { select: { name: true, slug: true } } },
+    });
+    return {
+      type: "FeatureCollection" as const,
+      features: labels
+        .filter((l) => Array.isArray(l.coordinates) && (l.coordinates as number[]).length >= 2)
+        .map((l) => ({
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: l.coordinates as [number, number] },
+          properties: {
+            id: l.id, text: l.text, labelType: l.labelType,
+            fontSize: l.fontSize, color: l.color, rotation: l.rotation,
+            letterSpacing: l.letterSpacing, fontWeight: l.fontWeight,
+            opacity: l.opacity, minZoom: l.minZoom, maxZoom: l.maxZoom,
+            wikiPageTitle: l.wikiPageTitle,
+            countryId: l.countryId, countryName: l.country.name,
+          },
+        })),
+    };
+  }),
 
   /**
    * Get edit history for the user's country.
@@ -3387,31 +4011,18 @@ export const geoRouter = createTRPCRouter({
       const name = input.wikiPageTitle.trim();
       if (!name) return null;
 
-      const sources = [
-        { key: "ixwiki", base: "https://ixwiki.com" },
-        { key: "iiwiki", base: "https://iiwiki.com" },
-      ];
+      const { getArticleIntro } = await import("~/lib/wiki-bridge");
 
-      for (const source of sources) {
-        try {
-          const url = `${source.base}/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exchars=400&format=json&titles=${encodeURIComponent(name)}`;
-          const res = await fetch(url, {
-            headers: { "User-Agent": "IxStats-Builder" },
-            signal: AbortSignal.timeout(5000),
-          });
-          if (!res.ok) continue;
-          const data = (await res.json()) as { query?: { pages?: Record<string, { missing?: boolean; extract?: string; title?: string }> } };
-          const pages = data?.query?.pages;
-          if (!pages) continue;
-          const page = Object.values(pages)[0];
-          if (page?.missing || !page?.extract) continue;
+      // Try ixwiki first (direct MySQL, ~8ms), then iiwiki (HTTP, ~400ms)
+      for (const wiki of ["ixwiki", "iiwiki"] as const) {
+        const result = await getArticleIntro(name, wiki);
+        if (result?.text) {
+          const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
           return {
-            extract: page.extract,
-            wikiSource: source.key as "ixwiki" | "iiwiki",
-            wikiUrl: `${source.base}/wiki/${encodeURIComponent(page.title ?? name)}`,
+            extract: result.text.substring(0, 400),
+            wikiSource: wiki,
+            wikiUrl: `${base}/wiki/${encodeURIComponent(result.title)}`,
           };
-        } catch {
-          continue;
         }
       }
       return null;
@@ -3425,65 +4036,46 @@ export const geoRouter = createTRPCRouter({
     .input(z.object({ pageTitle: z.string().min(1).max(200) }))
     .query(async ({ input }) => {
       const title = input.pageTitle.trim();
+      const { getArticleWikitext } = await import("~/lib/wiki-bridge");
 
-      const sources = [
-        { key: "ixwiki", base: "https://ixwiki.com" },
-        { key: "iiwiki", base: "https://iiwiki.com" },
-      ];
+      for (const wiki of ["ixwiki", "iiwiki"] as const) {
+        const article = await getArticleWikitext(title, wiki);
+        if (!article) continue;
 
-      for (const source of sources) {
-        try {
-          const url = `${source.base}/api.php?action=parse&prop=wikitext&format=json&page=${encodeURIComponent(title)}`;
-          const res = await fetch(url, {
-            headers: { "User-Agent": "IxStats-Builder" },
-            signal: AbortSignal.timeout(8000),
-          });
-          if (!res.ok) continue;
-          const data = (await res.json()) as {
-            parse?: { title?: string; wikitext?: { "*"?: string } };
-            error?: { code?: string };
-          };
+        const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
+        const parsed = parseInfobox(article.wikitext);
 
-          if (data.error || !data.parse?.wikitext?.["*"]) continue;
-
-          const wikitext = data.parse.wikitext["*"];
-          const parsed = parseInfobox(wikitext);
-          if (!parsed) {
-            return {
-              found: true,
-              hasInfobox: false,
-              pageTitle: data.parse.title ?? title,
-              pageUrl: `${source.base}/wiki/${encodeURIComponent(data.parse.title ?? title)}`,
-              wikiSource: source.key,
-              fields: [],
-              coordinates: null,
-            };
-          }
-
-          // Try to extract coordinates from separate lat/long fields
-          const splitCoords = extractCoordsFromFields(parsed.fields);
-          // Also check for a {{coord}} template anywhere in the wikitext
-          const templateCoords = parseCoordTemplate(wikitext);
-          const coordinates = splitCoords ?? templateCoords;
-
+        if (!parsed) {
           return {
             found: true,
-            hasInfobox: true,
-            templateName: parsed.templateName,
-            pageTitle: data.parse.title ?? title,
-            pageUrl: `${source.base}/wiki/${encodeURIComponent(data.parse.title ?? title)}`,
-            wikiSource: source.key,
-            fields: parsed.fields.map((f) => ({
-              key: f.key,
-              cleanValue: f.cleanValue,
-              typedValue: f.typedValue ?? null,
-              fieldType: f.fieldType,
-            })),
-            coordinates,
+            hasInfobox: false,
+            pageTitle: article.title,
+            pageUrl: `${base}/wiki/${encodeURIComponent(article.title)}`,
+            wikiSource: wiki,
+            fields: [],
+            coordinates: null,
           };
-        } catch {
-          continue;
         }
+
+        const splitCoords = extractCoordsFromFields(parsed.fields);
+        const templateCoords = parseCoordTemplate(article.wikitext);
+        const coordinates = splitCoords ?? templateCoords;
+
+        return {
+          found: true,
+          hasInfobox: true,
+          templateName: parsed.templateName,
+          pageTitle: article.title,
+          pageUrl: `${base}/wiki/${encodeURIComponent(article.title)}`,
+          wikiSource: wiki,
+          fields: parsed.fields.map((f) => ({
+            key: f.key,
+            cleanValue: f.cleanValue,
+            typedValue: f.typedValue ?? null,
+            fieldType: f.fieldType,
+          })),
+          coordinates,
+        };
       }
 
       return { found: false, hasInfobox: false, pageTitle: title, pageUrl: null, wikiSource: null, fields: [], coordinates: null };
@@ -3496,39 +4088,21 @@ export const geoRouter = createTRPCRouter({
   searchWikiPages: cachedPublicProcedure
     .input(z.object({ query: z.string().min(1).max(100), limit: z.number().min(1).max(20).default(10) }))
     .query(async ({ input }) => {
-      const sources = [
-        { key: "ixwiki", base: "https://ixwiki.com" },
-        { key: "iiwiki", base: "https://iiwiki.com" },
-      ];
+      const { searchPages } = await import("~/lib/wiki-bridge");
 
-      for (const source of sources) {
-        try {
-          const url = `${source.base}/api.php?action=opensearch&search=${encodeURIComponent(input.query)}&limit=${input.limit}&format=json`;
-          const res = await fetch(url, {
-            headers: { "User-Agent": "IxStats-Builder" },
-            signal: AbortSignal.timeout(5000),
-          });
-          if (!res.ok) continue;
-          // OpenSearch returns [query, titles[], descriptions[], urls[]]
-          const data = (await res.json()) as [string, string[], string[], string[]];
-          if (!Array.isArray(data) || data.length < 4) continue;
-
-          const titles = data[1] ?? [];
-          const descriptions = data[2] ?? [];
-          const urls = data[3] ?? [];
-
-          if (titles.length === 0) continue;
-
+      // Try ixwiki first (MySQL, ~30ms), then iiwiki (HTTP, ~400ms)
+      for (const wiki of ["ixwiki", "iiwiki"] as const) {
+        const results = await searchPages(input.query, input.limit, wiki);
+        if (results.length > 0) {
+          const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
           return {
-            wikiSource: source.key,
-            results: titles.map((title, i) => ({
-              title,
-              description: descriptions[i] ?? "",
-              url: urls[i] ?? `${source.base}/wiki/${encodeURIComponent(title)}`,
+            wikiSource: wiki,
+            results: results.map((r) => ({
+              title: r.title,
+              description: "",
+              url: `${base}/wiki/${encodeURIComponent(r.title)}`,
             })),
           };
-        } catch {
-          continue;
         }
       }
 
@@ -3544,28 +4118,15 @@ export const geoRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const title = input.pageTitle.trim();
 
-      // Fetch plaintext extract (longer than the intro)
+      // Fetch article intro via WikiBridge (direct MySQL for ixwiki)
+      const { getArticleIntro } = await import("~/lib/wiki-bridge");
       let plaintext = "";
-      const sources = [
-        { key: "ixwiki", base: "https://ixwiki.com" },
-        { key: "iiwiki", base: "https://iiwiki.com" },
-      ];
 
-      for (const source of sources) {
-        try {
-          const url = `${source.base}/api.php?action=query&prop=extracts&explaintext=1&exchars=5000&format=json&titles=${encodeURIComponent(title)}`;
-          const res = await fetch(url, {
-            headers: { "User-Agent": "IxStats-Builder" },
-            signal: AbortSignal.timeout(5000),
-          });
-          if (!res.ok) continue;
-          const data = (await res.json()) as { query?: { pages?: Record<string, { extract?: string; missing?: boolean }> } };
-          const page = Object.values(data?.query?.pages ?? {})[0];
-          if (page?.missing || !page?.extract) continue;
-          plaintext = page.extract;
+      for (const wiki of ["ixwiki", "iiwiki"] as const) {
+        const result = await getArticleIntro(title, wiki);
+        if (result?.text) {
+          plaintext = result.text;
           break;
-        } catch {
-          continue;
         }
       }
 
@@ -4945,8 +5506,11 @@ export const geoRouter = createTRPCRouter({
         throw new TRPCError({ code: "FORBIDDEN", message: "You can only import provinces for your own country" });
       }
 
-      // Get SVG content from upload record or direct input
+      // Get content from upload record or direct input
       let svgContent = input.svgContent;
+      let isPng = false;
+      let pngBase64: string | undefined;
+
       if (!svgContent && input.uploadId) {
         const upload = await ctx.db.svgUpload.findUnique({
           where: { id: input.uploadId },
@@ -4954,14 +5518,55 @@ export const geoRouter = createTRPCRouter({
         if (!upload) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Upload not found" });
         }
-        if (upload.uploadedBy !== (ctx.auth?.userId ?? ctx.user?.clerkUserId)) {
+        const isAdmin = !ctx.country; // countryOwnerMiddleware sets ctx.country = null for admins
+        if (!isAdmin && upload.uploadedBy !== (ctx.auth?.userId ?? ctx.user?.clerkUserId)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this upload" });
         }
-        svgContent = upload.svgContent ?? undefined;
+
+        // Detect PNG: check file extension from metadata or filename
+        const meta = upload.svgMetadata as Record<string, unknown> | null;
+        const fileType = (meta?.fileType as string) ?? "";
+        const fileName = upload.fileName ?? "";
+        isPng = fileType === "png" || fileName.toLowerCase().endsWith(".png");
+
+        if (isPng) {
+          pngBase64 = upload.svgContent ?? undefined;
+        } else {
+          svgContent = upload.svgContent ?? undefined;
+        }
+      }
+
+      // Also detect PNG from direct svgContent (base64-encoded PNG starts without '<')
+      if (svgContent && !svgContent.trimStart().startsWith("<")) {
+        isPng = true;
+        pngBase64 = svgContent;
+        svgContent = undefined;
+      }
+
+      // Get country border geometry (needed for both SVG and PNG paths)
+      const mapLayer = await ctx.db.mapLayer.findFirst({
+        where: { countryId: input.countryId, layerType: "political" },
+        select: { geometry: true },
+      });
+
+      if (isPng && pngBase64) {
+        // PNG path: extract provinces directly via boundary-line detection
+        const pngBuffer = Buffer.from(pngBase64, "base64");
+        const { extractProvincesFromPng } = await import("~/lib/png-to-svg");
+
+        const result = await extractProvincesFromPng(pngBuffer);
+
+        return {
+          provinces: result.provinces,
+          viewBox: { width: result.width, height: result.height },
+          log: result.log,
+          layersFound: ["png-boundary-detection"],
+          countryBorder: mapLayer?.geometry ?? null,
+        };
       }
 
       if (!svgContent) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "SVG content required (provide uploadId or svgContent)" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "SVG or PNG content required (provide uploadId or svgContent)" });
       }
 
       // Preprocess SVG (strip non-visual elements, remove fragments, normalize)
@@ -4974,12 +5579,6 @@ export const geoRouter = createTRPCRouter({
 
       // Prepend preprocessing log
       result.log.unshift(...preprocessed.log);
-
-      // Get country border geometry
-      const mapLayer = await ctx.db.mapLayer.findFirst({
-        where: { countryId: input.countryId, layerType: "political" },
-        select: { geometry: true },
-      });
 
       return {
         provinces: result.provinces,
@@ -5063,6 +5662,22 @@ export const geoRouter = createTRPCRouter({
       }
 
       return { results: validationResults };
+    }),
+
+  /**
+   * Delete all subdivisions for a country. Admin forge operation.
+   */
+  deleteAllSubdivisions: standardMutationCountryOwnerProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const country = ctx.country;
+      if (country && country.id !== input.countryId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only delete regions for your own country" });
+      }
+      const result = await ctx.db.subdivision.deleteMany({
+        where: { countryId: input.countryId },
+      });
+      return { deleted: result.count };
     }),
 
   /**

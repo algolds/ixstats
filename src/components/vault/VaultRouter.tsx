@@ -10,6 +10,7 @@ import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { api } from "~/trpc/react";
 import { VaultSidebarLayout } from "./VaultSidebarLayout";
 import { getSectionFromPathname, getSubTabFromPathname, type VaultSection } from "./VaultSidebarNav";
+import { withBasePath } from "~/lib/base-path";
 import { VaultDashboardSection } from "./sections/VaultDashboardSection";
 import { VaultCardsSection } from "./sections/VaultCardsSection";
 import { VaultAcquireSection } from "./sections/VaultAcquireSection";
@@ -48,7 +49,7 @@ function VaultRouterInner() {
     setActiveSection(section);
 
     const href = section === "dashboard" ? "/vault" : `/vault/${section}`;
-    window.history.pushState(null, "", href);
+    window.history.pushState(null, "", withBasePath(href));
 
     document.title = section === "dashboard"
       ? "MyVault - IxStats"

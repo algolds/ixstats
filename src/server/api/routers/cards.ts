@@ -789,34 +789,11 @@ export const cardsRouter = createTRPCRouter({
       wikiSource: z.enum(["ixwiki", "iiwiki"]),
     }))
     .query(async ({ input }) => {
-      const { getMediaWikiApiUrl, getWikiUserAgent } = await import("~/lib/mediawiki-config");
-      const apiUrl = getMediaWikiApiUrl(input.wikiSource);
-      const userAgent = getWikiUserAgent(input.wikiSource);
-
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("titles", input.articleTitle);
-      url.searchParams.set("prop", "extracts");
-      url.searchParams.set("exchars", "2000");
-      url.searchParams.set("exlimit", "1");
-      url.searchParams.set("explaintext", "1");
-
-      const resp = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
-      });
-
-      if (!resp.ok) {
-        return { extract: null };
-      }
-
-      const data = await resp.json();
-      const pages = data.query?.pages;
-      if (!pages) return { extract: null };
-
-      const page = Object.values(pages)[0] as { extract?: string; missing?: boolean };
-      if (page.missing) return { extract: null };
-
-      return { extract: page.extract || null };
+      const { getArticleIntro } = await import("~/lib/wiki-bridge");
+      const result = await getArticleIntro(
+        input.articleTitle,
+        input.wikiSource as "ixwiki" | "iiwiki"
+      );
+      return { extract: result?.text ?? null };
     }),
 });

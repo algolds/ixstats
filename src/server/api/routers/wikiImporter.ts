@@ -8,83 +8,82 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { parseInfoboxTemplate, mapInfoboxToIxStats } from "~/lib/wiki-infobox-mapper";
+import { getArticleWikitext, type WikiSource as BridgeWikiSource } from "~/lib/wiki-bridge";
 
 /**
- * Wiki source configuration
+ * Wiki source configuration (name mapping only — fetching delegated to WikiBridge)
  */
-const WIKI_SOURCES = {
-  iiwiki: {
-    name: "IIWiki",
-    apiUrl: "https://iiwiki.com/api.php",
-    priority: 1,
-  },
-  ixwiki: {
-    name: "IxWiki",
-    apiUrl: "https://ixwiki.com/api.php",
-    priority: 2,
-  },
-  althist: {
-    name: "Alternative History Wiki",
-    apiUrl: "https://althistory.fandom.com/api.php",
-    priority: 3,
-  },
+const WIKI_SOURCE_NAMES = {
+  iiwiki: { name: "IIWiki", priority: 1 },
+  ixwiki: { name: "IxWiki", priority: 2 },
+  althist: { name: "Alternative History Wiki", priority: 3 },
 } as const;
 
-type WikiSource = keyof typeof WIKI_SOURCES;
+type WikiSource = keyof typeof WIKI_SOURCE_NAMES;
+
+/** Map local source keys to WikiBridge-supported sources. althist falls back to HTTP. */
+function toBridgeSource(source: WikiSource): BridgeWikiSource | null {
+  if (source === "ixwiki" || source === "iiwiki") return source;
+  return null; // althist not supported by WikiBridge
+}
+
+function getWikiUrl(source: WikiSource, pageName: string): string {
+  const slug = encodeURIComponent(pageName.replace(/ /g, "_"));
+  if (source === "iiwiki") return `https://iiwiki.com/wiki/${slug}`;
+  if (source === "ixwiki") return `https://ixwiki.com/wiki/${slug}`;
+  return `https://althistory.fandom.com/wiki/${slug}`;
+}
 
 /**
- * Fetch page from a specific wiki source
+ * Fetch page from a specific wiki source via WikiBridge.
+ * Falls back to direct HTTP for unsupported sources (althist).
  */
 async function fetchFromWikiSource(pageName: string, source: WikiSource) {
-  const wikiConfig = WIKI_SOURCES[source];
+  const bridgeSource = toBridgeSource(source);
 
+  if (bridgeSource) {
+    // Use WikiBridge (direct MySQL for ixwiki, HTTP for iiwiki)
+    const article = await getArticleWikitext(pageName, bridgeSource);
+    if (!article) return null;
+
+    return {
+      source,
+      sourceName: WIKI_SOURCE_NAMES[source].name,
+      pageName,
+      pageId: article.pageId,
+      wikitext: article.wikitext,
+      hasInfobox:
+        article.wikitext.includes("{{Infobox country") ||
+        article.wikitext.includes("{{Infobox Country"),
+      url: getWikiUrl(source, pageName),
+    };
+  }
+
+  // Fallback: althist uses direct HTTP (not in WikiBridge)
+  const apiUrl = "https://althistory.fandom.com/api.php";
   const response = await fetch(
-    `${wikiConfig.apiUrl}?action=query&titles=${encodeURIComponent(pageName)}&prop=revisions&rvprop=content&format=json`,
+    `${apiUrl}?action=query&titles=${encodeURIComponent(pageName)}&prop=revisions&rvprop=content&format=json`,
     {
-      headers: {
-        "User-Agent": "IxStats-Builder", // CRITICAL: Must be exactly "IxStats-Builder" for iiwiki compatibility
-        Accept: "application/json",
-      },
+      headers: { "User-Agent": "IxStats-Builder", Accept: "application/json" },
     }
   );
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} from ${wikiConfig.name}`);
-  }
-
+  if (!response.ok) throw new Error(`HTTP ${response.status} from ${WIKI_SOURCE_NAMES[source].name}`);
   const data = await response.json();
   const pages = data.query?.pages;
-
-  if (!pages) {
-    return null;
-  }
-
+  if (!pages) return null;
   const page = Object.values(pages)[0] as any;
-
-  // Check if page exists (missing pages have negative IDs)
-  if (page.missing !== undefined || parseInt(page.pageid) < 0) {
-    return null;
-  }
-
+  if (page.missing !== undefined || parseInt(page.pageid) < 0) return null;
   const wikitext = page.revisions?.[0]?.["*"];
-
-  if (!wikitext) {
-    return null;
-  }
+  if (!wikitext) return null;
 
   return {
-    source: source,
-    sourceName: wikiConfig.name,
-    pageName: pageName,
+    source,
+    sourceName: WIKI_SOURCE_NAMES[source].name,
+    pageName,
     pageId: page.pageid,
     wikitext,
     hasInfobox: wikitext.includes("{{Infobox country") || wikitext.includes("{{Infobox Country"),
-    url:
-      source === "iiwiki"
-        ? `https://iiwiki.com/wiki/${encodeURIComponent(pageName.replace(/ /g, "_"))}`
-        : source === "ixwiki"
-          ? `https://ixwiki.com/wiki/${encodeURIComponent(pageName.replace(/ /g, "_"))}`
-          : `https://althistory.fandom.com/wiki/${encodeURIComponent(pageName.replace(/ /g, "_"))}`,
+    url: getWikiUrl(source, pageName),
   };
 }
 
@@ -95,10 +94,10 @@ async function searchAcrossWikis(pageName: string, preferredSource?: WikiSource)
   const sources: WikiSource[] = preferredSource
     ? [
         preferredSource,
-        ...(Object.keys(WIKI_SOURCES).filter((s) => s !== preferredSource) as WikiSource[]),
+        ...(Object.keys(WIKI_SOURCE_NAMES).filter((s) => s !== preferredSource) as WikiSource[]),
       ]
-    : (Object.keys(WIKI_SOURCES) as WikiSource[]).sort(
-        (a, b) => WIKI_SOURCES[a].priority - WIKI_SOURCES[b].priority
+    : (Object.keys(WIKI_SOURCE_NAMES) as WikiSource[]).sort(
+        (a, b) => WIKI_SOURCE_NAMES[a].priority - WIKI_SOURCE_NAMES[b].priority
       );
 
   const results: Array<{ source: WikiSource; success: boolean; data?: any; error?: string }> = [];
@@ -123,7 +122,7 @@ async function searchAcrossWikis(pageName: string, preferredSource?: WikiSource)
 
   // No successful results
   throw new Error(
-    `Page "${pageName}" not found in any wiki source. Tried: ${sources.map((s) => WIKI_SOURCES[s].name).join(", ")}`
+    `Page "${pageName}" not found in any wiki source. Tried: ${sources.map((s) => WIKI_SOURCE_NAMES[s].name).join(", ")}`
   );
 }
 
@@ -580,34 +579,46 @@ export const wikiImporterRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      const { searchPages } = await import("~/lib/wiki-bridge");
       const sources: WikiSource[] = ["iiwiki", "ixwiki", "althist"];
       const results = [];
 
       for (const source of sources) {
         try {
-          const wikiConfig = WIKI_SOURCES[source];
-          const response = await fetch(
-            `${wikiConfig.apiUrl}?action=opensearch&search=${encodeURIComponent(input.searchTerm)}&limit=5&format=json`,
-            {
-              headers: {
-                "User-Agent": "IxStats-Builder", // CRITICAL: Must be exactly "IxStats-Builder" for iiwiki compatibility
-              },
-            }
-          );
-
-          if (response.ok) {
-            const data = await response.json();
-            const [, titles, , urls] = data;
-
-            if (titles && titles.length > 0) {
+          const bridgeSource = toBridgeSource(source);
+          if (bridgeSource) {
+            // Use WikiBridge for ixwiki/iiwiki
+            const searchResults = await searchPages(input.searchTerm, 5, bridgeSource);
+            if (searchResults.length > 0) {
               results.push({
                 source,
-                sourceName: wikiConfig.name,
-                results: titles.map((title: string, idx: number) => ({
-                  title,
-                  url: urls[idx],
+                sourceName: WIKI_SOURCE_NAMES[source].name,
+                results: searchResults.map((r) => ({
+                  title: r.title,
+                  url: getWikiUrl(source, r.title),
                 })),
               });
+            }
+          } else {
+            // Fallback: althist via HTTP opensearch
+            const apiUrl = "https://althistory.fandom.com/api.php";
+            const response = await fetch(
+              `${apiUrl}?action=opensearch&search=${encodeURIComponent(input.searchTerm)}&limit=5&format=json`,
+              { headers: { "User-Agent": "IxStats-Builder" } }
+            );
+            if (response.ok) {
+              const data = await response.json();
+              const [, titles, , urls] = data;
+              if (titles && titles.length > 0) {
+                results.push({
+                  source,
+                  sourceName: WIKI_SOURCE_NAMES[source].name,
+                  results: titles.map((title: string, idx: number) => ({
+                    title,
+                    url: urls[idx],
+                  })),
+                });
+              }
             }
           }
         } catch (error) {
@@ -622,10 +633,9 @@ export const wikiImporterRouter = createTRPCRouter({
    * Get available wiki sources
    */
   getWikiSources: publicProcedure.query(() => {
-    return Object.entries(WIKI_SOURCES).map(([key, config]) => ({
+    return Object.entries(WIKI_SOURCE_NAMES).map(([key, config]) => ({
       id: key,
       name: config.name,
-      apiUrl: config.apiUrl,
       priority: config.priority,
     }));
   }),

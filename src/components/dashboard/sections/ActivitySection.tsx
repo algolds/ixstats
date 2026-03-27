@@ -15,6 +15,7 @@ import { InboxPreviewModal } from "~/components/dashboard/modals/InboxPreviewMod
 import { WorldEventsModal } from "~/components/dashboard/modals/WorldEventsModal";
 import { DiplomaticNetworkModal } from "~/components/dashboard/modals/DiplomaticNetworkModal";
 import { CrisisStatusModal } from "~/components/dashboard/modals/CrisisStatusModal";
+import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 const CATEGORY_CONFIG: Record<string, { icon: typeof TrendingUp; bg: string; text: string; label: string; border: string }> = {
   economic:    { icon: TrendingUp,     bg: "bg-emerald-500/10",  text: "text-emerald-500",  label: "Economy",    border: "text-emerald-600 border-emerald-500/30" },
@@ -52,12 +53,12 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
 
   const { data: headlineData } = api.activities.getGlobalHeadlines.useQuery(
     { limit: 25 },
-    { refetchInterval: 3_600_000 },
+    { refetchInterval: 5 * 60_000 },
   );
   const { data: activityStats } = api.activities.getActivityStats.useQuery({ timeRange: "24h" });
   const { data: trendingData } = api.activities.getUnifiedTrending.useQuery(
     { limit: 8 },
-    { refetchInterval: 3_600_000 },
+    { refetchInterval: 5 * 60_000 },
   );
   const { data: crisisStats } = api.crisisEvents.getStatistics.useQuery({ timeframe: "month" });
   const { data: leaderboard } = api.diplomatic.getInfluenceLeaderboard.useQuery();
@@ -157,7 +158,15 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
                   const isHigh = item.priority === "high";
                   const Wrapper = item.url ? "a" : "div";
                   const wrapperProps = item.url ? { href: item.url, target: "_blank", rel: "noopener noreferrer" } : {};
-                  return (
+                  // Detect wiki/forum links for tooltip wrapping
+                  const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
+                  const iiMatch = item.url?.match(/iiwiki\.com\/wiki\/([^#?]+)/);
+                  const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
+                  const wikiTitle = wikiMatch ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ") : iiMatch ? decodeURIComponent(iiMatch[1]!).replace(/_/g, " ") : null;
+                  const wikiSource = wikiMatch ? "ixwiki" as const : "iiwiki" as const;
+                  const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
+
+                  const itemContent = (
                     <Wrapper
                       key={item.id}
                       {...wrapperProps}
@@ -200,6 +209,15 @@ export function ActivitySection({ globalStats }: ActivitySectionProps) {
                       </div>
                     </Wrapper>
                   );
+
+                  // Wrap with tooltip if wiki/forum link detected
+                  if (wikiTitle) {
+                    return <WikiLinkPreview key={item.id} title={wikiTitle} wiki={wikiSource}>{itemContent}</WikiLinkPreview>;
+                  }
+                  if (forumThreadId) {
+                    return <ForumLinkPreview key={item.id} threadId={forumThreadId}>{itemContent}</ForumLinkPreview>;
+                  }
+                  return itemContent;
                 })}
               </div>
             </CardContent>

@@ -63,6 +63,15 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
   countryBorder,
   visible,
 }: ProvincePreviewLayerProps) {
+  // Debug mount
+  console.log("[ProvincePreview] MOUNTED", {
+    hasMap: !!map,
+    provinceCount: provinces.length,
+    includedCount: provinces.filter(p => p.included).length,
+    hasBorder: !!countryBorder,
+    visible,
+  });
+
   // ── Country border reference layer ──
   useEffect(() => {
     if (!map || !countryBorder) return;
@@ -89,27 +98,26 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
 
       map.addSource(BORDER_SOURCE_ID, { type: "geojson", data: borderFc });
 
-      // Translucent fill to show the country area
+      // Country border reference — bright outline so user can see alignment
       map.addLayer({
         id: BORDER_FILL_LAYER_ID,
         type: "fill",
         source: BORDER_SOURCE_ID,
         paint: {
-          "fill-color": "#f59e0b",
-          "fill-opacity": 0.08,
+          "fill-color": "#22c55e",
+          "fill-opacity": 0.05,
         },
       });
 
-      // Subtle dashed border outline (reference only)
       map.addLayer({
         id: BORDER_LINE_LAYER_ID,
         type: "line",
         source: BORDER_SOURCE_ID,
         paint: {
           "line-color": "#22c55e",
-          "line-width": 2,
+          "line-width": 3,
           "line-dasharray": [6, 4],
-          "line-opacity": 0.6,
+          "line-opacity": 0.8,
         },
       });
     }
@@ -122,13 +130,106 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
   // ── Memoized FeatureCollection — only recomputes when provinces change ──
   const fc = useMemo<FeatureCollection>(() => {
     const included = provinces.filter((p) => p.included);
+    if (included.length === 0) return { type: "FeatureCollection", features: [] };
+
+    // Compute bounding box of ALL province shapes (included + excluded for full SVG extent)
+    let svgMinX = Infinity, svgMinY = Infinity, svgMaxX = -Infinity, svgMaxY = -Infinity;
+    for (const p of provinces) {
+      const coords = p.geometry.type === "Polygon"
+        ? p.geometry.coordinates
+        : p.geometry.coordinates.flatMap((c) => c);
+      for (const ring of coords) {
+        for (const pt of ring) {
+          svgMinX = Math.min(svgMinX, pt[0]!);
+          svgMinY = Math.min(svgMinY, pt[1]!);
+          svgMaxX = Math.max(svgMaxX, pt[0]!);
+          svgMaxY = Math.max(svgMaxY, pt[1]!);
+        }
+      }
+    }
+
+    // Detect if provinces are in SVG coordinates (outside WGS84 range)
+    const needsTransform = svgMaxX > 180 || svgMaxY > 90 || svgMinX < -180 || svgMinY < -90;
+
+    console.log("[ProvincePreview] FC computation:", {
+      includedCount: included.length,
+      svgBounds: { svgMinX: svgMinX.toFixed(2), svgMinY: svgMinY.toFixed(2), svgMaxX: svgMaxX.toFixed(2), svgMaxY: svgMaxY.toFixed(2) },
+      needsTransform,
+      hasBorder: !!countryBorder,
+    });
+
+    if (!needsTransform) {
+      // Already in geographic coordinates — pass through
+      console.log("[ProvincePreview] Passthrough mode (coords already geographic)");
+      return {
+        type: "FeatureCollection",
+        features: included.map((p, i): Feature => ({
+          type: "Feature", id: i,
+          geometry: normalizeGeometry(p.geometry),
+          properties: { name: p.name, color: p.color || "#6366f1", sourceId: p.sourceId },
+        })),
+      };
+    }
+
+    // Compute country border bounding box as target
+    let geoMinX = -10, geoMinY = -10, geoMaxX = 10, geoMaxY = 10;
+    if (countryBorder) {
+      geoMinX = Infinity; geoMinY = Infinity; geoMaxX = -Infinity; geoMaxY = -Infinity;
+      const borderCoords = countryBorder.type === "Polygon"
+        ? countryBorder.coordinates
+        : countryBorder.coordinates.flatMap((c) => c);
+      for (const ring of borderCoords) {
+        for (const pt of ring) {
+          geoMinX = Math.min(geoMinX, pt[0]!);
+          geoMinY = Math.min(geoMinY, pt[1]!);
+          geoMaxX = Math.max(geoMaxX, pt[0]!);
+          geoMaxY = Math.max(geoMaxY, pt[1]!);
+        }
+      }
+    }
+
+    const svgW = svgMaxX - svgMinX || 1;
+    const svgH = svgMaxY - svgMinY || 1;
+    const geoW = geoMaxX - geoMinX;
+    const geoH = geoMaxY - geoMinY;
+
+    // Aspect-ratio-preserving fit (object-fit: contain)
+    // Pick the smaller scale to fit without distortion
+    const scale = Math.min(geoW / svgW, geoH / svgH);
+    const scaledW = svgW * scale;
+    const scaledH = svgH * scale;
+    // Center the scaled content within the country bounds
+    const padX = (geoW - scaledW) / 2;
+    const padY = (geoH - scaledH) / 2;
+
+    const transformPt = (pt: Position): Position => {
+      // Normalize point to 0-1 within SVG bounds
+      const nx = (pt[0]! - svgMinX) / svgW;
+      const ny = (pt[1]! - svgMinY) / svgH;
+      // Map to geographic coords, flipping Y (SVG Y=0 is top, geo Y increases north)
+      const geoX = geoMinX + padX + nx * scaledW;
+      const geoY = geoMaxY - padY - ny * scaledH;
+      return [geoX, geoY];
+    };
+
+    const transformRing = (ring: Position[]): Position[] => ring.map(transformPt);
+    const transformGeom = (geom: Polygon | MultiPolygon): Polygon | MultiPolygon => {
+      if (geom.type === "Polygon") {
+        return { type: "Polygon", coordinates: geom.coordinates.map(transformRing) };
+      }
+      return {
+        type: "MultiPolygon",
+        coordinates: geom.coordinates.map((poly) => poly.map(transformRing)),
+      };
+    };
+
     return {
       type: "FeatureCollection",
       features: included.map(
         (p, i): Feature => ({
           type: "Feature",
           id: i,
-          geometry: normalizeGeometry(p.geometry),
+          geometry: normalizeGeometry(transformGeom(p.geometry)),
           properties: {
             name: p.name,
             color: p.color || "#6366f1",
@@ -137,7 +238,7 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
         })
       ),
     };
-  }, [provinces]);
+  }, [provinces, countryBorder]);
 
   // Track previous feature count to avoid unnecessary MapLibre updates
   const prevFcRef = useRef<string>("");
@@ -147,7 +248,10 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     if (!map) return;
 
     // Skip if data hasn't actually changed (avoids expensive setData calls)
-    const fcKey = `${fc.features.length}:${provinces.length}`;
+    const firstCoord = fc.features[0]?.geometry?.type === "Polygon"
+      ? (fc.features[0].geometry as any).coordinates?.[0]?.[0]
+      : (fc.features[0]?.geometry as any)?.coordinates?.[0]?.[0]?.[0];
+    const fcKey = `${fc.features.length}:${JSON.stringify(firstCoord ?? [])}`;
     if (prevFcRef.current === fcKey && map.getSource(SOURCE_ID)) {
       // Just update visibility
       const vis = visible ? "visible" : "none";
@@ -172,13 +276,16 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
 
         map.addSource(SOURCE_ID, { type: "geojson", data: fc });
 
+        // Add layers at the TOP of the layer stack so they render above
+        // the editor country fill/mask layers.
+        // Use a fixed visible color (not the SVG fill which may be near-white/grey)
         map.addLayer({
           id: FILL_LAYER_ID,
           type: "fill",
           source: SOURCE_ID,
           paint: {
-            "fill-color": ["coalesce", ["get", "color"], "#6366f1"],
-            "fill-opacity": 0.25,
+            "fill-color": "#f59e0b",
+            "fill-opacity": 0.2,
           },
         });
 
@@ -187,10 +294,9 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
           type: "line",
           source: SOURCE_ID,
           paint: {
-            "line-color": "#6366f1",
-            "line-width": 1.5,
-            "line-dasharray": [3, 2],
-            "line-opacity": 0.7,
+            "line-color": "#ef4444",
+            "line-width": 2.5,
+            "line-opacity": 1.0,
           },
         });
 
@@ -211,7 +317,21 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
           },
         });
 
-        console.log("[ProvincePreview] Created source + 3 layers (fill, line, label)");
+        // Log bounds for debugging
+        const bounds = fc.features.reduce((acc, f) => {
+          const geom = f.geometry as any;
+          const coords = geom.type === "Polygon" ? geom.coordinates : geom.coordinates?.flatMap((c: any) => c) ?? [];
+          for (const ring of coords) {
+            for (const pt of ring as Position[]) {
+              acc.minLng = Math.min(acc.minLng, pt[0]!);
+              acc.minLat = Math.min(acc.minLat, pt[1]!);
+              acc.maxLng = Math.max(acc.maxLng, pt[0]!);
+              acc.maxLat = Math.max(acc.maxLat, pt[1]!);
+            }
+          }
+          return acc;
+        }, { minLng: Infinity, minLat: Infinity, maxLng: -Infinity, maxLat: -Infinity });
+        console.log(`[ProvincePreview] Created ${fc.features.length} features, bounds: lng ${bounds.minLng.toFixed(2)}-${bounds.maxLng.toFixed(2)}, lat ${bounds.minLat.toFixed(2)}-${bounds.maxLat.toFixed(2)}`);
       }
     } catch (err) {
       console.error("[ProvincePreview] Error creating/updating layers:", err);
@@ -222,7 +342,7 @@ export const ProvincePreviewLayer = memo(function ProvincePreviewLayer({
     if (map.getLayer(FILL_LAYER_ID)) map.setLayoutProperty(FILL_LAYER_ID, "visibility", vis);
     if (map.getLayer(LINE_LAYER_ID)) map.setLayoutProperty(LINE_LAYER_ID, "visibility", vis);
     if (map.getLayer(LABEL_LAYER_ID)) map.setLayoutProperty(LABEL_LAYER_ID, "visibility", vis);
-  }, [map, provinces, visible]);
+  }, [map, fc, provinces, visible]);
 
   // Cleanup on unmount
   useEffect(() => {

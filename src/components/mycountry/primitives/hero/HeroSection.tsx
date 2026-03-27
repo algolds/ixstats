@@ -1,20 +1,21 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Crown, Users, TrendingUp, Activity, Sparkles, Edit3 } from "lucide-react";
+import React, { useState } from "react";
+import { Crown, Users, TrendingUp, Edit3 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
-import { useCountryImage } from "~/hooks/useCountryImage";
-import { extractCountryImageData } from "~/lib/country-image-engine";
+import { HealthRing } from "~/components/ui/health-ring";
+import { LoreScoreBadge } from "../LoreScoreBadge";
+import type { RingConfig } from "../VitalityRings";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { createUrl } from "~/lib/url-utils";
 
 interface Country {
   id: string;
   name: string;
-  currentGdp?: number | null;
+  currentTotalGdp?: number | null;
   currentPopulation?: number | null;
   adjustedGdpGrowth?: number | null;
   currentGdpPerCapita?: number | null;
@@ -22,6 +23,8 @@ interface Country {
   populationTier?: string | null;
   continent?: string | null;
   landArea?: number | null;
+  /** Official name like "The Fourth Imperium of" — displayed as subtitle above country name */
+  officialName?: string | null;
 }
 
 interface HeroSectionProps {
@@ -30,6 +33,8 @@ interface HeroSectionProps {
   flagLoading?: boolean;
   showMetrics?: boolean;
   showEditButton?: boolean;
+  /** Health rings to display inline in the banner */
+  healthRings?: RingConfig[];
   className?: string;
 }
 
@@ -39,38 +44,32 @@ export function HeroSection({
   flagLoading = false,
   showMetrics = true,
   showEditButton = true,
+  healthRings,
   className = "",
 }: HeroSectionProps) {
-  const [showGdpPerCapita, setShowGdpPerCapita] = useState(true);
-  const [showFullPopulation, setShowFullPopulation] = useState(false);
+  const [showGdpPerCapita, setShowGdpPerCapita] = useState(false);
+  const [showFullPopulation, setShowFullPopulation] = useState(true);
 
-  // Use the keyword engine for contextual hero images
-  const countryImageData = useMemo(() => extractCountryImageData(country), [country]);
-  const { imageUrl: unsplashImageUrl } = useCountryImage({
-    countryData: countryImageData,
-    context: "hero",
-    enabled: !!country,
-    size: "regular",
-  });
-
-  const currentTotalGdp = country.currentGdp || 0;
+  const currentTotalGdp = country.currentTotalGdp || 0;
   const currentGdpPerCapita = country.currentGdpPerCapita || 0;
   const currentPopulation = country.currentPopulation || 0;
-  const growthRate = country.adjustedGdpGrowth || 0;
 
   return (
     <div className={`relative h-48 w-full overflow-hidden rounded-xl md:h-56 lg:h-64 ${className}`}>
-      {/* Background Image */}
-      {unsplashImageUrl ? (
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${unsplashImageUrl})` }}
-        >
-          <div className="to-background absolute inset-0 bg-gradient-to-b from-black/50 via-black/30" />
+      {/* Background — blurred flag or gradient fallback */}
+      {flagUrl ? (
+        <div className="absolute inset-0">
+          <img
+            src={flagUrl}
+            alt=""
+            className="h-full w-full object-cover scale-110 blur-[12px] saturate-150"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/30" />
         </div>
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-600/20 via-purple-600/20 to-pink-600/20">
-          <div className="to-background absolute inset-0 bg-gradient-to-b from-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-700/25 via-purple-700/15 to-pink-700/10 dark:from-amber-600/20 dark:via-purple-600/15 dark:to-pink-600/10">
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         </div>
       )}
 
@@ -114,60 +113,111 @@ export function HeroSection({
               )}
             </div>
 
-            <h1 className="mb-2 text-2xl font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
+            {/* Official name subtitle (e.g. "The Fourth Imperium of") */}
+            {country.officialName && country.officialName !== country.name && (
+              <p className="text-xs font-medium text-foreground/60 drop-shadow-sm md:text-sm">
+                {country.officialName}
+              </p>
+            )}
+
+            <h1 className="mb-2 text-2xl font-bold text-foreground drop-shadow-md md:text-3xl lg:text-4xl">
               {country.name.replace(/_/g, " ")}
             </h1>
 
             {showMetrics && (
               <div className="mb-2 flex flex-wrap items-center gap-2 md:gap-3">
-                {/* Population Badge - Clickable to toggle between formatted and full */}
+                {/* Population Badge */}
                 <Badge
                   className="cursor-pointer border-blue-400/30 bg-blue-600/90 font-semibold text-white backdrop-blur-sm transition-colors hover:bg-blue-500/90"
                   onClick={() => setShowFullPopulation(!showFullPopulation)}
                 >
                   <Users className="mr-1.5 h-3 w-3" />
                   {showFullPopulation
-                    ? currentPopulation.toLocaleString()
+                    ? Math.round(currentPopulation).toLocaleString()
                     : formatPopulation(currentPopulation)}
                 </Badge>
 
-                {/* GDP Badge - Clickable to toggle between per capita and total */}
+                {/* GDP Badge */}
                 <Badge
                   className="cursor-pointer border-green-400/30 bg-green-600/90 font-semibold text-white backdrop-blur-sm transition-colors hover:bg-green-500/90"
                   onClick={() => setShowGdpPerCapita(!showGdpPerCapita)}
                 >
                   <TrendingUp className="mr-1.5 h-3 w-3" />
                   {showGdpPerCapita
-                    ? `${formatCurrency(currentGdpPerCapita)}/capita`
-                    : formatCurrency(currentTotalGdp)}
+                    ? `$${Math.round(currentGdpPerCapita).toLocaleString()}/capita`
+                    : `$${Math.round(currentTotalGdp).toLocaleString()}`}
                 </Badge>
 
-                {/* Growth Rate Badge */}
-                <Badge
-                  className={`font-semibold text-white backdrop-blur-sm ${
-                    growthRate > 0
-                      ? "border-emerald-400/30 bg-emerald-600/90"
-                      : "border-red-400/30 bg-red-600/90"
-                  }`}
-                >
-                  <Activity className="mr-1.5 h-3 w-3" />
-                  {(growthRate * 100).toFixed(2)}% growth
-                </Badge>
-
-                {/* Economic Tier Badge */}
-                {country.economicTier && (
-                  <Badge
-                    variant="outline"
-                    className="border-foreground/20 bg-background/30 text-foreground backdrop-blur-sm"
-                  >
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    {country.economicTier}
-                  </Badge>
-                )}
+                {/* Lore Score Badge */}
+                {country.id && <LoreScoreBadge countryId={country.id} />}
               </div>
             )}
           </div>
+
+          {/* Inline Health Rings — desktop */}
+          {healthRings && healthRings.length > 0 && (
+            <div className="mb-2 hidden md:flex items-center gap-2 flex-shrink-0">
+              {healthRings.map((ring) => {
+                const Icon = ring.icon;
+                return (
+                  <div
+                    key={ring.key}
+                    className="relative cursor-pointer transition-transform hover:scale-110"
+                    onClick={ring.onClick}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") ring.onClick?.(); }}
+                    title={`${ring.label}: ${ring.displayValue ?? `${ring.value.toFixed(0)}%`} — ${ring.subtitle}`}
+                  >
+                    <HealthRing
+                      value={Number(ring.value)}
+                      size={36}
+                      color={ring.color}
+                      target={ring.target}
+                      label=""
+                      tooltip=""
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <Icon className="h-3 w-3" style={{ color: ring.color }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* Inline Health Rings — mobile (below badges) */}
+        {healthRings && healthRings.length > 0 && (
+          <div className="mt-2 flex md:hidden items-center gap-3">
+            {healthRings.map((ring) => {
+              const RingIcon = ring.icon;
+              return (
+                <button
+                  key={ring.key}
+                  className="relative flex items-center gap-1.5 transition-transform hover:scale-105"
+                  onClick={ring.onClick}
+                  title={`${ring.label}: ${ring.displayValue ?? `${ring.value.toFixed(0)}%`}`}
+                >
+                  <div className="relative">
+                    <HealthRing
+                      value={Number(ring.value)}
+                      size={28}
+                      color={ring.color}
+                      target={ring.target}
+                      label=""
+                      tooltip=""
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <RingIcon className="h-2.5 w-2.5" style={{ color: ring.color }} />
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-medium text-foreground/70">{ring.displayValue ?? `${ring.value.toFixed(0)}%`}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

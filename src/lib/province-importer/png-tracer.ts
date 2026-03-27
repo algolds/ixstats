@@ -48,27 +48,33 @@ export function traceProvincesFromPng(
     if (ignoreSet.has(hex)) continue;
     if (pixels.length < cfg.minRegionPixels) continue;
 
-    // Step 3: Trace boundary of each region
+    // Step 3: Trace ALL boundaries for this color (handles islands/disconnected regions)
     const mask = createBinaryMask(imageData, imageWidth, imageHeight, hex, cfg.colorThreshold);
-    const boundary = traceBoundary(mask, imageWidth, imageHeight);
+    const boundaries = traceAllBoundaries(mask, imageWidth, imageHeight);
 
-    if (boundary.length < 4) continue;
+    for (const boundary of boundaries) {
+      if (boundary.length < 4) continue;
 
-    // Step 4: Simplify boundary
-    const simplified = douglasPeucker(boundary, cfg.simplifyTolerance);
-    if (simplified.length < 4) continue;
+      // Step 4: Simplify boundary
+      const simplified = douglasPeucker(boundary, cfg.simplifyTolerance);
+      if (simplified.length < 4) continue;
 
-    // Close the ring
-    if (simplified[0]![0] !== simplified[simplified.length - 1]![0] ||
-        simplified[0]![1] !== simplified[simplified.length - 1]![1]) {
-      simplified.push([...simplified[0]!]);
+      // Close the ring
+      if (simplified[0]![0] !== simplified[simplified.length - 1]![0] ||
+          simplified[0]![1] !== simplified[simplified.length - 1]![1]) {
+        simplified.push([...simplified[0]!]);
+      }
+
+      // Compute area for this specific contour using shoelace formula
+      const contourArea = Math.abs(shoelaceArea(simplified));
+      if (contourArea < cfg.minRegionPixels) continue;
+
+      regions.push({
+        color: hex,
+        boundary: simplified,
+        areaPixels: contourArea,
+      });
     }
-
-    regions.push({
-      color: hex,
-      boundary: simplified,
-      areaPixels: pixels.length,
-    });
   }
 
   // Sort by area (largest first)
@@ -104,6 +110,9 @@ export function tracedRegionsToProvinces(
       if (y > maxY) maxY = y;
     }
 
+    // Compute actual polygon area using shoelace formula instead of pixel count
+    const polygonArea = Math.abs(computeShoelaceArea(coords));
+
     return {
       sourceId: `region_${i}`,
       name: `Region ${i + 1}`,
@@ -112,7 +121,7 @@ export function tracedRegionsToProvinces(
       confidence: 0.3, // Low confidence for color-based detection
       centroid: [cx, cy] as [number, number],
       bbox: [minX, minY, maxX, maxY] as [number, number, number, number],
-      areaSqKm: region.areaPixels, // Placeholder (pixel-based)
+      areaSqKm: polygonArea,
       included: true,
     };
   });
@@ -210,6 +219,65 @@ function createBinaryMask(
 }
 
 /**
+ * Trace ALL contour boundaries from a binary mask.
+ * After tracing one contour, marks those pixels as visited and continues
+ * scanning for additional disconnected regions of the same color.
+ */
+function traceAllBoundaries(
+  mask: Uint8Array,
+  width: number,
+  height: number
+): [number, number][][] {
+  const results: [number, number][][] = [];
+  // Work on a copy so we can mark visited pixels
+  const workMask = new Uint8Array(mask);
+
+  for (;;) {
+    const boundary = traceBoundary(workMask, width, height);
+    if (boundary.length < 4) break;
+
+    results.push(boundary);
+
+    // Mark all pixels in this traced contour as visited by flood-filling
+    // the connected region starting from the boundary pixels
+    markConnectedRegion(workMask, width, height, boundary[0]![0], boundary[0]![1]);
+  }
+
+  return results;
+}
+
+/**
+ * Flood-fill to mark all connected pixels of a region as visited (set to 0).
+ */
+function markConnectedRegion(
+  mask: Uint8Array,
+  width: number,
+  height: number,
+  startX: number,
+  startY: number
+): void {
+  const stack: [number, number][] = [[startX, startY]];
+  const idx = startY * width + startX;
+  if (!mask[idx]) return;
+
+  while (stack.length > 0) {
+    const [x, y] = stack.pop()!;
+    const i = y * width + x;
+    if (!mask[i]) continue;
+    mask[i] = 0;
+
+    // Check 4-connected neighbors
+    if (x > 0 && mask[y * width + (x - 1)]) stack.push([x - 1, y]);
+    if (x < width - 1 && mask[y * width + (x + 1)]) stack.push([x + 1, y]);
+    if (y > 0 && mask[(y - 1) * width + x]) stack.push([x, y - 1]);
+    if (y < height - 1 && mask[(y + 1) * width + x]) stack.push([x, y + 1]);
+  }
+}
+
+/** Max steps per individual boundary trace. */
+const MAX_TRACE_STEPS = 50000;
+
+/**
  * Trace the outer boundary of a binary mask using Moore neighborhood tracing.
  * Returns an array of [x, y] boundary pixel coordinates.
  */
@@ -241,9 +309,8 @@ function traceBoundary(
 
   let x = startX, y = startY;
   let dir = 7; // Start by looking left-up
-  const maxSteps = width * height * 2; // Safety limit
 
-  for (let step = 0; step < maxSteps; step++) {
+  for (let step = 0; step < MAX_TRACE_STEPS; step++) {
     boundary.push([x, y]);
 
     // Search for next boundary pixel
@@ -268,6 +335,21 @@ function traceBoundary(
   }
 
   return boundary;
+}
+
+/**
+ * Compute the signed area of a polygon using the shoelace formula.
+ * Returns positive for CCW, negative for CW winding.
+ */
+function shoelaceArea(points: [number, number][]): number {
+  let area = 0;
+  const n = points.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += points[i]![0] * points[j]![1];
+    area -= points[j]![0] * points[i]![1];
+  }
+  return area / 2;
 }
 
 // ──────────────────────────────────────────────
@@ -317,6 +399,25 @@ function pointToLineDistance(
   const projX = a[0] + t * dx;
   const projY = a[1] + t * dy;
   return Math.sqrt((p[0] - projX) ** 2 + (p[1] - projY) ** 2);
+}
+
+// ──────────────────────────────────────────────
+// Area Calculation
+// ──────────────────────────────────────────────
+
+/**
+ * Compute the area of a polygon from its coordinate array using the shoelace formula.
+ * Returns the absolute area (always positive).
+ */
+function computeShoelaceArea(coords: [number, number][]): number {
+  let area = 0;
+  const n = coords.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += coords[i]![0] * coords[j]![1];
+    area -= coords[j]![0] * coords[i]![1];
+  }
+  return Math.abs(area / 2);
 }
 
 // ──────────────────────────────────────────────

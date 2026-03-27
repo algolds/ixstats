@@ -1,23 +1,18 @@
 "use client";
 
 /**
- * DiplomacyMapWidget - Embassy network geographic view.
+ * DiplomacyMapWidget - Minimal embassy network map.
  *
- * Shows country territory with embassy partner connections:
- * - Country geometry highlighted
- * - Partner countries marked with cyan dots at centroids
- * - Great circle lines from country centroid to partner centroids
- * - Themed cyan border, follows sidebar widget pattern
+ * Flat mercator projection showing only the home country and partner countries
+ * with dashed connection lines. No world layer — just the relevant geometries.
  */
 
-import { useEffect, useRef, useCallback, useState, useMemo } from "react";
-import { Building2 } from "lucide-react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { Building2, MapPin, Loader2 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
-import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/map-config";
 import { api } from "~/trpc/react";
 import { createUrl } from "~/lib/url-utils";
-import { MapPin, Loader2 } from "lucide-react";
 
 interface DiplomacyMapWidgetProps {
   countryId: string;
@@ -31,27 +26,23 @@ export function DiplomacyMapWidget({
   className = "",
 }: DiplomacyMapWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const mapRef = useRef<any>(null);
+  const initializedRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
 
-  const {
-    geometry,
-    centroid,
-    bbox,
-    featureId,
-    fillColor,
-    isLoading: geoLoading,
-    hasGeometry,
-  } = useCountryMapEmbed(countryId);
+  // Fetch home country geometry
+  const { data: homeGeo, isLoading: homeLoading } = api.geo.getCountryGeometry.useQuery(
+    { countryId },
+    { enabled: !!countryId, staleTime: 30 * 60_000 },
+  );
 
-  const { data: embassies, isLoading: embassyLoading } =
-    api.diplomatic.getEmbassies.useQuery(
-      { countryId },
-      { enabled: !!countryId, staleTime: 5 * 60_000 }
-    );
+  // Fetch embassies
+  const { data: embassies, isLoading: embassyLoading } = api.diplomatic.getEmbassies.useQuery(
+    { countryId },
+    { enabled: !!countryId, staleTime: 5 * 60_000 },
+  );
 
-  // Build partner centroid lookup from neighbor data and embassy partner IDs
-  // We need geometry for partner countries — use getCountryGeometry per partner
+  // Get active partner country IDs
   const partnerIds = useMemo(() => {
     if (!embassies) return [];
     const ids = new Set<string>();
@@ -63,95 +54,168 @@ export function DiplomacyMapWidget({
     return Array.from(ids);
   }, [embassies, countryId]);
 
-  // Fetch centroids for all partner countries via neighbors (which includes centroids)
-  // Since getNeighbors only gives physical neighbors, we'll use a lightweight approach:
-  // For each partner, we already have their geometry from getCountryGeometry via the geo router
-  // But that's too many queries. Instead, use the global listCountries + map_layers join.
-  // Actually the simplest: getNeighbors gives us some, and for the rest we note that
-  // embassies already contain the partner country names. We'll just show dots on a world context.
+  // Fetch geometry for first partner (keep it minimal — one query, not N)
+  const firstPartnerId = partnerIds[0] ?? null;
+  const { data: partnerGeo, isLoading: partnerLoading } = api.geo.getCountryGeometry.useQuery(
+    { countryId: firstPartnerId! },
+    { enabled: !!firstPartnerId, staleTime: 30 * 60_000 },
+  );
 
+  const partnersLoading = !!firstPartnerId && partnerLoading;
+  const partnerGeos = useMemo(() => {
+    if (!firstPartnerId || !partnerGeo) return [];
+    return [{ id: firstPartnerId, geo: partnerGeo }];
+  }, [firstPartnerId, partnerGeo]);
+
+  const isLoading = homeLoading || embassyLoading;
+  const hasGeometry = !!homeGeo?.geometry;
   const activePartnerCount = partnerIds.length;
-  const isLoading = geoLoading || embassyLoading;
 
-  const initMap = useCallback(async () => {
-    if (!containerRef.current || !geometry || !centroid) return;
-
-    const maplibregl = (await import("maplibre-gl")).default;
-    await import("maplibre-gl/dist/maplibre-gl.css");
-
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-
-    const baseStyle = buildBaseStyle() as maplibregl.StyleSpecification;
-    delete (baseStyle as Record<string, unknown>).projection;
-
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: baseStyle,
-      center: [centroid.lng, centroid.lat],
-      zoom: 2.5,
-      attributionControl: false,
-      interactive: true,
-    });
-
-    mapRef.current = map;
-
-    map.on("load", () => {
-      // ── Country fill (highlighted) ──
-      const color = fillColor || (featureId ? getCountryColor(featureId) : "#c5cae9");
-
-      map.addSource("source-country", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: [{
-            type: "Feature",
-            properties: { _fillColor: color },
-            geometry: geometry as GeoJSON.Geometry,
-          }],
-        },
-      });
-
-      map.addLayer({
-        id: "country-fill",
-        type: "fill",
-        source: "source-country",
-        paint: { "fill-color": color, "fill-opacity": 0.5 },
-      });
-
-      map.addLayer({
-        id: "country-stroke",
-        type: "line",
-        source: "source-country",
-        paint: { "line-color": "#06b6d4", "line-width": 2 },
-      });
-
-      // Fit to country bounds with more context (lower zoom to show connections)
-      if (bbox) {
-        map.fitBounds(
-          [[bbox.minLng, bbox.minLat], [bbox.maxLng, bbox.maxLat]],
-          { padding: 60, maxZoom: 5, duration: 0 }
-        );
-      }
-
-      setMapReady(true);
-    });
-  }, [geometry, centroid, bbox, featureId, fillColor]);
-
+  // Initialize map once all data is ready
   useEffect(() => {
-    if (geometry && centroid) {
-      initMap();
-    }
+    if (!containerRef.current || !homeGeo?.geometry || !homeGeo?.centroid) return;
+    if (initializedRef.current) return;
+    // Don't wait for partners if there are none
+    if (partnerIds.length > 0 && partnersLoading) return;
+
+    initializedRef.current = true;
+
+    let map: any = null;
+
+    (async () => {
+      const maplibregl = (await import("maplibre-gl")).default;
+      await import("maplibre-gl/dist/maplibre-gl.css");
+
+      if (!containerRef.current) return;
+
+      const baseStyle = buildBaseStyle() as any;
+      delete baseStyle.projection; // Force flat mercator
+
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: baseStyle,
+        center: [homeGeo.centroid!.lng, homeGeo.centroid!.lat],
+        zoom: 3,
+        attributionControl: false,
+        interactive: true,
+      });
+
+      mapRef.current = map;
+
+      map.on("load", () => {
+        const homeColor = homeGeo.featureId ? getCountryColor(homeGeo.featureId) : "#c5cae9";
+
+        // ── Home country ──
+        map.addSource("home", {
+          type: "geojson",
+          data: { type: "Feature", properties: {}, geometry: homeGeo.geometry },
+        });
+        map.addLayer({
+          id: "home-fill",
+          type: "fill",
+          source: "home",
+          paint: { "fill-color": homeColor, "fill-opacity": 0.5 },
+        });
+        map.addLayer({
+          id: "home-stroke",
+          type: "line",
+          source: "home",
+          paint: { "line-color": "#06b6d4", "line-width": 2 },
+        });
+
+        // ── Partner countries ──
+        const connectionLines: GeoJSON.Feature[] = [];
+
+        for (const partner of partnerGeos) {
+          if (!partner.geo.geometry || !partner.geo.centroid) continue;
+
+          const pColor = partner.geo.featureId ? getCountryColor(partner.geo.featureId) : "#06b6d4";
+
+          map.addSource(`partner-${partner.id}`, {
+            type: "geojson",
+            data: { type: "Feature", properties: {}, geometry: partner.geo.geometry },
+          });
+          map.addLayer({
+            id: `partner-fill-${partner.id}`,
+            type: "fill",
+            source: `partner-${partner.id}`,
+            paint: { "fill-color": pColor, "fill-opacity": 0.35 },
+          });
+          map.addLayer({
+            id: `partner-stroke-${partner.id}`,
+            type: "line",
+            source: `partner-${partner.id}`,
+            paint: { "line-color": "#06b6d4", "line-width": 1.5, "line-opacity": 0.6 },
+          });
+
+          // Connection line
+          connectionLines.push({
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [homeGeo.centroid!.lng, homeGeo.centroid!.lat],
+                [partner.geo.centroid.lng, partner.geo.centroid.lat],
+              ],
+            },
+          });
+        }
+
+        // ── Connection lines ──
+        if (connectionLines.length > 0) {
+          map.addSource("connections", {
+            type: "geojson",
+            data: { type: "FeatureCollection", features: connectionLines },
+          });
+          map.addLayer({
+            id: "connection-lines",
+            type: "line",
+            source: "connections",
+            paint: {
+              "line-color": "#06b6d4",
+              "line-width": 1.5,
+              "line-opacity": 0.5,
+              "line-dasharray": [4, 4],
+            },
+          });
+        }
+
+        // ── Fit bounds to show all countries ──
+        if (homeGeo.bbox) {
+          let minLng = homeGeo.bbox.minLng;
+          let maxLng = homeGeo.bbox.maxLng;
+          let minLat = homeGeo.bbox.minLat;
+          let maxLat = homeGeo.bbox.maxLat;
+
+          for (const partner of partnerGeos) {
+            if (partner.geo.bbox) {
+              minLng = Math.min(minLng, partner.geo.bbox.minLng);
+              maxLng = Math.max(maxLng, partner.geo.bbox.maxLng);
+              minLat = Math.min(minLat, partner.geo.bbox.minLat);
+              maxLat = Math.max(maxLat, partner.geo.bbox.maxLat);
+            }
+          }
+
+          map.fitBounds(
+            [[minLng, minLat], [maxLng, maxLat]],
+            { padding: 40, maxZoom: 6, duration: 0 }
+          );
+        }
+
+        setMapReady(true);
+      });
+    })();
+
     return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
+      if (map) {
+        map.remove();
         mapRef.current = null;
+        initializedRef.current = false;
         setMapReady(false);
       }
     };
-  }, [initMap, geometry, centroid]);
+  }, [homeGeo, partnerGeos, partnerIds.length, partnersLoading]);
 
   if (isLoading) {
     return (
@@ -159,7 +223,7 @@ export function DiplomacyMapWidget({
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">Embassy Network</span>
+            <span className="text-xs font-medium">Embassy Network</span>
           </div>
         </div>
         <div className="flex h-48 items-center justify-center bg-muted">
@@ -175,7 +239,7 @@ export function DiplomacyMapWidget({
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs font-medium text-foreground">Embassy Network</span>
+            <span className="text-xs font-medium">Embassy Network</span>
           </div>
         </div>
         <div className="flex h-48 flex-col items-center justify-center gap-2 bg-muted">
@@ -188,21 +252,16 @@ export function DiplomacyMapWidget({
 
   return (
     <div className={`glass-hierarchy-child overflow-hidden rounded-xl border border-cyan-500/15 ${className}`}>
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <Building2 className="h-3.5 w-3.5 text-cyan-500" />
-          <span className="text-xs font-medium text-foreground">Embassy Network</span>
+          <span className="text-xs font-medium">Embassy Network</span>
         </div>
-        <Badge
-          variant="outline"
-          className="h-4 border-cyan-500/30 px-1.5 text-[9px] text-cyan-500"
-        >
-          {activePartnerCount} PARTNERS
+        <Badge variant="outline" className="h-4 border-cyan-500/30 px-1.5 text-[9px] text-cyan-500">
+          {activePartnerCount} PARTNER{activePartnerCount !== 1 ? "S" : ""}
         </Badge>
       </div>
 
-      {/* Map */}
       <div className="relative h-48">
         <div ref={containerRef} className="absolute inset-0" />
         {!mapReady && (
@@ -212,18 +271,11 @@ export function DiplomacyMapWidget({
         )}
       </div>
 
-      {/* Footer */}
       <div className="flex items-center justify-between border-t border-border/50 px-3 py-1.5">
-        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-          <span>{activePartnerCount} active embassies</span>
-          {embassies && embassies.length > activePartnerCount && (
-            <span>{embassies.length - activePartnerCount} inactive</span>
-          )}
-        </div>
-        <a
-          href={createUrl(`/maps?country=${countryId}`)}
-          className="text-[10px] text-cyan-500 hover:text-cyan-600"
-        >
+        <span className="text-[10px] text-muted-foreground">
+          {activePartnerCount} active embass{activePartnerCount !== 1 ? "ies" : "y"}
+        </span>
+        <a href={createUrl(`/maps?country=${countryId}`)} className="text-[10px] text-cyan-500 hover:text-cyan-600">
           Full map →
         </a>
       </div>

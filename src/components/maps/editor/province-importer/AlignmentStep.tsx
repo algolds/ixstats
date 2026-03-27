@@ -1,7 +1,7 @@
 "use client";
 
-import React, { memo } from "react";
-import { Crosshair, Wand2, Move, RotateCw, ZoomIn, Loader2, Trash2, Check } from "lucide-react";
+import React, { memo, useState } from "react";
+import { Crosshair, Wand2, Move, RotateCw, ZoomIn, Loader2, Trash2, Check, Magnet } from "lucide-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { AlignmentMode } from "~/lib/province-importer/types";
 
@@ -120,6 +120,29 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {/* Snap to Border — available after any alignment */}
+      {hasAlignment && (
+        <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Once alignment looks close, snap province edges to the country border:
+          </p>
+          <button
+            onClick={() => {
+              importer.applySnapping();
+            }}
+            disabled={!importer.countryBorder || importer.isProcessing}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+          >
+            <Magnet className="h-3.5 w-3.5" />
+            Snap to Country Border
+          </button>
+          <p className="text-[10px] text-muted-foreground">
+            Clips provinces to the border, snaps outer vertices, and aligns shared edges.
+            You can re-adjust and snap again.
+          </p>
         </div>
       )}
 

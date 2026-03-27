@@ -32,7 +32,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 
 /** Tags that carry no visible shape data and can be stripped. */
 const STRIP_TAGS = new Set([
-  "metadata", "title", "desc", "script", "style",
+  "metadata", "title", "desc", "script",
   "linearGradient", "radialGradient", "pattern",
   "filter", "feGaussianBlur", "feOffset", "feMerge", "feMergeNode",
   "feBlend", "feFlood", "feComposite", "feColorMatrix",
@@ -76,6 +76,13 @@ export function preprocessSvg(svgContent: string): PreprocessResult {
   elementsRemoved += stripped;
   if (stripped > 0) {
     log.push(`Stripped ${stripped} non-visual elements (metadata, scripts, filters, etc.)`);
+  }
+
+  // 1b. Inline CSS classes → resolve class-defined fill/stroke into inline style attributes
+  // This is critical for Adobe Illustrator exports where all styling is via CSS classes
+  const inlinedCount = inlineCssClasses(svgRoot, log);
+  if (inlinedCount > 0) {
+    log.push(`Inlined CSS styles on ${inlinedCount} elements`);
   }
 
   // 2. Normalize viewBox
@@ -171,10 +178,138 @@ function stripDefsContent(defs: Element, toRemove: Node[]) {
     const child = defs.childNodes[i];
     if (child.nodeType !== 1) continue;
     const tag = ((child as Element).localName ?? "").toLowerCase();
-    if (tag !== "clippath" && tag !== "mask") {
+    // Keep clipPath, mask, and style (CSS classes define fills/strokes in AI exports)
+    if (tag !== "clippath" && tag !== "mask" && tag !== "style") {
       toRemove.push(child);
     }
   }
+}
+
+/**
+ * Parse CSS <style> blocks in the SVG and inline the resolved properties
+ * onto elements that reference those classes. This is critical for
+ * Adobe Illustrator / Affinity Designer exports where fill, stroke, etc.
+ * are defined entirely via CSS classes (e.g., .cls-1 { fill: #ccebc5 }).
+ */
+function inlineCssClasses(root: Element, _log: string[]): number {
+  // Find all <style> elements in the SVG
+  const styleEls: Element[] = [];
+  const walk = (el: Element) => {
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const child = el.childNodes[i] as Element;
+      if (!child || child.nodeType !== 1) continue;
+      const tag = (child.localName ?? child.tagName?.split(":").pop() ?? "").toLowerCase();
+      if (tag === "style") {
+        styleEls.push(child);
+      } else {
+        walk(child);
+      }
+    }
+  };
+  walk(root);
+
+  if (styleEls.length === 0) return 0;
+
+  // Extract CSS text from all <style> elements
+  let cssText = "";
+  for (const se of styleEls) {
+    for (let i = 0; i < se.childNodes.length; i++) {
+      const child = se.childNodes[i];
+      if (child?.nodeType === 3 || child?.nodeType === 4) { // TEXT_NODE or CDATA
+        cssText += (child as any).data ?? (child as any).nodeValue ?? "";
+      }
+    }
+  }
+
+  if (!cssText.trim()) return 0;
+
+  // Parse CSS rules: .className { property: value; ... }
+  // Also handle grouped selectors: .cls-1, .cls-2 { fill: #abc; }
+  const classStyles = new Map<string, Map<string, string>>();
+
+  const ruleRegex = /([^{}]+)\{([^}]*)\}/g;
+  let match;
+  while ((match = ruleRegex.exec(cssText)) !== null) {
+    const selectorStr = match[1]!.trim();
+    const propsStr = match[2]!.trim();
+
+    // Parse properties
+    const props = new Map<string, string>();
+    for (const decl of propsStr.split(";")) {
+      const colonIdx = decl.indexOf(":");
+      if (colonIdx < 0) continue;
+      const prop = decl.slice(0, colonIdx).trim();
+      const val = decl.slice(colonIdx + 1).trim();
+      if (prop && val) props.set(prop, val);
+    }
+    if (props.size === 0) continue;
+
+    // Parse selectors (split by comma)
+    for (const selector of selectorStr.split(",")) {
+      const trimmed = selector.trim();
+      // Only handle simple class selectors: .cls-1
+      const classMatch = trimmed.match(/^\.([a-zA-Z0-9_-]+)$/);
+      if (classMatch) {
+        const className = classMatch[1]!;
+        const existing = classStyles.get(className) ?? new Map<string, string>();
+        for (const [p, v] of props) {
+          existing.set(p, v);
+        }
+        classStyles.set(className, existing);
+      }
+    }
+  }
+
+  if (classStyles.size === 0) return 0;
+
+  // Apply resolved CSS to elements with matching class attributes
+  // SVG-relevant properties to inline
+  const SVG_PROPS = new Set([
+    "fill", "stroke", "stroke-width", "stroke-miterlimit", "stroke-linecap",
+    "stroke-linejoin", "stroke-dasharray", "stroke-dashoffset", "stroke-opacity",
+    "fill-opacity", "opacity", "fill-rule", "clip-rule", "display", "visibility",
+  ]);
+
+  let inlinedCount = 0;
+
+  const applyToElement = (el: Element) => {
+    const classAttr = el.getAttribute("class");
+    if (classAttr) {
+      const classes = classAttr.split(/\s+/);
+      const existingStyle = el.getAttribute("style") ?? "";
+      const newProps: string[] = [];
+
+      for (const cls of classes) {
+        const styles = classStyles.get(cls);
+        if (!styles) continue;
+        for (const [prop, val] of styles) {
+          if (!SVG_PROPS.has(prop)) continue;
+          // Don't override existing inline styles
+          if (existingStyle.includes(prop + ":") || existingStyle.includes(prop + " :")) continue;
+          // Also check if the property is already set as an XML attribute
+          if (el.getAttribute(prop)) continue;
+          newProps.push(`${prop}:${val}`);
+        }
+      }
+
+      if (newProps.length > 0) {
+        const combined = existingStyle
+          ? existingStyle.replace(/;?\s*$/, "; ") + newProps.join("; ")
+          : newProps.join("; ");
+        el.setAttribute("style", combined);
+        inlinedCount++;
+      }
+    }
+
+    // Recurse into children
+    for (let i = 0; i < el.childNodes.length; i++) {
+      const child = el.childNodes[i] as Element;
+      if (child?.nodeType === 1) applyToElement(child);
+    }
+  };
+
+  applyToElement(root);
+  return inlinedCount;
 }
 
 /** Ensure the SVG has a valid viewBox. */

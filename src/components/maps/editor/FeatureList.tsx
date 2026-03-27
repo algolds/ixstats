@@ -6,9 +6,10 @@
  * auto-expands its group and scrolls it into view.
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { MapPin, Hexagon, Landmark, Trash2, Pencil, Crown, ChevronDown } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { MapPin, Hexagon, Landmark, Trash2, Pencil, Crown, ChevronDown, BookMarked, Type } from "lucide-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
+import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
 
 interface FeatureListProps {
   features: EditorFeature[];
@@ -21,23 +22,29 @@ interface FeatureListProps {
   selectedIds?: Set<string>;
   /** Multi-select: toggle a feature in/out of selection */
   onToggleSelect?: (id: string) => void;
+  /** When true, all groups collapse (e.g. properties panel is open) */
+  collapseAll?: boolean;
 }
 
 const TYPE_ICONS = {
   city: MapPin,
   subdivision: Hexagon,
   poi: Landmark,
+  storyPin: BookMarked,
+  mapLabel: Type,
 } as const;
 
 const TYPE_COLORS = {
   city: "text-blue-500",
   subdivision: "text-purple-500",
   poi: "text-amber-500",
+  storyPin: "text-amber-500",
+  mapLabel: "text-slate-500",
 } as const;
 
-type FeatureType = "city" | "subdivision" | "poi";
+type FeatureType = "city" | "subdivision" | "poi" | "storyPin" | "mapLabel";
 
-export function FeatureList({
+export const FeatureList = React.memo(function FeatureList({
   features,
   selectedFeature,
   onSelectFeature,
@@ -46,10 +53,25 @@ export function FeatureList({
   isLoading,
   selectedIds,
   onToggleSelect,
+  collapseAll,
 }: FeatureListProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<FeatureType>>(
-    () => new Set(["city", "subdivision", "poi"])
+    () => new Set<FeatureType>(["city", "subdivision", "poi", "storyPin", "mapLabel"])
   );
+
+  // Track which groups have been fully expanded (for 50+ item groups)
+  const [fullyExpandedGroups, setFullyExpandedGroups] = useState<Set<FeatureType>>(
+    () => new Set<FeatureType>()
+  );
+  const TRUNCATE_THRESHOLD = 50;
+  const TRUNCATE_SHOW = 20;
+
+  // Collapse all groups when properties panel is active
+  useEffect(() => {
+    if (collapseAll) {
+      setExpandedGroups(new Set());
+    }
+  }, [collapseAll]);
   const selectedRef = useRef<HTMLDivElement>(null);
 
   const toggleGroup = useCallback((type: FeatureType) => {
@@ -103,11 +125,15 @@ export function FeatureList({
   const cities = features.filter((f) => f.type === "city");
   const subdivisions = features.filter((f) => f.type === "subdivision");
   const pois = features.filter((f) => f.type === "poi");
+  const storyPins = features.filter((f) => f.type === "storyPin");
+  const mapLabels = features.filter((f) => f.type === "mapLabel");
 
   const groups: Array<{ label: string; items: EditorFeature[]; type: FeatureType }> = [
     { label: "Cities", items: cities, type: "city" },
     { label: "Regions", items: subdivisions, type: "subdivision" },
     { label: "Points of Interest", items: pois, type: "poi" },
+    { label: "Story Pins", items: storyPins, type: "storyPin" },
+    { label: "Map Labels", items: mapLabels, type: "mapLabel" },
   ].filter((g) => g.items.length > 0);
 
   return (
@@ -135,17 +161,22 @@ export function FeatureList({
               </span>
             </button>
 
-            {/* Feature items (collapsible) */}
-            {isExpanded && (
+            {/* Feature items (collapsible, with truncation for large groups) */}
+            {isExpanded && (() => {
+              const isTruncated = group.items.length > TRUNCATE_THRESHOLD && !fullyExpandedGroups.has(group.type);
+              const visibleItems = isTruncated ? group.items.slice(0, TRUNCATE_SHOW) : group.items;
+
+              return (
               <div className="space-y-0.5 pl-1">
-                {group.items.map((feature) => {
+                {visibleItems.map((feature) => {
                   const Icon = TYPE_ICONS[feature.type];
                   const colorClass = TYPE_COLORS[feature.type];
                   const isSelected = selectedFeature?.id === feature.id;
                   const isMultiSelected = selectedIds?.has(feature.id) ?? false;
                   const isCapital = feature.properties.isNationalCapital;
+                  const wikiTitle = feature.properties.wikiPageTitle as string | undefined;
 
-                  return (
+                  const row = (
                     <div
                       key={feature.id}
                       ref={isSelected ? selectedRef : undefined}
@@ -193,9 +224,30 @@ export function FeatureList({
                       </div>
                     </div>
                   );
+
+                  return wikiTitle ? (
+                    <WikiPreviewTooltip key={feature.id} wikiTitle={wikiTitle}>
+                      {row}
+                    </WikiPreviewTooltip>
+                  ) : (
+                    row
+                  );
                 })}
+                {isTruncated && (
+                  <button
+                    onClick={() => setFullyExpandedGroups((prev) => {
+                      const next = new Set(prev);
+                      next.add(group.type);
+                      return next;
+                    })}
+                    className="w-full rounded-md px-2 py-1.5 text-xs font-medium text-primary hover:bg-accent transition-colors"
+                  >
+                    Show all {group.items.length} {group.label.toLowerCase()}
+                  </button>
+                )}
               </div>
-            )}
+              );
+            })()}
           </div>
         );
       })}
@@ -207,8 +259,10 @@ export function FeatureList({
           <span><kbd className="rounded border border-border bg-muted px-1 font-mono">C</kbd> City</span>
           <span><kbd className="rounded border border-border bg-muted px-1 font-mono">R</kbd> Region</span>
           <span><kbd className="rounded border border-border bg-muted px-1 font-mono">P</kbd> POI</span>
+          <span><kbd className="rounded border border-border bg-muted px-1 font-mono">S</kbd> Story</span>
+          <span><kbd className="rounded border border-border bg-muted px-1 font-mono">L</kbd> Label</span>
         </div>
       </div>
     </div>
   );
-}
+});

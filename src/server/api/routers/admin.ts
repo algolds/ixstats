@@ -1101,7 +1101,7 @@ export const adminRouter = createTRPCRouter({
       const settings = await ctx.db.systemConfig.findMany({
         where: {
           key: {
-            in: ["showWikiTab", "showCardsTab", "showLabsTab", "showIntelligenceTab", "showMapsTab"],
+            in: ["showWikiTab", "showCardsTab", "showLabsTab", "showIntelligenceTab", "showDefenseTab", "showMapsTab"],
           },
         },
       });
@@ -1115,20 +1115,21 @@ export const adminRouter = createTRPCRouter({
       );
 
       return {
-        showWikiTab: settingsMap.showWikiTab ?? true, // Default to true
-        showCardsTab: settingsMap.showCardsTab ?? true, // Default to true
-        showLabsTab: settingsMap.showLabsTab ?? true, // Default to true
-        showIntelligenceTab: settingsMap.showIntelligenceTab ?? false, // Default to hidden
-        showMapsTab: settingsMap.showMapsTab ?? true, // Default to true
+        showWikiTab: settingsMap.showWikiTab ?? true,
+        showCardsTab: settingsMap.showCardsTab ?? true,
+        showLabsTab: settingsMap.showLabsTab ?? true,
+        showIntelligenceTab: settingsMap.showIntelligenceTab ?? false,
+        showDefenseTab: settingsMap.showDefenseTab ?? false,
+        showMapsTab: settingsMap.showMapsTab ?? true,
       };
     } catch (error) {
       console.error("Failed to get navigation settings:", error);
-      // Return defaults on error
       return {
         showWikiTab: true,
         showCardsTab: true,
         showLabsTab: true,
         showIntelligenceTab: false,
+        showDefenseTab: false,
         showMapsTab: true,
       };
     }
@@ -1142,6 +1143,7 @@ export const adminRouter = createTRPCRouter({
         showCardsTab: z.boolean(),
         showLabsTab: z.boolean(),
         showIntelligenceTab: z.boolean(),
+        showDefenseTab: z.boolean(),
         showMapsTab: z.boolean(),
       })
     )
@@ -1152,6 +1154,7 @@ export const adminRouter = createTRPCRouter({
           { key: "showCardsTab", value: input.showCardsTab.toString() },
           { key: "showLabsTab", value: input.showLabsTab.toString() },
           { key: "showIntelligenceTab", value: input.showIntelligenceTab.toString() },
+          { key: "showDefenseTab", value: input.showDefenseTab.toString() },
           { key: "showMapsTab", value: input.showMapsTab.toString() },
         ];
 
@@ -2339,7 +2342,7 @@ export const adminRouter = createTRPCRouter({
         endsAt: z.date().optional(),
         chainId: z.string().optional(),
         chainOrder: z.number().optional(),
-        parameters: z.record(z.unknown()).optional(),
+        parameters: z.record(z.string(), z.unknown()).optional(),
         affectedCountryIds: z.array(z.string()),
         generateEffects: z.boolean().optional().default(true),
       })
@@ -2427,7 +2430,7 @@ export const adminRouter = createTRPCRouter({
         isActive: z.boolean().optional(),
         startsAt: z.date().optional(),
         endsAt: z.date().optional(),
-        parameters: z.record(z.unknown()).optional(),
+        parameters: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -2471,7 +2474,7 @@ export const adminRouter = createTRPCRouter({
         severity: z.number().min(0).max(1),
         duration: z.number().optional(),
         affectedCountryIds: z.array(z.string()),
-        parameters: z.record(z.unknown()).optional(),
+        parameters: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -2579,5 +2582,75 @@ export const adminRouter = createTRPCRouter({
       return ctx.db.eventChain.create({
         data: { name: input.name, description: input.description, createdBy: userId },
       });
+    }),
+
+  // ─── Wiki Link Management ──────────────────────────────────────────
+
+  setWikiLink: adminProcedure
+    .input(z.object({
+      countryId: z.string(),
+      wikiPageTitle: z.string().nullable(),
+      wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.country.update({
+        where: { id: input.countryId },
+        data: {
+          wikiPageTitle: input.wikiPageTitle,
+          wikiSource: input.wikiSource,
+          wikiLastSynced: new Date(),
+        },
+        select: { id: true, name: true, wikiPageTitle: true, wikiSource: true },
+      });
+    }),
+
+  bulkSetWikiLinks: adminProcedure
+    .input(z.object({
+      links: z.array(z.object({
+        countryId: z.string(),
+        wikiPageTitle: z.string(),
+        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+      })).max(100),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const results = await Promise.all(
+        input.links.map((link) =>
+          ctx.db.country.update({
+            where: { id: link.countryId },
+            data: {
+              wikiPageTitle: link.wikiPageTitle,
+              wikiSource: link.wikiSource,
+              wikiLastSynced: new Date(),
+            },
+            select: { id: true, name: true },
+          })
+        )
+      );
+      return { updated: results.length, countries: results };
+    }),
+
+  resyncWikiCache: adminProcedure
+    .input(z.object({ countryId: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.countryId) {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: { name: true },
+        });
+        if (country) {
+          await ctx.db.wikiCache.deleteMany({ where: { countryName: country.name } });
+          await ctx.db.country.update({
+            where: { id: input.countryId },
+            data: { wikiLastSynced: new Date() },
+          });
+        }
+        return { cleared: 1 };
+      }
+      // Clear all wiki cache
+      const result = await ctx.db.wikiCache.deleteMany();
+      await ctx.db.country.updateMany({
+        data: { wikiLastSynced: new Date() },
+      });
+      return { cleared: result.count };
     }),
 });

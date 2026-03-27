@@ -552,7 +552,7 @@ export function LiveIntelligenceSection({ countryId, country }: LiveIntelligence
                                 <div className="bg-muted/50 rounded-lg p-3">
                                   <div className="text-muted-foreground text-xs">Density</div>
                                   <div className="text-foreground font-semibold">
-                                    {demographicMetrics.populationDensity.toFixed(1)}/km²
+                                    {demographicMetrics.populationDensity.toFixed(0)}/km²
                                   </div>
                                 </div>
                               )}

@@ -8,6 +8,7 @@ export interface PremiumFeatures {
   sdi: boolean;
   eci: boolean;
   intelligence: boolean;
+  defense: boolean;
   advancedAnalytics: boolean;
 }
 
@@ -61,6 +62,7 @@ export function usePremium(): PremiumStatus {
         sdi: false,
         eci: false,
         intelligence: false,
+        defense: false,
         advancedAnalytics: false,
       },
       isLoading,

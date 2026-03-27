@@ -11,7 +11,11 @@ import { getSectionFromPathname, type MyCountrySection } from "./MyCountrySideba
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "./MyCountryComplianceModal";
 import { useMyCountryNotifications } from "~/hooks/useMyCountryNotifications";
+import { usePremium } from "~/hooks/usePremium";
+import { PremiumGate } from "~/components/ui/premium-gate";
 import { useRouter } from "next/navigation";
+import { withBasePath } from "~/lib/base-path";
+import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 
 // Loading skeleton for dynamically loaded sections
 function SectionSkeleton() {
@@ -27,29 +31,19 @@ function SectionSkeleton() {
   );
 }
 
-// Dynamic imports - only load the active section's code
-const EnhancedMyCountryContent = dynamic(
-  () => import("./EnhancedMyCountryContent").then(m => ({ default: m.EnhancedMyCountryContent })),
-  { loading: () => <SectionSkeleton /> }
-);
-const EnhancedExecutiveContent = dynamic(
-  () => import("./EnhancedExecutiveContent").then(m => ({ default: m.EnhancedExecutiveContent })),
-  { loading: () => <SectionSkeleton /> }
-);
-const EnhancedDiplomacyContent = dynamic(
-  () => import("./EnhancedDiplomacyContent").then(m => ({ default: m.EnhancedDiplomacyContent })),
-  { loading: () => <SectionSkeleton /> }
-);
+// Core gameplay sections — eagerly imported for instant tab switching
+import { EnhancedMyCountryContent } from "./EnhancedMyCountryContent";
+import { EnhancedExecutiveContent } from "./EnhancedExecutiveContent";
+import { EnhancedDiplomacyContent } from "./EnhancedDiplomacyContent";
+import { EnhancedPoliticsContent } from "./EnhancedPoliticsContent";
+
+// Rarely-visited sections — lazy-loaded to keep initial bundle smaller
 const EnhancedIntelligenceContent = dynamic(
   () => import("./EnhancedIntelligenceContent").then(m => ({ default: m.EnhancedIntelligenceContent })),
   { loading: () => <SectionSkeleton /> }
 );
 const EnhancedDefenseContent = dynamic(
   () => import("./EnhancedDefenseContent").then(m => ({ default: m.EnhancedDefenseContent })),
-  { loading: () => <SectionSkeleton /> }
-);
-const EnhancedPoliticsContent = dynamic(
-  () => import("./EnhancedPoliticsContent").then(m => ({ default: m.EnhancedPoliticsContent })),
   { loading: () => <SectionSkeleton /> }
 );
 const EnhancedMapEditorContent = dynamic(
@@ -86,6 +80,12 @@ function MyCountryRouterInner() {
 
   // Notification counts for sidebar indicators
   const notifications = useMyCountryNotifications(country?.id);
+
+  // Push national issue alerts to Dynamic Island toast queue
+  useNationalIssuesToast(country?.id);
+
+  // Premium feature access
+  const { features: premiumFeatures, isLoading: premiumLoading } = usePremium();
 
   // Compliance modal (overview only)
   const { sections: complianceSections, isCompliant, loading: complianceLoading, countryId } = useMyCountryCompliance();
@@ -132,7 +132,7 @@ function MyCountryRouterInner() {
 
     // Sync URL without triggering Next.js route navigation
     const href = section === "overview" ? "/mycountry" : `/mycountry/${section}`;
-    window.history.pushState(null, "", href);
+    window.history.pushState(null, "", withBasePath(href));
 
     // Update document title
     const countryName = country?.name ?? "MyCountry";
@@ -192,6 +192,9 @@ function MyCountryRouterInner() {
           />
         );
       case "intelligence":
+        if (!premiumLoading && !premiumFeatures.intelligence) {
+          return <PremiumGate feature="intelligence" className="mx-auto mt-8 max-w-2xl" />;
+        }
         return (
           <EnhancedIntelligenceContent
             activeSection={activeSection}
@@ -200,6 +203,9 @@ function MyCountryRouterInner() {
           />
         );
       case "defense":
+        if (!premiumLoading && !premiumFeatures.defense) {
+          return <PremiumGate feature="defense" className="mx-auto mt-8 max-w-2xl" />;
+        }
         return (
           <EnhancedDefenseContent
             activeSection={activeSection}

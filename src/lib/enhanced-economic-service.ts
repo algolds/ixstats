@@ -189,7 +189,7 @@ export class EnhancedEconomicService {
       traditional: [
         { label: "GDP per Capita", value: `$${countryStats.currentGdpPerCapita.toLocaleString()}` },
         { label: "Economic Tier", value: countryStats.economicTier },
-        { label: "Population", value: countryStats.currentPopulation.toLocaleString() },
+        { label: "Population", value: Math.round(countryStats.currentPopulation).toLocaleString() },
         {
           label: "Unemployment",
           value: `${Number(economyData.labor.unemploymentRate ?? 0).toFixed(1)}%`,

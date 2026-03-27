@@ -7,6 +7,8 @@ import { Badge } from "~/components/ui/badge";
 import { Loader2, Search, Plus, X, ExternalLink } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { debounce } from "lodash";
+import { api } from "~/trpc/react";
+import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 interface WikiPageSearchProps {
   selectedPages: string[];
@@ -25,7 +27,9 @@ export function WikiPageSearch({ selectedPages, onPagesChange, countryName }: Wi
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  // Debounced search function
+  const utils = api.useUtils();
+
+  // Debounced search function — uses WikiBridge via tRPC (direct MySQL, ~30ms)
   const searchWikiPages = useCallback(
     debounce(async (query: string) => {
       if (!query.trim() || query.length < 3) {
@@ -38,31 +42,15 @@ export function WikiPageSearch({ selectedPages, onPagesChange, countryName }: Wi
       setShowResults(true);
 
       try {
-        // Use MediaWiki API opensearch
-        const params = new URLSearchParams({
-          action: "opensearch",
-          search: query,
-          limit: "10",
-          namespace: "0", // Main namespace only
-          format: "json",
-          formatversion: "2",
+        const data = await utils.wiki.searchPages.fetch({
+          query,
+          limit: 10,
+          wiki: "ixwiki",
         });
 
-        const response = await fetch(`https://ixwiki.com/api.php?${params.toString()}&origin=*`);
-        const data = await response.json();
-
-        // OpenSearch returns [query, [titles], [descriptions], [urls]]
-        if (Array.isArray(data) && data.length >= 2) {
-          const titles = data[1] as string[];
-          const descriptions = (data[2] || []) as string[];
-
-          const results: SearchResult[] = titles.map((title, i) => ({
-            title,
-            snippet: descriptions[i] || "",
-          }));
-
-          setSearchResults(results);
-        }
+        setSearchResults(
+          data.map((r) => ({ title: r.title, snippet: "" }))
+        );
       } catch (error) {
         console.error("[WikiPageSearch] Search error:", error);
         setSearchResults([]);
@@ -70,7 +58,7 @@ export function WikiPageSearch({ selectedPages, onPagesChange, countryName }: Wi
         setIsSearching(false);
       }
     }, 300),
-    []
+    [utils]
   );
 
   const handleSearchChange = (value: string) => {
@@ -191,16 +179,18 @@ export function WikiPageSearch({ selectedPages, onPagesChange, countryName }: Wi
                 variant="secondary"
                 className="group hover:bg-destructive/20 flex items-center gap-2 pr-1 transition-colors"
               >
-                <a
-                  href={`https://ixwiki.com/wiki/${encodeURIComponent(page)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span>{page}</span>
-                  <ExternalLink className="h-3 w-3 opacity-50" />
-                </a>
+                <WikiLinkPreview title={page}>
+                  <a
+                    href={`https://ixwiki.com/wiki/${encodeURIComponent(page)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span>{page}</span>
+                    <ExternalLink className="h-3 w-3 opacity-50" />
+                  </a>
+                </WikiLinkPreview>
                 <button
                   onClick={() => handleRemovePage(page)}
                   className="hover:bg-destructive/50 ml-1 rounded-sm p-0.5 transition-colors"

@@ -50,10 +50,15 @@ const PipelineWizard = nextDynamic(
   () => import("./_components/PipelineWizard").then((m) => m.PipelineWizard),
   { ssr: false, loading: LazyLoading }
 );
+const ForgeTab = nextDynamic(
+  () => import("./_components/ForgeTab").then((m) => m.ForgeTab),
+  { ssr: false, loading: LazyLoading }
+);
 
-type TabId = "pipeline" | "map" | "countries" | "sovereignty" | "edits" | "border-editor" | "templates" | "generator" | "settings";
+type TabId = "forge" | "pipeline" | "map" | "countries" | "sovereignty" | "edits" | "border-editor" | "templates" | "generator" | "settings";
 
 const TABS: { id: TabId; label: string }[] = [
+  { id: "forge", label: "Forge" },
   { id: "pipeline", label: "Import Pipeline" },
   { id: "map", label: "World Map" },
   { id: "countries", label: "Countries" },
@@ -134,6 +139,7 @@ export default function AdminMapsPage() {
       </div>
 
       {/* Tab content */}
+      {activeTab === "forge" && <ForgeTab />}
       {activeTab === "pipeline" && <PipelineWizard />}
       {activeTab === "map" && <WorldMapManager />}
       {activeTab === "countries" && <CountryLinkageTab />}

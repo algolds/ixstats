@@ -1,0 +1,40 @@
+// Animated icon components — motion/react powered
+// Hover to animate, or use ref.startAnimation()/stopAnimation() for programmatic control
+
+export { ActivityIcon, type ActivityIconHandle } from "./activity";
+export { AlertTriangleIcon, type AlertTriangleIconHandle } from "./alert-triangle";
+export { ArrowTrendingDownIcon, type ArrowTrendingDownIconHandle } from "./arrow-trending-down";
+export { ArrowTrendingUpIcon, type ArrowTrendingUpIconHandle } from "./arrow-trending-up";
+export { BellIcon, type BellIconHandle } from "./bell";
+export { BookOpenIcon, type BookOpenIconHandle } from "./book-open";
+export { BrainIcon, type BrainIconHandle } from "./brain";
+export { BriefcaseIcon, type BriefcaseIconHandle } from "./briefcase";
+export { ChartBarIcon, type ChartBarIconHandle } from "./chart-bar";
+export { ChartPieIcon, type ChartPieIconHandle } from "./chart-pie";
+export { CogIcon, type CogIconHandle } from "./cog";
+export { CrownIcon, type CrownIconHandle } from "./crown";
+export { CurrencyDollarIcon, type CurrencyDollarIconHandle } from "./currency-dollar";
+export { EyeIcon, type EyeIconHandle } from "./eye";
+export { GlobeAltIcon, type GlobeAltIconHandle } from "./globe-alt";
+export { HeartIcon, type HeartIconHandle } from "./heart";
+export { LandmarkIcon, type LandmarkIconHandle } from "./landmark";
+export { LayersIcon, type LayersIconHandle } from "./layers";
+export { LayoutDashboardIcon, type LayoutDashboardIconHandle } from "./layout-dashboard";
+export { LockClosedIcon, type LockClosedIconHandle } from "./lock-closed";
+export { MagnifyingGlassIcon, type MagnifyingGlassIconHandle } from "./magnifying-glass";
+export { MapIcon, type MapIconHandle } from "./map";
+export { MapPinIcon, type MapPinIconHandle } from "./map-pin";
+export { MousePointerIcon, type MousePointerIconHandle } from "./mouse-pointer";
+export { PaintBrushIcon, type PaintBrushIconHandle } from "./paint-brush";
+export { PencilIcon, type PencilIconHandle } from "./pencil";
+export { PlusIcon, type PlusIconHandle } from "./plus";
+export { RocketLaunchIcon, type RocketLaunchIconHandle } from "./rocket-launch";
+export { ScrollIcon, type ScrollIconHandle } from "./scroll";
+export { ShieldCheckIcon, type ShieldCheckIconHandle } from "./shield-check";
+export { SparklesIcon, type SparklesIconHandle } from "./sparkles";
+export { StarIcon, type StarIconHandle } from "./star";
+export { TargetIcon, type TargetIconHandle } from "./target";
+export { TrashIcon, type TrashIconHandle } from "./trash";
+export { TrophyIcon, type TrophyIconHandle } from "./trophy";
+export { UsersIcon, type UsersIconHandle } from "./users";
+export { VoteIcon, type VoteIconHandle } from "./vote";

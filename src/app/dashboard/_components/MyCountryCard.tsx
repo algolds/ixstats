@@ -38,6 +38,12 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { AppleRippleEffect } from "~/components/ui/apple-ripple-effect";
 import { SimpleFlag } from "~/components/SimpleFlag";
+import dynamic from "next/dynamic";
+
+const CountryMapEmbed = dynamic(
+  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
+  { ssr: false, loading: () => <div className="h-44 animate-pulse rounded-xl bg-muted" /> }
+);
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 
@@ -188,7 +194,7 @@ export function MyCountryCard({
 
     // Formatted display values
     const formattedGdpPerCapita = `$${(countryData.currentGdpPerCapita / 1000).toFixed(0)}k`;
-    const formattedPopulation = `${(countryData.currentPopulation / 1000000).toFixed(1)}M`;
+    const formattedPopulation = `${Math.round(countryData.currentPopulation / 1000000)}M`;
     const formattedEconomicGrowth = `${(economicGrowthRate * 100).toFixed(1)}% growth`;
     const formattedPopulationGrowth = `${(populationGrowthRate * 100).toFixed(1)}% growth`;
 
@@ -400,221 +406,48 @@ export function MyCountryCard({
               </DropdownMenu>
             </div>
 
-            {/* National Vitality Rings Section */}
-            {countryData && activityRingsData && (
-              <ThemedTabContent theme="executive" className="tab-content-enter mb-5">
-                <div className="space-y-4">
-                  <h4 className="text-foreground mb-3 flex items-center gap-2 text-base sm:text-lg font-semibold">
-                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
-                    National Vitality Index
-                  </h4>
+            {/* Country Map Embed */}
+            {countryData && (
+              <div className="mb-5 overflow-hidden rounded-xl border border-border/30">
+                <CountryMapEmbed
+                  countryId={countryData.id}
+                  height="h-44"
+                  showNeighbors={true}
+                  showCities={true}
+                  interactive={false}
+                  boundsPadding={40}
+                />
 
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-4">
-                    {/* Economic Health Ring */}
-                    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <HealthRing
-                              value={activityRingsData.economicVitality}
-                              size={60}
-                              color="#22c55e"
-                              label="Economic Health"
-                            />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <DollarSign size={16} style={{ color: "#22c55e" }} />
-                              <span className="font-semibold">Economic Vitality</span>
-                            </div>
-                            <p className="text-muted-foreground text-sm">
-                              Overall economic health including GDP growth, trade balance, and
-                              economic stability
-                            </p>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-sm">
-                                <span>Score:</span>
-                                <span className="font-medium">
-                                  {Math.round(activityRingsData.economicVitality)}/100
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                      <div className="space-y-0.5 sm:space-y-1">
-                        <div className="flex items-center justify-center gap-1 sm:gap-2">
-                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: "#22c55e" }} />
-                          <span className="text-xs sm:text-sm font-medium">Economic</span>
-                        </div>
-                        <div className="text-muted-foreground text-[10px] sm:text-xs">
-                          {Math.round(activityRingsData.economicVitality)}%
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Population Wellbeing Ring */}
-                    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <HealthRing
-                              value={activityRingsData.populationWellbeing}
-                              size={60}
-                              color="#3b82f6"
-                              label="Population Wellbeing"
-                            />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Users size={16} style={{ color: "#3b82f6" }} />
-                              <span className="font-semibold">Population Wellbeing</span>
-                            </div>
-                            <p className="text-muted-foreground text-sm">
-                              Demographics health, quality of life, education, and social cohesion
-                              indicators
-                            </p>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-sm">
-                                <span>Score:</span>
-                                <span className="font-medium">
-                                  {Math.round(activityRingsData.populationWellbeing)}/100
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                      <div className="space-y-0.5 sm:space-y-1">
-                        <div className="flex items-center justify-center gap-1 sm:gap-2">
-                          <Users className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: "#3b82f6" }} />
-                          <span className="text-xs sm:text-sm font-medium">Population</span>
-                        </div>
-                        <div className="text-muted-foreground text-[10px] sm:text-xs">
-                          {Math.round(activityRingsData.populationWellbeing)}%
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Diplomatic Standing Ring */}
-                    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <HealthRing
-                              value={activityRingsData.diplomaticStanding}
-                              size={60}
-                              color="#a855f7"
-                              label="Diplomatic Standing"
-                            />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Shield size={16} style={{ color: "#a855f7" }} />
-                              <span className="font-semibold">Diplomatic Standing</span>
-                            </div>
-                            <p className="text-muted-foreground text-sm">
-                              International relationships, treaties, trade partnerships, and global
-                              reputation
-                            </p>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-sm">
-                                <span>Score:</span>
-                                <span className="font-medium">
-                                  {Math.round(activityRingsData.diplomaticStanding)}/100
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                      <div className="space-y-0.5 sm:space-y-1">
-                        <div className="flex items-center justify-center gap-1 sm:gap-2">
-                          <Shield className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: "#a855f7" }} />
-                          <span className="text-xs sm:text-sm font-medium">Diplomatic</span>
-                        </div>
-                        <div className="text-muted-foreground text-[10px] sm:text-xs">
-                          {Math.round(activityRingsData.diplomaticStanding)}%
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Government Efficiency Ring */}
-                    <div className="flex flex-col items-center gap-2 sm:gap-3 text-center">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <HealthRing
-                              value={activityRingsData.governmentalEfficiency}
-                              size={60}
-                              color="#f97316"
-                              label="Government Efficiency"
-                            />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Building className="h-4 w-4" style={{ color: "#f97316" }} />
-                              <span className="font-semibold">Government Efficiency</span>
-                            </div>
-                            <p className="text-muted-foreground text-sm">
-                              Policy effectiveness, administrative efficiency, public approval, and
-                              governance quality
-                            </p>
-                            <div className="space-y-1">
-                              <div className="flex justify-between text-sm">
-                                <span>Score:</span>
-                                <span className="font-medium">
-                                  {Math.round(activityRingsData.governmentalEfficiency)}/100
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                      <div className="space-y-0.5 sm:space-y-1">
-                        <div className="flex items-center justify-center gap-1 sm:gap-2">
-                          <Building className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: "#f97316" }} />
-                          <span className="text-xs sm:text-sm font-medium">Government</span>
-                        </div>
-                        <div className="text-muted-foreground text-[10px] sm:text-xs">
-                          {Math.round(activityRingsData.governmentalEfficiency)}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </ThemedTabContent>
+              </div>
             )}
 
-            {/* Key Metrics Grid - Always visible */}
+            {/* Key Metrics Grid - Always visible, clickable to navigate */}
             {countryData && (
-              <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                <div className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center">
-                  <div className="text-muted-foreground mb-0.5 sm:mb-1 text-[10px] sm:text-xs">Population</div>
+              <div className="mb-4 sm:mb-6 grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+                <Link href="/mycountry" className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center transition-transform hover:scale-[1.02] cursor-pointer">
+                  <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">Population</div>
                   <div className="text-xs sm:text-sm font-bold text-blue-400">
                     {formatPopulation(countryData.currentPopulation || 0)}
                   </div>
-                </div>
-                <div className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center">
-                  <div className="text-muted-foreground mb-0.5 sm:mb-1 text-[10px] sm:text-xs">GDP/Capita</div>
+                </Link>
+                <Link href="/mycountry" className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center transition-transform hover:scale-[1.02] cursor-pointer">
+                  <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">GDP/Capita</div>
                   <div className="text-xs sm:text-sm font-bold text-green-400">
                     {formatCurrency(countryData.currentGdpPerCapita || 0)}
                   </div>
-                </div>
-                <div className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center">
-                  <div className="text-muted-foreground mb-0.5 sm:mb-1 text-[10px] sm:text-xs">Total GDP</div>
-                  <div className="text-xs sm:text-sm font-bold text-yellow-400">
-                    {formatCurrency(countryData.currentTotalGdp || 0)}
+                </Link>
+                <Link href="/mycountry" className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center transition-transform hover:scale-[1.02] cursor-pointer">
+                  <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">Growth</div>
+                  <div className="text-xs sm:text-sm font-bold text-emerald-400">
+                    {((countryData.adjustedGdpGrowth || 0) * 100).toFixed(1)}%
                   </div>
-                </div>
+                </Link>
+                <Link href="/mycountry" className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center transition-transform hover:scale-[1.02] cursor-pointer">
+                  <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">Tier</div>
+                  <div className="text-xs sm:text-sm font-bold text-yellow-400">
+                    {countryData.economicTier}
+                  </div>
+                </Link>
               </div>
             )}
 
@@ -684,107 +517,14 @@ export function MyCountryCard({
                       </div>
                     </div>
 
-                    {/* Economic Health Indicators Section */}
-                    <div>
-                      <h4 className="text-foreground mb-3 flex items-center gap-2 text-lg font-semibold">
-                        <BarChart3 className="h-5 w-5 text-green-400" />
-                        Economic Health Indicators
-                      </h4>
-                      <div className="space-y-3">
-                        {/* Unemployment Rate */}
-                        <div className="glass-hierarchy-child rounded-lg p-2.5">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-muted-foreground text-xs">Unemployment Rate</span>
-                            <span className="text-muted-foreground text-xs">
-                              {(3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)).toFixed(
-                                1
-                              )}
-                              %
-                            </span>
-                          </div>
-                          <Progress
-                            value={
-                              ((3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)) / 25) *
-                              100
-                            }
-                            className="h-2"
-                          />
-                          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
-                            <span>0%</span>
-                            <span className="text-green-600">Optimal: 3-7%</span>
-                            <span>25%</span>
-                          </div>
-                        </div>
-
-                        {/* Labor Force Participation */}
-                        <div className="glass-hierarchy-child rounded-lg p-2.5">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-muted-foreground text-xs">
-                              Labor Force Participation
-                            </span>
-                            <span className="text-muted-foreground text-xs">
-                              {(
-                                68.5 +
-                                ((countryData.currentGdpPerCapita || 0) / 100000) * 5
-                              ).toFixed(1)}
-                              %
-                            </span>
-                          </div>
-                          <Progress
-                            value={68.5 + ((countryData.currentGdpPerCapita || 0) / 100000) * 5}
-                            className="h-2"
-                          />
-                          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
-                            <span>0%</span>
-                            <span className="text-green-600">Optimal: 60-80%</span>
-                            <span>100%</span>
-                          </div>
-                        </div>
-
-                        {/* Economic Growth Health */}
-                        <div className="glass-hierarchy-child rounded-lg p-2.5">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-muted-foreground text-xs">
-                              Economic Growth Health
-                            </span>
-                            <span className="text-muted-foreground text-xs">
-                              {((countryData.adjustedGdpGrowth || 0) * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                          <Progress
-                            value={Math.max(
-                              0,
-                              Math.min(100, ((countryData.adjustedGdpGrowth || 0) * 100 + 5) * 10)
-                            )}
-                            className="h-2"
-                          />
-                          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
-                            <span>-5%</span>
-                            <span className="text-green-600">Optimal: 2-5%</span>
-                            <span>10%</span>
-                          </div>
-                        </div>
-
-                        {/* Economic Stability Index */}
-                        <div className="glass-hierarchy-child rounded-lg p-2.5">
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-muted-foreground text-xs">
-                              Economic Stability Index
-                            </span>
-                            <span className="text-muted-foreground text-xs">
-                              {activityRingsData?.economicVitality || 0}%
-                            </span>
-                          </div>
-                          <Progress
-                            value={activityRingsData?.economicVitality || 0}
-                            className="h-2"
-                          />
-                          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
-                            <span>0%</span>
-                            <span className="text-green-600">Target: 85%+</span>
-                            <span>100%</span>
-                          </div>
-                        </div>
+                    {/* Total GDP */}
+                    <div className="glass-hierarchy-child rounded-lg p-2.5">
+                      <div className="mb-2 flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-yellow-400" />
+                        <div className="text-muted-foreground text-xs">Total GDP</div>
+                      </div>
+                      <div className="text-foreground text-sm font-medium">
+                        {formatCurrency(countryData.currentTotalGdp || 0)}
                       </div>
                     </div>
                   </div>

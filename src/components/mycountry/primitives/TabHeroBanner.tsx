@@ -1,12 +1,34 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { useCountryData } from "./CountryDataProvider";
-import { useCountryImage } from "~/hooks/useCountryImage";
-import { extractCountryImageData, type ImageContext } from "~/lib/country-image-engine";
+import React from "react";
+import type { ImageContext } from "~/lib/country-image-engine";
 import { cn } from "~/lib/utils";
 import type { LucideIcon } from "lucide-react";
+
+/** Map accent color names to gradient classes */
+const ACCENT_GRADIENTS: Record<string, string> = {
+  emerald: "from-emerald-600/12 via-emerald-600/5 to-transparent",
+  red: "from-red-600/12 via-red-600/5 to-transparent",
+  amber: "from-amber-600/12 via-amber-600/5 to-transparent",
+  cyan: "from-cyan-600/12 via-cyan-600/5 to-transparent",
+  blue: "from-blue-600/12 via-blue-600/5 to-transparent",
+  indigo: "from-indigo-600/12 via-indigo-600/5 to-transparent",
+  purple: "from-purple-600/12 via-purple-600/5 to-transparent",
+  pink: "from-pink-600/12 via-pink-600/5 to-transparent",
+  orange: "from-orange-600/12 via-orange-600/5 to-transparent",
+};
+
+const ACCENT_ICON_BG: Record<string, string> = {
+  emerald: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+  red: "bg-red-500/15 text-red-600 dark:text-red-400",
+  amber: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  cyan: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
+  blue: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  indigo: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400",
+  purple: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+  pink: "bg-pink-500/15 text-pink-600 dark:text-pink-400",
+  orange: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
+};
 
 interface TabHeroBannerProps {
   context: ImageContext;
@@ -15,37 +37,27 @@ interface TabHeroBannerProps {
   icon?: LucideIcon;
   /** Height class. Default: "h-20 sm:h-24" */
   heightClass?: string;
-  /** Overlay darkness. Default 0.75 */
+  /** Overlay darkness. Default 0.75 (kept for API compat, now ignored) */
   overlayOpacity?: number;
-  /** Theme accent color name for bottom border */
+  /** Theme accent color name for bottom border and gradient */
   accentColor?: string;
   className?: string;
 }
 
 /**
  * Compact hero banner for tab content areas.
- * Renders a contextual Unsplash image with title overlay.
- * Place at the top of ThemedTabContent, before the panel component.
+ * Renders a themed gradient with title overlay.
  */
 export const TabHeroBanner = React.memo(function TabHeroBanner({
-  context,
   title,
   subtitle,
   icon: Icon,
   heightClass = "h-20 sm:h-24",
-  overlayOpacity = 0.75,
   accentColor,
   className,
 }: TabHeroBannerProps) {
-  const { country } = useCountryData();
-  const countryImageData = useMemo(() => extractCountryImageData(country), [country]);
-
-  const { imageUrl } = useCountryImage({
-    countryData: countryImageData,
-    context,
-    enabled: !!countryImageData,
-    size: "small",
-  });
+  const gradient = (accentColor && ACCENT_GRADIENTS[accentColor]) ?? "from-muted/10 to-transparent";
+  const iconClasses = (accentColor && ACCENT_ICON_BG[accentColor]) ?? "bg-muted/50 text-muted-foreground";
 
   return (
     <div
@@ -56,75 +68,22 @@ export const TabHeroBanner = React.memo(function TabHeroBanner({
         className,
       )}
     >
-      {/* Background image */}
-      <AnimatePresence>
-        {imageUrl && (
-          <motion.div
-            key={imageUrl}
-            className="absolute inset-0 z-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt=""
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background: `linear-gradient(to right,
-                  rgba(0,0,0,${overlayOpacity}) 0%,
-                  rgba(0,0,0,${overlayOpacity * 0.6}) 60%,
-                  rgba(0,0,0,${overlayOpacity * 0.85}) 100%)`,
-              }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Fallback background when no image */}
-      {!imageUrl && (
-        <div className="absolute inset-0 bg-muted/20" />
-      )}
+      {/* Themed gradient background */}
+      <div className={cn("absolute inset-0 z-0 bg-gradient-to-r", gradient)} />
 
       {/* Content overlay */}
       <div className="relative z-[1] flex items-center h-full px-4 sm:px-6">
         {Icon && (
-          <div
-            className={cn(
-              "rounded-lg p-2 mr-3 flex-shrink-0",
-              imageUrl ? "bg-white/10 backdrop-blur-sm" : "bg-muted/50",
-            )}
-          >
-            <Icon
-              className={cn(
-                "h-5 w-5 sm:h-6 sm:w-6",
-                imageUrl ? "text-white" : "text-muted-foreground",
-              )}
-            />
+          <div className={cn("rounded-lg p-2 mr-3 flex-shrink-0", iconClasses)}>
+            <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
         )}
         <div>
-          <h3
-            className={cn(
-              "text-sm sm:text-base font-semibold",
-              imageUrl ? "text-white" : "text-foreground",
-            )}
-          >
+          <h3 className="text-sm sm:text-base font-semibold text-foreground">
             {title}
           </h3>
           {subtitle && (
-            <p
-              className={cn(
-                "text-xs sm:text-sm mt-0.5",
-                imageUrl ? "text-white/70" : "text-muted-foreground",
-              )}
-            >
+            <p className="text-xs sm:text-sm mt-0.5 text-muted-foreground">
               {subtitle}
             </p>
           )}

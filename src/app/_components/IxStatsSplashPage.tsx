@@ -47,102 +47,53 @@ import {
 } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { ExternalLink } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
+import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 // Country showcase card for carousel with vitality rings and wiki intro
 function CountryShowcaseCard({ country }: { country: any }) {
   const { flagUrl } = useFlag(country.name);
   const [wikiIntro, setWikiIntro] = React.useState<string>("");
   const [coatOfArmsUrl, setCoatOfArmsUrl] = React.useState<string>("");
+  const trpcUtils = api.useUtils();
 
-  // Fetch wiki intro and coat of arms - first paragraph and a half
+  // Fetch wiki intro and coat of arms via WikiBridge (tRPC)
   React.useEffect(() => {
     const fetchWikiData = async () => {
       try {
-        // Fetch extract and page images
-        const apiUrl = `https://ixwiki.com/api.php?action=query&prop=extracts|pageimages&exintro=1&explaintext=1&piprop=original&format=json&titles=${encodeURIComponent(country.name)}`;
-        const resp = await fetch(apiUrl, {
-          headers: {
-            "User-Agent": "IxStats-Platform",
-            Accept: "application/json",
-          },
+        // Fetch intro text via WikiBridge (direct MySQL, ~8ms)
+        const introResult = await trpcUtils.countries.getWikiIntro.fetch({
+          countryName: country.name,
         });
-
-        if (resp.ok) {
-          const data = await resp.json();
-          if (data?.query?.pages) {
-            const pages = data.query.pages;
-            const pageId = Object.keys(pages)[0];
-            const page = pages[pageId];
-
-            if (page && !page.missing) {
-              // Extract intro text
-              if (page.extract) {
-                const paragraphs = page.extract.split("\n\n");
-                if (paragraphs.length > 0) {
-                  const firstParagraph = paragraphs[0];
-                  const secondParagraph = paragraphs[1];
-                  if (secondParagraph) {
-                    const sentences = secondParagraph.split(". ");
-                    const halfSecond =
-                      sentences.slice(0, Math.ceil(sentences.length / 2)).join(". ") +
-                      (sentences.length > 1 ? "." : "");
-                    setWikiIntro(firstParagraph + "\n\n" + halfSecond);
-                  } else {
-                    setWikiIntro(firstParagraph);
-                  }
-                }
-              }
-
-              // Try to get coat of arms from page images
-              if (page.original?.source) {
-                // Check if it might be a coat of arms
-                const imageUrl = page.original.source;
-                if (
-                  imageUrl.toLowerCase().includes("coat") ||
-                  imageUrl.toLowerCase().includes("coa") ||
-                  imageUrl.toLowerCase().includes("emblem")
-                ) {
-                  setCoatOfArmsUrl(imageUrl);
-                }
-              }
+        if (introResult?.extract) {
+          const paragraphs = introResult.extract.split("\n\n");
+          if (paragraphs.length > 0) {
+            const firstParagraph = paragraphs[0];
+            const secondParagraph = paragraphs[1];
+            if (secondParagraph) {
+              const sentences = secondParagraph.split(". ");
+              const halfSecond =
+                sentences.slice(0, Math.ceil(sentences.length / 2)).join(". ") +
+                (sentences.length > 1 ? "." : "");
+              setWikiIntro(firstParagraph + "\n\n" + halfSecond);
+            } else {
+              setWikiIntro(firstParagraph ?? "");
             }
           }
         }
 
-        // Fallback: Try to fetch coat of arms specifically
-        if (!coatOfArmsUrl) {
-          const coaApiUrl = `https://ixwiki.com/api.php?action=query&prop=images&format=json&titles=${encodeURIComponent(country.name)}`;
-          const coaResp = await fetch(coaApiUrl, {
-            headers: {
-              "User-Agent": "IxStats-Platform",
-              Accept: "application/json",
-            },
-          });
-
-          if (coaResp.ok) {
-            const coaData = await coaResp.json();
-            if (coaData?.query?.pages) {
-              const pages = coaData.query.pages;
-              const pageId = Object.keys(pages)[0];
-              const page = pages[pageId];
-
-              if (page?.images) {
-                // Look for coat of arms in images
-                const coaImage = page.images.find(
-                  (img: any) =>
-                    img.title?.toLowerCase().includes("coat") ||
-                    img.title?.toLowerCase().includes("coa") ||
-                    img.title?.toLowerCase().includes("emblem")
-                );
-
-                if (coaImage) {
-                  const imageTitle = coaImage.title.replace("File:", "");
-                  setCoatOfArmsUrl(
-                    `https://ixwiki.com/wiki/Special:Filepath/${encodeURIComponent(imageTitle)}`
-                  );
-                }
-              }
-            }
+        // Fetch page images to find coat of arms via WikiBridge (tRPC)
+        const imagesResult = await trpcUtils.countries.getWikiPageImages.fetch({
+          countryName: country.name,
+        });
+        if (imagesResult && imagesResult.length > 0) {
+          const coaImage = imagesResult.find(
+            (img: { title: string; url: string }) =>
+              img.title?.toLowerCase().includes("coat") ||
+              img.title?.toLowerCase().includes("coa") ||
+              img.title?.toLowerCase().includes("emblem")
+          );
+          if (coaImage) {
+            setCoatOfArmsUrl(coaImage.url);
           }
         }
       } catch (error) {
@@ -151,7 +102,7 @@ function CountryShowcaseCard({ country }: { country: any }) {
     };
 
     fetchWikiData();
-  }, [country.name]);
+  }, [country.name, trpcUtils]);
 
   const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
   const ixstatsUrl = `/countries/${country.slug}`;
@@ -887,14 +838,16 @@ export function IxStatsSplashPage() {
                   </div>
                   <p className="text-muted-foreground text-sm">
                     ThinkPages is{" "}
-                    <a
-                      href="https://ixwiki.com/wiki/ThinkPages"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-400 underline hover:text-indigo-300"
-                    >
-                      part of the Ixnay universe, meaning it's not just gameplay mechanics, but part of the lore and story of the world.
-                    </a>
+                    <WikiLinkPreview title="ThinkPages">
+                      <a
+                        href="https://ixwiki.com/wiki/ThinkPages"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-400 underline hover:text-indigo-300"
+                      >
+                        part of the Ixnay universe, meaning it's not just gameplay mechanics, but part of the lore and story of the world.
+                      </a>
+                    </WikiLinkPreview>
                     . Your posts contribute to a shared, persistent world with deep lore and
                     interconnected stories.
                   </p>

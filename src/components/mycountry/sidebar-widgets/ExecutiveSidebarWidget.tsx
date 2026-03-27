@@ -1,61 +1,140 @@
 "use client";
 
-import { Crown, Calendar, FileText, Layers, Bell } from "lucide-react";
+import { useMemo } from "react";
+import { ScrollText, CheckCircle, FileText, Calendar, Gavel } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
-import { useIssueCount } from "~/hooks/useNationalIssues";
 
 interface ExecutiveSidebarWidgetProps {
   countryId: string;
 }
 
+interface LogEntry {
+  id: string;
+  icon: typeof CheckCircle;
+  iconColor: string;
+  text: string;
+  time: Date;
+}
+
+/**
+ * Executive Command Log — shows a timeline of your own recent executive
+ * actions: policies enacted, meetings completed, issues resolved.
+ * A personal record of governance decisions.
+ */
 export function ExecutiveSidebarWidget({ countryId }: ExecutiveSidebarWidgetProps) {
   const { data: meetings } = api.meetings.getMeetings.useQuery(
     { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: 30_000 },
   );
   const { data: policies } = api.policies.getPolicies.useQuery(
     { countryId },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: 30_000 },
   );
 
-  const activeMeetings = meetings?.filter((m) => m.status === "in_progress").length ?? 0;
-  const totalMeetings = meetings?.length ?? 0;
-  const activePolicies = policies?.filter((p) => p.status === "active").length ?? 0;
-  const pendingPolicies = policies?.filter((p) => p.status === "draft").length ?? 0;
-  const pendingActions = meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
-  const { total: issueCount, urgent: urgentIssueCount } = useIssueCount(countryId);
+  const log = useMemo((): LogEntry[] => {
+    const entries: LogEntry[] = [];
 
-  const stats = [
-    { icon: Bell, label: "Issues", value: `${issueCount} pending`, sub: urgentIssueCount > 0 ? `${urgentIssueCount} urgent` : "all routine", color: issueCount > 0 ? (urgentIssueCount > 0 ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400") : "text-green-600 dark:text-green-400", bg: issueCount > 0 ? (urgentIssueCount > 0 ? "bg-red-50 dark:bg-red-950/50" : "bg-amber-50 dark:bg-amber-950/50") : "bg-green-50 dark:bg-green-950/50" },
-    { icon: Calendar, label: "Meetings", value: `${activeMeetings} active`, sub: `${totalMeetings} total`, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/50" },
-    { icon: FileText, label: "Policies", value: `${activePolicies} active`, sub: `${pendingPolicies} pending`, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/50" },
-    { icon: Layers, label: "Actions", value: `${pendingActions} pending`, sub: "require attention", color: pendingActions > 0 ? "text-orange-600 dark:text-orange-400" : "text-green-600 dark:text-green-400", bg: pendingActions > 0 ? "bg-orange-50 dark:bg-orange-950/50" : "bg-green-50 dark:bg-green-950/50" },
-  ];
+    // Completed meetings → "Held cabinet session: {title}"
+    meetings?.forEach((m: any) => {
+      if (m.status === "completed") {
+        entries.push({
+          id: `meeting-${m.id}`,
+          icon: Calendar,
+          iconColor: "text-blue-500",
+          text: `Held session: ${m.title}`,
+          time: new Date(m.scheduledDate ?? m.updatedAt ?? m.createdAt),
+        });
+      }
+    });
+
+    // Active policies → "Enacted: {name}"
+    policies?.forEach((p: any) => {
+      if (p.status === "active" && p.effectiveDate) {
+        entries.push({
+          id: `policy-active-${p.id}`,
+          icon: Gavel,
+          iconColor: "text-green-500",
+          text: `Enacted: ${p.name ?? p.title}`,
+          time: new Date(p.effectiveDate),
+        });
+      }
+    });
+
+    // Draft policies → "Drafted: {name}"
+    policies?.forEach((p: any) => {
+      if (p.status === "draft") {
+        entries.push({
+          id: `policy-draft-${p.id}`,
+          icon: FileText,
+          iconColor: "text-amber-500",
+          text: `Drafted: ${p.name ?? p.title}`,
+          time: new Date(p.createdAt),
+        });
+      }
+    });
+
+    // Completed action items → "Completed: {title}"
+    meetings?.forEach((m: any) => {
+      m.actionItems?.forEach((a: any) => {
+        if (a.status === "completed") {
+          entries.push({
+            id: `action-${a.id}`,
+            icon: CheckCircle,
+            iconColor: "text-emerald-500",
+            text: `Completed: ${a.title}`,
+            time: new Date(a.updatedAt ?? a.createdAt),
+          });
+        }
+      });
+    });
+
+    // Sort by most recent first, take top 5
+    return entries
+      .sort((a, b) => b.time.getTime() - a.time.getTime())
+      .slice(0, 5);
+  }, [meetings, policies]);
 
   return (
     <div className="glass-hierarchy-child rounded-xl border border-amber-500/15 p-3">
       <div className="mb-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Crown className="h-3.5 w-3.5 text-amber-500" />
-          <span className="text-xs font-semibold">Executive Status</span>
+          <ScrollText className="h-3.5 w-3.5 text-amber-500" />
+          <span className="text-xs font-semibold">Command Log</span>
         </div>
         <Badge variant="outline" className="border-amber-500/30 px-1.5 py-0 text-[0.65rem] text-amber-600 dark:text-amber-400">
-          LIVE
+          {log.length}
         </Badge>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {stats.map((stat) => (
-          <div key={stat.label} className={`rounded-lg ${stat.bg} px-3 py-2`}>
-            <div className="flex items-center gap-1.5">
-              <stat.icon className={`h-3.5 w-3.5 flex-shrink-0 ${stat.color}`} />
-              <span className="text-xs font-medium">{stat.label}</span>
+      <div className="space-y-1.5">
+        {log.length === 0 && (
+          <p className="text-[11px] text-muted-foreground text-center py-3">
+            No executive actions yet
+          </p>
+        )}
+        {log.map((entry) => (
+          <div key={entry.id} className="flex items-start gap-2 py-1">
+            <entry.icon className={`h-3 w-3 mt-0.5 flex-shrink-0 ${entry.iconColor}`} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] leading-snug line-clamp-1">{entry.text}</p>
+              <span className="text-[10px] text-muted-foreground">{getTimeAgo(entry.time)}</span>
             </div>
-            <div className={`mt-0.5 text-sm font-bold ${stat.color}`}>{stat.value}</div>
-            <div className="text-muted-foreground text-xs">{stat.sub}</div>
           </div>
         ))}
       </div>
     </div>
   );
+}
+
+function getTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 30) return `${diffDay}d ago`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }

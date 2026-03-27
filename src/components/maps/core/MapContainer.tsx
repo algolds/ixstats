@@ -13,6 +13,7 @@ import { api } from "~/trpc/react";
 import { MapControls } from "./MapControls";
 import { CountryInfoPanel } from "./CountryInfoPanel";
 import { FeatureInfoPanel } from "./FeatureInfoPanel";
+import { StoryPinModal } from "./StoryPinModal";
 import { RouteInfoPanel } from "./RouteInfoPanel";
 import MapPinInfoPanel from "./MapPinInfoPanel";
 import { MapSearchOverlay } from "./MapSearchOverlay";
@@ -20,6 +21,7 @@ import { AnalyticsLegend } from "./AnalyticsLegend";
 import { MeasureTool } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
+import { MapWelcomeModal } from "./MapWelcomeModal";
 // ProjectionToggle moved into MapSearchOverlay settings panel
 import type { MapLayerType, ProjectionMode } from "~/lib/map-config";
 import type { SelectedCountry, SelectedFeature, HoveredCountry, IxWorldMapRef, OverlayVisibility } from "./IxWorldMap";
@@ -87,6 +89,7 @@ export function MapContainer({
   const [projectionMode, setProjectionMode] = useState<ProjectionMode>("dynamic");
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [storyPinModalId, setStoryPinModalId] = useState<string | null>(null);
   const [editingCountryId, setEditingCountryId] = useState<string | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number | undefined>(undefined);
 
@@ -118,8 +121,23 @@ export function MapContainer({
     clearPin,
   } = useMapPinInfo();
 
-  // Overlay features come from batched query
-  const overlayFeatures = batchedOverlayFeatures;
+  // Overlay features come from batched query + story pins/labels
+  const { data: storyPinsGeoJson } = api.geo.getAllStoryPins.useQuery(
+    undefined,
+    { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const { data: mapLabelsGeoJson } = api.geo.getAllMapLabels.useQuery(
+    undefined,
+    { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
+  );
+  const overlayFeatures = useMemo(() => {
+    if (!batchedOverlayFeatures) return undefined;
+    return {
+      ...batchedOverlayFeatures,
+      storyPins: storyPinsGeoJson ?? undefined,
+      mapLabels: mapLabelsGeoJson ?? undefined,
+    };
+  }, [batchedOverlayFeatures, storyPinsGeoJson, mapLabelsGeoJson]);
 
   const [overlayVisibility, setOverlayVisibility] = useState<OverlayVisibility>({
     cities: true,
@@ -130,6 +148,8 @@ export function MapContainer({
     diplomacy: false,
     crises: false,
     transport: false,
+    storyPins: true,
+    mapLabels: true,
   });
 
   // Analytics overlay data — only fetched when the corresponding toggle is ON
@@ -280,7 +300,7 @@ export function MapContainer({
         mapRef.current.flyTo(country.centroidLng, country.centroidLat, targetZoom);
       }
     },
-    [onCountrySelect, dropPin, layerDataMap]
+    [onCountrySelect]
   );
 
   const utils = api.useUtils();
@@ -525,11 +545,27 @@ export function MapContainer({
         />
       )}
 
-      {/* Feature info panel (city/POI/capital) */}
+      {/* Feature info panel (city/POI/capital/storyPin) */}
       {showPopup && selectedFeature && !isPinToolActive && !isEditing && (
         <FeatureInfoPanel
           feature={selectedFeature}
           onClose={() => setSelectedFeature(null)}
+          onOpenStoryModal={(pinId) => {
+            setStoryPinModalId(pinId);
+            setSelectedFeature(null);
+          }}
+        />
+      )}
+
+      {/* Story pin modal — immersive reading experience */}
+      {storyPinModalId && (
+        <StoryPinModal
+          pinId={storyPinModalId}
+          onClose={() => setStoryPinModalId(null)}
+          onFlyTo={(lng, lat) => {
+            mapRef.current?.flyTo(lng, lat, 8);
+          }}
+          onNavigateToPin={(pinId) => setStoryPinModalId(pinId)}
         />
       )}
 
@@ -544,6 +580,9 @@ export function MapContainer({
 
       {/* Full-screen loading overlay — shows until map data + engine are ready */}
       <MapLoadingScreen isReady={!isLoading && mapEngineReady} />
+
+      {/* First-visit welcome modal — shows after loading screen dismisses */}
+      {showControls && <MapWelcomeModal isMapReady={!isLoading && mapEngineReady} />}
 
       {/* Map editor overlay */}
       {isEditing && editingCountryId && (

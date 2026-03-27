@@ -8,7 +8,7 @@
  * media gallery, sovereignty, and neighbors.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 import {
   X, ExternalLink, Users, DollarSign, TrendingUp, MapPin, Globe,
   Crown, BookOpen, Shield, Swords, ChevronDown, ChevronRight, Image as ImageIcon,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/map-config";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import Link from "next/link";
 import type { SelectedCountry } from "./IxWorldMap";
 import { SwipeableBottomSheet } from "./SwipeableBottomSheet";
@@ -125,7 +126,7 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
-export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeographyFilter, onEditMap }: CountryInfoPanelProps) {
+export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClose, onNeighborClick, onGeographyFilter, onEditMap }: CountryInfoPanelProps) {
   const { summary, neighbors, sovereignty, wikiSections, wikiImages, isLoading } = useCountryPanelData(country.countryId, country.displayName);
   // Use summary name for display, but country.displayName for cache-consistent wiki queries
   // (prefetch seeds cache with country.displayName from the GeoJSON layer)
@@ -149,9 +150,10 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
   });
   const isOwner = !!(userProfile?.countryId && country.countryId && userProfile.countryId === country.countryId);
 
-  // Tab state — only show Geography tab for claimed countries
-  const [activeTab, setActiveTab] = useState<"overview" | "geography">("overview");
+  // Tab state
+  const [activeTab, setActiveTab] = useState<"overview" | "info" | "geography">("overview");
   const hasGeoTab = !!country.countryId;
+  const hasInfoTab = !!(wikiRichIntro || wikiSections || wikiImages);
 
   // Modal state
   const [activeModal, setActiveModal] = useState<"gdp" | "population" | null>(null);
@@ -201,22 +203,35 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
         </button>
       </div>
 
-      {/* Tab bar — only shown for claimed countries */}
-      {hasGeoTab && (
-        <div className="flex border-b border-border/50 px-4">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`relative px-3 py-2 text-xs font-medium transition-colors ${
-              activeTab === "overview"
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Overview
-            {activeTab === "overview" && (
-              <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
-            )}
-          </button>
+      {/* Tab bar */}
+      <div className="flex border-b border-border/50 px-4">
+        <button
+          onClick={() => setActiveTab("overview")}
+          className={`relative px-3 py-2 text-xs font-medium transition-colors ${
+            activeTab === "overview"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Overview
+          {activeTab === "overview" && (
+            <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("info")}
+          className={`relative px-3 py-2 text-xs font-medium transition-colors ${
+            activeTab === "info"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Info
+          {activeTab === "info" && (
+            <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-amber-500" />
+          )}
+        </button>
+        {hasGeoTab && (
           <button
             onClick={() => setActiveTab("geography")}
             className={`relative px-3 py-2 text-xs font-medium transition-colors ${
@@ -230,13 +245,109 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
               <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-emerald-500" />
             )}
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Body */}
-      <div className="overflow-y-auto p-4" style={{ maxHeight: hasGeoTab ? "calc(100% - 90px)" : "calc(100% - 56px)" }}>
-        {/* Geography tab content */}
-        {activeTab === "geography" && hasGeoTab && country.countryId ? (
+      <div className="overflow-y-auto p-4" style={{ maxHeight: "calc(100% - 90px)" }}>
+        {/* Info tab — wiki content */}
+        {activeTab === "info" ? (
+          <div className="space-y-3">
+            {/* Wiki intro */}
+            {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
+              <div className="space-y-1.5">
+                {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 2).map((p, i) => (
+                  <WikiHtmlContent key={i} as="p" className="text-xs leading-relaxed text-foreground/80"
+                     html={sanitizeWikiContent(p)} />
+                ))}
+                {wikiRichIntro.paragraphs.length > 2 && (
+                  <button
+                    onClick={() => setIntroExpanded((v) => !v)}
+                    className="text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+                  >
+                    {introExpanded ? "Show less" : "Read more..."}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Wiki sections (TOC) */}
+            {wikiSections && wikiSections.length > 0 && (() => {
+              const baseWikiUrl = wikiRichIntro?.wikiUrl ?? `https://ixwiki.com/wiki/${encodeURIComponent(displayName)}`;
+              return (
+                <div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <BookOpen className="h-3 w-3" />
+                    Table of Contents ({wikiSections.filter((s) => s.level === 2).length})
+                  </div>
+                  <div className="mt-1.5 space-y-1">
+                    {wikiSections
+                      .filter((s) => s.level <= 3)
+                      .map((section, i) => {
+                        const sectionUrl = `${baseWikiUrl}#${section.anchor}`;
+                        if (section.level === 2) {
+                          return (
+                            <div key={`${section.anchor}-${i}`} className="rounded-md border border-border/30 p-2">
+                              <a href={sectionUrl} target="_blank" rel="noopener noreferrer"
+                                 className="block text-xs font-medium text-foreground/90 transition-colors hover:text-blue-600">
+                                {section.line}
+                              </a>
+                              {"preview" in section && section.preview && (
+                                <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground line-clamp-2">
+                                  {section.preview as string}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return (
+                          <a key={`${section.anchor}-${i}`} href={sectionUrl} target="_blank" rel="noopener noreferrer"
+                             className="block truncate pl-3 text-[10px] text-foreground/50 transition-colors hover:text-blue-600">
+                            {section.line}
+                          </a>
+                        );
+                      })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Media Gallery */}
+            {wikiImages && wikiImages.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <ImageIcon className="h-3 w-3" />
+                  Media ({wikiImages.length})
+                </div>
+                <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
+                  {wikiImages.slice(0, 12).map((img, i) => (
+                    <button key={`${img.title}-${i}`} onClick={() => setLightboxSrc(img.url)}
+                            className="flex-shrink-0 overflow-hidden rounded-md border border-border transition-transform hover:scale-105">
+                      <img src={img.thumbUrl} alt={img.title.replace(/^File:/, "").replace(/_/g, " ")}
+                           className="h-16 w-auto object-cover" loading="lazy" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Wiki link */}
+            {wikiRichIntro?.wikiUrl && (
+              <a href={wikiRichIntro.wikiUrl} target="_blank" rel="noopener noreferrer"
+                 className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/30">
+                <BookOpen className="h-3 w-3" />
+                Read full article on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+
+            {!wikiRichIntro && !wikiSections && !wikiImages && (
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                No wiki article found for this country.
+              </div>
+            )}
+          </div>
+        ) : activeTab === "geography" && hasGeoTab && country.countryId ? (
           <GeoProfileContent countryId={country.countryId} countryName={country.displayName} />
         ) : !country.countryId ? (
           /* Unclaimed territory */
@@ -244,8 +355,8 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
             {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
               <div className="mb-3 space-y-1.5">
                 {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 1).map((p, i) => (
-                  <p key={i} className="text-xs leading-relaxed text-foreground/80"
-                     dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(p) }} />
+                  <WikiHtmlContent key={i} as="p" className="text-xs leading-relaxed text-foreground/80"
+                     html={sanitizeWikiContent(p)} />
                 ))}
                 {wikiRichIntro.paragraphs.length > 1 && (
                   <button
@@ -293,21 +404,17 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
           </div>
         ) : summary ? (
           <>
-            {/* Wiki intro — rich HTML paragraphs from wikitext */}
-            {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
-              <div className="mb-3 space-y-1.5">
-                {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 1).map((p, i) => (
-                  <p key={i} className="text-xs leading-relaxed text-foreground/80"
-                     dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(p) }} />
-                ))}
-                {wikiRichIntro.paragraphs.length > 1 && (
-                  <button
-                    onClick={() => setIntroExpanded((v) => !v)}
-                    className="text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
-                  >
-                    {introExpanded ? "Show less" : "Read more..."}
-                  </button>
-                )}
+            {/* Brief wiki intro — first paragraph only, full content in Info tab */}
+            {wikiRichIntro?.paragraphs?.[0] && (
+              <div className="mb-3">
+                <WikiHtmlContent as="p" className="text-xs leading-relaxed text-foreground/80 line-clamp-3"
+                   html={sanitizeWikiContent(wikiRichIntro.paragraphs[0])} />
+                <button
+                  onClick={() => setActiveTab("info")}
+                  className="mt-1 text-[10px] font-medium text-blue-600 transition-colors hover:text-blue-500"
+                >
+                  Read more →
+                </button>
               </div>
             )}
 
@@ -369,89 +476,6 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
                 <div className="mt-1 space-y-0.5 text-xs text-foreground/80">
                   {summary.leader && <p>Leader: <span className="font-medium text-foreground">{summary.leader}</span></p>}
                   {summary.governmentType && <p>Type: <span className="font-medium text-foreground">{summary.governmentType}</span></p>}
-                </div>
-              </div>
-            )}
-
-            {/* Information (Table of Contents) — main headers with preview, sub-headings as links */}
-            {wikiSections && wikiSections.length > 0 && (() => {
-              const baseWikiUrl = wikiRichIntro?.wikiUrl ?? `https://ixwiki.com/wiki/${encodeURIComponent(displayName)}`;
-              const level2Sections = wikiSections.filter((s) => s.level === 2);
-              return (
-                <div className="mt-3">
-                  <button
-                    onClick={() => setSectionsExpanded((v) => !v)}
-                    className="flex w-full items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <BookOpen className="h-3 w-3" />
-                    Information ({level2Sections.length})
-                    {sectionsExpanded ? <ChevronDown className="ml-auto h-3 w-3" /> : <ChevronRight className="ml-auto h-3 w-3" />}
-                  </button>
-                  {sectionsExpanded && (
-                    <div className="mt-1.5 space-y-1">
-                      {wikiSections
-                        .filter((s) => s.level <= 3)
-                        .map((section, i) => {
-                          const sectionUrl = `${baseWikiUrl}#${section.anchor}`;
-                          if (section.level === 2) {
-                            return (
-                              <div key={`${section.anchor}-${i}`} className="rounded-md border border-border/30 p-2">
-                                <a
-                                  href={sectionUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="block text-xs font-medium text-foreground/90 transition-colors hover:text-blue-600"
-                                >
-                                  {section.line}
-                                </a>
-                                {"preview" in section && section.preview && (
-                                  <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground line-clamp-2">
-                                    {section.preview as string}
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          }
-                          return (
-                            <a
-                              key={`${section.anchor}-${i}`}
-                              href={sectionUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block truncate pl-3 text-[10px] text-foreground/50 transition-colors hover:text-blue-600"
-                            >
-                              {section.line}
-                            </a>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* Media Gallery */}
-            {wikiImages && wikiImages.length > 0 && (
-              <div className="mt-3">
-                <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <ImageIcon className="h-3 w-3" />
-                  Media ({wikiImages.length})
-                </div>
-                <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
-                  {wikiImages.slice(0, 8).map((img, i) => (
-                    <button
-                      key={`${img.title}-${i}`}
-                      onClick={() => setLightboxSrc(img.url)}
-                      className="flex-shrink-0 overflow-hidden rounded-md border border-border transition-transform hover:scale-105"
-                    >
-                      <img
-                        src={img.thumbUrl}
-                        alt={img.title.replace(/^File:/, "").replace(/_/g, " ")}
-                        className="h-16 w-auto object-cover"
-                        loading="lazy"
-                      />
-                    </button>
-                  ))}
                 </div>
               </div>
             )}
@@ -569,17 +593,6 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
                   Edit Map
                 </button>
               )}
-              {wikiRichIntro?.wikiUrl && (
-                <a
-                  href={wikiRichIntro.wikiUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
-                >
-                  <BookOpen className="h-3 w-3" />
-                  Read on {wikiRichIntro.wikiUrl.includes("ixwiki") ? "IxWiki" : "IIWiki"}
-                </a>
-              )}
               {summary.slug && process.env.NEXT_PUBLIC_IXWORLD_STANDALONE !== "true" && (
                 <Link
                   href={`/countries/${summary.slug}`}
@@ -644,4 +657,4 @@ export function CountryInfoPanel({ country, onClose, onNeighborClick, onGeograph
       `}</style>
     </>
   );
-}
+});

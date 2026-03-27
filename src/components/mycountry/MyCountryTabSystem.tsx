@@ -16,26 +16,33 @@ import {
   DollarSign,
   Users,
   Globe,
+  Globe2,
   TrendingDown,
   Crown,
-  ImageIcon,
   Bell,
   AlertTriangle,
   ChevronRight,
   ChevronDown,
-  ChevronUp,
   CheckCircle2,
   Circle,
+  Scroll,
+  BookOpen,
+  Clock,
+  Shield,
+  Landmark,
+  MapPin,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
+import { ArrowTrendingUpIcon, ArrowTrendingDownIcon } from "~/components/ui/icons";
 // EconomicSummaryWidget removed - using MetricCardGrid primitives instead
-import { SimplifiedTrendRiskAnalytics } from "~/components/analytics/SimplifiedTrendRiskAnalytics";
-import { ComparativeAnalysis } from "~/app/countries/_components/economy/ComparativeAnalysis";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import {
   useCountryData,
@@ -60,10 +67,9 @@ import { createUrl } from "~/lib/url-utils";
 // GovernmentStructureDisplay removed - using custom primitives instead
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import { extractCountryImageData } from "~/lib/country-image-engine";
+import { WikiLoreBlock } from "./primitives/WikiLoreBlock";
 import { useMetricDetailsModal, type MetricType } from "~/hooks/useMetricDetailsModal";
 import { useIssueCount } from "~/hooks/useNationalIssues";
-import { useFlag } from "~/hooks/useFlag";
-import { AnimatedFlagBackground } from "~/components/ui/animated-flag-background";
 import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
 import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
 import { LaborDetailsModal, GovernmentSpendingModal, DebtAnalysisModal, DemographicsHealthModal } from "~/components/modals/metric-details";
@@ -103,13 +109,28 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
   );
   const [activeTab, setActiveTab] = useState("overview");
   const [tabDirection, setTabDirection] = useState(0);
+  const [wikiSectionsOpen, setWikiSectionsOpen] = useState(false);
 
-  // Toggle state for Key Metrics cards (overview tab)
+  // Toggle state for At a Glance metrics (overview tab)
   const [metricView, setMetricView] = useState({
     gdp: "perCapita" as "perCapita" | "total",
     population: "total" as "total" | "density",
     area: "km" as "km" | "mi",
   });
+
+  // Wiki data for overview tab (fetched by country name, no wikiPageTitle gate)
+  const { data: wikiIntro, isLoading: wikiLoading } = api.countries.getWikiRichIntro.useQuery(
+    { countryName: country?.name || "" },
+    { staleTime: 24 * 60 * 60_000, enabled: !!country?.name }
+  );
+  const { data: wikiImages } = api.countries.getWikiPageImages.useQuery(
+    { countryName: country?.name || "" },
+    { staleTime: 24 * 60 * 60_000, enabled: !!country?.name }
+  );
+  const { data: wikiSections, isLoading: sectionsLoading } = api.countries.getWikiSections.useQuery(
+    { countryName: country?.name || "" },
+    { staleTime: 60 * 60_000, enabled: !!country?.name && activeTab === "overview" }
+  );
 
   // Card image upload modal state
   const [imageUploadModal, setImageUploadModal] = useState<{
@@ -167,75 +188,28 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
     };
   }, []);
 
-  // Data queries for analytics tab
-  const { data: historicalData, isLoading: historicalLoading } =
-    api.countries.getHistoricalData.useQuery(
-      { countryId: country?.id || "" },
-      { enabled: !!country?.id && activeTab === "analytics" }
-    );
-
-  const { data: allCountries, isLoading: allCountriesLoading } = api.countries.getAll.useQuery(
-    { limit: 200 },
-    { enabled: activeTab === "analytics", staleTime: 5 * 60 * 1000 }
-  );
-
-  // Memoize the country mapping for analytics tab to avoid re-computing on every render
-  const mappedAllCountries = useMemo(() => {
-    if (!allCountries?.countries || !country) return [];
-    return allCountries.countries.map((c) => ({
-      id: c.id,
-      name: c.name,
-      region: c.region || "Unknown",
-      tier: c.economicTier || "Developing",
-      gdp: c.currentTotalGdp || c.currentPopulation * c.currentGdpPerCapita,
-      gdpPerCapita: c.currentGdpPerCapita || 0,
-      population: c.currentPopulation || 0,
-      growthRate: smartNormalizeGrowthRate(c.adjustedGdpGrowth),
-      unemployment: c.unemploymentRate || 5.0,
-      inflation: c.inflationRate || 2.5,
-      taxRevenue: c.taxRevenueGDPPercent || 25.0,
-      debtToGdp: c.totalDebtGDPRatio || 60.0,
-      competitivenessIndex: 50 + ((c as any).economicVitality || 0) / 5,
-      innovationIndex: 50 + ((c as any).governmentalEfficiency || 0) / 5,
-      color: c.id === country.id ? "#FF6B6B" : "#8884d8",
-    }));
-  }, [allCountries?.countries, country?.id]);
-
   if (!country) return null;
 
   const renderTabsList = () => {
     const govComponentCount = governmentStructure?.components?.length ?? 0;
     const govBadge = govComponentCount === 0 ? 1 : 0; // Needs setup
 
-    const baseTabs = [
-      { value: "overview", icon: BarChart3, label: "Overview", shortLabel: "Over", badge: 0 },
+    const tabs = [
+      { value: "overview", icon: BarChart3, label: "At a Glance", shortLabel: "Glance", badge: 0 },
       { value: "economy", icon: TrendingUp, label: "Economy", shortLabel: "Econ", badge: 0 },
       { value: "labor", icon: Briefcase, label: "Labor", shortLabel: "Lab", badge: 0 },
       { value: "government", icon: Building, label: "Government", shortLabel: "Gov", badge: govBadge },
-      { value: "demographics", icon: PieChart, label: "Demographics", shortLabel: "Demo", badge: 0 },
     ];
-
-    const tabs = [...baseTabs];
-
-    // Add analytics for premium and unified
-    if (variant === "premium" || variant === "unified") {
-      tabs.push({ value: "analytics", icon: Target, label: "Analytics", shortLabel: "Analyze", badge: 0 });
-    }
 
     return (
       <div className="overflow-x-auto">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 min-w-fit gap-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 min-w-fit gap-1">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
               className={`data-[state=active]:bg-background data-[state=active]:text-foreground flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3 ${
-                [
-                  "economy",
-                  "labor",
-                  "government",
-                  "demographics",
-                ].includes(tab.value)
+                ["economy", "labor", "government"].includes(tab.value)
                   ? `tab-trigger-${tab.value}`
                   : ""
               }`}
@@ -368,153 +342,254 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
 
       {/* Animated tab content wrapper */}
       <AnimatedTabContent activeTab={activeTab} direction={tabDirection} mode="slide">
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4" id="overview">
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            className="space-y-4"
-          >
-            {/* Key Metrics - Click cards to toggle between views */}
-            <motion.div variants={staggerItem}>
-              <MetricCardGrid
-                theme="overview"
-                columns={3}
-                title="Key Metrics"
-                subtitle={`Core indicators for ${country.name} · click to toggle`}
-                metrics={[
-                  {
-                    id: "metric-gdp",
-                    title: metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP",
-                    value: metricView.gdp === "perCapita"
-                      ? (country.currentGdpPerCapita ?? 0).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })
-                      : (country.currentTotalGdp ?? 0).toLocaleString("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 }),
-                    icon: metricView.gdp === "perCapita" ? DollarSign : TrendingUp,
-                    description: metricView.gdp === "perCapita"
-                      ? `${country.economicTier || "Developing"} · Total: ${(country.currentTotalGdp ?? 0).toLocaleString("en-US", { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 })}`
-                      : `Per capita: ${(country.currentGdpPerCapita ?? 0).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}`,
-                    trend: (country.adjustedGdpGrowth ?? 0) !== 0 ? {
-                      direction: (country.adjustedGdpGrowth ?? 0) > 0 ? "up" as const : "down" as const,
-                      value: smartNormalizeGrowthRate(country.adjustedGdpGrowth, 0),
-                    } : undefined,
-                    onClick: () => setMetricView(v => ({ ...v, gdp: v.gdp === "perCapita" ? "total" : "perCapita" })),
-                    tooltip: "Gross Domestic Product measures total economic output. Per capita divides by population. Click to toggle view.",
-                  },
-                  {
-                    id: "metric-population",
-                    title: metricView.population === "total" ? "Population" : "Population Density",
-                    value: metricView.population === "total"
-                      ? (country.currentPopulation ?? 0).toLocaleString("en-US")
-                      : (country.populationDensity ? `${Math.round(country.populationDensity).toLocaleString()} /km²` : "N/A"),
-                    icon: Users,
-                    description: metricView.population === "total"
-                      ? `Tier ${country.populationTier || "N/A"}${country.populationDensity ? ` · ${Math.round(country.populationDensity).toLocaleString()}/km²` : ""}`
-                      : `Total: ${(country.currentPopulation ?? 0).toLocaleString("en-US")} · Tier ${country.populationTier || "N/A"}`,
-                    trend: metricView.population === "total" && (country.populationGrowthRate ?? 0) !== 0 ? {
-                      direction: (country.populationGrowthRate ?? 0) > 0 ? "up" as const : "down" as const,
-                      value: smartNormalizeGrowthRate(country.populationGrowthRate, 0),
-                    } : undefined,
-                    onClick: () => setMetricView(v => ({ ...v, population: v.population === "total" ? "density" : "total" })),
-                    tooltip: "Total number of citizens. Density measures people per square kilometer. Click to toggle view.",
-                  },
-                  {
-                    id: "metric-area",
-                    title: "Land Area",
-                    value: metricView.area === "km"
-                      ? (country.landArea ? `${country.landArea.toLocaleString()} km²` : "N/A")
-                      : (country.areaSqMi ? `${country.areaSqMi.toLocaleString()} sq mi` : "N/A"),
-                    icon: Globe,
-                    description: metricView.area === "km"
-                      ? (country.areaSqMi ? `${country.areaSqMi.toLocaleString()} sq mi` : "")
-                      : (country.landArea ? `${country.landArea.toLocaleString()} km²` : ""),
-                    onClick: (country.areaSqMi && country.landArea) ? () => setMetricView(v => ({ ...v, area: v.area === "km" ? "mi" : "km" })) : undefined,
-                    tooltip: "Total sovereign territory. Click to switch between square kilometers and square miles.",
-                  },
-                ]}
-                cardFooter={
-                  <div className="mt-3 flex items-center gap-4 border-t border-border/40 pt-2.5 text-[11px] text-muted-foreground">
-                    <span>
-                      <TrendingUp className="mr-1 inline h-3 w-3 text-pink-500" />
-                      Max GDP Growth <span className="font-semibold text-foreground">{((country.maxGdpGrowthRate ?? 0) * 100).toFixed(1)}%</span>
-                      <span className="ml-1 opacity-60">({country.economicTier || "N/A"} cap)</span>
-                    </span>
-                    <span>
-                      <Activity className="mr-1 inline h-3 w-3 text-pink-500" />
-                      Local Factor <span className={cn("font-semibold", (country.localGrowthFactor ?? 1) > 1 ? "text-emerald-500" : (country.localGrowthFactor ?? 1) < 1 ? "text-red-500" : "text-foreground")}>{(((country.localGrowthFactor ?? 1) - 1) * 100).toFixed(2)}%</span>
-                    </span>
+        {/* Overview Tab — single unified card */}
+        <TabsContent value="overview" className="space-y-2" id="overview">
+          <Card className="glass-surface glass-refraction border-border overflow-hidden">
+            <CardContent className="pt-4 pb-4 space-y-4">
+
+              {/* ── Metrics Grid (GDP / Population / Land Area) ── */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setMetricView(v => ({ ...v, gdp: v.gdp === "perCapita" ? "total" : "perCapita" }))}
+                      className="rounded-xl bg-white/40 dark:bg-white/[0.04] p-3 text-left transition-all hover:bg-white/60 dark:hover:bg-white/[0.07] active:scale-[0.98]"
+                    >
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                        {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
+                      </p>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <p className="text-lg font-bold tracking-tight text-foreground">
+                          ${metricView.gdp === "perCapita"
+                            ? Math.round(country.currentGdpPerCapita ?? 0).toLocaleString("en-US")
+                            : Math.round(country.currentTotalGdp ?? 0).toLocaleString("en-US")}
+                        </p>
+                        {(() => {
+                          const gdpGrowth = smartNormalizeGrowthRate(country.realGDPGrowthRate || country.adjustedGdpGrowth, 0);
+                          if (gdpGrowth > 0) return (
+                            <span className="flex items-center gap-0.5 text-emerald-500">
+                              <ArrowTrendingUpIcon size={14} className="inline-flex" />
+                              <span className="text-[10px] font-semibold">+{gdpGrowth.toFixed(1)}%</span>
+                            </span>
+                          );
+                          if (gdpGrowth < 0) return (
+                            <span className="flex items-center gap-0.5 text-red-500">
+                              <ArrowTrendingDownIcon size={14} className="inline-flex" />
+                              <span className="text-[10px] font-semibold">{gdpGrowth.toFixed(1)}%</span>
+                            </span>
+                          );
+                          return <span className="text-[10px] text-muted-foreground">0.0%</span>;
+                        })()}
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {metricView.gdp === "perCapita"
+                          ? `${country.economicTier || "Developing"} · $${Math.round(country.currentTotalGdp ?? 0).toLocaleString("en-US")} total`
+                          : `Per capita: $${Math.round(country.currentGdpPerCapita ?? 0).toLocaleString("en-US")}`}
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => setMetricView(v => ({ ...v, population: v.population === "total" ? "density" : "total" }))}
+                      className="rounded-xl bg-white/40 dark:bg-white/[0.04] p-3 text-left transition-all hover:bg-white/60 dark:hover:bg-white/[0.07] active:scale-[0.98]"
+                    >
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
+                        {metricView.population === "total" ? "Population" : "Pop. Density"}
+                      </p>
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <p className="text-lg font-bold tracking-tight text-foreground">
+                          {metricView.population === "total"
+                            ? Math.round(country.currentPopulation ?? 0).toLocaleString("en-US")
+                            : country.populationDensity ? `${Math.round(country.populationDensity).toLocaleString()} /km²` : "N/A"}
+                        </p>
+                        {(() => {
+                          const popGrowth = smartNormalizeGrowthRate(country.populationGrowthRate, 0);
+                          if (popGrowth > 0) return (
+                            <span className="flex items-center gap-0.5 text-emerald-500">
+                              <ArrowTrendingUpIcon size={14} className="inline-flex" />
+                              <span className="text-[10px] font-semibold">+{popGrowth.toFixed(1)}%</span>
+                            </span>
+                          );
+                          if (popGrowth < 0) return (
+                            <span className="flex items-center gap-0.5 text-red-500">
+                              <ArrowTrendingDownIcon size={14} className="inline-flex" />
+                              <span className="text-[10px] font-semibold">{popGrowth.toFixed(1)}%</span>
+                            </span>
+                          );
+                          return <span className="text-[10px] text-muted-foreground">0.0%</span>;
+                        })()}
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {metricView.population === "total"
+                          ? `Tier ${country.populationTier || "N/A"}${country.populationDensity ? ` · ${Math.round(country.populationDensity).toLocaleString()}/km²` : ""}`
+                          : `Total: ${Math.round(country.currentPopulation ?? 0).toLocaleString("en-US")}`}
+                      </p>
+                    </button>
+                    <button
+                      onClick={country.areaSqMi && country.landArea ? () => setMetricView(v => ({ ...v, area: v.area === "km" ? "mi" : "km" })) : undefined}
+                      className={cn(
+                        "rounded-xl bg-white/40 dark:bg-white/[0.04] p-3 text-left transition-all",
+                        country.areaSqMi && country.landArea && "hover:bg-white/60 dark:hover:bg-white/[0.07] active:scale-[0.98] cursor-pointer",
+                      )}
+                    >
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Land Area</p>
+                      <p className="mt-0.5 text-lg font-bold tracking-tight text-foreground">
+                        {metricView.area === "km"
+                          ? country.landArea ? `${country.landArea.toLocaleString()} km²` : "N/A"
+                          : country.areaSqMi ? `${country.areaSqMi.toLocaleString()} sq mi` : "N/A"}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        {metricView.area === "km"
+                          ? country.areaSqMi ? `${country.areaSqMi.toLocaleString()} sq mi` : ""
+                          : country.landArea ? `${country.landArea.toLocaleString()} km²` : ""}
+                      </p>
+                    </button>
                   </div>
-                }
-              />
-            </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">Click any metric to toggle between views</TooltipContent>
+              </Tooltip>
 
-            {/* National Identity - With background image support */}
-            {country.nationalIdentity && (
-              <motion.div variants={staggerItem}>
-                <NationalIdentityCard 
-                  country={country}
-                  onEditImage={() => setImageUploadModal({ isOpen: true, cardType: "national_identity" })}
-                />
-              </motion.div>
-            )}
+              {/* Growth footer */}
+              <div className="flex items-center gap-4 border-t border-border/40 pt-2.5 text-[11px] text-muted-foreground">
+                <span>
+                  <TrendingUp className="mr-1 inline h-3 w-3 text-pink-500" />
+                  Max GDP Growth <span className="font-semibold text-foreground">{((country.maxGdpGrowthRate ?? 0) * 100).toFixed(1)}%</span>
+                  <span className="ml-1 opacity-60">({country.economicTier || "N/A"} cap)</span>
+                </span>
+                <span>
+                  <Activity className="mr-1 inline h-3 w-3 text-pink-500" />
+                  Local Factor <span className={cn("font-semibold", (country.localGrowthFactor ?? 1) > 1 ? "text-emerald-500" : (country.localGrowthFactor ?? 1) < 1 ? "text-red-500" : "text-foreground")}>{(((country.localGrowthFactor ?? 1) - 1) * 100).toFixed(2)}%</span>
+                </span>
+              </div>
 
-            {/* Government Structure - Quick Overview */}
-            {governmentStructure && (
-              <motion.div variants={staggerItem}>
-                <MetricCardGrid
-                  theme="government"
-                  columns={4}
-                  title="Government Structure"
-                  subtitle="Current leadership and institutions"
-                  backgroundImage={{
-                    countryId: country.id,
-                    cardType: "government",
-                    showEditButton: true,
-                    onEditClick: () => setImageUploadModal({ isOpen: true, cardType: "government" }),
-                    autoFallback: true,
-                    countryImageData: countryImageData ?? undefined,
-                  }}
-                  metrics={[
-                    ...(governmentStructure.headOfState ? [{
-                      id: "head-of-state",
-                      title: "Head of State",
-                      value: governmentStructure.headOfState,
-                      icon: Crown,
-                      description: governmentStructure.governmentType || "Leader",
-                      tooltip: "The chief public representative and ceremonial leader of the nation.",
-                    }] : []),
-                    ...(governmentStructure.headOfGovernment ? [{
-                      id: "head-of-gov",
-                      title: "Head of Government",
-                      value: governmentStructure.headOfGovernment,
-                      icon: Building,
-                      description: "Executive leader",
-                      tooltip: "The chief executive who directs government operations and policy.",
-                    }] : []),
-                    ...(governmentStructure.legislatureName ? [{
-                      id: "legislature",
-                      title: "Legislature",
-                      value: governmentStructure.legislatureName,
-                      icon: Building,
-                      description: "Legislative body",
-                      tooltip: "The primary lawmaking body responsible for enacting legislation.",
-                    }] : []),
-                    ...(governmentStructure.totalBudget ? [{
-                      id: "budget",
-                      title: "Government Budget",
-                      value: governmentStructure.totalBudget.toLocaleString("en-US", { style: "currency", currency: governmentStructure.budgetCurrency || "USD", notation: "compact", maximumFractionDigits: 1 }),
-                      icon: DollarSign,
-                      description: "Annual budget",
-                      tooltip: "Total annual government expenditure across all departments and programs.",
-                    }] : []),
-                  ]}
-                />
-              </motion.div>
-            )}
+              {/* ── Identity & Lore (inline, no collapsible wrapper) ── */}
+              <div className="border-t border-border/30 pt-3 space-y-3">
+                {country.nationalIdentity?.motto && (
+                  <p className="text-xs italic text-muted-foreground/80">&ldquo;{country.nationalIdentity.motto}&rdquo;</p>
+                )}
 
+                {/* Wiki intro + coat of arms */}
+                {(() => {
+                  const introObj = wikiIntro as { paragraphs?: string[]; wikiUrl?: string } | string | string[] | null | undefined;
+                  let introHtml: string | null = null;
+                  if (introObj && typeof introObj === "object" && "paragraphs" in introObj && Array.isArray(introObj.paragraphs) && introObj.paragraphs.length > 0) {
+                    introHtml = introObj.paragraphs[0] ?? null;
+                  } else if (typeof introObj === "string") {
+                    introHtml = introObj;
+                  } else if (Array.isArray(introObj) && introObj.length > 0) {
+                    introHtml = String(introObj[0]);
+                  }
+                  const coatOfArmsUrl = wikiImages?.find((img: { title: string; url: string }) =>
+                    /coat.?of.?arms|coa|seal|emblem|escudo|wappen/i.test(img.title)
+                  )?.url ?? null;
+                  return (introHtml || coatOfArmsUrl || wikiLoading) ? (
+                    <div className="flex gap-3">
+                      {coatOfArmsUrl && (
+                        <img src={coatOfArmsUrl} alt={`Coat of arms of ${country.name}`} className="h-20 w-auto flex-shrink-0 rounded-lg border border-border/30 bg-white/50 object-contain p-1.5 dark:bg-white/10" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        {introHtml ? (
+                          <div
+                            className="line-clamp-4 text-[13px] leading-relaxed text-foreground/80 [&_a]:text-blue-600 [&_a]:underline dark:[&_a]:text-blue-400 [&_a]:hover:text-blue-500"
+                            dangerouslySetInnerHTML={{ __html: introHtml }}
+                          />
+                        ) : wikiLoading ? (
+                          <div className="space-y-1.5">
+                            <div className="h-3 w-full animate-pulse rounded bg-muted/50" />
+                            <div className="h-3 w-4/5 animate-pulse rounded bg-muted/50" />
+                            <div className="h-3 w-3/5 animate-pulse rounded bg-muted/50" />
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
 
+                {/* Identity field pills */}
+                {country.nationalIdentity && (() => {
+                  const ni = country.nationalIdentity;
+                  const fields = OVERVIEW_IDENTITY_FIELDS.filter(f => f.getValue(ni));
+                  if (fields.length === 0) return null;
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {fields.map(f => {
+                        const FieldIcon = f.icon;
+                        return (
+                          <div key={f.key} className="flex items-center gap-2 rounded-lg bg-white/40 dark:bg-white/[0.04] px-3 py-2">
+                            <FieldIcon className={cn("h-3.5 w-3.5 flex-shrink-0", f.color)} />
+                            <div className="min-w-0">
+                              <p className="text-[9px] uppercase tracking-wider text-muted-foreground/60">{f.label}</p>
+                              <p className="truncate text-xs font-semibold text-foreground">{f.getValue(ni)}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
 
-          </motion.div>
+              {/* ── Wiki Sections (collapsible) ── */}
+              {(() => {
+                const wikiSource = (country as any).wikiSource;
+                const wikiUrl = `https://${wikiSource === "iiwiki" ? "iiwiki.com" : "ixwiki.com"}/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
+                const sections = (wikiSections ?? [])
+                  .filter((s: any) => s.level === 2)
+                  .map((s: any, i: number) => ({ title: s.line || s.title || "", key: `${i}-${s.anchor || s.line || i}` }));
+
+                if (sectionsLoading) return (
+                  <div className="flex items-center gap-2 py-2 border-t border-border/30 pt-3">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-500" />
+                    <span className="text-xs text-muted-foreground">Loading wiki sections...</span>
+                  </div>
+                );
+
+                if (sections.length === 0) return null;
+
+                return (
+                  <div className="border-t border-border/30 pt-3">
+                    <button
+                      onClick={() => setWikiSectionsOpen(!wikiSectionsOpen)}
+                      className="flex w-full items-center gap-2 text-left"
+                    >
+                      <BookOpen className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                      <span className="text-xs font-semibold text-foreground">Wiki Sections</span>
+                      <span className="text-[10px] text-muted-foreground">{sections.length} sections</span>
+                      <a
+                        href={wikiUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-auto mr-1 flex items-center gap-0.5 rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-medium text-purple-600 hover:bg-purple-500/20 dark:text-purple-400"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Wiki <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                      <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform flex-shrink-0", !wikiSectionsOpen && "-rotate-90")} />
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {wikiSectionsOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-2 space-y-1">
+                            {sections.map(section => (
+                              <WikiSectionRow key={section.key} title={section.title} countryName={country.name} wikiUrl={wikiUrl} />
+                            ))}
+                          </div>
+                          <a href={wikiUrl} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center justify-center gap-1 text-xs font-medium text-purple-600 hover:underline dark:text-purple-400">
+                            Read full article on IxWiki <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })()}
+
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Economy Tab */}
@@ -1108,6 +1183,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
                 </Card>
               </motion.div>
             </motion.div>
+            <WikiLoreBlock context="economy" themeColor="emerald" title="Economic Lore" />
           </ThemedTabContent>
         </TabsContent>
 
@@ -1438,6 +1514,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
                 </motion.div>
               </TabsContent>
             </Tabs>
+            <WikiLoreBlock context="labor" themeColor="blue" title="Labor & Education Lore" />
           </ThemedTabContent>
         </TabsContent>
 
@@ -1930,453 +2007,12 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
                 </CardContent>
               </Card>
             </motion.div>
+            <WikiLoreBlock context="government" themeColor="amber" title="Government Lore" />
           </ThemedTabContent>
         </TabsContent>
 
-        {/* Demographics Tab */}
-        <TabsContent value="demographics" id="demographics">
-          <ThemedTabContent theme="demographics" className="space-y-4">
-            <TabHeroBanner context="overview_demographics" title="Population & Society" subtitle="Demographics, health, and social indicators" icon={PieChart} accentColor="cyan" />
-            <Tabs defaultValue="population" className="space-y-4">
-              <div className="flex justify-center mb-2">
-                <TabsList className="subtab-pills subtab-pills-demographics">
-                  <TabsTrigger value="population" className="subtab-pill subtab-pill-demographics">
-                    <Users className="subtab-icon h-4 w-4" />
-                    <span>Population</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="settlement" className="subtab-pill subtab-pill-demographics">
-                    <Building className="subtab-icon h-4 w-4" />
-                    <span>Settlement</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="development" className="subtab-pill subtab-pill-demographics">
-                    <TrendingUp className="subtab-icon h-4 w-4" />
-                    <span>Development</span>
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              {/* Population Sub-Tab */}
-              <TabsContent value="population" className="space-y-4">
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-4"
-                >
-                  {/* Population Overview */}
-                  <motion.div variants={staggerItem}>
-                    <MetricCardGrid
-                      theme="demographics"
-                      columns={4}
-                      title="Population Overview"
-                      subtitle={`Demographic indicators for ${country.name}`}
-                      backgroundImage={{
-                        countryId: country.id,
-                        cardType: "demographics",
-                        showEditButton: true,
-                        onEditClick: () => setImageUploadModal({ isOpen: true, cardType: "demographics" }),
-                        autoFallback: true,
-                        countryImageData: countryImageData ?? undefined,
-                      }}
-                      metrics={[
-                        {
-                          id: "total-pop",
-                          title: "Total Population",
-                          value: (economyData?.core?.totalPopulation ?? 0).toLocaleString(),
-                          icon: Users,
-                          trend: (country.populationGrowthRate ?? 0) > 0 ? "up" : "stable",
-                          trendValue: smartNormalizeGrowthRate(country.populationGrowthRate, 0),
-                          description: `Tier ${country.populationTier || "N/A"}`,
-                          tooltip: "Total number of citizens. Population tier determines economic modeling parameters.",
-                        },
-                        {
-                          id: "life-expectancy",
-                          title: "Life Expectancy",
-                          value: `${(economyData?.demographics?.lifeExpectancy ?? 0).toFixed(1)} years`,
-                          icon: Activity,
-                          description: "Average lifespan",
-                          onClick: () => openMetricModal("demographics-health", country.id),
-                          tooltip: "Average number of years a newborn is expected to live given current mortality rates.",
-                        },
-                        {
-                          id: "literacy",
-                          title: "Literacy Rate",
-                          value: `${(economyData?.demographics?.literacyRate ?? 0).toFixed(1)}%`,
-                          icon: Users,
-                          trend: (economyData?.demographics?.literacyRate ?? 0) > 90 ? "up" : "stable",
-                          description: "Adult literacy",
-                          tooltip: "Percentage of adults (15+) who can read and write. Key indicator of human development.",
-                        },
-                        {
-                          id: "urbanization",
-                          title: "Urbanization",
-                          value: `${(economyData?.demographics?.urbanRuralSplit?.urban ?? 0).toFixed(1)}%`,
-                          icon: Building,
-                          description: "Urban population",
-                          tooltip: "Share of the total population living in urban areas (cities and towns).",
-                        },
-                      ]}
-                    />
-                  </motion.div>
-
-                  {/* Age Distribution */}
-                  <motion.div variants={staggerItem}>
-                    <SectorBreakdownCard
-                      title="Age Distribution"
-                      subtitle="Population breakdown by age groups"
-                      layout="grid"
-                      showTrends={false}
-                      sectors={
-                        (economyData?.demographics?.ageDistribution ?? []).map((age: any) => ({
-                          id: age.group?.toLowerCase().replace(/\s+/g, '-') ?? 'unknown',
-                          name: age.group ?? 'Unknown',
-                          percentage: age.percentage ?? 0,
-                          color: age.group?.includes('0-14') ? 'cyan' :
-                                 age.group?.includes('15-24') ? 'blue' :
-                                 age.group?.includes('25-54') ? 'emerald' :
-                                 age.group?.includes('55-64') ? 'amber' : 'purple',
-                          description: `${Math.round((age.percentage ?? 0) / 100 * (economyData?.core?.totalPopulation ?? 0)).toLocaleString()} people`,
-                        }))
-                      }
-                    />
-                  </motion.div>
-                </motion.div>
-              </TabsContent>
-
-              {/* Settlement Sub-Tab */}
-              <TabsContent value="settlement" className="space-y-4">
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-4"
-                >
-                  {/* Urban/Rural Distribution */}
-                  <motion.div variants={staggerItem}>
-                    <SectorBreakdownCard
-                      title="Urban/Rural Distribution"
-                      subtitle="Geographic population distribution"
-                      layout="list"
-                      showProgressBars={true}
-                      sectors={[
-                        {
-                          id: "urban",
-                          name: "Urban Population",
-                          value: ((economyData?.demographics?.urbanRuralSplit?.urban ?? 0) / 100) * (economyData?.core?.totalPopulation ?? 0),
-                          percentage: economyData?.demographics?.urbanRuralSplit?.urban ?? 0,
-                          color: "blue",
-                          description: "Living in cities and towns",
-                        },
-                        {
-                          id: "rural",
-                          name: "Rural Population",
-                          value: ((economyData?.demographics?.urbanRuralSplit?.rural ?? 0) / 100) * (economyData?.core?.totalPopulation ?? 0),
-                          percentage: economyData?.demographics?.urbanRuralSplit?.rural ?? 0,
-                          color: "green",
-                          description: "Living in rural areas",
-                        },
-                      ]}
-                      totalValue={economyData?.core?.totalPopulation ?? 0}
-                    />
-                  </motion.div>
-
-                  {/* Regional Distribution */}
-                  {economyData?.demographics?.regionalDistribution && economyData.demographics.regionalDistribution.length > 0 && (
-                    <motion.div variants={staggerItem}>
-                      <SectorBreakdownCard
-                        title="Regional Distribution"
-                        subtitle="Population by administrative region"
-                        layout="list"
-                        showProgressBars={true}
-                        showTrends={false}
-                        sectors={
-                          (economyData.demographics.regionalDistribution ?? []).slice(0, 8).map((region: any) => ({
-                            id: region.region?.toLowerCase().replace(/\s+/g, '-') ?? 'unknown',
-                            name: region.region ?? 'Unknown',
-                            percentage: region.percentage ?? 0,
-                            color: ['blue', 'emerald', 'purple', 'amber', 'cyan', 'rose', 'indigo', 'teal'][
-                              (economyData?.demographics?.regionalDistribution ?? []).indexOf(region) % 8
-                            ],
-                            description: region.urbanPercent ? `${region.urbanPercent.toFixed(0)}% urban` : undefined,
-                          }))
-                        }
-                      />
-                    </motion.div>
-                  )}
-                </motion.div>
-              </TabsContent>
-
-              {/* Development Sub-Tab */}
-              <TabsContent value="development" className="space-y-4">
-                <motion.div
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-4"
-                >
-                  {/* Education Levels */}
-                  <motion.div variants={staggerItem}>
-                    <SectorBreakdownCard
-                      title="Education Levels"
-                      subtitle="Population by educational attainment"
-                      layout="list"
-                      showProgressBars={true}
-                      sectors={
-                        (economyData?.demographics?.educationLevels ?? []).map((edu: any) => ({
-                          id: edu.level?.toLowerCase().replace(/\s+/g, '-') ?? 'unknown',
-                          name: edu.level ?? 'Unknown',
-                          percentage: edu.percentage ?? 0,
-                          color: edu.level?.toLowerCase().includes('tertiary') ? 'purple' :
-                                 edu.level?.toLowerCase().includes('secondary') ? 'blue' :
-                                 edu.level?.toLowerCase().includes('primary') ? 'emerald' : 'amber',
-                        }))
-                      }
-                    />
-                  </motion.div>
-
-                  {/* Health & Social Indicators */}
-                  <motion.div variants={staggerItem}>
-                    <MetricCardGrid
-                      theme="demographics"
-                      columns={3}
-                      title="Health & Social Indicators"
-                      subtitle="Quality of life metrics"
-                      metrics={[
-                        {
-                          id: "median-age",
-                          title: "Median Age",
-                          value: `${(economyData?.demographics?.medianAge ?? 0).toFixed(1)} years`,
-                          icon: Users,
-                          description: "Population median age",
-                          tooltip: "The age that divides the population into two equal halves — half younger, half older.",
-                        },
-                        {
-                          id: "dependency-ratio",
-                          title: "Dependency Ratio",
-                          value: `${(economyData?.demographics?.dependencyRatio ?? 0).toFixed(1)}%`,
-                          icon: Users,
-                          description: "Non-working age population",
-                          tooltip: "Ratio of dependents (under 15 and over 64) to the working-age population (15-64).",
-                        },
-                        {
-                          id: "growth-rate",
-                          title: "Population Growth",
-                          value: `${smartNormalizeGrowthRate(country.populationGrowthRate, 0).toFixed(2)}%`,
-                          icon: TrendingUp,
-                          trend: (country.populationGrowthRate ?? 0) > 0 ? "up" : (country.populationGrowthRate ?? 0) < 0 ? "down" : "stable",
-                          description: "Annual growth rate",
-                          tooltip: "Annual rate of population change from births, deaths, and migration.",
-                        },
-                      ]}
-                    />
-                  </motion.div>
-                </motion.div>
-              </TabsContent>
-            </Tabs>
-          </ThemedTabContent>
-        </TabsContent>
-
-        {/* Advanced Analytics Tab */}
-        {(variant === "premium" || variant === "unified") && (
-          <TabsContent value="analytics" className="space-y-4" id="analytics">
-            <ThemedTabContent theme="detailed" className="space-y-4">
-              <TabHeroBanner context="overview_analytics" title="Advanced Analytics" subtitle="Trends, risk analysis, and comparative metrics" icon={Target} accentColor="pink" />
-              <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                animate="show"
-                className="space-y-4"
-              >
-                <motion.div variants={staggerItem}>
-                  <Card className="glass-surface glass-refraction border-border">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                        <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        Economic Trends & Projections
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {historicalLoading ? (
-                        <div className="space-y-4">
-                          <div className="bg-muted h-4 animate-pulse rounded" />
-                          <div className="bg-muted h-64 animate-pulse rounded" />
-                          <div className="bg-muted h-4 w-3/4 animate-pulse rounded" />
-                        </div>
-                      ) : historicalData && historicalData.length > 0 ? (
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="mb-3 text-sm font-medium">GDP Growth Over Time</h4>
-                            <div className="mb-2 grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3">
-                              <div className="rounded-lg border p-2.5 text-center">
-                                <div className="text-lg font-bold text-blue-600">
-                                  {historicalData.length}
-                                </div>
-                                <div className="text-muted-foreground text-xs">Data Points</div>
-                              </div>
-                              <div className="rounded-lg border p-2.5 text-center">
-                                <div className="text-lg font-bold text-green-600">
-                                  $
-                                  {(
-                                    (historicalData[historicalData.length - 1]?.gdpPerCapita || 0) /
-                                    1000
-                                  ).toFixed(0)}
-                                  k
-                                </div>
-                                <div className="text-muted-foreground text-xs">Latest GDP/Capita</div>
-                              </div>
-                              <div className="rounded-lg border p-2.5 text-center">
-                                <div className="text-lg font-bold text-purple-600">
-                                  {(
-                                    (historicalData[historicalData.length - 1]?.population || 0) /
-                                    1000000
-                                  ).toFixed(1)}
-                                  M
-                                </div>
-                                <div className="text-muted-foreground text-xs">Latest Population</div>
-                              </div>
-                            </div>
-
-                            {/* Simple GDP Trend Visualization */}
-                            <div className="mt-4">
-                              <div className="mb-2 flex items-center gap-2">
-                                {historicalData.length >= 2 && (
-                                  <>
-                                    {historicalData[historicalData.length - 1]!.gdpPerCapita >
-                                    historicalData[0]!.gdpPerCapita ? (
-                                      <TrendingUp className="h-4 w-4 text-green-600" />
-                                    ) : (
-                                      <TrendingDown className="h-4 w-4 text-red-600" />
-                                    )}
-                                    <span className="text-sm font-medium">
-                                      {(
-                                        ((historicalData[historicalData.length - 1]!.gdpPerCapita -
-                                          historicalData[0]!.gdpPerCapita) /
-                                          historicalData[0]!.gdpPerCapita) *
-                                        100
-                                      ).toFixed(1)}
-                                      % total change
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                              <div className="bg-muted h-2 overflow-hidden rounded-full">
-                                <div
-                                  className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all"
-                                  style={{
-                                    width: `${Math.min(100, Math.max(0, ((historicalData.length - 1) / 30) * 100))}%`,
-                                  }}
-                                />
-                              </div>
-                              <div className="text-muted-foreground mt-1 flex justify-between text-xs">
-                                <span>
-                                  Start: ${(historicalData[0]!.gdpPerCapita / 1000).toFixed(1)}k
-                                </span>
-                                <span>
-                                  Current: $
-                                  {(
-                                    (historicalData[historicalData.length - 1]!.gdpPerCapita || 0) /
-                                    1000
-                                  ).toFixed(1)}
-                                  k
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground py-6 text-center">
-                          <BarChart3 className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                          <p className="mb-1 text-sm">No Historical Data Available</p>
-                          <p className="text-xs">
-                            Historical data will appear once the country has been calculated over
-                            time.
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div variants={staggerItem}>
-                  <Card className="glass-surface glass-refraction border-border">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                        <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        Economic Health & Risk Analysis
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <SimplifiedTrendRiskAnalytics countryId={country.id} userId={user?.id} />
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div variants={staggerItem}>
-                  <Card className="glass-surface glass-refraction border-border">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                        <BarChart3 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        Comparative Analysis
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                    {allCountriesLoading ? (
-                      <div className="space-y-4">
-                        <div className="bg-muted h-4 animate-pulse rounded" />
-                        <div className="bg-muted h-32 animate-pulse rounded" />
-                        <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
-                      </div>
-                    ) : allCountries && allCountries.countries ? (
-                      <ComparativeAnalysis
-                        userCountry={{
-                          id: country.id,
-                          name: country.name,
-                          region: country.region || "Unknown",
-                          tier: country.economicTier || "Developing",
-                          gdp:
-                            country.currentTotalGdp ||
-                            country.currentPopulation * country.currentGdpPerCapita,
-                          gdpPerCapita: country.currentGdpPerCapita || 0,
-                          population: country.currentPopulation || 0,
-                          growthRate: smartNormalizeGrowthRate(
-                            country.realGDPGrowthRate || country.adjustedGdpGrowth
-                          ),
-                          unemployment:
-                            country.unemploymentRate || economyData?.labor?.unemploymentRate || 5.0,
-                          inflation:
-                            country.inflationRate || economyData?.core?.inflationRate || 2.5,
-                          taxRevenue:
-                            country.taxRevenueGDPPercent ||
-                            economyData?.fiscal?.taxRevenueGDPPercent ||
-                            25.0,
-                          debtToGdp:
-                            country.totalDebtGDPRatio ||
-                            economyData?.fiscal?.totalDebtGDPRatio ||
-                            60.0,
-                          competitivenessIndex: 50 + (country.economicVitality || 0) / 5,
-                          innovationIndex: 50 + (country.governmentalEfficiency || 0) / 5,
-                          color: "#3B82F6",
-                        }}
-                        allCountries={mappedAllCountries}
-                      />
-                    ) : (
-                      <div className="text-muted-foreground py-6 text-center">
-                        <BarChart3 className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                        <p className="mb-1 text-sm">Comparative Analysis Unavailable</p>
-                        <p className="text-xs">
-                          Unable to load country comparison data at this time.
-                        </p>
-                      </div>
-                    )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-              </motion.div>
-            </ThemedTabContent>
-          </TabsContent>
-        )}
+        {/* Demographics and Analytics tabs removed — demographics belongs in Intelligence (premium),
+            analytics belongs in Dashboard World section. See cross-pillar refactor plan. */}
       </AnimatedTabContent>
 
       {/* Render premium upgrade teaser */}
@@ -2450,137 +2086,6 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
 
 MyCountryTabSystemComponent.displayName = "MyCountryTabSystem";
 
-// National Identity field config (data-driven rendering)
-const IDENTITY_FIELDS: {
-  key: string;
-  label: string;
-  bg: string;
-  text: string;
-  border: string;
-  getValue: (ni: any) => string | null;
-}[] = [
-  { key: "governmentType", label: "Government", bg: "from-amber-50/80 to-yellow-50/80 dark:from-amber-900/20 dark:to-yellow-900/20", text: "text-amber-700 dark:text-amber-400", border: "border-amber-200/50 dark:border-amber-700/30", getValue: (ni) => ni.governmentType },
-  { key: "capitalCity", label: "Capital", bg: "from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20", text: "text-blue-700 dark:text-blue-400", border: "border-blue-200/50 dark:border-blue-700/30", getValue: (ni) => ni.capitalCity },
-  { key: "officialLanguages", label: "Languages", bg: "from-purple-50/80 to-violet-50/80 dark:from-purple-900/20 dark:to-violet-900/20", text: "text-purple-700 dark:text-purple-400", border: "border-purple-200/50 dark:border-purple-700/30", getValue: (ni) => ni.officialLanguages },
-  { key: "currency", label: "Currency", bg: "from-emerald-50/80 to-green-50/80 dark:from-emerald-900/20 dark:to-green-900/20", text: "text-emerald-700 dark:text-emerald-400", border: "border-emerald-200/50 dark:border-emerald-700/30", getValue: (ni) => ni.currency ? `${ni.currency}${ni.currencySymbol ? ` (${ni.currencySymbol})` : ""}` : null },
-  { key: "demonym", label: "Demonym", bg: "from-rose-50/80 to-pink-50/80 dark:from-rose-900/20 dark:to-pink-900/20", text: "text-rose-700 dark:text-rose-400", border: "border-rose-200/50 dark:border-rose-700/30", getValue: (ni) => ni.demonym },
-  { key: "callingCode", label: "Calling Code", bg: "from-indigo-50/80 to-blue-50/80 dark:from-indigo-900/20 dark:to-blue-900/20", text: "text-indigo-700 dark:text-indigo-400", border: "border-indigo-200/50 dark:border-indigo-700/30", getValue: (ni) => ni.callingCode },
-  { key: "timeZone", label: "Time Zone", bg: "from-cyan-50/80 to-teal-50/80 dark:from-cyan-900/20 dark:to-cyan-900/20", text: "text-cyan-700 dark:text-cyan-400", border: "border-cyan-200/50 dark:border-cyan-700/30", getValue: (ni) => ni.timeZone },
-  { key: "internetTLD", label: "Internet TLD", bg: "from-orange-50/80 to-amber-50/80 dark:from-orange-900/20 dark:to-amber-900/20", text: "text-orange-700 dark:text-orange-400", border: "border-orange-200/50 dark:border-orange-700/30", getValue: (ni) => ni.internetTLD },
-];
-
-// National Identity Card with background image support
-interface NationalIdentityCardProps {
-  country: NonNullable<ReturnType<typeof useCountryData>["country"]>;
-  onEditImage: () => void;
-}
-
-function NationalIdentityCard({ country, onEditImage }: NationalIdentityCardProps) {
-  const [flagLoaded, setFlagLoaded] = React.useState(false);
-  const [showAllFields, setShowAllFields] = React.useState(false);
-  const { flagUrl } = useFlag(country.name);
-
-  return (
-    <Card className="glass-surface glass-refraction border-border overflow-hidden relative">
-      {/* Flag Background with Canvas Sine-Wave Animation */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: flagLoaded ? 1 : 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <AnimatedFlagBackground
-          flagUrl={flagUrl ?? undefined}
-          intensity="subtle"
-          blur={3}
-          onLoad={() => setFlagLoaded(true)}
-          className="absolute inset-0"
-        />
-        {/* Gradient overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background/95" />
-      </motion.div>
-
-      {/* Edit Button with Tooltip */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-3 right-3 z-10 h-8 w-8 bg-black/30 hover:bg-black/50 text-white"
-            onClick={onEditImage}
-          >
-            <ImageIcon className="h-4 w-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Customize background image</TooltipContent>
-      </Tooltip>
-
-      {/* Content */}
-      <div className="relative z-[5]">
-        <CardHeader className="border-b border-amber-200/30 dark:border-amber-700/30">
-          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-            <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            National Identity
-            <span className="text-muted-foreground text-xs font-normal">{country.nationalIdentity?.officialName || country.name}</span>
-          </CardTitle>
-          {country.nationalIdentity?.motto && (
-            <p className="text-xs italic text-muted-foreground mt-1">
-              &ldquo;{country.nationalIdentity.motto}&rdquo;
-            </p>
-          )}
-        </CardHeader>
-        <CardContent className="p-4">
-          {(() => {
-            const filteredFields = IDENTITY_FIELDS.filter((field) => field.getValue(country.nationalIdentity));
-            const visibleFields = filteredFields.slice(0, 4);
-            const extraFields = filteredFields.slice(4);
-            const renderField = (field: typeof IDENTITY_FIELDS[number]) => (
-              <motion.div
-                key={field.key}
-                className={`p-3 rounded-lg bg-gradient-to-br ${field.bg} border ${field.border} backdrop-blur-sm`}
-                whileHover={{ scale: 1.02 }}
-              >
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{field.label}</p>
-                <p className={`font-semibold ${field.text}`}>{field.getValue(country.nationalIdentity)}</p>
-              </motion.div>
-            );
-            return (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                  {visibleFields.map(renderField)}
-                </div>
-                <AnimatePresence>
-                  {showAllFields && extraFields.length > 0 && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 mt-2">
-                        {extraFields.map(renderField)}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                {extraFields.length > 0 && (
-                  <button
-                    onClick={() => setShowAllFields(!showAllFields)}
-                    className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mx-auto"
-                  >
-                    {showAllFields ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                    {showAllFields ? "See less" : `See ${extraFields.length} more`}
-                  </button>
-                )}
-              </>
-            );
-          })()}
-        </CardContent>
-      </div>
-    </Card>
-  );
-}
 
 // Compact issues banner for the Overview tab
 export function OverviewIssuesBanner({ countryId }: { countryId: string }) {
@@ -2641,6 +2146,118 @@ export function OverviewIssuesBanner({ countryId }: { countryId: string }) {
         </div>
       </button>
     </motion.div>
+  );
+}
+
+// ─── Overview Identity Field Config ──────────────────────────────────────────
+
+const OVERVIEW_IDENTITY_FIELDS: Array<{
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  color: string;
+  getValue: (ni: any) => string | null;
+}> = [
+  { key: "governmentType", label: "Government", icon: Landmark, color: "text-amber-600 dark:text-amber-400", getValue: (ni) => ni.governmentType },
+  { key: "capitalCity", label: "Capital", icon: MapPin, color: "text-blue-600 dark:text-blue-400", getValue: (ni) => ni.capitalCity },
+  { key: "officialLanguages", label: "Languages", icon: Globe2, color: "text-purple-600 dark:text-purple-400", getValue: (ni) => ni.officialLanguages },
+  { key: "currency", label: "Currency", icon: DollarSign, color: "text-emerald-600 dark:text-emerald-400", getValue: (ni) => ni.currency ? `${ni.currency}${ni.currencySymbol ? ` (${ni.currencySymbol})` : ""}` : null },
+  { key: "demonym", label: "Demonym", icon: Users, color: "text-rose-600 dark:text-rose-400", getValue: (ni) => ni.demonym },
+  { key: "callingCode", label: "Calling Code", icon: Globe, color: "text-indigo-600 dark:text-indigo-400", getValue: (ni) => ni.callingCode },
+  { key: "timeZone", label: "Time Zone", icon: Clock, color: "text-cyan-600 dark:text-cyan-400", getValue: (ni) => ni.timeZone },
+  { key: "internetTLD", label: "Internet TLD", icon: Globe, color: "text-orange-600 dark:text-orange-400", getValue: (ni) => ni.internetTLD },
+];
+
+// ─── Wiki Section Classification ─────────────────────────────────────────────
+
+const WIKI_SECTION_TYPES: Array<{ pattern: RegExp; label: string; icon: LucideIcon; color: string }> = [
+  { pattern: /^history|^early|^medieval|^modern|^ancient|^prehistory|^contemporary|^classical/i, label: "History", icon: Clock, color: "text-amber-600" },
+  { pattern: /^military|^army|^navy|^defense|^armed/i, label: "Military", icon: Shield, color: "text-red-600" },
+  { pattern: /^government|^politics|^executive|^legislature|^judicial|^constitution/i, label: "Government", icon: Landmark, color: "text-indigo-600" },
+  { pattern: /^economy|^trade|^industry|^agriculture|^energy|^currency|^labor/i, label: "Economy", icon: Globe2, color: "text-emerald-600" },
+  { pattern: /^culture|^cuisine|^music|^art|^sport|^education|^language|^religion|^ethnic/i, label: "Culture", icon: Scroll, color: "text-purple-600" },
+  { pattern: /^demograph|^population|^society|^social|^health/i, label: "Society", icon: Users, color: "text-blue-600" },
+  { pattern: /^geography|^climate|^environment|^natural|^transport/i, label: "Geography", icon: Globe2, color: "text-teal-600" },
+];
+
+function classifyWikiSection(title: string): { label: string; icon: LucideIcon; color: string } {
+  for (const type of WIKI_SECTION_TYPES) {
+    if (type.pattern.test(title)) return type;
+  }
+  return { label: "General", icon: BookOpen, color: "text-muted-foreground" };
+}
+
+// ─── Wiki Section Row (expandable) ───────────────────────────────────────────
+
+function WikiSectionRow({ title, countryName, wikiUrl }: { title: string; countryName: string; wikiUrl: string }) {
+  const [expanded, setExpanded] = React.useState(false);
+  const { label, icon: Icon, color } = classifyWikiSection(title);
+
+  const { data: sectionContent, isLoading: contentLoading } = api.wiki.getSectionContent.useQuery(
+    { title: countryName, section: title, source: "ixwiki" },
+    { enabled: expanded, staleTime: 10 * 60_000 }
+  );
+
+  const rawContent = sectionContent
+    ? (typeof sectionContent === "object" && "content" in sectionContent
+        ? (sectionContent as { content: string }).content
+        : String(sectionContent))
+    : null;
+  const cleanContent = rawContent
+    ? rawContent
+        .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1")
+        .replace(/\{\{[^}]*\}\}/g, "")
+        .replace(/<[^>]*>/g, "")
+        .replace(/'{2,3}/g, "")
+        .trim()
+        .slice(0, 600)
+    : null;
+
+  return (
+    <div className="rounded-lg bg-white/30 dark:bg-white/[0.03] transition-colors hover:bg-white/50 dark:hover:bg-white/[0.06]">
+      <button onClick={() => setExpanded(!expanded)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left">
+        <Icon className={cn("h-3.5 w-3.5 flex-shrink-0", color)} />
+        <span className="flex-1 text-xs font-medium text-foreground">{title}</span>
+        <span className={cn("text-[9px] font-medium uppercase tracking-wider", color)}>{label}</span>
+        {expanded ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+      </button>
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-2.5">
+              {contentLoading && (
+                <div className="flex items-center gap-2 py-2">
+                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">Loading...</span>
+                </div>
+              )}
+              {cleanContent && (
+                <p className="text-[11px] leading-relaxed text-foreground/70">
+                  {cleanContent}{cleanContent.length >= 600 ? "..." : ""}
+                </p>
+              )}
+              {!contentLoading && !cleanContent && (
+                <p className="py-1 text-[10px] italic text-muted-foreground">No content available.</p>
+              )}
+              <a
+                href={`${wikiUrl}#${encodeURIComponent(title.replace(/ /g, "_"))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-[10px] text-purple-500 hover:underline"
+              >
+                Read more <ExternalLink className="h-2.5 w-2.5" />
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 

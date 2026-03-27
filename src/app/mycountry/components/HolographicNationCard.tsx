@@ -107,7 +107,7 @@ export function HolographicNationCard({
       tier: country.economicTier,
     },
     populationMetrics: {
-      population: `${(country.currentPopulation / 1000000).toFixed(1)}M`,
+      population: `${Math.round(country.currentPopulation / 1000000)}M`,
       growthRate: `${(country.populationGrowthRate * 100).toFixed(1)}%`,
       tier: country.populationTier,
     },
@@ -363,7 +363,7 @@ export function HolographicNationCard({
             <div className="bg-background/60 border-border/20 rounded-lg border p-3 text-center backdrop-blur-sm">
               <Users className="mx-auto mb-1 h-4 w-4 text-blue-500" />
               <div className="text-foreground text-sm font-bold">
-                {(country.currentPopulation / 1000000).toFixed(1)}M
+                {Math.round(country.currentPopulation / 1000000)}M
               </div>
               <div className="text-muted-foreground mb-1 text-xs">Population</div>
               <Badge variant="outline" className="bg-blue-50 text-xs dark:bg-blue-950/30">

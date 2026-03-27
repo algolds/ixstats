@@ -16,6 +16,7 @@ export function NavigationSettings() {
     showCardsTab: true,
     showLabsTab: true,
     showIntelligenceTab: false,
+    showDefenseTab: false,
     showMapsTab: true,
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -68,6 +69,7 @@ export function NavigationSettings() {
       navigationSettings.showCardsTab !== localSettings.showCardsTab ||
       navigationSettings.showLabsTab !== localSettings.showLabsTab ||
       navigationSettings.showIntelligenceTab !== localSettings.showIntelligenceTab ||
+      navigationSettings.showDefenseTab !== localSettings.showDefenseTab ||
       navigationSettings.showMapsTab !== localSettings.showMapsTab);
 
   if (isLoading) {
@@ -202,6 +204,36 @@ export function NavigationSettings() {
             id="intelligence-tab"
             checked={localSettings.showIntelligenceTab}
             onCheckedChange={(checked) => handleToggle("showIntelligenceTab", checked)}
+          />
+        </div>
+
+        {/* Defense Tab Setting */}
+        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-2">
+              {localSettings.showDefenseTab ? (
+                <Eye className="h-4 w-4 text-red-500" />
+              ) : (
+                <EyeOff className="text-muted-foreground h-4 w-4" />
+              )}
+            </div>
+            <div>
+              <Label
+                htmlFor="defense-tab"
+                className="flex items-center gap-1 text-sm font-medium"
+              >
+                <Shield className="text-muted-foreground h-4 w-4" />
+                Defense Tab
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Show/hide the Defense & Security navigation tab in MyCountry
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="defense-tab"
+            checked={localSettings.showDefenseTab}
+            onCheckedChange={(checked) => handleToggle("showDefenseTab", checked)}
           />
         </div>
 

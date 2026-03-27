@@ -1,25 +1,42 @@
 "use client";
 
 /**
- * EditorPanel — Right-side panel with collapsible accordion sections.
+ * EditorPanel — Right-side panel with tabbed navigation.
  *
- * Sections:
- * 1. Properties — form fields for the active feature (auto-expands on add/edit)
- * 2. Features — searchable feature list (auto-expands in view mode)
- * 3. Wiki — conflict detection + auto-linker (collapsed by default)
+ * Tabs:
+ * 1. Properties (Settings2) — form fields for the active feature
+ * 2. Layers (Layers) — placeholder for future layer management
+ * 3. Features (List) — searchable feature list
+ * 4. Wiki (BookOpen) — placeholder for wiki scanner
  *
- * Panel can be collapsed entirely via the edge toggle button.
+ * Auto-switches to Properties on add/edit modes, Features on view mode.
+ * User can manually override by clicking tabs.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  ChevronRight, ChevronLeft, ChevronDown,
-  Settings2, List, BookOpen, Search,
+  ChevronRight, ChevronLeft,
+  Settings2, Layers, List, BookOpen, Search,
 } from "lucide-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
+import { FeatureListSkeleton } from "~/components/maps/editor/EditorSkeleton";
+
+const PANEL_MIN_W = 256;
+const PANEL_MAX_W = 480;
+const PANEL_DEFAULT_W = 320;
+const PANEL_STORAGE_KEY = "ixworld-editor-panel-width";
+
+type TabId = "properties" | "layers" | "features" | "wiki";
+
+const TABS: { id: TabId; label: string; Icon: typeof Settings2 }[] = [
+  { id: "properties", label: "Props", Icon: Settings2 },
+  { id: "layers", label: "Layers", Icon: Layers },
+  { id: "features", label: "List", Icon: List },
+  { id: "wiki", label: "Wiki", Icon: BookOpen },
+];
 
 interface EditorPanelProps {
-  /** Current editor mode — controls which sections auto-expand */
+  /** Current editor mode — controls which tab auto-activates */
   mode: EditorMode;
   /** Whether the panel is collapsed (0-width) */
   collapsed: boolean;
@@ -27,14 +44,15 @@ interface EditorPanelProps {
   /** Content for each section (rendered by parent to avoid prop drilling) */
   propertiesContent: React.ReactNode;
   featureListContent: React.ReactNode;
+  layersContent?: React.ReactNode;
   wikiContent?: React.ReactNode;
   /** Feature count for badge */
   featureCount?: number;
   /** Whether import wizard should take over the panel */
   importWizardContent?: React.ReactNode;
+  /** Whether features are still loading */
+  featuresLoading?: boolean;
 }
-
-type SectionId = "properties" | "features" | "wiki";
 
 export function EditorPanel({
   mode,
@@ -42,49 +60,73 @@ export function EditorPanel({
   onToggleCollapse,
   propertiesContent,
   featureListContent,
+  layersContent,
   wikiContent,
   featureCount,
   importWizardContent,
+  featuresLoading,
 }: EditorPanelProps) {
-  const [expandedSections, setExpandedSections] = useState<Set<SectionId>>(
-    new Set(["properties"])
-  );
+  const [activeTab, setActiveTab] = useState<TabId>("features");
+  const userOverrideRef = useRef(false);
 
-  // Contextual auto-expand based on active tool
+  // Panel resize
+  const [panelWidth, setPanelWidth] = useState(() => {
+    if (typeof window === "undefined") return PANEL_DEFAULT_W;
+    const stored = localStorage.getItem(PANEL_STORAGE_KEY);
+    return stored ? Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, parseInt(stored))) : PANEL_DEFAULT_W;
+  });
+  const isDragging = useRef(false);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    const startX = e.clientX;
+    const startW = panelWidth;
+    const onMove = (me: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = startX - me.clientX; // dragging left = wider
+      const newW = Math.min(PANEL_MAX_W, Math.max(PANEL_MIN_W, startW + delta));
+      setPanelWidth(newW);
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      localStorage.setItem(PANEL_STORAGE_KEY, String(panelWidth));
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }, [panelWidth]);
+
+  // Auto-switch tabs based on mode (unless user manually overrode)
   useEffect(() => {
-    setExpandedSections(() => {
-      const next = new Set<SectionId>();
-      // Features list is always expanded (pinned at bottom)
-      next.add("features");
-      if (mode.startsWith("add-") || mode.startsWith("edit-") || mode === "paint") {
-        // Tool active: also show properties panel at top
-        next.add("properties");
-      }
-      return next;
-    });
+    // Reset override flag when mode changes
+    userOverrideRef.current = false;
+
+    if (mode.startsWith("add-") || mode.startsWith("edit-") || mode === "paint") {
+      setActiveTab("properties");
+    } else {
+      setActiveTab("features");
+    }
   }, [mode]);
 
-  const toggleSection = useCallback((id: SectionId) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
+  const handleTabClick = (tab: TabId) => {
+    userOverrideRef.current = true;
+    setActiveTab(tab);
+  };
 
   // Import mode takes over the entire panel
   if (mode === "import-provinces" && importWizardContent) {
     return (
       <div className="relative flex">
-        {/* Collapse toggle */}
         <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
-
         {!collapsed && (
-          <div className="flex h-full w-72 flex-col border-l border-border bg-card lg:w-80">
+          <div className="flex h-full flex-col border-l border-border bg-card" style={{ width: panelWidth }}>
+            {/* Resize handle */}
+            <div
+              className="absolute left-0 top-0 z-20 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
+              onMouseDown={handleResizeStart}
+            />
             {importWizardContent}
           </div>
         )}
@@ -94,49 +136,79 @@ export function EditorPanel({
 
   return (
     <div className="relative flex">
-      {/* Collapse toggle button on the panel edge */}
       <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} />
 
       {!collapsed && (
-        <div className="flex h-full w-72 flex-col border-l border-border bg-card lg:w-80">
-          {/* ── Top zone: Properties + Wiki (scrollable, shrinks when tool active) ── */}
-          {(mode.startsWith("add-") || mode.startsWith("edit-") || mode === "paint") && (
-            <div className="shrink-0 overflow-y-auto border-b border-border" style={{ maxHeight: "60%" }}>
-              <PanelSection
-                title="Properties"
-                icon={<Settings2 className="h-3.5 w-3.5" />}
-                expanded={expandedSections.has("properties")}
-                onToggle={() => toggleSection("properties")}
-              >
-                {propertiesContent}
-              </PanelSection>
-
-              {wikiContent && (
-                <PanelSection
-                  title="Wiki Scanner"
-                  icon={<BookOpen className="h-3.5 w-3.5" />}
-                  expanded={expandedSections.has("wiki")}
-                  onToggle={() => toggleSection("wiki")}
+        <div className="flex h-full flex-col border-l border-border bg-card" style={{ width: panelWidth }}>
+          {/* Resize handle */}
+          <div
+            className="absolute left-0 top-0 z-20 h-full w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors"
+            onMouseDown={handleResizeStart}
+          />
+          {/* Tab bar — compact 32px height */}
+          <div className="flex h-8 shrink-0 border-b border-border bg-muted/30">
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabClick(tab.id)}
+                  className={`flex flex-1 items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
+                    isActive
+                      ? "border-b-2 border-primary bg-card text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  }`}
                 >
-                  {wikiContent}
-                </PanelSection>
+                  <tab.Icon className="h-3 w-3" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  {tab.id === "features" && featureCount !== undefined && featureCount > 0 && (
+                    <span className="rounded-full bg-muted px-1 text-[9px] tabular-nums">
+                      {featureCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tab content — fills remaining space with crossfade */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div key={activeTab} style={{ animation: "editorTabFadeIn 150ms ease" }}>
+              {activeTab === "properties" && (
+                <div className="px-3 py-3">{propertiesContent}</div>
+              )}
+              {activeTab === "layers" && (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  {layersContent ?? (
+                    <div className="flex flex-1 items-center justify-center px-3 py-8 text-xs text-muted-foreground">
+                      Layers panel coming soon
+                    </div>
+                  )}
+                </div>
+              )}
+              {activeTab === "features" && (
+                <div className="flex min-h-0 flex-1 flex-col px-3 py-3">
+                  {featuresLoading ? <FeatureListSkeleton /> : featureListContent}
+                </div>
+              )}
+              {activeTab === "wiki" && (
+                <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                  {wikiContent ?? (
+                    <div className="flex flex-1 items-center justify-center px-3 py-8 text-xs text-muted-foreground">
+                      Wiki scanner coming soon
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-          )}
-
-          {/* ── Bottom zone: Features list (fills remaining space, always visible) ── */}
-          <div className="flex min-h-0 flex-1 flex-col">
-            <PanelSection
-              title="Features"
-              icon={<List className="h-3.5 w-3.5" />}
-              badge={featureCount}
-              expanded={expandedSections.has("features")}
-              onToggle={() => toggleSection("features")}
-              fillHeight
-            >
-              {featureListContent}
-            </PanelSection>
           </div>
+
+          <style jsx>{`
+            @keyframes editorTabFadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+          `}</style>
         </div>
       )}
     </div>
@@ -164,55 +236,6 @@ function CollapseToggle({
         <ChevronRight className="h-3 w-3" />
       )}
     </button>
-  );
-}
-
-function PanelSection({
-  title,
-  icon,
-  badge,
-  expanded,
-  onToggle,
-  children,
-  fillHeight,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  badge?: number;
-  expanded: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-  /** When true, section content fills remaining vertical space with internal scroll */
-  fillHeight?: boolean;
-}) {
-  return (
-    <div className={`border-b border-border last:border-b-0 ${fillHeight ? "flex min-h-0 flex-1 flex-col" : ""}`}>
-      {/* Section header */}
-      <button
-        onClick={onToggle}
-        className="flex w-full shrink-0 items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
-      >
-        <ChevronDown
-          className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform duration-150 ${
-            expanded ? "" : "-rotate-90"
-          }`}
-        />
-        {icon}
-        <span className="flex-1 text-xs font-semibold text-foreground">{title}</span>
-        {badge !== undefined && badge > 0 && (
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
-            {badge}
-          </span>
-        )}
-      </button>
-
-      {/* Section content */}
-      {expanded && (
-        <div className={fillHeight ? "min-h-0 flex-1 overflow-y-auto px-3 pb-3" : "px-3 pb-3"}>
-          {children}
-        </div>
-      )}
-    </div>
   );
 }
 

@@ -1314,8 +1314,8 @@ function generateAnalysisText(
 
 function formatPopulationDisplay(population: number): string {
   if (isNaN(population)) return "N/A";
-  if (population >= 1000000000) return `${(population / 1000000000).toFixed(1)}B`;
-  if (population >= 1000000) return `${(population / 1000000).toFixed(1)}M`;
+  if (population >= 1000000000) return `${Math.round(population / 1000000000)}B`;
+  if (population >= 1000000) return `${Math.round(population / 1000000)}M`;
   if (population >= 1000) return `${(population / 1000).toFixed(0)}K`;
   return population.toString();
 }

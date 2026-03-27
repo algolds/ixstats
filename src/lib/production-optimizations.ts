@@ -282,6 +282,8 @@ export class ResponseOptimizer {
  * Database connection optimization
  */
 export class DatabaseOptimizer {
+  private static pgStatStatementsAvailable: boolean | null = null;
+
   /**
    * Optimize database connection for production
    */
@@ -301,6 +303,11 @@ export class DatabaseOptimizer {
    * Analyze and optimize slow queries
    */
   static async analyzeSlowQueries(): Promise<void> {
+    // Skip if we already know pg_stat_statements is not available
+    if (this.pgStatStatementsAvailable === false) {
+      return;
+    }
+
     try {
       const { db } = await import("~/server/db");
 
@@ -318,14 +325,19 @@ export class DatabaseOptimizer {
         LIMIT 10
       `;
 
+      this.pgStatStatementsAvailable = true;
+
       if ((stats as any[]).length > 0) {
         console.warn("[DatabaseOptimizer] Slow queries detected:", stats);
       }
-    } catch (error) {
-      // Silently fail if pg_stat_statements is not enabled
-      console.debug(
-        "[DatabaseOptimizer] Slow query analysis unavailable (pg_stat_statements may not be enabled)"
-      );
+    } catch {
+      // Disable future checks if pg_stat_statements is not available
+      if (this.pgStatStatementsAvailable === null) {
+        this.pgStatStatementsAvailable = false;
+        console.debug(
+          "[DatabaseOptimizer] pg_stat_statements not available, disabling slow query analysis"
+        );
+      }
     }
   }
 }

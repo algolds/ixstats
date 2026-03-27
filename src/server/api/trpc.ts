@@ -302,14 +302,17 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
     throw new Error("UNAUTHORIZED: Authentication required");
   }
 
-  // System owners can access any country, bypass country ownership check
-  if (isSystemOwner(ctx.auth.userId)) {
+  // System owners and admin-role users can access any country, bypass country ownership check
+  const userRole = (ctx.user as any)?.role ?? (ctx.auth as any)?.sessionClaims?.metadata?.role;
+  const isAdmin = isSystemOwner(ctx.auth.userId) ||
+    (typeof userRole === "string" && ["admin", "owner", "staff"].includes(userRole));
+  if (isAdmin) {
     return next({
       ctx: {
         ...ctx,
         auth: ctx.auth,
         user: ctx.user,
-        country: null, // System owners bypass country check
+        country: null, // Admins bypass country check
       },
     });
   }

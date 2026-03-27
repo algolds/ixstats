@@ -66,6 +66,7 @@ import { systemValidationRouter } from "./routers/system-validation";
 import { geoRouter } from "./routers/geo";
 import { resourcesRouter } from "./routers/resources";
 import { transportRouter } from "./routers/transport";
+import { wikiRouter } from "./routers/wiki";
 
 /**
  * This is the primary router for your server.
@@ -138,6 +139,7 @@ export const appRouter = createTRPCRouter({
   geo: geoRouter, // IxEarth world map system - geographic data, spatial queries, map editing
   resources: resourcesRouter, // Geographic resource management - procedural placement based on terrain
   transport: transportRouter, // Transport infrastructure - routes, hubs, procedural generation
+  wiki: wikiRouter, // Unified wiki data access — direct MySQL for ixwiki, HTTP for iiwiki
 });
 
 // export type definition of API

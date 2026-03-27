@@ -16,16 +16,10 @@ const DOMPurify = DOMPurifyModule.default || DOMPurifyModule;
 // Note: This should only be used in client components or after hydration
 const getPurify = () => {
   if (typeof window === "undefined") {
-    // Server-side: return a no-op that just escapes HTML
+    // Server-side: pass through HTML as-is (will be sanitized on client hydration)
+    // This prevents SSR from escaping all HTML tags, breaking links and formatting
     return {
-      sanitize: (html: string, _config?: any) => {
-        return html
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      },
+      sanitize: (html: string, _config?: any) => html,
     };
   }
   return DOMPurify;

@@ -2,10 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Globe, TrendingUp, Newspaper } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { LayoutDashboard, Globe, Newspaper } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { LayoutDashboardIcon, GlobeAltIcon } from "~/components/ui/icons";
+import { stripBasePath } from "~/lib/base-path";
 
-export type DashboardSection = "activity" | "feed" | "diplomacy" | "trends";
+export type DashboardSection = "activity" | "feed" | "world";
+
+/** Map section ids to their animated icon counterparts */
+const ANIMATED_NAV_ICONS: Partial<Record<DashboardSection, React.ComponentType<{ size?: number; className?: string }>>> = {
+  activity: LayoutDashboardIcon,
+  world: GlobeAltIcon,
+};
+
+/** Renders the animated icon for a section when available, falling back to the lucide icon */
+function NavIcon({ id, fallback: Fallback, className, size = 16 }: { id: DashboardSection; fallback: LucideIcon; className?: string; size?: number }) {
+  const Animated = ANIMATED_NAV_ICONS[id];
+  if (Animated) return <Animated size={size} className={className} />;
+  return <Fallback className={cn("h-4 w-4", className)} />;
+}
 
 export const DASHBOARD_NAV_ITEMS: {
   id: DashboardSection;
@@ -19,7 +35,7 @@ export const DASHBOARD_NAV_ITEMS: {
     id: "activity",
     href: "/dashboard",
     icon: LayoutDashboard,
-    title: "Overview",
+    title: "Command Overview",
     gradient: "from-blue-500 to-cyan-500",
     activeGlow: "shadow-blue-500/30",
   },
@@ -32,27 +48,19 @@ export const DASHBOARD_NAV_ITEMS: {
     activeGlow: "shadow-purple-500/30",
   },
   {
-    id: "diplomacy",
-    href: "/dashboard/diplomacy",
+    id: "world",
+    href: "/dashboard/world",
     icon: Globe,
-    title: "Diplomacy & Crises",
-    gradient: "from-red-500 to-orange-500",
-    activeGlow: "shadow-red-500/30",
-  },
-  {
-    id: "trends",
-    href: "/dashboard/trends",
-    icon: TrendingUp,
-    title: "The World",
+    title: "World",
     gradient: "from-emerald-500 to-green-500",
     activeGlow: "shadow-emerald-500/30",
   },
 ];
 
-export function getSectionFromPathname(pathname: string): DashboardSection {
+export function getSectionFromPathname(rawPathname: string): DashboardSection {
+  const pathname = stripBasePath(rawPathname);
   if (pathname.startsWith("/dashboard/feed")) return "feed";
-  if (pathname.startsWith("/dashboard/diplomacy")) return "diplomacy";
-  if (pathname.startsWith("/dashboard/trends")) return "trends";
+  if (pathname.startsWith("/dashboard/world") || pathname.startsWith("/dashboard/diplomacy") || pathname.startsWith("/dashboard/trends")) return "world";
   return "activity";
 }
 
@@ -74,7 +82,6 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
           {DASHBOARD_NAV_ITEMS.map((item) => {
             const isActive = item.id === activeId;
-            const Icon = item.icon;
             const cls = cn(
               "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
               isActive
@@ -84,12 +91,12 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
 
             return isControlled ? (
               <button key={item.id} onClick={() => onNavigate(item.id)} className={cls} aria-current={isActive ? "page" : undefined}>
-                <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="flex-shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
               </button>
             ) : (
               <Link key={item.id} href={item.href} className={cls} aria-current={isActive ? "page" : undefined}>
-                <Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                <NavIcon id={item.id} fallback={item.icon} size={14} className="flex-shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
               </Link>
             );
@@ -104,7 +111,6 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
     <nav className="flex w-56 flex-col gap-1 rounded-xl border border-border/50 bg-background/80 p-1.5 shadow-sm backdrop-blur-lg">
       {DASHBOARD_NAV_ITEMS.map((item) => {
         const isActive = item.id === activeId;
-        const Icon = item.icon;
 
         const rowEl = (
           <div
@@ -115,7 +121,7 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             )}
           >
-            <Icon className="h-4 w-4 flex-shrink-0" />
+            <NavIcon id={item.id} fallback={item.icon} size={16} className="flex-shrink-0" />
             <span className="truncate text-xs font-medium">{item.title}</span>
           </div>
         );

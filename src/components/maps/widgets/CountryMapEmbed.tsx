@@ -83,6 +83,7 @@ export function CountryMapEmbed({
     cities,
     capital,
     subdivisions,
+    worldPolitical,
     isLoading,
     hasGeometry,
   } = useCountryMapEmbed(countryId);
@@ -122,52 +123,66 @@ export function CountryMapEmbed({
     mapRef.current = map;
 
     map.on("load", () => {
-      // ── Neighbor fill (dimmed context) ──
-      if (showNeighbors && neighbors.length > 0) {
-        // We don't have neighbor geometries from the getNeighbors endpoint.
-        // Instead, render a subtle point marker at each neighbor centroid.
-        const neighborPoints: GeoJSON.FeatureCollection = {
+      // ── World political layer (greyed-out neighbor countries) ──
+      if (worldPolitical && worldPolitical.features.length > 0) {
+        // Filter out the target country — render all others as grey
+        const otherCountries: GeoJSON.FeatureCollection = {
           type: "FeatureCollection",
-          features: neighbors
-            .filter((n) => n.centroidLng && n.centroidLat)
-            .map((n) => ({
-              type: "Feature" as const,
-              properties: {
-                name: n.displayName,
-                countryId: n.countryId,
-              },
-              geometry: {
-                type: "Point" as const,
-                coordinates: [n.centroidLng, n.centroidLat],
-              },
-            })),
+          features: worldPolitical.features.filter(
+            (f) => f.properties?._countryId !== countryId
+          ),
         };
-        neighborGeoRef.current = neighborPoints;
 
-        map.addSource("source-neighbors", {
+        map.addSource("source-world-political", {
           type: "geojson",
-          data: neighborPoints,
+          data: otherCountries,
         });
 
-        // Neighbor name labels
+        // Grey fill for all non-target countries
         map.addLayer({
-          id: "neighbor-labels",
-          type: "symbol",
-          source: "source-neighbors",
-          layout: {
-            "text-field": ["get", "name"] as unknown as string,
-            "text-size": 10,
-            "text-allow-overlap": false,
-            "text-optional": true,
-            "text-font": ["DejaVu Sans Regular"],
-          },
+          id: "world-political-fill",
+          type: "fill",
+          source: "source-world-political",
           paint: {
-            "text-color": "#888",
-            "text-halo-color": "#fff",
-            "text-halo-width": 1,
+            "fill-color": "#94a3b8",
+            "fill-opacity": 0.2,
           },
-          minzoom: 3,
         });
+
+        // Subtle border strokes
+        map.addLayer({
+          id: "world-political-stroke",
+          type: "line",
+          source: "source-world-political",
+          paint: {
+            "line-color": "#64748b",
+            "line-width": 0.5,
+            "line-opacity": 0.4,
+          },
+        });
+
+        // Neighbor country name labels
+        if (showNeighbors) {
+          map.addLayer({
+            id: "neighbor-labels",
+            type: "symbol",
+            source: "source-world-political",
+            layout: {
+              "text-field": ["coalesce", ["get", "_displayName"], ""] as unknown as string,
+              "text-size": 10,
+              "text-allow-overlap": false,
+              "text-optional": true,
+              "text-font": ["DejaVu Sans Regular"],
+            },
+            paint: {
+              "text-color": "#64748b",
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1,
+              "text-opacity": 0.7,
+            },
+            minzoom: 3,
+          });
+        }
       }
 
       // ── Subdivision boundaries ──
@@ -368,11 +383,22 @@ export function CountryMapEmbed({
     onCountryClick,
     onNeighborClick,
     boundsPadding,
+    worldPolitical,
+    countryId,
   ]);
 
   useEffect(() => {
     if (geometry) {
-      initMap();
+      // Small delay to ensure container has layout dimensions
+      const timer = setTimeout(() => initMap(), 50);
+      return () => {
+        clearTimeout(timer);
+        if (mapRef.current) {
+          mapRef.current.remove();
+          mapRef.current = null;
+          setMapReady(false);
+        }
+      };
     }
     return () => {
       if (mapRef.current) {
@@ -382,6 +408,14 @@ export function CountryMapEmbed({
       }
     };
   }, [initMap, geometry]);
+
+  // Resize map when container dimensions change
+  useEffect(() => {
+    if (!containerRef.current || !mapRef.current) return;
+    const observer = new ResizeObserver(() => { mapRef.current?.resize(); });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [mapReady]);
 
   // ── Loading state ──
   if (isLoading) {
@@ -409,8 +443,8 @@ export function CountryMapEmbed({
   }
 
   return (
-    <div className={`relative ${height} ${className}`}>
-      <div ref={containerRef} className="absolute inset-0" />
+    <div className={`relative overflow-hidden ${height} ${className}`} style={{ minHeight: 200 }}>
+      <div ref={containerRef} className="absolute inset-0" style={{ width: "100%", height: "100%" }} />
       {!mapReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

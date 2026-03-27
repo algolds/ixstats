@@ -28,6 +28,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
 import { createUrl } from "~/lib/url-utils";
+import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 interface CountryActionsMenuProps {
   targetCountryId: string;
@@ -124,7 +125,7 @@ export function CountryActionsMenu({
   }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]);
 
   const handleDiplomaticMessage = useCallback(() => {
-    router.push(createUrl(`/thinkpages?view=messages&country=${targetCountryId}`));
+    router.push(createUrl(`/thinkpages/thinkshare?country=${targetCountryId}`));
     onClose();
   }, [router, targetCountryId, onClose]);
 
@@ -198,7 +199,7 @@ export function CountryActionsMenu({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xl"
+            className="fixed inset-0 z-[100010] bg-black/60 backdrop-blur-xl"
           />
 
           <motion.div
@@ -206,7 +207,7 @@ export function CountryActionsMenu({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed top-1/2 left-1/2 z-50 mx-4 w-full max-w-md -translate-x-1/2 -translate-y-1/2"
+            className="fixed top-1/2 left-1/2 z-[100011] mx-4 w-full max-w-md -translate-x-1/2 -translate-y-1/2"
           >
             <div className="relative max-h-[85vh] overflow-y-auto rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-2xl backdrop-blur-2xl dark:from-black/40 dark:via-black/20 dark:to-transparent">
               <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent dark:from-white/5 dark:to-transparent" />
@@ -433,17 +434,19 @@ export function CountryActionsMenu({
                     Compare Countries
                   </button>
 
-                  <a
-                    href={`https://ixwiki.com/wiki/${targetCountryName.replace(/\s/g, "_")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={actionButtonClass("border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10")}
-                    onClick={onClose}
-                  >
-                    <Globe className="h-4 w-4" />
-                    View on IxWiki
-                    <ExternalLink className="ml-auto h-3.5 w-3.5 text-white/40" />
-                  </a>
+                  <WikiLinkPreview title={targetCountryName}>
+                    <a
+                      href={`https://ixwiki.com/wiki/${targetCountryName.replace(/\s/g, "_")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={actionButtonClass("border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10")}
+                      onClick={onClose}
+                    >
+                      <Globe className="h-4 w-4" />
+                      View on IxWiki
+                      <ExternalLink className="ml-auto h-3.5 w-3.5 text-white/40" />
+                    </a>
+                  </WikiLinkPreview>
 
                   <button
                     onClick={handleCopyLink}

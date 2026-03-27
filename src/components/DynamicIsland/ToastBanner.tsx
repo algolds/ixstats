@@ -29,7 +29,6 @@ import {
   Trophy,
   Zap,
   Swords,
-  Bell,
 } from "lucide-react";
 import type { ToastQueueItem, ToastType } from "~/stores/toastQueueStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
@@ -196,10 +195,8 @@ export const ToastBanner = React.memo(function ToastBanner({
       className="pointer-events-auto relative w-[95vw] cursor-grab select-none active:cursor-grabbing sm:w-[90vw] md:w-[400px]"
     >
       <div
-        className="relative overflow-hidden rounded-2xl border border-white/20 shadow-2xl shadow-black/20"
+        className="relative overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-2xl shadow-black/15 dark:border-white/15 dark:bg-background/90"
         style={{
-          background:
-            "linear-gradient(135deg, rgba(30,30,40,0.92) 0%, rgba(20,20,30,0.96) 100%)",
           backdropFilter: "blur(40px) saturate(180%)",
           WebkitBackdropFilter: "blur(40px) saturate(180%)",
         }}
@@ -218,11 +215,11 @@ export const ToastBanner = React.memo(function ToastBanner({
 
           {/* Text content */}
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-semibold leading-tight text-white/95">
+            <div className="text-[13px] font-semibold leading-tight text-foreground/95">
               {toast.title}
             </div>
             {toast.message && (
-              <div className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-white/60">
+              <div className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted-foreground">
                 {toast.message}
               </div>
             )}
@@ -240,8 +237,8 @@ export const ToastBanner = React.memo(function ToastBanner({
                     }}
                     className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
                       i === 0
-                        ? "bg-white/15 text-white hover:bg-white/25"
-                        : "text-white/50 hover:text-white/70"
+                        ? "bg-foreground/10 text-foreground hover:bg-foreground/20"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {action.label}
@@ -257,7 +254,7 @@ export const ToastBanner = React.memo(function ToastBanner({
               e.stopPropagation();
               onDismiss(toast.id);
             }}
-            className="mt-0.5 flex-shrink-0 rounded-full p-1 text-white/30 transition-colors hover:bg-white/10 hover:text-white/60"
+            className="mt-0.5 flex-shrink-0 rounded-full p-1 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-muted-foreground"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -265,7 +262,7 @@ export const ToastBanner = React.memo(function ToastBanner({
 
         {/* Progress bar */}
         {!toast.persistent && (
-          <div className="h-[2px] w-full bg-white/5">
+          <div className="h-[2px] w-full bg-foreground/5">
             <motion.div
               className={`h-full ${ACCENT_COLORS[toast.type]}`}
               style={{ width: `${progress}%`, opacity: 0.6 }}

@@ -28,7 +28,14 @@ import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessSer
 import { ComponentType } from "@prisma/client";
 import { calculateAllVitalityScores } from "~/lib/vitality-calculator";
 import { notificationAPI } from "~/lib/notification-api";
-import { localWikiFetch } from "~/lib/wiki-local-fetch";
+import {
+  getArticleIntro,
+  getPageSections,
+  getArticleWikitext,
+  getPageImages as wikiBridgePageImages,
+  searchPages as wikiBridgeSearch,
+  getInfobox as wikiBridgeInfobox,
+} from "~/lib/wiki-bridge";
 import { checkComponentSynergy } from "~/lib/government-synergy";
 import type {
   CoreEconomicIndicators,
@@ -178,61 +185,25 @@ const economicDataSchema = z.object({
   literacyRate: z.number().optional(),
 });
 
-/**
- * Normalize a flag URL stored in the database.
- * Some entries are bare filenames (e.g. "Halfway.png") from legacy data.
- * These need to be prefixed with the wiki file path URL to avoid 404s.
- */
-function normalizeFlagUrl(flag: string | null | undefined): string | undefined {
-  if (!flag) return undefined;
-  if (flag.startsWith("http") || flag.startsWith("data:") || flag.startsWith("/")) return flag;
-  return `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(flag)}`;
-}
+import { normalizeFlagUrl } from "~/lib/unified-flag-service";
 
 /**
- * Wiki sources for server-side API calls.
- * ixwiki uses local pool in production (13ms vs 60ms), iiwiki always public.
- * `publicBase` is always the public URL — used for wiki link hrefs in returned HTML.
+ * Wiki helpers — all use WikiBridge (direct MySQL for ixwiki, HTTP for iiwiki).
  */
-const WIKI_SOURCES = [
-  { key: "ixwiki" as const, publicBase: "https://ixwiki.com", isLocal: true },
-  { key: "iiwiki" as const, publicBase: "https://iiwiki.com", isLocal: false },
-] as const;
-
-type WikiSource = (typeof WIKI_SOURCES)[number];
-
-/** Fetch from a wiki source, routing ixwiki through localhost in production. */
-async function wikiFetch(source: WikiSource, path: string, timeoutMs = 5000): Promise<Response> {
-  if (source.isLocal) {
-    return localWikiFetch(path, timeoutMs);
-  }
-  return fetch(`${source.publicBase}${path}`, {
-    headers: { "User-Agent": "IxStats-Builder" },
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-}
 
 /** Fetch a single wiki intro from ixwiki or iiwiki fallback. */
 async function fetchWikiIntro(
   name: string
 ): Promise<{ extract: string; wikiSource: "ixwiki" | "iiwiki"; wikiUrl: string } | null> {
-  for (const source of WIKI_SOURCES) {
-    try {
-      const path = `/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exchars=400&format=json&titles=${encodeURIComponent(name)}`;
-      const res = await wikiFetch(source, path);
-      if (!res.ok) continue;
-      const data = await res.json();
-      const pages = data?.query?.pages;
-      if (!pages) continue;
-      const page = Object.values(pages)[0] as { missing?: boolean; extract?: string; title?: string };
-      if (page?.missing || !page?.extract) continue;
+  for (const wiki of ["ixwiki", "iiwiki"] as const) {
+    const result = await getArticleIntro(name, wiki);
+    if (result?.text) {
+      const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
       return {
-        extract: page.extract,
-        wikiSource: source.key,
-        wikiUrl: `${source.publicBase}/wiki/${encodeURIComponent(page.title ?? name)}`,
+        extract: result.text.substring(0, 400),
+        wikiSource: wiki,
+        wikiUrl: `${base}/wiki/${encodeURIComponent(result.title)}`,
       };
-    } catch {
-      continue;
     }
   }
   return null;
@@ -242,23 +213,15 @@ async function fetchWikiIntro(
 async function fetchWikiSections(
   name: string
 ): Promise<Array<{ level: number; line: string; number: string; anchor: string }> | null> {
-  for (const source of WIKI_SOURCES) {
-    try {
-      const path = `/api.php?action=parse&page=${encodeURIComponent(name)}&prop=sections&format=json&redirects=1`;
-      const res = await wikiFetch(source, path);
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data?.error) continue;
-      const sections = data?.parse?.sections;
-      if (!sections || !Array.isArray(sections)) continue;
-      return sections.map((s: { level: string; line: string; number: string; anchor: string }) => ({
-        level: parseInt(s.level, 10),
-        line: s.line,
-        number: s.number,
-        anchor: s.anchor,
+  for (const wiki of ["ixwiki", "iiwiki"] as const) {
+    const sections = await getPageSections(name, wiki);
+    if (sections.length > 0) {
+      return sections.map((s, i) => ({
+        level: s.level,
+        line: s.title,
+        number: String(i + 1),
+        anchor: s.title.replace(/\s+/g, "_"),
       }));
-    } catch {
-      continue;
     }
   }
   return null;
@@ -273,63 +236,12 @@ const EXCLUDED_IMAGE_PATTERNS = [
   /^File:Green ?arrow/i, /^File:Red ?arrow/i, /\.svg$/i,
 ];
 
-/** Fetch images from a country's wiki page with thumbnail URLs. */
+/** Fetch images from a country's wiki page with thumbnail URLs.
+ * Delegates to WikiBridge.getPageImages (HTTP API for image metadata). */
 async function fetchWikiPageImages(
   name: string
 ): Promise<Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }> | null> {
-  for (const source of WIKI_SOURCES) {
-    try {
-      // Step 1: Get image titles from the page
-      const listPath = `/api.php?action=query&titles=${encodeURIComponent(name)}&prop=images&imlimit=50&format=json&redirects=1`;
-      const listRes = await wikiFetch(source, listPath);
-      if (!listRes.ok) continue;
-      const listData = await listRes.json();
-      const pages = listData?.query?.pages;
-      if (!pages) continue;
-      const page = Object.values(pages)[0] as { missing?: boolean; images?: Array<{ title: string }> };
-      if (page?.missing || !page?.images?.length) continue;
-
-      // Filter out icons/templates
-      const imageTitles = page.images
-        .map((img) => img.title)
-        .filter((title) => !EXCLUDED_IMAGE_PATTERNS.some((p) => p.test(title)));
-      if (imageTitles.length === 0) continue;
-
-      // Step 2: Resolve image URLs with thumbnails (batch up to 50)
-      const titlesParam = imageTitles.slice(0, 50).map(encodeURIComponent).join("|");
-      const infoPath = `/api.php?action=query&titles=${titlesParam}&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=200&format=json`;
-      const infoRes = await wikiFetch(source, infoPath);
-      if (!infoRes.ok) continue;
-      const infoData = await infoRes.json();
-      const infoPages = infoData?.query?.pages;
-      if (!infoPages) continue;
-
-      const images: Array<{ title: string; url: string; thumbUrl: string; width: number; height: number }> = [];
-      for (const p of Object.values(infoPages) as Array<{
-        title?: string; missing?: boolean;
-        imageinfo?: Array<{ url: string; thumburl?: string; width: number; height: number; mime?: string }>;
-      }>) {
-        if (p?.missing || !p?.imageinfo?.[0]) continue;
-        const info = p.imageinfo[0];
-        // Skip tiny images (icons, bullets)
-        if (info.width < 100 && info.height < 100) continue;
-        // Skip non-image MIME types
-        if (info.mime && !info.mime.startsWith("image/")) continue;
-        images.push({
-          title: p.title ?? "",
-          url: info.url,
-          thumbUrl: info.thumburl ?? info.url,
-          width: info.width,
-          height: info.height,
-        });
-      }
-
-      return images.length > 0 ? images : null;
-    } catch {
-      continue;
-    }
-  }
-  return null;
+  return wikiBridgePageImages(name, { excludePatterns: EXCLUDED_IMAGE_PATTERNS });
 }
 
 /**
@@ -339,20 +251,14 @@ async function fetchWikiPageImages(
 async function fetchWikiRichIntro(
   name: string
 ): Promise<{ paragraphs: string[]; wikiUrl: string } | null> {
-  for (const source of WIKI_SOURCES) {
+  for (const wiki of ["ixwiki", "iiwiki"] as const) {
     try {
-      // Fetch raw wikitext for section 0 (intro)
-      const path = `/api.php?action=query&prop=revisions&rvprop=content&titles=${encodeURIComponent(name)}&rvsection=0&format=json&formatversion=2`;
-      const res = await wikiFetch(source, path);
-      if (!res.ok) continue;
-      const data = await res.json();
-      const pages = data?.query?.pages;
-      if (!pages || !Array.isArray(pages) || pages.length === 0) continue;
-      const page = pages[0] as { missing?: boolean; title?: string; revisions?: Array<{ content?: string }> };
-      if (page?.missing || !page?.revisions?.[0]?.content) continue;
+      const article = await getArticleWikitext(name, wiki);
+      if (!article) continue;
 
-      const wikitext = page.revisions[0].content;
-      const wikiUrl = `${source.publicBase}/wiki/${encodeURIComponent(page.title ?? name)}`;
+      const base = wiki === "ixwiki" ? "https://ixwiki.com" : "https://iiwiki.com";
+      const wikitext = article.wikitext;
+      const wikiUrl = `${base}/wiki/${encodeURIComponent(article.title)}`;
 
       // Strip infobox template (match balanced braces)
       let contentAfterInfobox = wikitext;
@@ -396,8 +302,8 @@ async function fetchWikiRichIntro(
         .replace(/\n/g, " ")
         .trim();
 
-      // Convert wiki links to HTML (use publicBase for link hrefs)
-      const linkBase = source.publicBase;
+      // Convert wiki links to HTML
+      const linkBase = base;
       const processedContent = cleanContent
         .replace(/\[\[([^\[\]|]+)\|([^\[\]]+?)\]\]/g, (_, pg: string, display: string) => {
           if (pg.toLowerCase().includes("template:")) return "";
@@ -432,21 +338,15 @@ async function fetchWikiRichIntro(
 }
 
 /**
- * Fetch wiki infobox server-side using IxnayWikiService singleton.
- * Reuses its in-memory LRU cache for deduplication.
+ * Fetch wiki infobox server-side via WikiBridge (direct MySQL, ~2ms).
  */
 async function fetchWikiInfoboxCached(name: string): Promise<Record<string, unknown> | null> {
   try {
-    const { ixnayWiki } = await import("~/lib/mediawiki-service");
-    const infobox = await ixnayWiki.getCountryInfobox(name);
+    const infobox = await wikiBridgeInfobox(name, "ixwiki") ?? await wikiBridgeInfobox(name, "iiwiki");
     if (!infobox) return null;
-    // Return as a plain object (strip methods, class instances)
-    // Only include defined string/number values
-    const result: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(infobox)) {
-      if (value !== undefined && key !== "rawWikitext" && key !== "renderedHtml" && key !== "parsedTemplateData") {
-        result[key] = value;
-      }
+    const result: Record<string, unknown> = { templateName: infobox.templateName };
+    for (const field of infobox.fields) {
+      result[field.key] = field.value;
     }
     return result;
   } catch {
@@ -464,44 +364,47 @@ async function fetchWikiSectionPreviews(
   const sections = await fetchWikiSections(name);
   if (!sections || sections.length === 0) return null;
 
+  // Get full wikitext to extract section previews from it directly (single MySQL query)
+  const article = await getArticleWikitext(name, "ixwiki") ?? await getArticleWikitext(name, "iiwiki");
+  if (!article) return sections.map((s) => ({ ...s, preview: undefined as string | undefined }));
+
+  const wikitext = article.wikitext;
   const results = sections.map((s) => ({ ...s, preview: undefined as string | undefined }));
   const level2Indices = results
     .map((s, i) => (s.level === 2 ? i : -1))
     .filter((i) => i >= 0)
-    .slice(0, 10); // Limit to first 10 level-2 sections to avoid excessive API calls
+    .slice(0, 10);
+
+  // Extract section content from wikitext by splitting on headings
+  const headingPattern = /^(={2,6})\s*(.+?)\s*\1$/gm;
+  const headingPositions: Array<{ title: string; start: number }> = [];
+  let m;
+  while ((m = headingPattern.exec(wikitext)) !== null) {
+    headingPositions.push({ title: m[2]!.trim(), start: m.index + m[0].length });
+  }
 
   for (const idx of level2Indices) {
     const section = results[idx]!;
-    for (const source of WIKI_SOURCES) {
-      try {
-        // Use parse API to get specific section wikitext
-        const path = `/api.php?action=parse&page=${encodeURIComponent(name)}&prop=wikitext&section=${section.number}&format=json&redirects=1`;
-        const res = await wikiFetch(source, path, 3000);
-        if (!res.ok) continue;
-        const data = await res.json();
-        if (data?.error) continue;
-        const wikitext = data?.parse?.wikitext?.["*"];
-        if (!wikitext) continue;
+    const hIdx = headingPositions.findIndex((h) => h.title === section.line);
+    if (hIdx < 0) continue;
 
-        // Strip the heading itself and extract first ~200 chars of plain text
-        const cleaned = wikitext
-          .replace(/^==+[^=]+=+\s*/m, "") // Remove section heading
-          .replace(/\{\{[^}]*\}\}/g, "") // Remove templates
-          .replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1") // [[link|text]] → text
-          .replace(/<ref[^>]*>.*?<\/ref>/gi, "") // Remove refs
-          .replace(/<ref[^>]*\/>/gi, "")
-          .replace(/<[^>]+>/g, "") // Remove HTML tags
-          .replace(/\n+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
+    const start = headingPositions[hIdx]!.start;
+    const end = hIdx + 1 < headingPositions.length ? headingPositions[hIdx + 1]!.start - 10 : start + 1000;
+    const sectionText = wikitext.substring(start, Math.min(end, start + 1000));
 
-        if (cleaned.length > 20) {
-          section.preview = cleaned.slice(0, 200) + (cleaned.length > 200 ? "..." : "");
-          break; // Got preview from this source
-        }
-      } catch {
-        continue;
-      }
+    const cleaned = sectionText
+      .replace(/\{\{[^}]*\}\}/g, "")
+      .replace(/\[\[(?:[^|\]]*\|)?([^\]]*)\]\]/g, "$1")
+      .replace(/<ref[^>]*>.*?<\/ref>/gi, "")
+      .replace(/<ref[^>]*\/>/gi, "")
+      .replace(/<[^>]+>/g, "")
+      .replace(/^==+[^=]+=+\s*/gm, "")
+      .replace(/\n+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (cleaned.length > 20) {
+      section.preview = cleaned.slice(0, 200) + (cleaned.length > 200 ? "..." : "");
     }
   }
 
@@ -2860,18 +2763,15 @@ const countriesRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       try {
-        console.log("[searchWiki] Starting search with input:", input);
-        const { searchWiki } = await import("~/lib/wiki-search-service");
-        console.log("[searchWiki] Successfully imported searchWiki function");
-        const result = await searchWiki(input.query, input.site, input.categoryFilter);
-        console.log("[searchWiki] Search completed, results:", result?.length || 0, "items");
-        return result;
+        const wiki = (input.site === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki";
+        const results = await wikiBridgeSearch(input.query, 20, wiki);
+        return results.map((r) => ({
+          title: r.title,
+          pageid: r.pageId,
+          size: r.length,
+          snippet: "",
+        }));
       } catch (error) {
-        console.error("[searchWiki] ERROR:", error);
-        if (error instanceof Error) {
-          console.error("[searchWiki] Error message:", error.message);
-          console.error("[searchWiki] Error stack:", error.stack);
-        }
         throw new Error(
           `Failed to search wiki: ${error instanceof Error ? error.message : "Unknown error"}`
         );
@@ -2886,13 +2786,14 @@ const countriesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      try {
-        const { parseCountryInfobox } = await import("~/lib/wiki-search-service");
-        return await parseCountryInfobox(input.pageName, input.site);
-      } catch (error) {
-        console.error("Infobox parsing failed:", error);
-        throw new Error("Failed to parse country infobox");
+      const wiki = (input.site === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki";
+      const infobox = await wikiBridgeInfobox(input.pageName, wiki);
+      if (!infobox) return null;
+      const result: Record<string, string> = {};
+      for (const field of infobox.fields) {
+        result[field.key] = field.value;
       }
+      return result;
     }),
 
   getWikiInfobox: publicProcedure
@@ -2903,15 +2804,19 @@ const countriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const { parseCountryInfobox } = await import("~/lib/wiki-search-service");
-      const data = await parseCountryInfobox(input.name, input.site);
-      if (!data) {
+      const wiki = (input.site === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki";
+      const infobox = await wikiBridgeInfobox(input.name, wiki);
+      if (!infobox) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: `No wiki infobox found for ${input.name}`,
         });
       }
-      return data;
+      const result: Record<string, string> = {};
+      for (const field of infobox.fields) {
+        result[field.key] = field.value;
+      }
+      return result;
     }),
 
   getIntelligenceBriefings: publicProcedure
@@ -3026,7 +2931,7 @@ const countriesRouter = createTRPCRouter({
           confidenceScore: 90,
           summary: `Population growth rate at ${(popGrowthRate * 100).toFixed(2)}% annually`,
           details: [
-            `Current population: ${currentStats.newStats.currentPopulation.toLocaleString()}`,
+            `Current population: ${Math.round(currentStats.newStats.currentPopulation).toLocaleString()}`,
             `Population tier: ${currentStats.newStats.populationTier}`,
             `Growth trend: ${popGrowthRate >= 0 ? "Positive" : "Negative"}`,
           ],
@@ -3322,7 +3227,7 @@ const countriesRouter = createTRPCRouter({
             tier: currentStats.newStats.economicTier,
           },
           populationMetrics: {
-            population: `${(currentStats.newStats.currentPopulation / 1000000).toFixed(1)}M`,
+            population: `${Math.round(currentStats.newStats.currentPopulation / 1000000)}M`,
             growthRate: `${(popGrowthRate * 100).toFixed(2)}%`,
             tier: currentStats.newStats.populationTier,
           },
@@ -4033,35 +3938,14 @@ const countriesRouter = createTRPCRouter({
       // Track which names still need resolution
       const remaining = new Set(names);
 
-      for (const source of WIKI_SOURCES) {
-        if (remaining.size === 0) break;
-        try {
-          const titlesParam = [...remaining].map(encodeURIComponent).join("|");
-          const path = `/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exchars=400&format=json&titles=${titlesParam}`;
-          const res = await wikiFetch(source, path, 10000);
-          if (!res.ok) continue;
-          const data = await res.json();
-          const pages = data?.query?.pages;
-          if (!pages) continue;
-
-          // Build a title→name lookup for case-insensitive matching
-          const nameLookup = new Map<string, string>();
-          for (const n of remaining) nameLookup.set(n.toLowerCase(), n);
-
-          for (const page of Object.values(pages) as Array<{ missing?: boolean; extract?: string; title?: string }>) {
-            if (page?.missing || !page?.extract || !page?.title) continue;
-            const matchedName = nameLookup.get(page.title.toLowerCase()) ?? page.title;
-            results[matchedName] = {
-              extract: page.extract,
-              wikiSource: source.key,
-              wikiUrl: `${source.publicBase}/wiki/${encodeURIComponent(page.title)}`,
-            };
-            remaining.delete(matchedName);
-          }
-        } catch {
-          continue;
+      // Fetch each intro via WikiBridge (parallel, direct MySQL ~8ms each)
+      await Promise.all([...remaining].map(async (n) => {
+        const intro = await fetchWikiIntro(n);
+        if (intro) {
+          results[n] = intro;
+          remaining.delete(n);
         }
-      }
+      }));
 
       // Fill remaining with null
       for (const name of remaining) {
@@ -5996,6 +5880,48 @@ const countriesRouter = createTRPCRouter({
       timestamp: new Date(),
     };
   }),
+
+  /** Lore Score — measures worldbuilding depth from wiki + maps + engagement. */
+  getLoreScore: cachedPublicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId },
+        select: { name: true, wikiPageTitle: true },
+      });
+      if (!country) return null;
+
+      // Fetch wiki metrics if country has a wiki page
+      let wikiData: { articleLength?: number; sectionCount?: number; satelliteCount?: number } = {};
+      if (country.wikiPageTitle) {
+        try {
+          const { getArticleWikitext, searchPages, getPageSections } = await import("~/lib/wiki-bridge");
+          const [article, satellites, sections] = await Promise.allSettled([
+            getArticleWikitext(country.wikiPageTitle),
+            searchPages(country.name, 30),
+            getPageSections(country.wikiPageTitle),
+          ]);
+
+          if (article.status === "fulfilled" && article.value) {
+            wikiData.articleLength = article.value.length ?? 0;
+          }
+          if (satellites.status === "fulfilled" && satellites.value) {
+            // Count articles that mention this country but aren't the main article
+            wikiData.satelliteCount = satellites.value.filter(
+              (s: { title: string }) => s.title !== country.wikiPageTitle
+            ).length;
+          }
+          if (sections.status === "fulfilled" && sections.value) {
+            wikiData.sectionCount = Array.isArray(sections.value) ? sections.value.length : 0;
+          }
+        } catch {
+          // Wiki access is best-effort
+        }
+      }
+
+      const { calculateLoreScore } = await import("~/lib/lore-score-calculator");
+      return calculateLoreScore(ctx.db, input.countryId, wikiData);
+    }),
 });
 
 export { countriesRouter };

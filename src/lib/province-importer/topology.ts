@@ -322,35 +322,43 @@ export function resolveOverlaps(
 // ──────────────────────────────────────────────
 
 /**
- * Simplify province geometries using Douglas-Peucker algorithm.
- * Preserves topology (shared edges stay aligned).
+ * Simplify province geometries using topology-preserving batch simplification.
+ * Delegates to topo-simplify which uses TopoJSON to ensure shared borders
+ * are simplified identically, preventing gaps between provinces.
+ *
+ * @param tolerance - Legacy parameter, ignored when options.targetVertices is set.
+ * @param options - Optional config: { targetVertices?: number }
  */
 export function simplifyProvinces(
   provinces: ProvinceFeature[],
-  tolerance: number
+  tolerance: number,
+  options?: { targetVertices?: number }
 ): ProvinceFeature[] {
+  const { simplifyProvinceBatch } = require("./topo-simplify") as typeof import("./topo-simplify");
+
+  const included = provinces.filter((p) => p.included && p.geometry);
+  if (included.length === 0) return provinces;
+
+  // Build Feature array from included provinces
+  const features = included.map((p) => ({
+    type: "Feature" as const,
+    properties: { name: p.name, sourceId: p.sourceId },
+    geometry: p.geometry as Polygon | MultiPolygon,
+  }));
+
+  const result = simplifyProvinceBatch(features, {
+    targetVerticesPerProvince: options?.targetVertices ?? 100,
+  });
+
+  // Map simplified geometries back onto provinces by index
+  let simplifiedIdx = 0;
   return provinces.map((p) => {
-    if (!p.included) return p;
-
-    try {
-      const feature = toTurfFeature(p.geometry);
-      if (!feature) return p;
-
-      const simplified = turf.simplify(feature, {
-        tolerance,
-        highQuality: true,
-      });
-
-      if (simplified && simplified.geometry) {
-        return {
-          ...p,
-          geometry: simplified.geometry as Polygon | MultiPolygon,
-        };
-      }
-    } catch {
-      // Skip if simplification fails
+    if (!p.included || !p.geometry) return p;
+    const simplified = result.features[simplifiedIdx];
+    simplifiedIdx++;
+    if (simplified?.geometry) {
+      return { ...p, geometry: simplified.geometry as Polygon | MultiPolygon };
     }
-
     return p;
   });
 }

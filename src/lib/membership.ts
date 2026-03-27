@@ -7,6 +7,7 @@ export interface PremiumFeatures {
   sdi: boolean;
   eci: boolean;
   intelligence: boolean;
+  defense: boolean;
   advancedAnalytics: boolean;
 }
 
@@ -30,6 +31,7 @@ export async function getUserMembership(clerkUserId?: string): Promise<{
           sdi: false,
           eci: false,
           intelligence: false,
+          defense: false,
           advancedAnalytics: false,
         },
       };
@@ -54,6 +56,7 @@ export async function getUserMembership(clerkUserId?: string): Promise<{
         sdi: isPremium,
         eci: isPremium,
         intelligence: isPremium,
+        defense: isPremium,
         advancedAnalytics: isPremium,
       },
     };
@@ -66,6 +69,7 @@ export async function getUserMembership(clerkUserId?: string): Promise<{
         sdi: false,
         eci: false,
         intelligence: false,
+        defense: false,
         advancedAnalytics: false,
       },
     };

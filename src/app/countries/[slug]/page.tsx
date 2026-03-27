@@ -17,21 +17,17 @@ import { AlertTriangle } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
-import { IxTime } from "~/lib/ixtime";
 import { CountryActionsMenu } from "~/components/countries/CountryActionsMenu";
 
 import { CountryHeader } from "./_components/CountryHeader";
 import { CountryTabs } from "./_components/CountryTabs";
 import { CountryOverviewPanel } from "./_components/CountryOverviewPanel";
-import { CountryEconomicPanel } from "./_components/CountryEconomicPanel";
 import { CountryActivityPanel } from "./_components/CountryActivityPanel";
-import { CountryDiplomaticPanel } from "./_components/CountryDiplomaticPanel";
 import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab";
 
 import { useCountryPageState } from "./_hooks/useCountryPageState";
 
 import {
-  transformCountryEconomicsData,
   calculateVitalityData,
 } from "./_utils/countryDataTransformers";
 
@@ -41,7 +37,7 @@ interface PublicCountryPageProps {
 
 export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   const { slug } = use(params);
-  const { user, userProfile } = useUserCountry();
+  const { userProfile } = useUserCountry();
 
   const {
     data: country,
@@ -64,7 +60,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   const {
     activeTab,
     setActiveTab,
-    isMounted,
     showGdpPerCapita,
     showFullPopulation,
     showCountryActions,
@@ -79,14 +74,8 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     setBannerMode,
   } = useCountryPageState(country);
 
-  const currentIxTime = IxTime.getCurrentIxTime();
   const isOwnCountry =
     userProfile?.countryId && country?.id && userProfile.countryId === country.id;
-
-  const economicsData = useMemo(() => {
-    if (!country) return null;
-    return transformCountryEconomicsData(country);
-  }, [country]);
 
   const vitalityData = useMemo(() => {
     if (!country) return null;
@@ -194,18 +183,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
           />
         )}
 
-        {activeTab === "mycountry" && country && economicsData && (
-          <CountryEconomicPanel
-            country={country}
-            economicsData={economicsData}
-            governmentStructure={governmentStructure}
-            wikiInfobox={wikiInfobox}
-            currentIxTime={currentIxTime}
-            isOwnCountry={!!isOwnCountry}
-            isMounted={isMounted}
-          />
-        )}
-
         {activeTab === "lore" && country && (
           <WikiIntelligenceTab
             countryName={country.name}
@@ -228,15 +205,6 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
           />
         )}
 
-        {activeTab === "diplomacy" && country && (
-          <CountryDiplomaticPanel
-            country={country}
-            flagUrl={flagUrl}
-            isOwnCountry={!!isOwnCountry}
-            viewerCountryId={userProfile?.countryId}
-            viewerCountryName={userProfile?.country?.name}
-          />
-        )}
       </div>
 
       {country && (

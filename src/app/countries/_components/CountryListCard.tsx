@@ -197,7 +197,7 @@ export function CountryListCard({
             <Scaling className="h-3 w-3 text-orange-500" />
             <span>
               {country.populationDensity != null
-                ? `${country.populationDensity.toFixed(1)}/km²`
+                ? `${country.populationDensity.toFixed(0)}/km²`
                 : "N/A"}
             </span>
           </div>

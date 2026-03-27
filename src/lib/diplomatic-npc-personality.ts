@@ -1191,7 +1191,9 @@ export class NPCPersonalitySystem {
       tradeExpansion: boolean; // Significant trade growth
       allianceFormed: boolean; // New alliance this year
       relationshipDeteriorated: boolean; // Major relationship loss
-    }
+    },
+    /** Optional geographic modifiers — small trait pressures from terrain/climate/position */
+    geoModifiers?: Partial<PersonalityTraits> | null
   ): { updatedTraits: PersonalityTraits; drift: PersonalityDrift } {
     const traitChanges: Partial<PersonalityTraits> = {};
     const triggeringEvents: string[] = [];
@@ -1241,6 +1243,21 @@ export class NPCPersonalitySystem {
       desiredChanges.assertiveness = (desiredChanges.assertiveness || 0) + 0.8;
       desiredChanges.riskTolerance = 0.6;
       triggeringEvents.push("Major relationship deterioration");
+    }
+
+    // Geographic modifiers — small terrain/climate-based pressures on national character
+    if (geoModifiers) {
+      let hasGeoEffect = false;
+      for (const [trait, value] of Object.entries(geoModifiers)) {
+        if (typeof value === "number" && Math.abs(value) > 0.05) {
+          desiredChanges[trait as keyof PersonalityTraits] =
+            (desiredChanges[trait as keyof PersonalityTraits] || 0) + value;
+          hasGeoEffect = true;
+        }
+      }
+      if (hasGeoEffect) {
+        triggeringEvents.push("Geographic environmental pressures");
+      }
     }
 
     // Apply changes with total drift limit

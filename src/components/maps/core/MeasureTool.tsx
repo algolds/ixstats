@@ -26,21 +26,10 @@ const MEASURE_CURSOR = (() => {
   return `url("data:image/svg+xml,${svg}") 12 12, crosshair`;
 })();
 
-// ─── Inline geo math ─────────────────────────────────────────────
+// ─── Geo math (unified, IxEarth-scaled) ─────────────────────────
+import { distanceKm as haversineKm } from "~/lib/geo-math";
 
 const DEG2RAD = Math.PI / 180;
-const EARTH_RADIUS_KM = 6371;
-
-function haversineKm(a: [number, number], b: [number, number]): number {
-  const dLat = (b[1] - a[1]) * DEG2RAD;
-  const dLng = (b[0] - a[0]) * DEG2RAD;
-  const lat1 = a[1] * DEG2RAD;
-  const lat2 = b[1] * DEG2RAD;
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
-}
 
 /** Spherical midpoint — correct even across the antimeridian */
 function sphericalMidpoint(

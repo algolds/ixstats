@@ -3,19 +3,18 @@
 import { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { getSectionFromPathname, type DashboardSection } from "./DashboardSidebarNav";
+import { withBasePath } from "~/lib/base-path";
 import { DashboardSidebarLayout } from "./DashboardSidebarLayout";
 import { WorldStatsBar } from "./WorldStatsBar";
 import { ActivitySection } from "./sections/ActivitySection";
 import { FeedSection } from "./sections/FeedSection";
-import { DiplomacySection } from "./sections/DiplomacySection";
-import { TrendsSection } from "./sections/TrendsSection";
+import { WorldSection } from "./sections/WorldSection";
 import { api } from "~/trpc/react";
 
 const SECTION_TITLES: Record<DashboardSection, string> = {
-  activity: "Overview",
+  activity: "Command Overview",
   feed: "Feed",
-  diplomacy: "Diplomacy & Crises",
-  trends: "The World",
+  world: "World",
 };
 
 export function DashboardRouter() {
@@ -34,7 +33,7 @@ export function DashboardRouter() {
     setActiveSection(section);
 
     const href = section === "activity" ? "/dashboard" : `/dashboard/${section}`;
-    window.history.pushState(null, "", href);
+    window.history.pushState(null, "", withBasePath(href));
 
     document.title = `${SECTION_TITLES[section]} - IxStats Dashboard`;
 
@@ -66,8 +65,7 @@ export function DashboardRouter() {
 
       {activeSection === "activity" && <ActivitySection globalStats={globalStats} />}
       {activeSection === "feed" && <FeedSection />}
-      {activeSection === "diplomacy" && <DiplomacySection />}
-      {activeSection === "trends" && <TrendsSection />}
+      {activeSection === "world" && <WorldSection />}
     </DashboardSidebarLayout>
   );
 }

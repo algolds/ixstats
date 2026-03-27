@@ -27,6 +27,7 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card } from "~/components/ui/card";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import {
   CardHeader,
   CardContent,
@@ -641,7 +642,7 @@ export function CountryInfobox({
           <CardDescription
             className="text-sm italic"
             // SECURITY: Sanitize wiki content to prevent XSS from external data
-            dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(infobox.native_name) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(infobox.native_name) }} /* native name - no wiki links */
           />
         )}
       </CardHeader>
@@ -715,15 +716,10 @@ export function CountryInfobox({
                         <span className="text-muted-foreground mr-2 font-medium">
                           {field.label}:
                         </span>
-                        <span
+                        <WikiHtmlContent
+                          as="span"
                           className="text-foreground wiki-content"
-                          // SECURITY: Sanitize wiki content to prevent XSS from external data
-                          dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(field.value) }}
-                          title={
-                            field.value !== (infobox.parsedTemplateData?.[field.key] || field.value)
-                              ? `Original: ${infobox.parsedTemplateData?.[field.key] || "N/A"}`
-                              : undefined
-                          }
+                          html={sanitizeWikiContent(field.value)}
                         />
                       </div>
                     </div>
@@ -868,15 +864,10 @@ export function CountryInfobox({
                     <Icon className="text-primary mt-0.5 mr-3 h-4 w-4 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <span className="text-muted-foreground mr-2 font-medium">{field.label}:</span>
-                      <span
+                      <WikiHtmlContent
+                        as="span"
                         className="text-foreground wiki-content"
-                        // SECURITY: Sanitize wiki content to prevent XSS from external data
-                        dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(field.value) }}
-                        title={
-                          field.value !== (infobox.parsedTemplateData?.[field.key] || field.value)
-                            ? `Original: ${infobox.parsedTemplateData?.[field.key] || "N/A"}`
-                            : undefined
-                        }
+                        html={sanitizeWikiContent(field.value)}
                       />
                     </div>
                   </div>

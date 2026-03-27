@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Button } from "~/components/ui/button";
 import { ExternalLink, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { WikiLinkPreview } from "~/components/wiki/WikiLinkPreview";
 
 export default function WikiRedirectPage() {
   useEffect(() => {
@@ -56,34 +57,40 @@ export default function WikiRedirectPage() {
             <p className="mb-2 font-medium">Quick Links:</p>
             <ul className="space-y-1">
               <li>
-                <a
-                  href="https://ixwiki.com/wiki/Main_Page"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  Main Page
-                </a>
+                <WikiLinkPreview title="Main Page">
+                  <a
+                    href="https://ixwiki.com/wiki/Main_Page"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Main Page
+                  </a>
+                </WikiLinkPreview>
               </li>
               <li>
-                <a
-                  href="https://ixwiki.com/wiki/Special:RecentChanges"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  Recent Changes
-                </a>
+                <WikiLinkPreview title="Special:RecentChanges">
+                  <a
+                    href="https://ixwiki.com/wiki/Special:RecentChanges"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Recent Changes
+                  </a>
+                </WikiLinkPreview>
               </li>
               <li>
-                <a
-                  href="https://ixwiki.com/wiki/Special:AllPages"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  All Pages
-                </a>
+                <WikiLinkPreview title="Special:AllPages">
+                  <a
+                    href="https://ixwiki.com/wiki/Special:AllPages"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    All Pages
+                  </a>
+                </WikiLinkPreview>
               </li>
             </ul>
           </div>

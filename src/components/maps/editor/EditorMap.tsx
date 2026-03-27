@@ -19,6 +19,7 @@ import {
   useState,
   forwardRef,
   useImperativeHandle,
+  memo,
 } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
@@ -87,6 +88,10 @@ interface EditorMapProps {
   onZoomChange?: (zoom: number) => void;
   /** Paint mode: per-subdivision color map (id → hex color) */
   paintColors?: Record<string, string>;
+  /** In-progress route waypoints for visual rendering */
+  routeWaypoints?: [number, number][];
+  /** Layer visibility state — controls which feature types are rendered */
+  layerVisibility?: Record<string, boolean>;
 }
 
 const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as any[] };
@@ -151,7 +156,7 @@ function updateSnapGuide(
   }
 }
 
-const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(
+const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
   function EditorMap(
     {
       countryGeometry,
@@ -170,6 +175,8 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(
       showGrid,
       onZoomChange,
       paintColors,
+      routeWaypoints,
+      layerVisibility,
     },
     ref
   ) {
@@ -757,8 +764,19 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
 
+      // Filter features by layer visibility
+      const lv = layerVisibility ?? {};
+      const visibleFeatures = features.filter((f) => {
+        if (f.type === "city" && lv.cities === false) return false;
+        if (f.type === "poi" && lv.pois === false) return false;
+        if (f.type === "storyPin" && lv.stories === false) return false;
+        if (f.type === "mapLabel" && lv.labels === false) return false;
+        if (f.type === "subdivision" && lv.regions === false) return false;
+        return true;
+      });
+
       // Cities + POIs as points
-      const pointFeatures = features
+      const pointFeatures = visibleFeatures
         .filter((f) => f.coordinates)
         .map((f) => ({
           type: "Feature" as const,
@@ -836,7 +854,7 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(
       }
 
       // Subdivisions as polygons
-      const polyFeatures = features
+      const polyFeatures = visibleFeatures
         .filter((f) => f.geometry)
         .map((f) => ({
           type: "Feature" as const,
@@ -900,7 +918,7 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(
           filter: ["==", ["get", "id"], ""],
         });
       }
-    }, [isLoaded, features]);
+    }, [isLoaded, features, layerVisibility]);
 
     // Render pending marker
     useEffect(() => {
@@ -938,6 +956,74 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(
         });
       }
     }, [isLoaded, pendingCoordinates]);
+
+    // ── Render in-progress route waypoints ──
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map || !isLoaded) return;
+
+      const lineGeoJson: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features:
+          routeWaypoints && routeWaypoints.length >= 2
+            ? [
+                {
+                  type: "Feature",
+                  geometry: {
+                    type: "LineString",
+                    coordinates: routeWaypoints,
+                  },
+                  properties: {},
+                },
+              ]
+            : [],
+      };
+
+      const pointGeoJson: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features:
+          routeWaypoints
+            ? routeWaypoints.map((wp) => ({
+                type: "Feature" as const,
+                geometry: { type: "Point" as const, coordinates: wp },
+                properties: {},
+              }))
+            : [],
+      };
+
+      if (map.getSource("editor-route-line")) {
+        (map.getSource("editor-route-line") as any).setData(lineGeoJson);
+      } else {
+        map.addSource("editor-route-line", { type: "geojson", data: lineGeoJson });
+        map.addLayer({
+          id: "editor-route-line-layer",
+          type: "line",
+          source: "editor-route-line",
+          paint: {
+            "line-color": "#6366f1",
+            "line-width": 3,
+            "line-opacity": 0.9,
+          },
+        });
+      }
+
+      if (map.getSource("editor-route-points")) {
+        (map.getSource("editor-route-points") as any).setData(pointGeoJson);
+      } else {
+        map.addSource("editor-route-points", { type: "geojson", data: pointGeoJson });
+        map.addLayer({
+          id: "editor-route-points-layer",
+          type: "circle",
+          source: "editor-route-points",
+          paint: {
+            "circle-radius": 5,
+            "circle-color": "#ffffff",
+            "circle-stroke-color": "#6366f1",
+            "circle-stroke-width": 2,
+          },
+        });
+      }
+    }, [isLoaded, routeWaypoints]);
 
     // Draw mode for subdivisions — simple click-to-draw polygon
     useEffect(() => {
@@ -1088,7 +1174,7 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(
 
         const currentMode = modeRef.current;
 
-        if (currentMode === "add-city" || currentMode === "add-poi") {
+        if (currentMode === "add-city" || currentMode === "add-poi" || currentMode === "add-story-pin" || currentMode === "add-label" || currentMode === "add-route") {
           onMapClick(e.lngLat.lng, e.lngLat.lat);
         } else if (currentMode === "add-subdivision") {
           drawVerticesRef.current.push([e.lngLat.lng, e.lngLat.lat]);
@@ -1758,6 +1844,6 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(
       </div>
     );
   }
-);
+));
 
 export default EditorMap;

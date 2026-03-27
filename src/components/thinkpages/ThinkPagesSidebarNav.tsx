@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageSquare, Users, Send } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { stripBasePath } from "~/lib/base-path";
 
 export type ThinkPagesSection = "feed" | "thinktanks" | "messages";
 
@@ -41,7 +42,8 @@ export const THINKPAGES_NAV_ITEMS: {
   },
 ];
 
-export function getSectionFromPathname(pathname: string): ThinkPagesSection {
+export function getSectionFromPathname(rawPathname: string): ThinkPagesSection {
+  const pathname = stripBasePath(rawPathname);
   if (pathname.startsWith("/thinkpages/thinktanks")) return "thinktanks";
   if (pathname.startsWith("/thinkpages/thinkshare")) return "messages";
   return "feed";

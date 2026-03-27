@@ -9,6 +9,8 @@ import { IxnayWikiService } from "~/lib/mediawiki-service";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
+import { api } from "~/trpc/react";
 
 interface FeaturedArticleProps {
   className?: string;
@@ -28,6 +30,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
   const [htmlContent, setHtmlContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
+  const trpcUtils = api.useUtils();
 
   const wikiService = new IxnayWikiService();
 
@@ -572,67 +575,19 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       const imageFileName = imageMatch?.[1]?.trim();
       let summary = "";
 
-      // Since we have the title from the arrow format, make a direct API call to get the page content
+      // Fetch intro via WikiBridge (tRPC → direct MySQL for ixwiki, HTTP for iiwiki)
       if (title && title !== "Featured Article") {
-        console.log("Making direct API call for title:", title);
-        // Use the proxy API instead of direct call to avoid CORS issues
-        const apiUrl = `/api/ixwiki-proxy/api.php?action=query&prop=extracts&exintro=1&explaintext=1&format=json&titles=${encodeURIComponent(title)}`;
-        console.log("API URL:", apiUrl);
-
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-          const resp = await fetch(apiUrl, {
-            signal: controller.signal,
-            headers: {
-              "User-Agent": "IxStats-Builder",
-              Accept: "application/json, text/plain, */*",
-            },
+          const result = await trpcUtils.countries.getWikiIntro.fetch({
+            countryName: title,
           });
-
-          clearTimeout(timeoutId);
-
-          if (!resp.ok) {
-            console.warn(`API request failed with status ${resp.status}: ${resp.statusText}`);
-            // Don't throw error, just use fallback summary
-            summary = `Discover the fascinating world of ${title}. This featured article showcases the rich history, culture, and achievements that make this topic noteworthy. Explore the detailed information and insights available on IxWiki.`;
+          if (result?.extract) {
+            summary = result.extract;
           } else {
-            const contentType = resp.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-              const data = await resp.json();
-              console.log("API response received:", data);
-
-              if (data?.query?.pages) {
-                const pages = data.query.pages;
-                const pageIds = Object.keys(pages);
-                if (pageIds.length > 0) {
-                  const pageId = pageIds[0];
-                  const page = pages[pageId as keyof typeof pages];
-
-                  if (page && !page.missing && page.extract) {
-                    summary = page.extract;
-                    console.log(
-                      "Successfully extracted summary:",
-                      summary.substring(0, 100) + "..."
-                    );
-                  } else if (page?.missing) {
-                    console.warn("Page not found:", title);
-                    summary = `The article "${title}" could not be found. This featured article showcases the rich history, culture, and achievements that make this topic noteworthy.`;
-                  }
-                }
-              }
-            } else {
-              // Handle non-JSON responses
-              const text = await resp.text();
-              if (text.length > 0) {
-                summary = text.substring(0, 500) + (text.length > 500 ? "..." : "");
-              }
-            }
+            summary = `The article "${title}" could not be found. This featured article showcases the rich history, culture, and achievements that make this topic noteworthy.`;
           }
         } catch (err) {
-          console.warn("Error fetching summary from API:", err);
-          // Use fallback summary instead of throwing
+          console.warn("Error fetching summary via WikiBridge:", err);
           summary = `Discover the fascinating world of ${title}. This featured article showcases the rich history, culture, and achievements that make this topic noteworthy. Explore the detailed information and insights available on IxWiki.`;
         }
       } else {
@@ -808,17 +763,9 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
         {htmlContent ? (
           <div className="max-w-full min-w-0 space-y-4">
             {/* Display the rendered HTML content */}
-            <div
+            <WikiHtmlContent
               className="[&_*]:overflow-wrap-break-word text-sm leading-relaxed [&_*]:max-w-full [&_*]:break-words [&_*]:hyphens-auto"
-              style={{
-                wordWrap: "break-word",
-                overflowWrap: "break-word",
-                hyphens: "auto",
-                maxWidth: "100%",
-                width: "100%",
-              }}
-              // SECURITY: Sanitize wiki content to prevent XSS from external data
-              dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(htmlContent) }}
+              html={sanitizeWikiContent(htmlContent)}
             />
 
             {/* Additional controls */}

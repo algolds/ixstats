@@ -30,6 +30,7 @@ import {
   ThinkPagesSettingsCard,
   QuickActionsSection,
 } from "./_components";
+import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
 
 import { useProfileSettings, useSetupStatus } from "./_hooks";
 
@@ -156,6 +157,8 @@ function ProfileContent() {
                 )}
 
                 {showPreferences && <UserPreferencesCard theme={theme} onThemeChange={setTheme} />}
+
+                <WikiPreferencesCard />
 
                 {thinkpagesAccount && (
                   <ThinkPagesSettingsCard

@@ -6,7 +6,6 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
-import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
@@ -283,7 +282,7 @@ export default function ReferenceDataPage() {
                   return (
                     <Link
                       key={type.key}
-                      href={withBasePath(type.href)}
+                      href={type.href}
                       className="glass-card-child group rounded-xl border border-border/50 p-4 transition-all duration-200 hover:scale-[1.01] hover:border-primary/30 hover:shadow-md"
                     >
                       <div className="flex items-start justify-between">

@@ -5,7 +5,7 @@ import { Crown, Lock, Star, Zap, Shield, TrendingUp, Users, Globe, ArrowRight } 
 import { GlassButton } from "./glass-button";
 
 interface PremiumGateProps {
-  feature: "sdi" | "eci" | "intelligence" | "analytics";
+  feature: "sdi" | "eci" | "intelligence" | "defense" | "analytics";
   title?: string;
   description?: string;
   className?: string;
@@ -51,6 +51,19 @@ const featureConfig = {
     ],
     color: "from-purple-500/20 to-purple-600/20",
     iconColor: "text-purple-400",
+  },
+  defense: {
+    icon: Shield,
+    title: "Defense & Security Command",
+    description: "Full access to military operations, force management, and security infrastructure",
+    features: [
+      "Military force customization",
+      "Active operations management",
+      "Defense budget allocation",
+      "Security & stability monitoring",
+    ],
+    color: "from-red-500/20 to-orange-600/20",
+    iconColor: "text-red-400",
   },
   analytics: {
     icon: Zap,

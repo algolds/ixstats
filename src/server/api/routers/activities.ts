@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import { getWikiRecentChanges, getWikiTrendingPages } from "~/lib/wiki-recentchanges-service";
+import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-bridge";
 import { getForumActivity, getForumTrendingThreads } from "~/lib/xenforo-service";
 
 // Input schemas
@@ -262,9 +262,9 @@ export const activitiesRouter = createTRPCRouter({
       // Add wiki recent changes as feed items
       if (input.filter === "all" || input.filter === "meta") {
         try {
-          const wikiChanges = await getWikiRecentChanges(10);
+          const wikiChanges = await getWikiBridgeRecentChanges(10);
           for (const rc of wikiChanges) {
-            const sizeChange = rc.newlen - rc.oldlen;
+            const sizeChange = rc.newLen - rc.oldLen;
             const isNewPage = rc.type === "new";
             combinedActivities.push({
               id: `wiki-rc-${rc.title}-${rc.timestamp}`,
@@ -1411,10 +1411,12 @@ export const activitiesRouter = createTRPCRouter({
         return `$${v.toLocaleString()}`;
       };
       const fmtPop = (v: number) => {
-        if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
-        if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`;
-        return v.toLocaleString();
+        if (v >= 1e9) return `${Math.round(v / 1e9)}B`;
+        if (v >= 1e6) return `${Math.round(v / 1e6)}M`;
+        return Math.round(v).toLocaleString();
       };
+
+      const wikiUrl = (name: string) => `https://ixwiki.com/wiki/${encodeURIComponent(name.replace(/ /g, "_"))}`;
 
       topGdp.forEach((c, i) => {
         headlines.push({
@@ -1423,6 +1425,7 @@ export const activitiesRouter = createTRPCRouter({
           category: "economic",
           priority: i === 0 ? "high" : "medium",
           timestamp: c.updatedAt.toISOString(),
+          url: wikiUrl(c.name),
         });
       });
 
@@ -1433,6 +1436,7 @@ export const activitiesRouter = createTRPCRouter({
           category: "economic",
           priority: c.adjustedGdpGrowth > 0.05 ? "high" : "medium",
           timestamp: c.updatedAt.toISOString(),
+          url: wikiUrl(c.name),
         });
       });
 
@@ -1443,6 +1447,7 @@ export const activitiesRouter = createTRPCRouter({
           category: "economic",
           priority: c.adjustedGdpGrowth < -0.02 ? "high" : "medium",
           timestamp: c.updatedAt.toISOString(),
+          url: wikiUrl(c.name),
         });
       });
 
@@ -1453,6 +1458,7 @@ export const activitiesRouter = createTRPCRouter({
           category: "economic",
           priority: "low",
           timestamp: c.updatedAt.toISOString(),
+          url: wikiUrl(c.name),
         });
       });
 
@@ -1520,6 +1526,7 @@ export const activitiesRouter = createTRPCRouter({
           category: "diplomatic",
           priority: event.severity === "high" || event.severity === "critical" ? "high" : "medium",
           timestamp: event.createdAt.toISOString(),
+          url: wikiUrl(c1),
         });
       });
 
@@ -1551,6 +1558,7 @@ export const activitiesRouter = createTRPCRouter({
           id: `mission_${mission.id}`,
           text: `Embassy mission ${statusText}: ${mission.name} between ${host} and ${guest}`,
           category: "diplomatic",
+          url: wikiUrl(host),
           priority: mission.status === "completed" ? "medium" : "low",
           timestamp: mission.updatedAt.toISOString(),
         });
@@ -1663,9 +1671,9 @@ export const activitiesRouter = createTRPCRouter({
 
       // ── 8. Wiki recent edits ──
       try {
-        const wikiChanges = await getWikiRecentChanges(8);
+        const wikiChanges = await getWikiBridgeRecentChanges(8);
         for (const rc of wikiChanges) {
-          const sizeChange = rc.newlen - rc.oldlen;
+          const sizeChange = rc.newLen - rc.oldLen;
           const sizeLabel = sizeChange > 0 ? `+${sizeChange}` : String(sizeChange);
           const isNewPage = rc.type === "new";
           // Clean up edit summary: drop auto-generated "Created page with ..." noise
@@ -1815,7 +1823,21 @@ export const activitiesRouter = createTRPCRouter({
 
       // ── 3. Wiki trending pages ──
       try {
-        const pages = await getWikiTrendingPages(10);
+        // Build trending pages from recent changes (aggregated by title)
+        const recentEdits = await getWikiBridgeRecentChanges(50);
+        const pageMap = new Map<string, { title: string; editCount: number; uniqueEditors: Set<string>; totalBytesChanged: number; isNew: boolean; latestEdit: string }>();
+        for (const rc of recentEdits) {
+          const existing = pageMap.get(rc.title);
+          if (existing) {
+            existing.editCount++;
+            existing.uniqueEditors.add(rc.user);
+            existing.totalBytesChanged += Math.abs(rc.newLen - rc.oldLen);
+            if (rc.type === "new") existing.isNew = true;
+          } else {
+            pageMap.set(rc.title, { title: rc.title, editCount: 1, uniqueEditors: new Set([rc.user]), totalBytesChanged: Math.abs(rc.newLen - rc.oldLen), isNew: rc.type === "new", latestEdit: rc.timestamp });
+          }
+        }
+        const pages = [...pageMap.values()].map(p => ({ ...p, uniqueEditors: p.uniqueEditors.size })).sort((a, b) => b.editCount - a.editCount).slice(0, 10);
         for (const page of pages) {
           // Wiki engagement: edits = activity signal, multiple editors = collaborative interest
           // Byte changes proxy for content depth; new pages get a bonus

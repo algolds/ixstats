@@ -194,7 +194,7 @@ export function CountryAtGlance({
       maxGdpGrowth: displayGrowthRate(country.maxGdpGrowthRate),
 
       populationDensity:
-        country.populationDensity != null ? `${country.populationDensity.toFixed(1)}/km²` : "N/A",
+        country.populationDensity != null ? `${country.populationDensity.toFixed(0)}/km²` : "N/A",
       gdpDensity: country.gdpDensity != null ? `${formatCurrency(country.gdpDensity)}/km²` : "N/A",
       landArea: country.landArea != null ? `${country.landArea.toLocaleString()} km²` : "N/A",
       areaSqMi: country.areaSqMi != null ? `${country.areaSqMi.toLocaleString()} sq mi` : "N/A",
