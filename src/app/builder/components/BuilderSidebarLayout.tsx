@@ -1,0 +1,85 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { BuilderSidebarNav } from "./BuilderSidebarNav";
+import type { BuilderSection } from "../lib/builder-theme";
+
+interface BuilderSidebarLayoutProps {
+  children: ReactNode;
+  /** Hero section rendered above the grid */
+  heroSection?: ReactNode;
+  /** Alerts/banners rendered above main content */
+  alerts?: ReactNode;
+  /** Extra content below nav in sidebar (desktop only) */
+  sidebarExtra?: ReactNode;
+  /** Active builder section */
+  activeSection: BuilderSection;
+  /** Callback for sidebar nav clicks */
+  onNavigate: (section: BuilderSection) => void;
+  /** Which steps have been completed */
+  completedSteps?: Set<BuilderSection>;
+  /** Which steps can be accessed */
+  accessibleSteps?: Set<BuilderSection>;
+}
+
+export function BuilderSidebarLayout({
+  children,
+  heroSection,
+  alerts,
+  sidebarExtra,
+  activeSection,
+  onNavigate,
+  completedSteps,
+  accessibleSteps,
+}: BuilderSidebarLayoutProps) {
+  return (
+    <div className="space-y-0">
+      {/* Hero Section */}
+      {heroSection && (
+        <div className="container mx-auto px-3 pt-3 sm:px-4 sm:pt-4">
+          {heroSection}
+        </div>
+      )}
+
+      <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4">
+        {/* Alerts */}
+        {alerts && <div className="mb-3 space-y-2 sm:mb-4">{alerts}</div>}
+
+        {/* Main Layout — sidebar + content */}
+        <div className="flex gap-3 sm:gap-4">
+          {/* Desktop: Fixed sidebar column */}
+          <div className={`relative z-30 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
+            <div className="sticky top-6 space-y-3">
+              <BuilderSidebarNav
+                activeSection={activeSection}
+                onNavigate={onNavigate}
+                completedSteps={completedSteps}
+                accessibleSteps={accessibleSteps}
+                variant={sidebarExtra ? "expanded" : "desktop"}
+              />
+              {sidebarExtra}
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="min-w-0 flex-1">
+            {/* Mobile: Horizontal nav strip */}
+            <div className="mb-3 lg:hidden">
+              <BuilderSidebarNav
+                activeSection={activeSection}
+                onNavigate={onNavigate}
+                completedSteps={completedSteps}
+                accessibleSteps={accessibleSteps}
+                variant="mobile"
+              />
+            </div>
+
+            <div className="space-y-3 sm:space-y-4">
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

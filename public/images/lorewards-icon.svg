@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="135" height="135" viewBox="0 0 135 135">
+  <defs>
+    <linearGradient id="lw-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="lw-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#d97706" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer ring — shield/medallion shape -->
+  <circle cx="67.5" cy="67.5" r="58" fill="none" stroke="url(#lw-gold)" stroke-width="2.5" opacity="0.4"/>
+  <circle cx="67.5" cy="67.5" r="52" fill="none" stroke="url(#lw-gold)" stroke-width="1" opacity="0.2"/>
+
+  <!-- Inner octagonal frame — scholarly/heraldic -->
+  <polygon
+    points="67.5,18 97,32 112,62 97,92 67.5,106 38,92 23,62 38,32"
+    fill="url(#lw-glow)"
+    stroke="url(#lw-gold)"
+    stroke-width="1.5"
+    stroke-linejoin="round"
+  />
+
+  <!-- Quill / pen nib — the writing symbol -->
+  <g transform="translate(67.5, 58) rotate(-30)">
+    <!-- Nib body -->
+    <path d="M0,-28 C4,-20 5,-10 3,0 L0,8 L-3,0 C-5,-10 -4,-20 0,-28Z"
+          fill="url(#lw-gold)" opacity="0.9"/>
+    <!-- Center line -->
+    <line x1="0" y1="-24" x2="0" y2="4" stroke="#1d4e89" stroke-width="0.8" opacity="0.5"/>
+    <!-- Nib split -->
+    <path d="M-2,2 L0,8 L2,2" fill="none" stroke="#1d4e89" stroke-width="0.6" opacity="0.4"/>
+  </g>
+
+  <!-- Star / compass point at top — excellence -->
+  <g transform="translate(67.5, 28)">
+    <polygon points="0,-8 2.5,-2 8,0 2.5,2 0,8 -2.5,2 -8,0 -2.5,-2"
+             fill="url(#lw-gold)" opacity="0.85"/>
+  </g>
+
+  <!-- Book / scroll base — lore foundation -->
+  <g transform="translate(67.5, 92)">
+    <!-- Open book shape -->
+    <path d="M-20,-3 C-18,-6 -8,-7 0,-4 C8,-7 18,-6 20,-3 L20,5 C18,2 8,1 0,4 C-8,1 -18,2 -20,5Z"
+          fill="url(#lw-gold)" opacity="0.75"/>
+    <!-- Book spine -->
+    <line x1="0" y1="-4" x2="0" y2="4" stroke="#1d4e89" stroke-width="0.8" opacity="0.4"/>
+    <!-- Pages left -->
+    <path d="M-16,-1 C-12,-3 -4,-3 0,-1" fill="none" stroke="#1d4e89" stroke-width="0.5" opacity="0.3"/>
+    <!-- Pages right -->
+    <path d="M16,-1 C12,-3 4,-3 0,-1" fill="none" stroke="#1d4e89" stroke-width="0.5" opacity="0.3"/>
+  </g>
+
+  <!-- Laurel branches — award/honor framing -->
+  <!-- Left branch -->
+  <g opacity="0.6">
+    <path d="M32,82 C28,74 26,66 28,58" fill="none" stroke="url(#lw-gold)" stroke-width="1.2" stroke-linecap="round"/>
+    <ellipse cx="26" cy="72" rx="4" ry="2" transform="rotate(-20,26,72)" fill="url(#lw-gold)" opacity="0.5"/>
+    <ellipse cx="27" cy="65" rx="3.5" ry="1.8" transform="rotate(-30,27,65)" fill="url(#lw-gold)" opacity="0.4"/>
+    <ellipse cx="29" cy="59" rx="3" ry="1.5" transform="rotate(-40,29,59)" fill="url(#lw-gold)" opacity="0.3"/>
+  </g>
+  <!-- Right branch -->
+  <g opacity="0.6">
+    <path d="M103,82 C107,74 109,66 107,58" fill="none" stroke="url(#lw-gold)" stroke-width="1.2" stroke-linecap="round"/>
+    <ellipse cx="109" cy="72" rx="4" ry="2" transform="rotate(20,109,72)" fill="url(#lw-gold)" opacity="0.5"/>
+    <ellipse cx="108" cy="65" rx="3.5" ry="1.8" transform="rotate(30,108,65)" fill="url(#lw-gold)" opacity="0.4"/>
+    <ellipse cx="106" cy="59" rx="3" ry="1.5" transform="rotate(40,106,59)" fill="url(#lw-gold)" opacity="0.3"/>
+  </g>
+
+  <!-- Small decorative dots — medal/stars -->
+  <circle cx="45" cy="40" r="1.5" fill="url(#lw-gold)" opacity="0.35"/>
+  <circle cx="90" cy="40" r="1.5" fill="url(#lw-gold)" opacity="0.35"/>
+  <circle cx="40" cy="95" r="1.2" fill="url(#lw-gold)" opacity="0.25"/>
+  <circle cx="95" cy="95" r="1.2" fill="url(#lw-gold)" opacity="0.25"/>
+</svg>

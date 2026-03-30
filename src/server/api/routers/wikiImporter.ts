@@ -21,10 +21,12 @@ const WIKI_SOURCE_NAMES = {
 
 type WikiSource = keyof typeof WIKI_SOURCE_NAMES;
 
-/** Map local source keys to WikiBridge-supported sources. althist falls back to HTTP. */
+/** Map local source keys to WikiBridge-supported sources. */
 function toBridgeSource(source: WikiSource): BridgeWikiSource | null {
   if (source === "ixwiki" || source === "iiwiki") return source;
-  return null; // althist not supported by WikiBridge
+  // althistory is now supported by WikiBridge (HTTP-only fetching)
+  if (source === "althist") return "althistory";
+  return null;
 }
 
 function getWikiUrl(source: WikiSource, pageName: string): string {
@@ -627,6 +629,120 @@ export const wikiImporterRouter = createTRPCRouter({
       }
 
       return results;
+    }),
+
+  /**
+   * Deep import — full article extraction with semantic analysis and IxWorld matching.
+   *
+   * Goes beyond infobox parsing: extracts sections, prose, lists, tables, and
+   * uses semantic keyword matching to identify economy, government, demographics,
+   * geography, military, and history data from the full article.
+   */
+  deepImport: publicProcedure
+    .input(
+      z.object({
+        pageName: z.string().min(1),
+        site: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      // Dynamic imports to keep the module lightweight when not used
+      const { extractWikiContent } = await import("~/lib/wiki-content-extractor");
+      const { analyzeWikiContent } = await import("~/lib/wiki-content-analyzer");
+      const { matchToIxWorld } = await import("~/lib/wiki-ixworld-mapper");
+
+      // 1. Fetch full wikitext via WikiBridge
+      const bridgeSource = input.site as BridgeWikiSource;
+      const article = await getArticleWikitext(input.pageName, bridgeSource);
+      if (!article) {
+        // Fallback: try fetchFromWikiSource for althist
+        const fallback = await fetchFromWikiSource(input.pageName, input.site === "althistory" ? "althist" : input.site as WikiSource);
+        if (!fallback) {
+          return { success: false, error: `Page "${input.pageName}" not found on ${input.site}` };
+        }
+
+        // Process fallback wikitext
+        const extracted = extractWikiContent(input.pageName, fallback.wikitext);
+        const analyzed = analyzeWikiContent(extracted);
+
+        // Run infobox mapper for compatibility
+        let infoboxMapped = {};
+        try {
+          const parsedInfobox = parseInfoboxTemplate(fallback.wikitext);
+          infoboxMapped = mapInfoboxToIxStats(parsedInfobox);
+        } catch { /* infobox parsing optional */ }
+
+        // IxWorld matching
+        let ixworldMatch = null;
+        try {
+          ixworldMatch = await matchToIxWorld(
+            extracted.coordinates,
+            input.pageName,
+            ctx.db,
+            analyzed.borders?.value
+          );
+        } catch { /* IxWorld matching optional */ }
+
+        return {
+          success: true,
+          extracted: {
+            title: extracted.title,
+            intro: extracted.intro,
+            sectionCount: extracted.sections.length,
+            sections: extracted.sections.map((s) => ({ level: s.level, title: s.title })),
+            categories: extracted.categories,
+            coordinates: extracted.coordinates,
+            imageCount: extracted.images.length,
+            tableCount: extracted.tables.length,
+          },
+          analyzed,
+          infoboxMapped,
+          ixworldMatch,
+          sourceUrl: fallback.url,
+        };
+      }
+
+      // 2. Run full extraction
+      const extracted = extractWikiContent(input.pageName, article.wikitext);
+
+      // 3. Run semantic analyzer
+      const analyzed = analyzeWikiContent(extracted);
+
+      // 4. Run infobox mapper for compatibility with existing builder
+      let infoboxMapped = {};
+      try {
+        const parsedInfobox = parseInfoboxTemplate(article.wikitext);
+        infoboxMapped = mapInfoboxToIxStats(parsedInfobox);
+      } catch { /* infobox parsing optional */ }
+
+      // 5. IxWorld geographic matching
+      let ixworldMatch = null;
+      try {
+        ixworldMatch = await matchToIxWorld(
+          extracted.coordinates,
+          input.pageName,
+          ctx.db,
+          analyzed.borders?.value
+        );
+      } catch { /* IxWorld matching optional */ }
+
+      return {
+        success: true,
+        extracted: {
+          title: extracted.title,
+          intro: extracted.intro,
+          sectionCount: extracted.sections.length,
+          sections: extracted.sections.map((s) => ({ level: s.level, title: s.title })),
+          categories: extracted.categories,
+          coordinates: extracted.coordinates,
+          imageCount: extracted.images.length,
+          tableCount: extracted.tables.length,
+        },
+        analyzed,
+        infoboxMapped,
+        ixworldMatch,
+        sourceUrl: getWikiUrl(input.site === "althistory" ? "althist" : input.site as WikiSource, input.pageName),
+      };
     }),
 
   /**

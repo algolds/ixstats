@@ -16,15 +16,15 @@ import { WorldGeneratorPreview } from "./WorldGeneratorPreview";
 
 const DEFAULT_PARAMS: GenParams = {
   seed: 42,
-  continentCount: 4,
-  countryMin: 20,
-  countryMax: 60,
+  continentCount: 6,
+  countryMin: 60,
+  countryMax: 200,
   oceanPercentage: 0.65,
   terrainRoughness: 0.5,
   hasIcecaps: true,
   hasRivers: true,
   hasLakes: true,
-  gridResolution: 256,
+  gridResolution: 512,
   similarity: 0.8,
   profileName: "IxWorld",
 };
@@ -90,7 +90,7 @@ export function WorldGeneratorTab() {
       hasIcecaps: true,
       hasRivers: true,
       hasLakes: true,
-      gridResolution: 384,
+      gridResolution: 512,
       similarity: 0.8,
       profileName: "IxWorld",
     };

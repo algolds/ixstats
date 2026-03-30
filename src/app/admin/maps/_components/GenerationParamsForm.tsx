@@ -33,7 +33,7 @@ const PRESETS: Record<string, Partial<GenParams>> = {
     hasIcecaps: true,
     hasRivers: true,
     hasLakes: true,
-    gridResolution: 384,
+    gridResolution: 512,
     similarity: 0.8,
     profileName: "IxWorld",
   },

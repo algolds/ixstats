@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <defs>
+    <linearGradient id="lws-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <!-- Shield/octagon -->
+  <polygon
+    points="12,2 20,6 22,14 18,21 12,23 6,21 2,14 4,6"
+    fill="none"
+    stroke="url(#lws-gold)"
+    stroke-width="1.5"
+    stroke-linejoin="round"
+    opacity="0.7"
+  />
+  <!-- Quill nib -->
+  <path d="M12,6 C13.5,8 14,11 13,14 L12,16 L11,14 C10,11 10.5,8 12,6Z"
+        fill="url(#lws-gold)" opacity="0.85"/>
+  <!-- Star at top -->
+  <polygon points="12,4 12.7,5.5 14,5.5 13,6.5 13.4,8 12,7 10.6,8 11,6.5 10,5.5 11.3,5.5"
+           fill="url(#lws-gold)" opacity="0.6" transform="scale(0.5) translate(12,2)"/>
+  <!-- Book at bottom -->
+  <path d="M7,18 C8,17 10,17 12,18 C14,17 16,17 17,18 L17,20 C16,19 14,19 12,20 C10,19 8,19 7,20Z"
+        fill="url(#lws-gold)" opacity="0.6"/>
+</svg>

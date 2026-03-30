@@ -67,6 +67,10 @@ import { geoRouter } from "./routers/geo";
 import { resourcesRouter } from "./routers/resources";
 import { transportRouter } from "./routers/transport";
 import { wikiRouter } from "./routers/wiki";
+import { studioRouter } from "./routers/studio";
+import { wikiosRouter } from "./routers/wikios";
+import { lorewardsRouter } from "./routers/lorewards";
+import { blurbsRouter } from "./routers/blurbs";
 
 /**
  * This is the primary router for your server.
@@ -140,6 +144,10 @@ export const appRouter = createTRPCRouter({
   resources: resourcesRouter, // Geographic resource management - procedural placement based on terrain
   transport: transportRouter, // Transport infrastructure - routes, hubs, procedural generation
   wiki: wikiRouter, // Unified wiki data access — direct MySQL for ixwiki, HTTP for iiwiki
+  studio: studioRouter, // World Studio — realm management, procedural generation, IxStats population
+  wikios: wikiosRouter, // WikiOS — modern wiki frontend with Parsoid rendering, PlateJS editing
+  lorewards: lorewardsRouter, // Lorewards — award tracking, leaderboards, user stats
+  blurbs: blurbsRouter, // Blurbs — Topic Tuesday cultural dispatches per country
 });
 
 // export type definition of API

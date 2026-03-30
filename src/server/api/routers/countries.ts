@@ -2763,7 +2763,7 @@ const countriesRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       try {
-        const wiki = (input.site === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki";
+        const wiki = input.site as "ixwiki" | "iiwiki" | "althistory";
         const results = await wikiBridgeSearch(input.query, 20, wiki);
         return results.map((r) => ({
           title: r.title,
@@ -2786,7 +2786,7 @@ const countriesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input }) => {
-      const wiki = (input.site === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki";
+      const wiki = input.site as "ixwiki" | "iiwiki" | "althistory";
       const infobox = await wikiBridgeInfobox(input.pageName, wiki);
       if (!infobox) return null;
       const result: Record<string, string> = {};
@@ -2804,7 +2804,7 @@ const countriesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const wiki = (input.site === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki";
+      const wiki = input.site as "ixwiki" | "iiwiki" | "althistory";
       const infobox = await wikiBridgeInfobox(input.name, wiki);
       if (!infobox) {
         throw new TRPCError({

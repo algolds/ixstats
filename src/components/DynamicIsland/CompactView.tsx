@@ -31,6 +31,8 @@ import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge
 import { usePermissions } from "~/hooks/usePermissions";
 import { withBasePath } from "~/lib/base-path";
 import type { CompactViewProps } from "./types";
+import { useWikiContext } from "~/components/wikios/shared/WikiContext";
+import { BookOpen } from "lucide-react";
 import { HealthRing } from "../ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
 import { debugLog } from "~/lib/console-utils";
@@ -64,9 +66,11 @@ function CompactViewComponent({
   timeDisplayMode,
   setTimeDisplayMode,
   onSwitchMode,
+  isOnWikiPage,
   crisisEvents,
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
+  const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
 
   // Get user role information
   const { user: roleUser, permissions } = usePermissions();
@@ -95,6 +99,9 @@ function CompactViewComponent({
     }
   }, [activityRingsData]);
   const { ixTimeTimestamp } = useIxTime();
+  const activeSectionName = activeSectionId
+    ? tocEntries.find((e) => e.id === activeSectionId)?.text ?? null
+    : null;
   const [mounted, setMounted] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
   const previousNotificationCountRef = useRef(0);
@@ -320,7 +327,7 @@ function CompactViewComponent({
 
             {/* Time Display / Notification Peek - horizontal layout */}
             <div className="flex flex-1 items-center justify-center overflow-hidden">
-              {/* Peek text shows in ALL modes (including sticky) */}
+              {/* Sticky mode: peek text OR wiki context */}
               {isSticky && peekText && (
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -337,6 +344,26 @@ function CompactViewComponent({
                     </span>
                   </motion.div>
                 </AnimatePresence>
+              )}
+              {isSticky && !peekText && isOnWikiPage && articleTitle && (
+                <button
+                  onClick={() => onSwitchMode("wiki")}
+                  className="flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 cursor-pointer max-w-[160px]"
+                  title="Open wiki mode"
+                >
+                  <BookOpen className="h-2.5 w-2.5 text-blue-400 opacity-70 flex-shrink-0" />
+                  <span className="text-foreground/80 text-[10px] font-medium truncate">
+                    {articleTitle}
+                  </span>
+                  {activeSectionName && (
+                    <>
+                      <span className="text-foreground/25 text-[9px]">›</span>
+                      <span className="text-foreground/50 text-[9px] truncate max-w-[60px]">
+                        {activeSectionName}
+                      </span>
+                    </>
+                  )}
+                </button>
               )}
               {!isSticky && (
                 <AnimatePresence mode="wait">
@@ -409,7 +436,27 @@ function CompactViewComponent({
                     )}
                   </button>
 
-                  {/* Greeting */}
+                  {/* Greeting — shows wiki context when on a wiki page */}
+                  {isOnWikiPage && articleTitle ? (
+                    <button
+                      onClick={() => onSwitchMode("wiki")}
+                      className="flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 cursor-pointer max-w-[180px]"
+                      title="Open wiki mode (Tab)"
+                    >
+                      <BookOpen className="h-3 w-3 text-blue-400 opacity-70 flex-shrink-0" />
+                      <span className="text-foreground/80 text-xs font-medium truncate">
+                        {articleTitle}
+                      </span>
+                      {activeSectionName && (
+                        <>
+                          <span className="text-foreground/25 text-[10px]">›</span>
+                          <span className="text-foreground/50 text-[10px] truncate max-w-[80px]">
+                            {activeSectionName}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
                   <Popover>
                     <PopoverTrigger>
                       <span className="text-foreground/70 text-xs font-medium hover:text-foreground/90 cursor-pointer px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 whitespace-nowrap">
@@ -587,6 +634,7 @@ function CompactViewComponent({
                         )}
                       </PopoverContent>
                     </Popover>
+                  )}
                 </motion.div>
                   )}
                 </AnimatePresence>

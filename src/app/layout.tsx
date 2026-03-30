@@ -24,6 +24,7 @@ import { NotificationBadgeProvider } from "~/components/notifications/Notificati
 import { withBasePath } from "~/lib/base-path";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
+import { WikiContextProvider } from "~/components/wikios/shared/WikiContext";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -59,6 +60,7 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
 
   const AppContent = () => (
     <TRPCReactProvider>
+      <WikiContextProvider>
       <GlobalLinkTooltipProvider>
       <ThemeProvider>
         <IxTimeProvider>
@@ -85,6 +87,7 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         </IxTimeProvider>
       </ThemeProvider>
       </GlobalLinkTooltipProvider>
+    </WikiContextProvider>
     </TRPCReactProvider>
   );
 

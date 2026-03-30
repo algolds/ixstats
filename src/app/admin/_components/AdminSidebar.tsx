@@ -15,6 +15,8 @@ import {
   Users,
   Database,
   BookOpen,
+  Sparkles,
+  MessageCircle,
   Menu,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
@@ -61,6 +63,12 @@ const NAV_ITEMS: NavItem[] = [
     description: "World Map & Assignments",
   },
   {
+    label: "World Studio",
+    href: "/admin/studio",
+    icon: Sparkles,
+    description: "Realms & World Configs",
+  },
+  {
     label: "Users & Roles",
     href: "/admin/users",
     icon: Users,
@@ -77,6 +85,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/wiki",
     icon: BookOpen,
     description: "Wiki Links & Scanning",
+  },
+  {
+    label: "Blurbs",
+    href: "/admin/blurbs",
+    icon: MessageCircle,
+    description: "Topic Prompts & Responses",
   },
 ];
 

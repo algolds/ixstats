@@ -3,6 +3,7 @@ import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
 import { CrisisView } from "./CrisisView";
+import { WikiView } from "./WikiView";
 import type { ExpandedViewProps } from "./types";
 
 export function ExpandedView({
@@ -57,6 +58,7 @@ export function ExpandedView({
           {mode === "notifications" && <NotificationsView onClose={onClose} />}
           {mode === "settings" && <SettingsView onClose={onClose} />}
           {mode === "crisis" && <CrisisView crises={crisisEvents || []} onClose={onClose} />}
+          {mode === "wiki" && <WikiView onClose={onClose} />}
         </div>
       </div>
     </div>

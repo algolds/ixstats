@@ -9,7 +9,7 @@
 
 import type { FeatureCollection } from "geojson";
 import type { SvgCoordinateConfig } from "./svg-coordinate-config";
-import type { WorldGenParams } from "./procedural/world-generator";
+import type { WorldGenParams } from "./worldgen/types";
 import type { PngToSvgConfig } from "./png-to-svg";
 import { getZoneByColor } from "./elevation-config";
 
@@ -144,7 +144,7 @@ export async function runMapPipeline(
 
       if (!input.worldGenParams) throw new Error("World gen params required for procedural source");
 
-      const { generateWorld } = await import("./procedural/world-generator");
+      const { generateWorld } = await import("./worldgen/engine");
       const world = generateWorld(input.worldGenParams);
 
       // Copy all generated layers

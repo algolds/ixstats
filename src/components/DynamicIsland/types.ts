@@ -29,7 +29,7 @@ export interface SearchResult {
 }
 
 // View modes
-export type ViewMode = "compact" | "search" | "notifications" | "settings" | "crisis" | "mycountry" | "cycling";
+export type ViewMode = "compact" | "search" | "notifications" | "settings" | "crisis" | "mycountry" | "cycling" | "wiki";
 export type SearchFilter = "all" | "countries" | "commands" | "features";
 export type TimeDisplayMode = "time" | "date" | "both";
 
@@ -55,6 +55,7 @@ export interface CompactViewProps {
   onSwitchMode: (mode: ViewMode) => void;
   scrollY?: number;
   crisisEvents?: any[];
+  isOnWikiPage?: boolean;
 }
 
 export interface CountriesData {

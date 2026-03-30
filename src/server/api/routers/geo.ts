@@ -5140,17 +5140,17 @@ export const geoRouter = createTRPCRouter({
         hasIcecaps: z.boolean().default(true),
         hasRivers: z.boolean().default(true),
         hasLakes: z.boolean().default(true),
-        gridResolution: z.number().int().min(128).max(512).default(256),
-        similarity: z.number().min(0).max(1).default(0),
+        gridResolution: z.number().int().min(128).max(512).default(512),
+        similarity: z.number().min(0).max(1).default(0.5),
         profileName: z.string().default("IxWorld"),
-        erosionIntensity: z.number().min(0).max(1).default(0.5),
+        erosionIntensity: z.number().min(0).max(1).default(0.8),
         climateDetail: z.enum(["simple", "full"]).default("full"),
         useTectonicElevation: z.boolean().default(true),
       })
     )
     .mutation(async ({ ctx, input }) => {
       // Dynamic import to avoid loading heavy generation code on every request
-      const { generateWorld } = await import("~/lib/procedural/world-generator");
+      const { generateWorld } = await import("~/lib/worldgen/engine");
 
       const result = generateWorld(input);
 
@@ -5282,7 +5282,7 @@ export const geoRouter = createTRPCRouter({
       if (!world) throw new TRPCError({ code: "NOT_FOUND" });
 
       const params = world.parameters as Record<string, unknown>;
-      const { generateWorld } = await import("~/lib/procedural/world-generator");
+      const { generateWorld } = await import("~/lib/worldgen/engine");
 
       // Regenerate with a shifted seed for the target layer
       const newSeed = (params.seed as number) + input.layerType.length * 1000;
@@ -5352,7 +5352,7 @@ export const geoRouter = createTRPCRouter({
       const result = await runMapPipeline({
         source: input.source,
         svgContent: input.svgContent,
-        worldGenParams: input.worldGenParams as import("~/lib/procedural/world-generator").WorldGenParams | undefined,
+        worldGenParams: input.worldGenParams as import("~/lib/worldgen/types").WorldGenParams | undefined,
         targetLayers: input.targetLayers,
       });
 

@@ -53,6 +53,7 @@ function CommandPaletteContent({
     searchResults,
     countriesData,
     crisisEvents,
+    isOnWikiPage,
     setMode,
     setIsExpanded,
     setExpandedMode,
@@ -180,6 +181,7 @@ function CommandPaletteContent({
               onSwitchMode={switchMode}
               scrollY={scrollY}
               crisisEvents={crisisEvents}
+              isOnWikiPage={isOnWikiPage}
             />
           </DynamicIsland>
         </motion.div>

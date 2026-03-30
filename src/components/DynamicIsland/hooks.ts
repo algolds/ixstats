@@ -13,6 +13,10 @@ import {
   Home,
   LogIn,
   LogOut,
+  BookOpen,
+  History,
+  Shuffle,
+  Search,
 } from "lucide-react";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
@@ -126,6 +130,7 @@ export function useCommandItems(userProfile?: UserProfile) {
 export function useDynamicIslandState() {
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
+  const isOnWikiPage = pathname?.startsWith("/w/") || pathname?.startsWith("/wiki-special/") || false;
   const [mode, setMode] = useState<ViewMode>("compact");
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedMode, setExpandedMode] = useState<ViewMode>("search");
@@ -150,6 +155,7 @@ export function useDynamicIslandState() {
   // Enhanced keyboard shortcuts with debouncing to prevent duplicates
   const [isProcessingShortcut, setIsProcessingShortcut] = useState(false);
   const shortcutTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const lastTabTimestampRef = useRef<number>(0);
 
   // Debounce search query for better performance
   useEffect(() => {
@@ -373,11 +379,14 @@ export function useDynamicIslandState() {
       }
 
       // Only skip shortcuts if user is typing in inputs (except search inputs)
-      const activeElement = document.activeElement;
+      const activeElement = document.activeElement as HTMLElement | null;
       const isInputFocused =
         activeElement?.tagName === "INPUT" ||
         activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.getAttribute("contenteditable") === "true";
+        activeElement?.getAttribute("contenteditable") === "true" ||
+        activeElement?.closest('[contenteditable="true"]') != null ||
+        activeElement?.closest('.cm-editor') != null ||
+        activeElement?.closest('[data-slate-editor]') != null;
 
       // Debug active element
       devLog(
@@ -481,7 +490,7 @@ export function useDynamicIslandState() {
       }
 
       // Tab cycling for filters when in search mode
-      if (e.key === "Tab" && mode === "search" && !isProcessingShortcut) {
+      if (e.key === "Tab" && mode === "search" && !isProcessingShortcut && !isInputFocused) {
         e.preventDefault();
         const filters: SearchFilter[] = ["all", "countries", "commands", "features"];
         const currentIndex = filters.indexOf(searchFilter);
@@ -492,7 +501,44 @@ export function useDynamicIslandState() {
         }
       }
 
-      if (e.key === "Escape" && !isProcessingShortcut) {
+      // Tab (no modifiers, not in input) — toggle wiki mode
+      // Double-tap Tab within 400ms — enter editor mode
+      if (
+        e.key === "Tab" &&
+        !e.metaKey && !e.ctrlKey && !e.altKey &&
+        !isInputFocused &&
+        mode !== "search" &&
+        !isProcessingShortcut
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const now = Date.now();
+        const timeSinceLastTab = now - (lastTabTimestampRef.current ?? 0);
+        lastTabTimestampRef.current = now;
+
+        if (timeSinceLastTab < 400 && mode === "wiki") {
+          // Double-tap: enter editor mode for current wiki article
+          setIsProcessingShortcut(true);
+          switchMode("compact");
+          // Navigate to edit page — dispatched via custom event
+          window.dispatchEvent(new CustomEvent("wikios:edit"));
+          if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+          shortcutTimeoutRef.current = setTimeout(() => {
+            setIsProcessingShortcut(false);
+          }, 500);
+        } else {
+          // Single tap: toggle wiki mode
+          setIsProcessingShortcut(true);
+          switchMode(mode === "wiki" ? "compact" : "wiki");
+          if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+          shortcutTimeoutRef.current = setTimeout(() => {
+            setIsProcessingShortcut(false);
+          }, 500);
+        }
+      }
+
+      if (e.key === "Escape" && !isProcessingShortcut && !isInputFocused) {
         e.preventDefault();
         if (mode === "search" && searchQuery) {
           setSearchQuery("");
@@ -547,6 +593,7 @@ export function useDynamicIslandState() {
     searchResults,
     countriesData,
     crisisEvents,
+    isOnWikiPage,
 
     // Actions
     setMode,
@@ -629,9 +676,27 @@ export const commands = [
   },
   {
     name: "IxWiki",
-    path: "/wiki",
-    icon: Activity,
-    description: "Access the IxWiki knowledge base",
+    path: "/w/Main_Page",
+    icon: BookOpen,
+    description: "IxWiki main page (WikiOS)",
+  },
+  {
+    name: "Wiki Recent Changes",
+    path: "/wiki-special/recent-changes",
+    icon: History,
+    description: "Latest wiki edits and activity",
+  },
+  {
+    name: "Wiki Random Article",
+    path: "/wiki-special/random",
+    icon: Shuffle,
+    description: "Discover a random wiki article",
+  },
+  {
+    name: "Wiki Search",
+    path: "/wiki-special/search",
+    icon: Search,
+    description: "Search wiki articles",
   },
 
   // Tools & Creation

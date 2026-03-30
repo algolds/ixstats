@@ -7,17 +7,20 @@
  */
 
 import { ELEVATION_ZONES, type ElevationZoneConfig } from "./elevation-config";
-import { CLIMATE_TYPES, CLIMATE_NAMES, CLIMATE_COLORS, type IxWorldClimate } from "./procedural/climate-system";
+import { CLIMATE_TYPES, CLIMATE_NAMES, CLIMATE_COLORS, type IxWorldClimate } from "./procedural-archive/climate-system";
 
 /** Available map layer types matching GeoJSON files */
 export const MAP_LAYER_TYPES = [
   "background",
   "altitudes",
   "climate",
+  "biomes",
   "political",
   "lakes",
   "rivers",
   "icecaps",
+  "cities",
+  "trade_routes",
 ] as const;
 
 export type MapLayerType = (typeof MAP_LAYER_TYPES)[number];
@@ -77,6 +80,14 @@ export const LAYER_CONFIGS: Record<MapLayerType, LayerConfig> = {
     fillOpacity: 0.35,
     type: "fill",
   },
+  biomes: {
+    label: "Biomes",
+    zIndex: 4,
+    defaultVisible: false,
+    fillColor: "from-property",
+    fillOpacity: 0.4,
+    type: "fill",
+  },
   political: {
     label: "Countries",
     zIndex: 5,
@@ -94,6 +105,24 @@ export const LAYER_CONFIGS: Record<MapLayerType, LayerConfig> = {
     fillColor: "#f0f4f8",
     fillOpacity: 0.7,
     type: "fill",
+  },
+  cities: {
+    label: "Cities",
+    zIndex: 7,
+    defaultVisible: false,
+    fillColor: "#FF4444",
+    fillOpacity: 1,
+    type: "fill",
+  },
+  trade_routes: {
+    label: "Trade Routes",
+    zIndex: 7,
+    defaultVisible: false,
+    fillColor: "#8B4513",
+    fillOpacity: 0,
+    strokeColor: "#8B4513",
+    strokeWidth: 1.5,
+    type: "line",
   },
 };
 
@@ -549,43 +578,82 @@ export interface WorldMapConfig {
   elevationZones: readonly ElevationZoneConfig[];
 }
 
+/** Default IxWorld configuration (used as baseline for all worlds) */
+const IXWORLD_DEFAULTS: WorldMapConfig = {
+  worldId: "default",
+  name: "IxWorld",
+  wikiBaseUrl: "https://ixwiki.com",
+  wikiApiPath: "/api.php",
+  mapProjection: "dynamic",
+  defaultCenter: MAP_DEFAULTS.center,
+  defaultZoom: MAP_DEFAULTS.zoom,
+  layerTypes: [...MAP_LAYER_TYPES],
+  climateSystem: "trewartha",
+  oceanColor: OCEAN_COLOR,
+  countryColors: DEFAULT_COUNTRY_COLORS,
+  waterBodyLabels: WATER_BODY_LABELS.map((l) => ({
+    name: l.name,
+    lng: l.coordinates[0],
+    lat: l.coordinates[1],
+    type: l.type,
+    areaMKm2: l.areaMKm2,
+    avgDepthM: l.avgDepthM,
+    maxDepthM: l.maxDepthM,
+    borders: l.borders,
+  })),
+  layerConfigs: { ...LAYER_CONFIGS },
+  sovereigntyTypes: SOVEREIGNTY_TYPE_MAP,
+  elevationZones: ELEVATION_ZONES,
+};
+
 /**
  * Load world configuration by worldId.
  *
- * Phase 1 (current): Returns hardcoded IxWorld config for "default".
- * Phase 2 (future): Reads from WorldConfig table, merges with defaults.
- *
- * All existing code passes worldId="default" (or omits it), so this
- * is a no-op refactor that preserves current behavior while establishing
- * the framework interface.
+ * Synchronous path: returns hardcoded IxWorld config for "default".
+ * For custom realms, use loadRealmWorldConfig() which reads from DB.
  */
 export function loadWorldConfig(worldId: string = "default"): WorldMapConfig {
-  // Currently only "default" (IxWorld) is supported.
-  // Future: fetch from DB and merge with these defaults.
+  if (worldId === "default") {
+    return { ...IXWORLD_DEFAULTS };
+  }
+  // For non-default worlds without DB access, return defaults with worldId override
+  return { ...IXWORLD_DEFAULTS, worldId, name: worldId };
+}
+
+/**
+ * Load world configuration from a database WorldConfig record.
+ * Merges stored config with IxWorld defaults — any field not set
+ * in the DB record falls back to the IxWorld baseline.
+ */
+export function loadWorldConfigFromDB(dbConfig: {
+  worldId: string;
+  name: string;
+  description?: string | null;
+  wikiBaseUrl?: string | null;
+  wikiApiPath?: string;
+  mapProjection?: string;
+  defaultCenter?: unknown;
+  defaultZoom?: number;
+  layerTypes?: unknown;
+  climateSystem?: string;
+  elevationZones?: unknown;
+  waterBodyLabels?: unknown;
+  countryColors?: unknown;
+  sovereigntyTypes?: unknown;
+}): WorldMapConfig {
   return {
-    worldId,
-    name: worldId === "default" ? "IxWorld" : worldId,
-    wikiBaseUrl: "https://ixwiki.com",
-    wikiApiPath: "/api.php",
-    mapProjection: "dynamic",
-    defaultCenter: MAP_DEFAULTS.center,
-    defaultZoom: MAP_DEFAULTS.zoom,
-    layerTypes: [...MAP_LAYER_TYPES],
-    climateSystem: "trewartha",
-    oceanColor: OCEAN_COLOR,
-    countryColors: COUNTRY_COLORS,
-    waterBodyLabels: WATER_BODY_LABELS.map((l) => ({
-      name: l.name,
-      lng: l.coordinates[0],
-      lat: l.coordinates[1],
-      type: l.type,
-      areaMKm2: l.areaMKm2,
-      avgDepthM: l.avgDepthM,
-      maxDepthM: l.maxDepthM,
-      borders: l.borders,
-    })),
-    layerConfigs: { ...LAYER_CONFIGS },
-    sovereigntyTypes: SOVEREIGNTY_TYPE_MAP,
-    elevationZones: ELEVATION_ZONES,
+    ...IXWORLD_DEFAULTS,
+    worldId: dbConfig.worldId,
+    name: dbConfig.name,
+    wikiBaseUrl: dbConfig.wikiBaseUrl ?? IXWORLD_DEFAULTS.wikiBaseUrl,
+    wikiApiPath: dbConfig.wikiApiPath ?? IXWORLD_DEFAULTS.wikiApiPath,
+    mapProjection: (dbConfig.mapProjection as ProjectionMode) ?? IXWORLD_DEFAULTS.mapProjection,
+    defaultCenter: (dbConfig.defaultCenter as [number, number]) ?? IXWORLD_DEFAULTS.defaultCenter,
+    defaultZoom: dbConfig.defaultZoom ?? IXWORLD_DEFAULTS.defaultZoom,
+    layerTypes: (dbConfig.layerTypes as MapLayerType[]) ?? IXWORLD_DEFAULTS.layerTypes,
+    climateSystem: dbConfig.climateSystem ?? IXWORLD_DEFAULTS.climateSystem,
+    countryColors: (dbConfig.countryColors as string[]) ?? IXWORLD_DEFAULTS.countryColors,
+    waterBodyLabels: (dbConfig.waterBodyLabels as WorldMapConfig["waterBodyLabels"]) ?? IXWORLD_DEFAULTS.waterBodyLabels,
+    elevationZones: (dbConfig.elevationZones as readonly ElevationZoneConfig[]) ?? IXWORLD_DEFAULTS.elevationZones,
   };
 }

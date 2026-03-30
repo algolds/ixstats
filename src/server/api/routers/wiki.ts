@@ -23,7 +23,7 @@ import {
   type WikiSource,
 } from "~/lib/wiki-bridge";
 
-const wikiSourceSchema = z.enum(["ixwiki", "iiwiki"]).default("ixwiki");
+const wikiSourceSchema = z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki");
 
 export const wikiRouter = createTRPCRouter({
   /**

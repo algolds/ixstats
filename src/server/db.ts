@@ -136,6 +136,12 @@ const createPrismaClient = () => {
     "ActivityFeed", "UserAchievement",
     // Wiki cache (written by WikiCacheService for 3-layer caching)
     "WikiCache",
+    // WikiOS Lore Stash — save-for-later with annotations
+    "LoreStash", "LoreStashItem", "LoreStashAnnotation",
+    // WikiOS Template Registry
+    "WikiTemplate",
+    // Lorewards — synced from Discord bot + cross-validation
+    "LorewardEntry", "LorewardUserStats", "LorewardCrossValidation",
   ]);
 
   // In read-only mode, extend the client to block write operations
