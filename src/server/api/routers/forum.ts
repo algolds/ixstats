@@ -84,7 +84,7 @@ async function requireForumUser(userId: string): Promise<number> {
 
   // Fallback: if forumUsername is set but forumUserId is missing, look it up and backfill
   if (user?.forumUsername) {
-    const { lookupForumUser } = await import("~/lib/xenforo-user-sync");
+    const { lookupForumUser } = await import("~/modules/forum");
     const xfUser = await lookupForumUser(user.forumUsername);
     if (xfUser) {
       await db.user.update({
@@ -1009,7 +1009,7 @@ export const forumRouter = createTRPCRouter({
     // Backfill: if forumUsername exists but forumUserId is missing, look it up
     if (user?.forumUsername && !user.forumUserId) {
       try {
-        const { lookupForumUser } = await import("~/lib/xenforo-user-sync");
+        const { lookupForumUser } = await import("~/modules/forum");
         const xfUser = await lookupForumUser(user.forumUsername);
         if (xfUser) {
           await db.user.update({

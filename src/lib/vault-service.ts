@@ -16,7 +16,7 @@
 import { type PrismaClient } from "@prisma/client";
 import { type VaultTransactionType } from "@prisma/client";
 import { budgetVaultCalculator } from "./budget-vault-calculator";
-import { syncUserToForum } from "./xenforo-user-sync";
+import { syncUserToForum } from "~/modules/forum";
 
 /**
  * Vault Service

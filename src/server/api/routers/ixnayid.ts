@@ -164,7 +164,7 @@ export const ixnayidRouter = createTRPCRouter({
   lookupForumUser: protectedProcedure
     .input(z.object({ username: z.string().min(1).max(100) }))
     .query(async ({ input }) => {
-      const { lookupForumUser } = await import("~/lib/xenforo-user-sync");
+      const { lookupForumUser } = await import("~/modules/forum");
       return lookupForumUser(input.username);
     }),
 });
