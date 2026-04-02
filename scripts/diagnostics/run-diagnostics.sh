@@ -1,5 +1,5 @@
 #!/bin/bash
-# IxStats Diagnostic Suite Runner
+# IxStates Diagnostic Suite Runner
 # Runs all diagnostic scripts and generates a comprehensive report
 
 set -e
@@ -32,7 +32,7 @@ BASE_URL="http://localhost:3000"
 
 show_help() {
     cat << EOF
-IxStats Diagnostic Suite
+IxStates Diagnostic Suite
 
 Usage: $0 [options]
 
@@ -54,7 +54,7 @@ Examples:
     $0                      # Run all diagnostics
     $0 --health-only        # Run only health checks
     $0 --skip-db --verbose  # Skip DB analysis, verbose output
-    $0 --url http://localhost:3550/projects/ixstats  # Test production
+    $0 --url http://localhost:3550  # Test production
 
 EOF
 }
@@ -169,7 +169,7 @@ section() {
 
 clear
 log "╔═══════════════════════════════════════════════════════════════════╗" "BLUE"
-log "║                    IxStats Diagnostic Suite                       ║" "BLUE"
+log "║                    IxStates Diagnostic Suite                       ║" "BLUE"
 log "╚═══════════════════════════════════════════════════════════════════╝" "BLUE"
 log ""
 log "Timestamp: $(date)"

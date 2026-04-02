@@ -29,6 +29,7 @@ import {
   UserPreferencesCard,
   ThinkPagesSettingsCard,
   QuickActionsSection,
+  IxnayIDCard,
 } from "./_components";
 import { WikiPreferencesCard } from "~/components/profile/WikiPreferencesCard";
 
@@ -160,6 +161,8 @@ function ProfileContent() {
 
                 <WikiPreferencesCard />
 
+                <IxnayIDCard />
+
                 {thinkpagesAccount && (
                   <ThinkPagesSettingsCard
                     thinkpagesAccount={thinkpagesAccount}
@@ -191,36 +194,17 @@ function ProfileContent() {
                       <Shield className="mr-2 h-4 w-4" />
                       Privacy & Security
                     </button>
-                    <button className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
+                    <button
+                      onClick={() => document.getElementById("ixnayid-card")?.scrollIntoView({ behavior: "smooth" })}
+                      className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
                       <Key className="mr-2 h-4 w-4" />
                       Connected Accounts
                     </button>
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                  <div className="mb-4 flex items-center">
-                    <Disc className="mr-2 h-5 w-5 text-[#5865F2]" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Discord Account
-                    </h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      <p>Your account is managed through Discord authentication.</p>
-                      {hasDiscordAccount && (
-                        <p className="mt-2 text-green-600 dark:text-green-400">
-                          ✓ Connected to Discord
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-500">
-                      <p>
-                        To manage your account settings, use the Discord account management portal.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                {/* Discord Account section removed — now in IxnayID card */}
               </div>
             </div>
           </div>

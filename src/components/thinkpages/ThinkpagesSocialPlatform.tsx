@@ -1,30 +1,21 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "motion/react";
 import {
   Users,
-  TrendingUp,
-  Search,
   RefreshCw,
   Loader2,
-  Hash,
-  Newspaper,
   Rss,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Card, CardContent } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { ThinkpagesPost } from "./ThinkpagesPost";
 import { GlassCanvasComposer } from "./GlassCanvasComposer";
-import { LiveHeadlinesTicker } from "~/components/shared/LiveHeadlinesTicker";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { AccountManagerModal } from "./AccountManagerModal";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { RepostModal } from "./RepostModal";
-import { cn } from "~/lib/utils";
 
 interface ThinkpagesSocialPlatformProps {
   countryId: string;
@@ -52,8 +43,7 @@ export function ThinkpagesSocialPlatform({
   countryOwnerClerkUserId,
 }: ThinkpagesSocialPlatformProps) {
   const notify = useNotify();
-  const [feedFilter, setFeedFilter] = useState<"recent" | "trending" | "hot">("recent");
-  const [searchQuery, setSearchQuery] = useState("");
+  const feedFilter = "recent" as const;
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);
@@ -79,10 +69,6 @@ export function ThinkpagesSocialPlatform({
     { clerkUserId: countryOwnerClerkUserId!, limit: 20 },
     { enabled: profileMode && !!countryOwnerClerkUserId },
   );
-
-  const {
-    data: trendingTopics,
-  } = api.thinkpages.getTrendingTopics.useQuery({ limit: 5 });
 
   const displayFeed = profileMode ? userFeed : feed;
   const isLoadingDisplayFeed = profileMode ? isLoadingUserFeed : isLoadingFeed;
@@ -178,14 +164,7 @@ export function ThinkpagesSocialPlatform({
     setNextCursor(null);
   }, [feedFilter]);
 
-  const filteredPosts = useMemo(() => {
-    return allPosts.filter((post: any) => {
-      if (searchQuery) {
-        return post.content.toLowerCase().includes(searchQuery.toLowerCase());
-      }
-      return true;
-    });
-  }, [allPosts, searchQuery]);
+  const filteredPosts = allPosts;
 
   const totalPosts = allPosts.length;
 
@@ -374,113 +353,6 @@ export function ThinkpagesSocialPlatform({
         </div>
       )}
 
-      {/* ── Feed Toolbar (non-profile mode) ── */}
-      {!profileMode && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.05 }}
-          className="glass-hierarchy-child rounded-xl border border-white/10 p-3 sm:p-4"
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Search */}
-            <div className="relative flex-1 sm:max-w-sm">
-              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search posts..."
-                className="h-9 rounded-lg pr-4 pl-9 text-sm"
-                inputMode="search"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Filter pills */}
-              <ToggleGroup
-                type="single"
-                value={feedFilter}
-                onValueChange={(value) => value && setFeedFilter(value as typeof feedFilter)}
-                className="flex gap-0.5 rounded-lg bg-white/5 p-0.5"
-              >
-                {(["recent", "trending", "hot"] as const).map((filter) => (
-                  <ToggleGroupItem
-                    key={filter}
-                    value={filter}
-                    className="data-[state=on]:bg-primary/10 data-[state=on]:text-primary rounded-md px-3 py-1 text-xs font-medium capitalize transition-all"
-                  >
-                    {filter}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-
-              {/* Actions */}
-              <div className="flex gap-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => refetchFeed()}
-                >
-                  {isLoadingFeed ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5"
-                  onClick={() => setIsAccountModalOpen(true)}
-                >
-                  <Users className="h-3.5 w-3.5" />
-                  <span className="hidden text-xs sm:inline">Accounts</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── Live News Ticker ── */}
-      {!profileMode && <LiveHeadlinesTicker />}
-
-      {/* ── Trending Topics Strip (non-profile mode) ── */}
-      {!profileMode && trendingTopics && trendingTopics.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.1 }}
-          className="glass-hierarchy-child rounded-xl border border-white/10 p-3 sm:p-4"
-        >
-          <div className="mb-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-3.5 w-3.5 text-orange-500" />
-              <span className="text-xs font-semibold">Trending</span>
-            </div>
-            <Badge variant="outline" className="text-muted-foreground px-1.5 py-0 text-[0.6rem]">
-              {trendingTopics.length} topics
-            </Badge>
-          </div>
-          <div className="hide-scrollbar flex gap-2 overflow-x-auto">
-            {trendingTopics.map((topic, index) => (
-              <button
-                key={topic.hashtag}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-              >
-                <Hash className="h-3 w-3 text-orange-500" />
-                <span>{topic.hashtag}</span>
-                <span className="text-muted-foreground text-[0.65rem]">{topic.postCount}</span>
-                {index === 0 && (
-                  <TrendingUp className="ml-0.5 h-2.5 w-2.5 text-green-500" />
-                )}
-              </button>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
       {/* ── Composer ── */}
       {!profileMode && selectedAccount && (
         <motion.div
@@ -572,9 +444,7 @@ export function ThinkpagesSocialPlatform({
               <p className="text-muted-foreground text-sm">
                 {profileMode
                   ? `${countryName.replace(/_/g, " ")} hasn't shared any posts yet.`
-                  : searchQuery
-                    ? "No posts match your search criteria."
-                    : "Be the first to share something on ThinkPages!"}
+                  : "Be the first to share something on ThinkPages!"}
               </p>
             </CardContent>
           </Card>

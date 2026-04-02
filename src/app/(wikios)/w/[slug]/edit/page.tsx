@@ -177,7 +177,7 @@ export default function WikiOSEditPage() {
           onClick={() => {
             // Open diff in new tab to compare
             window.open(
-              withBasePath(`/wiki-special/history/${encodeURIComponent(title.replace(/ /g, "_"))}`),
+              withBasePath(`/w/special/history/${encodeURIComponent(title.replace(/ /g, "_"))}`),
               "_blank"
             );
           }}

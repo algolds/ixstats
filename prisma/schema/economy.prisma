@@ -1,0 +1,653 @@
+// IxStates — Economy & Tax models
+
+model EconomicProfile {
+  id                  String   @id @default(cuid())
+  countryId           String   @unique
+  gdpGrowthVolatility Float?
+  economicComplexity  Float?
+  innovationIndex     Float?
+  competitivenessRank Int?
+  easeOfDoingBusiness Int?
+  corruptionIndex     Float?
+  sectorBreakdown     String?
+  exportsGDPPercent   Float?
+  importsGDPPercent   Float?
+  tradeBalance        Float?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  country             Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+model LaborMarket {
+  id                      String   @id @default(cuid())
+  countryId               String   @unique
+  employmentBySector      String?
+  youthUnemploymentRate   Float?
+  femaleParticipationRate Float?
+  informalEmploymentRate  Float?
+  medianWage              Float?
+  wageGrowthRate          Float?
+  wageBySector            String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  country                 Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+model FiscalSystem {
+  id                       String   @id @default(cuid())
+  countryId                String   @unique
+  personalIncomeTaxRates   String?
+  corporateTaxRates        String?
+  salesTaxRate             Float?
+  propertyTaxRate          Float?
+  payrollTaxRate           Float?
+  exciseTaxRates           String?
+  wealthTaxRate            Float?
+  spendingByCategory       String?
+  fiscalBalanceGDPPercent  Float?
+  primaryBalanceGDPPercent Float?
+  taxEfficiency            Float?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  country                  Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+model IncomeDistribution {
+  id                        String   @id @default(cuid())
+  countryId                 String   @unique
+  economicClasses           String?
+  top10PercentWealth        Float?
+  bottom50PercentWealth     Float?
+  middleClassPercent        Float?
+  intergenerationalMobility Float?
+  educationMobility         Float?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  country                   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+model GovernmentBudget {
+  id                    String   @id @default(cuid())
+  countryId             String   @unique
+  spendingCategories    String?
+  spendingEfficiency    Float?
+  publicInvestmentRate  Float?
+  socialSpendingPercent Float?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  country               Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+model Demographics {
+  id                         String    @id @default(cuid())
+  countryId                  String    @unique
+  ageDistribution            String?
+  regions                    String?
+  educationLevels            String?
+  citizenshipStatuses        String?
+  birthRate                  Float?
+  deathRate                  Float?
+  migrationRate              Float?
+  dependencyRatio            Float?
+  medianAge                  Float?
+  populationGrowthProjection Float?
+  ethnicDiversity            Float?    @default(50)
+  religiousDiversity         Float?    @default(50)
+  linguisticDiversity        Float?    @default(30)
+  culturalDiversity          Float?    @default(50)
+  diversityLastUpdated       DateTime?
+  diversitySource            String?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+  country                    Country   @relation(fields: [countryId], references: [id], onDelete: Cascade)
+}
+
+model HistoricalDataPoint {
+  id                   String   @id @default(cuid())
+  countryId            String
+  ixTimeTimestamp      DateTime
+  population           Float
+  gdpPerCapita         Float
+  totalGdp             Float
+  populationGrowthRate Float
+  gdpGrowthRate        Float
+  landArea             Float?
+  populationDensity    Float?
+  gdpDensity           Float?
+  createdAt            DateTime @default(now())
+  country              Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([ixTimeTimestamp])
+  @@index([countryId, ixTimeTimestamp])
+}
+
+model VitalityHistory {
+  id                     String   @id @default(cuid())
+  countryId              String
+  economicVitality       Float
+  populationWellbeing    Float
+  diplomaticStanding     Float
+  governmentalEfficiency Float
+  overallHealth          Float
+  timestamp              DateTime @default(now())
+
+  @@index([countryId, timestamp])
+  @@index([timestamp])
+}
+
+model ComponentEffectivenessHistory {
+  id                 String   @id @default(cuid())
+  countryId          String
+  componentId        String
+  componentType      String
+  effectivenessScore Float
+  timestamp          DateTime @default(now())
+
+  @@index([componentId])
+  @@index([timestamp])
+  @@index([countryId, componentType, timestamp], map: "ComponentEffectivenessHistory_countryId_componentType_idx")
+}
+
+model EconomicModel {
+  id                   String           @id @default(cuid())
+  countryId            String           @unique
+  baseYear             Int
+  projectionYears      Int
+  gdpGrowthRate        Float
+  inflationRate        Float
+  unemploymentRate     Float
+  interestRate         Float
+  exchangeRate         Float
+  populationGrowthRate Float
+  investmentRate       Float
+  fiscalBalance        Float
+  tradeBalance         Float
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  country              Country          @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  policyEffects        PolicyEffect[]
+  sectoralOutputs      SectoralOutput[]
+}
+
+model SectoralOutput {
+  id              String        @id @default(cuid())
+  economicModelId String
+  year            Int
+  agriculture     Float
+  industry        Float
+  services        Float
+  government      Float
+  totalGDP        Float
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  economicModel   EconomicModel @relation(fields: [economicModelId], references: [id], onDelete: Cascade)
+}
+
+model PolicyEffect {
+  id                         String        @id @default(cuid())
+  economicModelId            String
+  name                       String
+  description                String
+  gdpEffectPercentage        Float
+  inflationEffectPercentage  Float
+  employmentEffectPercentage Float
+  yearImplemented            Int
+  durationYears              Int
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+  economicModel              EconomicModel @relation(fields: [economicModelId], references: [id], onDelete: Cascade)
+}
+
+model EconomicIndicator {
+  id                 String   @id @default(cuid())
+  globalGDP          Float
+  globalGrowth       Float
+  inflationRate      Float
+  unemploymentRate   Float
+  tradeVolume        Float
+  currencyVolatility Float
+  timestamp          DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([timestamp])
+}
+
+model TaxSystem {
+  id                   String           @id @default(cuid())
+  countryId            String           @unique
+  taxSystemName        String
+  taxAuthority         String?
+  fiscalYear           String           @default("calendar")
+  taxCode              String?
+  baseRate             Float?
+  progressiveTax       Boolean          @default(true)
+  flatTaxRate          Float?
+  alternativeMinTax    Boolean          @default(false)
+  alternativeMinRate   Float?
+  taxHolidays          String?
+  complianceRate       Float?
+  collectionEfficiency Float?
+  lastReform           DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  taxBrackets          TaxBracket[]
+  taxCalculations      TaxCalculation[]
+  taxCategories        TaxCategory[]
+  taxExemptions        TaxExemption[]
+  taxPolicy            TaxPolicy[]
+  country              Country          @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+}
+
+model TaxCategory {
+  id                String         @id @default(cuid())
+  taxSystemId       String
+  categoryName      String
+  categoryType      String
+  description       String?
+  isActive          Boolean        @default(true)
+  baseRate          Float?
+  calculationMethod String         @default("percentage")
+  minimumAmount     Float?
+  maximumAmount     Float?
+  exemptionAmount   Float?
+  deductionAllowed  Boolean        @default(true)
+  standardDeduction Float?
+  priority          Int            @default(50)
+  color             String?
+  icon              String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  taxBrackets       TaxBracket[]
+  taxSystem         TaxSystem      @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+  taxDeductions     TaxDeduction[]
+  taxExemptions     TaxExemption[]
+
+  @@index([taxSystemId])
+  @@index([categoryName])
+}
+
+model TaxBracket {
+  id           String      @id @default(cuid())
+  taxSystemId  String
+  categoryId   String
+  bracketName  String?
+  minIncome    Float
+  maxIncome    Float?
+  rate         Float
+  flatAmount   Float?
+  marginalRate Boolean     @default(true)
+  isActive     Boolean     @default(true)
+  priority     Int         @default(50)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  category     TaxCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  taxSystem    TaxSystem   @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+
+  @@index([taxSystemId])
+  @@index([categoryId])
+  @@index([minIncome, maxIncome])
+}
+
+model TaxExemption {
+  id              String       @id @default(cuid())
+  taxSystemId     String
+  categoryId      String?
+  exemptionName   String
+  exemptionType   String
+  description     String?
+  exemptionAmount Float?
+  exemptionRate   Float?
+  qualifications  String?
+  isActive        Boolean      @default(true)
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  category        TaxCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  taxSystem       TaxSystem    @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+
+  @@index([taxSystemId])
+  @@index([categoryId])
+  @@index([exemptionType])
+}
+
+model TaxDeduction {
+  id             String      @id @default(cuid())
+  categoryId     String
+  deductionName  String
+  deductionType  String
+  description    String?
+  maximumAmount  Float?
+  percentage     Float?
+  qualifications String?
+  isActive       Boolean     @default(true)
+  priority       Int         @default(50)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  category       TaxCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([deductionType])
+}
+
+model TaxPolicy {
+  id                 String    @id @default(cuid())
+  taxSystemId        String
+  policyName         String
+  policyType         String
+  description        String?
+  targetCategory     String?
+  impactType         String
+  rateChange         Float?
+  effectiveDate      DateTime
+  expiryDate         DateTime?
+  isActive           Boolean   @default(true)
+  estimatedRevenue   Float?
+  affectedPopulation Float?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  taxSystem          TaxSystem @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+
+  @@index([taxSystemId])
+  @@index([effectiveDate])
+  @@index([isActive])
+}
+
+model TaxCalculation {
+  id                  String    @id @default(cuid())
+  taxSystemId         String
+  calculationName     String
+  taxableIncome       Float
+  totalDeductions     Float     @default(0)
+  totalExemptions     Float     @default(0)
+  adjustedGrossIncome Float
+  taxOwed             Float
+  effectiveRate       Float
+  marginalRate        Float
+  breakdown           String?
+  calculationDate     DateTime  @default(now())
+  taxYear             Int
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  taxSystem           TaxSystem @relation(fields: [taxSystemId], references: [id], onDelete: Cascade)
+
+  @@index([taxSystemId])
+  @@index([taxYear])
+  @@index([calculationDate])
+}
+
+model EconomicComponent {
+  id                 String                @id @default(cuid())
+  countryId          String
+  componentType      EconomicComponentType
+  effectivenessScore Float                 @default(50)
+  implementationDate DateTime              @default(now())
+  implementationCost Float                 @default(0)
+  maintenanceCost    Float                 @default(0)
+  requiredCapacity   Float                 @default(50)
+  isActive           Boolean               @default(true)
+  notes              String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  country            Country               @relation("CountryEconomicComponents", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([componentType])
+  @@index([isActive])
+  @@index([countryId, componentType, isActive])  // Compound index for active components by type
+}
+
+model TaxComponent {
+  id                 String           @id @default(cuid())
+  countryId          String
+  componentType      TaxComponentType
+  effectivenessScore Float            @default(50)
+  implementationDate DateTime         @default(now())
+  implementationCost Float            @default(0)
+  maintenanceCost    Float            @default(0)
+  requiredCapacity   Float            @default(50)
+  isActive           Boolean          @default(true)
+  notes              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  country            Country          @relation("CountryTaxComponents", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([componentType])
+  @@index([isActive])
+}
+
+model ComponentChangeLog {
+  id            String   @id @default(cuid())
+  countryId     String
+  componentType String
+  componentId   String
+  changeType    String
+  previousValue String?
+  newValue      String?
+  triggeredBy   String?
+  timestamp     DateTime @default(now())
+  description   String?
+  country       Country  @relation("CountryComponentChanges", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([componentType])
+  @@index([changeType])
+  @@index([timestamp])
+}
+
+model CrossBuilderSynergy {
+  id                   String   @id @default(cuid())
+  countryId            String
+  governmentComponents String
+  economicComponents   String
+  taxComponents        String
+  synergyType          String
+  effectivenessBonus   Float    @default(0)
+  description          String?
+  isActive             Boolean  @default(true)
+  discoveredAt         DateTime @default(now())
+  createdAt            DateTime @default(now())
+  country              Country  @relation("CountryCrossBuilderSynergies", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([synergyType])
+  @@index([isActive])
+}
+
+model BudgetScenario {
+  id          String                   @id @default(cuid())
+  countryId   String
+  name        String
+  description String?
+  totalBudget Float
+  assumptions String?
+  riskLevel   String
+  feasibility Float                    @default(50)
+  isActive    Boolean                  @default(true)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  country     Country                  @relation("CountryBudgetScenarios", fields: [countryId], references: [id], onDelete: Cascade)
+  categories  BudgetScenarioCategory[]
+
+  @@index([countryId])
+  @@index([isActive])
+}
+
+model BudgetScenarioCategory {
+  id               String              @id @default(cuid())
+  scenarioId       String
+  categoryName     String
+  allocatedAmount  Float
+  allocatedPercent Float
+  priority         BudgetPriorityLevel @default(medium)
+  efficiency       Float               @default(50)
+  performance      Float               @default(50)
+  createdAt        DateTime            @default(now())
+  scenario         BudgetScenario      @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioId])
+}
+
+model FiscalPolicy {
+  id             String    @id @default(cuid())
+  countryId      String
+  name           String
+  policyType     String
+  impact         Float
+  implementation String
+  cost           Float
+  benefits       Float
+  description    String?
+  isActive       Boolean   @default(true)
+  appliedDate    DateTime?
+  expiryDate     DateTime?
+  measuredImpact Float?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  country        Country   @relation("CountryFiscalPolicies", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([policyType])
+  @@index([isActive])
+}
+
+model AtomicEffectiveness {
+  id                  String   @id @default(cuid())
+  countryId           String   @unique
+  overallScore        Float
+  taxEffectiveness    Float
+  economicPolicyScore Float
+  stabilityScore      Float
+  legitimacyScore     Float
+  componentCount      Int      @default(0)
+  synergyBonus        Float    @default(0)
+  conflictPenalty     Float    @default(0)
+  lastCalculated      DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  country             Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([overallScore])
+  @@index([lastCalculated])
+}
+
+model AtomicEconomicImpact {
+  id               String        @id @default(cuid())
+  countryId        String
+  componentType    ComponentType
+  economicMetric   String
+  impactMultiplier Float
+  effectiveDate    DateTime      @default(now())
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  country          Country       @relation("AtomicEconomicImpacts", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([componentType])
+  @@index([economicMetric])
+  @@index([effectiveDate])
+  @@index([isActive])
+}
+
+model EconomicArchetype {
+  id                       String   @id @default(cuid())
+  key                      String   @unique
+  name                     String
+  description              String
+  region                   String
+  era                      String
+  characteristics          String
+  economicComponents       String
+  governmentComponents     String
+  taxProfile               String
+  sectorFocus              String
+  employmentProfile        String
+  growthMetrics            String
+  strengths                String
+  challenges               String
+  culturalFactors          String
+  modernExamples           String
+  recommendations          String
+  implementationComplexity String
+  historicalContext        String
+  isActive                 Boolean  @default(true)
+  isCustom                 Boolean  @default(false)
+  createdBy                String?
+  usageCount               Int      @default(0)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([key])
+  @@index([era])
+  @@index([region])
+  @@index([isActive])
+  @@index([usageCount])
+}
+
+model EconomicComponentData {
+  id                  String                @id @default(cuid())
+  componentType       EconomicComponentType @unique
+  name                String
+  description         String
+  category            String
+  effectiveness       Int
+  synergies           String
+  conflicts           String
+  governmentSynergies String
+  governmentConflicts String
+  taxImpact           String
+  sectorImpact        String
+  employmentImpact    String
+  implementationCost  Int
+  maintenanceCost     Int
+  requiredCapacity    Int
+  color               String
+  iconName            String
+  metadata            String
+  isActive            Boolean               @default(true)
+  usageCount          Int                   @default(0)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([category, isActive])
+  @@index([componentType])
+  @@index([usageCount])
+}
+
+model EconomicSynergy {
+  id           String                @id @default(cuid())
+  component1   EconomicComponentType
+  component2   EconomicComponentType
+  synergyType  String
+  bonusPercent Int
+  description  String
+  isActive     Boolean               @default(true)
+
+  @@unique([component1, component2])
+  @@index([component1])
+  @@index([component2])
+  @@index([synergyType])
+}
+
+model EconomicTemplate {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String
+  components  String
+  iconName    String
+  isActive    Boolean  @default(true)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([usageCount])
+}

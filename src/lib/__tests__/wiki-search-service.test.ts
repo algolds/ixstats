@@ -50,8 +50,8 @@ describe("wiki-search-service base path handling", () => {
   });
 
   it("prefixes API proxy calls with base path on the server", async () => {
-    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstats";
-    process.env.NEXT_PUBLIC_APP_URL = "https://ixstats.example.com/projects/ixstats";
+    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
+    process.env.NEXT_PUBLIC_APP_URL = "https://ixstates.example.com/projects/ixstates";
 
     const { searchWiki } = await import("../wiki-search-service");
     await searchWiki("Caphiria", "ixwiki");
@@ -62,12 +62,12 @@ describe("wiki-search-service base path handling", () => {
     );
     expect(targetCall).toBeDefined();
     expect(targetCall?.[0] as string).toMatch(
-      /^https:\/\/ixstats\.example\.com\/projects\/ixstats\/api\/ixwiki-proxy\/wiki\/api\.php\?/
+      /^https:\/\/ixstates\.example\.com\/projects\/ixstates\/api\/ixwiki-proxy\/wiki\/api\.php\?/
     );
   });
 
   it("prefixes API proxy calls with base path on the client", async () => {
-    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstats";
+    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
     // Simulate browser environment
     globalWithWindow.window = {};
 
@@ -80,13 +80,13 @@ describe("wiki-search-service base path handling", () => {
     );
     expect(targetCall).toBeDefined();
     expect(targetCall?.[0] as string).toMatch(
-      /^\/projects\/ixstats\/api\/iiwiki-proxy\/wiki\/api\.php\?/
+      /^\/projects\/ixstates\/api\/iiwiki-proxy\/wiki\/api\.php\?/
     );
   });
 
   it("supports all configured wiki endpoints", async () => {
-    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstats";
-    process.env.NEXT_PUBLIC_APP_URL = "https://ixstats.example.com/projects/ixstats";
+    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
+    process.env.NEXT_PUBLIC_APP_URL = "https://ixstates.example.com/projects/ixstates";
 
     const { searchWiki } = await import("../wiki-search-service");
 

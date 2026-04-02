@@ -5,3 +5,4 @@ export { FlagUploadSection } from "./FlagUploadSection";
 export { UserPreferencesCard } from "./UserPreferencesCard";
 export { ThinkPagesSettingsCard } from "./ThinkPagesSettingsCard";
 export { QuickActionsSection } from "./QuickActionsSection";
+export { IxnayIDCard } from "./IxnayIDCard";

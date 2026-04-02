@@ -1,10 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { ThinkPagesRouter } from "~/components/thinkpages/ThinkPagesRouter";
-
-export default function ThinkTanksPage() {
-  usePageTitle({ title: "ThinkTanks - ThinkPages" });
-
-  return <ThinkPagesRouter />;
+export default function ThinkTanksRedirect() {
+  redirect("/messages/groups");
 }

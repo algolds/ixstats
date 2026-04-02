@@ -125,7 +125,7 @@ export function CountryActionsMenu({
   }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]);
 
   const handleDiplomaticMessage = useCallback(() => {
-    router.push(createUrl(`/thinkpages/thinkshare?country=${targetCountryId}`));
+    router.push(createUrl(`/messages?country=${targetCountryId}`));
     onClose();
   }, [router, targetCountryId, onClose]);
 

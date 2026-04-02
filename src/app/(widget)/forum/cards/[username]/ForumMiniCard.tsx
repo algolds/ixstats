@@ -3,7 +3,7 @@
  * Uses inline CSS for rarity-colored borders and glow effects.
  */
 
-import { getRarityColors, formatValue, resolveArtworkUrl } from "~/lib/forum-widget-utils";
+import { getRarityColors, formatValue, resolveArtworkUrl } from "~/modules/forum";
 import { styles } from "./widget-styles";
 
 interface ForumMiniCardProps {
@@ -28,7 +28,7 @@ export function ForumMiniCard({
 }: ForumMiniCardProps) {
   const colors = getRarityColors(card.rarity);
   const artworkUrl = resolveArtworkUrl(card.artwork, basePath);
-  const cardUrl = `https://ixwiki.com/projects/ixstats/vault`;
+  const cardUrl = `https://ixstates.ixwiki.com/vault`;
 
   return (
     <a

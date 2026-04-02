@@ -163,6 +163,12 @@ function PromptManagementSection() {
     },
   });
 
+  const featureMutation = api.blurbs.featurePrompt.useMutation({
+    onSuccess: () => {
+      utils.blurbs.getAllPrompts.invalidate();
+    },
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -218,6 +224,11 @@ function PromptManagementSection() {
                     <Badge variant={config.variant} className="text-[10px] shrink-0">
                       {config.label}
                     </Badge>
+                    {prompt.featured && (
+                      <Badge variant="outline" className="border-amber-500/30 text-[10px] text-amber-400 shrink-0">
+                        Featured
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-muted-foreground truncate text-xs">
                     {prompt.question}
@@ -227,6 +238,27 @@ function PromptManagementSection() {
                   {prompt._count.responses} responses
                 </div>
                 <div className="flex shrink-0 gap-1">
+                  {prompt.status === "ACTIVE" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`h-7 w-7 p-0 ${prompt.featured ? "text-amber-400" : ""}`}
+                      onClick={() =>
+                        featureMutation.mutate({
+                          promptId: prompt.id,
+                          featured: !prompt.featured,
+                        })
+                      }
+                      disabled={featureMutation.isPending}
+                      title={prompt.featured ? "Remove featured" : "Feature this prompt"}
+                    >
+                      {prompt.featured ? (
+                        <StarOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <Star className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  )}
                   {prompt.status === "DRAFT" && (
                     <Button
                       variant="ghost"

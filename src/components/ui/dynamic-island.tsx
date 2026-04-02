@@ -39,7 +39,9 @@ export type SizePresets =
   | "ultra"
   | "massive"
   | "extraWide"
-  | "fullWidth";
+  | "fullWidth"
+  | "wikiInline"
+  | "wikiCompact";
 
 const SIZE_PRESETS = {
   RESET: "reset",
@@ -59,6 +61,8 @@ const SIZE_PRESETS = {
   MASSIVE: "massive",
   EXTRA_WIDE: "extraWide",
   FULL_WIDTH: "fullWidth",
+  WIKI_INLINE: "wikiInline",
+  WIKI_COMPACT: "wikiCompact",
 } as const;
 
 type Preset = {
@@ -157,6 +161,18 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     width: 1400,
     aspectRatio: 80 / 1400,
     borderRadius: 28,
+  },
+  [SIZE_PRESETS.WIKI_INLINE]: {
+    width: 280,
+    height: 38,
+    aspectRatio: 38 / 280,
+    borderRadius: 46,
+  },
+  [SIZE_PRESETS.WIKI_COMPACT]: {
+    width: 170,
+    height: 32,
+    aspectRatio: 32 / 170,
+    borderRadius: 46,
   },
 };
 

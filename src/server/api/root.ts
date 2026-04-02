@@ -1,153 +1,209 @@
 // src/server/api/root.ts
-// FIXED: Updated main router with admin endpoints
+// IxStates — Unified tRPC API Router
+// Routers are organized by domain module for architectural clarity.
 
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+
+// ─── Core ────────────────────────────────────────────────────────────────────
 import { countriesRouter } from "./routers/countries";
 import { adminRouter } from "./routers/admin";
 import { usersRouter } from "./routers/users";
-import { intelligenceRouter, intelligenceBriefingRouter } from "./routers/intelligence";
-import { meetingsRouter } from "./routers/meetings";
-import { notificationsRouter } from "./routers/notifications";
-import { myCountryRouter } from "./routers/mycountry";
-import { policiesRouter } from "./routers/policies";
-import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence";
-import { diplomaticRouter } from "./routers/diplomatic";
-import { thinkpagesRouter } from "./routers/thinkpages";
-import { archetypesRouter } from "./routers/archetypes";
-import { economicArchetypesRouter } from "./routers/economicArchetypes";
-import { activitiesRouter } from "./routers/activities";
-import { enhancedEconomicsRouter } from "./routers/enhanced-economics";
 import { rolesRouter } from "./routers/roles";
-import { governmentRouter } from "./routers/government";
-import { atomicGovernmentRouter } from "./routers/atomicGovernment";
-import { atomicEconomicRouter } from "./routers/atomicEconomic";
-import { atomicTaxRouter } from "./routers/atomicTax";
-import { unifiedAtomicRouter } from "./routers/unifiedAtomic";
-import { formulasRouter } from "./routers/formulas";
-import { quickActionsRouter } from "./routers/quickactions";
-import { scheduledChangesRouter } from "./routers/scheduledChanges";
-import { taxSystemRouter } from "./routers/taxSystem";
-import { wikiImporterRouter } from "./routers/wikiImporter";
-import { wikiCacheRouter } from "./routers/wikiCache";
-import { securityRouter } from "./routers/security";
+import { systemRouter } from "./routers/system";
+import { cacheRouter } from "./routers/cache";
+import { notificationsRouter } from "./routers/notifications";
+import { activitiesRouter } from "./routers/activities";
 import { achievementsRouter } from "./routers/achievements";
 import { userLoggingRouter } from "./routers/user-logging";
-import { customTypesRouter } from "./routers/customTypes";
+import { demoModeRouter } from "./routers/demo-mode";
+import { systemValidationRouter } from "./routers/system-validation";
+import { autosaveHistoryRouter } from "./routers/autosaveHistory";
+import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
+
+// ─── Economy ─────────────────────────────────────────────────────────────────
 import { economicsRouter } from "./routers/economics";
-import { unifiedIntelligenceRouter } from "./routers/unified-intelligence";
-import { nationalIdentityRouter } from "./routers/nationalIdentity";
-import { cacheRouter } from "./routers/cache";
-import { governmentComponentsRouter } from "./routers/governmentComponents";
+import { enhancedEconomicsRouter } from "./routers/enhanced-economics";
+import { atomicEconomicRouter } from "./routers/atomicEconomic";
 import { economicComponentsRouter } from "./routers/economicComponents";
-import { militaryEquipmentRouter } from "./routers/militaryEquipment";
-import { smallArmsEquipmentRouter } from "./routers/smallArmsEquipment";
+import { economicArchetypesRouter } from "./routers/economicArchetypes";
+import { formulasRouter } from "./routers/formulas";
+import { taxSystemRouter } from "./routers/taxSystem";
+import { atomicTaxRouter } from "./routers/atomicTax";
+
+// ─── Government ──────────────────────────────────────────────────────────────
+import { governmentRouter } from "./routers/government";
+import { atomicGovernmentRouter } from "./routers/atomicGovernment";
+import { governmentComponentsRouter } from "./routers/governmentComponents";
+import { unifiedAtomicRouter } from "./routers/unifiedAtomic";
+import { policiesRouter } from "./routers/policies";
+import { electionsRouter } from "./routers/elections";
+import { nationalIdentityRouter } from "./routers/nationalIdentity";
+import { customTypesRouter } from "./routers/customTypes";
+import { quickActionsRouter } from "./routers/quickactions";
+import { scheduledChangesRouter } from "./routers/scheduledChanges";
+import { nationalIssuesRouter } from "./routers/national-issues";
+
+// ─── Diplomacy ───────────────────────────────────────────────────────────────
+import { diplomaticRouter } from "./routers/diplomatic";
+import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence";
 import { diplomaticScenariosRouter } from "./routers/diplomaticScenarios";
 import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
 import { crisisEventsRouter } from "./routers/crisis-events";
-import { historicalRouter } from "./routers/historical";
-import { systemRouter } from "./routers/system";
-import { cardPacksRouter } from "./routers/card-packs";
-import { vaultRouter } from "./routers/vault";
+import { archetypesRouter } from "./routers/archetypes";
+
+// ─── Intelligence & Security ─────────────────────────────────────────────────
+import { intelligenceRouter, intelligenceBriefingRouter } from "./routers/intelligence";
+import { unifiedIntelligenceRouter } from "./routers/unified-intelligence";
+import { securityRouter } from "./routers/security";
+import { meetingsRouter } from "./routers/meetings";
+
+// ─── Military ────────────────────────────────────────────────────────────────
+import { militaryEquipmentRouter } from "./routers/militaryEquipment";
+import { smallArmsEquipmentRouter } from "./routers/smallArmsEquipment";
+
+// ─── Cards & Vault ───────────────────────────────────────────────────────────
 import { cardsRouter } from "./routers/cards";
-import { loreCardsRouter } from "./routers/lore-cards";
-import { nsImportRouter } from "./routers/ns-import";
+import { cardPacksRouter } from "./routers/card-packs";
 import { cardMarketRouter } from "./routers/card-market";
 import { cardAnalyticsRouter } from "./routers/card-analytics";
-import { autosaveHistoryRouter } from "./routers/autosaveHistory";
-import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
+import { cardImagesRouter } from "./routers/cardImages";
+import { loreCardsRouter } from "./routers/lore-cards";
+import { nsImportRouter } from "./routers/ns-import";
+import { vaultRouter } from "./routers/vault";
 import { craftingRouter } from "./routers/crafting";
 import { tradingRouter } from "./routers/trading";
-import { cardImagesRouter } from "./routers/cardImages";
-import { electionsRouter } from "./routers/elections";
-import { forumRouter } from "./routers/forum";
-import { nationalIssuesRouter } from "./routers/national-issues";
-import { demoModeRouter } from "./routers/demo-mode";
-import { systemValidationRouter } from "./routers/system-validation";
+
+// ─── Maps & Geo ──────────────────────────────────────────────────────────────
 import { geoRouter } from "./routers/geo";
 import { resourcesRouter } from "./routers/resources";
 import { transportRouter } from "./routers/transport";
-import { wikiRouter } from "./routers/wiki";
 import { studioRouter } from "./routers/studio";
+
+// ─── Wiki & WikiOS ───────────────────────────────────────────────────────────
+import { wikiRouter } from "./routers/wiki";
 import { wikiosRouter } from "./routers/wikios";
+import { wikiCacheRouter } from "./routers/wikiCache";
+import { wikiImporterRouter } from "./routers/wikiImporter";
 import { lorewardsRouter } from "./routers/lorewards";
+import { commonsRouter } from "./routers/commons";
 import { blurbsRouter } from "./routers/blurbs";
 
+// ─── Social ──────────────────────────────────────────────────────────────────
+import { thinkpagesRouter } from "./routers/thinkpages";
+import { messagesRouter } from "./routers/messages";
+
+// ─── Forum & Identity ────────────────────────────────────────────────────────
+import { forumRouter } from "./routers/forum";
+import { ixnayidRouter } from "./routers/ixnayid";
+
+// ─── MyCountry ───────────────────────────────────────────────────────────────
+import { myCountryRouter } from "./routers/mycountry";
+import { historicalRouter } from "./routers/historical";
+
 /**
- * This is the primary router for your server.
+ * Primary tRPC router for IxStates.
  *
  * All routers added in /api/routers should be manually added here.
+ * Routers are grouped by domain module — keep imports and registrations
+ * in the same order for easy navigation.
  */
 export const appRouter = createTRPCRouter({
+  // ─── Core ──────────────────────────────────────────────────────────────────
   countries: countriesRouter,
-  admin: adminRouter, // FIXED: Added admin router
-  users: usersRouter, // FIXED: Added users router
-  system: systemRouter, // Public system information (IxTime, etc.)
-  roles: rolesRouter, // Role and permission management
+  admin: adminRouter,
+  users: usersRouter,
+  system: systemRouter,
+  roles: rolesRouter,
+  cache: cacheRouter,
+  notifications: notificationsRouter,
+  activities: activitiesRouter,
+  achievements: achievementsRouter,
+  userLogging: userLoggingRouter,
+  demoMode: demoModeRouter,
+  systemValidation: systemValidationRouter,
+  autosaveHistory: autosaveHistoryRouter,
+  autosaveMonitoring: autosaveMonitoringRouter,
+
+  // ─── Economy ───────────────────────────────────────────────────────────────
+  economics: economicsRouter,
+  enhancedEconomics: enhancedEconomicsRouter,
+  atomicEconomic: atomicEconomicRouter,
+  economicComponents: economicComponentsRouter,
+  economicArchetypes: economicArchetypesRouter,
+  formulas: formulasRouter,
+  taxSystem: taxSystemRouter,
+  atomicTax: atomicTaxRouter,
+
+  // ─── Government ────────────────────────────────────────────────────────────
+  government: governmentRouter,
+  atomicGovernment: atomicGovernmentRouter,
+  governmentComponents: governmentComponentsRouter,
+  unifiedAtomic: unifiedAtomicRouter,
+  policies: policiesRouter,
+  elections: electionsRouter,
+  nationalIdentity: nationalIdentityRouter,
+  customTypes: customTypesRouter,
+  quickActions: quickActionsRouter,
+  scheduledChanges: scheduledChangesRouter,
+  nationalIssues: nationalIssuesRouter,
+
+  // ─── Diplomacy ─────────────────────────────────────────────────────────────
+  diplomatic: diplomaticRouter,
+  diplomaticIntelligence: diplomaticIntelligenceRouter,
+  diplomaticScenarios: diplomaticScenariosRouter,
+  npcPersonalities: npcPersonalitiesRouter,
+  crisisEvents: crisisEventsRouter,
+  archetypes: archetypesRouter,
+
+  // ─── Intelligence & Security ───────────────────────────────────────────────
   intelligence: intelligenceRouter,
-  intelligenceBriefing: intelligenceBriefingRouter, // Intelligence Briefing system (stored in database)
-  unifiedIntelligence: unifiedIntelligenceRouter, // Unified Intelligence system (SDI/ECI combined with executive operations)
-  meetings: meetingsRouter, // Cabinet meetings, government officials, and meeting management
-  notifications: notificationsRouter, // Notifications router
-  mycountry: myCountryRouter, // MyCountry specialized endpoints
-  policies: policiesRouter, // Policy management and tracking system
-  diplomaticIntelligence: diplomaticIntelligenceRouter, // Diplomatic Intelligence system
-  diplomatic: diplomaticRouter, // Diplomatic relations management
-  thinkpages: thinkpagesRouter, // Thinkpages social platform
-  archetypes: archetypesRouter, // Enhanced archetype system for country filtering
-  economicArchetypes: economicArchetypesRouter, // Economic archetype system for builder (Phase 3 migration)
-  activities: activitiesRouter, // Live activity feed system
-  enhancedEconomics: enhancedEconomicsRouter, // Enhanced economic analysis system
-  government: governmentRouter, // Government structure and budget management system
-  atomicGovernment: atomicGovernmentRouter, // Atomic government component system
-  atomicEconomic: atomicEconomicRouter, // Atomic economic component system
-  atomicTax: atomicTaxRouter, // Atomic tax component system
-  unifiedAtomic: unifiedAtomicRouter, // Unified atomic component system (cross-builder)
-  formulas: formulasRouter, // Internal calculation formulas and system monitoring
-  quickActions: quickActionsRouter, // Quick Actions system (meetings, policies, officials, activities)
-  scheduledChanges: scheduledChangesRouter, // Scheduled changes system for delayed impact
-  taxSystem: taxSystemRouter, // Tax system management
-  wikiImporter: wikiImporterRouter, // MediaWiki infobox importer for country data
-  wikiCache: wikiCacheRouter, // Wiki data caching system (Redis + Database + API)
-  security: securityRouter, // Security & Defense system
-  achievements: achievementsRouter, // Achievement system for country milestones
-  userLogging: userLoggingRouter, // User activity logging and analytics
-  customTypes: customTypesRouter, // Custom government types and field autocomplete system
-  economics: economicsRouter, // Economy builder and economic data management
-  nationalIdentity: nationalIdentityRouter, // National identity CRUD and autosave
-  cache: cacheRouter, // External API cache management (MediaWiki, Unsplash, flags, etc.)
-  governmentComponents: governmentComponentsRouter, // Government component library and synergy system (Phase 4)
-  economicComponents: economicComponentsRouter, // Economic component library system (Phase 5)
-  militaryEquipment: militaryEquipmentRouter, // Military equipment catalog and manufacturer system (Phase 6)
-  smallArmsEquipment: smallArmsEquipmentRouter, // Small arms equipment catalog (Phase 9 - October 2025)
-  diplomaticScenarios: diplomaticScenariosRouter, // Diplomatic scenario generation and choice tracking (Phase 7B)
-  npcPersonalities: npcPersonalitiesRouter, // NPC personality system for behavioral prediction (Phase 8 - FINAL PHASE)
-  crisisEvents: crisisEventsRouter, // Crisis events management (natural disasters, economic crises, diplomatic incidents, etc.)
-  historical: historicalRouter, // Historical time-series data and analytics (12 endpoints)
-  cardPacks: cardPacksRouter, // IxCards pack purchase and opening system (Phase 1 - Card Packs)
-  vault: vaultRouter, // MyVault IxCredits economy system (Phase 1 - MyVault)
-  cards: cardsRouter, // IxCards trading card system (Phase 1 - Card Service & Router)
-  loreCards: loreCardsRouter, // Wiki lore card generation and user request system (Phase 4 - Advanced Features)
-  nsImport: nsImportRouter, // NationStates deck import for IxCards (Phase 2 - NS Deck Import)
-  cardMarket: cardMarketRouter, // Card marketplace and auction system (Phase 2 - Auction Logic & Market Services)
-  cardAnalytics: cardAnalyticsRouter, // Card economy analytics for Intelligence dashboard (Phase 5-6 - Analytics Integration)
-  autosaveHistory: autosaveHistoryRouter, // Autosave history for country builders (read-only)
-  autosaveMonitoring: autosaveMonitoringRouter, // Autosave system monitoring and analytics (admin-only)
-  crafting: craftingRouter, // Card crafting/fusion/evolution system (Phase 3 - Crafting System)
-  trading: tradingRouter, // P2P card trading system (Phase 3 - Trading System)
-  cardImages: cardImagesRouter, // Card background image management for MyCountry UI customization
-  elections: electionsRouter, // Election system: parties, legislature, elections, hemicycle visualization
-  forum: forumRouter, // XenForo forum integration (profile sync, account linking)
-  nationalIssues: nationalIssuesRouter, // National Issues Engine - dynamic decision/event generation system
-  demoMode: demoModeRouter, // Demo mode management - clone country with seeded data for live demos
-  systemValidation: systemValidationRouter, // System validation dashboard for admin health checks
-  geo: geoRouter, // IxEarth world map system - geographic data, spatial queries, map editing
-  resources: resourcesRouter, // Geographic resource management - procedural placement based on terrain
-  transport: transportRouter, // Transport infrastructure - routes, hubs, procedural generation
-  wiki: wikiRouter, // Unified wiki data access — direct MySQL for ixwiki, HTTP for iiwiki
-  studio: studioRouter, // World Studio — realm management, procedural generation, IxStats population
-  wikios: wikiosRouter, // WikiOS — modern wiki frontend with Parsoid rendering, PlateJS editing
-  lorewards: lorewardsRouter, // Lorewards — award tracking, leaderboards, user stats
-  blurbs: blurbsRouter, // Blurbs — Topic Tuesday cultural dispatches per country
+  intelligenceBriefing: intelligenceBriefingRouter,
+  unifiedIntelligence: unifiedIntelligenceRouter,
+  security: securityRouter,
+  meetings: meetingsRouter,
+
+  // ─── Military ──────────────────────────────────────────────────────────────
+  militaryEquipment: militaryEquipmentRouter,
+  smallArmsEquipment: smallArmsEquipmentRouter,
+
+  // ─── Cards & Vault ─────────────────────────────────────────────────────────
+  cards: cardsRouter,
+  cardPacks: cardPacksRouter,
+  cardMarket: cardMarketRouter,
+  cardAnalytics: cardAnalyticsRouter,
+  cardImages: cardImagesRouter,
+  loreCards: loreCardsRouter,
+  nsImport: nsImportRouter,
+  vault: vaultRouter,
+  crafting: craftingRouter,
+  trading: tradingRouter,
+
+  // ─── Maps & Geo ────────────────────────────────────────────────────────────
+  geo: geoRouter,
+  resources: resourcesRouter,
+  transport: transportRouter,
+  studio: studioRouter,
+
+  // ─── Wiki & WikiOS ─────────────────────────────────────────────────────────
+  wiki: wikiRouter,
+  wikios: wikiosRouter,
+  wikiCache: wikiCacheRouter,
+  wikiImporter: wikiImporterRouter,
+  lorewards: lorewardsRouter,
+  commons: commonsRouter,
+  blurbs: blurbsRouter,
+
+  // ─── Social ────────────────────────────────────────────────────────────────
+  thinkpages: thinkpagesRouter,
+  messages: messagesRouter,
+
+  // ─── Forum & Identity ──────────────────────────────────────────────────────
+  forum: forumRouter,
+  ixnayid: ixnayidRouter,
+
+  // ─── MyCountry ─────────────────────────────────────────────────────────────
+  mycountry: myCountryRouter,
+  historical: historicalRouter,
 });
 
 // export type definition of API

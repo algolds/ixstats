@@ -1,0 +1,485 @@
+// IxStates — Military & Security models
+
+model MilitaryBranch {
+  id                  String          @id @default(cuid())
+  countryId           String
+  branchType          BranchType
+  name                String
+  motto               String?
+  imageUrl            String?
+  description         String?
+  established         String?
+  activeDuty          Int             @default(0)
+  reserves            Int             @default(0)
+  civilianStaff       Int             @default(0)
+  annualBudget        Float           @default(0)
+  budgetPercent       Float           @default(0)
+  readinessLevel      Float           @default(50)
+  technologyLevel     Float           @default(50)
+  trainingLevel       Float           @default(50)
+  morale              Float           @default(50)
+  deploymentCapacity  Float           @default(50)
+  sustainmentCapacity Float           @default(50)
+  isActive            Boolean         @default(true)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  assets              MilitaryAsset[]
+  country             Country         @relation("CountryMilitaryBranches", fields: [countryId], references: [id], onDelete: Cascade)
+  units               MilitaryUnit[]
+
+  @@index([countryId])
+  @@index([branchType])
+  @@index([isActive])
+}
+
+model MilitaryUnit {
+  id            String          @id @default(cuid())
+  branchId      String
+  name          String
+  unitType      String
+  designation   String?
+  description   String?
+  personnel     Int             @default(0)
+  commanderName String?
+  commanderRank String?
+  headquarters  String?
+  readiness     Float           @default(50)
+  imageUrl      String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  assets        MilitaryAsset[]
+  branch        MilitaryBranch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId])
+}
+
+model MilitaryAsset {
+  id                 String         @id @default(cuid())
+  branchId           String
+  unitId             String?
+  name               String
+  assetType          AssetType
+  category           String
+  status             AssetStatus    @default(operational)
+  quantity           Int            @default(1)
+  operational        Int            @default(1)
+  acquisitionCost    Float          @default(0)
+  maintenanceCost    Float          @default(0)
+  modernizationLevel Float          @default(50)
+  capability         String?
+  imageUrl           String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  branch             MilitaryBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  unit               MilitaryUnit?  @relation(fields: [unitId], references: [id])
+
+  @@index([branchId])
+  @@index([unitId])
+  @@index([assetType])
+  @@index([status])
+}
+
+model SecurityThreat {
+  id                  String           @id @default(cuid())
+  countryId           String
+  userId              String?
+  threatName          String
+  threatType          ThreatType
+  severity            ThreatSeverity
+  status              ThreatStatus     @default(monitoring)
+  description         String?
+  likelihood          Float            @default(50)
+  impact              Float            @default(50)
+  urgency             String?
+  actorType           String?
+  actorName           String?
+  actorLocation       String?
+  actorCapability     Float            @default(50)
+  potentialCasualties Int              @default(0)
+  economicImpact      Float            @default(0)
+  politicalImpact     String?
+  infrastructureRisk  Float            @default(0)
+  responseLevel       String?
+  mitigationActions   String?
+  resourcesAllocated  Float            @default(0)
+  intelligenceSource  String?
+  confidenceLevel     Float            @default(50)
+  estimatedTimeline   String?
+  tags                String?
+  lastUpdated         DateTime         @updatedAt
+  detectedAt          DateTime         @default(now())
+  isActive            Boolean          @default(true)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  country             Country          @relation("CountrySecurityThreats", fields: [countryId], references: [id], onDelete: Cascade)
+  incidents           ThreatIncident[]
+
+  @@index([countryId])
+  @@index([threatType])
+  @@index([severity])
+  @@index([isActive])
+  @@index([userId])
+}
+
+model ThreatIncident {
+  id              String         @id @default(cuid())
+  threatId        String
+  title           String
+  description     String
+  incidentType    String
+  casualties      Int            @default(0)
+  damage          Float          @default(0)
+  location        String?
+  responseActions String?
+  effectiveness   Float?
+  occurredAt      DateTime       @default(now())
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  threat          SecurityThreat @relation(fields: [threatId], references: [id], onDelete: Cascade)
+
+  @@index([threatId])
+  @@index([occurredAt])
+}
+
+model DefenseBudget {
+  id                    String   @id @default(cuid())
+  countryId             String   @unique
+  fiscalYear            Int
+  totalBudget           Float    @default(0)
+  gdpPercent            Float    @default(0)
+  perCapita             Float    @default(0)
+  personnelCosts        Float    @default(0)
+  operationsMaintenance Float    @default(0)
+  procurement           Float    @default(0)
+  rdteCosts             Float    @default(0)
+  militaryConstruction  Float    @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  country               Country  @relation("CountryDefenseBudget", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([fiscalYear])
+}
+
+model SecurityAssessment {
+  id                   String   @id @default(cuid())
+  countryId            String   @unique
+  overallSecurityScore Float    @default(60)
+  securityLevel        String   @default("moderate")
+  securityTrend        String   @default("stable")
+  militaryStrength     Float    @default(60)
+  internalStability    Float    @default(60)
+  borderSecurity       Float    @default(60)
+  cybersecurity        Float    @default(50)
+  counterTerrorism     Float    @default(55)
+  militaryReadiness    Float    @default(65)
+  emergencyResponse    Float    @default(60)
+  disasterPreparedness Float    @default(55)
+  activeThreatCount    Int      @default(0)
+  highSeverityThreats  Int      @default(0)
+  lastAssessed         DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  country              Country  @relation("CountrySecurityAssessment", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([securityLevel])
+}
+
+model InternalStabilityMetrics {
+  id                      String   @id @default(cuid())
+  countryId               String   @unique
+  stabilityScore          Float    @default(75)
+  stabilityTrend          String   @default("stable")
+  crimeRate               Float    @default(5)
+  violentCrimeRate        Float    @default(2)
+  propertyCrimeRate       Float    @default(10)
+  organizedCrimeLevel     Float    @default(3)
+  policingEffectiveness   Float    @default(60)
+  justiceSystemEfficiency Float    @default(50)
+  protestFrequency        Float    @default(5)
+  riotRisk                Float    @default(10)
+  civilDisobedience       Float    @default(5)
+  socialCohesion          Float    @default(70)
+  ethnicTension           Float    @default(20)
+  politicalPolarization   Float    @default(40)
+  trustInGovernment       Float    @default(50)
+  trustInPolice           Float    @default(55)
+  fearOfCrime             Float    @default(35)
+  lastCalculated          DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  country                 Country  @relation("CountryStabilityMetrics", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+}
+
+model SecurityEvent {
+  id              String    @id @default(cuid())
+  countryId       String
+  eventType       String
+  severity        String
+  status          String    @default("active")
+  title           String
+  description     String?
+  casualties      Int       @default(0)
+  arrested        Int       @default(0)
+  economicImpact  Float     @default(0)
+  stabilityImpact Float     @default(0)
+  region          String?
+  city            String?
+  triggerFactors  String?
+  rngSeed         String?
+  resolutionNotes String?
+  startDate       DateTime  @default(now())
+  endDate         DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  country         Country   @relation("CountrySecurityEvents", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([status])
+  @@index([severity])
+}
+
+model BorderSecurity {
+  id                    String                     @id @default(cuid())
+  countryId             String                     @unique
+  overallSecurityLevel  Float                      @default(70)
+  securityStatus        String                     @default("moderate")
+  borderIntegrity       Float                      @default(85)
+  borderLength          Float?
+  landBorders           Int                        @default(0)
+  maritimeBorders       Int                        @default(0)
+  borderAgents          Int                        @default(0)
+  checkpoints           Int                        @default(0)
+  surveillanceSystems   Int                        @default(0)
+  interceptionRate      Float                      @default(60)
+  processingEfficiency  Float                      @default(70)
+  illegalCrossings      Int                        @default(0)
+  smugglingActivity     Float                      @default(20)
+  traffickingRisk       Float                      @default(15)
+  refugeePresure        Float                      @default(10)
+  technologyLevel       Float                      @default(50)
+  infrastructureQuality Float                      @default(60)
+  lastAssessed          DateTime                   @default(now())
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+  country               Country                    @relation("CountryBorderSecurity", fields: [countryId], references: [id], onDelete: Cascade)
+  neighborThreats       NeighborThreatAssessment[]
+
+  @@index([countryId])
+}
+
+model NeighborThreatAssessment {
+  id                  String         @id @default(cuid())
+  borderSecurityId    String
+  neighborName        String
+  neighborCountryId   String?
+  borderType          String
+  borderLength        Float?
+  threatLevel         String         @default("low")
+  threatScore         Float          @default(20)
+  militaryThreat      Float          @default(10)
+  terrorismRisk       Float          @default(15)
+  smugglingRisk       Float          @default(25)
+  refugeeFlow         Float          @default(20)
+  politicalStability  Float          @default(60)
+  diplomaticRelations String         @default("neutral")
+  tradeVolume         Float          @default(0)
+  treatyStatus        String?
+  notes               String?
+  lastAssessed        DateTime       @default(now())
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  borderSecurity      BorderSecurity @relation(fields: [borderSecurityId], references: [id], onDelete: Cascade)
+
+  @@index([borderSecurityId])
+}
+
+model MilitaryEquipmentCatalog {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  name              String
+  manufacturer      String
+  category          String
+  subcategory       String?
+  era               String
+  specifications    String
+  capabilities      String
+  acquisitionCost   Float
+  maintenanceCost   Float
+  technologyLevel   Int
+  crewRequirement   Int
+  maintenanceHours  Int?
+  imageUrl          String?
+  description       String?
+  historicalContext String?
+  isActive          Boolean  @default(true)
+  usageCount        Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category, era])
+  @@index([manufacturer])
+  @@index([technologyLevel])
+  @@index([isActive, usageCount])
+}
+
+model DefenseManufacturer {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  country   String
+  specialty String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([country])
+  @@index([isActive])
+}
+
+model SmallArmsManufacturer {
+  id        String               @id @default(cuid())
+  key       String               @unique
+  name      String
+  country   String
+  specialty String
+  isActive  Boolean              @default(true)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  equipment SmallArmsEquipment[]
+
+  @@index([country])
+  @@index([isActive])
+}
+
+model WeaponEra {
+  id          String               @id @default(cuid())
+  key         String               @unique
+  label       String
+  years       String
+  reliability Int
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  equipment   SmallArmsEquipment[]
+
+  @@index([isActive])
+}
+
+model SmallArmsEquipment {
+  id              String                @id @default(cuid())
+  key             String                @unique
+  name            String
+  manufacturerKey String
+  category        String
+  equipmentType   String
+  eraKey          String
+  weight          Float
+  unitCost        Float
+  maintenanceCost Float
+  imageUrl        String?
+  caliber         String?
+  capacity        Int?
+  effectiveRange  Int?
+  fireRate        Int?
+  protectionLevel String?
+  range           Int?
+  altitude        Int?
+  description     String?
+  isActive        Boolean               @default(true)
+  usageCount      Int                   @default(0)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  era             WeaponEra             @relation(fields: [eraKey], references: [key])
+  manufacturer    SmallArmsManufacturer @relation(fields: [manufacturerKey], references: [key])
+
+  @@index([equipmentType, eraKey])
+  @@index([manufacturerKey])
+  @@index([category])
+  @@index([eraKey])
+  @@index([isActive, usageCount])
+  @@index([equipmentType, category])
+  @@index([unitCost])
+}
+
+model MilitaryOperation {
+  id                String       @id @default(cuid())
+  countryId         String
+  operationType     String       // "peacekeeping", "defense_pact", "blockade", "intervention", "training"
+  name              String
+  description       String?
+  targetCountryId   String?
+  allianceId        String?
+  status            String       @default("planned") // "planned", "active", "completed", "failed", "cancelled"
+  startIxTime       Float        @default(0)
+  endIxTime         Float?
+  duration          Int?         // Planned duration in IxTime days
+  personnelDeployed Int          @default(0)
+  assetsDeployed    String?      // JSON array of MilitaryAsset IDs
+  dailyCost         Float        @default(0)
+  totalCostSoFar    Float        @default(0)
+  gdpDrain          Float        @default(0) // Percentage of GDP consumed
+  readinessImpact   Float        @default(-10)
+  successRating     String?      // "success", "partial", "failure"
+  diplomaticImpact  Int          @default(0)
+  casualties        Int          @default(0)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  country           Country      @relation("CountryMilitaryOperations", fields: [countryId], references: [id], onDelete: Cascade)
+  targetCountry     Country?     @relation("MilitaryOperationTarget", fields: [targetCountryId], references: [id])
+  deployments       Deployment[]
+
+  @@index([countryId])
+  @@index([targetCountryId])
+  @@index([operationType])
+  @@index([status])
+  @@index([startIxTime])
+}
+
+model Deployment {
+  id          String            @id @default(cuid())
+  operationId String
+  unitId      String?
+  assetId     String?
+  status      String            @default("deployed") // "deployed", "recalled", "lost"
+  deployedAt  DateTime          @default(now())
+  recalledAt  DateTime?
+
+  operation   MilitaryOperation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+
+  @@index([operationId])
+  @@index([unitId])
+  @@index([assetId])
+}
+
+model MilitaryConflict {
+  id                  String   @id @default(cuid())
+  type                String   // "pvp", "pvnpc"
+  initiatorId         String
+  defenderId          String
+  status              String   @default("proposed") // "proposed", "accepted", "active", "resolved"
+  pvpRules            String?  // JSON: { victoryConditions, maxDuration, stakes }
+  initiatorApproved   Boolean  @default(false)
+  defenderApproved    Boolean  @default(false)
+  reason              String?
+  startDate           DateTime?
+  endDate             DateTime?
+  winner              String?  // Country ID or "draw"
+  initiatorCasualties Int      @default(0)
+  defenderCasualties  Int      @default(0)
+  economicDamage      Float    @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  initiator           Country  @relation("ConflictInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  defender            Country  @relation("ConflictDefender", fields: [defenderId], references: [id], onDelete: Cascade)
+
+  @@index([initiatorId])
+  @@index([defenderId])
+  @@index([status])
+  @@index([type])
+}

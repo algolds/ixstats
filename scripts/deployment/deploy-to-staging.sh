@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Staging Deployment Script for IxStats v1.2
+# Staging Deployment Script for IxStates v1.2
 # Deploys to staging environment for pre-production testing
 
 set -e
@@ -44,7 +44,7 @@ info() {
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════════════════════╗"
 echo "║                                                       ║"
-echo "║      IxStats v1.2 - Staging Deployment Script       ║"
+echo "║      IxStates v1.2 - Staging Deployment Script       ║"
 echo "║                                                       ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -82,7 +82,7 @@ fi
 
 # Set staging environment
 export NODE_ENV=staging
-export BASE_PATH=${BASE_PATH:-/projects/ixstats}
+export BASE_PATH=${BASE_PATH:-}
 export NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-$BASE_PATH}
 
 log "Environment: $NODE_ENV"

@@ -592,13 +592,13 @@ export async function onThinktankActivity(params: {
 
     let title = "";
     let message = customMessage || "";
-    let href = `/thinkpages/thinktanks?group=${groupId}`;
+    let href = `/messages/groups?group=${groupId}`;
 
     switch (activityType) {
       case "group_invite":
         title = `Invitation to ${groupName}`;
         message = `${actorName} invited you to join the group`;
-        href = `/thinkpages/thinktanks?invite=${groupId}`;
+        href = `/messages/groups?invite=${groupId}`;
         break;
 
       case "new_message":
@@ -611,7 +611,7 @@ export async function onThinktankActivity(params: {
         message = contentTitle
           ? `${actorName} created "${contentTitle}"`
           : `${actorName} created a new document`;
-        href = contentId ? `/thinkpages/thinktanks?group=${groupId}&doc=${contentId}` : href;
+        href = contentId ? `/messages/groups?group=${groupId}&doc=${contentId}` : href;
         break;
 
       case "document_updated":
@@ -619,7 +619,7 @@ export async function onThinktankActivity(params: {
         message = contentTitle
           ? `${actorName} updated "${contentTitle}"`
           : `${actorName} updated a document`;
-        href = contentId ? `/thinkpages/thinktanks?group=${groupId}&doc=${contentId}` : href;
+        href = contentId ? `/messages/groups?group=${groupId}&doc=${contentId}` : href;
         break;
 
       case "member_joined":

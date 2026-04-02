@@ -2295,7 +2295,7 @@ export const thinkpagesRouter = createTRPCRouter({
             category: "social",
             type: "warning",
             priority: "medium",
-            href: "/thinkpages/thinktanks",
+            href: "/messages/groups",
             source: "thinktank",
             actionable: false,
             metadata: {
@@ -2896,7 +2896,7 @@ export const thinkpagesRouter = createTRPCRouter({
                 category: "social",
                 type: "update",
                 priority: "low",
-                href: `/thinkpages/thinkshare?conversation=${conversation.id}`,
+                href: `/messages?conversation=${conversation.id}`,
                 source: "thinkshare",
                 actionable: true,
                 metadata: {
@@ -3408,7 +3408,7 @@ export const thinkpagesRouter = createTRPCRouter({
               category: "social",
               type: "update",
               priority: "medium",
-              href: `/thinkpages/thinkshare?conversation=${input.conversationId}`,
+              href: `/messages?conversation=${input.conversationId}`,
               source: "thinkshare",
               actionable: true,
               metadata: {

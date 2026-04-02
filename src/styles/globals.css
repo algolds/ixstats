@@ -88,6 +88,19 @@
    VAULT THEME - Complete Color System v2.0
    ========================================== */
 :root {
+  /* WikiOS color tokens (global so nav bar can reference them) */
+  --wikios-bg: #0f1114;
+  --wikios-surface: #16181d;
+  --wikios-border: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] {
+  --wikios-bg: #fafafa;
+  --wikios-surface: #ffffff;
+  --wikios-border: rgba(0, 0, 0, 0.1);
+}
+
+:root {
   /* Vault Primary Colors */
   --vault-gold-start: #FFD700;
   --vault-gold-end: #FF8C00;

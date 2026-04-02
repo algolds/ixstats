@@ -36,12 +36,12 @@ export function InboxPreviewModal({ isOpen, onClose, conversations, totalUnread 
 
   const navigateToConversation = (conversationId: string) => {
     onClose();
-    router.push(createUrl(`/thinkpages/thinkshare?conversation=${conversationId}`));
+    router.push(createUrl(`/messages?conversation=${conversationId}`));
   };
 
   const navigateToThinkShare = () => {
     onClose();
-    router.push(createUrl("/thinkpages/thinkshare"));
+    router.push(createUrl("/messages"));
   };
 
   return (

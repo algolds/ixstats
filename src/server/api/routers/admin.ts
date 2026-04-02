@@ -1101,7 +1101,7 @@ export const adminRouter = createTRPCRouter({
       const settings = await ctx.db.systemConfig.findMany({
         where: {
           key: {
-            in: ["showWikiTab", "showCardsTab", "showLabsTab", "showIntelligenceTab", "showDefenseTab", "showMapsTab"],
+            in: ["showWikiTab", "showCardsTab", "showLabsTab", "showIntelligenceTab", "showDefenseTab", "showMapsTab", "showForumTab", "showHelpTab"],
           },
         },
       });
@@ -1121,6 +1121,8 @@ export const adminRouter = createTRPCRouter({
         showIntelligenceTab: settingsMap.showIntelligenceTab ?? false,
         showDefenseTab: settingsMap.showDefenseTab ?? false,
         showMapsTab: settingsMap.showMapsTab ?? true,
+        showForumTab: settingsMap.showForumTab ?? true,
+        showHelpTab: settingsMap.showHelpTab ?? true,
       };
     } catch (error) {
       console.error("Failed to get navigation settings:", error);
@@ -1131,6 +1133,8 @@ export const adminRouter = createTRPCRouter({
         showIntelligenceTab: false,
         showDefenseTab: false,
         showMapsTab: true,
+        showForumTab: true,
+        showHelpTab: true,
       };
     }
   }),
@@ -1145,6 +1149,8 @@ export const adminRouter = createTRPCRouter({
         showIntelligenceTab: z.boolean(),
         showDefenseTab: z.boolean(),
         showMapsTab: z.boolean(),
+        showForumTab: z.boolean(),
+        showHelpTab: z.boolean(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1156,6 +1162,8 @@ export const adminRouter = createTRPCRouter({
           { key: "showIntelligenceTab", value: input.showIntelligenceTab.toString() },
           { key: "showDefenseTab", value: input.showDefenseTab.toString() },
           { key: "showMapsTab", value: input.showMapsTab.toString() },
+          { key: "showForumTab", value: input.showForumTab.toString() },
+          { key: "showHelpTab", value: input.showHelpTab.toString() },
         ];
 
         // Batch upserts using transaction for better performance (avoids N+1 pattern)

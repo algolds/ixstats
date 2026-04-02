@@ -1,0 +1,401 @@
+// IxStates — IxCards, Vault & Trading models
+
+/// *
+///  * MyVault - Personal vault system for IxCredits currency and card collectibles
+///  * Replaces legacy IxBank system with enhanced features
+model MyVault {
+  id             String             @id(map: "MyVault_pkey") @default(cuid())
+  userId         String             @unique(map: "MyVault_userId_key")
+  credits        Float              @default(0)
+  lifetimeEarned Float              @default(0)
+  lifetimeSpent  Float              @default(0)
+  vaultLevel     Int                @default(1)
+  vaultXp        Int                @default(0)
+  loginStreak    Int                @default(0)
+  lastLoginDate  DateTime?
+  todayEarned    Float              @default(0)
+  lastDailyReset DateTime           @default(now())
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @default(now()) @updatedAt
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade, map: "MyVault_userId_fkey")
+  transactions   VaultTransaction[]
+
+  @@index([userId], map: "MyVault_userId_idx")
+  @@map("my_vault")
+}
+
+/// *
+///  * VaultTransaction - Transaction history for IxCredits
+///  * Tracks all earning and spending activities
+model VaultTransaction {
+  id           String   @id @default(cuid())
+  vaultId      String
+  credits      Float
+  balanceAfter Float
+  type         String
+  source       String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  vault        MyVault  @relation(fields: [vaultId], references: [id], onDelete: Cascade, map: "VaultTransaction_vaultId_fkey")
+
+  @@index([vaultId, createdAt])
+  @@index([type, createdAt])
+  @@map("vault_transactions")
+}
+
+/// *
+///  * Card - Core card model with IxStats, NationStates, and Wiki integration
+///  * Supports multiple card types and rarity tiers
+model Card {
+  id               String          @id(map: "Card_pkey") @default(cuid())
+  title            String
+  description      String?
+  artwork          String?
+  rarity           String
+  season           Int             @default(1)
+  cardType         String
+  attributes       Json?
+  marketValue      Float           @default(0.0)
+  totalSupply      Int?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+  nsCardId         Int?
+  nsSeason         Int?
+  wikiSource       String?
+  wikiArticleTitle String?
+  countryId        String?
+  stats            Json?
+  level            Int?            @default(1)
+  enhancements     Json?
+  artworkVariants  Json?
+  name             String?
+  metadata         Json?
+  CardOwnership    CardOwnership[]
+  valueHistory     CardValueHistory[]
+
+  @@unique([nsCardId, nsSeason])
+  @@index([cardType, rarity, season])
+  @@index([marketValue])
+  @@index([countryId])
+  @@index([rarity], map: "Card_rarity_idx")
+  @@index([season], map: "Card_season_idx")
+  @@map("cards")
+}
+
+/// *
+///  * NSVerification - NationStates nation ownership verification
+///  * Tracks verification attempts for NS deck imports
+model NSVerification {
+  id               String    @id
+  userId           String
+  nationName       String
+  verificationCode String
+  verified         Boolean   @default(false)
+  verifiedAt       DateTime?
+  expiresAt        DateTime
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "NSVerification_userId_fkey")
+
+  @@map("ns_verifications")
+}
+
+model AuctionBid {
+  id          String      @id
+  auctionId   String
+  bidderId    String
+  amount      Int
+  createdAt   DateTime    @default(now())
+  CardAuction CardAuction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  User        User        @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@index([auctionId])
+  @@index([bidderId])
+}
+
+model CardAuction {
+  id              String        @id
+  cardInstanceId  String
+  sellerId        String
+  startingPrice   Int
+  currentBid      Int
+  buyoutPrice     Int?
+  currentBidderId String?
+  winnerId        String?
+  finalPrice      Int?
+  bidCount        Int           @default(0)
+  status          String        @default("ACTIVE")
+  isFeatured      Boolean       @default(false)
+  endTime         DateTime
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now())
+  AuctionBid      AuctionBid[]
+  CardOwnership   CardOwnership @relation(fields: [cardInstanceId], references: [id], onDelete: Cascade)
+  User            User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([endTime])
+  @@index([sellerId])
+  @@index([status])
+}
+
+model CardCollection {
+  id          String               @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  isPublic    Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @default(now())
+  User        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       CardCollectionItem[]
+
+  @@index([userId])
+}
+
+model CardCollectionItem {
+  id              String         @id @default(cuid())
+  collectionId    String
+  cardOwnershipId String
+  addedAt         DateTime       @default(now())
+  collection      CardCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  cardOwnership   CardOwnership  @relation(fields: [cardOwnershipId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, cardOwnershipId])
+  @@index([collectionId])
+  @@index([cardOwnershipId])
+}
+
+model CardOwnership {
+  id            String        @id
+  cardId        String
+  userId        String
+  ownerId       String
+  serialNumber  Int
+  level         Int           @default(1)
+  experience    Int           @default(0)
+  isLocked      Boolean       @default(false)
+  lastSalePrice Int?
+  lastSaleDate  DateTime?
+  acquiredAt    DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now())
+  quantity      Int           @default(1)
+  CardAuction      CardAuction[]
+  collectionItems  CardCollectionItem[]
+  cards            Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  User             User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([ownerId])
+  @@index([userId])
+}
+
+model CardPack {
+  id               String     @id @default(cuid())
+  name             String
+  description      String?
+  artwork          String?
+  packType         String
+  priceCredits     Int
+  cardCount        Int
+  guaranteedRarity String?
+  isActive         Boolean    @default(true)
+  commonOdds       Float      @default(65.0)
+  uncommonOdds     Float      @default(25.0)
+  rareOdds         Float      @default(7.0)
+  ultraRareOdds    Float      @default(2.0)
+  epicOdds         Float      @default(0.9)
+  legendaryOdds    Float      @default(0.1)
+  season           Int?
+  cardType         String?
+  themeFilter      Json?
+  limitedQuantity  Int?
+  purchaseLimit    Int?
+  expiresAt        DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @default(now())
+  UserPack         UserPack[]
+}
+
+model UserPack {
+  id             String    @id @default(cuid())
+  userId         String
+  packId         String
+  isOpened       Boolean   @default(false)
+  acquiredMethod String    @default("PURCHASE")
+  acquiredDate   DateTime  @default(now())
+  openedAt       DateTime?
+  pack           CardPack  @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([packId])
+  @@map("user_packs")
+}
+
+model NSImport {
+  id           String    @id @default(cuid())
+  userId       String
+  nationName   String
+  cardCount    Int
+  totalValue   Float
+  status       String    @default("PENDING")
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@map("ns_imports")
+}
+
+model SyncLog {
+  id             String    @id @default(cuid())
+  syncType       String
+  status         String
+  itemsProcessed Int       @default(0)
+  itemsFailed    Int       @default(0)
+  errorMessage   String?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  season         Int?
+  cardsProcessed Int?
+  cardsCreated   Int?
+  cardsUpdated   Int?
+  errors         String?
+  metadata       Json?
+
+  @@index([syncType, status])
+  @@map("sync_logs")
+}
+
+model SyncCheckpoint {
+  id          String   @id @default(cuid())
+  syncType    String
+  season      Int?
+  lastCardId  String?
+  lastPage    Int?
+  totalPages  Int?
+  checkpoint  Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([syncType, season])
+  @@index([syncType])
+  @@map("sync_checkpoints")
+}
+
+model LoreCardRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  articleTitle    String
+  wikiSource      String
+  status          String    @default("PENDING")
+  cardId          String?
+  adminNotes      String?
+  requestedAt     DateTime  @default(now())
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  generatedAt     DateTime?
+  rejectionReason String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([wikiSource])
+  @@map("lore_card_requests")
+}
+
+model CardValueHistory {
+  id          String   @id @default(cuid())
+  cardId      String
+  value       Float
+  recordedAt  DateTime @default(now())
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([recordedAt])
+  @@map("card_value_history")
+}
+
+model CardTrade {
+  id          String    @id
+  fromUserId  String
+  toUserId    String
+  status      String    @default("PENDING")
+  expiresAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+}
+
+/// Crafting Recipe Model
+/// Defines card crafting/fusion/evolution recipes
+model CraftingRecipe {
+  id              String            @id @default(cuid())
+  name            String
+  description     String?
+  recipeType      String            // "FUSION" | "EVOLUTION"
+  requiredCardIds Json              // Array of card IDs or criteria
+  requiredCount   Int               @default(1)
+  resultCardId    String?           // Specific result card (null = random by rarity)
+  resultRarity    String?           // If random result, rarity constraint
+  ixCreditsCost   Int               @default(0)
+  successRate     Float             @default(1.0) // 0.0-1.0 (1.0 = 100%)
+  minLevel        Int               @default(1)
+  collectorXPGain Int               @default(0)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  craftingHistory CraftingHistory[]
+
+  @@index([recipeType])
+  @@index([resultRarity])
+  @@index([isActive])
+}
+
+/// Crafting History Model
+/// Tracks user crafting attempts and results
+model CraftingHistory {
+  id              String         @id @default(cuid())
+  userId          String
+  recipeId        String
+  materialsUsed   Json           // Array of CardOwnership IDs consumed
+  success         Boolean
+  resultCardId    String?        // CardOwnership ID created (if successful)
+  ixCreditsSpent  Int
+  collectorXPGain Int
+  craftedAt       DateTime       @default(now())
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe          CraftingRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([userId, craftedAt])
+  @@index([recipeId])
+  @@index([success])
+}
+
+/// Trade Offer Model
+/// P2P card trading system
+model TradeOffer {
+  id                 String    @id @default(cuid())
+  initiatorId        String
+  recipientId        String
+  initiatorCardIds   Json      // Array of CardOwnership IDs
+  recipientCardIds   Json      // Array of CardOwnership IDs
+  initiatorCredits   Int       @default(0)
+  recipientCredits   Int       @default(0)
+  status             String    // "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED" | "EXPIRED" | "COUNTERED"
+  message            String?
+  counterOfferFromId String?   // Previous offer ID if this is a counter
+  expiresAt          DateTime
+  respondedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  initiator          User      @relation("TradeInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  recipient          User      @relation("TradeRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([initiatorId])
+  @@index([recipientId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([createdAt])
+}

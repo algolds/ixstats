@@ -31,8 +31,9 @@ import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge
 import { usePermissions } from "~/hooks/usePermissions";
 import { withBasePath } from "~/lib/base-path";
 import type { CompactViewProps } from "./types";
+import { useRouter } from "next/navigation";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Trophy, Flame, History } from "lucide-react";
 import { HealthRing } from "../ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
 import { debugLog } from "~/lib/console-utils";
@@ -365,6 +366,7 @@ function CompactViewComponent({
                   )}
                 </button>
               )}
+              {/* Forum context removed from DI — ForumLayout sidebar handles navigation */}
               {!isSticky && (
                 <AnimatePresence mode="wait">
                   {peekText ? (
@@ -390,7 +392,8 @@ function CompactViewComponent({
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   className="flex items-center gap-2"
                 >
-                  {/* Time Display - cycles through modes */}
+                  {/* Time Display - hidden on wiki pages */}
+                  {!isOnWikiPage && (
                   <button
                     onClick={() => {
                       const currentMode = timeDisplayMode;
@@ -435,27 +438,30 @@ function CompactViewComponent({
                       </div>
                     )}
                   </button>
+                  )}
 
-                  {/* Greeting — shows wiki context when on a wiki page */}
+                  {/* Wiki context — always visible on wiki pages */}
                   {isOnWikiPage && articleTitle ? (
                     <button
                       onClick={() => onSwitchMode("wiki")}
-                      className="flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 cursor-pointer max-w-[180px]"
+                      className="flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 cursor-pointer max-w-[220px] overflow-hidden"
                       title="Open wiki mode (Tab)"
                     >
                       <BookOpen className="h-3 w-3 text-blue-400 opacity-70 flex-shrink-0" />
-                      <span className="text-foreground/80 text-xs font-medium truncate">
-                        {articleTitle}
+                      <span className="di-wiki-title">
+                        <span className="di-wiki-title-text">{articleTitle}</span>
                       </span>
                       {activeSectionName && (
                         <>
-                          <span className="text-foreground/25 text-[10px]">›</span>
+                          <span className="text-foreground/25 text-[10px] flex-shrink-0">›</span>
                           <span className="text-foreground/50 text-[10px] truncate max-w-[80px]">
                             {activeSectionName}
                           </span>
                         </>
                       )}
                     </button>
+                  ) : isOnWikiPage ? (
+                    <WikiProfileButton onSwitchMode={onSwitchMode} />
                   ) : (
                   <Popover>
                     <PopoverTrigger>
@@ -697,7 +703,7 @@ function CompactViewComponent({
                 <TooltipContent side="bottom">Alerts</TooltipContent>
               </Tooltip>
 
-              {crisisEvents && crisisEvents.length > 0 && (
+              {!isOnWikiPage && crisisEvents && crisisEvents.length > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className={`flex items-center justify-center ${isSticky ? "h-6 w-6" : "h-7 w-7"}`}>
@@ -738,3 +744,110 @@ function CompactViewComponent({
 }
 
 export const CompactView = React.memo(CompactViewComponent);
+
+// ---------------------------------------------------------------------------
+// Wiki Profile Button — shown in Dynamic Island on wiki pages without an article
+// ---------------------------------------------------------------------------
+
+function WikiProfileButton({ onSwitchMode }: { onSwitchMode: (mode: any) => void }) {
+  const { user } = useUser();
+  const { recentArticles, restoreSession } = useWikiContext();
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const router = useRouter();
+
+  const { data: userProfile } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: popoverOpen && !!user?.id }
+  );
+
+  // Loreward stats use wiki username (matches country name in the system)
+  const countryName = userProfile?.country?.name ?? "";
+  const { data: lorewardStats } = api.lorewards.getUserStats.useQuery(
+    { username: countryName },
+    { enabled: popoverOpen && !!countryName, staleTime: 60_000 }
+  );
+
+  const wikiUsername = user?.username ?? user?.firstName ?? "";
+
+  return (
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger className="flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 cursor-pointer">
+        <BookOpen className="h-3 w-3 text-blue-400 opacity-70 flex-shrink-0" />
+        <span className="text-foreground/80 text-xs font-medium">WikiOS</span>
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="center"
+        className="bg-card/95 border-border z-[10002] mt-2 w-72 rounded-xl p-0 shadow-2xl backdrop-blur-xl"
+        sideOffset={8}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-2 border-b border-border/50 px-4 py-3">
+          <BookOpen className="h-4 w-4 text-blue-400" />
+          <span className="text-sm font-semibold">Wiki Profile</span>
+        </div>
+
+        <div className="p-3 space-y-3">
+          {/* Loreward stats */}
+          {lorewardStats && (
+            <div className="flex gap-4">
+              <div className="flex items-center gap-1.5">
+                <Trophy className="h-3 w-3 text-amber-400" />
+                <span className="text-xs text-foreground/80">{lorewardStats.totalScore ?? 0}</span>
+                <span className="text-[10px] text-muted-foreground">score</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Flame className="h-3 w-3 text-orange-400" />
+                <span className="text-xs text-foreground/80">{lorewardStats.currentStreak ?? 0}</span>
+                <span className="text-[10px] text-muted-foreground">streak</span>
+              </div>
+            </div>
+          )}
+
+          {/* Quick links */}
+          <div className="space-y-0.5">
+            {wikiUsername && (
+              <button
+                onClick={() => { setPopoverOpen(false); router.push(withBasePath(`/w/special/user/${encodeURIComponent(wikiUsername)}`)); }}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground/70 hover:bg-accent/10 hover:text-foreground transition-colors"
+              >
+                <User className="h-3 w-3" />
+                <span>My Profile</span>
+              </button>
+            )}
+            {userProfile?.countryId && (
+              <button
+                onClick={() => { setPopoverOpen(false); router.push(withBasePath("/mycountry")); }}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground/70 hover:bg-accent/10 hover:text-foreground transition-colors"
+              >
+                <Crown className="h-3 w-3" />
+                <span>MyCountry</span>
+              </button>
+            )}
+          </div>
+
+          {/* Recent articles */}
+          {recentArticles.length > 0 && (
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 px-2">
+                Recent Pages
+              </div>
+              <div className="space-y-0.5">
+                {recentArticles.map((title) => (
+                  <button
+                    key={title}
+                    onClick={() => { setPopoverOpen(false); restoreSession(title); }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground/70 hover:bg-accent/10 hover:text-foreground transition-colors"
+                  >
+                    <History className="h-3 w-3 text-blue-400 shrink-0" />
+                    <span className="truncate">{title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

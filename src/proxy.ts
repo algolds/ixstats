@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { type NextRequest, NextResponse } from "next/server";
+import { isStandaloneRequest } from "~/lib/standalone-detection";
 
 // Get base path from environment - should match Next.js basePath
 const BASE_PATH = process.env.BASE_PATH || "";
@@ -31,8 +32,6 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 // IxWorld standalone mode: when running as maps.ixwiki.com, restrict routes
-const IXWORLD_STANDALONE =
-  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
 const IXWORLD_ALLOWED_PREFIXES = [
   "/maps",
   "/api",
@@ -64,14 +63,14 @@ const isClerkConfigured = Boolean(
  *
  * If Clerk SDK breaks, check: https://clerk.com/docs/security/csp
  */
-function buildCSPTemplate(): string {
+function buildCSPTemplate(standalone: boolean): string {
   const isDevelopment = process.env.NODE_ENV === "development";
 
   // IxWorld standalone: relaxed CSP since nonce propagation doesn't work
-  // in standalone builds and the map viewer is public content only
+  // reliably and the map viewer is public content only
   const scriptSrc = isDevelopment
     ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
-    : IXWORLD_STANDALONE
+    : standalone
       ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://static.cloudflareinsights.com`
       : `script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`;
 
@@ -81,7 +80,7 @@ function buildCSPTemplate(): string {
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https: http:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
-    `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://api.clerk.com https://ixwiki.com https://commons.wikimedia.org https://api.unsplash.com https://*.tile.openstreetmap.org https://demotiles.maplibre.org https://protomaps.github.io wss: ws:`,
+    `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://api.clerk.com https://ixwiki.com https://ixstates.ixwiki.com https://maps.ixwiki.com https://commons.wikimedia.org https://api.unsplash.com https://*.tile.openstreetmap.org https://demotiles.maplibre.org https://protomaps.github.io wss: ws:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com`,
     `worker-src 'self' blob:`,
     `object-src 'none'`,
@@ -100,8 +99,9 @@ function buildCSPTemplate(): string {
   return directives.join("; ");
 }
 
-// Pre-compute once at module load — only the nonce changes per request
-const CSP_TEMPLATE = buildCSPTemplate();
+// Pre-compute both CSP templates at module load — select per-request by hostname
+const CSP_TEMPLATE_APP = buildCSPTemplate(false);
+const CSP_TEMPLATE_STANDALONE = buildCSPTemplate(true);
 
 /**
  * Add comprehensive security and performance headers to response
@@ -115,9 +115,10 @@ function enhanceResponse(
   const requestId = crypto.randomUUID();
   const nonce = Buffer.from(requestId).toString("base64");
 
-  // Content Security Policy — inject nonce into pre-computed template
+  // Content Security Policy — select template by hostname, inject nonce
   const isForumWidget = req.nextUrl.pathname.startsWith("/forum/");
-  let csp = CSP_TEMPLATE.replaceAll("__NONCE__", nonce);
+  const cspTemplate = isStandaloneRequest(req.headers) ? CSP_TEMPLATE_STANDALONE : CSP_TEMPLATE_APP;
+  let csp = cspTemplate.replaceAll("__NONCE__", nonce);
   if (isForumWidget) {
     // Allow iframe embedding from forum.ixwiki.com for widget pages
     csp = csp.replace("frame-ancestors 'none'", "frame-ancestors https://forum.ixwiki.com");
@@ -158,11 +159,11 @@ function enhanceResponse(
 
 /**
  * IxWorld standalone route guard.
- * In standalone mode (maps.ixwiki.com), only maps-related routes are served.
- * All other routes redirect to the main IxStats instance.
+ * When the request comes from maps.ixwiki.com, only maps-related routes are served.
+ * All other routes redirect to the main IxStates instance.
  */
 function handleStandaloneRouting(req: NextRequest): NextResponse | null {
-  if (!IXWORLD_STANDALONE) return null;
+  if (!isStandaloneRequest(req.headers)) return null;
 
   const pathname = req.nextUrl.pathname;
 
@@ -179,9 +180,9 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
     return null;
   }
 
-  // Everything else → redirect to main IxStats
+  // Everything else → redirect to main IxStates
   return NextResponse.redirect(
-    `https://ixwiki.com/projects/ixstats${pathname}`
+    `https://ixstates.ixwiki.com${pathname}`
   );
 }
 

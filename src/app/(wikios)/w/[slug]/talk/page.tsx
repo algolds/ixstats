@@ -61,7 +61,7 @@ export default function TalkPage() {
             &larr; Article
           </Link>
           <Link
-            href={withBasePath(`/wiki-special/history/${encodeURIComponent(`Talk:${title.replace(/ /g, "_")}`)}`)}
+            href={withBasePath(`/w/special/history/${encodeURIComponent(`Talk:${title.replace(/ /g, "_")}`)}`)}
             className="wikios-action-btn"
             style={{ fontSize: "0.8125rem" }}
           >

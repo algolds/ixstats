@@ -329,7 +329,7 @@ export function DiplomaticOperationsCard({
                 </Button>
               </Link>
 
-              <Link href={createUrl("/thinkpages?filter=diplomatic")}>
+              <Link href={createUrl("/dashboard")}>
                 <Button variant="outline" size="sm" className="w-full">
                   <Globe className="mr-2 h-4 w-4" />
                   Embassy Wire

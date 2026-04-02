@@ -161,12 +161,46 @@ export const blurbsRouter = createTRPCRouter({
   // Protected endpoints (authenticated users)
   // ---------------------------------------------------------------------------
 
+  /** All of the current user's blurb responses. */
+  getMyBlurbs: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(50).default(20),
+        cursor: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const user = await db.user.findUnique({
+        where: { clerkUserId: ctx.auth?.userId },
+        select: { id: true },
+      });
+      if (!user) return { responses: [], nextCursor: undefined };
+
+      const responses = await db.blurbResponse.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+        take: input.limit + 1,
+        ...(input.cursor && { cursor: { id: input.cursor }, skip: 1 }),
+        include: {
+          prompt: { select: { id: true, title: true, question: true, slug: true } },
+          country: { select: { id: true, name: true, flag: true } },
+        },
+      });
+
+      let nextCursor: string | undefined;
+      if (responses.length > input.limit) {
+        nextCursor = responses.pop()!.id;
+      }
+
+      return { responses, nextCursor };
+    }),
+
   /** Check if current user already responded to a prompt. */
   getMyResponse: protectedProcedure
     .input(z.object({ promptId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       const user = await db.user.findUnique({
-        where: { clerkUserId: ctx.userId },
+        where: { clerkUserId: ctx.auth?.userId },
         select: { id: true },
       });
       if (!user) return null;
@@ -204,7 +238,7 @@ export const blurbsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Look up the user and their country
       const user = await db.user.findUnique({
-        where: { clerkUserId: ctx.userId },
+        where: { clerkUserId: ctx.auth?.userId },
         select: { id: true, countryId: true },
       });
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "User not found" });
@@ -241,7 +275,7 @@ export const blurbsRouter = createTRPCRouter({
       let thinkpagesPostId: string | null = null;
       try {
         thinkpagesPostId = await crossPostToThinkPages(
-          ctx.userId,
+          ctx.auth?.userId,
           user.countryId,
           input.content,
           prompt.title,
@@ -283,7 +317,7 @@ export const blurbsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const user = await db.user.findUnique({
-        where: { clerkUserId: ctx.userId },
+        where: { clerkUserId: ctx.auth?.userId },
         select: { id: true },
       });
       if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
@@ -307,6 +341,35 @@ export const blurbsRouter = createTRPCRouter({
         data: {
           content: input.content,
           linkedArticles: input.linkedArticles ?? undefined,
+        },
+      });
+    }),
+
+  /** User-submitted prompt (goes to DRAFT for admin review). */
+  submitPrompt: protectedProcedure
+    .input(
+      z.object({
+        title: z.string().min(1).max(200),
+        question: z.string().min(1).max(500),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Auto-generate slug from title
+      const baseSlug = input.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .slice(0, 80);
+      // Append short random suffix to avoid collisions
+      const slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`;
+
+      return db.blurbPrompt.create({
+        data: {
+          title: input.title,
+          question: input.question,
+          slug,
+          status: "DRAFT",
+          createdBy: ctx.auth?.userId ?? "unknown",
         },
       });
     }),
@@ -339,7 +402,7 @@ export const blurbsRouter = createTRPCRouter({
           closedAt: input.closedAt ? new Date(input.closedAt) : null,
           isRecurring: input.isRecurring,
           publishedAt: input.status === "ACTIVE" ? new Date() : null,
-          createdBy: ctx.userId,
+          createdBy: ctx.auth?.userId,
         },
       });
     }),
@@ -382,6 +445,22 @@ export const blurbsRouter = createTRPCRouter({
       });
     }),
 
+  /** Random active prompt (for WikiOS homepage — cycles on each load). */
+  getRandomActivePrompt: publicProcedure.query(async () => {
+    const activePrompts = await db.blurbPrompt.findMany({
+      where: { status: "ACTIVE" },
+      include: { _count: { select: { responses: true } } },
+    });
+    if (activePrompts.length === 0) return null;
+
+    // Prefer featured prompts (50% chance if any exist), otherwise random
+    const featured = activePrompts.filter((p) => p.featured);
+    if (featured.length > 0 && Math.random() < 0.5) {
+      return featured[Math.floor(Math.random() * featured.length)]!;
+    }
+    return activePrompts[Math.floor(Math.random() * activePrompts.length)]!;
+  }),
+
   /** Toggle featured flag on a response. */
   featureResponse: adminProcedure
     .input(
@@ -393,6 +472,21 @@ export const blurbsRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       return db.blurbResponse.update({
         where: { id: input.responseId },
+        data: { featured: input.featured },
+      });
+    }),
+
+  /** Toggle featured flag on a prompt. */
+  featurePrompt: adminProcedure
+    .input(
+      z.object({
+        promptId: z.string().min(1),
+        featured: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return db.blurbPrompt.update({
+        where: { id: input.promptId },
         data: { featured: input.featured },
       });
     }),
@@ -416,21 +510,23 @@ async function crossPostToThinkPages(
   });
   if (!account) return null;
 
-  // Truncate for ThinkPages (280 char limit)
+  // Embed structured metadata prefix for ThinkPages to render distinctively
+  const prefix = `[blurb:${promptSlug}|${promptTitle}]\n\n`;
+  const maxContent = 280 - prefix.length;
   const truncated =
-    content.length > 220
-      ? content.slice(0, 220) + "..."
+    content.length > maxContent
+      ? content.slice(0, maxContent - 3) + "..."
       : content;
-
-  const postContent = `${truncated}\n\n${promptTitle} — Read full blurb → /blurbs/${promptSlug}`;
 
   const post = await db.thinkpagesPost.create({
     data: {
       accountId: account.id,
-      content: postContent.slice(0, 280),
+      content: (prefix + truncated).slice(0, 280),
       postType: "original",
-      hashtags: ["blurb", "topictuesday"],
+      hashtags: JSON.stringify(["blurb", "topictuesday"]),
       visibility: "public",
+      isAutoGenerated: true,
+      ixTimeTimestamp: new Date(),
     },
   });
 

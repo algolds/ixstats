@@ -13,7 +13,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 
-// Normalize base path so we can deploy under https://ixwiki.com/projects/ixstats
+// Normalize base path so we can deploy under https://ixwiki.com/projects/ixstates
 const normalizeBasePath = (value) => {
   if (!value) {
     return "";
@@ -27,12 +27,7 @@ const normalizeBasePath = (value) => {
 
 const resolveBasePath = () => {
   const hasBasePathEnv = Object.prototype.hasOwnProperty.call(process.env, "BASE_PATH");
-  const rawBasePath = hasBasePathEnv
-    ? process.env.BASE_PATH
-    : process.env.NODE_ENV === "production"
-      ? "/projects/ixstats"
-      : "";
-
+  const rawBasePath = hasBasePathEnv ? process.env.BASE_PATH : "";
   return normalizeBasePath(rawBasePath);
 };
 

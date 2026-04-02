@@ -9,7 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
-import { computeRarityCounts, formatValue, rarityRank } from "~/lib/forum-widget-utils";
+import { computeRarityCounts, formatValue, rarityRank } from "~/modules/forum";
 
 const CACHE_MAX_AGE = 300; // 5 minutes
 

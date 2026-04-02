@@ -1,0 +1,842 @@
+// IxStates — Diplomacy, NPC & Cultural Exchange models
+
+model DiplomaticRelation {
+  id                 String   @id @default(cuid())
+  country1           String
+  country2           String
+  relationship       String
+  strength           Int
+  treaties           String?
+  lastContact        DateTime
+  status             String
+  diplomaticChannels String?
+  recentActivity     String?
+  tradeVolume        Float?
+  culturalExchange   String?
+  economicTier       String?
+  flagUrl            String?
+  establishedAt      DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([country1, country2])
+  @@index([country1])
+  @@index([country2])
+  @@index([relationship])
+  @@index([status])
+}
+
+model Treaty {
+  id             String   @id @default(cuid())
+  name           String
+  parties        String?
+  type           String
+  status         String
+  signedDate     DateTime
+  expiryDate     DateTime
+  description    String?
+  complianceRate Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([signedDate])
+}
+
+model DiplomaticRelationshipHistory {
+  id               String   @id @default(cuid())
+  country1Id       String
+  country2Id       String
+  strength         Float
+  relationship     String
+  treaties         String?
+  tradeVolume      Float    @default(0)
+  culturalExchange String   @default("Medium")
+  timestamp        DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([country1Id, country2Id, timestamp], map: "DiplomaticRelationshipHistory_country1Id_country2Id_idx")
+}
+
+model DiplomaticEvent {
+  id                 String   @id @default(cuid())
+  country1Id         String
+  country2Id         String?
+  eventType          String
+  title              String
+  description        String
+  tradeValue         Float?
+  status             String   @default("active")
+  metadata           String?
+  embassyId          String?
+  missionId          String?
+  severity           String   @default("info")
+  relationshipImpact Float    @default(0)
+  reputationImpact   Float    @default(0)
+  economicImpact     Float    @default(0)
+  ixTimeTimestamp    Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([country1Id])
+  @@index([country2Id])
+  @@index([eventType])
+  @@index([embassyId])
+  @@index([createdAt])
+}
+
+model DiplomaticAction {
+  id            String   @id @default(cuid())
+  fromCountryId String
+  toCountryId   String
+  actionType    String
+  description   String?
+  status        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([fromCountryId])
+  @@index([toCountryId])
+}
+
+model Embassy {
+  id                  String                  @id @default(cuid())
+  hostCountryId       String
+  guestCountryId      String
+  name                String
+  location            String?
+  ambassadorName      String?
+  staffCount          Int                     @default(1)
+  establishedAt       DateTime                @default(now())
+  status              String                  @default("active")
+  services            String?
+  securityLevel       String                  @default("STANDARD")
+  establishmentCost   Float                   @default(0)
+  maintenanceCost     Float                   @default(1000)
+  lastMaintenancePaid DateTime                @default(now())
+  budget              Float                   @default(50000)
+  level               Int                     @default(1)
+  experience          Int                     @default(0)
+  upgradeProgress     Float                   @default(0)
+  influence           Float                   @default(10)
+  effectiveness       Float                   @default(50)
+  reputation          Float                   @default(50)
+  maxStaff            Int                     @default(5)
+  currentMissions     Int                     @default(0)
+  maxMissions         Int                     @default(2)
+  specialization      String?
+  specializationLevel Int                     @default(0)
+  buffs               String?
+  debuffs             String?
+  lastActivity        DateTime                @default(now())
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  description         String?
+  strategicPriorities String?
+  partnershipGoals    String?
+  keyAchievements     String?
+  optionUsage         DiplomaticOptionUsage[]
+  guestCountry        Country                 @relation("GuestCountryEmbassies", fields: [guestCountryId], references: [id], onDelete: Cascade)
+  hostCountry         Country                 @relation("HostCountryEmbassies", fields: [hostCountryId], references: [id], onDelete: Cascade)
+  missions            EmbassyMission[]
+  upgrades            EmbassyUpgrade[]
+
+  @@unique([hostCountryId, guestCountryId])
+  @@index([hostCountryId])
+  @@index([guestCountryId])
+  @@index([status])
+  @@index([level])
+  @@index([specialization])
+}
+
+model DiplomaticChannel {
+  id             String                         @id @default(cuid())
+  name           String
+  type           String
+  classification String                         @default("PUBLIC")
+  encrypted      Boolean                        @default(false)
+  lastActivity   DateTime                       @default(now())
+  createdAt      DateTime                       @default(now())
+  updatedAt      DateTime                       @updatedAt
+  participants   DiplomaticChannelParticipant[]
+  messages       DiplomaticMessage[]
+
+  @@index([type])
+  @@index([classification])
+  @@index([lastActivity])
+}
+
+model DiplomaticChannelParticipant {
+  id          String            @id @default(cuid())
+  channelId   String
+  countryId   String
+  countryName String
+  flagUrl     String?
+  role        String            @default("MEMBER")
+  joinedAt    DateTime          @default(now())
+  channel     DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, countryId])
+  @@index([channelId])
+  @@index([countryId])
+}
+
+model DiplomaticMessage {
+  id                String            @id @default(cuid())
+  channelId         String
+  fromCountryId     String
+  fromCountryName   String
+  toCountryId       String?
+  toCountryName     String?
+  subject           String?
+  content           String
+  classification    String            @default("PUBLIC")
+  priority          String            @default("NORMAL")
+  status            String            @default("SENT")
+  encrypted         Boolean           @default(false)
+  ixTimeTimestamp   Float
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  encryptedContent  String?
+  signature         String?
+  encryptionVersion String?
+  iv                String?
+  encryptedKey      String?
+  senderKeyId       String?
+  signatureVerified Boolean           @default(false)
+  channel           DiplomaticChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([channelId])
+  @@index([fromCountryId])
+  @@index([toCountryId])
+  @@index([classification])
+  @@index([priority])
+  @@index([status])
+  @@index([ixTimeTimestamp])
+}
+
+model CulturalExchange {
+  id                      String                        @id @default(cuid())
+  title                   String
+  type                    String
+  description             String
+  narrative               String?
+  objectives              String?
+  isPublic                Boolean                       @default(true)
+  maxParticipants         Int?
+  hostCountryId           String
+  hostCountryName         String
+  hostCountryFlag         String?
+  status                  String                        @default("planning")
+  startDate               DateTime
+  endDate                 DateTime
+  ixTimeContext           Float
+  participants            Int                           @default(0)
+  culturalImpact          Float                         @default(0)
+  diplomaticValue         Float                         @default(0)
+  socialEngagement        Int                           @default(0)
+  achievements            String?
+  createdAt               DateTime                      @default(now())
+  updatedAt               DateTime                      @updatedAt
+  scenarioType            String?
+  scenarioId              String?
+  markovStateImpact       String?
+  npcResponses            String?
+  predictedOutcome        String?
+  participantSatisfaction Float                         @default(50)
+  publicPerception        Float                         @default(50)
+  economicCost            Float                         @default(0)
+  culturalBonusDelta      Float                         @default(0)
+  diplomaticBonusDelta    Float                         @default(0)
+  culturalArtifacts       CulturalArtifact[]
+  scenario                CulturalScenario?             @relation(fields: [scenarioId], references: [id])
+  outcomes                CulturalExchangeOutcome[]
+  participatingCountries  CulturalExchangeParticipant[]
+  votes                   CulturalExchangeVote[]
+  embassyMissions         EmbassyMission[]
+
+  @@index([hostCountryId])
+  @@index([type])
+  @@index([status])
+  @@index([startDate])
+  @@index([scenarioType])
+  @@index([scenarioId])
+}
+
+model CulturalExchangeParticipant {
+  id                      String           @id @default(cuid())
+  exchangeId              String
+  countryId               String
+  countryName             String
+  flagUrl                 String?
+  role                    String
+  joinedAt                DateTime         @default(now())
+  isNPC                   Boolean          @default(false)
+  enthusiasmLevel         Float?
+  resourceCommitment      Float?
+  participationDecision   String?
+  npcPersonalityArchetype String?
+  exchange                CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+
+  @@unique([exchangeId, countryId])
+  @@index([exchangeId])
+  @@index([countryId])
+}
+
+model CulturalArtifact {
+  id           String           @id @default(cuid())
+  exchangeId   String
+  type         String
+  title        String
+  description  String?
+  thumbnailUrl String?
+  fileUrl      String?
+  contributor  String
+  countryId    String
+  uploadedAt   DateTime         @default(now())
+  exchange     CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+
+  @@index([exchangeId])
+  @@index([countryId])
+  @@index([type])
+}
+
+model CulturalScenario {
+  id                     String             @id @default(cuid())
+  type                   String
+  title                  String
+  narrative              String
+  country1Id             String
+  country2Id             String
+  country1Name           String
+  country2Name           String
+  relationshipState      String
+  relationshipStrength   Float
+  responseOptions        String
+  tags                   String
+  culturalImpact         Float
+  diplomaticRisk         Float
+  economicCost           Float
+  status                 String             @default("active")
+  createdAt              DateTime           @default(now())
+  expiresAt              DateTime
+  resolvedAt             DateTime?
+  chosenOption           String?
+  actualCulturalImpact   Float?
+  actualDiplomaticImpact Float?
+  actualEconomicCost     Float?
+  outcomeNotes           String?
+  relatedExchanges       CulturalExchange[]
+
+  @@index([country1Id])
+  @@index([country2Id])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+model CulturalExchangeOutcome {
+  id                        String           @id @default(cuid())
+  exchangeId                String
+  countryId                 String
+  responseChoice            String
+  culturalImpactChange      Float
+  diplomaticChange          Float
+  economicCostActual        Float
+  participantSatisfaction   Float
+  publicPerception          Float
+  relationshipStateBefore   String
+  relationshipStateAfter    String
+  stateChanged              Boolean
+  transitionProbability     Float
+  relationshipStrengthDelta Float
+  culturalBonusDelta        Float
+  diplomaticBonusDelta      Float
+  culturalTiesStrength      Float
+  softPowerGain             Float
+  peopleTopeopleBonds       Float
+  impactReasoning           String
+  createdAt                 DateTime         @default(now())
+  exchange                  CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+
+  @@index([exchangeId])
+  @@index([countryId])
+  @@index([createdAt])
+}
+
+model CulturalExchangeVote {
+  id          String           @id @default(cuid())
+  exchangeId  String
+  countryId   String
+  countryName String
+  vote        String
+  comment     String?
+  votedAt     DateTime         @default(now())
+  exchange    CulturalExchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+
+  @@unique([exchangeId, countryId])
+  @@index([exchangeId])
+  @@index([countryId])
+  @@index([vote])
+}
+
+model EmbassyMission {
+  id                     String            @id @default(cuid())
+  embassyId              String
+  name                   String
+  type                   String
+  description            String
+  difficulty             String
+  status                 String            @default("active")
+  requiredStaff          Int               @default(1)
+  requiredLevel          Int               @default(1)
+  requiredSpecialization String?
+  cost                   Float             @default(0)
+  duration               Int               @default(7)
+  startedAt              DateTime          @default(now())
+  completesAt            DateTime
+  experienceReward       Int               @default(0)
+  influenceReward        Float             @default(0)
+  reputationReward       Float             @default(0)
+  economicReward         Float             @default(0)
+  progress               Float             @default(0)
+  successChance          Float             @default(50)
+  complications          String?
+  ixTimeStarted          Float
+  ixTimeCompletes        Float
+  culturalExchangeId     String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  culturalExchange       CulturalExchange? @relation(fields: [culturalExchangeId], references: [id])
+  embassy                Embassy           @relation(fields: [embassyId], references: [id], onDelete: Cascade)
+
+  @@index([embassyId])
+  @@index([type])
+  @@index([status])
+  @@index([completesAt])
+  @@index([culturalExchangeId])
+}
+
+model EmbassyUpgrade {
+  id            String    @id @default(cuid())
+  embassyId     String
+  upgradeType   String
+  name          String
+  description   String
+  level         Int       @default(1)
+  cost          Float
+  duration      Int
+  requiredLevel Int       @default(1)
+  status        String    @default("available")
+  startedAt     DateTime?
+  completesAt   DateTime?
+  progress      Float     @default(0)
+  effects       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  embassy       Embassy   @relation(fields: [embassyId], references: [id], onDelete: Cascade)
+
+  @@index([embassyId])
+  @@index([upgradeType])
+  @@index([status])
+}
+
+model EmbassyRequirement {
+  id                     String   @id @default(cuid())
+  hostCountryId          String   @unique
+  requiredRelationship   String   @default("neutral")
+  minRelationStrength    Int      @default(25)
+  establishmentCost      Float    @default(100000)
+  approvalTime           Int      @default(30)
+  specialRequirements    String?
+  economicTierMultiplier Float    @default(1.0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([hostCountryId])
+}
+
+model DiplomaticOption {
+  id          String                  @id @default(cuid())
+  type        String
+  value       String
+  category    String?
+  description String?
+  sortOrder   Int                     @default(0)
+  isActive    Boolean                 @default(true)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  usage       DiplomaticOptionUsage[]
+
+  @@unique([type, value])
+  @@index([type, isActive])
+  @@index([category])
+}
+
+model DiplomaticOptionUsage {
+  id         String           @id @default(cuid())
+  optionId   String
+  embassyId  String
+  selectedAt DateTime         @default(now())
+  removedAt  DateTime?
+  embassy    Embassy          @relation(fields: [embassyId], references: [id], onDelete: Cascade)
+  option     DiplomaticOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@index([optionId])
+  @@index([embassyId])
+  @@index([selectedAt])
+}
+
+model DiplomaticScenario {
+  id                      String               @id @default(cuid())
+  key                     String               @unique
+  scenarioType            String
+  title                   String
+  introduction            String
+  context                 String
+  situation               String
+  implications            String
+  urgency                 String?
+  relationshipLevel       String
+  timeFrame               String
+  difficulty              String
+  recommendedEmbassyLevel Int                  @default(1)
+  minimumRelationship     Int?
+  requiredEconomicTier    String?
+  triggerConditions       String
+  eligibilityCriteria     String
+  templateVariables       String
+  historicalContext       String
+  involvedCountries       String
+  weight                  Float                @default(1.0)
+  baseRelevance           Int                  @default(50)
+  isActive                Boolean              @default(true)
+  isCustom                Boolean              @default(false)
+  usageCount              Int                  @default(0)
+  lastUsedAt              DateTime?
+  createdBy               String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  choices                 ScenarioChoice[]
+  generations             ScenarioGeneration[]
+
+  @@index([scenarioType, relationshipLevel])
+  @@index([difficulty, timeFrame])
+  @@index([isActive, usageCount])
+  @@index([recommendedEmbassyLevel])
+}
+
+model ScenarioChoice {
+  id             String             @id @default(cuid())
+  scenarioId     String
+  choiceKey      String
+  label          String
+  description    String
+  skillRequired  String
+  skillLevel     Int
+  riskLevel      String
+  requirements   String
+  shortTerm      String
+  mediumTerm     String
+  longTerm       String
+  effects        String
+  displayOrder   Int                @default(0)
+  isActive       Boolean            @default(true)
+  selectionCount Int                @default(0)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  scenario       DiplomaticScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([scenarioId, displayOrder])
+  @@index([skillRequired, skillLevel])
+  @@index([riskLevel])
+}
+
+model ScenarioGeneration {
+  id              String             @id @default(cuid())
+  scenarioId      String
+  countryId       String
+  targetCountryId String
+  worldContext    String
+  relevanceScore  Int
+  choiceId        String?
+  responseTime    DateTime?
+  appliedEffects  String?
+  outcomeNotes    String?
+  generatedAt     DateTime           @default(now())
+  expiresAt       DateTime?
+  completedAt     DateTime?
+  scenario        DiplomaticScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, generatedAt])
+  @@index([scenarioId, targetCountryId])
+  @@index([expiresAt])
+}
+
+model ScenarioTemplate {
+  id                   String   @id @default(cuid())
+  templateKey          String   @unique
+  scenarioType         String
+  titleTemplate        String
+  introductionTemplate String
+  contextTemplate      String
+  situationTemplate    String
+  implicationsTemplate String
+  requiredVariables    String
+  isActive             Boolean  @default(true)
+  usageCount           Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([scenarioType, isActive])
+}
+
+model ScenarioUsageAnalytics {
+  id                        String   @id @default(cuid())
+  scenarioId                String   @unique
+  choiceId                  String?
+  totalGenerations          Int      @default(0)
+  totalCompletions          Int      @default(0)
+  completionRate            Float    @default(0.0)
+  choiceDistribution        String
+  averageRelationshipChange Float    @default(0.0)
+  averageEconomicImpact     Float    @default(0.0)
+  averageReputationChange   Float    @default(0.0)
+  averageSecurityImpact     Float    @default(0.0)
+  averageResponseTime       Float    @default(0.0)
+  lastUpdated               DateTime @default(now())
+
+  @@index([totalGenerations])
+  @@index([completionRate])
+}
+
+model NPCPersonality {
+  id                  String                     @id @default(cuid())
+  name                String
+  archetype           String
+  assertiveness       Int                        @default(50)
+  cooperativeness     Int                        @default(50)
+  economicFocus       Int                        @default(50)
+  culturalOpenness    Int                        @default(50)
+  riskTolerance       Int                        @default(50)
+  ideologicalRigidity Int                        @default(50)
+  militarism          Int                        @default(50)
+  isolationism        Int                        @default(50)
+  traitDescriptions   String
+  culturalProfile     String
+  toneMatrix          String
+  responsePatterns    String
+  scenarioResponses   String
+  eventModifiers      String
+  historicalBasis     String?
+  historicalContext   String?
+  isActive            Boolean                    @default(true)
+  usageCount          Int                        @default(0)
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  npcAssignments      NPCPersonalityAssignment[]
+
+  @@index([archetype])
+  @@index([usageCount])
+  @@index([isActive])
+  @@index([assertiveness])
+  @@index([cooperativeness])
+}
+
+model NPCPersonalityAssignment {
+  id            String         @id @default(cuid())
+  personalityId String
+  countryId     String         @unique
+  assignedAt    DateTime       @default(now())
+  assignedBy    String?
+  reason        String?
+  driftHistory  String?
+  lastDriftAt   DateTime?
+  country       Country        @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  personality   NPCPersonality @relation(fields: [personalityId], references: [id], onDelete: Cascade)
+
+  @@index([personalityId])
+  @@index([countryId])
+  @@index([assignedAt])
+}
+
+model CrisisEvent {
+  id                String   @id @default(cuid())
+  type              String
+  title             String
+  severity          Priority
+  affectedCountries String?
+  casualties        Int?
+  economicImpact    Float?
+  responseStatus    String?
+  timestamp         DateTime
+  description       String?
+  location          String?
+  category          Category @default(governance)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model ForeignPolicyAction {
+  id                   String   @id @default(cuid())
+  initiatorId          String
+  targetId             String
+  actionType           String   // "embargo", "sanction", "free_trade", "military_alliance", "blockade"
+  category             String   @default("trade") // "trade", "military", "diplomatic"
+  severity             String   @default("moderate") // "light", "moderate", "severe"
+  status               String   @default("proposed") // "proposed", "active", "expired", "lifted"
+  effectiveIxTime      Float?
+  expiryIxTime         Float?
+  initiatorGdpImpact   Float    @default(0)
+  targetGdpImpact      Float    @default(0)
+  initiatorTradeImpact Float    @default(0)
+  targetTradeImpact    Float    @default(0)
+  relationshipDelta    Int      @default(0)
+  reason               String?
+  description          String?
+  supportingCountries  String?  // JSON array of country IDs
+  opposingCountries    String?  // JSON array of country IDs
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  initiator            Country  @relation("ForeignPolicyInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  target               Country  @relation("ForeignPolicyTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([initiatorId])
+  @@index([targetId])
+  @@index([actionType])
+  @@index([status])
+  @@index([effectiveIxTime])
+}
+
+model BilateralTrade {
+  id               String   @id @default(cuid())
+  country1Id       String
+  country2Id       String
+  tradeVolume      Float    @default(0)
+  exportsFrom1     Float    @default(0)
+  exportsFrom2     Float    @default(0)
+  tradeBalance1    Float    @default(0) // Surplus/deficit for country1
+  commodities      String?  // JSON: top traded goods
+  lastCalculatedIx Float    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  country1         Country  @relation("BilateralTradeCountry1", fields: [country1Id], references: [id], onDelete: Cascade)
+  country2         Country  @relation("BilateralTradeCountry2", fields: [country2Id], references: [id], onDelete: Cascade)
+
+  @@unique([country1Id, country2Id])
+  @@index([country1Id])
+  @@index([country2Id])
+}
+
+model Alliance {
+  id              String             @id @default(cuid())
+  name            String             @unique
+  shortName       String?
+  type            String             @default("military") // "military", "economic", "political", "regional"
+  description     String?
+  charter         String?
+  logo            String?
+  color           String             @default("#6366f1")
+  visibility      String             @default("public") // "public", "private", "secret"
+  joinPolicy      String             @default("invite") // "open", "invite", "application"
+  memberCount     Int                @default(0)
+  totalGdp        Float              @default(0)
+  totalPopulation Float              @default(0)
+  foundedIxTime   Float              @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  members         AllianceMember[]
+  actions         AllianceAction[]
+  documents       AllianceDocument[]
+
+  @@index([type])
+  @@index([visibility])
+}
+
+model AllianceMember {
+  id                String   @id @default(cuid())
+  allianceId        String
+  countryId         String
+  role              String   @default("member") // "founder", "leader", "member", "observer"
+  votingPower       Float    @default(1.0)
+  contributionLevel String   @default("standard") // "minimal", "standard", "high"
+  isActive          Boolean  @default(true)
+  joinedAt          DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  alliance          Alliance @relation(fields: [allianceId], references: [id], onDelete: Cascade)
+  country           Country  @relation("CountryAllianceMemberships", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([allianceId, countryId])
+  @@index([allianceId])
+  @@index([countryId])
+  @@index([role])
+}
+
+model AllianceAction {
+  id            String         @id @default(cuid())
+  allianceId    String
+  actionType    String         // "collective_sanction", "shared_defense", "trade_bloc", "joint_statement"
+  targetId      String?        // Target country ID (if applicable)
+  title         String
+  description   String?
+  status        String         @default("proposed") // "proposed", "approved", "active", "rejected", "expired"
+  proposedBy    String         // Country ID that proposed
+  requiredVotes Int            @default(1)
+  votesFor      Int            @default(0)
+  votesAgainst  Int            @default(0)
+  effectiveIxTime Float?
+  expiryIxTime    Float?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  alliance      Alliance       @relation(fields: [allianceId], references: [id], onDelete: Cascade)
+  votes         AllianceVote[]
+
+  @@index([allianceId])
+  @@index([status])
+  @@index([actionType])
+}
+
+model AllianceVote {
+  id          String         @id @default(cuid())
+  allianceId  String
+  actionId    String
+  countryId   String
+  vote        String         // "for", "against", "abstain"
+  votingPower Float          @default(1.0)
+  comment     String?
+  votedAt     DateTime       @default(now())
+
+  action      AllianceAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  @@unique([actionId, countryId])
+  @@index([allianceId])
+  @@index([actionId])
+  @@index([countryId])
+}
+
+model AllianceDocument {
+  id              String   @id @default(cuid())
+  allianceId      String
+  title           String
+  content         String
+  documentType    String   @default("memo") // "memo", "policy", "strategy", "communique"
+  authorCountryId String
+  version         Int      @default(1)
+  isPublic        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  alliance        Alliance @relation(fields: [allianceId], references: [id], onDelete: Cascade)
+
+  @@index([allianceId])
+  @@index([documentType])
+  @@index([isPublic])
+}

@@ -1,0 +1,804 @@
+// IxStates — Government, Policy & Political models
+
+model GovernmentComponent {
+  id                 String             @id @default(cuid())
+  countryId          String
+  componentType      ComponentType
+  effectivenessScore Float              @default(50)
+  implementationDate DateTime           @default(now())
+  implementationCost Float              @default(0)
+  maintenanceCost    Float              @default(0)
+  requiredCapacity   Float              @default(50)
+  isActive           Boolean            @default(true)
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  synergies          ComponentSynergy[] @relation("PrimaryComponent")
+  conflictsWith      ComponentSynergy[] @relation("SecondaryComponent")
+  country            Country            @relation("CountryComponents", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([componentType])
+  @@index([isActive])
+  @@index([countryId, componentType, isActive])  // Compound index for active components by type
+}
+
+model ComponentSynergy {
+  id                   String              @id @default(cuid())
+  countryId            String
+  primaryComponentId   String
+  secondaryComponentId String
+  synergyType          String
+  effectMultiplier     Float               @default(1.0)
+  description          String?
+  discoveredAt         DateTime            @default(now())
+  createdAt            DateTime            @default(now())
+  country              Country             @relation("CountrySynergies", fields: [countryId], references: [id], onDelete: Cascade)
+  primaryComponent     GovernmentComponent @relation("PrimaryComponent", fields: [primaryComponentId], references: [id], onDelete: Cascade)
+  secondaryComponent   GovernmentComponent @relation("SecondaryComponent", fields: [secondaryComponentId], references: [id], onDelete: Cascade)
+
+  @@unique([primaryComponentId, secondaryComponentId])
+  @@index([countryId])
+  @@index([synergyType])
+}
+
+model GovernmentStructure {
+  id                      String                 @id @default(cuid())
+  countryId               String                 @unique
+  governmentName          String
+  governmentType          String
+  headOfState             String?
+  headOfGovernment        String?
+  legislatureName         String?
+  executiveName           String?
+  judicialName            String?
+  totalBudget             Float                  @default(0)
+  fiscalYear              String                 @default("Calendar Year")
+  budgetCurrency          String                 @default("USD")
+  politicalStability      Float?                 @default(0.5)
+  politicalPolarization   Float?                 @default(50)
+  democracyIndex          Float?                 @default(50)
+  electionCycle           Int?                   @default(4)
+  governmentEffectiveness Float?                 @default(50)
+  ruleOfLaw               Float?                 @default(50)
+  corruptionIndex         Float?                 @default(50)
+  politicalMetricsUpdated DateTime?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+  budgetAllocations       BudgetAllocation[]
+  departments             GovernmentDepartment[]
+  officials               GovernmentOfficial[]
+  country                 Country                @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  revenueSources          RevenueSource[]
+
+  @@index([countryId])
+}
+
+model GovernmentDepartment {
+  id                    String                 @id @default(cuid())
+  governmentStructureId String
+  name                  String
+  shortName             String?
+  category              String
+  description           String?
+  minister              String?
+  ministerTitle         String                 @default("Minister")
+  headquarters          String?
+  established           String?
+  employeeCount         Int?
+  icon                  String?
+  color                 String                 @default("#6366f1")
+  priority              Int                    @default(50)
+  isActive              Boolean                @default(true)
+  parentDepartmentId    String?
+  organizationalLevel   String                 @default("Ministry")
+  functions             String?
+  kpis                  String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  budgetAllocations     BudgetAllocation[]
+  governmentStructure   GovernmentStructure    @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  parentDepartment      GovernmentDepartment?  @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id])
+  subDepartments        GovernmentDepartment[] @relation("DepartmentHierarchy")
+  officials             GovernmentOfficial[]
+  subBudgets            SubBudgetCategory[]
+
+  @@index([governmentStructureId])
+  @@index([category])
+  @@index([parentDepartmentId])
+  @@index([isActive])
+}
+
+model BudgetAllocation {
+  id                    String               @id @default(cuid())
+  governmentStructureId String
+  departmentId          String
+  budgetYear            Int
+  allocatedAmount       Float
+  allocatedPercent      Float
+  spentAmount           Float                @default(0)
+  encumberedAmount      Float                @default(0)
+  availableAmount       Float                @default(0)
+  budgetStatus          String               @default("Allocated")
+  lastReviewed          DateTime             @default(now())
+  notes                 String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  department            GovernmentDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  governmentStructure   GovernmentStructure  @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, budgetYear])
+  @@index([governmentStructureId])
+  @@index([departmentId])
+  @@index([budgetYear])
+}
+
+model SubBudgetCategory {
+  id           String               @id @default(cuid())
+  departmentId String
+  name         String
+  description  String?
+  amount       Float
+  percent      Float
+  budgetType   String
+  isRecurring  Boolean              @default(true)
+  priority     String               @default("Medium")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  department   GovernmentDepartment @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([departmentId])
+  @@index([budgetType])
+}
+
+model RevenueSource {
+  id                    String              @id @default(cuid())
+  governmentStructureId String
+  name                  String
+  category              String
+  description           String?
+  rate                  Float?
+  revenueAmount         Float               @default(0)
+  revenuePercent        Float               @default(0)
+  isActive              Boolean             @default(true)
+  collectionMethod      String?
+  administeredBy        String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  governmentStructure   GovernmentStructure @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+
+  @@index([governmentStructureId])
+  @@index([category])
+  @@index([isActive])
+}
+
+model GovernmentOfficial {
+  id                    String                @id @default(cuid())
+  governmentStructureId String?
+  departmentId          String?
+  name                  String
+  title                 String
+  role                  String
+  email                 String?
+  phone                 String?
+  bio                   String?
+  photoUrl              String?
+  appointedDate         DateTime              @default(now())
+  termEndDate           DateTime?
+  isActive              Boolean               @default(true)
+  priority              Int                   @default(50)
+  responsibilities      String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  department            GovernmentDepartment? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  governmentStructure   GovernmentStructure?  @relation(fields: [governmentStructureId], references: [id], onDelete: Cascade)
+  meetingAttendances    MeetingAttendance[]
+
+  @@index([governmentStructureId])
+  @@index([departmentId])
+  @@index([isActive])
+  @@index([role])
+}
+
+model CabinetMeeting {
+  id              String              @id @default(cuid())
+  countryId       String
+  userId          String
+  title           String
+  description     String?
+  scheduledDate   DateTime
+  scheduledIxTime Float?
+  duration        Int                 @default(60)
+  status          String              @default("scheduled")
+  notes           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  completedAt     DateTime?
+  actionItems     MeetingActionItem[]
+  agendaItems     MeetingAgendaItem[]
+  attendances     MeetingAttendance[]
+  decisions       MeetingDecision[]
+
+  @@index([countryId])
+  @@index([userId])
+  @@index([scheduledDate])
+  @@index([scheduledIxTime])
+  @@index([status])
+}
+
+model MeetingAttendance {
+  id               String              @id @default(cuid())
+  meetingId        String
+  officialId       String?
+  attendeeName     String
+  attendeeRole     String?
+  attendanceStatus String              @default("invited")
+  notes            String?
+  createdAt        DateTime            @default(now())
+  meeting          CabinetMeeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  official         GovernmentOfficial? @relation(fields: [officialId], references: [id])
+
+  @@index([meetingId])
+  @@index([officialId])
+  @@index([attendanceStatus])
+}
+
+model MeetingAgendaItem {
+  id             String         @id @default(cuid())
+  meetingId      String
+  title          String
+  description    String?
+  order          Int            @default(0)
+  duration       Int?
+  category       String?
+  tags           String?
+  relatedMetrics String?
+  presenter      String?
+  status         String         @default("pending")
+  outcome        String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  meeting        CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@index([category])
+  @@index([status])
+}
+
+model MeetingDecision {
+  id                   String         @id @default(cuid())
+  meetingId            String
+  agendaItemId         String?
+  title                String
+  description          String
+  decisionType         String
+  impact               String?
+  votingResult         String?
+  implementationStatus String         @default("pending")
+  relatedPolicyId      String?
+  relatedMetrics       String?
+  estimatedEffect      String?
+  decisionMakers       String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  meeting              CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@index([agendaItemId])
+  @@index([decisionType])
+  @@index([implementationStatus])
+}
+
+model MeetingActionItem {
+  id              String         @id @default(cuid())
+  meetingId       String
+  agendaItemId    String?
+  decisionId      String?
+  title           String
+  description     String?
+  assignedTo      String?
+  dueDate         DateTime?
+  dueIxTime       Float?
+  priority        String         @default("normal")
+  status          String         @default("pending")
+  category        String?
+  tags            String?
+  completionNotes String?
+  completedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  meeting         CabinetMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+  @@index([agendaItemId])
+  @@index([decisionId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+}
+
+model Policy {
+  id                          String            @id @default(cuid())
+  countryId                   String
+  userId                      String
+  name                        String
+  description                 String
+  policyType                  String
+  category                    String
+  status                      String            @default("draft")
+  priority                    String            @default("medium")
+  objectives                  String?
+  targetMetrics               String?
+  implementationCost          Float             @default(0)
+  maintenanceCost             Float             @default(0)
+  estimatedBenefit            String?
+  recommendedFor              String?
+  requiredTier                String?
+  requiredComponents          String?
+  conflictsWith               String?
+  prerequisitePolicies        String?
+  proposedDate                DateTime          @default(now())
+  effectiveDate               DateTime?
+  expiryDate                  DateTime?
+  proposedIxTime              Float?
+  effectiveIxTime             Float?
+  gdpEffect                   Float             @default(0)
+  employmentEffect            Float             @default(0)
+  inflationEffect             Float             @default(0)
+  taxRevenueEffect            Float             @default(0)
+  customEffects               String?
+  relatedGovernmentComponents String?
+  relatedEconomicComponents   String?
+  relatedTaxComponents        String?
+  calculatedEffects           String?
+  lastRecalculated            DateTime?
+  approvalRequired            Boolean           @default(false)
+  approvedBy                  String?
+  approvedDate                DateTime?
+  reviewNotes                 String?
+  createdAt                   DateTime          @default(now())
+  updatedAt                   DateTime          @updatedAt
+  country                     Country?          @relation("CountryPolicies", fields: [countryId], references: [id], onDelete: Cascade)
+  policyEffectLog             PolicyEffectLog[]
+
+  @@index([countryId])
+  @@index([userId])
+  @@index([policyType])
+  @@index([status])
+  @@index([effectiveDate])
+  @@index([effectiveIxTime])
+}
+
+model PolicyEffectLog {
+  id            String   @id @default(cuid())
+  policyId      String
+  appliedAt     DateTime @default(now())
+  appliedIxTime Float
+  effectType    String
+  metricsBefore String?
+  metricsAfter  String?
+  actualEffect  String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  policy        Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@index([policyId])
+  @@index([appliedIxTime])
+  @@index([effectType])
+}
+
+model ActivitySchedule {
+  id               String   @id @default(cuid())
+  countryId        String
+  userId           String
+  activityType     String
+  title            String
+  description      String?
+  scheduledDate    DateTime
+  scheduledIxTime  Float?
+  duration         Int?
+  status           String   @default("scheduled")
+  priority         String   @default("normal")
+  category         String?
+  tags             String?
+  relatedIds       String?
+  recurrence       String?
+  reminderSettings String?
+  completionNotes  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([userId])
+  @@index([scheduledDate])
+  @@index([scheduledIxTime])
+  @@index([activityType])
+  @@index([status])
+  @@index([priority])
+}
+
+model QuickActionTemplate {
+  id                String   @id @default(cuid())
+  name              String
+  actionType        String
+  category          String
+  description       String
+  defaultSettings   String?
+  requiredFields    String?
+  optionalFields    String?
+  estimatedDuration String?
+  recommendedFor    String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([actionType])
+  @@index([category])
+  @@index([isActive])
+}
+
+model GovernmentComponentData {
+  id                 String        @id @default(cuid())
+  componentType      ComponentType @unique
+  name               String
+  description        String
+  category           String
+  effectiveness      Int
+  implementationCost Int
+  maintenanceCost    Int
+  requiredCapacity   Int
+  synergies          String
+  conflicts          String
+  prerequisites      String
+  metadata           String
+  color              String
+  iconName           String
+  isActive           Boolean       @default(true)
+  usageCount         Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([category, isActive])
+  @@index([componentType])
+  @@index([usageCount])
+}
+
+model GovernmentSynergy {
+  id           String        @id @default(cuid())
+  component1   ComponentType
+  component2   ComponentType
+  synergyType  String
+  bonusPercent Int
+  description  String
+  isActive     Boolean       @default(true)
+
+  @@unique([component1, component2])
+  @@index([component1])
+  @@index([component2])
+  @@index([synergyType])
+}
+
+model PoliticalParty {
+  id             String              @id @default(cuid())
+  countryId      String
+  name           String
+  shortName      String?
+  ideology       String              // "far_left", "left", "center_left", "center", "center_right", "right", "far_right"
+  color          String              @default("#6366f1") // Hex color for hemicycle visualization
+  logo           String?
+  leaderName     String?
+  platform       String?             // JSON: { economy: "liberal", social: "progressive", foreign: "internationalist" }
+  baseSupport    Float               @default(25) // 0-100 starting support percentage
+  currentSupport Float               @default(25) // 0-100 current polling
+  isActive       Boolean             @default(true)
+  foundedDate    DateTime            @default(now())
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  country        Country             @relation("CountryPoliticalParties", fields: [countryId], references: [id], onDelete: Cascade)
+  candidates     ElectionCandidate[]
+  seats          LegislativeSeat[]
+
+  @@index([countryId])
+  @@index([ideology])
+  @@index([isActive])
+}
+
+model Legislature {
+  id              String            @id @default(cuid())
+  countryId       String            @unique
+  name            String            // "National Assembly", "Parliament", "Congress"
+  chamberType     String            @default("unicameral") // "unicameral", "bicameral"
+  totalSeats      Int               @default(100)
+  electoralSystem String            @default("proportional") // "proportional", "fptp", "mixed"
+  termLength      Int               @default(4) // years
+  electionCycle   String            @default("fixed") // "fixed", "variable"
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  country         Country           @relation("CountryLegislature", fields: [countryId], references: [id], onDelete: Cascade)
+  elections       Election[]
+  seats           LegislativeSeat[]
+
+  @@index([countryId])
+}
+
+model Election {
+  id              String              @id @default(cuid())
+  countryId       String
+  legislatureId   String
+  electionType    String              @default("general") // "general", "special", "referendum"
+  name            String
+  scheduledIxTime Float               // IxTime timestamp for scheduling
+  status          String              @default("upcoming") // "upcoming", "campaigning", "voting", "completed", "cancelled"
+  turnout         Float?              // 0-100 voter turnout percentage
+  totalVotes      Int                 @default(0)
+  marginOfVictory Float?              // Percentage difference between top 2
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  country         Country             @relation("CountryElections", fields: [countryId], references: [id], onDelete: Cascade)
+  legislature     Legislature         @relation(fields: [legislatureId], references: [id], onDelete: Cascade)
+  candidates      ElectionCandidate[]
+  results         ElectionResult[]
+
+  @@index([countryId])
+  @@index([legislatureId])
+  @@index([status])
+  @@index([scheduledIxTime])
+}
+
+model ElectionCandidate {
+  id               String           @id @default(cuid())
+  electionId       String
+  partyId          String
+  candidateName    String
+  region           String?
+  platform         String?          // Campaign manifesto text
+  charisma         Float            @default(50) // 0-100 affects vote swing
+  politicalCapital Float            @default(50) // 0-100 influence
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  election         Election         @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  party            PoliticalParty   @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  results          ElectionResult[]
+
+  @@index([electionId])
+  @@index([partyId])
+}
+
+model ElectionResult {
+  id             String            @id @default(cuid())
+  electionId     String
+  candidateId    String
+  region         String?
+  votesReceived  Int               @default(0)
+  votePercentage Float             @default(0)
+  seatsWon       Int               @default(0)
+  createdAt      DateTime          @default(now())
+
+  election       Election          @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  candidate      ElectionCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([electionId, candidateId])
+  @@index([electionId])
+  @@index([candidateId])
+}
+
+model LegislativeSeat {
+  id            String          @id @default(cuid())
+  legislatureId String
+  partyId       String?
+  seatNumber    Int             // 1-N for hemicycle ordering
+  region        String?
+  incumbentName String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  legislature   Legislature     @relation(fields: [legislatureId], references: [id], onDelete: Cascade)
+  party         PoliticalParty? @relation(fields: [partyId], references: [id])
+
+  @@unique([legislatureId, seatNumber])
+  @@index([legislatureId])
+  @@index([partyId])
+  @@index([isActive])
+}
+
+model NationalIssueTemplate {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  title               String
+  description         String
+  longDescription     String?
+  domain              String   // economic | political | social | military | diplomatic | infrastructure | environmental
+  category            Category @default(governance)
+  tags                String?  // JSON array
+  baseSeverity        Priority @default(medium)
+  baseUrgency         Int      @default(50) // 0-100
+  deadlineDaysBase    Int?     // IxTime days until auto-resolve, null = no deadline
+  triggerConditions   String   // JSON expression tree
+  cooldownDays        Int      @default(30)
+  maxActivePerCountry Int      @default(1)
+  responseOptions     String   // JSON array of ResponseOptionTemplate
+  followUpTemplateIds String?  // JSON array of template slugs
+  followUpConditions  String?  // JSON conditions for follow-up generation
+  variableDefinitions String?  // JSON variable metadata
+  personalityModifiers String? // JSON: { trait: multiplier }
+  isActive            Boolean  @default(true)
+  isGlobal            Boolean  @default(false)
+  authorId            String?
+  version             Int      @default(1)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  instances           NationalIssue[]
+
+  @@index([domain])
+  @@index([isActive])
+  @@map("national_issue_templates")
+}
+
+model NationalIssue {
+  id                  String    @id @default(cuid())
+  templateId          String
+  countryId           String
+  title               String
+  description         String
+  longDescription     String?
+  domain              String
+  category            Category  @default(governance)
+  severity            Priority  @default(medium)
+  urgency             Int       @default(50)
+  deadlineIxTime      Float?
+  status              String    @default("pending") // pending | viewed | responded | auto_resolved | expired | dismissed
+  chosenOptionId      String?
+  chosenOptionLabel   String?
+  respondedAt         DateTime?
+  respondedIxTime     Float?
+  autoResolveOptionId String?
+  autoResolveLabel    String?
+  responseOptions     String    // JSON array of rendered ResponseOption
+  appliedConsequences String?   // JSON of what happened
+  consequenceLog      String?   // Human-readable summary
+  contextSnapshot     String?   // JSON country data at creation
+  triggerReason       String?
+  aiConfidence        Float?    @default(75)
+  parentIssueId       String?
+  childIssueIds       String?   // JSON array
+  createdIxTime       Float
+  ixCreditsAwarded    Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  template            NationalIssueTemplate @relation(fields: [templateId], references: [id])
+  country             Country               @relation("CountryNationalIssues", fields: [countryId], references: [id], onDelete: Cascade)
+  consequences        NationalIssueConsequence[]
+
+  @@index([countryId, status])
+  @@index([countryId, deadlineIxTime])
+  @@index([templateId])
+  @@index([status])
+  @@index([createdIxTime])
+  @@index([parentIssueId])
+  @@map("national_issues")
+}
+
+model NationalIssueConsequence {
+  id              String   @id @default(cuid())
+  issueId         String
+  targetModel     String   // Country | GovernmentStructure | InternalStabilityMetrics
+  targetField     String
+  previousValue   String?  // JSON-encoded
+  newValue        String?  // JSON-encoded
+  deltaValue      Float?
+  description     String
+  effectType      String   @default("immediate") // immediate | gradual
+  effectDuration  Int?     // IxTime days for gradual effects
+  appliedAt       DateTime @default(now())
+  appliedIxTime   Float
+
+  issue           NationalIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([targetModel, targetField])
+  @@map("national_issue_consequences")
+}
+
+model IssueGenerationLog {
+  id                    String   @id @default(cuid())
+  countryId             String?
+  templatesEvaluated    Int      @default(0)
+  templatesPassed       Int      @default(0)
+  issuesGenerated       Int      @default(0)
+  issuesSkippedCooldown Int      @default(0)
+  issuesSkippedMaxActive Int     @default(0)
+  executionTimeMs       Int      @default(0)
+  ixTimeAtEvaluation    Float
+  errors                String?  // JSON array
+  createdAt             DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([countryId])
+  @@map("issue_generation_logs")
+}
+
+model WorldEvent {
+  id                String              @id @default(cuid())
+  name              String
+  type              String              // economic_crisis, trade_war, natural_disaster, political_upheaval, tech_revolution, peace_era, pandemic, custom
+  description       String?
+  severity          Float               // 0-1 scale
+  duration          Float?              // in IxTime years
+  startsAt          DateTime            // IxTime timestamp when event begins
+  endsAt            DateTime?           // IxTime timestamp when event ends
+  isActive          Boolean             @default(true)
+  chainId           String?
+  chainOrder        Int?
+  parameters        Json?               // type-specific configuration
+  createdBy         String              // admin clerk user id
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  storytellerEffects StorytellerEffect[]
+  chain             EventChain?         @relation(fields: [chainId], references: [id], onDelete: SetNull)
+  affectedCountries WorldEventCountry[]
+
+  @@index([type])
+  @@index([isActive])
+  @@index([startsAt])
+  @@index([chainId])
+  @@map("world_events")
+}
+
+model EventChain {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean      @default(true)
+  createdBy   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  events      WorldEvent[]
+
+  @@map("event_chains")
+}
+
+model WorldEventCountry {
+  id        String     @id @default(cuid())
+  eventId   String
+  countryId String
+  impact    Json?      // projected impact snapshot { gdpChange, populationChange, stabilityChange }
+  event     WorldEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  country   Country    @relation("CountryWorldEvents", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, countryId])
+  @@index([eventId])
+  @@index([countryId])
+  @@map("world_event_countries")
+}
+
+model StorytellerEffect {
+  id              String      @id @default(cuid())
+  countryId       String?
+  ixTimeTimestamp  DateTime
+  inputType       String
+  value           Float
+  description     String?
+  duration        Int?
+  isActive        Boolean     @default(true)
+  createdBy       String?
+  worldEventId    String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  country         Country?    @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  worldEvent      WorldEvent? @relation(fields: [worldEventId], references: [id], onDelete: SetNull)
+
+  @@index([countryId])
+  @@index([ixTimeTimestamp])
+  @@index([isActive])
+  @@index([inputType])
+  @@index([worldEventId])
+  @@map("DmInputs")
+}

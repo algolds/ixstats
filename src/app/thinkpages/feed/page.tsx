@@ -1,10 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { ThinkPagesRouter } from "~/components/thinkpages/ThinkPagesRouter";
-
-export default function ThinkPagesFeedPage() {
-  usePageTitle({ title: "Feed - ThinkPages" });
-
-  return <ThinkPagesRouter />;
+export default function ThinkPagesFeedRedirect() {
+  redirect("/dashboard");
 }

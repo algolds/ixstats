@@ -1,5 +1,5 @@
 #!/bin/bash
-# IxStats Health Check Script
+# IxStates Health Check Script
 # Quick validation of system health and dependencies
 
 set -e
@@ -21,7 +21,7 @@ WARNINGS=0
 
 print_header() {
     echo -e "\n${BLUE}═══════════════════════════════════════════════════════════════${NC}"
-    echo -e "${BLUE}  IxStats Health Check${NC}"
+    echo -e "${BLUE}  IxStates Health Check${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}\n"
 }
 
@@ -76,7 +76,7 @@ check_environment() {
     if [ -f "$PROJECT_DIR/package.json" ]; then
         check_pass "Project directory valid"
     else
-        check_fail "Not in IxStats project directory"
+        check_fail "Not in IxStates project directory"
     fi
 }
 
@@ -253,7 +253,7 @@ check_services() {
     fi
 
     # Check if production server is running
-    if curl -s -o /dev/null -w "%{http_code}" "http://localhost:3550/projects/ixstats" 2>/dev/null | grep -q "200\|302\|307"; then
+    if curl -s -o /dev/null -w "%{http_code}" "http://localhost:3550" 2>/dev/null | grep -q "200\|302\|307"; then
         check_pass "Production server running on port 3550"
     else
         check_warn "Production server not running on port 3550"

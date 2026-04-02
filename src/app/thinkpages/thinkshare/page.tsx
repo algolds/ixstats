@@ -1,10 +1,5 @@
-"use client";
-
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { ThinkPagesRouter } from "~/components/thinkpages/ThinkPagesRouter";
+import { redirect } from "next/navigation";
 
 export default function ThinkSharePage() {
-  usePageTitle({ title: "ThinkShare - ThinkPages" });
-
-  return <ThinkPagesRouter />;
+  redirect("/messages");
 }

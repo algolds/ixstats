@@ -109,6 +109,7 @@ const NAV_COLORS: Record<string, { shine: string[]; glow: string; hover: string 
   "Admin":        { shine: ["#ef4444", "#dc2626", "#f87171"], glow: "text-red-400",     hover: "group-hover:text-red-400" },
   "Cards":        { shine: ["#06b6d4", "#0891b2", "#22d3ee"], glow: "text-cyan-400",    hover: "group-hover:text-cyan-400" },
   "Help":         { shine: ["#fb923c", "#f97316", "#fdba74"], glow: "text-orange-400",  hover: "group-hover:text-orange-400" },
+  "Forum":        { shine: ["#f97316", "#ea580c", "#fb923c"], glow: "text-orange-400",  hover: "group-hover:text-orange-400" },
 };
 const DEFAULT_NAV = { shine: ["#3b82f6", "#8b5cf6", "#06b6d4"], glow: "text-blue-400", hover: "group-hover:text-blue-400" };
 
@@ -168,7 +169,7 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
           },
           {
             name: "ThinkPages Social",
-            href: "/thinkpages",
+            href: "/dashboard",
             icon: Rss,
             description: "Social feed and diplomatic communications.",
           },
@@ -260,21 +261,21 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
         items: [
           {
             name: "Social Feed",
-            href: "/thinkpages",
+            href: "/dashboard",
             icon: Rss,
             description: "Public declarations, diplomatic announcements, and intelligence broadcasts.",
           },
           {
             name: "ThinkTanks",
-            href: "/thinkpages/thinktanks",
+            href: "/messages/groups",
             icon: Users,
             description: "Coordinate intelligence networks and diplomatic working groups.",
           },
           {
-            name: "ThinkShare Messaging",
-            href: "/thinkpages/thinkshare",
+            name: "Messages",
+            href: "/messages",
             icon: MessageSquare,
-            description: "Secure diplomatic channels and encrypted government communications.",
+            description: "Unified messaging across all systems — DMs, diplomatic, wiki, forum.",
           },
         ],
       },
@@ -283,13 +284,13 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
         items: [
           {
             name: "Account Manager",
-            href: "/thinkpages?panel=account-manager",
+            href: "/dashboard?panel=account-manager",
             icon: Settings,
             description: "Manage diplomatic personas and official government accounts.",
           },
           {
             name: "Workspace Settings",
-            href: "/thinkpages?panel=settings",
+            href: "/dashboard?panel=settings",
             icon: SlidersHorizontal,
             description: "Configure intelligence alerts and diplomatic communication preferences.",
           },
@@ -427,7 +428,7 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
           },
           {
             name: "ThinkPages",
-            href: "/thinkpages",
+            href: "/dashboard",
             icon: Rss,
             description: "Diplomatic communications and intelligence sharing.",
           },
@@ -441,11 +442,52 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       },
     ],
   },
+  forum: {
+    title: "Forum",
+    description: "Community discussions and collaboration.",
+    groups: [
+      {
+        title: "Browse",
+        items: [
+          {
+            name: "All Forums",
+            href: "/forum",
+            icon: MessageSquare,
+            description: "Browse forum categories and discussions.",
+          },
+          {
+            name: "New Posts",
+            href: "/forum?sort=new",
+            icon: Rss,
+            description: "Latest activity across all forums.",
+          },
+        ],
+      },
+      {
+        title: "Community",
+        items: [
+          {
+            name: "Messages",
+            href: "/messages",
+            icon: Send,
+            description: "Unified messaging — DMs, diplomatic, wiki, forum.",
+          },
+          {
+            name: "Search",
+            href: "/forum/search",
+            icon: Compass,
+            description: "Search threads and posts.",
+          },
+        ],
+      },
+    ],
+  },
 };
 
 function getContextKey(path: string): keyof typeof contextualMenus {
   if (path.startsWith("/mycountry")) return "mycountry";
   if (path.startsWith("/thinkpages")) return "thinkpages";
+  if (path.startsWith("/forum")) return "forum";
   if (path.startsWith("/admin")) return "admin";
   if (path.startsWith("/builder")) return "builder";
   if (path.startsWith("/countries")) return "explore";
@@ -458,6 +500,7 @@ function getContextKey(path: string): keyof typeof contextualMenus {
 export function Navigation() {
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "/");
+  const isWikiPage = normalizedPathname.startsWith("/w/") || normalizedPathname.startsWith("/w/special/") || normalizedPathname.startsWith("/blurbs");
   const { user, isLoaded } = useUser();
   const [scrollY, setScrollY] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
@@ -607,7 +650,7 @@ export function Navigation() {
     },
     {
       name: "ThinkPages",
-      href: "/thinkpages",
+      href: "/dashboard",
       icon: Rss,
       requiresAuth: false,
       description: "Diplomatic communications and intelligence sharing platform",
@@ -615,23 +658,30 @@ export function Navigation() {
       dropdownItems: [
         {
           name: "Social Feed",
-          href: "/thinkpages",
+          href: "/dashboard",
           icon: MessageSquare,
           description: "Public declarations and diplomatic announcements",
         },
         {
           name: "ThinkTanks",
-          href: "/thinkpages/thinktanks",
+          href: "/messages/groups",
           icon: Users,
           description: "Intelligence networks and diplomatic working groups",
         },
         {
-          name: "ThinkShare Messages",
-          href: "/thinkpages/thinkshare",
+          name: "Messages",
+          href: "/messages",
           icon: Send,
-          description: "Secure diplomatic channels and encrypted communications",
+          description: "Unified messaging — DMs, diplomatic, wiki, forum",
         },
       ],
+    },
+    {
+      name: "Forum",
+      href: "/forum",
+      icon: MessageSquare,
+      requiresAuth: false,
+      description: "Community discussion forums",
     },
     {
       name: "Admin",
@@ -754,6 +804,8 @@ export function Navigation() {
         if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
         if (item.name === "Labs" && !navigationSettings.showLabsTab) return false;
         if (item.name === "Maps" && !navigationSettings.showMapsTab) return false;
+        if (item.name === "Forum" && !navigationSettings.showForumTab) return false;
+        if (item.name === "Help" && !navigationSettings.showHelpTab) return false;
       }
 
       return true;
@@ -787,8 +839,14 @@ export function Navigation() {
 
   return (
     <>
-      <nav className="navigation-bar from-background/95 via-secondary/95 to-background/95 border-border relative z-[10005] border-b bg-gradient-to-r shadow-2xl backdrop-blur-xl">
-        <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
+      <nav className={`navigation-bar relative z-[10005] border-b backdrop-blur-xl transition-colors duration-300 ${
+        isWikiPage
+          ? "bg-[var(--wikios-bg)] border-[var(--wikios-border)] shadow-lg"
+          : "from-background/95 via-secondary/95 to-background/95 border-border bg-gradient-to-r shadow-2xl"
+      }`}>
+        {!isWikiPage && (
+          <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
+        )}
 
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="relative hidden h-16 w-full items-center justify-between lg:flex">

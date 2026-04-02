@@ -47,7 +47,7 @@ function CategoryNode({ title, fullTitle, depth }: CategoryNodeProps) {
         )}
         <Link
           href={withBasePath(
-            `/wiki-special/categories/${encodeURIComponent(title.replace(/ /g, "_"))}`
+            `/w/special/categories/${encodeURIComponent(title.replace(/ /g, "_"))}`
           )}
           className="wikios-tree-label"
           onClick={(e) => e.stopPropagation()}

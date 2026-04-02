@@ -1,10 +1,7 @@
 "use client";
 
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { ThinkPagesRouter } from "~/components/thinkpages/ThinkPagesRouter";
+import { ThinkPagesAccountHub } from "~/components/thinkpages/ThinkPagesAccountHub";
 
 export default function ThinkPagesMainPage() {
-  usePageTitle({ title: "ThinkPages" });
-
-  return <ThinkPagesRouter />;
+  return <ThinkPagesAccountHub />;
 }

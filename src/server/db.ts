@@ -142,6 +142,8 @@ const createPrismaClient = () => {
     "WikiTemplate",
     // Lorewards — synced from Discord bot + cross-validation
     "LorewardEntry", "LorewardUserStats", "LorewardCrossValidation",
+    // Blurbs — Topic Tuesday prompts & user responses
+    "BlurbPrompt", "BlurbResponse",
   ]);
 
   // In read-only mode, extend the client to block write operations

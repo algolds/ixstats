@@ -1,0 +1,223 @@
+// IxStates — WikiOS & Lorewards models
+
+model WikiCache {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  type        String
+  data        String
+  countryName String?
+  metadata    String?
+  hitCount    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime
+
+  @@index([key])
+  @@index([type, countryName])
+  @@index([expiresAt])
+  @@index([countryName])
+}
+
+/// Wiki template registry — cached TemplateData schemas from MediaWiki.
+model WikiTemplate {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  description   String?
+  category      String?  // navigation, infobox, formatting, maintenance, etc.
+  templateData  Json?    // TemplateData JSON schema (params, description, format)
+  paramCount    Int      @default(0)
+  usageCount    Int      @default(0)
+  lastSynced    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([name])
+  @@map("wiki_templates")
+}
+
+/// A named, color-coded collection of saved wiki pages (Lore Stash).
+model LoreStash {
+  id        String          @id @default(cuid())
+  userId    String
+  name      String          @default("My Stash")
+  color     String          @default("#3b82f6")
+  icon      String?
+  isDefault Boolean         @default(false)
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  items     LoreStashItem[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("lore_stashes")
+}
+
+/// A single saved page within a Lore Stash, with optional notes.
+model LoreStashItem {
+  id          String              @id @default(cuid())
+  stashId     String
+  pageTitle   String
+  pageSlug    String
+  contentType String              @default("wiki") // "wiki" | "forum_thread" | "forum_post"
+  contentId   Int?                                  // XenForo thread_id or post_id for forum items
+  note        String?
+  order       Int                 @default(0)
+  savedAt     DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  stash       LoreStash           @relation(fields: [stashId], references: [id], onDelete: Cascade)
+  annotations LoreStashAnnotation[]
+
+  @@unique([stashId, pageTitle])
+  @@index([stashId])
+  @@index([pageTitle])
+  @@index([contentType])
+  @@map("lore_stash_items")
+}
+
+/// A text-selection annotation on a saved wiki page.
+model LoreStashAnnotation {
+  id             String        @id @default(cuid())
+  itemId         String
+  anchorSelector String
+  anchorOffset   Int
+  focusSelector  String
+  focusOffset    Int
+  selectedText   String
+  comment        String?
+  color          String        @default("#fbbf24")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  item           LoreStashItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@map("lore_stash_annotations")
+}
+
+/// A single Loreward result (daily, weekly, or monthly).
+model LorewardEntry {
+  id            String   @id @default(cuid())
+  date          String
+  type          String   // daily, weekly, monthly
+  dateStart     String?  // Range start for weekly/monthly (e.g. "2026-03-23")
+  dateEnd       String?  // Range end for weekly/monthly (e.g. "2026-03-29")
+  winnerUser    String?
+  winnerPage    String?
+  winnerScore   Int?
+  winnerBytes   Int?
+  runnerUpUser  String?
+  runnerUpPage  String?
+  runnerUpScore Int?
+  runnerUpBytes Int?
+  editCount     Int      @default(0)
+  status        String   @default("approved")
+  month         String?
+  year          Int?
+  metadata      String?
+  syncedAt      DateTime @default(now())
+
+  @@unique([date, type])
+  @@index([winnerUser])
+  @@index([runnerUpUser])
+  @@index([type])
+  @@index([date])
+  @@map("loreward_entries")
+}
+
+/// Aggregated Loreward stats per wiki user.
+model LorewardUserStats {
+  id             String   @id @default(cuid())
+  username       String   @unique
+  dailyWins      Int      @default(0)
+  dailyRunnerUps Int      @default(0)
+  weeklyWins     Int      @default(0)
+  monthlyWins    Int      @default(0)
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  totalScore     Int      @default(0)
+  totalBytes     Int      @default(0)
+  lastWinDate    String?
+  updatedAt      DateTime @updatedAt
+
+  @@index([totalScore])
+  @@index([dailyWins])
+  @@map("loreward_user_stats")
+}
+
+/// Cross-validation: bot picks vs WikiOS scoring engine picks.
+model LorewardCrossValidation {
+  id                String   @id @default(cuid())
+  date              String   @unique
+  botWinner         String?
+  botWinnerPage     String?
+  botWinnerScore    Int?
+  botRunnerUp       String?
+  wikiosWinner      String?
+  wikiosWinnerPage  String?
+  wikiosWinnerScore Int?
+  wikiosRunnerUp    String?
+  winnersAgree      Boolean  @default(false)
+  runnerUpsAgree    Boolean  @default(false)
+  wikiosCandidates  String?
+  botCandidates     String?
+  manualWinner      String?
+  createdAt         DateTime @default(now())
+
+  @@map("loreward_cross_validation")
+}
+
+enum BlurbPromptStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+model BlurbPrompt {
+  id           String             @id @default(cuid())
+  title        String
+  question     String             @db.VarChar(500)
+  slug         String             @unique
+  status       BlurbPromptStatus  @default(DRAFT)
+  scheduledFor DateTime?
+  publishedAt  DateTime?
+  closedAt     DateTime?
+  isRecurring  Boolean            @default(false)
+  featured     Boolean            @default(false)
+  createdBy    String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  responses    BlurbResponse[]
+
+  @@index([status])
+  @@index([slug])
+  @@index([publishedAt])
+  @@index([featured])
+  @@map("blurb_prompts")
+}
+
+model BlurbResponse {
+  id                String       @id @default(cuid())
+  promptId          String
+  userId            String
+  countryId         String
+  content           String       @db.VarChar(1000)
+  linkedArticles    Json?
+  featured          Boolean      @default(false)
+  thinkpagesPostId  String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  prompt  BlurbPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  user    User        @relation("UserBlurbResponses", fields: [userId], references: [id])
+  country Country     @relation("CountryBlurbResponses", fields: [countryId], references: [id])
+
+  @@unique([promptId, userId])
+  @@index([promptId])
+  @@index([userId])
+  @@index([countryId])
+  @@index([featured])
+  @@map("blurb_responses")
+}

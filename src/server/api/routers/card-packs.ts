@@ -14,7 +14,7 @@ import {
   getAvailablePacks,
   getUserPacks,
 } from "~/lib/card-pack-service";
-import { syncUserToForum } from "~/lib/xenforo-user-sync";
+import { syncUserToForum } from "~/modules/forum";
 import { notificationAPI } from "~/lib/notification-api";
 
 /**

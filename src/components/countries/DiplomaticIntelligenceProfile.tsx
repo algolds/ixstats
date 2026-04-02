@@ -129,7 +129,7 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
     onSuccess: (newConversation: any) => {
       notify.success(`Opening secure channel with ${country.name}...`);
       // Redirect to ThinkShare and auto-select the messages view
-      const url = new URL("/thinkpages", window.location.origin);
+      const url = new URL("/dashboard", window.location.origin);
       url.searchParams.set("view", "messages");
       url.searchParams.set("conversation", newConversation.id);
       window.location.href = url.toString();

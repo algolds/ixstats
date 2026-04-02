@@ -15,7 +15,7 @@
  *   ?layer=climate         — show a specific layer on load
  *   ?embed=true            — chromeless mode for iframe embedding (no nav, no controls)
  *
- * When NEXT_PUBLIC_IXWORLD_STANDALONE=true (maps.ixwiki.com), renders full-screen.
+ * When running on maps.ixwiki.com, renders full-screen (standalone mode).
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -23,11 +23,11 @@ import { useSearchParams } from "next/navigation";
 import { MapContainer } from "~/components/maps/core/MapContainer";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
+import { isStandaloneClient } from "~/lib/standalone-detection";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { MapLayerType } from "~/lib/map-config";
 
-const isStandalone =
-  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
+const isStandalone = isStandaloneClient();
 
 export const dynamic = "force-dynamic";
 

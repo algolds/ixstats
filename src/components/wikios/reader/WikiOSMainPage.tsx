@@ -5,11 +5,20 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
+import { BookOpen, ExternalLink } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 
 // ---------------------------------------------------------------------------
 // Category definitions (matches live IxWiki navigation grid)
@@ -31,10 +40,151 @@ const CATEGORIES = [
 ] as const;
 
 // ---------------------------------------------------------------------------
+// Blurb Modal
+// ---------------------------------------------------------------------------
+
+function BlurbPromptModal({
+  open,
+  onClose,
+  prompt,
+}: {
+  open: boolean;
+  onClose: () => void;
+  prompt: {
+    id: string;
+    title: string;
+    question: string;
+    slug: string;
+    _count: { responses: number };
+  };
+}) {
+  const {
+    data: responsesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = api.blurbs.getResponsesForPrompt.useInfiniteQuery(
+    { promptId: prompt.id, limit: 8, featuredFirst: true },
+    {
+      enabled: open,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    }
+  );
+
+  const responses = responsesData?.pages.flatMap((p) => p.responses) ?? [];
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col gap-0 p-0">
+        {/* Header */}
+        <DialogHeader className="border-b border-white/10 px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <BookOpen className="h-4 w-4 text-purple-400 shrink-0" />
+                <DialogTitle className="text-base font-semibold">
+                  {prompt.title}
+                </DialogTitle>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {prompt.question}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="secondary" className="text-[10px]">
+                  {prompt._count.responses}{" "}
+                  {prompt._count.responses === 1 ? "response" : "responses"}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Responses */}
+        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2.5">
+          {responses.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground py-6">
+              No responses yet. Be the first!
+            </p>
+          )}
+
+          {responses.map((r) => (
+            <div
+              key={r.id}
+              className={`rounded-lg border p-3 ${
+                r.featured
+                  ? "border-amber-500/30 bg-amber-500/5"
+                  : "border-white/10"
+              }`}
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                {r.country?.flag && (
+                  <img
+                    src={r.country.flag}
+                    alt=""
+                    className="w-5 h-3.5 rounded-sm object-cover"
+                  />
+                )}
+                <span className="text-xs font-medium text-[var(--wikios-text)]">
+                  {r.country?.name ?? "Unknown"}
+                </span>
+                {r.featured && (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] text-amber-400 border-amber-500/30 px-1 py-0"
+                  >
+                    Featured
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-[var(--wikios-text-muted)] whitespace-pre-wrap line-clamp-4">
+                {r.content}
+              </p>
+            </div>
+          ))}
+
+          {hasNextPage && (
+            <div className="text-center py-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? "Loading..." : "Load more"}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-white/10 px-5 py-3 flex items-center justify-between">
+          <Link
+            href={withBasePath(`/blurbs/${prompt.slug}`)}
+            className="inline-flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Open full prompt
+          </Link>
+          <Link
+            href={withBasePath("/blurbs")}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            All prompts →
+          </Link>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Page Component
 // ---------------------------------------------------------------------------
 
 export function WikiOSMainPage() {
+
+  const [blurbModalOpen, setBlurbModalOpen] = useState(false);
 
   // Fetch Main_Page HTML to extract the featured article from it
   const { data: mainPageData } = api.wikios.getArticleHtml.useQuery(
@@ -60,10 +210,10 @@ export function WikiOSMainPage() {
     { staleTime: 5 * 60 * 1000 }
   );
 
-  // Fetch blurb count
-  const { data: blurbCount } = api.blurbs.getBlurbCount.useQuery(
+  // Fetch random active blurb prompt (cycles on each page load)
+  const { data: activePrompt } = api.blurbs.getRandomActivePrompt.useQuery(
     undefined,
-    { staleTime: 5 * 60 * 1000 }
+    { staleTime: 60 * 1000, refetchOnWindowFocus: false }
   );
 
   // Extract featured article from Main_Page contentHtml (server-transformed)
@@ -84,7 +234,6 @@ export function WikiOSMainPage() {
       {/* Hero Header */}
       <header className="wikios-main-hero">
         <div className="wikios-main-hero-inner">
-          <div className="wikios-main-pretitle">Welcome to</div>
           <h1 className="wikios-main-title">
             <img
               src="https://ixwiki.com/data/IxWiki_4.svg"
@@ -94,7 +243,7 @@ export function WikiOSMainPage() {
             IXWIKI
           </h1>
           <p className="wikios-main-tagline">
-            The <em>bespoke</em> two-decades old geopolitical worldbuilding community & fictional encyclopedia
+            A collaborative worldbuilding community &amp; fictional encyclopedia
           </p>
         </div>
       </header>
@@ -119,12 +268,29 @@ export function WikiOSMainPage() {
           </span>
           <span className="wikios-main-stat-label">Users</span>
         </div>
-        <div className="wikios-main-stat">
-          <span className="wikios-main-stat-value wikios-main-stat-ixtime">
-            {blurbCount?.toLocaleString() ?? "..."}
-          </span>
-          <span className="wikios-main-stat-label">Blurbs</span>
-        </div>
+        {activePrompt ? (
+          <button
+            onClick={() => setBlurbModalOpen(true)}
+            className="wikios-main-stat wikios-main-stat-blurb"
+          >
+            <span className="wikios-main-stat-badge">
+              Blurbs{activePrompt.featured && <span className="wikios-main-stat-featured">Featured</span>}
+            </span>
+            <span className="wikios-main-stat-value wikios-main-stat-ixtime">
+              {activePrompt.title}
+            </span>
+            <span className="wikios-main-stat-label wikios-main-stat-question">
+              {activePrompt.question}
+            </span>
+          </button>
+        ) : (
+          <div className="wikios-main-stat">
+            <span className="wikios-main-stat-value wikios-main-stat-ixtime">
+              0
+            </span>
+            <span className="wikios-main-stat-label">Blurbs</span>
+          </div>
+        )}
       </section>
 
       <div className="wikios-main-content">
@@ -148,7 +314,7 @@ export function WikiOSMainPage() {
               {CATEGORIES.map((cat) => (
                 <Link
                   key={cat.name}
-                  href={withBasePath(`/wiki-special/categories/${encodeURIComponent(cat.name)}`)}
+                  href={withBasePath(`/w/special/categories/${encodeURIComponent(cat.name)}`)}
                   className="wikios-main-cat-pill"
                   style={{ "--cat-color": cat.color } as React.CSSProperties}
                 >
@@ -162,7 +328,7 @@ export function WikiOSMainPage() {
           <section className="wikios-main-section">
             <h2 className="wikios-main-section-title">
               Recent activity
-              <Link href={withBasePath("/wiki-special/recent-changes")} className="wikios-main-section-more">
+              <Link href={withBasePath("/w/special/recent-changes")} className="wikios-main-section-more">
                 View all →
               </Link>
             </h2>
@@ -183,7 +349,7 @@ export function WikiOSMainPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-zinc-500 text-sm">Loading recent changes...</p>
+              <p className="text-[var(--wikios-text-dim)] text-sm">Loading recent changes...</p>
             )}
           </section>
         </div>
@@ -225,6 +391,15 @@ export function WikiOSMainPage() {
         )}
 
       </div>
+
+      {/* Blurb Prompt Modal */}
+      {activePrompt && (
+        <BlurbPromptModal
+          open={blurbModalOpen}
+          onClose={() => setBlurbModalOpen(false)}
+          prompt={activePrompt}
+        />
+      )}
     </div>
   );
 }

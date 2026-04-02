@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 /**
- * Environment Verification Script for IxStats v1.2
+ * Environment Verification Script for IxStates v1.2
  * Validates all required environment variables and external connections
  */
 
@@ -243,8 +243,8 @@ function validateBasePath(): ValidationResult {
   const nodeEnv = process.env.NODE_ENV;
 
   if (nodeEnv === "production") {
-    if (!basePath || basePath === "/") {
-      result.warnings.push("BASE_PATH not set or set to root (expected: /projects/ixstats)");
+    if (basePath && basePath !== "/" && basePath !== "") {
+      result.warnings.push(`BASE_PATH is set to "${basePath}" (expected: empty string for ixstates.ixwiki.com subdomain deployment)`);
     }
 
     if (basePath !== publicBasePath) {
@@ -450,7 +450,7 @@ async function main() {
 
   print("╔═══════════════════════════════════════════════════════╗", "cyan");
   print("║                                                       ║", "cyan");
-  print("║     IxStats v1.2 - Environment Verification          ║", "cyan");
+  print("║     IxStates v1.2 - Environment Verification          ║", "cyan");
   print("║                                                       ║", "cyan");
   print("╚═══════════════════════════════════════════════════════╝", "cyan");
 

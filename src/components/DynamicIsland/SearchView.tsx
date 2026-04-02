@@ -65,7 +65,7 @@ export function SearchView({
 
       {/* Search Filter Tabs */}
       <div className="mb-4 flex items-center gap-2">
-        {(["all", "countries", "commands", "features"] as SearchFilter[]).map((filter) => (
+        {(["all", "wiki", "countries", "commands", "features"] as SearchFilter[]).map((filter) => (
           <Button
             key={filter}
             size="sm"
@@ -245,9 +245,11 @@ export function SearchView({
                             className={`h-5 px-2 py-0.5 text-[10px] ${
                               result.type === "country"
                                 ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                : result.type === "command"
-                                  ? "bg-green-500/10 text-green-600 dark:text-green-400"
-                                  : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                                : result.type === "wiki"
+                                  ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
+                                  : result.type === "command"
+                                    ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                                    : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
                             }`}
                           >
                             {result.type}
@@ -292,6 +294,11 @@ export function SearchView({
                               {formatCurrency(result.metadata.gdpPerCapita || 0)}
                             </span>
                           </div>
+                        </div>
+                      )}
+                      {result.type === "wiki" && (
+                        <div className="text-sm">
+                          {result.description || "Wiki article. Click to read."}
                         </div>
                       )}
                       {result.type === "command" && (

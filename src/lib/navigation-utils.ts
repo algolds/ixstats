@@ -1,25 +1,19 @@
 /**
- * Navigation utilities for environment-aware routing
- * Handles basePath differences between development and production
+ * Navigation utilities for environment-aware routing.
+ * With the subdomain migration (ixstates.ixwiki.com), basePath is always "".
  */
 
 /**
- * Get the correct URL for navigation based on environment
- * Development: uses root path (no basePath)
- * Production: uses /projects/ixstats basePath
+ * Get the correct URL for navigation based on environment.
+ * basePath is now always "" — this function normalizes the path.
  */
 export function getNavUrl(path: string): string {
-  // Ensure path starts with /
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  // In production, basePath is handled by Next.js automatically
-  // In development, no basePath is used
   return normalizedPath;
 }
 
 /**
- * Navigate to a path using window.location (for non-Next.js navigation)
- * This handles the basePath automatically based on environment
+ * Navigate to a path using window.location (for non-Next.js navigation).
  */
 export function navigateToPath(path: string): void {
   const url = getNavUrl(path);
@@ -27,24 +21,20 @@ export function navigateToPath(path: string): void {
 }
 
 /**
- * Get the base URL for external links or API calls
- * This includes the basePath for production environments
+ * Get the base URL for external links or API calls.
  */
 export function getBaseUrl(): string {
-  const basePath = process.env.NODE_ENV === "production" ? "/projects/ixstats" : "";
-
   if (typeof window !== "undefined") {
-    return window.location.origin + basePath;
+    return window.location.origin;
   }
 
-  // Server-side URL building
   if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}${basePath}`;
+    return `https://${process.env.VERCEL_URL}`;
   }
 
   if (process.env.NODE_ENV === "production") {
-    return `https://ixwiki.com${basePath}`;
+    return "https://ixstates.ixwiki.com";
   }
 
-  return `http://localhost:${process.env.PORT ?? 3000}${basePath}`;
+  return `http://localhost:${process.env.PORT ?? 3000}`;
 }

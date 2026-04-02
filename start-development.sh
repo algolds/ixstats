@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# IxStats Development Server Startup Script
+# IxStates Development Server Startup Script
 # Comprehensive development server with environment validation
 
 set -e
 
-echo "🔧 Starting IxStats Development Server"
+echo "🔧 Starting IxStates Development Server"
 echo "======================================"
 
 # Navigate to project directory

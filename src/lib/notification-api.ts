@@ -553,7 +553,7 @@ class NotificationAPIService {
       category: "social",
       type: "info",
       priority: "low",
-      href: `/thinkpages/thinktanks?group=${params.groupId}`,
+      href: `/messages/groups?group=${params.groupId}`,
       source: "thinktank",
       actionable: true,
       metadata: {

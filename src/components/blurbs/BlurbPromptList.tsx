@@ -22,13 +22,13 @@ export function BlurbPromptList() {
   return (
     <div className="space-y-4">
       {isLoading && (
-        <div className="text-center py-12 text-zinc-500 text-sm">
+        <div className="text-center py-12 text-[var(--wikios-text-dim)] text-sm">
           Loading prompts...
         </div>
       )}
 
       {!isLoading && prompts.length === 0 && (
-        <div className="text-center py-12 text-zinc-500 text-sm">
+        <div className="text-center py-12 text-[var(--wikios-text-dim)] text-sm">
           No active prompts yet. Check back soon!
         </div>
       )}
@@ -42,10 +42,10 @@ export function BlurbPromptList() {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-zinc-100 text-sm sm:text-base truncate">
+                <h3 className="font-semibold text-[var(--wikios-text)] text-sm sm:text-base truncate">
                   {prompt.title}
                 </h3>
-                <p className="text-zinc-400 text-sm mt-1 line-clamp-2">
+                <p className="text-[var(--wikios-text-muted)] text-sm mt-1 line-clamp-2">
                   {prompt.question}
                 </p>
               </div>
@@ -55,7 +55,7 @@ export function BlurbPromptList() {
               </Badge>
             </div>
             {prompt.publishedAt && (
-              <p className="text-zinc-600 text-xs mt-2">
+              <p className="text-[var(--wikios-text-dim)] text-xs mt-2">
                 {new Date(prompt.publishedAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",

@@ -16,7 +16,7 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus, type Prisma } from "@prisma/client";
-import { syncUserToForum } from "~/lib/xenforo-user-sync";
+import { syncUserToForum } from "~/modules/forum";
 import { notificationAPI } from "~/lib/notification-api";
 
 /**

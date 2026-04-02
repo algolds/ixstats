@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 /**
- * Post-Deployment Validation Script for IxStats v1.2
+ * Post-Deployment Validation Script for IxStates v1.2
  * Comprehensive validation of deployment success
  */
 
@@ -661,14 +661,14 @@ async function main() {
 
   print("╔═══════════════════════════════════════════════════════╗", "cyan");
   print("║                                                       ║", "cyan");
-  print("║   IxStats v1.2 - Post-Deployment Validation          ║", "cyan");
+  print("║   IxStates v1.2 - Post-Deployment Validation          ║", "cyan");
   print("║                                                       ║", "cyan");
   print("╚═══════════════════════════════════════════════════════╝", "cyan");
 
   const validationStart = Date.now();
   const nodeEnv = process.env.NODE_ENV || "development";
   const port = process.env.PORT || "3550";
-  const basePath = process.env.BASE_PATH || "/projects/ixstats";
+  const basePath = process.env.BASE_PATH || "";
   const baseUrl = `http://localhost:${port}${basePath}`;
 
   print(`\nEnvironment: ${nodeEnv}`, "blue");

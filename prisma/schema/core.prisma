@@ -1,0 +1,774 @@
+// IxStates — Core platform models (Country, User, system infrastructure)
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+model Country {
+  id                          String                    @id @default(cuid())
+  name                        String                    @unique
+  slug                        String?                   @unique
+  isDemo                      Boolean                   @default(false)
+  continent                   String?
+  region                      String?
+  governmentType              String?
+  religion                    String?
+  leader                      String?
+  flag                        String?
+  coatOfArms                  String?
+  landArea                    Float?
+  areaSqMi                    Float?
+  baselinePopulation          Float
+  baselineGdpPerCapita        Float
+  maxGdpGrowthRate            Float
+  adjustedGdpGrowth           Float
+  populationGrowthRate        Float
+  currentPopulation           Float
+  currentGdpPerCapita         Float
+  currentTotalGdp             Float
+  populationDensity           Float?
+  gdpDensity                  Float?
+  economicTier                String
+  populationTier              String
+  projected2040Population     Float                     @default(0)
+  projected2040Gdp            Float                     @default(0)
+  projected2040GdpPerCapita   Float                     @default(0)
+  actualGdpGrowth             Float                     @default(0)
+  nominalGDP                  Float?
+  realGDPGrowthRate           Float?
+  inflationRate               Float?
+  currencyExchangeRate        Float?
+  laborForceParticipationRate Float?
+  employmentRate              Float?
+  unemploymentRate            Float?
+  totalWorkforce              Float?
+  averageWorkweekHours        Float?
+  minimumWage                 Float?
+  averageAnnualIncome         Float?
+  taxRevenueGDPPercent        Float?
+  governmentRevenueTotal      Float?
+  taxRevenuePerCapita         Float?
+  governmentBudgetGDPPercent  Float?
+  budgetDeficitSurplus        Float?
+  internalDebtGDPPercent      Float?
+  externalDebtGDPPercent      Float?
+  totalDebtGDPRatio           Float?
+  debtPerCapita               Float?
+  interestRates               Float?
+  debtServiceCosts            Float?
+  povertyRate                 Float?
+  incomeInequalityGini        Float?
+  socialMobilityIndex         Float?
+  totalGovernmentSpending     Float?
+  spendingGDPPercent          Float?
+  spendingPerCapita           Float?
+  lifeExpectancy              Float?
+  urbanPopulationPercent      Float?
+  ruralPopulationPercent      Float?
+  literacyRate                Float?
+  localGrowthFactor           Float                     @default(1.0)
+  economicVitality            Float                     @default(0)
+  populationWellbeing         Float                     @default(0)
+  diplomaticStanding          Float                     @default(0)
+  governmentalEfficiency      Float                     @default(0)
+  overallNationalHealth       Float                     @default(0)
+  activeAlliances             Int                       @default(0)
+  activeTreaties              Int                       @default(0)
+  diplomaticReputation        String                    @default("Neutral")
+  publicApproval              Float                     @default(50)
+  governmentEfficiency        String                    @default("Moderate")
+  politicalStability          String                    @default("Stable")
+  tradeBalance                Float                     @default(0)
+  infrastructureRating        Float                     @default(50)
+  geometry                    Json?
+  centroid                    Json?
+  boundingBox                 Json?
+  coastlineKm                 Float?
+  wikiPageTitle               String?
+  wikiSource                  String?                   @default("ixwiki")
+  wikiLastSynced              DateTime?
+  usesAtomicGovernment        Boolean                   @default(true)
+  hideDiplomaticOps           Boolean                   @default(false)
+  hideStratcommIntel          Boolean                   @default(false)
+  lastCalculated              DateTime                  @default(now())
+  baselineDate                DateTime                  @default(now())
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+  geom_postgis                Unsupported("geometry")?
+  atomicEconomicImpacts       AtomicEconomicImpact[]    @relation("AtomicEconomicImpacts")
+  atomicEffectiveness         AtomicEffectiveness?
+  borderSecurity              BorderSecurity?           @relation("CountryBorderSecurity")
+  budgetScenarios             BudgetScenario[]          @relation("CountryBudgetScenarios")
+  componentChanges            ComponentChangeLog[]      @relation("CountryComponentChanges")
+  componentSynergies          ComponentSynergy[]        @relation("CountrySynergies")
+  archetypeMatches            CountryArchetypeMatch[]   @relation("CountryArchetypes")
+  followers                   CountryFollow[]           @relation("CountryFollowing")
+  following                   CountryFollow[]           @relation("CountryFollowers")
+  moodMetrics                 CountryMoodMetric[]
+  crossBuilderSynergies       CrossBuilderSynergy[]     @relation("CountryCrossBuilderSynergies")
+  defenseBudget               DefenseBudget?            @relation("CountryDefenseBudget")
+  demographics                Demographics?
+  storytellerEffects          StorytellerEffect[]
+  economicComponents          EconomicComponent[]       @relation("CountryEconomicComponents")
+  economicModel               EconomicModel?
+  economicProfile             EconomicProfile?
+  embassiesGuest              Embassy[]                 @relation("GuestCountryEmbassies")
+  embassiesHosting            Embassy[]                 @relation("HostCountryEmbassies")
+  fiscalPolicies              FiscalPolicy[]            @relation("CountryFiscalPolicies")
+  policies                    Policy[]                  @relation("CountryPolicies")
+  fiscalSystem                FiscalSystem?
+  governmentBudget            GovernmentBudget?
+  governmentComponents        GovernmentComponent[]     @relation("CountryComponents")
+  governmentStructure         GovernmentStructure?
+  historicalData              HistoricalDataPoint[]
+  incomeDistribution          IncomeDistribution?
+  stabilityMetrics            InternalStabilityMetrics? @relation("CountryStabilityMetrics")
+  laborMarket                 LaborMarket?
+  militaryBranches            MilitaryBranch[]          @relation("CountryMilitaryBranches")
+  personalityAssignment       NPCPersonalityAssignment?
+  nationalIdentity            NationalIdentity?
+  securityAssessment          SecurityAssessment?       @relation("CountrySecurityAssessment")
+  securityEvents              SecurityEvent[]           @relation("CountrySecurityEvents")
+  securityThreats             SecurityThreat[]          @relation("CountrySecurityThreats")
+  taxComponents               TaxComponent[]            @relation("CountryTaxComponents")
+  taxSystem                   TaxSystem?
+  thinkpagesAccounts          ThinkpagesAccount[]       @relation("ThinkpagesAccounts")
+  users                       User[]                    @relation("UserCountry")
+  borderHistory               BorderHistory[]
+  cardBackgroundImages        CardBackgroundImage[]     @relation("CountryCardImages")
+  cities                      City[]                    @relation("CountryCities")
+  pointsOfInterest            PointOfInterest[]         @relation("CountryPOIs")
+  storyPins                   StoryPin[]                @relation("CountryStoryPins")
+  storylines                  Storyline[]               @relation("CountryStorylines")
+  mapLabels                   MapLabel[]                @relation("CountryMapLabels")
+  subdivisions                Subdivision[]             @relation("CountrySubdivisions")
+  territories                 Territory[]
+  politicalParties            PoliticalParty[]             @relation("CountryPoliticalParties")
+  legislature                 Legislature?                 @relation("CountryLegislature")
+  elections                   Election[]                   @relation("CountryElections")
+  foreignPolicyInitiated      ForeignPolicyAction[]        @relation("ForeignPolicyInitiator")
+  foreignPolicyTargeted       ForeignPolicyAction[]        @relation("ForeignPolicyTarget")
+  bilateralTradeAsCountry1    BilateralTrade[]             @relation("BilateralTradeCountry1")
+  bilateralTradeAsCountry2    BilateralTrade[]             @relation("BilateralTradeCountry2")
+  allianceMemberships         AllianceMember[]             @relation("CountryAllianceMemberships")
+  militaryOperations          MilitaryOperation[]          @relation("CountryMilitaryOperations")
+  militaryOpsTargeted         MilitaryOperation[]          @relation("MilitaryOperationTarget")
+  conflictsInitiated          MilitaryConflict[]           @relation("ConflictInitiator")
+  conflictsDefended           MilitaryConflict[]           @relation("ConflictDefender")
+  nationalIssues              NationalIssue[]              @relation("CountryNationalIssues")
+  worldEventCountries         WorldEventCountry[]          @relation("CountryWorldEvents")
+  mapFeatures                 MapLayer[]                   @relation("CountryMapFeatures")
+  mapEditRequests             MapEditRequest[]             @relation("CountryMapEdits")
+  sovereignOf                 CountrySovereignty[]         @relation("SovereignOf")
+  subjectOf                   CountrySovereignty[]         @relation("SubjectOf")
+  geoProfile                  CountryGeoProfile?           @relation("CountryGeoProfile")
+  geographicResources         GeographicResource[]         @relation("CountryGeographicResources")
+  transportRoutes             TransportRoute[]              @relation("CountryTransportRoutes")
+  transportHubs               TransportHub[]                @relation("CountryTransportHubs")
+  blurbResponses              BlurbResponse[]               @relation("CountryBlurbResponses")
+  realm                       Realm?                        @relation("RealmCountries", fields: [realmId], references: [id])
+  realmId                     String                        @default("default")
+
+  @@index([name])
+  @@index([economicTier])
+  @@index([populationTier])
+  @@index([continent])
+  @@index([region])
+  @@index([realmId])
+  @@index([geom_postgis], map: "idx_country_geom", type: Gist)
+  @@index([name], map: "idx_country_name")
+}
+
+// Card background images for MyCountry UI customization
+model CardBackgroundImage {
+  id         String   @id @default(cuid())
+  countryId  String
+  cardType   String   // "national_identity", "head_of_state", "economic", "demographics", "labor", "government"
+  imageUrl   String
+  isCustom   Boolean  @default(false)
+  presetKey  String?  // For fallback presets like "government_building"
+  uploadedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  country    Country  @relation("CountryCardImages", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([countryId, cardType])
+  @@index([countryId])
+  @@map("card_background_images")
+}
+
+model User {
+  id                  String                   @id @default(cuid())
+  clerkUserId         String                   @unique
+  countryId           String?
+  roleId              String?
+  membershipTier      String                   @default("basic")
+  isActive            Boolean                  @default(true)
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  totalCards          Int                      @default(0)
+  deckValue           Float                    @default(0)
+  collectorLevel      Int                      @default(1)
+  collectorXp         Int                      @default(0)
+  AuctionBid          AuctionBid[]
+  CardAuction         CardAuction[]
+  CardCollection      CardCollection[]
+  CardOwnership       CardOwnership[]
+  scheduledChanges    ScheduledChange[]        @relation("UserScheduledChanges")
+  country             Country?                 @relation("UserCountry", fields: [countryId], references: [id])
+  role                Role?                    @relation(fields: [roleId], references: [id])
+  archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
+  vault               MyVault?
+  nsVerifications     NSVerification[]
+  craftingHistory     CraftingHistory[]
+  tradesInitiated     TradeOffer[]             @relation("TradeInitiator")
+  tradesReceived      TradeOffer[]             @relation("TradeRecipient")
+  forumUserId         Int?
+  forumUsername        String?
+  lastForumSync       DateTime?
+  // IxnayID: Wiki account linking
+  wikiUserId          Int?
+  wikiUsername         String?
+  lastWikiSync        DateTime?
+  // IxnayID: Discord account linking
+  discordUserId       String?                  @unique
+  discordUsername      String?
+  lastDiscordSync     DateTime?
+  blurbResponses      BlurbResponse[]          @relation("UserBlurbResponses")
+
+  @@index([clerkUserId])
+  @@index([countryId])
+  @@index([roleId])
+  @@index([membershipTier])
+  @@index([isActive])
+  @@index([forumUserId])
+  @@index([forumUsername])
+  @@index([wikiUserId])
+  @@index([discordUserId])
+}
+
+model ScheduledChange {
+  id           String    @id @default(cuid())
+  userId       String
+  countryId    String
+  changeType   String
+  impactLevel  String
+  fieldPath    String
+  oldValue     String
+  newValue     String
+  scheduledFor DateTime
+  appliedAt    DateTime?
+  status       String    @default("pending")
+  warnings     String?
+  metadata     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation("UserScheduledChanges", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([countryId])
+  @@index([status])
+  @@index([scheduledFor])
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  targetType String
+  targetId   String
+  targetName String
+  changes    String
+  adminId    String
+  adminName  String
+  timestamp  DateTime @default(now())
+  ipAddress  String?
+
+  @@index([action])
+  @@index([targetId])
+  @@index([adminId])
+  @@index([timestamp])
+}
+
+model CalculationLog {
+  id                 String   @id @default(cuid())
+  timestamp          DateTime @default(now())
+  ixTimeTimestamp    DateTime
+  countriesUpdated   Int
+  executionTimeMs    Int
+  globalGrowthFactor Float
+  notes              String?
+  createdAt          DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([ixTimeTimestamp])
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  userId         String?
+  countryId      String?
+  title          String
+  description    String?
+  message        String?
+  read           Boolean  @default(false)
+  dismissed      Boolean  @default(false)
+  href           String?
+  type           String?
+  category       String?
+  priority       String   @default("medium")
+  severity       String   @default("informational")
+  source         String?
+  actionable     Boolean  @default(false)
+  metadata       String?
+  relevanceScore Float?
+  deliveryMethod String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId, read, dismissed])
+  @@index([countryId, read, dismissed])
+  @@index([createdAt])
+  @@index([priority, read])
+}
+
+model UserPreferences {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  emailNotifications Boolean  @default(true)
+  pushNotifications  Boolean  @default(true)
+  economicAlerts     Boolean  @default(true)
+  crisisAlerts       Boolean  @default(true)
+  diplomaticAlerts   Boolean  @default(false)
+  systemAlerts       Boolean  @default(true)
+  notificationLevel  String   @default("medium")
+  wikiAutoScan       Boolean  @default(true)
+  wikiSourcePriority String   @default("ixwiki")
+  wikiDisplayMode    String   @default("inline")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Role {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  displayName     String
+  description     String?
+  level           Int              @unique
+  isSystem        Boolean          @default(false)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+  users           User[]
+
+  @@index([name])
+  @@index([level])
+  @@index([isActive])
+  @@index([isSystem])
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  displayName     String
+  description     String?
+  category        String
+  isSystem        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+
+  @@index([name])
+  @@index([category])
+  @@index([isSystem])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserSession {
+  id           String   @id @default(cuid())
+  clerkUserId  String
+  roleId       String?
+  permissions  String?
+  ipAddress    String?
+  userAgent    String?
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([clerkUserId])
+  @@index([roleId])
+  @@index([lastActivity])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  target     String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  success    Boolean  @default(true)
+  error      String?
+  timestamp  DateTime @default(now())
+  entityType String?
+
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+  @@index([success])
+}
+
+model AdminFavorite {
+  id          String   @id @default(cuid())
+  userId      String
+  panelType   String
+  panelId     String
+  displayName String
+  description String?
+  iconName    String?
+  url         String
+  category    String   @default("general")
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, panelId])
+  @@index([userId])
+  @@index([category])
+  @@index([isActive])
+  @@index([order])
+}
+
+model CountryFollow {
+  id                String   @id @default(cuid())
+  followerCountryId String
+  followedCountryId String
+  createdAt         DateTime @default(now())
+  followedCountry   Country  @relation("CountryFollowing", fields: [followedCountryId], references: [id], onDelete: Cascade)
+  followerCountry   Country  @relation("CountryFollowers", fields: [followerCountryId], references: [id], onDelete: Cascade)
+
+  @@unique([followerCountryId, followedCountryId])
+  @@index([followerCountryId])
+  @@index([followedCountryId])
+}
+
+model SystemLog {
+  id           String   @id @default(cuid())
+  level        String
+  category     String
+  message      String
+  userId       String?
+  countryId    String?
+  requestId    String?
+  traceId      String?
+  duration     Int?
+  errorName    String?
+  errorMessage String?
+  errorStack   String?
+  metadata     String?
+  component    String?
+  ip           String?
+  userAgent    String?
+  endpoint     String?
+  method       String?
+  timestamp    DateTime @default(now())
+
+  @@index([level])
+  @@index([category])
+  @@index([userId])
+  @@index([countryId])
+  @@index([timestamp])
+  @@index([requestId])
+}
+
+model LogRetentionPolicy {
+  id               String   @id @default(cuid())
+  logLevel         String   @unique
+  retentionDays    Int
+  archiveAfterDays Int?
+  deleteAfterDays  Int
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ExternalApiCache {
+  id               String   @id @default(cuid())
+  key              String   @unique
+  service          String
+  type             String
+  identifier       String
+  data             String
+  countryName      String?
+  metadata         String?
+  contentHash      String?
+  hitCount         Int      @default(0)
+  lastValidatedAt  DateTime @default(now())
+  validationStatus String   @default("valid")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  expiresAt        DateTime
+
+  @@index([key])
+  @@index([service, type, identifier])
+  @@index([service, countryName])
+  @@index([expiresAt])
+  @@index([lastValidatedAt])
+  @@index([validationStatus])
+  @@index([countryName])
+}
+
+model EncryptionKey {
+  id                         String    @id
+  countryId                  String
+  publicKey                  String
+  encryptedPrivateKey        String
+  signingPublicKey           String
+  encryptedSigningPrivateKey String
+  version                    String    @default("v1")
+  status                     String    @default("ACTIVE")
+  expiresAt                  DateTime
+  createdAt                  DateTime  @default(now())
+  revokedAt                  DateTime?
+
+  @@index([countryId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model EncryptionAuditLog {
+  id             String   @id @default(cuid())
+  countryId      String
+  operation      String
+  classification String
+  success        Boolean
+  errorMessage   String?
+  metadata       String?
+  userId         String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  @@index([countryId])
+  @@index([operation])
+  @@index([createdAt])
+}
+
+model UserConnection {
+  id              String   @id @default(cuid())
+  userId          String
+  targetUserId    String?
+  targetCountryId String?
+  connectionType  String
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, targetUserId, connectionType])
+  @@unique([userId, targetCountryId, connectionType])
+  @@index([userId])
+  @@index([targetUserId])
+  @@index([targetCountryId])
+  @@index([connectionType])
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  title         String
+  description   String
+  category      String
+  rarity        String
+  iconUrl       String?
+  metadata      String?
+  unlockedAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([category])
+  @@index([rarity])
+  @@index([unlockedAt])
+}
+
+model CountryActivity {
+  id        String   @id @default(cuid())
+  countryId String
+  type      String
+  data      String
+  timestamp DateTime @default(now())
+
+  @@index([countryId])
+  @@index([type])
+  @@index([timestamp])
+}
+
+model ArchetypeCategory {
+  id            String      @id @default(cuid())
+  name          String      @unique
+  description   String
+  color         String
+  maxSelectable Int         @default(2)
+  priority      Int         @default(0)
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  archetypes    Archetype[]
+
+  @@index([priority])
+  @@index([isActive])
+}
+
+model Archetype {
+  id             String                   @id @default(cuid())
+  name           String                   @unique
+  description    String
+  categoryId     String
+  iconName       String
+  color          String
+  gradient       String
+  priority       Int                      @default(0)
+  isSelectable   Boolean                  @default(true)
+  isActive       Boolean                  @default(true)
+  tags           String?
+  filterRules    String
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  category       ArchetypeCategory        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  countryMatches CountryArchetypeMatch[]
+  userSelections UserArchetypeSelection[]
+
+  @@index([categoryId])
+  @@index([priority])
+  @@index([isSelectable])
+  @@index([isActive])
+}
+
+model UserArchetypeSelection {
+  id          String    @id @default(cuid())
+  userId      String
+  archetypeId String
+  selectedAt  DateTime  @default(now())
+  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
+  user        User      @relation("UserArchetypes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, archetypeId])
+  @@index([userId])
+  @@index([archetypeId])
+}
+
+model CountryArchetypeMatch {
+  id          String    @id @default(cuid())
+  countryId   String
+  archetypeId String
+  matchScore  Float     @default(1.0)
+  lastChecked DateTime  @default(now())
+  archetype   Archetype @relation(fields: [archetypeId], references: [id], onDelete: Cascade)
+  country     Country   @relation("CountryArchetypes", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([countryId, archetypeId])
+  @@index([countryId])
+  @@index([archetypeId])
+  @@index([matchScore])
+}
+
+model NationalIdentity {
+  id                   String   @id @default(cuid())
+  countryId            String   @unique
+  countryName          String?
+  officialName         String?
+  governmentType       String?
+  motto                String?
+  mottoNative          String?
+  capitalCity          String?
+  largestCity          String?
+  demonym              String?
+  currency             String?
+  currencySymbol       String?
+  officialLanguages    String?
+  nationalLanguage     String?
+  nationalAnthem       String?
+  nationalReligion     String?
+  nationalDay          String?
+  callingCode          String?
+  internetTLD          String?
+  drivingSide          String?
+  timeZone             String?
+  isoCode              String?
+  coordinatesLatitude  String?
+  coordinatesLongitude String?
+  emergencyNumber      String?
+  postalCodeFormat     String?
+  nationalSport        String?
+  weekStartDay         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  country              Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+}
+
+model CustomGovernmentType {
+  id             String   @id @default(cuid())
+  userId         String
+  customTypeName String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  usageCount     Int      @default(1)
+  lastUsedAt     DateTime @default(now())
+
+  @@unique([userId, customTypeName])
+  @@index([userId])
+  @@index([usageCount])
+}
+
+model CustomFieldValue {
+  id         String   @id @default(cuid())
+  fieldName  String
+  value      String
+  userId     String?
+  usageCount Int      @default(1)
+  isGlobal   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastUsedAt DateTime @default(now())
+
+  @@unique([fieldName, value, userId])
+  @@index([fieldName, isGlobal])
+  @@index([userId])
+  @@index([usageCount])
+}

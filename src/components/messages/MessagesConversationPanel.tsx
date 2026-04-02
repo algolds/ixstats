@@ -1,0 +1,167 @@
+"use client";
+
+import { Search, Plus, RefreshCw } from "lucide-react";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { api } from "~/trpc/react";
+import { MESSAGE_FOLDERS } from "./MessagesFolderNav";
+import { MessagesConversationCard } from "./MessagesConversationCard";
+import type { ThinkShareConversation } from "~/types/thinkshare";
+import type { MessageFolder } from "~/types/messages";
+
+interface MessagesConversationPanelProps {
+  activeFolder: MessageFolder;
+  conversations: ThinkShareConversation[];
+  isLoading: boolean;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  selectedConversationId: string | null;
+  onSelectConversation: (id: string) => void;
+  currentUserId: string;
+  onNewConversation: () => void;
+}
+
+export function MessagesConversationPanel({
+  activeFolder,
+  conversations,
+  isLoading,
+  searchQuery,
+  onSearchChange,
+  selectedConversationId,
+  onSelectConversation,
+  currentUserId,
+  onNewConversation,
+}: MessagesConversationPanelProps) {
+  const folderConfig = MESSAGE_FOLDERS.find((f) => f.id === activeFolder);
+  const utils = api.useUtils();
+
+  // Sync discussions (wiki + forum) on demand
+  const syncMutation = api.messages.syncDiscussions.useMutation({
+    onSuccess: () => {
+      void utils.messages.getConversationsByFolder.invalidate();
+      void utils.messages.getFolderCounts.invalidate();
+    },
+  });
+
+  // Filter conversations by search query
+  const filtered = searchQuery.trim()
+    ? conversations.filter((c) => {
+        const name =
+          c.otherParticipants[0]?.account?.displayName ?? c.name ?? "";
+        return name.toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : conversations;
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="shrink-0 border-b border-border/50 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">
+            {folderConfig?.title ?? "Messages"}
+          </h2>
+          <div className="flex items-center gap-1">
+            {/* Sync button for Discussions folder */}
+            {activeFolder === "discussions" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0"
+                onClick={() =>
+                  syncMutation.mutate({ userId: currentUserId })
+                }
+                disabled={syncMutation.isPending}
+                title="Sync wiki & forum discussions"
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${syncMutation.isPending ? "animate-spin" : ""}`}
+                />
+              </Button>
+            )}
+            {activeFolder === "personal" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0"
+                onClick={onNewConversation}
+                title="New conversation"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search conversations..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="h-8 pl-8 text-xs"
+          />
+        </div>
+      </div>
+
+      {/* Conversation list */}
+      <div className="flex-1 overflow-y-auto p-1.5">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="px-3 py-12 text-center">
+            <p className="text-sm font-medium text-muted-foreground">
+              {searchQuery.trim()
+                ? "No matching conversations"
+                : folderConfig?.emptyTitle ?? "No conversations"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              {searchQuery.trim()
+                ? "Try a different search term"
+                : folderConfig?.emptyDescription ?? ""}
+            </p>
+            {activeFolder === "personal" && !searchQuery.trim() && (
+              <Button
+                size="sm"
+                className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-700 hover:to-teal-700"
+                onClick={onNewConversation}
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                New Conversation
+              </Button>
+            )}
+            {activeFolder === "discussions" && !searchQuery.trim() && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-4"
+                onClick={() =>
+                  syncMutation.mutate({ userId: currentUserId })
+                }
+                disabled={syncMutation.isPending}
+              >
+                <RefreshCw
+                  className={`mr-1.5 h-3.5 w-3.5 ${syncMutation.isPending ? "animate-spin" : ""}`}
+                />
+                {syncMutation.isPending ? "Syncing..." : "Sync Wiki & Forum"}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-0.5">
+            {filtered.map((conversation) => (
+              <MessagesConversationCard
+                key={conversation.id}
+                conversation={conversation}
+                isSelected={conversation.id === selectedConversationId}
+                onClick={() => onSelectConversation(conversation.id)}
+                currentUserId={currentUserId}
+                activeFolder={activeFolder}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

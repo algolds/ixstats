@@ -1,0 +1,173 @@
+"use client";
+
+import React, { useEffect, useCallback, useState, useRef } from "react";
+import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
+import { MessagesChatHeader } from "./MessagesChatHeader";
+import { MessagesBubble } from "./MessagesBubble";
+import { MessagesInputBar } from "./MessagesInputBar";
+import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
+import type { MessageFolder } from "~/types/messages";
+
+interface MessagesChatPanelProps {
+  conversation: ThinkShareConversation;
+  currentUserId: string;
+  activeFolder: MessageFolder;
+  clientState: ThinkShareClientState;
+  sendTypingIndicator: (
+    conversationId: string,
+    accountId: string | undefined,
+    isTyping: boolean
+  ) => void;
+}
+
+export function MessagesChatPanel({
+  conversation,
+  currentUserId,
+  activeFolder,
+  clientState,
+  sendTypingIndicator,
+}: MessagesChatPanelProps) {
+  const notify = useNotify();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [replyingTo, setReplyingTo] = useState<any>(null);
+
+  // Fetch messages
+  const {
+    data: messagesData,
+    isLoading,
+    refetch: refetchMessages,
+  } = api.messages.getConversationMessages.useQuery(
+    {
+      conversationId: conversation.id,
+      userId: currentUserId,
+    },
+    {
+      enabled: !!conversation.id && !!currentUserId,
+      refetchOnWindowFocus: false,
+      staleTime: 5000,
+    }
+  );
+
+  // Refetch conversations to update unread counts
+  const utils = api.useUtils();
+  const refetchConversations = useCallback(() => {
+    void utils.messages.getConversationsByFolder.invalidate();
+  }, [utils]);
+
+  // Mark messages as read
+  const markAsRead = api.messages.markMessagesAsRead.useMutation();
+
+  useEffect(() => {
+    if (conversation.id && currentUserId) {
+      markAsRead.mutate({
+        conversationId: conversation.id,
+        userId: currentUserId,
+        messageIds: [],
+      });
+    }
+    // Only run when conversation changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversation.id, currentUserId]);
+
+  // Send message
+  const sendMessage = api.messages.sendMessage.useMutation({
+    onSuccess: () => {
+      void refetchMessages();
+      refetchConversations();
+    },
+    onError: (error: any) => {
+      let msg = "Failed to send message";
+      if (error.message?.includes("conversation")) {
+        msg = "Conversation not found or you're not a participant";
+      } else if (error.message?.includes("content")) {
+        msg = "Message content is invalid";
+      }
+      notify.error(msg);
+    },
+  });
+
+  const handleSendMessage = useCallback(
+    (content?: string, plainText?: string) => {
+      const text = plainText ?? "";
+      if (!text.trim() || !conversation || !currentUserId) return;
+
+      sendMessage.mutate({
+        conversationId: conversation.id,
+        userId: currentUserId,
+        content: content ?? "",
+        messageType: "text",
+      });
+      setReplyingTo(null);
+    },
+    [conversation, currentUserId, sendMessage]
+  );
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messagesData?.messages?.length]);
+
+  const messages = messagesData?.messages ?? [];
+
+  return (
+    <div className="flex h-full flex-col">
+      <MessagesChatHeader
+        conversation={conversation}
+        currentUserId={currentUserId}
+        activeFolder={activeFolder}
+      />
+
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto">
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-muted-foreground">
+              No messages yet. Say hello!
+            </p>
+          </div>
+        ) : (
+          <div className="py-2">
+            {[...messages].reverse().map((message: any, index: number, arr: any[]) => {
+              const prev = index > 0 ? arr[index - 1] : null;
+              const isConsecutive =
+                prev != null &&
+                prev.accountId === message.accountId &&
+                new Date(message.createdAt ?? message.ixTimeTimestamp).getTime() -
+                  new Date(prev.createdAt ?? prev.ixTimeTimestamp).getTime() <
+                  5 * 60 * 1000; // 5 min threshold
+
+              return (
+                <MessagesBubble
+                  key={message.id}
+                  message={message}
+                  currentUserId={currentUserId}
+                  isConsecutive={isConsecutive}
+                  refetchMessages={refetchMessages}
+                  onReply={setReplyingTo}
+                />
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      <MessagesInputBar
+        onSendMessage={handleSendMessage}
+        onTyping={(isTyping) => {
+          if (clientState.connectionStatus === "connected") {
+            sendTypingIndicator(conversation.id, undefined, isTyping);
+          }
+        }}
+        isSending={sendMessage.isPending}
+        replyingTo={replyingTo}
+        onCancelReply={() => setReplyingTo(null)}
+      />
+    </div>
+  );
+}

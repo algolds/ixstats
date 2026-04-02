@@ -10,7 +10,7 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-    // Base path for deployment under subpath (e.g., /projects/ixstats)
+    // Base path for deployment under subpath (e.g., /projects/ixstates)
     BASE_PATH: z.string().optional().default(""),
     // Discord Bot IxTime API Configuration
     IXTIME_BOT_URL: z.string().url().optional().default("http://localhost:3001"),

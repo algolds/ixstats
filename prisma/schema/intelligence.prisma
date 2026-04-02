@@ -1,0 +1,175 @@
+// IxStates — Intelligence, Briefing & Analytics models
+
+model IntelligenceItem {
+  id                String   @id @default(cuid())
+  title             String
+  content           String
+  category          Category
+  priority          Priority @default(medium)
+  source            String
+  timestamp         DateTime
+  region            String?
+  affectedCountries String?
+  isActive          Boolean  @default(true)
+  actionable        Boolean  @default(false)
+  confidence        Int?
+  itemType          String   @default("update")
+  severity          Priority @default(medium)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model IntelligenceBriefing {
+  id              String                       @id @default(cuid())
+  countryId       String
+  title           String
+  description     String
+  type            BriefingType
+  priority        Priority
+  area            Category
+  confidence      Float
+  urgency         Urgency
+  impactMagnitude String
+  evidence        String
+  generatedAt     DateTime                     @default(now())
+  expiresAt       DateTime?
+  isActive        Boolean                      @default(true)
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+  alerts          IntelligenceAlert[]
+  recommendations IntelligenceRecommendation[]
+
+  @@index([countryId])
+  @@index([type])
+  @@index([priority])
+  @@index([isActive])
+  @@index([generatedAt])
+}
+
+model IntelligenceRecommendation {
+  id                 String                @id @default(cuid())
+  briefingId         String?
+  countryId          String
+  title              String
+  description        String
+  category           Category
+  urgency            String
+  difficulty         Difficulty
+  estimatedDuration  String
+  estimatedCost      String
+  estimatedBenefit   String
+  prerequisites      String
+  risks              String
+  successProbability Float
+  economicImpact     Float                 @default(0)
+  socialImpact       Float                 @default(0)
+  diplomaticImpact   Float                 @default(0)
+  isImplemented      Boolean               @default(false)
+  implementedAt      DateTime?
+  generatedAt        DateTime              @default(now())
+  isActive           Boolean               @default(true)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  briefing           IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([category])
+  @@index([urgency])
+  @@index([isActive])
+}
+
+model IntelligenceAlert {
+  id            String                @id @default(cuid())
+  briefingId    String?
+  countryId     String
+  title         String
+  description   String
+  severity      Priority
+  category      Category
+  alertType     String
+  currentValue  Float
+  expectedValue Float
+  deviation     Float
+  zScore        Float
+  factors       String
+  confidence    Float
+  isResolved    Boolean               @default(false)
+  resolvedAt    DateTime?
+  detectedAt    DateTime              @default(now())
+  isActive      Boolean               @default(true)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  briefing      IntelligenceBriefing? @relation(fields: [briefingId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([severity])
+  @@index([category])
+  @@index([isActive])
+  @@index([detectedAt])
+}
+
+model IntelligenceAlertThreshold {
+  id               String   @id @default(cuid())
+  countryId        String
+  userId           String
+  alertType        String
+  metricName       String
+  criticalMin      Float?
+  criticalMax      Float?
+  highMin          Float?
+  highMax          Float?
+  mediumMin        Float?
+  mediumMax        Float?
+  notifyOnCritical Boolean  @default(true)
+  notifyOnHigh     Boolean  @default(true)
+  notifyOnMedium   Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([countryId, alertType, metricName])
+  @@index([countryId])
+  @@index([userId])
+}
+
+model IntelligenceTemplate {
+  id               String   @id @default(cuid())
+  reportType       String
+  classification   String
+  summaryTemplate  String
+  findingsTemplate String
+  minimumLevel     Int
+  confidenceBase   Int
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([reportType, isActive])
+  @@index([minimumLevel])
+}
+
+model VitalitySnapshot {
+  id                  String   @id @default(cuid())
+  countryId           String
+  area                Category
+  score               Float
+  trend               Trend
+  changeValue         Float
+  changePeriod        String
+  keyMetrics          String
+  peerAverage         Float
+  regionalAverage     Float
+  historicalBest      Float
+  rank                Int
+  totalCountries      Int
+  criticalAlertsCount Int      @default(0)
+  calculatedAt        DateTime @default(now())
+  ixTime              Float
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([area])
+  @@index([calculatedAt])
+  @@index([ixTime])
+}

@@ -94,7 +94,7 @@ export function ThinkPagesStatusCard({
           {/* Action Button - Always show */}
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="pt-2">
             <Link
-              href="/thinkpages"
+              href="/dashboard"
               className="glass-hierarchy-interactive hover:bg-accent/10 group flex w-full items-center justify-between rounded-lg p-3 transition-colors"
             >
               <span className="text-sm font-medium">Open ThinkPages</span>

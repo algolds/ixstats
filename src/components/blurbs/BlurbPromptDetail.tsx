@@ -40,7 +40,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
 
   if (promptLoading) {
     return (
-      <div className="text-center py-12 text-zinc-500 text-sm">
+      <div className="text-center py-12 text-[var(--wikios-text-dim)] text-sm">
         Loading...
       </div>
     );
@@ -48,7 +48,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
 
   if (!prompt) {
     return (
-      <div className="text-center py-12 text-zinc-500 text-sm">
+      <div className="text-center py-12 text-[var(--wikios-text-dim)] text-sm">
         Prompt not found.
       </div>
     );
@@ -58,10 +58,10 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
     <div className="space-y-6">
       {/* Prompt header */}
       <div className="glass-hierarchy-child rounded-xl border border-white/10 p-5 sm:p-6">
-        <h1 className="text-lg sm:text-xl font-bold text-zinc-100">
+        <h1 className="text-lg sm:text-xl font-bold text-[var(--wikios-text)]">
           {prompt.title}
         </h1>
-        <p className="text-zinc-300 mt-2 text-sm sm:text-base">
+        <p className="text-[var(--wikios-text-muted)] mt-2 text-sm sm:text-base">
           {prompt.question}
         </p>
         <div className="flex items-center gap-3 mt-3">
@@ -70,7 +70,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
             {prompt._count.responses === 1 ? "response" : "responses"}
           </Badge>
           {prompt.status === "CLOSED" && (
-            <Badge variant="outline" className="text-xs text-zinc-500">
+            <Badge variant="outline" className="text-xs text-[var(--wikios-text-dim)]">
               Closed
             </Badge>
           )}
@@ -87,7 +87,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
           <p className="text-xs text-emerald-400 font-medium mb-2">
             Your response
           </p>
-          <p className="text-zinc-300 text-sm whitespace-pre-wrap">
+          <p className="text-[var(--wikios-text-muted)] text-sm whitespace-pre-wrap">
             {myResponse.content}
           </p>
         </div>
@@ -95,7 +95,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
 
       {!isSignedIn && prompt.status === "ACTIVE" && (
         <div className="glass-hierarchy-child rounded-xl border border-white/10 p-4 text-center">
-          <p className="text-zinc-400 text-sm">
+          <p className="text-[var(--wikios-text-muted)] text-sm">
             Sign in to submit your response.
           </p>
         </div>
@@ -103,16 +103,16 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
 
       {/* Responses list */}
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-zinc-300">
+        <h2 className="text-sm font-semibold text-[var(--wikios-text-muted)]">
           Responses
         </h2>
 
         {responsesLoading && (
-          <p className="text-zinc-500 text-sm">Loading responses...</p>
+          <p className="text-[var(--wikios-text-dim)] text-sm">Loading responses...</p>
         )}
 
         {!responsesLoading && responses.length === 0 && (
-          <p className="text-zinc-500 text-sm">
+          <p className="text-[var(--wikios-text-dim)] text-sm">
             No responses yet. Be the first!
           </p>
         )}
@@ -138,7 +138,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
                 href={withBasePath(
                   `/w/${encodeURIComponent((r.country?.name ?? "").replace(/ /g, "_"))}`
                 )}
-                className="text-sm font-medium text-zinc-200 hover:text-white transition-colors"
+                className="text-sm font-medium text-[var(--wikios-text)] hover:text-white transition-colors"
               >
                 {r.country?.name ?? "Unknown"}
               </Link>
@@ -151,7 +151,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
                 </Badge>
               )}
             </div>
-            <p className="text-zinc-300 text-sm whitespace-pre-wrap">
+            <p className="text-[var(--wikios-text-muted)] text-sm whitespace-pre-wrap">
               {r.content}
             </p>
             {r.linkedArticles &&
@@ -172,7 +172,7 @@ export function BlurbPromptDetail({ slug }: { slug: string }) {
                   ))}
                 </div>
               )}
-            <p className="text-zinc-600 text-xs mt-2">
+            <p className="text-[var(--wikios-text-dim)] text-xs mt-2">
               {new Date(r.createdAt).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
@@ -241,7 +241,7 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
 
   return (
     <div className="glass-hierarchy-child rounded-xl border border-white/10 p-4 sm:p-5">
-      <h3 className="text-sm font-semibold text-zinc-300 mb-3">
+      <h3 className="text-sm font-semibold text-[var(--wikios-text-muted)] mb-3">
         Your response
       </h3>
       <textarea
@@ -250,17 +250,17 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
         placeholder="Share your country's perspective..."
         maxLength={1000}
         rows={4}
-        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-white/20 resize-none"
+        className="w-full rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-2 text-sm text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:outline-none focus:border-[var(--wikios-accent)] resize-none"
       />
       <div className="flex items-center justify-between mt-1">
-        <span className="text-xs text-zinc-600">
+        <span className="text-xs text-[var(--wikios-text-dim)]">
           {content.length}/1000
         </span>
       </div>
 
       {/* Link wiki articles */}
       <div className="mt-3">
-        <p className="text-xs text-zinc-500 mb-1.5">
+        <p className="text-xs text-[var(--wikios-text-dim)] mb-1.5">
           Link wiki articles (optional, max 5)
         </p>
         <div className="flex gap-2">
@@ -269,7 +269,7 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
             value={articleTitle}
             onChange={(e) => setArticleTitle(e.target.value)}
             placeholder="Article title"
-            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-white/20"
+            className="flex-1 rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-1.5 text-xs text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:outline-none focus:border-[var(--wikios-accent)]"
             onKeyDown={(e) => e.key === "Enter" && addArticle()}
           />
           <Button
@@ -287,12 +287,12 @@ function BlurbSubmissionForm({ promptId }: { promptId: string }) {
             {linkedArticles.map((a, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 rounded-full bg-white/5 border border-white/10 px-2 py-0.5 text-xs text-zinc-300"
+                className="inline-flex items-center gap-1 rounded-full bg-white/5 border border-white/10 px-2 py-0.5 text-xs text-[var(--wikios-text-muted)]"
               >
                 {a.title}
                 <button
                   onClick={() => removeArticle(i)}
-                  className="text-zinc-500 hover:text-zinc-300 ml-0.5"
+                  className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text-muted)] ml-0.5"
                 >
                   x
                 </button>

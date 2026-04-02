@@ -1,35 +1,27 @@
 "use client";
 
-import Link from "next/link";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { withBasePath } from "~/lib/base-path";
+import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
 import { BlurbPromptList } from "~/components/blurbs/BlurbPromptList";
+import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
 
 export default function BlurbsPage() {
   usePageTitle({ title: "Blurbs" });
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-zinc-100">
-          Blurbs
-        </h1>
-        <p className="text-zinc-400 text-sm mt-1">
-          Weekly prompts to share your country&apos;s culture, flavor, and lore.
-          Responses are saved to your country&apos;s profile.
-        </p>
+    <WikiOSLayout>
+      <div className="mx-auto max-w-3xl py-6">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold sm:text-2xl">Blurbs</h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Weekly prompts to share your country&apos;s culture, flavor, and lore.
+            </p>
+          </div>
+          <BlurbsNav />
+        </div>
+        <BlurbPromptList />
       </div>
-
-      <BlurbPromptList />
-
-      <div className="mt-8 text-center">
-        <Link
-          href={withBasePath("/thinkpages")}
-          className="text-xs text-zinc-500 hover:text-zinc-400 transition-colors"
-        >
-          Discuss on ThinkPages &rarr;
-        </Link>
-      </div>
-    </div>
+    </WikiOSLayout>
   );
 }

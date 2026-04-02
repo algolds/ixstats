@@ -209,9 +209,11 @@ async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange
     const pool = getIxWikiPool();
     const [rows] = await pool.execute<mysql.RowDataPacket[]>(
       `SELECT rc.rc_title, a.actor_name, rc.rc_timestamp,
-              rc.rc_type, rc.rc_old_len, rc.rc_new_len
+              rc.rc_type, rc.rc_old_len, rc.rc_new_len,
+              COALESCE(c.comment_text, '') AS rc_comment
        FROM recentchanges rc
        JOIN actor a ON a.actor_id = rc.rc_actor
+       LEFT JOIN comment c ON c.comment_id = rc.rc_comment_id
        WHERE rc.rc_namespace = 0 AND rc.rc_bot = 0
        ORDER BY rc.rc_timestamp DESC
        LIMIT ?`,
@@ -222,7 +224,7 @@ async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange
       title: String(row.rc_title).replace(/_/g, " "),
       user: String(row.actor_name),
       timestamp: String(row.rc_timestamp),
-      comment: "",
+      comment: String(row.rc_comment || ""),
       type: (row.rc_type as number) === 1 ? "new" : "edit",
       oldLen: row.rc_old_len as number,
       newLen: row.rc_new_len as number,
@@ -448,11 +450,13 @@ async function ixwikiGetBacklinks(
     const pool = getIxWikiPool();
     const dbTitle = title.replace(/ /g, "_");
 
+    // MediaWiki 1.45+ uses linktarget table instead of pl_title/pl_namespace
     let query = `
-      SELECT p.page_title, p.page_namespace, p.page_id
+      SELECT DISTINCT p.page_title, p.page_namespace, p.page_id
       FROM pagelinks pl
+      JOIN linktarget lt ON lt.lt_id = pl.pl_target_id
       JOIN page p ON p.page_id = pl.pl_from
-      WHERE pl.pl_title = ? AND pl.pl_namespace = 0
+      WHERE lt.lt_title = ? AND lt.lt_namespace = 0
     `;
     const params: (string | number)[] = [dbTitle];
 
@@ -506,8 +510,9 @@ async function ixwikiGetCategoryMembers(
     let query = `
       SELECT p.page_title, p.page_namespace
       FROM categorylinks cl
+      JOIN linktarget lt ON lt.lt_id = cl.cl_target_id
       JOIN page p ON p.page_id = cl.cl_from
-      WHERE cl.cl_to = ?
+      WHERE lt.lt_namespace = 14 AND lt.lt_title = ?
     `;
     const params: (string | number)[] = [catName];
 

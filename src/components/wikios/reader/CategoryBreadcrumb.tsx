@@ -42,7 +42,7 @@ export function CategoryBreadcrumb({ title }: CategoryBreadcrumbProps) {
           {i > 0 && <ChevronRight size={12} className="wikios-breadcrumb-sep" />}
           <Link
             href={withBasePath(
-              `/wiki-special/categories/${encodeURIComponent(cat.title.replace(/ /g, "_"))}`
+              `/w/special/categories/${encodeURIComponent(cat.title.replace(/ /g, "_"))}`
             )}
             className="wikios-breadcrumb-link"
           >

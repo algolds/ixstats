@@ -94,7 +94,7 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
               </div>
             </div>
 
-            <Link href={createUrl("/thinkpages")}>
+            <Link href={createUrl("/dashboard")}>
               <Button variant="outline" size="sm" className="group">
                 Open Platform
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -224,7 +224,7 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
           {/* Quick Actions */}
           <div className="border-t border-white/10 pt-2">
             <div className="flex gap-2">
-              <Link href={createUrl("/thinkpages")} className="flex-1">
+              <Link href={createUrl("/dashboard")} className="flex-1">
                 <Button variant="outline" size="sm" className="w-full">
                   <MessageSquare className="mr-2 h-4 w-4" />
                   View Feed
@@ -232,7 +232,7 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
               </Link>
 
               {accounts && accounts.length < 25 && (
-                <Link href={createUrl("/thinkpages")} className="flex-1">
+                <Link href={createUrl("/dashboard")} className="flex-1">
                   <Button variant="outline" size="sm" className="w-full">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Account

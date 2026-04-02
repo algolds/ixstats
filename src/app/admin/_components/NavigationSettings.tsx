@@ -18,6 +18,8 @@ export function NavigationSettings() {
     showIntelligenceTab: false,
     showDefenseTab: false,
     showMapsTab: true,
+    showForumTab: true,
+    showHelpTab: true,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -70,7 +72,9 @@ export function NavigationSettings() {
       navigationSettings.showLabsTab !== localSettings.showLabsTab ||
       navigationSettings.showIntelligenceTab !== localSettings.showIntelligenceTab ||
       navigationSettings.showDefenseTab !== localSettings.showDefenseTab ||
-      navigationSettings.showMapsTab !== localSettings.showMapsTab);
+      navigationSettings.showMapsTab !== localSettings.showMapsTab ||
+      navigationSettings.showForumTab !== localSettings.showForumTab ||
+      navigationSettings.showHelpTab !== localSettings.showHelpTab);
 
   if (isLoading) {
     return (
@@ -258,6 +262,54 @@ export function NavigationSettings() {
             id="maps-tab"
             checked={localSettings.showMapsTab}
             onCheckedChange={(checked) => handleToggle("showMapsTab", checked)}
+          />
+        </div>
+
+        {/* Forum Tab Setting */}
+        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg border border-orange-500/20 bg-orange-500/10 p-2">
+              {localSettings.showForumTab ? (
+                <Eye className="h-4 w-4 text-orange-500" />
+              ) : (
+                <EyeOff className="text-muted-foreground h-4 w-4" />
+              )}
+            </div>
+            <div>
+              <Label htmlFor="forum-tab" className="text-sm font-medium">
+                Forum Tab
+              </Label>
+              <p className="text-muted-foreground text-xs">Show/hide the Forum navigation tab</p>
+            </div>
+          </div>
+          <Switch
+            id="forum-tab"
+            checked={localSettings.showForumTab}
+            onCheckedChange={(checked) => handleToggle("showForumTab", checked)}
+          />
+        </div>
+
+        {/* Help Tab Setting */}
+        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
+              {localSettings.showHelpTab ? (
+                <Eye className="h-4 w-4 text-amber-500" />
+              ) : (
+                <EyeOff className="text-muted-foreground h-4 w-4" />
+              )}
+            </div>
+            <div>
+              <Label htmlFor="help-tab" className="text-sm font-medium">
+                Help Tab
+              </Label>
+              <p className="text-muted-foreground text-xs">Show/hide the Help navigation tab</p>
+            </div>
+          </div>
+          <Switch
+            id="help-tab"
+            checked={localSettings.showHelpTab}
+            onCheckedChange={(checked) => handleToggle("showHelpTab", checked)}
           />
         </div>
 

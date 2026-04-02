@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 /**
- * Monitoring Setup Script for IxStats v1.42
+ * Monitoring Setup Script for IxStates v1.42
  * Configures monitoring, alerting, and logging infrastructure
  */
 
@@ -92,7 +92,7 @@ async function testDiscordWebhook(): Promise<boolean> {
   const success = await sendDiscordNotification(
     webhookUrl,
     "🔧 Monitoring Setup Test",
-    `IxStats monitoring system is being configured.\nTimestamp: ${new Date().toLocaleString()}\nEnvironment: ${process.env.NODE_ENV || "development"}`,
+    `IxStates monitoring system is being configured.\nTimestamp: ${new Date().toLocaleString()}\nEnvironment: ${process.env.NODE_ENV || "development"}`,
     "info"
   );
 
@@ -110,7 +110,7 @@ async function testDiscordWebhook(): Promise<boolean> {
  */
 function createDashboardConfig(): string {
   const config = {
-    name: "IxStats Production Monitoring",
+    name: "IxStates Production Monitoring",
     version: "1.42",
     created: new Date().toISOString(),
     metrics: {
@@ -345,7 +345,7 @@ function createPerformanceConfig(): string {
  * Create log rotation configuration
  */
 function createLogRotationConfig(): string {
-  const config = `# Logrotate configuration for IxStats
+  const config = `# Logrotate configuration for IxStates
 # Place this file in /etc/logrotate.d/ (requires root)
 
 /ixwiki/public/projects/ixstats/logs/*.log {
@@ -381,11 +381,11 @@ function createLogRotationConfig(): string {
  * Create monitoring cron jobs
  */
 function createCronJobs(): string {
-  const config = `# IxStats Monitoring Cron Jobs
+  const config = `# IxStates Monitoring Cron Jobs
 # Add these to your crontab: crontab -e
 
 # Check application health every 5 minutes
-*/5 * * * * curl -f http://localhost:3550/projects/ixstats/api/health > /dev/null 2>&1 || echo "Health check failed at $(date)" >> /ixwiki/public/projects/ixstats/logs/health-check.log
+*/5 * * * * curl -f http://localhost:3550/api/health > /dev/null 2>&1 || echo "Health check failed at $(date)" >> /ixwiki/public/projects/ixstats/logs/health-check.log
 
 # Check disk space every hour
 0 * * * * df -h /ixwiki/public/projects/ixstats | tail -1 | awk '{if ($5+0 > 90) print "Disk usage warning: " $5 " at " strftime("%Y-%m-%d %H:%M:%S")}' >> /ixwiki/public/projects/ixstats/logs/disk-space.log
@@ -397,7 +397,7 @@ function createCronJobs(): string {
 0 3 * * 0 find /ixwiki/public/projects/ixstats/logs -name "*.log" -mtime +30 -delete
 
 # Check process running every 10 minutes
-*/10 * * * * ps aux | grep "node.*ixstats" > /dev/null || echo "IxStats process not running at $(date)" >> /ixwiki/public/projects/ixstats/logs/process-monitor.log
+*/10 * * * * ps aux | grep "node.*ixstats" > /dev/null || echo "IxStates process not running at $(date)" >> /ixwiki/public/projects/ixstats/logs/process-monitor.log
 `;
 
   return config;
@@ -408,7 +408,7 @@ function createCronJobs(): string {
  */
 function createSystemdService(): string {
   const config = `[Unit]
-Description=IxStats Economic Simulation Platform
+Description=IxStates Economic Simulation Platform
 After=network.target postgresql.service redis.service
 Wants=postgresql.service redis.service
 
@@ -454,7 +454,7 @@ async function main() {
 
   print("╔═══════════════════════════════════════════════════════╗", "cyan");
   print("║                                                       ║", "cyan");
-  print("║     IxStats v1.42 - Monitoring Setup Script           ║", "cyan");
+  print("║     IxStates v1.42 - Monitoring Setup Script           ║", "cyan");
   print("║                                                       ║", "cyan");
   print("╚═══════════════════════════════════════════════════════╝", "cyan");
 
@@ -535,9 +535,9 @@ async function main() {
   // Create README
   printHeader("Creating Documentation");
 
-  const readme = `# IxStats Monitoring Configuration
+  const readme = `# IxStates Monitoring Configuration
 
-This directory contains monitoring and alerting configuration for IxStats v1.42.
+This directory contains monitoring and alerting configuration for IxStates v1.42.
 
 ## Configuration Files
 
@@ -619,8 +619,8 @@ All logs are stored in: \`${logsDir}\`
 
 ## Dashboard URLs
 
-- Health Check: http://localhost:3550/projects/ixstats/api/health
-- Production URL: https://ixwiki.com/projects/ixstats
+- Health Check: http://localhost:3550/api/health
+- Production URL: https://ixstates.ixwiki.com
 
 ## Troubleshooting
 

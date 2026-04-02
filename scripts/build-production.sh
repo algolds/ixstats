@@ -5,12 +5,12 @@
 
 set -e
 
-echo "🚀 Building IxStats for production deployment..."
+echo "🚀 Building IxStates for production deployment..."
 echo "=============================================="
 
 # Set production environment variables
 export NODE_ENV=production
-export BASE_PATH=/projects/ixstats
+export BASE_PATH=""
 
 echo "📋 Build Configuration:"
 echo "   NODE_ENV: $NODE_ENV"
@@ -39,7 +39,7 @@ echo "   Static assets: .next/static/"
 echo "   Server files: .next/server/"
 echo ""
 echo "🌐 Deployment URLs:"
-echo "   App URL: https://ixwiki.com/projects/ixstats"
-echo "   Static assets: https://ixwiki.com/projects/ixstats/_next/static/"
+echo "   App URL: https://ixstates.ixwiki.com"
+echo "   Static assets: https://ixstates.ixwiki.com/_next/static/"
 echo ""
 echo "🚀 Ready for deployment!"

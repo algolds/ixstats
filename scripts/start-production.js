@@ -9,13 +9,13 @@ const { spawn } = require("child_process");
 const path = require("path");
 
 async function startProduction() {
-  console.log("🚀 Starting IxStats in production mode...\n");
+  console.log("🚀 Starting IxStates in production mode...\n");
 
   // Set production environment
   process.env.NODE_ENV = "production";
   process.env.NEXT_TELEMETRY_DISABLED = "1";
 
-  const DEFAULT_BASE_PATH = "/projects/ixstats";
+  const DEFAULT_BASE_PATH = "";
 
   const normalizeBasePath = (value) => {
     if (!value) {

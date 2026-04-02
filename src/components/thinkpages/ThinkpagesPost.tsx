@@ -4,10 +4,12 @@ import React, { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useRelativeTime } from "~/hooks/useRelativeTime";
+import Link from "next/link";
 import {
   MoreHorizontal,
   Pin,
   Bookmark,
+  BookOpen,
   Flag,
   Verified,
   Smile,
@@ -24,6 +26,7 @@ import {
   Repeat2,
   MessageCircle,
 } from "lucide-react";
+import { withBasePath } from "~/lib/base-path";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -92,6 +95,48 @@ const REACTION_ICONS: { [key: string]: React.ElementType } = {
   thumbsdown: ThumbsDown,
 };
 
+// ---------------------------------------------------------------------------
+// Blurb detection — parses structured [blurb:slug|title] prefix from content
+// ---------------------------------------------------------------------------
+
+interface BlurbMeta {
+  isBlurb: boolean;
+  promptTitle?: string;
+  promptSlug?: string;
+  cleanContent: string;
+}
+
+function parseBlurbMeta(post: { hashtags?: string[] | string | null; content?: string }): BlurbMeta {
+  const content = post.content ?? "";
+
+  // Check hashtags for "blurb" marker
+  let hashtags: string[] = [];
+  if (Array.isArray(post.hashtags)) {
+    hashtags = post.hashtags;
+  } else if (typeof post.hashtags === "string") {
+    try { hashtags = JSON.parse(post.hashtags); } catch { /* ignore */ }
+  }
+
+  if (!hashtags.includes("blurb")) {
+    return { isBlurb: false, cleanContent: content };
+  }
+
+  // Try to extract structured prefix: [blurb:slug|Title]\n\ncontent
+  const match = content.match(/^\[blurb:([^\]|]+)\|([^\]]+)\]\n\n([\s\S]*)$/);
+  if (match) {
+    return {
+      isBlurb: true,
+      promptSlug: match[1],
+      promptTitle: match[2],
+      cleanContent: match[3] ?? "",
+    };
+  }
+
+  // Fallback for old format: strip trailing "— Read full blurb →" text
+  const cleaned = content.replace(/\n\n.*?— Read full blurb →.*$/, "").trim();
+  return { isBlurb: true, cleanContent: cleaned };
+}
+
 const ThinkpagesPostComponent = ({
   post,
   currentUserAccountId = "",
@@ -111,6 +156,7 @@ const ThinkpagesPostComponent = ({
   showThread = false,
 }: ThinkpagesPostProps) => {
   const notify = useNotify();
+  const blurbMeta = parseBlurbMeta(post);
   const [showReplies, setShowReplies] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
@@ -335,6 +381,23 @@ const ThinkpagesPostComponent = ({
         </div>
       )}
 
+      {blurbMeta.isBlurb && (
+        <div className="mb-3 flex items-center gap-2 text-sm text-purple-400">
+          <BookOpen className="h-4 w-4" />
+          <span className="font-medium">
+            {blurbMeta.promptTitle ?? "Topic Tuesday"}
+          </span>
+          {blurbMeta.promptSlug && (
+            <Link
+              href={withBasePath(`/blurbs/${blurbMeta.promptSlug}`)}
+              className="text-purple-400/70 hover:text-purple-300 transition-colors"
+            >
+              View prompt →
+            </Link>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-3">
         <button onClick={() => onAccountClick?.(post.account.id)} className="flex-shrink-0">
           <Avatar className={compact ? "h-8 w-8" : "h-10 w-10"}>
@@ -407,7 +470,7 @@ const ThinkpagesPostComponent = ({
                 <WikiHtmlContent html={formatContentEnhanced(post.repostOf.content)} />
               </Card>
             ) : (
-              <WikiHtmlContent html={formatContentEnhanced(post.content)} />
+              <WikiHtmlContent html={formatContentEnhanced(blurbMeta.isBlurb ? blurbMeta.cleanContent : post.content)} />
             )}
           </div>
 

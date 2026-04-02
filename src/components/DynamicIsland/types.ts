@@ -19,7 +19,7 @@ export interface UserProfile {
 // Search Result interface
 export interface SearchResult {
   id: string;
-  type: "country" | "command" | "feature";
+  type: "country" | "command" | "feature" | "wiki";
   title: string;
   subtitle?: string;
   description?: string;
@@ -30,7 +30,7 @@ export interface SearchResult {
 
 // View modes
 export type ViewMode = "compact" | "search" | "notifications" | "settings" | "crisis" | "mycountry" | "cycling" | "wiki";
-export type SearchFilter = "all" | "countries" | "commands" | "features";
+export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
 export type TimeDisplayMode = "time" | "date" | "both";
 
 // Current time state interface

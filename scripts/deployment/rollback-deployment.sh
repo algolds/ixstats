@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Rollback Deployment Script for IxStats v1.2
+# Rollback Deployment Script for IxStates v1.2
 # Restores previous version in case of deployment failure
 
 set -e
@@ -116,7 +116,7 @@ done
 echo -e "${RED}"
 echo "╔═══════════════════════════════════════════════════════╗"
 echo "║                                                       ║"
-echo "║         IxStats v1.2 - Rollback Script               ║"
+echo "║         IxStates v1.2 - Rollback Script               ║"
 echo "║                                                       ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -128,7 +128,7 @@ log "Environment: $ENVIRONMENT"
 log "Timestamp: $TIMESTAMP"
 log "Log file: $LOG_FILE"
 
-send_discord_notification "⚠️  **Rollback Initiated**" "Rolling back IxStats deployment\nEnvironment: $ENVIRONMENT\nTime: $(date)" "warning"
+send_discord_notification "⚠️  **Rollback Initiated**" "Rolling back IxStates deployment\nEnvironment: $ENVIRONMENT\nTime: $(date)" "warning"
 
 # Change to project directory
 cd "$PROJECT_ROOT" || error "Failed to change to project directory"
@@ -168,7 +168,7 @@ else
 fi
 
 export NODE_ENV=$ENVIRONMENT
-export BASE_PATH=${BASE_PATH:-/projects/ixstats}
+export BASE_PATH=${BASE_PATH:-}
 export NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-$BASE_PATH}
 
 # ============================================================================
@@ -407,9 +407,9 @@ ROLLBACK_END=$(date +%s)
 ROLLBACK_TIME=$((ROLLBACK_END - ROLLBACK_START))
 
 if [ "$ALL_TESTS_PASSED" = true ]; then
-    send_discord_notification "✅ **Rollback Successful**" "IxStats rolled back successfully\nCommit: $ROLLBACK_COMMIT\nTime: ${ROLLBACK_TIME}s\nServer PID: $SERVER_PID" "success"
+    send_discord_notification "✅ **Rollback Successful**" "IxStates rolled back successfully\nCommit: $ROLLBACK_COMMIT\nTime: ${ROLLBACK_TIME}s\nServer PID: $SERVER_PID" "success"
 else
-    send_discord_notification "⚠️  **Rollback Completed with Warnings**" "IxStats rolled back but some tests failed\nCommit: $ROLLBACK_COMMIT\nManual verification required" "warning"
+    send_discord_notification "⚠️  **Rollback Completed with Warnings**" "IxStates rolled back but some tests failed\nCommit: $ROLLBACK_COMMIT\nManual verification required" "warning"
 fi
 
 # Final summary

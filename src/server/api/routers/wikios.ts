@@ -1520,7 +1520,7 @@ async function notifyStashOwners(
 
   const pageSlug = encodeURIComponent(pageTitle.replace(/ /g, "_"));
   const href = revisionId
-    ? `/wiki-special/diff?from=${revisionId - 1}&to=${revisionId}`
+    ? `/w/special/diff?from=${revisionId - 1}&to=${revisionId}`
     : `/w/${pageSlug}`;
 
   await db.notification.createMany({

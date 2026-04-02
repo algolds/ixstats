@@ -42,10 +42,11 @@ export function WikiView({ onClose }: WikiViewProps) {
     setTimeout(() => searchInputRef.current?.focus(), 50);
   }, []);
 
-  const { data: searchResults, isFetching: isSearching } = api.wikios.search.useQuery(
+  const { data: searchData, isFetching: isSearching } = api.wikios.advancedSearch.useQuery(
     { query: searchQuery, limit: 8 },
-    { enabled: searchQuery.length >= 1, staleTime: 0, keepPreviousData: true }
+    { enabled: searchQuery.length >= 2, staleTime: 30_000 }
   );
+  const searchResults = searchData?.results ?? [];
 
   // Country match for map
   const { data: countries } = api.countries.getSelectList.useQuery(
@@ -133,24 +134,32 @@ export function WikiView({ onClose }: WikiViewProps) {
         </div>
       </div>
 
-      {/* Search Results — instant, inline */}
-      {searchQuery.length >= 1 && (
+      {/* Search Results — full-text with snippets */}
+      {searchQuery.length >= 2 && (
         <div className="border-border mb-3 border-b pb-3">
           <div className="text-muted-foreground mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider">
-            <span>Results</span>
+            <span>Results{searchData?.totalHits ? ` (${searchData.totalHits})` : ""}</span>
             {isSearching && (
               <span className="text-muted-foreground/50 animate-pulse">searching...</span>
             )}
           </div>
-          {searchResults && searchResults.length > 0 ? (
+          {searchResults.length > 0 ? (
             searchResults.map((result) => (
               <button
                 key={result.title}
                 onClick={() => handleNavigateToArticle(result.title)}
-                className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors"
+                className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full flex-col rounded-md px-2 py-1.5 text-left transition-colors"
               >
-                <BookOpen className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
-                <span className="truncate">{result.title}</span>
+                <span className="flex items-center gap-2 text-sm">
+                  <BookOpen className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="truncate font-medium">{result.title}</span>
+                </span>
+                {result.snippet && (
+                  <span
+                    className="text-muted-foreground mt-0.5 line-clamp-1 pl-[22px] text-[11px] [&_.searchmatch]:text-foreground [&_.searchmatch]:font-semibold"
+                    dangerouslySetInnerHTML={{ __html: result.snippet }}
+                  />
+                )}
               </button>
             ))
           ) : !isSearching ? (
@@ -249,11 +258,11 @@ export function WikiView({ onClose }: WikiViewProps) {
                 }} />
                 <QuickAction icon={<History />} label="History" onClick={() => {
                   onClose();
-                  router.push(withBasePath(`/wiki-special/history/${slug}`));
+                  router.push(withBasePath(`/w/special/history/${slug}`));
                 }} />
                 <QuickAction icon={<Link2 />} label="What links here" onClick={() => {
                   onClose();
-                  router.push(withBasePath(`/wiki-special/whatlinkshere/${slug}`));
+                  router.push(withBasePath(`/w/special/whatlinkshere/${slug}`));
                 }} />
                 <QuickAction icon={<ExternalLink />} label="View on MediaWiki" onClick={() => {
                   window.open(`https://ixwiki.com/wiki/${slug}`, "_blank");
@@ -269,7 +278,7 @@ export function WikiView({ onClose }: WikiViewProps) {
               <QuickAction icon={<Home />} label="Main Page" onClick={() => handleNavigateToArticle("Main Page")} />
               <QuickAction icon={<Shuffle />} label="Random Article" onClick={() => {
                 onClose();
-                router.push(withBasePath("/wiki-special/random"));
+                router.push(withBasePath("/w/special/random"));
               }} />
               <QuickAction icon={<Globe />} label="All Countries" onClick={() => {
                 onClose();
@@ -277,7 +286,7 @@ export function WikiView({ onClose }: WikiViewProps) {
               }} />
               <QuickAction icon={<Users />} label="ThinkPages" onClick={() => {
                 onClose();
-                router.push(withBasePath("/thinkpages"));
+                router.push(withBasePath("/dashboard"));
               }} />
               <QuickAction icon={<Map />} label="World Map" onClick={() => {
                 onClose();

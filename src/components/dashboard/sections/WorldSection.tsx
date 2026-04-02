@@ -10,6 +10,7 @@ import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
+import { WorldStatsBar } from "~/components/dashboard/WorldStatsBar";
 
 const SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   critical: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30" },
@@ -45,6 +46,11 @@ export function WorldSection() {
       animate="show"
       className="space-y-4 sm:space-y-6"
     >
+      {/* World Economy Stats */}
+      <motion.div variants={staggerItem}>
+        <WorldStatsBar globalStats={globalStats} />
+      </motion.div>
+
       {/* Crisis Metrics */}
       <motion.div variants={staggerItem}>
         <MetricCardGrid

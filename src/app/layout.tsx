@@ -22,9 +22,12 @@ import { GlobalNotificationSystem } from "~/components/notifications/GlobalNotif
 import { ToastProvider } from "~/components/ui/toast";
 import { NotificationBadgeProvider } from "~/components/notifications/NotificationBadgeProvider";
 import { withBasePath } from "~/lib/base-path";
+import { headers } from "next/headers";
+import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 import { WikiContextProvider } from "~/components/wikios/shared/WikiContext";
+import { ForumContextProvider } from "~/components/forum/shared/ForumContext";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -49,11 +52,9 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
-// IxWorld standalone mode: strip navigation chrome for maps.ixwiki.com
-const isStandalone =
-  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
-
-const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>) => {
+  const headersList = await headers();
+  const isStandalone = isStandaloneRequest(headersList);
   const dashboardPath = withBasePath("/dashboard");
   const signInPath = withBasePath("/sign-in");
   const signUpPath = withBasePath("/sign-up");
@@ -61,6 +62,7 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   const AppContent = () => (
     <TRPCReactProvider>
       <WikiContextProvider>
+      <ForumContextProvider>
       <GlobalLinkTooltipProvider>
       <ThemeProvider>
         <IxTimeProvider>
@@ -87,6 +89,7 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
         </IxTimeProvider>
       </ThemeProvider>
       </GlobalLinkTooltipProvider>
+      </ForumContextProvider>
     </WikiContextProvider>
     </TRPCReactProvider>
   );

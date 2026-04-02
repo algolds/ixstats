@@ -232,7 +232,7 @@ export function StashButton({ title, isAuthenticated }: StashButtonProps) {
                 Remove from all
               </button>
               <Link
-                href={withBasePath("/wiki-special/stashes")}
+                href={withBasePath("/w/special/stashes")}
                 className="wikios-stash-popover-action"
                 onClick={() => setShowPopover(false)}
               >
@@ -394,7 +394,7 @@ function StashManagerModal({
         </div>
 
         <Link
-          href={withBasePath("/wiki-special/stashes")}
+          href={withBasePath("/w/special/stashes")}
           className="wikios-quick-modal-fullpage"
           onClick={onClose}
         >

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# IxStats Server Configuration Validation Script
+# IxStates Server Configuration Validation Script
 # Validates both development and production server configurations
 
 set -e
 
-echo "🔍 IxStats Server Configuration Validation"
+echo "🔍 IxStates Server Configuration Validation"
 echo "==========================================="
 echo ""
 
@@ -138,7 +138,7 @@ echo ""
 # Summary
 echo "📊 Configuration Summary:"
 echo "   Development Server: localhost:3000 (root path)"
-echo "   Production Server:  localhost:3550 (/projects/ixstats basePath)"
+echo "   Production Server:  localhost:3550 (ixstates.ixwiki.com, root basePath)"
 echo "   Database (Dev):     SQLite (./dev.db)"
 echo "   Database (Prod):    PostgreSQL (localhost:5433/ixstats)"
 echo ""

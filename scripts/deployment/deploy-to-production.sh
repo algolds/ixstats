@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Production Deployment Script for IxStats v1.2
+# Production Deployment Script for IxStates v1.2
 # Enhanced version with comprehensive checks, backup, and notifications
 
 set -e
@@ -77,7 +77,7 @@ send_discord_notification() {
 echo -e "${CYAN}"
 echo "╔═══════════════════════════════════════════════════════╗"
 echo "║                                                       ║"
-echo "║    IxStats v1.2 - Production Deployment Script       ║"
+echo "║    IxStates v1.2 - Production Deployment Script       ║"
 echo "║                                                       ║"
 echo "╚═══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
@@ -85,11 +85,11 @@ echo -e "${NC}"
 DEPLOYMENT_START=$(date +%s)
 
 # Start deployment
-log "Starting production deployment for IxStats v1.2..."
+log "Starting production deployment for IxStates v1.2..."
 log "Deployment ID: $TIMESTAMP"
 log "Log file: $LOG_FILE"
 
-send_discord_notification "🚀 **Production Deployment Started**" "IxStats v1.2 deployment initiated\nDeployment ID: $TIMESTAMP" "info"
+send_discord_notification "🚀 **Production Deployment Started**" "IxStates v1.2 deployment initiated\nDeployment ID: $TIMESTAMP" "info"
 
 # Change to project directory
 cd "$PROJECT_ROOT" || error "Failed to change to project directory"
@@ -118,7 +118,7 @@ fi
 
 # Set production environment
 export NODE_ENV=production
-export BASE_PATH=${BASE_PATH:-/projects/ixstats}
+export BASE_PATH=${BASE_PATH:-}
 export NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-$BASE_PATH}
 
 log "Environment: $NODE_ENV"
@@ -410,7 +410,7 @@ DEPLOYMENT_TIME=$((DEPLOYMENT_END - DEPLOYMENT_START))
 log "Generating deployment report..."
 
 cat > "$REPORT_FILE" << EOF
-# Production Deployment Report - IxStats v1.2
+# Production Deployment Report - IxStates v1.2
 
 **Deployment Date**: $(date +'%Y-%m-%d %H:%M:%S')
 **Deployment ID**: $TIMESTAMP
@@ -479,7 +479,7 @@ cat > "$REPORT_FILE" << EOF
 
 ## Access Information
 
-- **Production URL**: https://ixwiki.com$BASE_PATH
+- **Production URL**: https://ixstates.ixwiki.com$BASE_PATH
 - **Local URL**: $PRODUCTION_URL
 - **Server PID**: $SERVER_PID
 - **Log File**: $LOG_FILE
@@ -527,7 +527,7 @@ cd /ixwiki/public/projects/ixstats
 
 - Check logs: \`tail -f $LOG_DIR/production-server-$TIMESTAMP.log\`
 - Monitor process: \`ps aux | grep $SERVER_PID\`
-- Test endpoints: \`curl https://ixwiki.com$BASE_PATH/api/health\`
+- Test endpoints: \`curl https://ixstates.ixwiki.com$BASE_PATH/api/health\`
 
 ---
 
@@ -539,9 +539,9 @@ log "✓ Deployment report generated: $REPORT_FILE"
 
 # Send success notification
 if [ "$ALL_TESTS_PASSED" = true ]; then
-    send_discord_notification "✅ **Production Deployment Successful**" "IxStats v1.2 deployed successfully\nTime: ${DEPLOYMENT_TIME}s\nCommit: ${NEW_COMMIT:-unknown}\nURL: https://ixwiki.com$BASE_PATH" "success"
+    send_discord_notification "✅ **Production Deployment Successful**" "IxStates v1.2 deployed successfully\nTime: ${DEPLOYMENT_TIME}s\nCommit: ${NEW_COMMIT:-unknown}\nURL: https://ixstates.ixwiki.com$BASE_PATH" "success"
 else
-    send_discord_notification "⚠️ **Production Deployment Completed with Warnings**" "IxStats v1.2 deployed but some tests failed\nTime: ${DEPLOYMENT_TIME}s\nManual review required\nLog: $LOG_FILE" "warning"
+    send_discord_notification "⚠️ **Production Deployment Completed with Warnings**" "IxStates v1.2 deployed but some tests failed\nTime: ${DEPLOYMENT_TIME}s\nManual review required\nLog: $LOG_FILE" "warning"
 fi
 
 # Final summary
@@ -557,7 +557,7 @@ echo ""
 success "Deployment ID: $TIMESTAMP"
 success "Deployment Time: ${DEPLOYMENT_TIME}s (~$((DEPLOYMENT_TIME / 60))m $((DEPLOYMENT_TIME % 60))s)"
 success "Server PID: $SERVER_PID"
-success "Production URL: https://ixwiki.com$BASE_PATH"
+success "Production URL: https://ixstates.ixwiki.com$BASE_PATH"
 echo ""
 log "📊 View deployment report: cat $REPORT_FILE"
 log "📋 View logs: tail -f $LOG_DIR/production-server-$TIMESTAMP.log"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   DynamicIsland,
@@ -64,18 +65,41 @@ function CommandPaletteContent({
     switchMode,
   } = useDynamicIslandState();
 
-  // Dynamic size based on sticky/collapsed state
+  // Dynamic size based on sticky/collapsed state + wiki context
   useEffect(() => {
     let newSize: string;
-    if (isSticky && isCollapsed) {
-      newSize = SIZE_PRESETS.COMPACT;        // 200x36 pill
-    } else if (isSticky && !isCollapsed) {
-      newSize = SIZE_PRESETS.COMPACT_LONG;   // 320x40 pill (hover state)
+    if (isOnWikiPage) {
+      if (isSticky && isCollapsed) {
+        newSize = SIZE_PRESETS.WIKI_COMPACT;   // 170x32 — compact wiki pill
+      } else if (isSticky) {
+        newSize = SIZE_PRESETS.COMPACT;         // 200x36 — hover state
+      } else {
+        newSize = SIZE_PRESETS.WIKI_INLINE;     // 280x38 — inline wiki pill
+      }
     } else {
-      newSize = SIZE_PRESETS.COMPACT_TALL;   // 360x44 pill (inline in navbar)
+      if (isSticky && isCollapsed) {
+        newSize = SIZE_PRESETS.COMPACT;          // 200x36 pill
+      } else if (isSticky && !isCollapsed) {
+        newSize = SIZE_PRESETS.COMPACT_LONG;     // 320x40 pill (hover state)
+      } else {
+        newSize = SIZE_PRESETS.COMPACT_TALL;     // 360x44 pill (inline in navbar)
+      }
     }
     setSize(newSize);
-  }, [setSize, isSticky, isCollapsed]);
+  }, [setSize, isSticky, isCollapsed, isOnWikiPage]);
+
+  // DI glow pulse on wiki page navigation
+  const diPathname = usePathname();
+  const prevNavRef = useRef(diPathname);
+
+  useEffect(() => {
+    if (isOnWikiPage && diPathname !== prevNavRef.current) {
+      prevNavRef.current = diPathname;
+      setDiPulseClass("animate-di-nav-pulse");
+      const timer = setTimeout(() => setDiPulseClass(""), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [diPathname, isOnWikiPage]);
 
   // Initialize notification store
   const initialize = useNotificationStore((state) => state.initialize);

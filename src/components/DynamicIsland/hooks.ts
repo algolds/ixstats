@@ -130,7 +130,8 @@ export function useCommandItems(userProfile?: UserProfile) {
 export function useDynamicIslandState() {
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
-  const isOnWikiPage = pathname?.startsWith("/w/") || pathname?.startsWith("/wiki-special/") || false;
+  const isOnWikiPage = pathname?.startsWith("/w/") || pathname?.startsWith("/w/special/") || pathname?.startsWith("/blurbs") || false;
+  const isOnForumPage = pathname?.startsWith("/forum") || false;
   const [mode, setMode] = useState<ViewMode>("compact");
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedMode, setExpandedMode] = useState<ViewMode>("search");
@@ -140,17 +141,29 @@ export function useDynamicIslandState() {
   const [isUserInteracting, setIsUserInteracting] = useState(false);
   const [timeDisplayMode, setTimeDisplayMode] = useState<"time" | "date" | "both">("time");
 
-  // Get countries data for search (use lightweight select list)
+  // Lazy-load countries only when search is expanded (not on mount)
   const { data: countriesData } = api.countries.getSelectList.useQuery(
     { limit: 500 },
-    { staleTime: 30 * 60 * 1000 }
+    { staleTime: 30 * 60 * 1000, enabled: isExpanded }
   );
 
   // Get user profile for contextual search
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
-  // Get crisis events
-  const { data: crisisEvents } = api.unifiedIntelligence.getCrisisEvents.useQuery();
+  // Wiki full-text search — only fires when query is active and relevant filter
+  const { data: wikiSearchData } = api.wikios.advancedSearch.useQuery(
+    { query: debouncedSearchQuery, limit: 5 },
+    {
+      enabled: debouncedSearchQuery.length >= 2 && (searchFilter === "all" || searchFilter === "wiki"),
+      staleTime: 60_000,
+    }
+  );
+
+  // Lazy-load crisis events only when expanded
+  const { data: crisisEvents } = api.unifiedIntelligence.getCrisisEvents.useQuery(
+    undefined,
+    { enabled: isExpanded, staleTime: 5 * 60 * 1000 }
+  );
 
   // Enhanced keyboard shortcuts with debouncing to prevent duplicates
   const [isProcessingShortcut, setIsProcessingShortcut] = useState(false);
@@ -161,7 +174,7 @@ export function useDynamicIslandState() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-    }, 300); // 300ms debounce
+    }, 150); // 150ms debounce — fast enough for command palette feel
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
@@ -190,6 +203,43 @@ export function useDynamicIslandState() {
     }
   }, []);
 
+  // Pre-compute lowercase search indexes for static data (avoids repeated .toLowerCase() per keystroke)
+  const commandIndex = useMemo(() => {
+    const ctx = [...commands];
+    if (!isSignedIn || !user) {
+      ctx.push(
+        { name: "Sign In", path: "/sign-in", icon: LogIn, description: "Sign in to your IxStats account" },
+        { name: "Sign Up", path: "/sign-up", icon: LogIn, description: "Create a new IxStats account" },
+      );
+    } else {
+      ctx.push({ name: "Sign Out", path: "/sign-out", icon: LogOut, description: "Sign out of your account" });
+    }
+    if (pathname !== "/") {
+      ctx.unshift({ name: "Home", path: "/", icon: Home, description: "Return to IxStats homepage" });
+    }
+    if (pathname?.includes("/countries/") && !pathname?.includes("/countries/new")) {
+      const cid = pathname.split("/countries/")[1]?.split("/")[0];
+      if (cid) {
+        ctx.push(
+          { name: "Country Profile", path: `/countries/${cid}/profile`, icon: Globe, description: "View detailed country profile" },
+          { name: "Economic Modeling", path: `/countries/${cid}/modeling`, icon: BarChart3, description: "Economic modeling and analysis" },
+        );
+      }
+    }
+    return ctx.map((c) => ({ ...c, _lower: `${c.name}\t${c.description}`.toLowerCase() }));
+  }, [isSignedIn, user, pathname]);
+
+  const featureIndex = useMemo(
+    () => features.map((f) => ({ ...f, _lower: `${f.name}\t${f.description}`.toLowerCase() })),
+    []
+  );
+
+  const countryIndex = useMemo(() => {
+    const list = Array.isArray(countriesData) ? countriesData : (countriesData as any)?.countries;
+    if (!list) return [];
+    return (list as any[]).map((c: any) => ({ ...c, _lower: (c.name as string).toLowerCase() }));
+  }, [countriesData]);
+
   // Generate search results based on query and filter
   const searchResults: SearchResult[] = useMemo(() => {
     if (!debouncedSearchQuery.trim()) return [];
@@ -197,11 +247,10 @@ export function useDynamicIslandState() {
     const query = debouncedSearchQuery.toLowerCase();
     const results: SearchResult[] = [];
 
-    // Search countries
+    // Countries — pre-indexed lowercase match
     if (searchFilter === "all" || searchFilter === "countries") {
-      const countryList = Array.isArray(countriesData) ? countriesData : (countriesData as any)?.countries;
-      countryList?.forEach((country: any) => {
-        if (country.name.toLowerCase().includes(query)) {
+      for (const country of countryIndex) {
+        if (country._lower.includes(query)) {
           const slug = country.slug ?? country.id;
           results.push({
             id: `country-${country.id}`,
@@ -209,139 +258,78 @@ export function useDynamicIslandState() {
             title: country.name,
             subtitle: `Economic Tier: ${country.economicTier || "Unknown"}`,
             description: country.economicTier ? `Tier: ${country.economicTier}` : "View country profile",
-            metadata: {
-              countryName: country.name,
-              economicTier: country.economicTier,
-            },
+            metadata: { countryName: country.name, economicTier: country.economicTier },
             action: () => (window.location.href = createAbsoluteUrl(`/countries/${slug}`)),
           });
         }
-      });
+        if (results.length >= 5 && searchFilter !== "countries") break;
+      }
     }
 
-    // Search commands/pages
+    // Commands — pre-indexed lowercase match
     if (searchFilter === "all" || searchFilter === "commands") {
-      // Add contextual commands based on current page and user state
-      const contextualCommands = [...commands];
-
-      // Add authentication commands
-      if (!isSignedIn || !user) {
-        contextualCommands.push(
-          {
-            name: "Sign In",
-            path: "/sign-in",
-            icon: LogIn,
-            description: "Sign in to your IxStats account",
-          },
-          {
-            name: "Sign Up",
-            path: "/sign-up",
-            icon: LogIn,
-            description: "Create a new IxStats account",
-          }
-        );
-      } else {
-        contextualCommands.push({
-          name: "Sign Out",
-          path: "/sign-out",
-          icon: LogOut,
-          description: "Sign out of your account",
-        });
-      }
-
-      // Add home command if not on home page
-      if (pathname !== "/") {
-        contextualCommands.unshift({
-          name: "Home",
-          path: "/",
-          icon: Home,
-          description: "Return to IxStats homepage",
-        });
-      }
-
-      // Add current page specific commands
-      if (pathname?.includes("/countries/") && !pathname?.includes("/countries/new")) {
-        const countryId = pathname.split("/countries/")[1]?.split("/")[0];
-        if (countryId) {
-          contextualCommands.push(
-            {
-              name: "Country Profile",
-              path: `/countries/${countryId}/profile`,
-              icon: Globe,
-              description: "View detailed country profile",
-            },
-            {
-              name: "Economic Modeling",
-              path: `/countries/${countryId}/modeling`,
-              icon: BarChart3,
-              description: "Economic modeling and analysis",
-            }
-          );
-        }
-      }
-
-      contextualCommands.forEach((command, index) => {
-        if (
-          command.name.toLowerCase().includes(query) ||
-          command.description.toLowerCase().includes(query)
-        ) {
+      for (const cmd of commandIndex) {
+        if (cmd._lower.includes(query)) {
           results.push({
-            id: `command-${command.name.toLowerCase().replace(/\s+/g, "-")}-${index}`,
+            id: `command-${cmd.name.toLowerCase().replace(/\s+/g, "-")}`,
             type: "command",
-            title: command.name,
-            description: command.description,
-            icon: command.icon,
+            title: cmd.name,
+            description: cmd.description,
+            icon: cmd.icon,
             action: () => {
-              if (command.path === "/sign-out") {
-                // Handle sign out
-                window.location.href = createAbsoluteUrl("/");
-              } else {
-                window.location.href = createAbsoluteUrl(command.path);
-              }
+              window.location.href = createAbsoluteUrl(cmd.path === "/sign-out" ? "/" : cmd.path);
             },
           });
         }
-      });
+        if (results.length >= 8 && searchFilter !== "commands") break;
+      }
     }
 
-    // Search features
+    // Features — pre-indexed lowercase match
     if (searchFilter === "all" || searchFilter === "features") {
-      features.forEach((feature, index) => {
-        if (
-          feature.name.toLowerCase().includes(query) ||
-          feature.description.toLowerCase().includes(query)
-        ) {
+      for (const feat of featureIndex) {
+        if (feat._lower.includes(query)) {
           results.push({
-            id: `feature-${feature.name.toLowerCase().replace(/\s+/g, "-")}-${index}`,
+            id: `feature-${feat.name.toLowerCase().replace(/\s+/g, "-")}`,
             type: "feature",
-            title: feature.name,
-            description: feature.description,
-            icon: feature.icon,
+            title: feat.name,
+            description: feat.description,
+            icon: feat.icon,
             action: () => {
-              // Handle special actions
-              if (feature.path === "#refresh") {
-                window.location.reload();
-              } else if (feature.path === "#search") {
-                // Focus on command palette search (this is already open)
-                const searchInput = document.querySelector(
-                  '[data-command-palette-search="true"]'
-                ) as HTMLInputElement;
-                if (searchInput) searchInput.focus();
-              } else if (feature.path === "#notifications") {
-                // Switch to notifications mode in Dynamic Island
-                switchMode("notifications");
-              } else {
-                // Normal navigation
-                window.location.href = createAbsoluteUrl(feature.path);
+              if (feat.path === "#refresh") { window.location.reload(); return; }
+              if (feat.path === "#search") {
+                (document.querySelector('[data-command-palette-search="true"]') as HTMLInputElement)?.focus();
+                return;
               }
+              if (feat.path === "#notifications") { switchMode("notifications"); return; }
+              window.location.href = createAbsoluteUrl(feat.path);
             },
           });
         }
-      });
+        if (results.length >= 10 && searchFilter !== "features") break;
+      }
     }
 
-    return results.slice(0, 10); // Limit to 10 results
-  }, [debouncedSearchQuery, searchFilter, countriesData?.countries, switchMode, user, pathname]);
+    // Wiki articles — from advancedSearch API (already server-ranked by relevance)
+    if (searchFilter === "all" || searchFilter === "wiki") {
+      for (const article of wikiSearchData?.results ?? []) {
+        results.push({
+          id: `wiki-${article.title}`,
+          type: "wiki",
+          title: article.title,
+          description: article.snippet
+            ? article.snippet.replace(/<[^>]*>/g, "").slice(0, 120)
+            : "Wiki article",
+          icon: BookOpen,
+          action: () => {
+            window.location.href = createAbsoluteUrl(`/w/${encodeURIComponent(article.title.replace(/ /g, "_"))}`);
+          },
+        });
+      }
+    }
+
+    return results.slice(0, 12);
+  }, [debouncedSearchQuery, searchFilter, countryIndex, commandIndex, featureIndex, switchMode, wikiSearchData]);
 
   // Cycling timeout ref
   const cyclingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -356,7 +344,7 @@ export function useDynamicIslandState() {
       clearTimeout(cyclingTimeoutRef.current);
     }
 
-    if (mode === "compact" && !isUserInteracting) {
+    if (mode === "compact" && !isUserInteracting && !isOnWikiPage) {
       cyclingTimeoutRef.current = setTimeout(() => {
         switchMode("cycling");
       }, idleMs);
@@ -367,7 +355,16 @@ export function useDynamicIslandState() {
         clearTimeout(cyclingTimeoutRef.current);
       }
     };
-  }, [mode, isUserInteracting, switchMode]);
+  }, [mode, isUserInteracting, isOnWikiPage, switchMode]);
+
+  // On wiki pages, default expanded mode to wiki view
+  useEffect(() => {
+    if (isOnWikiPage) {
+      setExpandedMode("wiki");
+    }
+  }, [isOnWikiPage]);
+
+  // Forum pages use their own ForumLayout sidebar — no DI forum mode needed.
 
   // Enhanced GLOBAL keyboard shortcuts - work everywhere
   useEffect(() => {
@@ -501,14 +498,16 @@ export function useDynamicIslandState() {
         }
       }
 
-      // Tab (no modifiers, not in input) — toggle wiki mode
-      // Double-tap Tab within 400ms — enter editor mode
+      // Tab (no modifiers, not in input) — wiki mode toggle only
+      // Only activates on wiki pages. Forum pages use their own sidebar.
+      // Double-tap Tab within 400ms on wiki — enter editor mode
       if (
         e.key === "Tab" &&
         !e.metaKey && !e.ctrlKey && !e.altKey &&
         !isInputFocused &&
         mode !== "search" &&
-        !isProcessingShortcut
+        !isProcessingShortcut &&
+        isOnWikiPage
       ) {
         e.preventDefault();
         e.stopPropagation();
@@ -518,10 +517,9 @@ export function useDynamicIslandState() {
         lastTabTimestampRef.current = now;
 
         if (timeSinceLastTab < 400 && mode === "wiki") {
-          // Double-tap: enter editor mode for current wiki article
+          // Double-tap on wiki: enter editor mode for current wiki article
           setIsProcessingShortcut(true);
           switchMode("compact");
-          // Navigate to edit page — dispatched via custom event
           window.dispatchEvent(new CustomEvent("wikios:edit"));
           if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
           shortcutTimeoutRef.current = setTimeout(() => {
@@ -670,7 +668,7 @@ export const commands = [
   // Knowledge & Communication
   {
     name: "ThinkPages",
-    path: "/thinkpages",
+    path: "/dashboard",
     icon: TrendingUp,
     description: "Knowledge management and collaborative thinking",
   },
@@ -682,19 +680,19 @@ export const commands = [
   },
   {
     name: "Wiki Recent Changes",
-    path: "/wiki-special/recent-changes",
+    path: "/w/special/recent-changes",
     icon: History,
     description: "Latest wiki edits and activity",
   },
   {
     name: "Wiki Random Article",
-    path: "/wiki-special/random",
+    path: "/w/special/random",
     icon: Shuffle,
     description: "Discover a random wiki article",
   },
   {
     name: "Wiki Search",
-    path: "/wiki-special/search",
+    path: "/w/special/search",
     icon: Search,
     description: "Search wiki articles",
   },
@@ -886,7 +884,7 @@ export const features = [
   // Knowledge & Documentation
   {
     name: "Knowledge Management",
-    path: "/thinkpages",
+    path: "/dashboard",
     icon: TrendingUp,
     description: "Collaborative wiki and documentation system",
   },
@@ -898,7 +896,7 @@ export const features = [
   },
   {
     name: "Documentation",
-    path: "/thinkpages",
+    path: "/dashboard",
     icon: Activity,
     description: "Platform documentation and guides",
   },

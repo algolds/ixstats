@@ -10,6 +10,7 @@ import { useUser } from "~/context/auth-context";
 import {
   Bell,
   BellRing,
+  BookOpen,
   X,
   CheckCircle,
   Info,
@@ -33,6 +34,7 @@ function getNotificationIcon(notification: any): React.ComponentType<{ className
       economic: TrendingUp, diplomatic: Globe, social: Users,
       security: AlertTriangle, governance: Building2, achievement: CheckCircle,
       crisis: AlertCircle, opportunity: TrendingUp, military: AlertTriangle,
+      wiki: BookOpen,
     };
     return iconMap[cat] ?? Bell;
   }

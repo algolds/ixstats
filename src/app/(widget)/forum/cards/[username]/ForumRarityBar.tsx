@@ -2,7 +2,7 @@
  * ForumRarityBar — Server component showing rarity distribution as a horizontal bar.
  */
 
-import { RARITY_INLINE_COLORS } from "~/lib/forum-widget-utils";
+import { RARITY_INLINE_COLORS } from "~/modules/forum";
 import { styles } from "./widget-styles";
 
 // Display order: LEGENDARY → COMMON (highest first)

@@ -1,0 +1,582 @@
+// IxStates — Maps, Geography & IxWorld models
+
+model Territory {
+  id           String                   @id @default(cuid())
+  countryId    String
+  name         String
+  geometry     Json
+  isMainland   Boolean                  @default(false)
+  areaSqKm     Float?
+  geom_postgis Unsupported("geometry")?
+  country      Country                  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])  // FK index for country territory queries
+  @@index([geom_postgis], map: "idx_territory_geom", type: Gist)
+  @@map("territories")
+}
+
+model BorderHistory {
+  id            String   @id @default(cuid())
+  countryId     String
+  geometry      Json
+  changedBy     String
+  changedAt     DateTime @default(now())
+  reason        String?
+  oldAreaSqMi   Float?
+  newAreaSqMi   Float?
+  areaDeltaSqMi Float?
+  country       Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, changedAt])
+  @@map("border_history")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+model Subdivision {
+  id              String                   @id @default(cuid())
+  countryId       String
+  name            String
+  type            String
+  geometry        Json
+  level           Int
+  population      Float?
+  capital         String?
+  areaSqKm        Float?
+  color           String?
+  status          String                   @default("pending")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  geom_postgis    Unsupported("geometry")?
+  cities          City[]                   @relation("SubdivisionCities")
+  pois            PointOfInterest[]        @relation("SubdivisionPOIs")
+  storyPins       StoryPin[]               @relation("SubdivisionStoryPins")
+  country         Country                  @relation("CountrySubdivisions", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_subdivision_geom", type: Gist)
+  @@map("subdivisions")
+}
+
+model City {
+  id                   String                   @id @default(cuid())
+  countryId            String
+  subdivisionId        String?
+  name                 String
+  type                 String
+  coordinates          Json
+  population           Float?
+  isNationalCapital    Boolean                  @default(false)
+  isSubdivisionCapital Boolean                  @default(false)
+  wikiPageTitle        String?
+  elevation            Float?
+  foundedYear          Int?
+  status               String                   @default("pending")
+  submittedBy          String
+  reviewedBy           String?
+  reviewedAt           DateTime?
+  rejectionReason      String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  geom_postgis         Unsupported("geometry")?
+  country              Country                  @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision          Subdivision?             @relation("SubdivisionCities", fields: [subdivisionId], references: [id])
+  transportHubs        TransportHub[]           @relation("CityTransportHubs")
+
+  @@index([countryId, status])
+  @@index([type, isNationalCapital])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_city_geom", type: Gist)
+  @@map("cities")
+}
+
+model PointOfInterest {
+  id              String                   @id @default(cuid())
+  countryId       String
+  subdivisionId   String?
+  name            String
+  category        String
+  icon            String?
+  coordinates     Json
+  description     String?
+  wikiPageTitle   String?
+  images          Json?
+  metadata        Json?
+  status          String                   @default("pending")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  geom_postgis    Unsupported("geometry")?
+  country         Country                  @relation("CountryPOIs", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision     Subdivision?             @relation("SubdivisionPOIs", fields: [subdivisionId], references: [id])
+
+  @@index([countryId, status, category])
+  @@index([category, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_poi_geom", type: Gist)
+  @@map("points_of_interest")
+}
+
+/// Story Pins — Narrative markers placed on the map telling a country's history.
+/// Each pin links to a wiki article and has a category, IxTime year, and rich text.
+model StoryPin {
+  id              String                   @id @default(cuid())
+  countryId       String
+  subdivisionId   String?
+  title           String
+  content         String                   @db.Text
+  contentFormat   String                   @default("plain") // "plain" | "markdown"
+  category        String                   // battle, founding, treaty, cultural, religious, trade, naval, settlement, government, biography, linguistic, upheaval, natural, exploration
+  importance      Int                      @default(0) // 0=normal, 1=major, 2=legendary
+  ixTimeYear      Int?
+  eraLabel        String?
+  coordinates     Json                     // [lng, lat]
+  wikiPageTitle   String?
+  photos          Json?                    // string[] of image URLs
+  thumbnailUrl    String?                  // cached hero image for map preview
+  icon            String?
+  metadata        Json?
+  storylineId     String?
+  storylineOrder  Int?                     // ordering within a storyline
+  status          String                   @default("approved")
+  submittedBy     String
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  country         Country                  @relation("CountryStoryPins", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision     Subdivision?             @relation("SubdivisionStoryPins", fields: [subdivisionId], references: [id])
+  storyline       Storyline?               @relation("StorylinePins", fields: [storylineId], references: [id])
+
+  @@index([countryId, status, category])
+  @@index([countryId, ixTimeYear])
+  @@index([status, createdAt])
+  @@index([storylineId, storylineOrder])
+  @@map("story_pins")
+}
+
+/// Storylines — Narrative chains connecting story pins into sequential historical arcs.
+/// Each storyline belongs to a country and groups related story pins in order.
+model Storyline {
+  id          String     @id @default(cuid())
+  title       String     @db.VarChar(200)
+  description String?    @db.Text
+  countryId   String
+  color       String?    @db.VarChar(7) // hex color for map connection lines
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  country     Country    @relation("CountryStorylines", fields: [countryId], references: [id], onDelete: Cascade)
+  pins        StoryPin[] @relation("StorylinePins")
+
+  @@index([countryId])
+  @@map("storylines")
+}
+
+/// Map Labels — Custom styled text on the map for geographic feature names.
+/// Mountain ranges, straits, bays, deserts, etc. Rendered as MapLibre text layers.
+model MapLabel {
+  id            String                   @id @default(cuid())
+  countryId     String
+  text          String
+  labelType     String                   // mountain_range, strait, bay, peninsula, plateau, valley, desert, sea, region, historical
+  coordinates   Json                     // [lng, lat] anchor point
+  fontSize      Float                    @default(14)
+  color         String                   @default("#374151")
+  rotation      Float                    @default(0)
+  letterSpacing Float                    @default(0)
+  fontWeight    String                   @default("normal")
+  opacity       Float                    @default(1.0)
+  minZoom       Float                    @default(4)
+  maxZoom       Float                    @default(18)
+  wikiPageTitle String?
+  metadata      Json?
+  status        String                   @default("approved")
+  submittedBy   String
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  country       Country                  @relation("CountryMapLabels", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, status])
+  @@index([status, minZoom])
+  @@map("map_labels")
+}
+
+/// IxMaps - Base map layer storage for GeoJSON features (political, climate, etc.)
+model MapLayer {
+  id           String                   @id @default(cuid())
+  layerType    String                   // "political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background"
+  featureId    String                   // Original GeoJSON ID (e.g., "Kagazi", "nature_preserve")
+  geometry     Json                     // GeoJSON geometry object
+  properties   Json                     // GeoJSON properties (fill, ixmap-subgroup, etc.)
+  countryId    String?                  // Link to Country for political features
+  displayName  String?                  // Human-readable name
+  areaSqKm     Float?                   // Calculated area
+  centroid     Json?                    // GeoJSON Point [lng, lat]
+  boundingBox  Json?                    // [minLng, minLat, maxLng, maxLat]
+  isActive     Boolean                  @default(true)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  geom_postgis   Unsupported("geometry")?
+  sourceUploadId String?                  // Reference to SvgUpload that created this record
+  worldId      String?                  @default("default") // Future multi-tenant world support
+
+  country      Country?                 @relation("CountryMapFeatures", fields: [countryId], references: [id], onDelete: SetNull)
+
+  @@unique([layerType, featureId])
+  @@index([layerType, isActive])
+  @@index([countryId])
+  @@index([worldId])
+  @@index([geom_postgis], map: "idx_map_layer_geom", type: Gist)
+  @@map("map_layers")
+}
+
+/// IxMaps - Approval queue for user map edits (subdivisions, cities, POIs, border adjustments)
+model MapEditRequest {
+  id               String    @id @default(cuid())
+  countryId        String
+  userId           String
+  editType         String    // "subdivision", "city", "poi", "border_adjust", "split", "merge", "redraw", "vertex_edit"
+  targetId         String?   // ID of entity being edited (null for new)
+  operation        String    // "create", "update", "delete"
+  proposedData     Json      // Proposed changes (geometry, properties)
+  currentData      Json?     // Snapshot of current state for diff
+  editSubtype      String?   // For border edits: "split", "merge", "redraw", "vertex_edit"
+  affectedFeatures Json?     // Array of featureIds affected (for merge/split)
+  previousGeometry Json?     // Complete previous geometry for undo
+  status           String    @default("pending") // pending, approved, rejected
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  country          Country   @relation("CountryMapEdits", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, status])
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@map("map_edit_requests")
+}
+
+/// IxMaps - Border editor sessions for tracking in-progress edits
+model MapEditorSession {
+  id          String    @id @default(cuid())
+  userId      String
+  featureId   String    // MapLayer featureId being edited
+  sessionData Json      // Complete editor state: vertices, undo stack, mode
+  isDraft     Boolean   @default(true)
+  expiresAt   DateTime  // 24h auto-expire
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, isDraft])
+  @@index([featureId])
+  @@index([expiresAt])
+  @@map("map_editor_sessions")
+}
+
+/// IxMaps - World template for export/import (clone system)
+model WorldTemplate {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  version       String    @default("1.0.0")
+  createdBy     String    // Clerk userId
+  metadata      Json?     // { bounds, featureCounts, generatedFrom, etc. }
+  layers        Json      // Record<LayerType, GeoJSON.FeatureCollection>
+  countries     Json?     // Array<{ name, featureId, properties }>
+  sovereignty   Json?     // Array<{ sovereign, subject, type, autonomy }>
+  mapConfig     Json?     // { center, zoom, layerConfigs, colorPalette }
+  fileSizeBytes Int?
+  isPublic      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([createdBy])
+  @@index([isPublic])
+  @@map("world_templates")
+}
+
+/// IxMaps - Procedurally generated worlds
+model ProceduralWorld {
+  id             String    @id @default(cuid())
+  seed           Int
+  parameters     Json      // WorldGenParams
+  status         String    @default("completed") // "generating", "completed", "failed"
+  generatedData  Json?     // Generated layers (FeatureCollections)
+  metadata       Json?     // Stats: landPercentage, countryCount, generationTimeMs, etc.
+  templateId     String?   // If saved as template
+  createdBy      String    // Clerk userId
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([seed])
+  @@index([createdBy])
+  @@map("procedural_worlds")
+}
+
+/// IxMaps - Sovereignty/dependency relationships between countries
+/// Supports multi-level hierarchies (crown possessions, vassals, protectorates, etc.)
+model CountrySovereignty {
+  id               String   @id @default(cuid())
+  sovereignId      String
+  subjectId        String
+  relationshipType String   // "crown_possession", "vassal", "protectorate", "dependency", "puppet_state", "dominion", "condominium", "associated_state"
+  autonomyLevel    Float    @default(0.5) // 0=fully controlled, 1=mostly autonomous
+  description      String?
+  establishedDate  String?  // Descriptive date text
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  sovereign Country @relation("SovereignOf", fields: [sovereignId], references: [id], onDelete: Cascade)
+  subject   Country @relation("SubjectOf", fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([sovereignId, subjectId])
+  @@index([sovereignId])
+  @@index([subjectId])
+  @@map("country_sovereignty")
+}
+
+/// IxMaps - Canonical elevation zone reference (9 zones matching IxWiki topographic legend)
+model ElevationZone {
+  id           String   @id @default(cuid())
+  zoneId       String   @unique // "zone_0" through "zone_8"
+  zoneName     String // "Coastal Lowlands", "Low Hills", etc.
+  elevationMin Int // meters: 0, 100, 350, 500, 1000, 2000, 3000, 4000, 5000
+  elevationMax Int // meters: 99, 349, 499, 999, 1999, 2999, 3999, 4999, 9999
+  color        String // hex with alpha: "#a8c995ff"
+  sortOrder    Int // 0-8 for rendering order
+  createdAt    DateTime @default(now())
+
+  @@index([sortOrder])
+  @@map("elevation_zones")
+}
+
+/// IxMaps - Shared vertices between political features for synchronized border editing
+/// Built automatically on map data import; tracks vertices shared by 2+ country borders
+model SharedVertex {
+  id          String   @id @default(cuid())
+  lng         Float // WGS84 longitude
+  lat         Float // WGS84 latitude
+  featureRefs Json // Array<{ featureId: string, ringIndex: number, vertexIndex: number }>
+  snapTarget  String? // Optional: "altitude_boundary", "river", "coastline"
+  worldId     String   @default("default")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([worldId])
+  @@map("shared_vertices")
+}
+
+/// IxMaps - SVG upload history for map layer management
+/// Tracks uploaded SVG files, processing status, and extracted GeoJSON data
+model SvgUpload {
+  id            String    @id @default(cuid())
+  layerType     String    // "political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background"
+  fileName      String
+  fileSizeBytes Int
+  svgHash       String    // SHA-256 hash of SVG content for deduplication
+  status        String    @default("pending") // pending, processing, processed, failed, rolled_back
+  processingLog Json?     // Array of log messages from processing pipeline
+  featureCount  Int?      // Number of features extracted from SVG
+  errorMessage  String?   // Error message if processing failed
+  processedAt   DateTime?
+  uploadedBy    String    // Clerk user ID of uploader
+  isActive      Boolean   @default(false) // true = this upload is the current active version for this layer
+  geojsonData   Json?     // Extracted GeoJSON FeatureCollection (stored for rollback)
+  svgContent    String?   // Raw SVG content (stored for reprocessing) @db.Text
+  svgMetadata   Json?     // SVG viewBox, dimensions, layer info, coordinate config
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([layerType, isActive])
+  @@index([layerType, createdAt])
+  @@index([status])
+  @@map("svg_uploads")
+}
+
+/// Cached geographic analysis profile for a country.
+/// Computed from spatial intersection of country geometry with climate/altitude layers.
+/// Used by the economic engine (GDP modifiers), NPC personality drift, and crisis generation.
+model CountryGeoProfile {
+  id                  String   @id @default(cuid())
+  countryId           String   @unique
+  country             Country  @relation("CountryGeoProfile", fields: [countryId], references: [id], onDelete: Cascade)
+  climateDistribution Json     // [{ type, name, percentArea, areaSqKm, agricultureFactor }]
+  elevationProfile    Json     // [{ zone, name, percentArea, areaSqKm, minElev, maxElev }]
+  arableLandPercent   Float
+  coastlineKm         Float    @default(0)
+  isLandlocked        Boolean  @default(false)
+  isIsland            Boolean  @default(false)
+  riverKm             Float    @default(0)
+  lakeAreaSqKm        Float    @default(0)
+  neighborCount       Int      @default(0)
+  dominantClimate     String?
+  dominantElevation   String?
+  meanElevation       Float?
+  terrainRoughness    Float?
+  gdpModifier         Float    @default(1.0)
+  tradeModifier       Float    @default(1.0)
+  infraCostModifier   Float    @default(1.0)
+  lastCalculatedAt    DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([countryId])
+  @@map("country_geo_profiles")
+}
+
+/// Geographic resources procedurally generated from a country's terrain.
+/// Resources are placed based on climate zones, elevation, and hydrography.
+/// Used for trade, economic output, and strategic gameplay.
+model GeographicResource {
+  id               String   @id @default(cuid())
+  countryId        String
+  country          Country  @relation("CountryGeographicResources", fields: [countryId], references: [id], onDelete: Cascade)
+  resourceType     String   // mineral, fishery, forest, oil, gas, freshwater, agricultural
+  name             String
+  coordinates      Json     // [lng, lat]
+  quantity         Float    @default(0.5) // 0-1 abundance scale
+  quality          Float    @default(0.5) // 0-1 grade/purity
+  exploitedPercent Float    @default(0)   // 0-100 exploitation level
+  climateZone      String?
+  elevationZone    String?
+  isDiscovered     Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([resourceType])
+  @@index([countryId, resourceType])
+  @@map("geographic_resources")
+}
+
+/// A Realm is a self-contained world instance with its own map, countries, and IxStats data.
+/// The "default" realm is IxWorld. Custom realms are created via World Studio.
+model Realm {
+  id              String       @id @default(cuid())
+  slug            String       @unique // URL-safe: "my-fantasy-world"
+  name            String
+  description     String?
+  ownerId         String       // Clerk userId
+  status          String       @default("draft") // draft, generating, active, archived
+  visibility      String       @default("private") // private, unlisted, public
+  templateId      String?      // Source ProceduralWorld or WorldTemplate
+  settings        Json?        // Realm-specific config overrides
+  thumbnail       String?      // Preview image URL
+  seed            Int?         // Master generation seed for reproducibility
+  generationParams Json?       // WorldGenParams snapshot
+  countries       Country[]    @relation("RealmCountries")
+  worldConfig     WorldConfig? @relation("RealmWorldConfig")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([visibility])
+  @@map("realms")
+}
+
+/// World configuration for the IxWorld framework.
+/// Allows multiple independent worlds to be hosted on the same instance,
+/// each with their own wiki, map layers, climate system, etc.
+/// The "default" world is IxWorld (IxEarth). Future worlds are created
+/// by other communities licensing the framework.
+model WorldConfig {
+  id               String   @id @default(cuid())
+  worldId          String   @unique // "default" for IxWorld, custom slug for others
+  name             String   // "IxWorld", "MyWorld", etc.
+  description      String?
+  wikiBaseUrl      String?  // "https://ixwiki.com"
+  wikiApiPath      String   @default("/api.php")
+  mapProjection    String   @default("globe") // globe, mercator, dynamic
+  defaultCenter    Json?    // [lng, lat]
+  defaultZoom      Float    @default(2)
+  layerTypes       Json?    // available layer types, e.g. ["background","political","climate"]
+  sovereigntyTypes Json?    // custom sovereignty type definitions
+  climateSystem    String   @default("trewartha") // trewartha, koppen, custom
+  elevationZones   Json?    // custom elevation zone definitions
+  waterBodyLabels  Json?    // ocean/sea label positions [{name, lng, lat, zoom}]
+  countryColors    Json?    // custom palette for political layer
+  isActive         Boolean  @default(true)
+  realmId          String?  @unique // FK to Realm (null for legacy "default" config)
+  realm            Realm?   @relation("RealmWorldConfig", fields: [realmId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Data sync authority
+  dataAuthority     Json?    // Per-field authority map: {"population":"stats","capital":"wiki",...}
+  syncEnabled       Boolean  @default(true)
+  syncIntervalMin   Int      @default(60)
+
+  @@map("world_configs")
+}
+
+/// Transport route connecting cities/hubs across terrain.
+/// Generated procedurally from terrain + population data, then editable by users.
+model TransportRoute {
+  id                String   @id @default(cuid())
+  countryId         String?
+  country           Country? @relation("CountryTransportRoutes", fields: [countryId], references: [id], onDelete: SetNull)
+  routeType         String   // rail, highway, road, shipping_lane, air_corridor, canal
+  name              String?
+  geometry          Json     // GeoJSON LineString
+  stops             Json?    // [{cityId, name, coordinates, order}]
+  properties        Json?    // {gauge, speed_kmh, lanes, tonnage, is_electrified}
+  isInternational   Boolean  @default(false)
+  status            String   @default("operational") // planned, under_construction, operational, abandoned
+  builtYear         Int?
+  capacity          Float?   // passengers/yr or tonnes/yr
+  costBillion       Float?   // construction cost estimate
+  terrainDifficulty Float?   // 0-1, computed from elevation changes along route
+  lengthKm          Float?   // total route length
+  worldId           String   @default("default")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([routeType])
+  @@index([worldId, routeType])
+  @@map("transport_routes")
+}
+
+/// Transport hub — station, port, airport, or junction where routes converge.
+model TransportHub {
+  id           String   @id @default(cuid())
+  cityId       String?
+  city         City?    @relation("CityTransportHubs", fields: [cityId], references: [id], onDelete: SetNull)
+  countryId    String
+  country      Country  @relation("CountryTransportHubs", fields: [countryId], references: [id], onDelete: Cascade)
+  hubType      String   // station, port, airport, junction, interchange
+  name         String
+  coordinates  Json     // [lng, lat]
+  throughput   Float?   // annual capacity
+  connections  Int      @default(0) // number of routes through this hub
+  worldId      String   @default("default")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([hubType])
+  @@index([worldId])
+  @@map("transport_hubs")
+}

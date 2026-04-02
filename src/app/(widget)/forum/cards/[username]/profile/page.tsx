@@ -6,7 +6,7 @@
  */
 
 import { db } from "~/server/db";
-import { rarityRank, computeRarityCounts, formatValue } from "~/lib/forum-widget-utils";
+import { rarityRank, computeRarityCounts, formatValue } from "~/modules/forum";
 import { ForumMiniCard } from "../ForumMiniCard";
 import { ForumRarityBar } from "../ForumRarityBar";
 import { styles } from "../widget-styles";
@@ -68,7 +68,7 @@ export default async function ForumProfileWidget({
     );
   }
 
-  const showcaseUrl = `https://ixwiki.com/projects/ixstats/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`;
+  const showcaseUrl = `https://ixstates.ixwiki.com/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`;
 
   return (
     <div style={{ padding: 12 }}>

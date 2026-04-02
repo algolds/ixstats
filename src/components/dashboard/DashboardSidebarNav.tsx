@@ -3,20 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Globe, Newspaper } from "lucide-react";
+import { LayoutDashboard, Globe } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { LayoutDashboardIcon, GlobeAltIcon } from "~/components/ui/icons";
 import { stripBasePath } from "~/lib/base-path";
 
-export type DashboardSection = "activity" | "feed" | "world";
+export type DashboardSection = "overview" | "world";
 
-/** Map section ids to their animated icon counterparts */
 const ANIMATED_NAV_ICONS: Partial<Record<DashboardSection, React.ComponentType<{ size?: number; className?: string }>>> = {
-  activity: LayoutDashboardIcon,
+  overview: LayoutDashboardIcon,
   world: GlobeAltIcon,
 };
 
-/** Renders the animated icon for a section when available, falling back to the lucide icon */
 function NavIcon({ id, fallback: Fallback, className, size = 16 }: { id: DashboardSection; fallback: LucideIcon; className?: string; size?: number }) {
   const Animated = ANIMATED_NAV_ICONS[id];
   if (Animated) return <Animated size={size} className={className} />;
@@ -32,20 +30,12 @@ export const DASHBOARD_NAV_ITEMS: {
   activeGlow: string;
 }[] = [
   {
-    id: "activity",
+    id: "overview",
     href: "/dashboard",
     icon: LayoutDashboard,
-    title: "Command Overview",
+    title: "Overview",
     gradient: "from-blue-500 to-cyan-500",
     activeGlow: "shadow-blue-500/30",
-  },
-  {
-    id: "feed",
-    href: "/dashboard/feed",
-    icon: Newspaper,
-    title: "Feed",
-    gradient: "from-purple-500 to-violet-500",
-    activeGlow: "shadow-purple-500/30",
   },
   {
     id: "world",
@@ -59,9 +49,14 @@ export const DASHBOARD_NAV_ITEMS: {
 
 export function getSectionFromPathname(rawPathname: string): DashboardSection {
   const pathname = stripBasePath(rawPathname);
-  if (pathname.startsWith("/dashboard/feed")) return "feed";
-  if (pathname.startsWith("/dashboard/world") || pathname.startsWith("/dashboard/diplomacy") || pathname.startsWith("/dashboard/trends")) return "world";
-  return "activity";
+  if (
+    pathname.startsWith("/dashboard/world") ||
+    pathname.startsWith("/dashboard/diplomacy") ||
+    pathname.startsWith("/dashboard/trends")
+  )
+    return "world";
+  // /dashboard, /dashboard/feed, and anything else → overview
+  return "overview";
 }
 
 interface DashboardSidebarNavProps {
@@ -75,7 +70,6 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
   const activeId = activeSection ?? getSectionFromPathname(pathname);
   const isControlled = !!onNavigate;
 
-  /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
       <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-border/50 bg-muted/30 p-1.5 backdrop-blur-md">
@@ -106,7 +100,6 @@ export function DashboardSidebarNav({ activeSection, onNavigate, variant = "desk
     );
   }
 
-  /* ── Desktop: expanded sidebar with icon + label ── */
   return (
     <nav className="flex w-56 flex-col gap-1 rounded-xl border border-border/50 bg-background/80 p-1.5 shadow-sm backdrop-blur-lg">
       {DASHBOARD_NAV_ITEMS.map((item) => {

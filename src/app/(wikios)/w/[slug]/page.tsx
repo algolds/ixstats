@@ -24,7 +24,7 @@ export default function WikiOSArticlePage() {
   useEffect(() => {
     if (title.startsWith("Category:")) {
       const catName = title.slice("Category:".length);
-      router.replace(withBasePath(`/wiki-special/categories/${encodeURIComponent(catName.replace(/ /g, "_"))}`));
+      router.replace(withBasePath(`/w/special/categories/${encodeURIComponent(catName.replace(/ /g, "_"))}`));
     }
   }, [title, router]);
 

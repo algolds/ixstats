@@ -61,6 +61,8 @@ export const lorewardsRouter = createTRPCRouter({
 
       return entries.map((e) => ({
         date: e.date,
+        dateStart: e.dateStart,
+        dateEnd: e.dateEnd,
         type: e.type,
         winnerUser: e.winnerUser,
         winnerPage: e.winnerPage,

@@ -16,6 +16,7 @@ import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { CategoryBreadcrumb } from "~/components/wikios/reader/CategoryBreadcrumb";
 import { StashButton } from "~/components/wikios/reader/StashButton";
 import { useAnnotationOverlay } from "~/components/wikios/reader/AnnotationOverlay";
+import { useCiteTooltips } from "~/components/wikios/reader/useCiteTooltips";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 
@@ -91,6 +92,9 @@ export function ArticleRenderer({
   const { toggleButton: markupToggle, toolbarPortal, annotationPopover } =
     useAnnotationOverlay(contentRef, title, isAuthenticated, isStashed);
 
+  // Citation hover tooltips
+  const citeTooltipPortal = useCiteTooltips(contentRef);
+
   // Award badge detection
   const awardQuery = api.lorewards.isAwardWinningArticle.useQuery(
     { title },
@@ -112,7 +116,7 @@ export function ArticleRenderer({
         const count = awardData.entries.length;
         return (
           <Link
-            href={withBasePath("/wiki-special/lorewards")}
+            href={withBasePath("/w/special/lorewards")}
             className="wikios-award-banner"
           >
             <Trophy size={15} />
@@ -178,6 +182,7 @@ export function ArticleRenderer({
       {lightboxPortal}
       {toolbarPortal}
       {annotationPopover}
+      {citeTooltipPortal}
 
       {/* Quick action modals */}
       {activeModal === "history" && (
@@ -240,7 +245,7 @@ function QuickHistoryModal({ title, slug, onClose }: { title: string; slug: stri
         </div>
 
         <Link
-          href={withBasePath(`/wiki-special/history/${slug}`)}
+          href={withBasePath(`/w/special/history/${slug}`)}
           className="wikios-quick-modal-fullpage"
           onClick={onClose}
         >
@@ -279,9 +284,9 @@ function QuickBacklinksModal({ title, slug, onClose }: { title: string; slug: st
           {links.length === 0 && !isLoading && (
             <div className="wikios-quick-modal-empty">No pages link to this article.</div>
           )}
-          {links.map((link) => (
+          {links.map((link, i) => (
             <Link
-              key={link.title}
+              key={`${link.title}-${i}`}
               href={withBasePath(`/w/${encodeURIComponent(link.title.replace(/ /g, "_"))}`)}
               className="wikios-quick-modal-link"
               onClick={onClose}
@@ -292,7 +297,7 @@ function QuickBacklinksModal({ title, slug, onClose }: { title: string; slug: st
         </div>
 
         <Link
-          href={withBasePath(`/wiki-special/whatlinkshere/${slug}`)}
+          href={withBasePath(`/w/special/whatlinkshere/${slug}`)}
           className="wikios-quick-modal-fullpage"
           onClick={onClose}
         >

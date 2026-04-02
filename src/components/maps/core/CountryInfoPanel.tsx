@@ -15,6 +15,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/map-config";
+import { isStandaloneClient } from "~/lib/standalone-detection";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 import Link from "next/link";
@@ -593,7 +594,7 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
                   Edit Map
                 </button>
               )}
-              {summary.slug && process.env.NEXT_PUBLIC_IXWORLD_STANDALONE !== "true" && (
+              {summary.slug && !isStandaloneClient() && (
                 <Link
                   href={`/countries/${summary.slug}`}
                   className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"

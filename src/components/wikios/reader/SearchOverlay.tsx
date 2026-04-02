@@ -104,7 +104,7 @@ export function SearchOverlay({ query, onClose, inputRef }: SearchOverlayProps) 
           className="wikios-search-footer-link"
           onClick={() => {
             onClose();
-            router.push(withBasePath(`/wiki-special/search?q=${encodeURIComponent(query)}`));
+            router.push(withBasePath(`/w/special/search?q=${encodeURIComponent(query)}`));
           }}
         >
           Full search for &ldquo;{query}&rdquo;

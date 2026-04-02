@@ -5,15 +5,12 @@ import { usePathname } from "next/navigation";
 import { getSectionFromPathname, type DashboardSection } from "./DashboardSidebarNav";
 import { withBasePath } from "~/lib/base-path";
 import { DashboardSidebarLayout } from "./DashboardSidebarLayout";
-import { WorldStatsBar } from "./WorldStatsBar";
-import { ActivitySection } from "./sections/ActivitySection";
-import { FeedSection } from "./sections/FeedSection";
+import { UnifiedDashboardSection } from "./sections/UnifiedDashboardSection";
 import { WorldSection } from "./sections/WorldSection";
 import { api } from "~/trpc/react";
 
 const SECTION_TITLES: Record<DashboardSection, string> = {
-  activity: "Command Overview",
-  feed: "Feed",
+  overview: "Dashboard",
   world: "World",
 };
 
@@ -24,23 +21,18 @@ export function DashboardRouter() {
     () => getSectionFromPathname(pathname)
   );
 
-  // Global stats for the WorldStatsBar
   const { data: globalStats } = api.countries.getGlobalStats.useQuery({});
 
   const handleNavigate = useCallback((section: DashboardSection) => {
     if (section === activeSection) return;
-
     setActiveSection(section);
 
-    const href = section === "activity" ? "/dashboard" : `/dashboard/${section}`;
+    const href = section === "overview" ? "/dashboard" : `/dashboard/${section}`;
     window.history.pushState(null, "", withBasePath(href));
-
-    document.title = `${SECTION_TITLES[section]} - IxStats Dashboard`;
-
+    document.title = `${SECTION_TITLES[section]} - IxStats`;
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [activeSection]);
 
-  // Handle browser back/forward
   useEffect(() => {
     const onPopState = () => {
       const newSection = getSectionFromPathname(window.location.pathname);
@@ -51,9 +43,8 @@ export function DashboardRouter() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  // Set initial page title
   useEffect(() => {
-    document.title = `${SECTION_TITLES[activeSection]} - IxStats Dashboard`;
+    document.title = `${SECTION_TITLES[activeSection]} - IxStats`;
   }, [activeSection]);
 
   return (
@@ -61,10 +52,7 @@ export function DashboardRouter() {
       activeSection={activeSection}
       onNavigate={handleNavigate}
     >
-      <WorldStatsBar globalStats={globalStats} />
-
-      {activeSection === "activity" && <ActivitySection globalStats={globalStats} />}
-      {activeSection === "feed" && <FeedSection />}
+      {activeSection === "overview" && <UnifiedDashboardSection globalStats={globalStats} />}
       {activeSection === "world" && <WorldSection />}
     </DashboardSidebarLayout>
   );

@@ -58,6 +58,12 @@ interface StateFileResult {
   editCount?: number;
   status?: string;
   date?: string;
+  // Weekly range fields
+  weekStart?: string;
+  weekEnd?: string;
+  // Monthly range fields
+  monthStart?: string;
+  monthEnd?: string;
 }
 
 interface StateFile {
@@ -118,13 +124,15 @@ export async function syncFromStateFile(): Promise<number> {
     synced++;
   }
 
-  // Sync weekly results
+  // Sync weekly results — capture weekStart/weekEnd for date range display
   for (const [date, result] of Object.entries(state.weeklyResults ?? {})) {
     await db.lorewardEntry.upsert({
       where: { date_type: { date, type: "weekly" } },
       create: {
         date,
         type: "weekly",
+        dateStart: result.weekStart ?? null,
+        dateEnd: result.weekEnd ?? null,
         winnerUser: result.winner?.user ?? null,
         winnerPage: result.winner?.page ?? null,
         winnerScore: result.winner?.score ?? null,
@@ -132,6 +140,8 @@ export async function syncFromStateFile(): Promise<number> {
         status: "approved",
       },
       update: {
+        dateStart: result.weekStart ?? undefined,
+        dateEnd: result.weekEnd ?? undefined,
         winnerUser: result.winner?.user ?? null,
         winnerPage: result.winner?.page ?? null,
         syncedAt: new Date(),
@@ -140,19 +150,39 @@ export async function syncFromStateFile(): Promise<number> {
     synced++;
   }
 
-  // Sync monthly results
+  // Sync monthly results — derive range from date key (YYYY-MM format)
   for (const [date, result] of Object.entries(state.monthlyResults ?? {})) {
+    // Compute month range from key (e.g. "2026-03" → Mar 1 - Mar 31)
+    let monthStart: string | null = null;
+    let monthEnd: string | null = null;
+    if (result.monthStart) {
+      monthStart = result.monthStart;
+      monthEnd = result.monthEnd ?? null;
+    } else if (/^\d{4}-\d{2}$/.test(date)) {
+      // Derive from YYYY-MM key
+      const [year, month] = date.split("-").map(Number);
+      if (year && month) {
+        monthStart = `${date}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        monthEnd = `${date}-${String(lastDay).padStart(2, "0")}`;
+      }
+    }
+
     await db.lorewardEntry.upsert({
       where: { date_type: { date, type: "monthly" } },
       create: {
         date,
         type: "monthly",
+        dateStart: monthStart,
+        dateEnd: monthEnd,
         winnerUser: result.winner?.user ?? null,
         winnerPage: result.winner?.page ?? null,
         winnerScore: result.winner?.score ?? null,
         status: "approved",
       },
       update: {
+        dateStart: monthStart ?? undefined,
+        dateEnd: monthEnd ?? undefined,
         winnerUser: result.winner?.user ?? null,
         winnerPage: result.winner?.page ?? null,
         syncedAt: new Date(),

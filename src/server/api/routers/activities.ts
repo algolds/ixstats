@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { getRecentChanges as getWikiBridgeRecentChanges } from "~/lib/wiki-bridge";
-import { getForumActivity, getForumTrendingThreads } from "~/lib/xenforo-service";
+import { getForumActivity, getForumTrendingThreads } from "~/modules/forum";
 
 // Input schemas
 const activityFilterSchema = z.object({

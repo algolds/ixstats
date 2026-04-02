@@ -18,7 +18,7 @@ import {
   getCardMarketValue,
 } from "~/lib/card-service";
 import { CardRarity, CardType } from "@prisma/client";
-import { searchForumThreads } from "~/lib/xenforo-service";
+import { searchForumThreads } from "~/modules/forum";
 
 /**
  * Cards router for IxCards system

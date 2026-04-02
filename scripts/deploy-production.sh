@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Production Deployment Script for IxStats
-# Ensures the app is configured for https://ixwiki.com/projects/ixstats
+# Ensures the app is configured for https://ixstates.ixwiki.com
 
 set -e
 
-echo "🚀 Starting production deployment for IxStats..."
+echo "🚀 Starting production deployment for IxStates..."
 
 # Check if we're in the right directory
 if [ ! -f "package.json" ]; then
@@ -46,7 +46,7 @@ normalize_base_path() {
 }
 
 if [ -z "${BASE_PATH+x}" ]; then
-    BASE_PATH="/projects/ixstats"
+    BASE_PATH=""
 fi
 
 BASE_PATH="$(normalize_base_path "$BASE_PATH")"
@@ -147,7 +147,7 @@ fi
 # Display production configuration
 echo ""
 echo "🎯 Production Configuration:"
-echo "   Base URL: https://ixwiki.com$BASE_PATH"
+echo "   Base URL: https://ixstates.ixwiki.com$BASE_PATH"
 echo "   Node Environment: $NODE_ENV"
 echo "   Database: Configured"
 if [ -n "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] && [ -n "$CLERK_SECRET_KEY" ]; then
@@ -159,7 +159,7 @@ echo ""
 
 # Start the production server
 echo "🚀 Starting production server..."
-echo "   The application will be available at: https://ixwiki.com$BASE_PATH"
+echo "   The application will be available at: https://ixstates.ixwiki.com$BASE_PATH"
 echo "   Production server will run on port: $PORT"
 echo "   Press Ctrl+C to stop the server"
 echo ""

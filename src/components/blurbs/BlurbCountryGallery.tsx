@@ -20,7 +20,7 @@ export function BlurbCountryGallery({ countryId }: { countryId: string }) {
 
   if (isLoading) {
     return (
-      <div className="text-center py-8 text-zinc-500 text-sm">
+      <div className="text-center py-8 text-[var(--wikios-text-dim)] text-sm">
         Loading blurbs...
       </div>
     );
@@ -28,7 +28,7 @@ export function BlurbCountryGallery({ countryId }: { countryId: string }) {
 
   if (responses.length === 0) {
     return (
-      <div className="text-center py-8 text-zinc-500 text-sm">
+      <div className="text-center py-8 text-[var(--wikios-text-dim)] text-sm">
         No blurbs yet for this country.
       </div>
     );
@@ -42,18 +42,18 @@ export function BlurbCountryGallery({ countryId }: { countryId: string }) {
           href={withBasePath(`/blurbs/${r.prompt.slug}`)}
           className="glass-hierarchy-child block rounded-xl border border-white/10 p-4 transition-colors hover:border-white/20"
         >
-          <p className="text-xs font-medium text-zinc-500 mb-1">
+          <p className="text-xs font-medium text-[var(--wikios-text-dim)] mb-1">
             {r.prompt.title}
           </p>
-          <p className="text-zinc-300 text-sm whitespace-pre-wrap line-clamp-4">
+          <p className="text-[var(--wikios-text-muted)] text-sm whitespace-pre-wrap line-clamp-4">
             {r.content}
           </p>
           {r.prompt.question && (
-            <p className="text-zinc-600 text-xs mt-2 italic">
+            <p className="text-[var(--wikios-text-dim)] text-xs mt-2 italic">
               &ldquo;{r.prompt.question}&rdquo;
             </p>
           )}
-          <p className="text-zinc-600 text-xs mt-1">
+          <p className="text-[var(--wikios-text-dim)] text-xs mt-1">
             {new Date(r.createdAt).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
