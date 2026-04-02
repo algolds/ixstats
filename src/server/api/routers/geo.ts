@@ -131,15 +131,17 @@ const CACHE_TTLS: Record<string, number> = {
 };
 const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
 
-/** Per-layer geometry compression — simplify + truncate + dedup */
+/** Per-layer geometry compression — simplify + truncate + dedup.
+ * Decorative layers use precision 3 (~111m) and higher tolerance to cut payload.
+ * Political borders keep precision 4 (~11m) for crisp rendering. */
 const LAYER_COMPRESSION: Record<string, CompressOptions> = {
-  altitudes:  { simplifyTolerance: 0.035, coordinatePrecision: 4 },  // decorative — aggressive OK
-  rivers:     { simplifyTolerance: 0.025, coordinatePrecision: 4 },  // decorative — aggressive OK
-  climate:    { simplifyTolerance: 0.035, coordinatePrecision: 4 },  // decorative — aggressive OK
+  altitudes:  { simplifyTolerance: 0.05,  coordinatePrecision: 3 },  // decorative — aggressive
+  rivers:     { simplifyTolerance: 0.035, coordinatePrecision: 3 },  // decorative — aggressive
+  climate:    { simplifyTolerance: 0.05,  coordinatePrecision: 3 },  // decorative — aggressive
   political:  { simplifyTolerance: 0.008, coordinatePrecision: 4 },  // borders — keep crisp
-  lakes:      { simplifyTolerance: 0.015, coordinatePrecision: 4 },
-  icecaps:    { simplifyTolerance: 0,     coordinatePrecision: 4 },  // no simplification — preserves polar vertices
-  background: { simplifyTolerance: 0,     coordinatePrecision: 4 },
+  lakes:      { simplifyTolerance: 0.02,  coordinatePrecision: 3 },  // decorative
+  icecaps:    { simplifyTolerance: 0,     coordinatePrecision: 3 },  // no simplification — preserves polar vertices
+  background: { simplifyTolerance: 0,     coordinatePrecision: 3 },
 };
 
 /**
@@ -158,20 +160,20 @@ function getZoomBucket(zoom?: number): ZoomBucket {
 }
 
 const LOD_OVERRIDES: Record<ZoomBucket, Record<string, Partial<CompressOptions>>> = {
-  0: { // Globe view — aggressive simplification
-    altitudes:  { simplifyTolerance: 0.08 },
-    rivers:     { simplifyTolerance: 0.06 },
-    climate:    { simplifyTolerance: 0.08 },
-    political:  { simplifyTolerance: 0.02 },
-    lakes:      { simplifyTolerance: 0.04 },
+  0: { // Globe view — very aggressive (user can't see detail anyway)
+    altitudes:  { simplifyTolerance: 0.12, coordinatePrecision: 2 },
+    rivers:     { simplifyTolerance: 0.10, coordinatePrecision: 2 },
+    climate:    { simplifyTolerance: 0.12, coordinatePrecision: 2 },
+    political:  { simplifyTolerance: 0.025 },
+    lakes:      { simplifyTolerance: 0.06, coordinatePrecision: 2 },
   },
   1: {}, // Mid zoom — use defaults
-  2: { // Detail view — minimal simplification
-    political:  { simplifyTolerance: 0.002 },
-    altitudes:  { simplifyTolerance: 0.01 },
-    rivers:     { simplifyTolerance: 0.008 },
-    climate:    { simplifyTolerance: 0.01 },
-    lakes:      { simplifyTolerance: 0.005 },
+  2: { // Detail view — minimal simplification for crisp borders
+    political:  { simplifyTolerance: 0.002, coordinatePrecision: 4 },
+    altitudes:  { simplifyTolerance: 0.01,  coordinatePrecision: 4 },
+    rivers:     { simplifyTolerance: 0.008, coordinatePrecision: 4 },
+    climate:    { simplifyTolerance: 0.01,  coordinatePrecision: 4 },
+    lakes:      { simplifyTolerance: 0.005, coordinatePrecision: 4 },
   },
 };
 
@@ -421,24 +423,33 @@ async function loadLayerFromDB(
         ? { ...(layer.properties as Record<string, unknown>) }
         : {};
 
+      // Decorative layers (altitudes, rivers, climate, etc.) only need _id + _fillColor.
+      // Political layer carries full metadata for info panels and click handling.
+      const isPolitical = layerType === "political";
+      const properties = isPolitical
+        ? {
+            ...baseProps,
+            _id: layer.featureId,
+            _displayName: layer.displayName || featureIdToDisplayName(layer.featureId),
+            _fillColor: fillColor,
+            _countryId: layer.countryId,
+            _areaSqKm: layer.areaSqKm,
+            _centroidLng: centroidLng,
+            _centroidLat: centroidLat,
+            ...((layer as any).country?.continent ? { _continent: (layer as any).country.continent } : {}),
+            ...((layer as any).country?.region ? { _region: (layer as any).country.region } : {}),
+            ...extraProps,
+          }
+        : {
+            _id: layer.featureId,
+            _fillColor: fillColor,
+          };
+
       return {
         type: "Feature" as const,
         id: index,
         geometry: layer.geometry as Geometry,
-        properties: {
-          ...baseProps,
-          _id: layer.featureId,
-          _displayName: layer.displayName || featureIdToDisplayName(layer.featureId),
-          _fillColor: fillColor,
-          _countryId: layer.countryId,
-          _areaSqKm: layer.areaSqKm,
-          _centroidLng: centroidLng,
-          _centroidLat: centroidLat,
-          // Geography tags for continent/region highlighting
-          ...((layer as any).country?.continent ? { _continent: (layer as any).country.continent } : {}),
-          ...((layer as any).country?.region ? { _region: (layer as any).country.region } : {}),
-          ...extraProps,
-        },
+        properties,
       };
     }
   );

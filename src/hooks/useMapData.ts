@@ -36,11 +36,10 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
   "lakes",
 ];
 
-/** All layers we pre-fetch so toggling is instant */
+/** Layers to pre-fetch on initial load.
+ * Climate excluded — lazy-loaded on toggle to save ~2MB on initial bundle. */
 const ALL_PREFETCH_LAYERS: MapLayerType[] = [
   ...DEFAULT_VISIBLE,
-  "climate",
-  "lakes",
 ];
 
 /** Shared query options for map data - long cache, no refetching */

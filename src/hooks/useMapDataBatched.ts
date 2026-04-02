@@ -32,10 +32,10 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
   "lakes",
 ];
 
+// Climate is NOT prefetched — lazy-loaded when user toggles the layer.
+// This cuts ~2MB from the initial bundle (climate = 2.12MB uncompressed).
 const ALL_PREFETCH_LAYERS: MapLayerType[] = [
   ...DEFAULT_VISIBLE,
-  "climate",
-  "lakes",
 ];
 
 export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number) {
