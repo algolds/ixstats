@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useCallback, useState, useRef } from "react";
+import React, { useEffect, useCallback, useState, useRef, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { MessagesChatHeader } from "./MessagesChatHeader";
-import { MessagesBubble } from "./MessagesBubble";
+import { MessagesBubble, type MessageActions } from "./MessagesBubble";
 import { MessagesInputBar } from "./MessagesInputBar";
 import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
 import type { MessageFolder } from "~/types/messages";
@@ -49,7 +49,7 @@ export function MessagesChatPanel({
     }
   );
 
-  // Refetch conversations to update unread counts
+  // Invalidate conversation list (for unread badges)
   const utils = api.useUtils();
   const refetchConversations = useCallback(() => {
     void utils.messages.getConversationsByFolder.invalidate();
@@ -66,7 +66,6 @@ export function MessagesChatPanel({
         messageIds: [],
       });
     }
-    // Only run when conversation changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversation.id, currentUserId]);
 
@@ -86,6 +85,40 @@ export function MessagesChatPanel({
       notify.error(msg);
     },
   });
+
+  // ── Lifted mutations (shared across all bubbles) ──
+  const addReaction = api.messages.addReaction.useMutation({
+    onSuccess: () => void refetchMessages(),
+  });
+  const removeReaction = api.messages.removeReaction.useMutation({
+    onSuccess: () => void refetchMessages(),
+  });
+  const editMutation = api.messages.editMessage.useMutation({
+    onSuccess: () => {
+      void refetchMessages();
+      notify.success("Message edited");
+    },
+  });
+  const deleteMutation = api.messages.deleteMessage.useMutation({
+    onSuccess: () => {
+      void refetchMessages();
+      notify.success("Message deleted");
+    },
+  });
+
+  const messageActions: MessageActions = useMemo(
+    () => ({
+      onAddReaction: (messageId: string, reaction: string) =>
+        addReaction.mutate({ messageId, userId: currentUserId, reaction }),
+      onRemoveReaction: (messageId: string, reaction: string) =>
+        removeReaction.mutate({ messageId, reaction }),
+      onEditMessage: (messageId: string, content: string) =>
+        editMutation.mutate({ messageId, content }),
+      onDeleteMessage: (messageId: string) =>
+        deleteMutation.mutate({ messageId }),
+    }),
+    [currentUserId, addReaction, removeReaction, editMutation, deleteMutation]
+  );
 
   const handleSendMessage = useCallback(
     (content?: string, plainText?: string) => {
@@ -139,7 +172,7 @@ export function MessagesChatPanel({
                 prev.accountId === message.accountId &&
                 new Date(message.createdAt ?? message.ixTimeTimestamp).getTime() -
                   new Date(prev.createdAt ?? prev.ixTimeTimestamp).getTime() <
-                  5 * 60 * 1000; // 5 min threshold
+                  5 * 60 * 1000;
 
               return (
                 <MessagesBubble
@@ -147,8 +180,8 @@ export function MessagesChatPanel({
                   message={message}
                   currentUserId={currentUserId}
                   isConsecutive={isConsecutive}
-                  refetchMessages={refetchMessages}
                   onReply={setReplyingTo}
+                  actions={messageActions}
                 />
               );
             })}

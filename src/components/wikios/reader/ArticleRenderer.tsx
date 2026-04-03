@@ -28,7 +28,13 @@ interface ArticleRendererProps {
   toc: TocEntry[];
   categories: string[];
   lastModified: string | null;
+  wikiSource?: "ixwiki" | "iiwiki" | "althistory";
 }
+
+const WIKI_SOURCE_LABELS: Record<string, { label: string; url: string }> = {
+  iiwiki: { label: "iiwiki.com", url: "https://iiwiki.com/wiki/" },
+  althistory: { label: "althistory.fandom.com", url: "https://althistory.fandom.com/wiki/" },
+};
 
 export function ArticleRenderer({
   title,
@@ -38,6 +44,7 @@ export function ArticleRenderer({
   toc,
   categories,
   lastModified,
+  wikiSource,
 }: ArticleRendererProps) {
   const titleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -110,6 +117,21 @@ export function ArticleRenderer({
 
       {/* Category breadcrumbs */}
       <CategoryBreadcrumb title={title} />
+
+      {/* External wiki source badge */}
+      {wikiSource && wikiSource !== "ixwiki" && WIKI_SOURCE_LABELS[wikiSource] && (
+        <div className="mb-2 flex items-center gap-1.5">
+          <a
+            href={`${WIKI_SOURCE_LABELS[wikiSource]!.url}${encodeURIComponent(title.replace(/ /g, "_"))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/40 px-2 py-0.5 rounded hover:underline"
+          >
+            <ExternalLink size={11} />
+            From {WIKI_SOURCE_LABELS[wikiSource]!.label}
+          </a>
+        </div>
+      )}
 
       {/* Award banner */}
       {awardData?.isAward && (() => {

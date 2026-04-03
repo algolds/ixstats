@@ -48,6 +48,16 @@ export const env = createEnv({
     // XenForo Forum API Configuration
     XENFORO_API_KEY: z.string().optional(),
     XENFORO_API_URL: z.string().url().optional().default("https://forum.ixwiki.com/api"),
+    // IxWiki MySQL direct access (for wiki-bridge.ts read queries)
+    IXWIKI_DB_HOST: z.string().optional().default("localhost"),
+    IXWIKI_DB_PORT: z.coerce.number().optional().default(3306),
+    IXWIKI_DB_USER: z.string().optional().default("ixwiki"),
+    IXWIKI_DB_PASSWORD: z.string().optional(),
+    IXWIKI_DB_NAME: z.string().optional().default("ixwiki"),
+    // IxWiki image base URL (for file/image serving)
+    IXWIKI_IMAGE_BASE_URL: z.string().optional().default("https://ixwiki.com/images"),
+    // Unsplash API (for country card images)
+    UNSPLASH_ACCESS_KEY: z.string().optional(),
     // Server port
     PORT: z.string().optional().default("3550"),
     // Vercel URL (auto-set by Vercel)
@@ -130,6 +140,15 @@ export const env = createEnv({
     // XenForo Forum
     XENFORO_API_KEY: process.env.XENFORO_API_KEY,
     XENFORO_API_URL: process.env.XENFORO_API_URL,
+    // IxWiki MySQL
+    IXWIKI_DB_HOST: process.env.IXWIKI_DB_HOST,
+    IXWIKI_DB_PORT: process.env.IXWIKI_DB_PORT,
+    IXWIKI_DB_USER: process.env.IXWIKI_DB_USER,
+    IXWIKI_DB_PASSWORD: process.env.IXWIKI_DB_PASSWORD,
+    IXWIKI_DB_NAME: process.env.IXWIKI_DB_NAME,
+    IXWIKI_IMAGE_BASE_URL: process.env.IXWIKI_IMAGE_BASE_URL,
+    // Unsplash
+    UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
     // Server
     PORT: process.env.PORT,
     VERCEL_URL: process.env.VERCEL_URL,

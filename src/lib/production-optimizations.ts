@@ -566,14 +566,26 @@ export class ProductionStartup {
     try {
       const { globalCache } = await import("./advanced-cache-system");
       const { OptimizedCountryQueries } = await import("./database-optimizations");
+      const { db } = await import("~/server/db");
 
-      // Pre-load critical data
-      const countries = await OptimizedCountryQueries.getCountriesByIds(
-        [], // Will be populated with actual IDs
-        { select: { id: true, name: true, slug: true } }
-      );
+      // Query top 20 countries by GDP to pre-load the most frequently accessed data
+      const topCountries = await db.country.findMany({
+        where: { totalGDP: { not: null } },
+        orderBy: { totalGDP: "desc" },
+        take: 20,
+        select: { id: true },
+      });
 
-      console.log(`[ProductionStartup] Cache warmed up with ${countries.length} countries`);
+      const ids = topCountries.map((c) => c.id);
+
+      if (ids.length > 0) {
+        const countries = await OptimizedCountryQueries.getCountriesByIds(ids, {
+          select: { id: true, name: true, slug: true },
+        });
+        console.log(`[ProductionStartup] Cache warmed up with ${countries.length} countries`);
+      } else {
+        console.log("[ProductionStartup] Cache warm-up skipped (no countries with GDP found)");
+      }
     } catch (error) {
       console.error("[ProductionStartup] Failed to warm up caches:", error);
     }

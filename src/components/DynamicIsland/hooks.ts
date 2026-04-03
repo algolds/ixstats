@@ -159,12 +159,6 @@ export function useDynamicIslandState() {
     }
   );
 
-  // Lazy-load crisis events only when expanded
-  const { data: crisisEvents } = api.unifiedIntelligence.getCrisisEvents.useQuery(
-    undefined,
-    { enabled: isExpanded, staleTime: 5 * 60 * 1000 }
-  );
-
   // Enhanced keyboard shortcuts with debouncing to prevent duplicates
   const [isProcessingShortcut, setIsProcessingShortcut] = useState(false);
   const shortcutTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -590,7 +584,6 @@ export function useDynamicIslandState() {
     timeDisplayMode,
     searchResults,
     countriesData,
-    crisisEvents,
     isOnWikiPage,
 
     // Actions

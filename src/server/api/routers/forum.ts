@@ -960,6 +960,154 @@ export const forumRouter = createTRPCRouter({
   // Conversations removed — all private messaging is centralized in ThinkShare.
 
   // =========================================================================
+  // MODERATION ENDPOINTS (require admin / system owner)
+  // =========================================================================
+
+  /**
+   * Moderate a post (soft delete, undelete, or approve).
+   */
+  moderatePost: adminProcedure
+    .input(
+      z.object({
+        postId: z.number(),
+        action: z.enum(["soft_delete", "undelete", "approve"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const xfUserId = await requireForumUser(ctx.user.id);
+
+      let body: Record<string, unknown>;
+      switch (input.action) {
+        case "soft_delete":
+          body = { soft_delete: true, soft_delete_reason: "Moderated via IxStates" };
+          break;
+        case "undelete":
+          body = { soft_delete: false };
+          break;
+        case "approve":
+          body = { message_state: "visible" };
+          break;
+      }
+
+      const result = await xfPostAsUser<{ post: XFPost }>(
+        `/posts/${input.postId}/`,
+        body,
+        xfUserId
+      );
+
+      if (!result?.post) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to ${input.action} post`,
+        });
+      }
+
+      cacheInvalidate("forum:thread:");
+      cacheInvalidate(`forum:post:${input.postId}`);
+
+      return { success: true, post: normalizePost(result.post) };
+    }),
+
+  /**
+   * Moderate a thread (lock, unlock, soft delete, undelete, sticky, unsticky).
+   */
+  moderateThread: adminProcedure
+    .input(
+      z.object({
+        threadId: z.number(),
+        action: z.enum(["lock", "unlock", "soft_delete", "undelete", "sticky", "unsticky"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const xfUserId = await requireForumUser(ctx.user.id);
+
+      let body: Record<string, unknown>;
+      switch (input.action) {
+        case "lock":
+          body = { discussion_open: false };
+          break;
+        case "unlock":
+          body = { discussion_open: true };
+          break;
+        case "soft_delete":
+          body = { soft_delete: true, soft_delete_reason: "Moderated via IxStates" };
+          break;
+        case "undelete":
+          body = { soft_delete: false };
+          break;
+        case "sticky":
+          body = { sticky: true };
+          break;
+        case "unsticky":
+          body = { sticky: false };
+          break;
+      }
+
+      const result = await xfPostAsUser<{ thread: XFThread }>(
+        `/threads/${input.threadId}/`,
+        body,
+        xfUserId
+      );
+
+      if (!result?.thread) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to ${input.action} thread`,
+        });
+      }
+
+      invalidateThread(input.threadId);
+      cacheInvalidate("forum:threadList:");
+
+      return { success: true, thread: normalizeThread(result.thread) };
+    }),
+
+  // =========================================================================
+  // ALERT SYNC (surface XenForo alerts in IxStates UI)
+  // =========================================================================
+
+  /**
+   * Fetch the current user's XenForo alerts.
+   * Does not create IxStates notifications — just surfaces them for the UI.
+   */
+  getAlerts: protectedProcedure.query(async ({ ctx }) => {
+    const xfUserId = await requireForumUser(ctx.user.id);
+
+    const data = await xfFetchAsUser<{
+      alerts: Array<{
+        alert_id: number;
+        alert_text: string;
+        content_type: string;
+        content_id: number;
+        action: string;
+        user_id: number;
+        username: string;
+        read_date: number;
+        event_date: number;
+        view_date: number;
+      }>;
+    }>("/alerts/?page=1", xfUserId);
+
+    if (!data?.alerts) return { alerts: [] };
+
+    return {
+      alerts: data.alerts.map((a) => ({
+        id: a.alert_id,
+        title: `${a.username} — ${a.action}`,
+        message: a.alert_text,
+        read: a.read_date > 0,
+        date: a.event_date,
+        link:
+          a.content_type === "post"
+            ? `/forum/thread/0#post-${a.content_id}`
+            : a.content_type === "thread"
+              ? `/forum/thread/${a.content_id}`
+              : null,
+      })),
+    };
+  }),
+
+  // =========================================================================
   // ACCOUNT LINKING (existing endpoints, kept intact)
   // =========================================================================
 

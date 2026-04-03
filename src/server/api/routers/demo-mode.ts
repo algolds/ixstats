@@ -247,7 +247,7 @@ export const demoModeRouter = createTRPCRouter({
     await ctx.db.activityFeed.deleteMany({ where: { countryId } });
     const reseedUser = await ctx.db.user.findFirst({
       where: { countryId }, select: { clerkUserId: true },
-    }).catch(() => null);
+    }).catch((err: unknown) => { console.error("[DemoMode] Background op failed:", (err as Error).message); return null; });
     if (reseedUser?.clerkUserId) {
       await ctx.db.userAchievement.deleteMany({ where: { userId: reseedUser.clerkUserId } });
     }

@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Heart, Reply, Edit, Trash2, Check, CheckCheck } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { api } from "~/trpc/react";
-import { useNotify } from "~/hooks/useNotify";
 
 interface MessageAccount {
   id: string;
@@ -31,13 +29,21 @@ interface Message {
   replyTo?: Message;
 }
 
+export type { Message };
+
+export interface MessageActions {
+  onAddReaction: (messageId: string, reaction: string) => void;
+  onRemoveReaction: (messageId: string, reaction: string) => void;
+  onEditMessage: (messageId: string, content: string) => void;
+  onDeleteMessage: (messageId: string) => void;
+}
+
 interface MessagesBubbleProps {
   message: Message;
   currentUserId: string;
-  /** Whether this message is from the same sender as the previous one (consecutive) */
   isConsecutive: boolean;
-  refetchMessages: () => void;
   onReply: (message: Message) => void;
+  actions: MessageActions;
 }
 
 const QUICK_REACTIONS = ["❤️", "👍", "👎", "😂", "😮", "😢", "😡"];
@@ -61,41 +67,10 @@ export const MessagesBubble = React.memo(function MessagesBubble({
   message,
   currentUserId,
   isConsecutive,
-  refetchMessages,
   onReply,
+  actions,
 }: MessagesBubbleProps) {
-  const notify = useNotify();
   const [showReactions, setShowReactions] = useState(false);
-
-  const stableRefetch = useCallback(() => {
-    refetchMessages();
-  }, [refetchMessages]);
-
-  const addReaction = api.messages.addReaction.useMutation({
-    onSuccess: stableRefetch,
-    onError: (err: any) => notify.error(err.message || "Failed to react"),
-  });
-
-  const removeReaction = api.messages.removeReaction.useMutation({
-    onSuccess: stableRefetch,
-    onError: (err: any) => notify.error(err.message || "Failed to remove reaction"),
-  });
-
-  const editMessage = api.messages.editMessage.useMutation({
-    onSuccess: () => {
-      stableRefetch();
-      notify.success("Message edited");
-    },
-    onError: (err: any) => notify.error(err.message || "Failed to edit"),
-  });
-
-  const deleteMessage = api.messages.deleteMessage.useMutation({
-    onSuccess: () => {
-      stableRefetch();
-      notify.success("Message deleted");
-    },
-    onError: (err: any) => notify.error(err.message || "Failed to delete"),
-  });
 
   const isOwn = message.accountId === currentUserId;
   const account = message.account;
@@ -115,7 +90,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
         !isConsecutive && "mt-3 pt-1"
       )}
     >
-      {/* Avatar column — only show for first in sequence */}
+      {/* Avatar column */}
       <div className="w-10 shrink-0">
         {!isConsecutive && (
           <Avatar className="h-10 w-10">
@@ -134,7 +109,6 @@ export const MessagesBubble = React.memo(function MessagesBubble({
 
       {/* Message content */}
       <div className="min-w-0 flex-1">
-        {/* Name + timestamp header (first in sequence only) */}
         {!isConsecutive && (
           <div className="mb-0.5 flex items-baseline gap-2">
             <span className="text-sm font-semibold text-foreground">
@@ -149,7 +123,6 @@ export const MessagesBubble = React.memo(function MessagesBubble({
           </div>
         )}
 
-        {/* Reply preview */}
         {message.replyTo && (
           <div className="mb-1 flex items-center gap-1.5 rounded border-l-2 border-primary/40 bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
             <Reply className="h-3 w-3 shrink-0" />
@@ -160,25 +133,18 @@ export const MessagesBubble = React.memo(function MessagesBubble({
           </div>
         )}
 
-        {/* Message text */}
         <div
           className="text-sm leading-relaxed text-foreground/90 [&>p]:mb-0"
           dangerouslySetInnerHTML={{ __html: message.content }}
         />
 
-        {/* Reactions */}
         {message.reactions && Object.keys(message.reactions).length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1">
             {Object.entries(message.reactions).map(([emoji, count]) => (
               <button
                 key={emoji}
                 className="flex items-center gap-1 rounded-full border border-border/50 bg-muted/50 px-1.5 py-0.5 text-xs transition-colors hover:bg-muted"
-                onClick={() =>
-                  removeReaction.mutate({
-                    messageId: message.id,
-                    reaction: emoji,
-                  })
-                }
+                onClick={() => actions.onRemoveReaction(message.id, emoji)}
               >
                 <span>{emoji}</span>
                 <span className="text-muted-foreground">{count as number}</span>
@@ -187,7 +153,6 @@ export const MessagesBubble = React.memo(function MessagesBubble({
           </div>
         )}
 
-        {/* Read receipts for own messages */}
         {isOwn && message.readReceipts && (
           <div className="mt-0.5 flex items-center gap-1">
             {message.readReceipts.length > 0 ? (
@@ -216,11 +181,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                   key={emoji}
                   className="rounded p-1 text-base transition-colors hover:bg-muted"
                   onClick={() => {
-                    addReaction.mutate({
-                      messageId: message.id,
-                      userId: currentUserId,
-                      reaction: emoji,
-                    });
+                    actions.onAddReaction(message.id, emoji);
                     setShowReactions(false);
                   }}
                 >
@@ -244,9 +205,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               title="Edit"
               onClick={() => {
                 const newContent = prompt("Edit message:", message.content.replace(/<[^>]*>/g, ""));
-                if (newContent) {
-                  editMessage.mutate({ messageId: message.id, content: newContent });
-                }
+                if (newContent) actions.onEditMessage(message.id, newContent);
               }}
             >
               <Edit className="h-3.5 w-3.5" />
@@ -256,7 +215,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
               title="Delete"
               onClick={() => {
                 if (confirm("Delete this message?")) {
-                  deleteMessage.mutate({ messageId: message.id });
+                  actions.onDeleteMessage(message.id);
                 }
               }}
             >

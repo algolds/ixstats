@@ -1,14 +1,12 @@
 /**
- * Wiki Talk Bridge — Bidirectional sync between MediaWiki talk pages and ThinkShare.
+ * Wiki Notifications Bridge — Syncs MediaWiki notifications/alerts into ThinkShare.
  *
- * Inbound:  Fetches recent talk page activity for a user → creates ThinkShare conversations/messages
- * Outbound: Posts ThinkShare replies → MediaWiki talk page sections (as bot, attributed in summary)
+ * Inbound:  Fetches watchlist changes and user talk page notifications → creates ThinkShare messages
+ * Outbound: Not applicable for notifications (read-only sync)
  */
 
 import type { PrismaClient } from "@prisma/client";
 import type { BridgeAdapter, BridgeSyncResult } from "./bridge-types";
-import { getNamespacedWikitext } from "~/lib/wiki-bridge";
-import { getCsrfToken } from "~/lib/wikios/csrf-cache";
 
 const apiBase =
   process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
@@ -16,95 +14,66 @@ const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
-/** Fetch talk pages where a user has recent edits. */
-async function getUserTalkActivity(
+/** Fetch recent changes to pages the user has edited (watchlist proxy). */
+async function getUserWatchlistChanges(
   wikiUsername: string,
-  limit = 30
-): Promise<{ title: string; timestamp: string }[]> {
+  limit = 20
+): Promise<{ title: string; user: string; timestamp: string; comment: string; type: string; newLen: number; oldLen: number }[]> {
   try {
+    // Get pages the user has edited, then check recent changes on those pages
     const params = new URLSearchParams({
       action: "query",
-      list: "usercontribs",
-      ucuser: wikiUsername,
-      ucnamespace: "1", // Talk namespace
-      uclimit: String(limit),
-      ucprop: "title|timestamp",
+      list: "recentchanges",
+      rcnamespace: "0|1", // Main + Talk
+      rclimit: String(limit),
+      rcprop: "title|user|timestamp|comment|sizes|flags",
+      rctype: "edit|new",
       format: "json",
     });
 
-    const res = await fetch(`${apiBase}?${params}`, {
-      headers: botToken
-        ? { Authorization: `Bearer ${botToken}` }
-        : {},
-    });
+    const headers: Record<string, string> = {};
+    if (botToken) headers.Authorization = `Bearer ${botToken}`;
 
+    const res = await fetch(`${apiBase}?${params}`, { headers });
     if (!res.ok) return [];
+
     const data = await res.json();
-    const contribs = data?.query?.usercontribs ?? [];
+    const changes = data?.query?.recentchanges ?? [];
 
-    // Deduplicate by title, keep most recent timestamp
-    const seen = new Map<string, string>();
-    for (const c of contribs) {
-      if (!seen.has(c.title) || c.timestamp > seen.get(c.title)!) {
-        seen.set(c.title, c.timestamp);
-      }
-    }
-
-    return Array.from(seen.entries()).map(([title, timestamp]) => ({
-      title,
-      timestamp,
-    }));
+    // Filter to changes NOT by this user (notifications about others' edits)
+    return changes.filter((rc: any) => rc.user !== wikiUsername);
   } catch {
     return [];
   }
 }
 
-/** Parse wikitext sections from a talk page. */
-function parseSections(
-  wikitext: string
-): { level: number; title: string; content: string; index: number }[] {
-  const lines = wikitext.split("\n");
-  const sections: {
-    level: number;
-    title: string;
-    content: string;
-    index: number;
-  }[] = [];
+/** Check if user's talk page has new messages. */
+async function getUserTalkPageMessages(
+  wikiUsername: string
+): Promise<{ hasMessages: boolean; content: string | null }> {
+  try {
+    const talkTitle = `User_talk:${wikiUsername}`;
+    const params = new URLSearchParams({
+      action: "parse",
+      page: talkTitle,
+      prop: "wikitext",
+      format: "json",
+    });
 
-  let current: (typeof sections)[0] | null = null;
-  let sectionIndex = 0;
+    const headers: Record<string, string> = {};
+    if (botToken) headers.Authorization = `Bearer ${botToken}`;
 
-  for (const line of lines) {
-    const headingMatch = line.match(/^(={2,6})\s*(.+?)\s*\1$/);
-    if (headingMatch) {
-      if (current) sections.push(current);
-      sectionIndex++;
-      current = {
-        level: headingMatch[1]!.length,
-        title: headingMatch[2]!,
-        content: "",
-        index: sectionIndex,
-      };
-    } else if (current) {
-      current.content += line + "\n";
-    }
+    const res = await fetch(`${apiBase}?${params}`, { headers });
+    if (!res.ok) return { hasMessages: false, content: null };
+
+    const data = await res.json();
+    if (data?.error) return { hasMessages: false, content: null };
+
+    const wikitext = data?.parse?.wikitext?.["*"] ?? "";
+    return { hasMessages: wikitext.length > 0, content: wikitext };
+  } catch {
+    return { hasMessages: false, content: null };
   }
-  if (current) sections.push(current);
-
-  return sections;
-}
-
-/** Extract usernames from wikitext signatures (~~~~). */
-function extractSignatureUsers(wikitext: string): string[] {
-  // Match [[User:Username|...]] patterns common in signatures
-  const matches = wikitext.matchAll(
-    /\[\[User:([^|\]]+)/gi
-  );
-  const users = new Set<string>();
-  for (const match of matches) {
-    users.add(match[1]!);
-  }
-  return Array.from(users);
 }
 
 // ─── Bridge Implementation ───────────────────────────────────────
@@ -128,128 +97,112 @@ export const wikiTalkBridge: BridgeAdapter = {
 
     if (!user?.wikiUsername) return result;
 
-    // Fetch user's recent talk page activity
-    const talkPages = await getUserTalkActivity(user.wikiUsername);
-    if (talkPages.length === 0) return result;
+    // ── 1. Sync watchlist-style notifications ──
+    const changes = await getUserWatchlistChanges(user.wikiUsername);
 
-    for (const page of talkPages) {
-      try {
-        // Check if conversation already exists for this talk page
-        let conversation = await db.thinkshareConversation.findFirst({
-          where: { source: "wiki", sourceId: page.title },
+    if (changes.length > 0) {
+      // Get or create the wiki alerts conversation
+      const alertsSourceId = `wiki-alerts:${user.wikiUsername}`;
+      let alertsConv = await db.thinkshareConversation.findFirst({
+        where: { source: "wiki", sourceId: alertsSourceId },
+      });
+
+      if (!alertsConv) {
+        alertsConv = await db.thinkshareConversation.create({
+          data: {
+            type: "direct",
+            name: "Wiki Activity",
+            source: "wiki",
+            sourceId: alertsSourceId,
+            isActive: true,
+          },
+        });
+        await db.conversationParticipant.create({
+          data: {
+            conversationId: alertsConv.id,
+            userId,
+            role: "participant",
+            lastReadAt: new Date(0),
+          },
+        });
+        result.conversationsCreated++;
+      }
+
+      // Add recent changes as messages
+      for (const rc of changes) {
+        const msgId = `wiki-rc:${rc.title}:${rc.timestamp}`;
+
+        const existing = await db.thinkshareMessage.findFirst({
+          where: {
+            conversationId: alertsConv.id,
+            source: "wiki",
+            sourceMessageId: msgId,
+          },
         });
 
-        // Get talk page wikitext to parse sections
-        const articleTitle = page.title.replace(/^Talk:/, "");
-        const wikitext = await getNamespacedWikitext(articleTitle, 1);
-        if (!wikitext) continue;
+        if (!existing) {
+          const sizeChange = (rc.newLen ?? 0) - (rc.oldLen ?? 0);
+          const sizeStr = sizeChange > 0 ? `+${sizeChange}` : String(sizeChange);
+          const isNew = rc.type === "new";
+          const comment = rc.comment?.replace(/\/\*.*?\*\/\s*/, "").trim();
 
-        const sections = parseSections(wikitext);
-        if (sections.length === 0) continue;
+          const description = isNew
+            ? `<strong>${rc.user}</strong> created <a href="https://ixwiki.com/wiki/${encodeURIComponent(rc.title)}" target="_blank"><strong>${rc.title}</strong></a> (${sizeStr} bytes)`
+            : `<strong>${rc.user}</strong> edited <a href="https://ixwiki.com/wiki/${encodeURIComponent(rc.title)}" target="_blank"><strong>${rc.title}</strong></a> (${sizeStr} bytes)${comment ? `: ${comment}` : ""}`;
 
-        if (!conversation) {
-          // Create new conversation
-          const participants = extractSignatureUsers(wikitext);
-          conversation = await db.thinkshareConversation.create({
+          await db.thinkshareMessage.create({
             data: {
-              type: "group",
-              name: page.title.replace(/^Talk:/, ""),
+              conversationId: alertsConv.id,
+              userId: `wiki:${rc.user}`, // External wiki user — ensures unread count works
+              content: description,
+              messageType: "text",
               source: "wiki",
-              sourceId: page.title,
-              lastActivity: new Date(page.timestamp),
-              isActive: true,
+              sourceMessageId: msgId,
+              isSystem: true,
+              ixTimeTimestamp: new Date(rc.timestamp),
             },
           });
-          result.conversationsCreated++;
-
-          // Add current user as participant
-          await db.conversationParticipant.create({
-            data: {
-              conversationId: conversation.id,
-              userId,
-              role: "participant",
-            },
-          });
-
-          // Add other known participants (resolve wiki usernames to clerkUserIds)
-          for (const wikiUser of participants) {
-            if (wikiUser === user.wikiUsername) continue;
-            const otherUser = await db.user.findFirst({
-              where: { wikiUsername: wikiUser },
-              select: { clerkUserId: true },
-            });
-            if (otherUser) {
-              await db.conversationParticipant.upsert({
-                where: {
-                  conversationId_userId: {
-                    conversationId: conversation.id,
-                    userId: otherUser.clerkUserId,
-                  },
-                },
-                update: {},
-                create: {
-                  conversationId: conversation.id,
-                  userId: otherUser.clerkUserId,
-                  role: "participant",
-                },
-              });
-            }
-          }
+          result.messagesCreated++;
         }
+      }
 
-        // Sync sections as messages
-        for (const section of sections) {
-          const msgExternalId = `${page.title}#section${section.index}`;
-
-          // Check if message already exists
-          const existing = await db.thinkshareMessage.findFirst({
-            where: {
-              conversationId: conversation.id,
-              source: "wiki",
-              sourceMessageId: msgExternalId,
-            },
-          });
-
-          if (!existing) {
-            // Determine author from section signatures
-            const sectionUsers = extractSignatureUsers(section.content);
-            const authorWikiName = sectionUsers[sectionUsers.length - 1]; // Last signer
-            let authorUserId = userId; // Default to current user
-
-            if (authorWikiName && authorWikiName !== user.wikiUsername) {
-              const author = await db.user.findFirst({
-                where: { wikiUsername: authorWikiName },
-                select: { clerkUserId: true },
-              });
-              if (author) authorUserId = author.clerkUserId;
-            }
-
-            await db.thinkshareMessage.create({
-              data: {
-                conversationId: conversation.id,
-                userId: authorUserId,
-                content: `<strong>${section.title}</strong><br/>${section.content.trim().substring(0, 2000)}`,
-                messageType: "text",
-                source: "wiki",
-                sourceMessageId: msgExternalId,
-                isSystem: false,
-              },
-            });
-            result.messagesCreated++;
-          }
-        }
-
-        // Update conversation lastActivity
+      // Update lastActivity
+      if (result.messagesCreated > 0) {
         await db.thinkshareConversation.update({
-          where: { id: conversation.id },
-          data: { lastActivity: new Date(page.timestamp) },
+          where: { id: alertsConv.id },
+          data: { lastActivity: new Date() },
         });
         result.conversationsUpdated++;
-      } catch (err) {
-        console.error(
-          `Wiki bridge: failed to sync talk page "${page.title}":`,
-          err
-        );
+      }
+    }
+
+    // ── 2. Check user talk page for new messages ──
+    const talkPage = await getUserTalkPageMessages(user.wikiUsername);
+    if (talkPage.hasMessages && talkPage.content) {
+      const talkSourceId = `wiki-talk:${user.wikiUsername}`;
+      let talkConv = await db.thinkshareConversation.findFirst({
+        where: { source: "wiki", sourceId: talkSourceId },
+      });
+
+      if (!talkConv) {
+        talkConv = await db.thinkshareConversation.create({
+          data: {
+            type: "direct",
+            name: `Talk: ${user.wikiUsername}`,
+            source: "wiki",
+            sourceId: talkSourceId,
+            isActive: true,
+          },
+        });
+        await db.conversationParticipant.create({
+          data: {
+            conversationId: talkConv.id,
+            userId,
+            role: "participant",
+            lastReadAt: new Date(0),
+          },
+        });
+        result.conversationsCreated++;
       }
     }
 
@@ -257,64 +210,15 @@ export const wikiTalkBridge: BridgeAdapter = {
   },
 
   async sendOutbound(
-    conversationSourceId: string,
-    content: string,
-    userId: string,
-    db: PrismaClient
+    _conversationSourceId: string,
+    _content: string,
+    _userId: string,
+    _db: PrismaClient
   ): Promise<{ success: boolean; error?: string }> {
-    if (!botToken) {
-      return { success: false, error: "WIKIOS_MEDIAWIKI_BOT_TOKEN not configured" };
-    }
-
-    // Get user's wiki username for attribution
-    const user = await db.user.findFirst({
-      where: { clerkUserId: userId },
-      select: { wikiUsername: true },
-    });
-
-    const wikiUsername = user?.wikiUsername ?? "Unknown";
-    const talkPageTitle = conversationSourceId; // sourceId is the talk page title
-
-    try {
-      // Get CSRF token
-      const csrfToken = await getCsrfToken();
-
-      // Strip HTML tags for wikitext content
-      const plainContent = content.replace(/<[^>]*>/g, "");
-
-      // Post as new section or append to last section
-      const params = new URLSearchParams({
-        action: "edit",
-        title: talkPageTitle,
-        section: "new",
-        sectiontitle: `Reply from ${wikiUsername}`,
-        text: `${plainContent} ~~~~`,
-        summary: `Reply via ThinkShare (${wikiUsername})`,
-        token: csrfToken,
-        format: "json",
-      });
-
-      const res = await fetch(apiBase, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${botToken}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: params.toString(),
-      });
-
-      const data = await res.json();
-
-      if (data?.edit?.result === "Success") {
-        return { success: true };
-      }
-
-      return {
-        success: false,
-        error: data?.error?.info ?? "Unknown MediaWiki error",
-      };
-    } catch (err: any) {
-      return { success: false, error: err.message ?? "Wiki bridge error" };
-    }
+    // Wiki notifications are read-only — replies go through WikiOS talk page UI
+    return {
+      success: false,
+      error: "Wiki notifications are read-only. Use the wiki talk page to reply.",
+    };
   },
 };

@@ -159,7 +159,7 @@ export const cardPacksRouter = createTRPCRouter({
         const userPack = await purchasePack(ctx.db, ctx.user.id, input.packId);
 
         // Sync to forum profile (fire-and-forget)
-        syncUserToForum(ctx.user.id).catch(() => {});
+        syncUserToForum(ctx.user.id).catch((err: unknown) => { console.error("[CardPacks] Background op failed:", (err as Error).message); });
 
         // Notification: pack purchased (fire-and-forget)
         try {
@@ -233,7 +233,7 @@ export const cardPacksRouter = createTRPCRouter({
         const cards = await openPack(ctx.db, ctx.user.id, input.userPackId);
 
         // Sync to forum profile (fire-and-forget)
-        syncUserToForum(ctx.user.id).catch(() => {});
+        syncUserToForum(ctx.user.id).catch((err: unknown) => { console.error("[CardPacks] Background op failed:", (err as Error).message); });
 
         // Format cards with rarity reveal data
         const revealData = cards.map((card) => ({

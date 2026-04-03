@@ -47,9 +47,13 @@ function getRedisClient(): Redis | null {
         // Don't crash on Redis errors, fall back to memory cache
       });
 
+      redis.on("connect", () => {
+        console.log("[TRPC_CACHE] Connected to Redis");
+      });
+
       return redis;
     } catch (err) {
-      console.warn("[TRPC_CACHE] Failed to connect to Redis, using memory cache");
+      console.warn("[TRPC_CACHE] Failed to connect to Redis, using memory cache fallback");
       return null;
     }
   }
@@ -146,6 +150,17 @@ function shouldSkipCache(path: string, skipPatterns?: RegExp[]): boolean {
     /send/i,
     /save/i,
     /upload/i,
+    /batch/i,
+    /sync/i,
+    /copy/i,
+    /clone/i,
+    /import/i,
+    /export/i,
+    /publish/i,
+    /generate/i,
+    /seed/i,
+    /migrate/i,
+    /reset/i,
   ];
 
   for (const pattern of mutationPatterns) {

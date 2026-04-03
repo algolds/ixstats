@@ -1108,7 +1108,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1217,7 +1217,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1288,7 +1288,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -1383,7 +1383,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1490,7 +1490,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1582,7 +1582,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[DiplomaticScenarios] Background op failed:", (err as Error).message); });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({

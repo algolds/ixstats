@@ -21,7 +21,7 @@ interface UnsplashSearchParams {
 }
 
 class UnsplashService {
-  private readonly accessKey = "7f8LVq5DRx6drL_07VYMOZQnBkWs44Tp8gc3X2sguwE";
+  private readonly accessKey = process.env.UNSPLASH_ACCESS_KEY || "";
   private readonly baseUrl = "https://api.unsplash.com";
   private readonly cache = new Map<string, { data: UnsplashImageData[]; timestamp: number }>();
   private readonly cacheTtl = 1000 * 60 * 60 * 24; // 24 hours

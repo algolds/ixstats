@@ -172,10 +172,13 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
               const TypeIcon = group.type === "private" ? Lock : group.type === "invite_only" ? Hash : Globe;
 
               return (
-                <button
+                <div
                   key={group.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleOpenGroup(group)}
-                  className="flex w-full items-start gap-3 rounded-lg border border-transparent p-3 text-left transition-colors hover:bg-muted/50"
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleOpenGroup(group); }}
+                  className="flex w-full cursor-pointer items-start gap-3 rounded-lg border border-transparent p-3 text-left transition-colors hover:bg-muted/50"
                 >
                   <Avatar className="h-10 w-10 shrink-0">
                     <AvatarImage src={group.avatar ?? undefined} />
@@ -237,7 +240,7 @@ export function MessagesGroupsPanel({ onSelectGroup }: MessagesGroupsPanelProps)
                       Leave
                     </Button>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>

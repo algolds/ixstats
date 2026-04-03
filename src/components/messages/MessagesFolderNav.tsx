@@ -49,11 +49,11 @@ export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
     id: "discussions",
     icon: MessageCircle,
     title: "Discussions",
-    description: "Wiki talk & forum threads",
+    description: "Wiki alerts & forum PMs",
     gradient: "text-purple-500",
     activeGlow: "bg-purple-500/10 border-purple-500/40",
     emptyTitle: "No discussions",
-    emptyDescription: "Wiki talk pages and forum threads will appear here.",
+    emptyDescription: "Wiki notifications and forum private messages will appear here.",
   },
   {
     id: "groups",

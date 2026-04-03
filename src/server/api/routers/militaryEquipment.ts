@@ -422,7 +422,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -554,7 +554,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -626,7 +626,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -696,7 +696,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -770,7 +770,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -860,7 +860,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -1140,7 +1140,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
               timestamp: new Date(),
             },
           })
-          .catch(() => {});
+          .catch((err: unknown) => { console.error("[MilitaryEquipment] Background op failed:", (err as Error).message); });
 
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

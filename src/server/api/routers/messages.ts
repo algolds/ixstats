@@ -18,7 +18,164 @@ import { validateNoXSS } from "~/lib/sanitize-html";
 import { notificationAPI } from "~/lib/notification-api";
 import { getThinkPagesServer } from "~/server/websocket-server";
 import { wikiTalkBridge } from "~/server/bridges/wiki-talk-bridge";
-import { forumBridge } from "~/modules/forum";
+import { forumBridge } from "~/server/bridges/forum-bridge";
+
+// ─── User Profile Cache (batch lookup) ───────────────────────────
+
+type UserAccount = {
+  id: string;
+  username: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  accountType: "country";
+};
+
+/** Batch-resolve userIds to display accounts. Single query instead of N+1. */
+async function batchResolveUsers(
+  userIds: string[],
+  db: any
+): Promise<Map<string, UserAccount>> {
+  const map = new Map<string, UserAccount>();
+  if (userIds.length === 0) return map;
+
+  const unique = [...new Set(userIds)];
+
+  // Separate bridge-prefixed IDs from real clerkUserIds
+  const realIds: string[] = [];
+  const forumKeys: { key: string; raw: string }[] = []; // raw = part after "forum:"
+  const wikiNames: string[] = [];
+
+  for (const id of unique) {
+    if (id.startsWith("forum:")) {
+      forumKeys.push({ key: id, raw: id.slice(6) });
+    } else if (id.startsWith("wiki:")) {
+      wikiNames.push(id.slice(5));
+    } else {
+      realIds.push(id);
+    }
+  }
+
+  // 1. Resolve real clerkUserIds
+  if (realIds.length > 0) {
+    const users = await db.user.findMany({
+      where: { clerkUserId: { in: realIds } },
+      include: { country: true },
+    });
+    for (const u of users) {
+      map.set(u.clerkUserId, {
+        id: u.clerkUserId,
+        username: u.country?.slug ?? u.clerkUserId,
+        displayName: u.country?.name ?? "Unknown",
+        profileImageUrl: u.country?.flag ?? null,
+        accountType: "country",
+      });
+    }
+
+    // Fallback: unresolved real IDs might be countryIds (diplomatic channels)
+    const unresolvedReal = realIds.filter((id) => !map.has(id));
+    if (unresolvedReal.length > 0) {
+      const countries = await db.country.findMany({
+        where: { id: { in: unresolvedReal } },
+      });
+      for (const c of countries) {
+        map.set(c.id, {
+          id: c.id,
+          username: c.slug,
+          displayName: c.name,
+          profileImageUrl: c.flag ?? null,
+          accountType: "country",
+        });
+      }
+    }
+  }
+
+  // 2. Resolve forum:* IDs — try by forumUserId (numeric) or forumUsername
+  if (forumKeys.length > 0) {
+    const numericIds = forumKeys
+      .map((f) => parseInt(f.raw, 10))
+      .filter((n) => !isNaN(n));
+    const nameKeys = forumKeys.filter((f) => isNaN(parseInt(f.raw, 10)));
+
+    // Try numeric forumUserId lookup
+    if (numericIds.length > 0) {
+      const forumUsers = await db.user.findMany({
+        where: { forumUserId: { in: numericIds } },
+        include: { country: true },
+      });
+      for (const u of forumUsers) {
+        map.set(`forum:${u.forumUserId}`, {
+          id: `forum:${u.forumUserId}`,
+          username: u.forumUsername ?? u.country?.slug ?? `forum-${u.forumUserId}`,
+          displayName: u.forumUsername ?? u.country?.name ?? `Forum User`,
+          profileImageUrl: u.country?.flag ?? null,
+          accountType: "country",
+        });
+      }
+    }
+
+    // Try forumUsername lookup for name-based IDs
+    if (nameKeys.length > 0) {
+      const forumUsersByName = await db.user.findMany({
+        where: { forumUsername: { in: nameKeys.map((f) => f.raw) } },
+        include: { country: true },
+      });
+      for (const u of forumUsersByName) {
+        map.set(`forum:${u.forumUsername}`, {
+          id: `forum:${u.forumUsername}`,
+          username: u.forumUsername ?? u.country?.slug ?? "forum-user",
+          displayName: u.country?.name ?? u.forumUsername ?? "Forum User",
+          profileImageUrl: u.country?.flag ?? null,
+          accountType: "country",
+        });
+      }
+    }
+
+    // Fallback: use the raw value (username or ID) as the display name
+    for (const f of forumKeys) {
+      if (!map.has(f.key)) {
+        map.set(f.key, {
+          id: f.key,
+          username: f.raw,
+          displayName: f.raw,
+          profileImageUrl: null,
+          accountType: "country",
+        });
+      }
+    }
+  }
+
+  // 3. Resolve wiki:Username IDs
+  if (wikiNames.length > 0) {
+    const wikiUsers = await db.user.findMany({
+      where: { wikiUsername: { in: wikiNames } },
+      include: { country: true },
+    });
+    for (const u of wikiUsers) {
+      map.set(`wiki:${u.wikiUsername}`, {
+        id: `wiki:${u.wikiUsername}`,
+        username: u.wikiUsername ?? u.country?.slug ?? "wiki-user",
+        displayName: u.wikiUsername ?? u.country?.name ?? "Wiki User",
+        profileImageUrl: u.country?.flag ?? null,
+        accountType: "country",
+      });
+    }
+    // For unresolved wiki names, use the username directly
+    for (const name of wikiNames) {
+      const key = `wiki:${name}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          username: name,
+          displayName: name,
+          profileImageUrl: null,
+          accountType: "country",
+        });
+      }
+    }
+  }
+
+  return map;
+}
 
 // ─── Shared Schemas ──────────────────────────────────────────────
 
@@ -68,10 +225,19 @@ export const messagesRouter = createTRPCRouter({
         isActive: true,
       };
 
+      // Fire-and-forget bridge sync for folders that need it (non-blocking)
+      if (
+        (folder === "inbox" || folder === "discussions") &&
+        input.userId
+      ) {
+        Promise.allSettled([
+          wikiTalkBridge.syncInbound(input.userId, ctx.db),
+          forumBridge.syncInbound(input.userId, ctx.db),
+        ]).catch((err: unknown) => { console.error("[Messages] Background op failed:", (err as Error).message); });
+      }
+
       switch (folder) {
         case "inbox":
-          // All conversations — we'll filter by unread client-side or via subquery
-          // For now, fetch recent and let client determine unread
           break;
         case "personal":
           baseWhere.source = "thinkshare";
@@ -88,17 +254,6 @@ export const messagesRouter = createTRPCRouter({
           ];
           break;
         case "discussions":
-          // Sync-on-demand: pull latest from wiki + forum before querying
-          if (input.userId) {
-            try {
-              await Promise.all([
-                wikiTalkBridge.syncInbound(input.userId, ctx.db),
-                forumBridge.syncInbound(input.userId, ctx.db),
-              ]);
-            } catch {
-              // Non-fatal: sync failures shouldn't block the query
-            }
-          }
           baseWhere.source = { in: ["wiki", "forum"] };
           break;
         case "groups":
@@ -136,116 +291,96 @@ export const messagesRouter = createTRPCRouter({
         },
       });
 
-      // Compute unread counts and enrich with user profile data
-      const enriched = await Promise.all(
-        conversations.slice(0, limit).map(async (conv) => {
-          const participant = conv.participants.find(
-            (p) => p.userId === input.userId
-          );
-          const lastReadAt = participant?.lastReadAt ?? new Date(0);
+      // ── Batch enrichment (replaces N+1 loops) ──
+      const page = conversations.slice(0, limit);
 
-          const unreadCount = await ctx.db.thinkshareMessage.count({
+      // 1. Collect all userIds we need to resolve (participants + last message senders)
+      const allUserIds = new Set<string>();
+      for (const conv of page) {
+        for (const p of conv.participants) allUserIds.add(p.userId);
+        if (conv.messages[0]) allUserIds.add(conv.messages[0].userId);
+      }
+      allUserIds.delete(input.userId);
+
+      // 2. Single batch query for all user profiles
+      const userMap = await batchResolveUsers([...allUserIds], ctx.db);
+
+      // 3. Batch unread counts — single query with groupBy
+      const participantReadMap = new Map(
+        page.map((c) => {
+          const p = c.participants.find((pp) => pp.userId === input.userId);
+          return [c.id, p?.lastReadAt ?? new Date(0)];
+        })
+      );
+
+      // Batch unread counts: parallel Promise.all instead of sequential loop
+      const unreadMap = new Map<string, number>();
+      await Promise.all(
+        page.map(async (conv) => {
+          const lastRead = participantReadMap.get(conv.id) ?? new Date(0);
+          const count = await ctx.db.thinkshareMessage.count({
             where: {
               conversationId: conv.id,
               userId: { not: input.userId },
-              ixTimeTimestamp: { gt: lastReadAt },
+              ixTimeTimestamp: { gt: lastRead },
               deletedAt: null,
             },
           });
-
-          // Get other participants' display info
-          const otherParticipants = conv.participants.filter(
-            (p) => p.userId !== input.userId
-          );
-
-          const participantProfiles = await Promise.all(
-            otherParticipants.map(async (p) => {
-              // Try user lookup first
-              const user = await ctx.db.user.findFirst({
-                where: { clerkUserId: p.userId },
-                include: { country: true },
-              });
-
-              // Fallback: try as countryId (for diplomatic channels)
-              if (!user) {
-                const country = await ctx.db.country.findUnique({
-                  where: { id: p.userId },
-                });
-                if (country) {
-                  return {
-                    id: p.id,
-                    accountId: p.userId,
-                    isActive: p.isActive,
-                    account: {
-                      id: p.userId,
-                      username: country.slug,
-                      displayName: country.name,
-                      profileImageUrl: country.flag ?? null,
-                      accountType: "country" as const,
-                    },
-                  };
-                }
-              }
-
-              return {
-                id: p.id,
-                accountId: p.userId,
-                isActive: p.isActive,
-                account: {
-                  id: p.userId,
-                  username: user?.country?.slug ?? p.userId,
-                  displayName: user?.country?.name ?? "Unknown",
-                  profileImageUrl: user?.country?.flag ?? null,
-                  accountType: "country" as const,
-                },
-              };
-            })
-          );
-
-          const lastMessage = conv.messages[0];
-          let lastMessageAccount = null;
-          if (lastMessage) {
-            const sender = await ctx.db.user.findFirst({
-              where: { clerkUserId: lastMessage.userId },
-              include: { country: true },
-            });
-            lastMessageAccount = {
-              id: lastMessage.userId,
-              username: sender?.country?.slug ?? lastMessage.userId,
-              displayName: sender?.country?.name ?? "Unknown",
-              profileImageUrl: sender?.country?.flag ?? null,
-              accountType: "country" as const,
-            };
-          }
-
-          return {
-            id: conv.id,
-            type: conv.type,
-            name: conv.name,
-            avatar: conv.avatar,
-            isActive: conv.isActive,
-            lastActivity: conv.lastActivity,
-            createdAt: conv.createdAt,
-            updatedAt: conv.updatedAt,
-            source: conv.source,
-            sourceId: conv.sourceId,
-            conversationType: conv.conversationType,
-            diplomaticClassification: conv.diplomaticClassification,
-            unreadCount,
-            otherParticipants: participantProfiles,
-            lastMessage: lastMessage
-              ? {
-                  id: lastMessage.id,
-                  accountId: lastMessage.userId,
-                  account: lastMessageAccount,
-                  content: lastMessage.content,
-                  ixTimeTimestamp: lastMessage.ixTimeTimestamp,
-                  createdAt: lastMessage.ixTimeTimestamp,
-                }
-              : undefined,
-          };
+          unreadMap.set(conv.id, count);
         })
       );
+
+      // 4. Build enriched results (no more async per-item)
+      const defaultAccount: UserAccount = {
+        id: "unknown",
+        username: "unknown",
+        displayName: "Unknown",
+        profileImageUrl: null,
+        accountType: "country",
+      };
+
+      const enriched = page.map((conv) => {
+        const otherParticipants = conv.participants
+          .filter((p) => p.userId !== input.userId)
+          .map((p) => ({
+            id: p.id,
+            accountId: p.userId,
+            isActive: p.isActive,
+            account: userMap.get(p.userId) ?? { ...defaultAccount, id: p.userId },
+          }));
+
+        const lastMessage = conv.messages[0];
+        const lastMessageAccount = lastMessage
+          ? userMap.get(lastMessage.userId) ?? { ...defaultAccount, id: lastMessage.userId }
+          : null;
+
+        return {
+          id: conv.id,
+          type: conv.type,
+          name: conv.name,
+          avatar: conv.avatar,
+          isActive: conv.isActive,
+          lastActivity: conv.lastActivity,
+          createdAt: conv.createdAt,
+          updatedAt: conv.updatedAt,
+          source: conv.source,
+          sourceId: conv.sourceId,
+          conversationType: conv.conversationType,
+          diplomaticClassification: conv.diplomaticClassification,
+          unreadCount: unreadMap.get(conv.id) ?? 0,
+          otherParticipants,
+          lastMessage: lastMessage
+            ? {
+                id: lastMessage.id,
+                accountId: lastMessage.userId,
+                account: lastMessageAccount,
+                content: lastMessage.content,
+                ixTimeTimestamp: lastMessage.ixTimeTimestamp,
+                createdAt: lastMessage.ixTimeTimestamp,
+              }
+            : undefined,
+        };
+      });
 
       // For inbox folder, filter to only unread
       const result =
@@ -309,7 +444,22 @@ export const messagesRouter = createTRPCRouter({
         },
       });
 
-      // Count unread per conversation
+      // Batch unread counts in parallel (Promise.all instead of sequential loop)
+      const unreadResults = await Promise.all(
+        conversations.map(async (conv) => {
+          const lastRead = readMap.get(conv.id) ?? new Date(0);
+          const count = await ctx.db.thinkshareMessage.count({
+            where: {
+              conversationId: conv.id,
+              userId: { not: input.userId },
+              ixTimeTimestamp: { gt: lastRead },
+              deletedAt: null,
+            },
+          });
+          return { conv, count };
+        })
+      );
+
       const counts: Record<string, number> = {
         inbox: 0,
         personal: 0,
@@ -319,32 +469,15 @@ export const messagesRouter = createTRPCRouter({
         system: 0,
       };
 
-      for (const conv of conversations) {
-        const lastRead = readMap.get(conv.id) ?? new Date(0);
-        const unread = await ctx.db.thinkshareMessage.count({
-          where: {
-            conversationId: conv.id,
-            userId: { not: input.userId },
-            ixTimeTimestamp: { gt: lastRead },
-            deletedAt: null,
-          },
-        });
+      for (const { conv, count } of unreadResults) {
+        if (count === 0) continue;
 
-        if (unread === 0) continue;
-
-        // Classify folder
         let folder: string;
-        if (
-          conv.source === "diplomatic" ||
-          conv.conversationType === "diplomatic"
-        ) {
+        if (conv.source === "diplomatic" || conv.conversationType === "diplomatic") {
           folder = "diplomatic";
         } else if (conv.source === "thinktank" || conv.type === "group") {
           folder = "groups";
-        } else if (
-          conv.source === "wiki" ||
-          conv.source === "forum"
-        ) {
+        } else if (conv.source === "wiki" || conv.source === "forum") {
           folder = "discussions";
         } else if (conv.source === "system") {
           folder = "system";
@@ -352,8 +485,8 @@ export const messagesRouter = createTRPCRouter({
           folder = "personal";
         }
 
-        counts[folder]! += unread;
-        counts.inbox! += unread;
+        counts[folder]! += count;
+        counts.inbox! += count;
       }
 
       return counts;
@@ -401,80 +534,61 @@ export const messagesRouter = createTRPCRouter({
         },
       });
 
-      // Enrich with user accounts
-      const enriched = await Promise.all(
-        messages.slice(0, input.limit).map(async (msg) => {
-          const user = await ctx.db.user.findFirst({
-            where: { clerkUserId: msg.userId },
-            include: { country: true },
-          });
+      // Batch resolve all message senders in one query
+      const page = messages.slice(0, input.limit);
+      const senderIds = [...new Set(page.map((m) => m.userId))];
+      const userMap = await batchResolveUsers(senderIds, ctx.db);
 
-          // Fallback: countryId for diplomatic
-          let account;
-          if (user) {
-            account = {
-              id: msg.userId,
-              username: user.country?.slug ?? msg.userId,
-              displayName: user.country?.name ?? "Unknown",
-              profileImageUrl: user.country?.flag ?? null,
-              accountType: "country" as const,
-            };
-          } else {
-            const country = await ctx.db.country.findUnique({
-              where: { id: msg.userId },
-            });
-            account = {
-              id: msg.userId,
-              username: country?.slug ?? msg.userId,
-              displayName: country?.name ?? "Unknown",
-              profileImageUrl: country?.flag ?? null,
-              accountType: "country" as const,
-            };
-          }
+      const defaultAccount: UserAccount = {
+        id: "unknown",
+        username: "unknown",
+        displayName: "Unknown",
+        profileImageUrl: null,
+        accountType: "country",
+      };
 
-          // Parse JSON fields
-          let reactions: Record<string, number> = {};
-          try {
-            reactions = msg.reactions ? JSON.parse(msg.reactions) : {};
-          } catch { /* empty */ }
+      // Synchronous enrichment — no more async per message
+      const enriched = page.map((msg) => {
+        const account = userMap.get(msg.userId) ?? {
+          ...defaultAccount,
+          id: msg.userId,
+        };
 
-          let mentions: string[] = [];
-          try {
-            mentions = msg.mentions ? JSON.parse(msg.mentions) : [];
-          } catch { /* empty */ }
+        let reactions: Record<string, number> = {};
+        try { reactions = msg.reactions ? JSON.parse(msg.reactions) : {}; } catch { /* empty */ }
 
-          let attachments: any[] = [];
-          try {
-            attachments = msg.attachments ? JSON.parse(msg.attachments) : [];
-          } catch { /* empty */ }
+        let mentions: string[] = [];
+        try { mentions = msg.mentions ? JSON.parse(msg.mentions) : []; } catch { /* empty */ }
 
-          return {
-            id: msg.id,
-            conversationId: msg.conversationId,
-            accountId: msg.userId,
-            account,
-            content: msg.content,
-            messageType: msg.messageType,
-            ixTimeTimestamp: msg.ixTimeTimestamp,
-            createdAt: msg.ixTimeTimestamp,
-            reactions,
-            mentions,
-            attachments,
-            replyTo: msg.replyTo
-              ? { ...msg.replyTo, account: { displayName: "..." } }
-              : undefined,
-            readReceipts: msg.readReceipts.map((r) => ({
-              id: r.id,
-              accountId: r.userId,
-              readAt: r.readAt,
-            })),
-            isSystem: msg.isSystem,
-            editedAt: msg.editedAt,
-            deletedAt: msg.deletedAt,
-            source: msg.source,
-          };
-        })
-      );
+        let attachments: any[] = [];
+        try { attachments = msg.attachments ? JSON.parse(msg.attachments) : []; } catch { /* empty */ }
+
+        return {
+          id: msg.id,
+          conversationId: msg.conversationId,
+          accountId: msg.userId,
+          account,
+          content: msg.content,
+          messageType: msg.messageType,
+          ixTimeTimestamp: msg.ixTimeTimestamp,
+          createdAt: msg.ixTimeTimestamp,
+          reactions,
+          mentions,
+          attachments,
+          replyTo: msg.replyTo
+            ? { ...msg.replyTo, account: { displayName: "..." } }
+            : undefined,
+          readReceipts: msg.readReceipts.map((r) => ({
+            id: r.id,
+            accountId: r.userId,
+            readAt: r.readAt,
+          })),
+          isSystem: msg.isSystem,
+          editedAt: msg.editedAt,
+          deletedAt: msg.deletedAt,
+          source: msg.source,
+        };
+      });
 
       const hasMore = messages.length > input.limit;
       const nextCursor = hasMore

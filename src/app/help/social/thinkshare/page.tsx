@@ -31,7 +31,7 @@ export default function ThinkShareArticle() {
             </li>
             <li>
               <MessageCircle className="inline h-4 w-4" /> <strong>Cross-System</strong> — wiki
-              talk page replies, forum conversations, and diplomatic cables all appear in your
+              edit notifications, forum private messages, and diplomatic cables all appear in your
               unified inbox.
             </li>
           </ul>

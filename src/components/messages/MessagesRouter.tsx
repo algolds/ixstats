@@ -37,7 +37,7 @@ function MessagesRouterInner() {
   const pathname = usePathname();
   const notify = useNotify();
 
-  const currentUserId = user?.clerkUserId ?? "";
+  const currentUserId = user?.id ?? "";
 
   // ── State ──
   const [activeFolder, setActiveFolder] = useState<MessageFolder>(() =>

@@ -64,9 +64,74 @@ export const wikiosRouter = createTRPCRouter({
    * happens here server-side. Client renders with zero regex work.
    */
   getArticleHtml: publicProcedure
-    .input(z.object({ title: z.string().min(1).max(500) }))
+    .input(z.object({
+      title: z.string().min(1).max(500),
+      wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+    }))
     .query(async ({ input }) => {
-      // Resolve redirects server-side so the client never sees redirect pages
+      const { wikiSource } = input;
+
+      // For external wikis, fetch wikitext then render via ixwiki's action=parse
+      if (wikiSource !== "ixwiki") {
+        const article = await getArticleWikitext(input.title, wikiSource);
+        if (!article) {
+          throw new Error(`Article "${input.title}" not found on ${wikiSource}`);
+        }
+
+        // Use ixwiki's action=parse as a cross-wiki render proxy.
+        // Templates won't resolve but basic wikitext formatting will work.
+        const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
+        const response = await fetch(apiBase, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            action: "parse",
+            text: article.wikitext,
+            contentmodel: "wikitext",
+            prop: "text",
+            disablelimitreport: "1",
+            disableeditsection: "1",
+            wrapoutputclass: "",
+            formatversion: "2",
+            format: "json",
+          }),
+          signal: AbortSignal.timeout(15000),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Cross-wiki render failed (${response.status})`);
+        }
+
+        const data = (await response.json()) as {
+          parse?: { text: string };
+          error?: { info: string };
+        };
+
+        if (data.error || !data.parse) {
+          throw new Error(`Cross-wiki render error: ${data.error?.info ?? "no parse result"}`);
+        }
+
+        const transformed = transformArticleHtml(
+          stripConflictingStyles(data.parse.text),
+          ""
+        );
+
+        return {
+          contentHtml: transformed.contentHtml,
+          infoboxHtml: transformed.infoboxHtml,
+          noticesHtml: transformed.noticesHtml,
+          toc: transformed.toc,
+          title: article.title,
+          categories: [] as string[],
+          lastModified: null,
+          isRedirect: false,
+          redirectTarget: null,
+          resolvedFrom: null,
+          wikiSource,
+        };
+      }
+
+      // Default ixwiki flow — direct Parsoid/MySQL
       const resolvedTitle = await resolveRedirect(input.title);
       const article = await getArticleHtml(resolvedTitle);
 
@@ -88,6 +153,7 @@ export const wikiosRouter = createTRPCRouter({
         redirectTarget: null,
         // Pass the resolved title if different from input
         resolvedFrom: resolvedTitle !== input.title ? input.title : null,
+        wikiSource: "ixwiki" as const,
       };
     }),
 
@@ -179,16 +245,42 @@ export const wikiosRouter = createTRPCRouter({
 
   /**
    * Search articles by title prefix.
+   * Supports multi-wiki search: specify a single source or "all" to query
+   * ixwiki, iiwiki, and althistory in parallel.
    */
   search: publicProcedure
     .input(
       z.object({
         query: z.string().min(1).max(200),
         limit: z.number().min(1).max(50).default(10),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory", "all"]).optional().default("ixwiki"),
       })
     )
     .query(async ({ input }) => {
-      return searchPages(input.query, input.limit, "ixwiki" as WikiSource);
+      const { query, limit, wikiSource } = input;
+
+      if (wikiSource !== "all") {
+        const results = await searchPages(query, limit, wikiSource as WikiSource);
+        return results.map((r) => ({ ...r, source: wikiSource as "ixwiki" | "iiwiki" | "althistory" }));
+      }
+
+      // Query all 3 wikis in parallel
+      const sources: WikiSource[] = ["ixwiki", "iiwiki", "althistory"];
+      const settled = await Promise.allSettled(
+        sources.map((src) => searchPages(query, limit, src))
+      );
+
+      const merged: Array<{ title: string; pageId: number; length: number; source: "ixwiki" | "iiwiki" | "althistory" }> = [];
+      for (let i = 0; i < sources.length; i++) {
+        const result = settled[i]!;
+        if (result.status === "fulfilled") {
+          for (const r of result.value) {
+            merged.push({ ...r, source: sources[i]! });
+          }
+        }
+      }
+
+      return merged;
     }),
 
   /**
@@ -1403,6 +1495,82 @@ export const wikiosRouter = createTRPCRouter({
         subcategories: children,
       };
     }),
+
+  // ---------------------------------------------------------------------------
+  // Watchlist endpoints (backed by the LoreStash "Watchlist" stash)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Add a page to the user's watchlist stash.
+   */
+  watchPage: protectedProcedure
+    .input(z.object({ pageTitle: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      // Find or create the "Watchlist" stash
+      let watchlistStash = await ctx.db.loreStash.findFirst({
+        where: { userId, name: "Watchlist" },
+      });
+      if (!watchlistStash) {
+        watchlistStash = await ctx.db.loreStash.create({
+          data: { userId, name: "Watchlist", color: "#f59e0b", icon: "eye", isDefault: false },
+        });
+      }
+      // Add page (upsert to avoid duplicates)
+      await ctx.db.loreStashItem.upsert({
+        where: { stashId_pageTitle: { stashId: watchlistStash.id, pageTitle: input.pageTitle } },
+        create: { stashId: watchlistStash.id, pageTitle: input.pageTitle, pageSlug: input.pageTitle.replace(/ /g, "_") },
+        update: {},
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Remove a page from the user's watchlist stash.
+   */
+  unwatchPage: protectedProcedure
+    .input(z.object({ pageTitle: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      const watchlistStash = await ctx.db.loreStash.findFirst({
+        where: { userId, name: "Watchlist" },
+      });
+      if (!watchlistStash) return { success: true };
+      await ctx.db.loreStashItem.deleteMany({
+        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle },
+      });
+      return { success: true };
+    }),
+
+  /**
+   * Get the user's full watchlist (most recently saved first, max 100).
+   */
+  getWatchlist: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.userId;
+      const watchlistStash = await ctx.db.loreStash.findFirst({
+        where: { userId, name: "Watchlist" },
+        include: { items: { orderBy: { savedAt: "desc" }, take: 100 } },
+      });
+      return watchlistStash?.items ?? [];
+    }),
+
+  /**
+   * Check whether a page is on the user's watchlist.
+   */
+  isPageWatched: protectedProcedure
+    .input(z.object({ pageTitle: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.userId;
+      const watchlistStash = await ctx.db.loreStash.findFirst({
+        where: { userId, name: "Watchlist" },
+      });
+      if (!watchlistStash) return false;
+      const item = await ctx.db.loreStashItem.findFirst({
+        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle },
+      });
+      return !!item;
+    }),
 });
 
 // ---------------------------------------------------------------------------
@@ -1476,7 +1644,7 @@ async function saveToMediaWiki(
   invalidateCache(title);
 
   // Notify stash owners about the edit (non-blocking)
-  notifyStashOwners(title, userId, editData.edit?.newrevid ?? null).catch(() => {});
+  notifyStashOwners(title, userId, editData.edit?.newrevid ?? null).catch((err: unknown) => { console.error("[WikiOS] Background op failed:", (err as Error).message); });
 
   return {
     success: editData.edit?.result === "Success",

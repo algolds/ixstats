@@ -26,6 +26,7 @@ import { useUser } from "~/context/auth-context";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
+import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
 import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
 import { usePermissions } from "~/hooks/usePermissions";
@@ -37,7 +38,6 @@ import { BookOpen, Trophy, Flame, History } from "lucide-react";
 import { HealthRing } from "../ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
 import { debugLog } from "~/lib/console-utils";
-import { CrisisIndicator } from "./CrisisIndicator";
 
 // Helper functions
 const getGreeting = (ixTime: number): string => {
@@ -68,7 +68,6 @@ function CompactViewComponent({
   setTimeDisplayMode,
   onSwitchMode,
   isOnWikiPage,
-  crisisEvents,
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
   const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
@@ -209,11 +208,13 @@ function CompactViewComponent({
   const liveNotificationCount = notifications.filter(
     (n) => n.status !== "read" && n.status !== "dismissed"
   ).length;
+  const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const totalUnreadCount =
     unreadNotifications +
     (isExecutiveMode ? executiveUnreadCount : 0) +
     enhancedUnreadCount +
-    liveNotificationCount;
+    liveNotificationCount +
+    messageUnreadCount;
 
   const getSetupStatus = () => {
     if (!isLoaded || profileLoading) return "loading";
@@ -702,21 +703,6 @@ function CompactViewComponent({
                 </TooltipTrigger>
                 <TooltipContent side="bottom">Alerts</TooltipContent>
               </Tooltip>
-
-              {!isOnWikiPage && crisisEvents && crisisEvents.length > 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className={`flex items-center justify-center ${isSticky ? "h-6 w-6" : "h-7 w-7"}`}>
-                      <CrisisIndicator
-                        crises={crisisEvents}
-                        variant="compact"
-                        onClick={() => onSwitchMode("crisis")}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Crisis Monitor</TooltipContent>
-                </Tooltip>
-              )}
 
               <Tooltip>
                 <TooltipTrigger asChild>

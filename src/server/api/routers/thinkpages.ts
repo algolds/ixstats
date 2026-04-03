@@ -2904,7 +2904,7 @@ export const thinkpagesRouter = createTRPCRouter({
                   fromUserId: initiatorId,
                 },
               })
-              .catch(() => {});
+              .catch((err: unknown) => { console.error("[ThinkPages] Background op failed:", (err as Error).message); });
           }
         } catch (e) {
           console.warn("[ThinkShare] Failed to send conversation start notification:", e);
@@ -3417,7 +3417,7 @@ export const thinkpagesRouter = createTRPCRouter({
                 fromUserId: input.userId,
               },
             })
-            .catch(() => {});
+            .catch((err: unknown) => { console.error("[ThinkPages] Background op failed:", (err as Error).message); });
         }
       } catch (e) {
         console.warn("[ThinkPages] Failed to create notifications (non-fatal):", e);

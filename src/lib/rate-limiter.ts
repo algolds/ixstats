@@ -43,6 +43,8 @@ class RateLimiter {
 
     if (this.redisEnabled) {
       this.initRedis();
+    } else {
+      console.warn("[RateLimiter] Redis not available — using in-memory fallback");
     }
   }
 

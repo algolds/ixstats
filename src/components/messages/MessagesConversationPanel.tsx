@@ -1,9 +1,8 @@
 "use client";
 
-import { Search, Plus, RefreshCw } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { api } from "~/trpc/react";
 import { MESSAGE_FOLDERS } from "./MessagesFolderNav";
 import { MessagesConversationCard } from "./MessagesConversationCard";
 import type { ThinkShareConversation } from "~/types/thinkshare";
@@ -33,15 +32,6 @@ export function MessagesConversationPanel({
   onNewConversation,
 }: MessagesConversationPanelProps) {
   const folderConfig = MESSAGE_FOLDERS.find((f) => f.id === activeFolder);
-  const utils = api.useUtils();
-
-  // Sync discussions (wiki + forum) on demand
-  const syncMutation = api.messages.syncDiscussions.useMutation({
-    onSuccess: () => {
-      void utils.messages.getConversationsByFolder.invalidate();
-      void utils.messages.getFolderCounts.invalidate();
-    },
-  });
 
   // Filter conversations by search query
   const filtered = searchQuery.trim()
@@ -60,36 +50,17 @@ export function MessagesConversationPanel({
           <h2 className="text-sm font-semibold text-foreground">
             {folderConfig?.title ?? "Messages"}
           </h2>
-          <div className="flex items-center gap-1">
-            {/* Sync button for Discussions folder */}
-            {activeFolder === "discussions" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0"
-                onClick={() =>
-                  syncMutation.mutate({ userId: currentUserId })
-                }
-                disabled={syncMutation.isPending}
-                title="Sync wiki & forum discussions"
-              >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${syncMutation.isPending ? "animate-spin" : ""}`}
-                />
-              </Button>
-            )}
-            {activeFolder === "personal" && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0"
-                onClick={onNewConversation}
-                title="New conversation"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
+          {activeFolder === "personal" && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              onClick={onNewConversation}
+              title="New conversation"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -128,22 +99,6 @@ export function MessagesConversationPanel({
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 New Conversation
-              </Button>
-            )}
-            {activeFolder === "discussions" && !searchQuery.trim() && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="mt-4"
-                onClick={() =>
-                  syncMutation.mutate({ userId: currentUserId })
-                }
-                disabled={syncMutation.isPending}
-              >
-                <RefreshCw
-                  className={`mr-1.5 h-3.5 w-3.5 ${syncMutation.isPending ? "animate-spin" : ""}`}
-                />
-                {syncMutation.isPending ? "Syncing..." : "Sync Wiki & Forum"}
               </Button>
             )}
           </div>

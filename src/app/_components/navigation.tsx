@@ -57,6 +57,7 @@ import { FaTreeCity } from "react-icons/fa6";
 import { stripBasePath } from "~/lib/base-path";
 import { UserProfileMenu } from "~/components/UserProfileMenu";
 import { useCountryFlag } from "~/hooks/useCountryFlags";
+import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 
 interface NavigationItem {
   name: string;
@@ -502,6 +503,7 @@ export function Navigation() {
   const normalizedPathname = stripBasePath(pathname || "/");
   const isWikiPage = normalizedPathname.startsWith("/w/") || normalizedPathname.startsWith("/w/special/") || normalizedPathname.startsWith("/blurbs");
   const { user, isLoaded } = useUser();
+  const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const [scrollY, setScrollY] = useState(0);
   const [isSticky, setIsSticky] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1081,6 +1083,7 @@ export function Navigation() {
                             <DropdownMenuContent align="end" className="glass-panel w-56">
                               {item.dropdownItems.map((subItem, index) => {
                                 const SubIcon = subItem.icon;
+                                const isMessages = subItem.href === "/messages";
                                 return (
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
@@ -1088,8 +1091,15 @@ export function Navigation() {
                                         href={subItem.href}
                                         className="flex cursor-pointer items-center gap-3 px-3 py-3"
                                       >
-                                        <SubIcon className="text-muted-foreground h-4 w-4" />
-                                        <div className="flex flex-col">
+                                        <div className="relative">
+                                          <SubIcon className="text-muted-foreground h-4 w-4" />
+                                          {isMessages && messageUnreadCount > 0 && (
+                                            <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+                                              {messageUnreadCount > 9 ? "9+" : messageUnreadCount}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="flex flex-1 flex-col">
                                           <span className="font-medium">{subItem.name}</span>
                                           {subItem.description && (
                                             <span className="text-muted-foreground text-xs">
@@ -1097,6 +1107,11 @@ export function Navigation() {
                                             </span>
                                           )}
                                         </div>
+                                        {isMessages && messageUnreadCount > 0 && (
+                                          <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                                            {messageUnreadCount}
+                                          </span>
+                                        )}
                                       </Link>
                                     </DropdownMenuItem>
                                     {index < item.dropdownItems!.length - 1 && (

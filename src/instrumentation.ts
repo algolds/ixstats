@@ -25,17 +25,12 @@ export async function register() {
 
     try {
       // Dynamically import to avoid bundling issues
-      const { ProductionStartup, MemoryOptimizer } = await import(
+      const { ProductionStartup } = await import(
         "./lib/production-optimizations"
       );
 
       // Initialize production optimizations (memory monitoring, slow query analysis)
       await ProductionStartup.initialize();
-
-      // Set up periodic memory monitoring (every 30 seconds)
-      setInterval(() => {
-        MemoryOptimizer.monitorMemoryUsage();
-      }, 30000);
 
       // Warm up critical caches on startup
       // This pre-loads frequently accessed data to reduce cold-start latency
@@ -57,6 +52,14 @@ export async function register() {
       } catch (geoError) {
         console.warn("[Instrumentation] Geo cache warm-up failed (non-fatal):", geoError);
       }
+
+      // Global error handlers for uncaught exceptions/rejections
+      process.on("unhandledRejection", (reason) => {
+        console.error("[FATAL] Unhandled rejection:", reason);
+      });
+      process.on("uncaughtException", (err) => {
+        console.error("[FATAL] Uncaught exception:", err);
+      });
 
       console.log("[Instrumentation] Production optimizations initialized successfully");
     } catch (error) {

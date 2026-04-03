@@ -68,11 +68,11 @@ let ixwikiPool: Pool | null = null;
 function getIxWikiPool(): Pool {
   if (!ixwikiPool) {
     ixwikiPool = mysql.createPool({
-      host: "localhost",
-      port: 3306,
-      user: "ixwiki",
-      password: "Multico1!",
-      database: "ixwiki",
+      host: process.env.IXWIKI_DB_HOST || "localhost",
+      port: Number(process.env.IXWIKI_DB_PORT) || 3306,
+      user: process.env.IXWIKI_DB_USER || "ixwiki",
+      password: process.env.IXWIKI_DB_PASSWORD || "",
+      database: process.env.IXWIKI_DB_NAME || "ixwiki",
       waitForConnections: true,
       connectionLimit: 5,
       maxIdle: 2,
@@ -1087,7 +1087,7 @@ async function ixwikiGetImageMeta(filename: string): Promise<{
     const crypto = await import("crypto");
     const md5 = crypto.createHash("md5").update(name).digest("hex");
     const hashPath = `${md5[0]}/${md5.slice(0, 2)}`;
-    const baseUrl = "https://ixwiki.com/mediawiki/releases/1.45.1/images";
+    const baseUrl = process.env.IXWIKI_IMAGE_BASE_URL || "https://ixwiki.com/images";
     const url = `${baseUrl}/${hashPath}/${encodeURIComponent(name)}`;
     const thumbUrl = `${baseUrl}/thumb/${hashPath}/${encodeURIComponent(name)}/200px-${encodeURIComponent(name)}`;
 
@@ -1168,13 +1168,49 @@ function formatMWTimestamp(ts: string): string {
 }
 
 // ──────────────────────────────────────────────
+// External Wiki Fetch Helper (retry + 403 resilience)
+// ──────────────────────────────────────────────
+
+const USER_AGENT = "IxStats-Builder";
+
+/**
+ * Fetch from an external wiki API with retry logic for transient 403 errors.
+ * Returns null on persistent failures instead of throwing.
+ */
+async function fetchExternalWiki(url: string, retries = 2): Promise<Response | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (response.ok) return response;
+      if (response.status === 403 && attempt < retries) {
+        console.warn(`[WikiBridge] ${new URL(url).hostname} returned 403, retry ${attempt + 1}/${retries}`);
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      console.warn(`[WikiBridge] ${new URL(url).hostname} returned ${response.status}`);
+      return null;
+    } catch (err) {
+      if (attempt < retries) {
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
+      console.error(`[WikiBridge] ${new URL(url).hostname} fetch failed:`, (err as Error).message);
+      return null;
+    }
+  }
+  return null;
+}
+
+// ──────────────────────────────────────────────
 // IIWiki HTTP API (external)
 // ──────────────────────────────────────────────
 
 const IIWIKI_API = "https://iiwiki.com/api.php";
-const USER_AGENT = "IxStats-Builder";
 
-async function iiwikiApiCall(params: Record<string, string>): Promise<unknown> {
+async function iiwikiApiCall(params: Record<string, string>): Promise<unknown | null> {
   const url = new URL(IIWIKI_API);
   url.searchParams.set("format", "json");
   url.searchParams.set("origin", "*");
@@ -1182,12 +1218,8 @@ async function iiwikiApiCall(params: Record<string, string>): Promise<unknown> {
     url.searchParams.set(k, v);
   }
 
-  const res = await fetch(url.toString(), {
-    headers: { "User-Agent": USER_AGENT },
-    signal: AbortSignal.timeout(15000),
-  });
-
-  if (!res.ok) throw new Error(`iiwiki API ${res.status}`);
+  const res = await fetchExternalWiki(url.toString());
+  if (!res) return null;
   return res.json();
 }
 
@@ -1199,9 +1231,10 @@ async function iiwikiGetWikitext(title: string): Promise<WikiArticle | null> {
       prop: "revisions",
       rvprop: "content",
       rvslots: "main",
-    }) as { query?: { pages?: Record<string, { pageid?: number; title?: string; revisions?: Array<{ slots?: { main?: { "*"?: string } } }> }> } };
+    }) as { query?: { pages?: Record<string, { pageid?: number; title?: string; revisions?: Array<{ slots?: { main?: { "*"?: string } } }> }> } } | null;
 
-    const pages = data?.query?.pages;
+    if (!data) return null;
+    const pages = data.query?.pages;
     if (!pages) return null;
 
     const page = Object.values(pages)[0];
@@ -1227,9 +1260,9 @@ async function iiwikiSearch(query: string, limit: number = 10): Promise<WikiSear
       search: query,
       limit: String(limit),
       namespace: "0",
-    }) as [string, string[]];
+    });
 
-    if (!Array.isArray(data) || data.length < 2) return [];
+    if (!data || !Array.isArray(data) || data.length < 2) return [];
     return (data[1] ?? []).map((title, i) => ({
       title,
       pageId: i,
@@ -1246,7 +1279,7 @@ async function iiwikiSearch(query: string, limit: number = 10): Promise<WikiSear
 
 const ALTHISTORY_API = "https://althistory.fandom.com/api.php";
 
-async function althistoryApiCall(params: Record<string, string>): Promise<unknown> {
+async function althistoryApiCall(params: Record<string, string>): Promise<unknown | null> {
   const url = new URL(ALTHISTORY_API);
   url.searchParams.set("format", "json");
   url.searchParams.set("origin", "*");
@@ -1254,12 +1287,8 @@ async function althistoryApiCall(params: Record<string, string>): Promise<unknow
     url.searchParams.set(k, v);
   }
 
-  const res = await fetch(url.toString(), {
-    headers: { "User-Agent": USER_AGENT },
-    signal: AbortSignal.timeout(15000),
-  });
-
-  if (!res.ok) throw new Error(`althistory API ${res.status}`);
+  const res = await fetchExternalWiki(url.toString());
+  if (!res) return null;
   return res.json();
 }
 
@@ -1271,9 +1300,10 @@ async function althistoryGetWikitext(title: string): Promise<WikiArticle | null>
       prop: "revisions",
       rvprop: "content",
       rvslots: "main",
-    }) as { query?: { pages?: Record<string, { pageid?: number; title?: string; revisions?: Array<{ slots?: { main?: { "*"?: string } } }> }> } };
+    }) as { query?: { pages?: Record<string, { pageid?: number; title?: string; revisions?: Array<{ slots?: { main?: { "*"?: string } } }> }> } } | null;
 
-    const pages = data?.query?.pages;
+    if (!data) return null;
+    const pages = data.query?.pages;
     if (!pages) return null;
 
     const page = Object.values(pages)[0];
@@ -1299,9 +1329,9 @@ async function althistorySearch(query: string, limit: number = 10): Promise<Wiki
       search: query,
       limit: String(limit),
       namespace: "0",
-    }) as [string, string[]];
+    });
 
-    if (!Array.isArray(data) || data.length < 2) return [];
+    if (!data || !Array.isArray(data) || data.length < 2) return [];
     return (data[1] ?? []).map((title, i) => ({
       title,
       pageId: i,
@@ -1729,6 +1759,69 @@ function cleanWikiMarkup(text: string): string {
   clean = clean.trim();
 
   return clean;
+}
+
+// ──────────────────────────────────────────────
+// Category Tree (cached 1 hour)
+// ──────────────────────────────────────────────
+
+/**
+ * Build a top-level category tree from the MediaWiki `categorylinks` table.
+ * Returns the top 500 categories with their subcategory names and page counts.
+ * Result is cached in L1 memory for 1 hour.
+ */
+export async function ixwikiGetCategoryTree(): Promise<
+  Array<{ name: string; subcategories: string[]; pageCount: number }>
+> {
+  const cacheKey = "category_tree";
+  const cached = cacheGet<Array<{ name: string; subcategories: string[]; pageCount: number }>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const pool = getIxWikiPool();
+
+    // Get all categories with their page counts
+    const [rows] = await pool.query<mysql.RowDataPacket[]>(`
+      SELECT
+        cl_to AS name,
+        COUNT(*) AS pageCount
+      FROM categorylinks
+      GROUP BY cl_to
+      ORDER BY pageCount DESC
+      LIMIT 500
+    `);
+
+    // Get subcategory relationships (namespace 14 = Category)
+    const [subRows] = await pool.query<mysql.RowDataPacket[]>(`
+      SELECT
+        p.page_title AS child,
+        cl.cl_to AS parent
+      FROM categorylinks cl
+      JOIN page p ON cl.cl_from = p.page_id
+      WHERE p.page_namespace = 14
+      LIMIT 2000
+    `);
+
+    const subcatMap = new Map<string, string[]>();
+    for (const row of subRows as Array<{ child: string; parent: string }>) {
+      const parent = (row.parent as string).replace(/_/g, " ");
+      const child = (row.child as string).replace(/_/g, " ");
+      if (!subcatMap.has(parent)) subcatMap.set(parent, []);
+      subcatMap.get(parent)!.push(child);
+    }
+
+    const result = (rows as Array<{ name: string; pageCount: number }>).map((r) => ({
+      name: (r.name as string).replace(/_/g, " "),
+      subcategories: subcatMap.get((r.name as string).replace(/_/g, " ")) ?? [],
+      pageCount: Number(r.pageCount),
+    }));
+
+    cacheSet(cacheKey, result, 60 * 60 * 1000); // 1 hour TTL
+    return result;
+  } catch (err) {
+    console.error("[WikiBridge] Category tree query failed:", (err as Error).message);
+    return [];
+  }
 }
 
 /**

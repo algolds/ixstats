@@ -390,8 +390,8 @@ export const tradingRouter = createTRPCRouter({
       });
 
       // Sync both traders to forum profile (fire-and-forget)
-      syncUserToForum(trade.initiatorId).catch(() => {});
-      syncUserToForum(trade.recipientId).catch(() => {});
+      syncUserToForum(trade.initiatorId).catch((err: unknown) => { console.error("[Trading] Background op failed:", (err as Error).message); });
+      syncUserToForum(trade.recipientId).catch((err: unknown) => { console.error("[Trading] Background op failed:", (err as Error).message); });
 
       // Notify initiator that their trade was accepted
       try {

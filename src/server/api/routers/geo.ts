@@ -2929,8 +2929,8 @@ export const geoRouter = createTRPCRouter({
       // Auto-generate ThinkPages news for major/legendary story pins
       if (input.importance >= 1) {
         import("~/lib/diplomatic-news-generator").then(({ generateStoryPinNews }) => {
-          generateStoryPinNews(ctx.db, input.countryId, pin.title, input.category, input.importance, input.ixTimeYear).catch(() => {});
-        }).catch(() => {});
+          generateStoryPinNews(ctx.db, input.countryId, pin.title, input.category, input.importance, input.ixTimeYear).catch((err: unknown) => { console.error("[Geo] Background op failed:", (err as Error).message); });
+        }).catch((err: unknown) => { console.error("[Geo] Background op failed:", (err as Error).message); });
       }
 
       return { id: pin.id, title: pin.title, status: "approved" as const };

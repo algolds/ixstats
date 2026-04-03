@@ -53,7 +53,6 @@ function CommandPaletteContent({
     timeDisplayMode,
     searchResults,
     countriesData,
-    crisisEvents,
     isOnWikiPage,
     setMode,
     setIsExpanded,
@@ -204,7 +203,6 @@ function CommandPaletteContent({
               setTimeDisplayMode={setTimeDisplayMode}
               onSwitchMode={switchMode}
               scrollY={scrollY}
-              crisisEvents={crisisEvents}
               isOnWikiPage={isOnWikiPage}
             />
           </DynamicIsland>
@@ -223,7 +221,6 @@ function CommandPaletteContent({
           debouncedSearchQuery={debouncedSearchQuery}
           searchResults={searchResults}
           countriesData={countriesData}
-          crisisEvents={crisisEvents}
         />
       )}
 
