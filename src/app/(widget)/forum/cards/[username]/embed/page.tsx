@@ -53,7 +53,7 @@ export default async function ForumPostEmbed({
   const top = sorted.slice(0, EMBED_CARD_LIMIT);
   const totalValue = sorted.reduce((sum, o) => sum + o.cards.marketValue, 0);
 
-  const showcaseUrl = `https://ixstates.ixwiki.com/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`;
+  const showcaseUrl = `https://ixwiki.com/projects/ixstates/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`;
 
   return (
     <div style={{ padding: "6px 4px", maxWidth: 160, margin: "0 auto" }}>

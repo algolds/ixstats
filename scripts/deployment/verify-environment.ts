@@ -243,8 +243,8 @@ function validateBasePath(): ValidationResult {
   const nodeEnv = process.env.NODE_ENV;
 
   if (nodeEnv === "production") {
-    if (basePath && basePath !== "/" && basePath !== "") {
-      result.warnings.push(`BASE_PATH is set to "${basePath}" (expected: empty string for ixstates.ixwiki.com subdomain deployment)`);
+    if (basePath && basePath !== "/" && basePath !== "/projects/ixstates") {
+      result.warnings.push(`BASE_PATH is set to "${basePath}" (expected: "/projects/ixstates" for ixwiki.com/projects/ixstates deployment)`);
     }
 
     if (basePath !== publicBasePath) {

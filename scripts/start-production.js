@@ -15,7 +15,7 @@ async function startProduction() {
   process.env.NODE_ENV = "production";
   process.env.NEXT_TELEMETRY_DISABLED = "1";
 
-  const DEFAULT_BASE_PATH = "";
+  const DEFAULT_BASE_PATH = "/projects/ixstates";
 
   const normalizeBasePath = (value) => {
     if (!value) {

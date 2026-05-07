@@ -385,7 +385,7 @@ function createCronJobs(): string {
 # Add these to your crontab: crontab -e
 
 # Check application health every 5 minutes
-*/5 * * * * curl -f http://localhost:3550/api/health > /dev/null 2>&1 || echo "Health check failed at $(date)" >> /ixwiki/public/projects/ixstats/logs/health-check.log
+*/5 * * * * curl -f http://localhost:3550/projects/ixstates/api/health > /dev/null 2>&1 || echo "Health check failed at $(date)" >> /ixwiki/public/projects/ixstats/logs/health-check.log
 
 # Check disk space every hour
 0 * * * * df -h /ixwiki/public/projects/ixstats | tail -1 | awk '{if ($5+0 > 90) print "Disk usage warning: " $5 " at " strftime("%Y-%m-%d %H:%M:%S")}' >> /ixwiki/public/projects/ixstats/logs/disk-space.log
@@ -619,8 +619,8 @@ All logs are stored in: \`${logsDir}\`
 
 ## Dashboard URLs
 
-- Health Check: http://localhost:3550/api/health
-- Production URL: https://ixstates.ixwiki.com
+- Health Check: http://localhost:3550/projects/ixstates/api/health
+- Production URL: https://ixwiki.com/projects/ixstates
 
 ## Troubleshooting
 

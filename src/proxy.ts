@@ -80,7 +80,7 @@ function buildCSPTemplate(standalone: boolean): string {
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https: http:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
-    `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://api.clerk.com https://ixwiki.com https://ixstates.ixwiki.com https://maps.ixwiki.com https://commons.wikimedia.org https://api.unsplash.com https://*.tile.openstreetmap.org https://demotiles.maplibre.org https://protomaps.github.io wss: ws:`,
+    `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://api.clerk.com https://ixwiki.com https://maps.ixwiki.com https://commons.wikimedia.org https://api.unsplash.com https://*.tile.openstreetmap.org https://demotiles.maplibre.org https://protomaps.github.io wss: ws:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com`,
     `worker-src 'self' blob:`,
     `object-src 'none'`,
@@ -182,7 +182,7 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
 
   // Everything else → redirect to main IxStates
   return NextResponse.redirect(
-    `https://ixstates.ixwiki.com${pathname}`
+    `https://ixwiki.com/projects/ixstates${pathname}`
   );
 }
 

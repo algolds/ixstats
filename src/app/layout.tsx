@@ -41,7 +41,7 @@ const isClerkConfigured = Boolean(
 );
 
 export const metadata: Metadata = {
-  title: "IxStats - Nation Simulation Platform",
+  title: "IxStats — Nations, economy, lore",
   description:
     "Build your country from the ground up. Design government systems, shape culture and identity, manage diplomacy, and watch your nation evolve",
   icons: [{ rel: "icon", url: "/favicon.ico" }],

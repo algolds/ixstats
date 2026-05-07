@@ -36,7 +36,11 @@ import { PostActions } from "./primitives/PostActions";
 import { ReactionsDialog } from "./ReactionsDialog";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { formatContentEnhanced, extractHashtags, extractMentions } from "~/lib/text-formatter";
+import {
+  formatThinkpagesContentForDisplay,
+  extractHashtags,
+  extractMentions,
+} from "~/lib/text-formatter";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 
 interface ThinkpagesPostProps {
@@ -374,7 +378,7 @@ const ThinkpagesPostComponent = ({
               </span>
             </div>
             <WikiHtmlContent
-              html={formatContentEnhanced(post.parentPost.content)}
+              html={formatThinkpagesContentForDisplay(post.parentPost.content)}
               className="text-muted-foreground line-clamp-3 text-sm"
             />
           </div>
@@ -467,10 +471,12 @@ const ThinkpagesPostComponent = ({
                     @{post.repostOf.account.username}
                   </span>
                 </div>
-                <WikiHtmlContent html={formatContentEnhanced(post.repostOf.content)} />
+                <WikiHtmlContent html={formatThinkpagesContentForDisplay(post.repostOf.content)} />
               </Card>
             ) : (
-              <WikiHtmlContent html={formatContentEnhanced(blurbMeta.isBlurb ? blurbMeta.cleanContent : post.content)} />
+              <WikiHtmlContent
+                html={formatThinkpagesContentForDisplay(blurbMeta.isBlurb ? blurbMeta.cleanContent : post.content)}
+              />
             )}
           </div>
 

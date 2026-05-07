@@ -168,7 +168,7 @@ else
 fi
 
 export NODE_ENV=$ENVIRONMENT
-export BASE_PATH=${BASE_PATH:-}
+export BASE_PATH=${BASE_PATH:-/projects/ixstates}
 export NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-$BASE_PATH}
 
 # ============================================================================

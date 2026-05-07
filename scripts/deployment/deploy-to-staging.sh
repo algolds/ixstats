@@ -82,7 +82,7 @@ fi
 
 # Set staging environment
 export NODE_ENV=staging
-export BASE_PATH=${BASE_PATH:-}
+export BASE_PATH=${BASE_PATH:-/projects/ixstates}
 export NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-$BASE_PATH}
 
 log "Environment: $NODE_ENV"

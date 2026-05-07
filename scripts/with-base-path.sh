@@ -5,7 +5,7 @@
 
 set -e
 
-DEFAULT_BASE_PATH=""
+DEFAULT_BASE_PATH="/projects/ixstates"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

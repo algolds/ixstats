@@ -69,16 +69,16 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: '3550',
-        BASE_PATH: '',
-        NEXT_PUBLIC_BASE_PATH: '',
+        BASE_PATH: '/projects/ixstates',
+        NEXT_PUBLIC_BASE_PATH: '/projects/ixstates',
         NEXT_PUBLIC_CLERK_DOMAIN: 'clerk.ixwiki.com',
         // Clerk Custom Domain URLs (non-secret, can be hardcoded)
         NEXT_PUBLIC_CLERK_SIGN_IN_URL: 'https://accounts.ixwiki.com/sign-in',
         NEXT_PUBLIC_CLERK_SIGN_UP_URL: 'https://accounts.ixwiki.com/sign-up',
-        NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: 'https://ixstates.ixwiki.com',
-        NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: 'https://ixstates.ixwiki.com',
-        NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: 'https://ixstates.ixwiki.com',
-        NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: 'https://ixstates.ixwiki.com',
+        NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: 'https://ixwiki.com/projects/ixstates',
+        NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: 'https://ixwiki.com/projects/ixstates',
+        NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: 'https://ixwiki.com/projects/ixstates',
+        NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: 'https://ixwiki.com/projects/ixstates',
         // Secrets loaded from .env.production.local
         ...localSecrets,
       },

@@ -28,7 +28,7 @@ export function ForumMiniCard({
 }: ForumMiniCardProps) {
   const colors = getRarityColors(card.rarity);
   const artworkUrl = resolveArtworkUrl(card.artwork, basePath);
-  const cardUrl = `https://ixstates.ixwiki.com/vault`;
+  const cardUrl = `https://ixwiki.com/projects/ixstates/vault`;
 
   return (
     <a

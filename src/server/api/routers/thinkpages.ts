@@ -1244,6 +1244,13 @@ export const thinkpagesRouter = createTRPCRouter({
             profileImageUrl: true,
             accountType: true,
             verified: true,
+            country: {
+              select: {
+                id: true,
+                name: true,
+                flag: true,
+              },
+            },
           },
         },
         parentPost: {

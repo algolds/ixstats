@@ -72,7 +72,7 @@ export default async function ForumCardsPage({
         <p style={{ fontSize: 16, marginBottom: 8 }}>No cards yet</p>
         <p>{user.forumUsername} hasn&apos;t collected any IxCards yet.</p>
         <a
-          href="https://ixstates.ixwiki.com/vault"
+          href="https://ixwiki.com/projects/ixstates/vault"
           target="_blank"
           rel="noopener noreferrer"
           style={{ ...styles.link, marginTop: 12, display: "inline-block" }}
@@ -133,7 +133,7 @@ export default async function ForumCardsPage({
         <span>
           Powered by{" "}
           <a
-            href="https://ixstates.ixwiki.com"
+            href="https://ixwiki.com/projects/ixstates"
             target="_blank"
             rel="noopener noreferrer"
             style={styles.link}
@@ -142,7 +142,7 @@ export default async function ForumCardsPage({
           </a>
         </span>
         <a
-          href="https://ixstates.ixwiki.com/vault"
+          href="https://ixwiki.com/projects/ixstates/vault"
           target="_blank"
           rel="noopener noreferrer"
           style={styles.link}

@@ -8,7 +8,7 @@ import { getForumActivity, getForumTrendingThreads } from "~/modules/forum";
 
 // Input schemas
 const activityFilterSchema = z.object({
-  limit: z.number().min(1).max(50).default(20),
+  limit: z.number().min(1).max(80).default(20),
   cursor: z.string().optional(),
   filter: z
     .enum(["all", "achievements", "diplomatic", "economic", "social", "meta"])
@@ -84,11 +84,14 @@ export const activitiesRouter = createTRPCRouter({
         where.userId = input.userId;
       }
 
+      /** Pull a wider slice per source so merges with ThinkPages / wiki / forum stay representative */
+      const mergeCap = Math.min(Math.max(input.limit * 4, 48), 150);
+
       // Get ActivityFeed entries
       const activityFeedEntries = await ctx.db.activityFeed.findMany({
         where,
         orderBy: { createdAt: "desc" },
-        take: input.limit,
+        take: mergeCap,
       });
 
       // Get ThinkPages posts (only if not filtering by specific type that excludes social)
@@ -99,7 +102,7 @@ export const activitiesRouter = createTRPCRouter({
               visibility: "public",
             },
             orderBy: { createdAt: "desc" },
-            take: input.limit,
+            take: mergeCap,
             include: {
               account: {
                 select: {
@@ -136,7 +139,7 @@ export const activitiesRouter = createTRPCRouter({
         countryIds.length > 0
           ? ctx.db.country.findMany({
               where: { id: { in: countryIds } },
-              select: { id: true, name: true, leader: true },
+              select: { id: true, name: true, leader: true, flag: true },
             })
           : [],
       ]);
@@ -179,6 +182,7 @@ export const activitiesRouter = createTRPCRouter({
               name: "User",
               countryName: dbUser.country?.name,
               countryId: dbUser.countryId,
+              countryFlag: dbUser.country?.flag ?? null,
             };
           }
         }
@@ -200,10 +204,12 @@ export const activitiesRouter = createTRPCRouter({
                   name: country.leader || `Leader of ${country.name}`,
                   countryName: country.name,
                   countryId: country.id,
+                  countryFlag: country.flag ?? null,
                 }
               : {
                   id: "system",
                   name: "IxStats System",
+                  countryFlag: null,
                 }),
           content: {
             title: activity.title,
@@ -235,9 +241,13 @@ export const activitiesRouter = createTRPCRouter({
             name: `@${post.account.username}`,
             countryName: post.account.country?.name,
             countryId: post.account.country?.id,
+            countryFlag: post.account.country?.flag ?? null,
           },
           content: {
-            title: `@${post.account.username} posted on ThinkPages`,
+            title: (() => {
+              const raw = post.content.replace(/\s+/g, " ").trim().slice(0, 115);
+              return raw.length ? raw : `@${post.account.username} · ThinkPages`;
+            })(),
             description: post.content,
             metadata: {
               accountType: post.account.accountType,
@@ -262,7 +272,7 @@ export const activitiesRouter = createTRPCRouter({
       // Add wiki recent changes as feed items
       if (input.filter === "all" || input.filter === "meta") {
         try {
-          const wikiChanges = await getWikiBridgeRecentChanges(10);
+          const wikiChanges = await getWikiBridgeRecentChanges(20);
           for (const rc of wikiChanges) {
             const sizeChange = rc.newLen - rc.oldLen;
             const isNewPage = rc.type === "new";
@@ -274,6 +284,7 @@ export const activitiesRouter = createTRPCRouter({
               user: {
                 id: `wiki-user-${rc.user}`,
                 name: rc.user,
+                countryFlag: null,
               },
               content: {
                 title: isNewPage ? `New wiki page: ${rc.title}` : `Wiki edit: ${rc.title}`,
@@ -308,7 +319,7 @@ export const activitiesRouter = createTRPCRouter({
       // Add forum activity as feed items
       if (input.filter === "all" || input.filter === "social") {
         try {
-          const forumItems = await getForumActivity(10);
+          const forumItems = await getForumActivity(20);
           for (const item of forumItems) {
             combinedActivities.push({
               id: item.id,
@@ -318,6 +329,7 @@ export const activitiesRouter = createTRPCRouter({
               user: {
                 id: `forum-user-${item.author}`,
                 name: item.author,
+                countryFlag: null,
               },
               content: {
                 title: item.type === "thread" ? `New forum thread: ${item.title}` : `Forum reply in: ${item.title}`,
@@ -418,7 +430,7 @@ export const activitiesRouter = createTRPCRouter({
       const countries = countryIds.length > 0
         ? await ctx.db.country.findMany({
             where: { id: { in: countryIds } },
-            select: { id: true, name: true, leader: true },
+            select: { id: true, name: true, leader: true, flag: true },
           })
         : [];
       const countryMap = new Map(countries.map((c) => [c.id, c]));
@@ -445,8 +457,9 @@ export const activitiesRouter = createTRPCRouter({
                 name: country.leader || `Leader of ${country.name}`,
                 countryName: country.name,
                 countryId: country.id,
+                countryFlag: country.flag ?? null,
               }
-            : { id: "system", name: "IxStats System" },
+            : { id: "system", name: "IxStats System", countryFlag: null },
           content: {
             title: activity.title,
             description: activity.description,
@@ -477,9 +490,13 @@ export const activitiesRouter = createTRPCRouter({
             name: `@${post.account.username}`,
             countryName: post.account.country?.name,
             countryId: post.account.country?.id,
+            countryFlag: post.account.country?.flag ?? null,
           },
           content: {
-            title: `@${post.account.username} posted on ThinkPages`,
+            title: (() => {
+              const raw = post.content.replace(/\s+/g, " ").trim().slice(0, 115);
+              return raw.length ? raw : `@${post.account.username} · ThinkPages`;
+            })(),
             description: post.content,
             metadata: {
               accountType: post.account.accountType,
@@ -1153,7 +1170,10 @@ export const activitiesRouter = createTRPCRouter({
             id: post.id,
             type: "social",
             source: "thinkpages",
-            title: `@${post.account.username} posted on ThinkPages`,
+            title: (() => {
+              const raw = post.content.replace(/\s+/g, " ").trim().slice(0, 115);
+              return raw.length ? raw : `@${post.account.username} · ThinkPages`;
+            })(),
             description: post.content,
             timestamp: post.createdAt,
             metadata: {

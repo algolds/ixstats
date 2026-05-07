@@ -1,11 +1,10 @@
 /**
  * Navigation utilities for environment-aware routing.
- * With the subdomain migration (ixstates.ixwiki.com), basePath is always "".
+ * Production uses /projects/ixstates basePath.
  */
 
 /**
  * Get the correct URL for navigation based on environment.
- * basePath is now always "" — this function normalizes the path.
  */
 export function getNavUrl(path: string): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -22,19 +21,22 @@ export function navigateToPath(path: string): void {
 
 /**
  * Get the base URL for external links or API calls.
+ * Includes the basePath for production environments.
  */
 export function getBaseUrl(): string {
+  const basePath = process.env.NODE_ENV === "production" ? "/projects/ixstates" : "";
+
   if (typeof window !== "undefined") {
-    return window.location.origin;
+    return window.location.origin + basePath;
   }
 
   if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+    return `https://${process.env.VERCEL_URL}${basePath}`;
   }
 
   if (process.env.NODE_ENV === "production") {
-    return "https://ixstates.ixwiki.com";
+    return `https://ixwiki.com${basePath}`;
   }
 
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  return `http://localhost:${process.env.PORT ?? 3000}${basePath}`;
 }

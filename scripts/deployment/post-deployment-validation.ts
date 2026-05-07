@@ -668,7 +668,7 @@ async function main() {
   const validationStart = Date.now();
   const nodeEnv = process.env.NODE_ENV || "development";
   const port = process.env.PORT || "3550";
-  const basePath = process.env.BASE_PATH || "";
+  const basePath = process.env.BASE_PATH || "/projects/ixstates";
   const baseUrl = `http://localhost:${port}${basePath}`;
 
   print(`\nEnvironment: ${nodeEnv}`, "blue");

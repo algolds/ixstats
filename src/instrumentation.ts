@@ -53,13 +53,11 @@ export async function register() {
         console.warn("[Instrumentation] Geo cache warm-up failed (non-fatal):", geoError);
       }
 
-      // Global error handlers for uncaught exceptions/rejections
-      process.on("unhandledRejection", (reason) => {
-        console.error("[FATAL] Unhandled rejection:", reason);
-      });
-      process.on("uncaughtException", (err) => {
-        console.error("[FATAL] Uncaught exception:", err);
-      });
+      // Register process-level error handlers from a Node-only module.
+      const { registerNodeProcessErrorHandlers } = await import(
+        "./lib/node-process-error-handlers"
+      );
+      registerNodeProcessErrorHandlers();
 
       console.log("[Instrumentation] Production optimizations initialized successfully");
     } catch (error) {

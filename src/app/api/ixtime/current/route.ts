@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { IxTime } from "~/lib/ixtime";
 
+export const runtime = "nodejs";
+
 export async function GET() {
   try {
     // Get the current calculated IxTime (which includes any time overrides and progression)

@@ -53,7 +53,7 @@ normalize_base_path() {
 }
 
 if [ -z "${BASE_PATH+x}" ]; then
-    BASE_PATH=""
+    BASE_PATH="/projects/ixstates"
 fi
 
 BASE_PATH="$(normalize_base_path "$BASE_PATH")"
@@ -105,7 +105,7 @@ echo ""
 # Start the server
 echo "🌐 Starting Next.js production server..."
 echo "   Local URL:      http://localhost:$PRODUCTION_PORT$BASE_PATH"
-echo "   Production URL: https://ixstates.ixwiki.com$BASE_PATH"
+echo "   Production URL: https://ixwiki.com$BASE_PATH"
 echo ""
 echo "   Note: Production URL requires reverse proxy configuration"
 echo "   Press Ctrl+C to stop the server"

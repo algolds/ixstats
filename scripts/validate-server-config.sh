@@ -138,7 +138,7 @@ echo ""
 # Summary
 echo "📊 Configuration Summary:"
 echo "   Development Server: localhost:3000 (root path)"
-echo "   Production Server:  localhost:3550 (ixstates.ixwiki.com, root basePath)"
+echo "   Production Server:  localhost:3550 (ixwiki.com/projects/ixstates)"
 echo "   Database (Dev):     SQLite (./dev.db)"
 echo "   Database (Prod):    PostgreSQL (localhost:5433/ixstats)"
 echo ""

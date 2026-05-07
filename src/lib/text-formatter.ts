@@ -32,6 +32,25 @@ export function formatContentEnhanced(content: string): string {
   return sanitizeUserContent(formattedContent);
 }
 
+/** Rich editor posts store HTML; legacy/plain posts are plain text with @/#/URLs. */
+function looksLikeStoredHtml(content: string): boolean {
+  return /<\/?(p|div|br|span|img|a|ul|ol|li|h[1-6]|strong|em|b|i|u|figure|section|article|pre|code|blockquote)\b/i.test(
+    content
+  );
+}
+
+/**
+ * ThinkPages body: sanitize HTML from the rich editor, or run plain text through formatContentEnhanced.
+ */
+export function formatThinkpagesContentForDisplay(content: string): string {
+  if (!content) return "";
+  const t = content.trim();
+  if (looksLikeStoredHtml(t)) {
+    return sanitizeUserContent(t);
+  }
+  return formatContentEnhanced(t);
+}
+
 // Extract hashtags from text
 export function extractHashtags(text: string): string[] {
   if (!text) return [];

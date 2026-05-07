@@ -68,7 +68,7 @@ export default async function ForumProfileWidget({
     );
   }
 
-  const showcaseUrl = `https://ixstates.ixwiki.com/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`;
+  const showcaseUrl = `https://ixwiki.com/projects/ixstates/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`;
 
   return (
     <div style={{ padding: 12 }}>
