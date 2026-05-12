@@ -3,7 +3,7 @@
  * Economic Calculations Verification Script for IxStats v1.0
  * Verifies all economic formulas, tier-based calculations, and projections
  *
- * Usage: npx tsx scripts/audit/verify-economic-calculations.ts
+ * Usage: bunx tsx scripts/audit/verify-economic-calculations.ts
  */
 
 import { db } from "~/server/db";

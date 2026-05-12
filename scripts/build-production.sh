@@ -29,7 +29,7 @@ rm -rf .next
 
 # Run production build
 echo "🔨 Running production build..."
-npm run build:prod
+bun run build:prod
 
 echo ""
 echo "✅ Production build completed successfully!"

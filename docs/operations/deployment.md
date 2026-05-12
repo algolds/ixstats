@@ -5,15 +5,15 @@
 IxStats ships as a Next.js app with a custom Node server (`server.mjs`). Production deployments wrap the Next build with base-path tooling and enable WebSocket broadcasting.
 
 ## Build Pipeline
-1. Install dependencies: `npm install`
-2. Prepare database (if needed): `npm run db:migrate:deploy`
-3. Build: `npm run build` (wraps `./scripts/with-base-path.sh next build`)
-4. Start: `npm run start` (executes `server.mjs`)
+1. Install dependencies: `bun install`
+2. Prepare database (if needed): `bun run db:migrate:deploy`
+3. Build: `bun run build` (wraps `./scripts/with-base-path.sh next build`)
+4. Start: `bun run start` (executes `server.mjs`)
 
 ### Alternative Commands
-- `npm run preview` – Build + start Next.js server on `${PORT:-3550}`
-- `npm run start:next` – Direct Next.js start without the custom server (no WebSocket support)
-- `npm run deploy:prod` – Hook for deployment automation (extend as required)
+- `bun run preview` – Build + start Next.js server on `${PORT:-3550}`
+- `bun run start:next` – Direct Next.js start without the custom server (no WebSocket support)
+- `bun run deploy:prod` – Hook for deployment automation (extend as required)
 
 ## Server Behaviour (`server.mjs`)
 - Loads environment variables from `.env.production`, `.env.local`, `.env`
@@ -30,18 +30,18 @@ IxStats ships as a Next.js app with a custom Node server (`server.mjs`). Product
 - **Migration Notice (October 2025)**: IxStats now uses PostgreSQL exclusively (migrated from SQLite)
 - Production database: PostgreSQL with PostGIS extension for geographic features
 - Use `pg_dump` for backups before promotions; store backups securely
-- For schema changes, update `DATABASE_URL` and run `npm run db:migrate:deploy`
+- For schema changes, update `DATABASE_URL` and run `bun run db:migrate:deploy`
 - Legacy SQLite files archived in `prisma/backups/sqlite-legacy/`
 
 ## Health & Monitoring
 - Rate limiter and error logger configured via environment toggles (`ENABLE_RATE_LIMITING`, `DISCORD_WEBHOOK_ENABLED`)
-- `npm run verify:production` convenience command runs critical test suites + linting
+- `bun run verify:production` convenience command runs critical test suites + linting
 - WebSocket failures log warnings but continue serving HTTP; monitor logs for `[Server] ✗ WebSocket` entries
 
 ## Deployment Checklist
-1. Verify environment variables using `npm run auth:check:prod` and compare with `docs/operations/environments.md`
-2. Run `npm run audit:wiring` and `npm run test:critical`
-3. Create a database backup (`npm run db:backup`)
+1. Verify environment variables using `bun run auth:check:prod` and compare with `docs/operations/environments.md`
+2. Run `bun run audit:wiring` and `bun run test:critical`
+3. Create a database backup (`bun run db:backup`)
 4. Build and deploy the new release
 5. Monitor Discord/webhook alerts and server logs after rollout
 

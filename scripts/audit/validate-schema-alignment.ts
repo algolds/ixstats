@@ -8,7 +8,7 @@
  * - Default value discrepancies
  * - Operations using spread operator without explicit validation
  *
- * Usage: npx tsx scripts/audit/validate-schema-alignment.ts
+ * Usage: bunx tsx scripts/audit/validate-schema-alignment.ts
  */
 
 import { readFileSync, readdirSync, statSync } from "fs";

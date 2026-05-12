@@ -268,21 +268,21 @@ elif [ -n "$DATABASE_URL" ]; then
             # Create backup of current state before restore
             CURRENT_DB_BACKUP="$BACKUP_DIR/before-rollback-$TIMESTAMP.backup"
             log "Creating backup of current database state..."
-            npm run db:backup 2>/dev/null || warn "Failed to backup current database state"
+            bun run db:backup 2>/dev/null || warn "Failed to backup current database state"
 
             # Restore from backup
             log "Restoring database from backup file: $BACKUP_FILE"
             warn "⚠️  Manual PostgreSQL restoration required:"
             warn "   1. Review backup file: $BACKUP_FILE"
-            warn "   2. Use: npm run db:restore --backup=$BACKUP_FILE"
+            warn "   2. Use: bun run db:restore --backup=$BACKUP_FILE"
             warn "   3. Or use: pg_restore -d ixstats $BACKUP_FILE"
             warn "   4. Or manually restore from SQL dump if available"
             warn ""
             warn "Database rollback must be completed manually before proceeding."
 
             # Attempt automated restore if db:restore script exists
-            if npm run db:restore --backup="$BACKUP_FILE" 2>/dev/null; then
-                success "✓ Database restored successfully via npm script"
+            if bun run db:restore --backup="$BACKUP_FILE" 2>/dev/null; then
+                success "✓ Database restored successfully via bun script"
             else
                 warn "Automated restore not available - manual intervention required"
                 warn "Press Enter when database has been manually restored, or Ctrl+C to abort"
@@ -310,7 +310,7 @@ log "Removing node_modules..."
 rm -rf node_modules
 
 log "Installing dependencies..."
-npm ci --production=false || error "Failed to install dependencies"
+bun install --frozen-lockfile || error "Failed to install dependencies"
 log "✓ Dependencies installed"
 
 # ============================================================================
@@ -320,14 +320,14 @@ log "✓ Dependencies installed"
 info "Phase 5: Rebuilding application"
 
 log "Generating Prisma client..."
-npm run db:generate || error "Failed to generate Prisma client"
+bun run db:generate || error "Failed to generate Prisma client"
 
 log "Cleaning previous build..."
-npm run clean || warn "Failed to clean build directory"
+bun run clean || warn "Failed to clean build directory"
 
 BUILD_START=$(date +%s)
 log "Building application..."
-npm run build || error "Build failed - rollback incomplete"
+bun run build || error "Build failed - rollback incomplete"
 BUILD_END=$(date +%s)
 BUILD_TIME=$((BUILD_END - BUILD_START))
 
@@ -342,7 +342,7 @@ info "Phase 6: Starting application"
 PORT=${PORT:-3550}
 log "Starting server on port $PORT..."
 
-nohup npm run start:prod > "$LOG_DIR/rollback-server-$TIMESTAMP.log" 2>&1 &
+nohup bun run start:prod > "$LOG_DIR/rollback-server-$TIMESTAMP.log" 2>&1 &
 SERVER_PID=$!
 echo "$SERVER_PID" > .production.pid
 
@@ -397,7 +397,7 @@ fi
 
 # Test 3: Database
 info "Test 3/3: Database connectivity..."
-npm run test:db > /dev/null 2>&1 && log "✓ Database connectivity verified" || { warn "Database connectivity issues"; ALL_TESTS_PASSED=false; }
+bun run test:db > /dev/null 2>&1 && log "✓ Database connectivity verified" || { warn "Database connectivity issues"; ALL_TESTS_PASSED=false; }
 
 # ============================================================================
 # ROLLBACK COMPLETE

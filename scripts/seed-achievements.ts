@@ -6,7 +6,7 @@
  * This script should be run during application initialization or database setup.
  *
  * Usage:
- *   npx tsx scripts/seed-achievements.ts
+ *   bunx tsx scripts/seed-achievements.ts
  *
  * Features:
  *   - Idempotent: Safe to run multiple times

@@ -339,8 +339,8 @@ export CLERK_SECRET_KEY="sk_test_your_secret"
    git check-ignore .env.local
 
    # 6. Install dependencies and start development
-   npm install
-   npm run dev
+   bun install
+   bun run dev
    ```
 
 2. **Before committing:**
@@ -497,7 +497,7 @@ git check-ignore .env.local
 git diff --cached | grep -E "(CLERK_SECRET|DISCORD.*TOKEN|PASSWORD)"
 
 # List all environment variables (development)
-npm run env:check  # if available
+bun run env:check  # if available
 ```
 
 ### Emergency Contacts

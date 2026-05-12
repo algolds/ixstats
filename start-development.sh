@@ -105,7 +105,7 @@ echo ""
 
 # Check if dependencies are installed
 if [ ! -d "node_modules" ]; then
-    echo "❌ Error: Dependencies not installed. Run 'npm install' first."
+    echo "❌ Error: Dependencies not installed. Run 'bun install' first."
     exit 1
 fi
 
@@ -148,7 +148,7 @@ else
 fi
 echo ""
 echo "   Press Ctrl+C to stop the server"
-echo "   Run 'npm run auth:check:dev' to verify auth configuration"
+echo "   Run 'bun run auth:check:dev' to verify auth configuration"
 echo ""
 
 # Memory optimization for development server (7.2GB total server RAM)
@@ -166,4 +166,4 @@ echo ""
 
 # Start Next.js development server with Turbopack (default in Next.js 16, uses incremental compilation)
 # Pass --webpack to fall back to Webpack if Turbopack has issues with specific features
-exec npx next dev --port "$DEVELOPMENT_PORT"
+exec bunx next dev --port "$DEVELOPMENT_PORT"

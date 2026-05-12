@@ -110,19 +110,19 @@ echo "   NEXT_PUBLIC_BASE_PATH: $NEXT_PUBLIC_BASE_PATH"
 
 # Clean previous build
 echo "🧹 Cleaning previous build..."
-npm run clean
+bun run clean
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-npm ci --production=false
+bun install --frozen-lockfile
 
 # Generate Prisma client
 echo "🗄️ Generating Prisma client..."
-npm run db:generate
+bun run db:generate
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."
-npm run db:sync
+bun run db:sync
 
 # Check if sync was successful
 if [ $? -eq 0 ]; then
@@ -134,7 +134,7 @@ fi
 
 # Build the application
 echo "🔨 Building application..."
-npm run build
+bun run build
 
 # Check if build was successful
 if [ $? -eq 0 ]; then

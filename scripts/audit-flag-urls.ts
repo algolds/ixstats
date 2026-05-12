@@ -6,8 +6,8 @@
  * Tests flag service URLs, metadata loading, and path resolution
  *
  * Usage:
- *   npx tsx scripts/audit-flag-urls.ts
- *   BASE_PATH=/projects/ixstats npx tsx scripts/audit-flag-urls.ts
+ *   bunx tsx scripts/audit-flag-urls.ts
+ *   BASE_PATH=/projects/ixstats bunx tsx scripts/audit-flag-urls.ts
  */
 
 import * as fs from "fs";

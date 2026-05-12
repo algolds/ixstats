@@ -5,11 +5,11 @@
  * Use this to ensure your dev user has the same country access as your prod user.
  *
  * Usage:
- *   npx tsx scripts/link-dev-user-to-country.ts [countryName]
+ *   bunx tsx scripts/link-dev-user-to-country.ts [countryName]
  *
  * Examples:
- *   npx tsx scripts/link-dev-user-to-country.ts Caphiria
- *   npx tsx scripts/link-dev-user-to-country.ts "Caphiria"
+ *   bunx tsx scripts/link-dev-user-to-country.ts Caphiria
+ *   bunx tsx scripts/link-dev-user-to-country.ts "Caphiria"
  */
 
 import { PrismaClient } from "@prisma/client";

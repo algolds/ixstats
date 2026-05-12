@@ -3,8 +3,8 @@
  * Master Test Runner for IxStats v1.0
  * Runs all verification and audit scripts in sequence
  *
- * Usage: npx tsx scripts/audit/run-all-tests.ts
- * Usage (specific): npx tsx scripts/audit/run-all-tests.ts --only=crud,health
+ * Usage: bunx tsx scripts/audit/run-all-tests.ts
+ * Usage (specific): bunx tsx scripts/audit/run-all-tests.ts --only=crud,health
  */
 
 import { exec } from "child_process";
@@ -95,7 +95,7 @@ async function runTestSuite(suite: TestSuite): Promise<TestResult> {
   console.log(`${"=".repeat(80)}\n`);
 
   try {
-    const { stdout, stderr } = await execAsync(`npx tsx ${scriptPath}`, {
+    const { stdout, stderr } = await execAsync(`bunx tsx ${scriptPath}`, {
       cwd: path.join(__dirname, "../.."),
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer
     });
@@ -256,7 +256,7 @@ const onlyTests = onlyArg?.split("=")[1]?.split(",");
 
 if (args.includes("--help") || args.includes("-h")) {
   console.log("\n🧪 IxStats Test Suite Runner\n");
-  console.log("Usage: npx tsx scripts/audit/run-all-tests.ts [options]\n");
+  console.log("Usage: bunx tsx scripts/audit/run-all-tests.ts [options]\n");
   console.log("Options:");
   console.log("  --help, -h          Show this help message");
   console.log("  --only=<tests>      Run only specific tests (comma-separated)");
@@ -266,7 +266,7 @@ if (args.includes("--help") || args.includes("-h")) {
     console.log(`  ${s.name.padEnd(15)} ${critical.padEnd(12)} ${s.description}`);
   });
   console.log("\nExample:");
-  console.log("  npx tsx scripts/audit/run-all-tests.ts --only=crud,health\n");
+  console.log("  bunx tsx scripts/audit/run-all-tests.ts --only=crud,health\n");
   process.exit(0);
 }
 

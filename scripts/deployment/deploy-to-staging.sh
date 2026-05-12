@@ -109,18 +109,18 @@ fi
 
 # Step 2: Install dependencies
 log "Step 2/7: Installing dependencies..."
-npm ci || error "Failed to install dependencies"
+bun install --frozen-lockfile || error "Failed to install dependencies"
 log "✓ Dependencies installed successfully"
 
 # Step 3: Generate Prisma client
 log "Step 3/7: Generating Prisma client..."
-npm run db:generate || error "Failed to generate Prisma client"
+bun run db:generate || error "Failed to generate Prisma client"
 log "✓ Prisma client generated successfully"
 
 # Step 4: Run database migrations
 log "Step 4/7: Running database migrations..."
 if [ -n "$DATABASE_URL" ]; then
-    npm run db:migrate:deploy || warn "Database migration failed (may need manual intervention)"
+    bun run db:migrate:deploy || warn "Database migration failed (may need manual intervention)"
     log "✓ Database migrations completed"
 else
     warn "DATABASE_URL not set, skipping migrations"
@@ -129,7 +129,7 @@ fi
 # Step 5: Build production bundle
 log "Step 5/7: Building production bundle..."
 BUILD_START=$(date +%s)
-npm run build || error "Build failed"
+bun run build || error "Build failed"
 BUILD_END=$(date +%s)
 BUILD_TIME=$((BUILD_END - BUILD_START))
 log "✓ Build completed successfully in ${BUILD_TIME}s"
@@ -150,7 +150,7 @@ fi
 
 # Start new process
 log "Starting new staging server..."
-PORT=${PORT:-3001} npm run start:prod > "$LOG_DIR/staging-server-$TIMESTAMP.log" 2>&1 &
+PORT=${PORT:-3001} bun run start:prod > "$LOG_DIR/staging-server-$TIMESTAMP.log" 2>&1 &
 SERVER_PID=$!
 echo "$SERVER_PID" > .staging.pid
 log "Server started with PID: $SERVER_PID"
@@ -224,7 +224,7 @@ cat > "$REPORT_FILE" << EOF
 - **Branch**: ${CURRENT_BRANCH:-unknown}
 - **Commit**: $(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 - **Node Version**: $(node --version)
-- **npm Version**: $(npm --version)
+- **bun Version**: $(bun --version)
 
 ---
 
@@ -295,9 +295,9 @@ kill $SERVER_PID
 
 # Restore previous version
 git checkout <previous-commit>
-npm ci
-npm run build
-npm run start:prod
+bun install --frozen-lockfile
+bun run build
+bun run start:prod
 \`\`\`
 
 ---

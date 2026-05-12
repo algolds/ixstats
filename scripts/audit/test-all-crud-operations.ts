@@ -4,7 +4,7 @@
  * Tests all tRPC router endpoints for Create, Read, Update, Delete operations
  *
  * ⚠️  WARNING: This script should NEVER run in production!
- * Usage: npx tsx scripts/audit/test-all-crud-operations.ts
+ * Usage: bunx tsx scripts/audit/test-all-crud-operations.ts
  */
 
 // Production safety guard

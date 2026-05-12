@@ -22,7 +22,7 @@ BASE_PATH="" \
 NEXT_PUBLIC_BASE_PATH="" \
 NEXT_PUBLIC_IXWORLD_STANDALONE=true \
 NODE_ENV=production \
-npx next build 2>&1 | grep -E "Route|✓|✗|Error|error" | tail -5
+bunx next build 2>&1 | grep -E "Route|✓|✗|Error|error" | tail -5
 
 # Step 2: Deploy
 echo "[2/3] Deploying to $IXWORLD_DIR..."

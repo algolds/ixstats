@@ -122,15 +122,15 @@ validate_startup_script "./start-production.sh" "Production"
 # Check package.json scripts
 echo "📦 Validating package.json scripts:"
 if grep -q '"dev": "./start-development.sh"' package.json; then
-    echo "   ✅ npm run dev configured to use development script"
+    echo "   ✅ bun run dev configured to use development script"
 else
-    echo "   ❌ npm run dev not properly configured"
+    echo "   ❌ bun run dev not properly configured"
 fi
 
 if grep -q '"start:prod": "./start-production.sh"' package.json; then
-    echo "   ✅ npm run start:prod configured to use production script"
+    echo "   ✅ bun run start:prod configured to use production script"
 else
-    echo "   ❌ npm run start:prod not properly configured"
+    echo "   ❌ bun run start:prod not properly configured"
 fi
 
 echo ""
@@ -144,8 +144,8 @@ echo "   Database (Prod):    PostgreSQL (localhost:5433/ixstats)"
 echo ""
 
 echo "🎯 Ready to run:"
-echo "   Development: npm run dev"
-echo "   Production:  npm run start:prod"
+echo "   Development: bun run dev"
+echo "   Production:  bun run start:prod"
 echo ""
 
 echo "✅ Server configuration validation complete!"

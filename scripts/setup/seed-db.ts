@@ -39,7 +39,7 @@ async function seedDatabase() {
           console.log("🤖 CI/Test environment detected - proceeding with reseed");
         }
       } else {
-        console.log("💡 Use --force flag to skip confirmation: npm run db:seed -- --force");
+        console.log("💡 Use --force flag to skip confirmation: bun run db:seed -- --force");
         process.exit(0);
       }
     }

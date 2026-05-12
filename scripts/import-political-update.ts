@@ -5,7 +5,7 @@
  * records, deactivates removed features, and updates Country geometry.
  *
  * Usage:
- *   npx tsx scripts/import-political-update.ts [--dry-run]
+ *   bunx tsx scripts/import-political-update.ts [--dry-run]
  *
  * The SVG must be at: public/master-map-updated.svg
  */

@@ -6,9 +6,9 @@ This guide outlines expectations for contributing to IxStats. Use it alongside t
 
 ## Workflow
 1. Create a feature branch from `main` with a descriptive name
-2. Install dependencies and prepare the database (`npm install`, `npm run db:setup`)
+2. Install dependencies and prepare the database (`bun install`, `bun run db:setup`)
 3. Implement changes with accompanying tests and documentation updates
-4. Run quality gates: `npm run test`, `npm run audit:wiring`, `npm run typecheck:app`
+4. Run quality gates: `bun run test`, `bun run audit:wiring`, `bun run typecheck:app`
 5. Submit a pull request referencing the relevant documentation or help articles
 
 ## Code Standards

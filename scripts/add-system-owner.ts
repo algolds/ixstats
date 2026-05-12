@@ -31,12 +31,12 @@ async function addSystemOwner() {
     if (!userId) {
       console.log("❌ Error: Please provide a user ID");
       console.log("");
-      console.log("Usage: npx tsx scripts/add-system-owner.ts <user_id>");
+      console.log("Usage: bunx tsx scripts/add-system-owner.ts <user_id>");
       console.log("");
-      console.log("Example: npx tsx scripts/add-system-owner.ts user_2zqmDdZvhpNQWGLdAIj2YwH8MLo");
+      console.log("Example: bunx tsx scripts/add-system-owner.ts user_2zqmDdZvhpNQWGLdAIj2YwH8MLo");
       console.log("");
       console.log("💡 To get your user ID:");
-      console.log("1. Start the dev server: npm run dev");
+      console.log("1. Start the dev server: bun run dev");
       console.log("2. Sign in at http://localhost:3000");
       console.log("3. Open browser console (F12)");
       console.log("4. Type: window.Clerk.user.id");
@@ -103,7 +103,7 @@ async function addSystemOwner() {
       console.log("✅ System owner setup complete!");
       console.log("");
       console.log("🔄 Next steps:");
-      console.log("1. Restart the development server: npm run dev");
+      console.log("1. Restart the development server: bun run dev");
       console.log("2. Sign in with your account");
       console.log("3. You should now have system owner access");
       console.log("");

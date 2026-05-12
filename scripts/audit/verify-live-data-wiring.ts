@@ -3,7 +3,7 @@
  * Live Data Wiring Verification Script for IxStats v1.0
  * Verifies that all components are connected to live data sources
  *
- * Usage: npx tsx scripts/audit/verify-live-data-wiring.ts
+ * Usage: bunx tsx scripts/audit/verify-live-data-wiring.ts
  */
 
 import * as fs from "fs";

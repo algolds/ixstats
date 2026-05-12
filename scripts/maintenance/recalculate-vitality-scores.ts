@@ -1,6 +1,6 @@
 /**
  * Script to recalculate and store vitality scores for all countries
- * Run with: npx tsx scripts/recalculate-vitality-scores.ts
+ * Run with: bunx tsx scripts/recalculate-vitality-scores.ts
  */
 
 import { PrismaClient } from "@prisma/client";

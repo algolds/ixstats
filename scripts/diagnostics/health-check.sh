@@ -64,12 +64,12 @@ check_environment() {
         check_fail "Node.js not found"
     fi
 
-    # npm version
-    if command -v npm &> /dev/null; then
-        NPM_VERSION=$(npm -v)
-        check_pass "npm v$NPM_VERSION"
+    # bun version
+    if command -v bun &> /dev/null; then
+        BUN_VERSION=$(bun -v)
+        check_pass "bun v$BUN_VERSION"
     else
-        check_fail "npm not found"
+        check_fail "bun not found"
     fi
 
     # Check if in project directory
@@ -94,14 +94,14 @@ check_dependencies() {
         MODULE_COUNT=$(find node_modules -maxdepth 1 -type d | wc -l)
         check_pass "node_modules present ($MODULE_COUNT packages)"
     else
-        check_fail "node_modules missing - run 'npm install'"
+        check_fail "node_modules missing - run 'bun install'"
     fi
 
     # Check Prisma client
     if [ -d "node_modules/.prisma/client" ]; then
         check_pass "Prisma client generated"
     else
-        check_warn "Prisma client not generated - run 'npm run db:generate'"
+        check_warn "Prisma client not generated - run 'bun run db:generate'"
     fi
 
     # Check .next directory (if dev server was run)
@@ -229,8 +229,8 @@ check_database() {
     fi
 
     # Test database connection (quick check)
-    if command -v npx &> /dev/null; then
-        if timeout 15 npx prisma db execute --schema=prisma/schema.prisma --stdin <<< "SELECT 1" &>/dev/null; then
+    if command -v bunx &> /dev/null; then
+        if timeout 15 bunx prisma db execute --schema=prisma/schema.prisma --stdin <<< "SELECT 1" &>/dev/null; then
             check_pass "Database connection successful"
         else
             check_warn "Database connection test failed or timed out"

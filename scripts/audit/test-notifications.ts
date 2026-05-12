@@ -3,7 +3,7 @@
  * Notification System Audit Script
  * Tests all notification triggers and verifies end-to-end functionality
  *
- * Usage: npx tsx scripts/audit/test-notifications.ts
+ * Usage: bunx tsx scripts/audit/test-notifications.ts
  */
 
 import { db } from "~/server/db";

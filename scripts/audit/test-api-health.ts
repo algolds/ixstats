@@ -3,7 +3,7 @@
  * API Endpoint Health Check Script for IxStats v1.0
  * Tests all tRPC router endpoints for availability and response times
  *
- * Usage: npx tsx scripts/audit/test-api-health.ts
+ * Usage: bunx tsx scripts/audit/test-api-health.ts
  */
 
 import { db } from "../../src/server/db";

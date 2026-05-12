@@ -57,7 +57,7 @@ async function findUserInfo() {
     });
 
     console.log("\n💡 How to get your Clerk User ID:");
-    console.log("1. Start the development server: npm run dev");
+    console.log("1. Start the development server: bun run dev");
     console.log("2. Go to http://localhost:3000");
     console.log("3. Sign in with your Clerk account");
     console.log("4. Open browser developer tools (F12)");
@@ -65,7 +65,7 @@ async function findUserInfo() {
     console.log("6. Type: window.Clerk.user.id");
     console.log("7. Copy the user ID that appears");
     console.log("");
-    console.log("8. Then run: npm run set-admin-role");
+    console.log("8. Then run: bun run set-admin-role");
     console.log("   This will add your user ID to the system owner list");
   } catch (error) {
     console.error("❌ Error finding user information:", error);

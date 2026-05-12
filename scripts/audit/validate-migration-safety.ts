@@ -8,7 +8,7 @@
  * - Detect schema drift between environments
  * - Verify migration order and dependencies
  *
- * Usage: npx tsx scripts/audit/validate-migration-safety.ts
+ * Usage: bunx tsx scripts/audit/validate-migration-safety.ts
  */
 
 import { execSync } from "child_process";

@@ -4,7 +4,7 @@
  * Purpose: Comprehensive testing of database connectivity, CRUD operations,
  * and state management in production environment.
  *
- * Usage: npx tsx scripts/prod-audit.ts [test-user-clerk-id]
+ * Usage: bunx tsx scripts/prod-audit.ts [test-user-clerk-id]
  */
 
 import { PrismaClient } from "@prisma/client";

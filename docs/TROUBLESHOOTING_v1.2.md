@@ -32,30 +32,30 @@ node --version  # Should be v18.17.0 or higher
 npm --version   # Should be 9.0.0 or higher
 
 # Run comprehensive checks
-npm run check  # Runs lint + typecheck
-npm run typecheck  # TypeScript validation only
-npm run lint  # ESLint validation only
+bun run check  # Runs lint + typecheck
+bun run typecheck  # TypeScript validation only
+bun run lint  # ESLint validation only
 
 # Test database connection
-npm run db:studio  # Opens Prisma Studio (port 5555)
+bun run db:studio  # Opens Prisma Studio (port 5555)
 
 # Check environment configuration
-npm run auth:check:dev  # Development environment
-npm run auth:check:prod  # Production environment
+bun run auth:check:dev  # Development environment
+bun run auth:check:prod  # Production environment
 
 # Verify production build
-npm run build:fast  # Fast build without full validation
-npm run verify:production  # Full production readiness check
+bun run build:fast  # Fast build without full validation
+bun run verify:production  # Full production readiness check
 ```
 
 ### Common Error Quick Reference
 
 | Error Pattern | Quick Fix | Section |
 |--------------|-----------|---------|
-| `ENOENT: no such file` | Run `npm install` | [Installation](#installation--setup-issues) |
-| `PrismaClientInitializationError` | Run `npm run db:setup` | [Database](#database-problems) |
+| `ENOENT: no such file` | Run `bun install` | [Installation](#installation--setup-issues) |
+| `PrismaClientInitializationError` | Run `bun run db:setup` | [Database](#database-problems) |
 | `CLERK_SECRET_KEY is not set` | Add to `.env.local` | [Authentication](#authentication--authorization) |
-| `Type error: Cannot find module` | Run `npm run db:generate` | [Build](#build--deployment) |
+| `Type error: Cannot find module` | Run `bun run db:generate` | [Build](#build--deployment) |
 | `Port already in use` | Kill process or change port | [Runtime](#runtime-errors) |
 | `Rate limit exceeded` | Adjust limits in env | [Rate Limiting](#rate-limiting) |
 | `Builder data not saving` | Check persistence hooks | [Builder System](#builder-system-issues) |
@@ -65,7 +65,7 @@ npm run verify:production  # Full production readiness check
 
 ## Installation & Setup Issues
 
-### Problem: npm install Fails with Dependency Conflicts
+### Problem: bun install Fails with Dependency Conflicts
 
 **Symptoms:**
 ```bash
@@ -82,7 +82,7 @@ npm ERR! ERESOLVE could not resolve
    ```bash
    npm cache clean --force
    rm -rf node_modules package-lock.json
-   npm install
+   bun install
    ```
 
 2. **Verify Node.js version:**
@@ -91,7 +91,7 @@ npm ERR! ERESOLVE could not resolve
 
    # If using nvm, switch version
    nvm use 18
-   npm install
+   bun install
    ```
 
 3. **Check disk space:**
@@ -102,7 +102,7 @@ npm ERR! ERESOLVE could not resolve
 
 4. **Try legacy peer deps (last resort):**
    ```bash
-   npm install --legacy-peer-deps
+   bun install --legacy-peer-deps
    # Note: This may cause runtime issues, use cautiously
    ```
 
@@ -122,7 +122,7 @@ Cannot find module '.prisma/client'
 
 ```bash
 # Generate Prisma client
-npm run db:generate
+bun run db:generate
 
 # If that fails, try manual generation
 npx prisma generate
@@ -137,11 +137,11 @@ npx prisma validate
 
 # Clear Prisma cache and regenerate
 rm -rf node_modules/.prisma
-npm run db:generate
+bun run db:generate
 ```
 
 **Prevention:**
-- Always run `npm run db:generate` after pulling schema changes
+- Always run `bun run db:generate` after pulling schema changes
 - Add to your git hooks to auto-generate on checkout
 
 ---
@@ -178,7 +178,7 @@ npm run db:generate
 3. **Restart development server:**
    ```bash
    # Stop server (Ctrl+C)
-   npm run dev
+   bun run dev
    # Environment variables only load on server start
    ```
 
@@ -218,8 +218,8 @@ Database schema is out of sync
 
 ```bash
 # Nuclear option: Reset database
-npm run db:reset
-npm run db:setup
+bun run db:reset
+bun run db:setup
 
 # Verify schema
 npx prisma validate
@@ -229,19 +229,19 @@ npx prisma migrate status
 
 # If specific migration failed, mark as rolled back
 npx prisma migrate resolve --rolled-back "20251020_migration_name"
-npm run db:migrate
+bun run db:migrate
 ```
 
 **For Production (PostgreSQL):**
 ```bash
 # ALWAYS backup first
-npm run db:backup
+bun run db:backup
 
 # Check migration status
 npx prisma migrate status
 
 # Deploy pending migrations
-npm run db:migrate:deploy
+bun run db:migrate:deploy
 
 # If migration fails, check PostgreSQL logs
 tail -f /var/log/postgresql/postgresql-*.log
@@ -297,7 +297,7 @@ cat .env.local | grep DATABASE_URL
 sudo cat /etc/postgresql/*/main/pg_hba.conf
 
 # 7. Restart fresh
-npm run dev
+bun run dev
 ```
 
 **Prevention:**
@@ -322,10 +322,10 @@ Type 'X' is not assignable to type 'Y'
 
 ```bash
 # Development: Push schema changes (WARNING: may lose data)
-npm run db:push
+bun run db:push
 
 # Better: Create migration for schema changes
-npm run db:migrate
+bun run db:migrate
 # This creates a migration file you can review
 
 # Verify schema is valid
@@ -338,7 +338,7 @@ npx prisma migrate diff \
   --script
 
 # Production: Deploy migrations only
-npm run db:migrate:deploy
+bun run db:migrate:deploy
 ```
 
 **Debugging Schema Issues:**
@@ -385,7 +385,7 @@ useUser must be used within ClerkProvider
 2. **Restart development server:**
    ```bash
    # Stop server (Ctrl+C)
-   npm run dev
+   bun run dev
    ```
 
 3. **Verify ClerkProvider in layout:**
@@ -503,14 +503,14 @@ useUser must be used within ClerkProvider
 
 1. **Verify user role in database:**
    ```bash
-   npm run db:studio
+   bun run db:studio
    # Open User table → find your user → check role relation
    ```
 
 2. **Assign admin role via script:**
    ```bash
    # Set admin role for specific user
-   npm run script:set-admin -- user_2xyz789abc123
+   bun run script:set-admin -- user_2xyz789abc123
 
    # Or run the manual script
    npx tsx scripts/set-admin-role.ts
@@ -549,7 +549,7 @@ useUser must be used within ClerkProvider
    # Sign out and sign in again
 
    # Or run sync script
-   npm run script:sync-user-roles
+   bun run script:sync-user-roles
    ```
 
 ---
@@ -570,14 +570,14 @@ Build failed: TypeScript compilation failed
 
 1. **Run typecheck independently:**
    ```bash
-   npm run typecheck
+   bun run typecheck
    # This shows all TypeScript errors without building
    ```
 
 2. **Common type error fixes:**
    ```bash
    # Regenerate Prisma types
-   npm run db:generate
+   bun run db:generate
 
    # Restart TypeScript server in VS Code
    # Cmd/Ctrl + Shift + P → "TypeScript: Restart TS Server"
@@ -605,7 +605,7 @@ Build failed: TypeScript compilation failed
 4. **Emergency build (skip type checking):**
    ```bash
    # Only use for emergency deployments
-   npm run build:no-check
+   bun run build:no-check
 
    # Or set in next.config.js temporarily
    typescript: {
@@ -640,7 +640,7 @@ Command timed out after 10 minutes
 1. **Increase Node.js memory:**
    ```bash
    # Set higher memory limit (8GB)
-   NODE_OPTIONS='--max-old-space-size=8192' npm run build
+   NODE_OPTIONS='--max-old-space-size=8192' bun run build
 
    # Or add to package.json scripts:
    "build": "NODE_OPTIONS='--max-old-space-size=8192' next build"
@@ -649,16 +649,16 @@ Command timed out after 10 minutes
 2. **Use fast build:**
    ```bash
    # Skip validation steps
-   npm run build:fast
+   bun run build:fast
 
    # Or build without lint
-   npm run build:no-check
+   bun run build:no-check
    ```
 
 3. **Check bundle size:**
    ```bash
    # Analyze bundle after build
-   npm run build
+   bun run build
    # Check .next/build-manifest.json
 
    # Look for large dependencies
@@ -671,7 +671,7 @@ Command timed out after 10 minutes
    rm -rf .next
 
    # Reduce concurrent processes
-   NODE_OPTIONS='--max-old-space-size=4096 --max-old-space-size=4096' npm run build
+   NODE_OPTIONS='--max-old-space-size=4096 --max-old-space-size=4096' bun run build
 
    # Close other applications during build
    ```
@@ -791,7 +791,7 @@ INTERNAL_SERVER_ERROR
 3. **Check database connection:**
    ```bash
    # Open Prisma Studio
-   npm run db:studio
+   bun run db:studio
 
    # If this fails, database connection is broken
    ```
@@ -825,7 +825,7 @@ INTERNAL_SERVER_ERROR
 6. **Check server logs:**
    ```bash
    # Development server logs
-   # Look for error stack traces in terminal running npm run dev
+   # Look for error stack traces in terminal running bun run dev
 
    # Production logs
    tail -f logs/production.log
@@ -1126,7 +1126,7 @@ Rate limit exceeded
    RATE_LIMIT_ENABLED="false"
 
    # Restart server
-   npm run dev
+   bun run dev
    ```
 
 2. **Increase development limits:**
@@ -1305,7 +1305,7 @@ Rate limit exceeded
    cat prisma/schema.prisma | grep -A 10 "model Country"
 
    # Test save directly in Prisma Studio
-   npm run db:studio
+   bun run db:studio
    # Try creating/updating record manually
    ```
 
@@ -1446,7 +1446,7 @@ Rate limit exceeded
 4. **Test tax system persistence:**
    ```bash
    # Open Prisma Studio
-   npm run db:studio
+   bun run db:studio
 
    # Check TaxSystem table
    # After saving, verify data appears in database
@@ -1501,7 +1501,7 @@ Rate limit exceeded
 3. **Check database for data:**
    ```bash
    # Open Prisma Studio
-   npm run db:studio
+   bun run db:studio
 
    # Find your country in Country table
    # Check if nationalIdentity relation exists
@@ -1582,8 +1582,8 @@ Rate limit exceeded
    # Fill in production values
 
    # Build and run in production mode
-   npm run build
-   npm run start
+   bun run build
+   bun run start
    ```
 
 5. **Check server logs:**
@@ -1863,7 +1863,7 @@ const result = await api.countries.getAll.query();
 console.timeEnd("API Call");
 
 # 4. Check bundle size
-npm run build
+bun run build
 # Review .next/build-manifest.json
 
 # 5. Lighthouse audit
@@ -1906,7 +1906,7 @@ tail -f logs/queries.log | grep "duration"
 # Check EXPLAIN for slow queries in Prisma Studio
 
 # 4. Use Prisma Studio query profiler
-npm run db:studio
+bun run db:studio
 # Run queries and check execution time
 
 # 5. Monitor database performance
@@ -1975,21 +1975,21 @@ If everything is broken:
 git stash
 
 # 2. Nuclear cleanup
-npm run clean:all
+bun run clean:all
 rm -rf node_modules package-lock.json .next
 
 # 3. Fresh install
-npm install
+bun install
 
 # 4. Reset database
-npm run db:reset
-npm run db:setup
+bun run db:reset
+bun run db:setup
 
 # 5. Regenerate Prisma client
-npm run db:generate
+bun run db:generate
 
 # 6. Test development server
-npm run dev
+bun run dev
 
 # 7. If working, restore changes
 git stash pop

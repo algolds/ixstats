@@ -6,9 +6,9 @@
  * cached current* values up to date.
  *
  * Usage:
- *   npx tsx scripts/sync-current-stats.ts                  # Update all countries
- *   npx tsx scripts/sync-current-stats.ts --dry-run        # Preview without writing
- *   npx tsx scripts/sync-current-stats.ts --country "Name" # Update single country
+ *   bunx tsx scripts/sync-current-stats.ts                  # Update all countries
+ *   bunx tsx scripts/sync-current-stats.ts --dry-run        # Preview without writing
+ *   bunx tsx scripts/sync-current-stats.ts --country "Name" # Update single country
  */
 
 // Must be set before any imports that touch ~/env

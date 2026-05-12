@@ -23,20 +23,20 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **All tests passing**
   ```bash
-  npm run test
-  npm run test:critical
-  npm run check  # Lint + typecheck
+  bun run test
+  bun run test:critical
+  bun run check  # Lint + typecheck
   ```
 
 - [ ] **No TypeScript errors**
   ```bash
-  npm run typecheck
+  bun run typecheck
   # Should show: "Found 0 errors"
   ```
 
 - [ ] **No ESLint errors**
   ```bash
-  npm run lint
+  bun run lint
   # Should show: "✓ No ESLint warnings or errors"
   ```
 
@@ -92,7 +92,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 - [ ] **Database backup created**
   ```bash
   # Development database
-  npm run db:backup
+  bun run db:backup
 
   # Production database (PostgreSQL)
   pg_dump -U postgres -d ixstats > backups/ixstats-$(date +%Y%m%d).sql
@@ -132,7 +132,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 - [ ] **All required variables set**
   ```bash
   # Run validation script
-  npm run auth:check:prod
+  bun run auth:check:prod
 
   # Manual check - all these should be set:
   grep -E "DATABASE_URL|CLERK_SECRET_KEY|NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" .env.production
@@ -180,7 +180,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Server dependencies installed:**
   - [ ] Node.js: `node --version`
-  - [ ] npm: `npm --version`
+  - [ ] npm: `bun --version`
   - [ ] PostgreSQL: `psql --version` (if applicable)
   - [ ] Redis: `redis-cli --version` (if applicable)
   - [ ] PM2: `pm2 --version` (if using PM2)
@@ -243,7 +243,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Prisma client generated**
   ```bash
-  npm run db:generate
+  bun run db:generate
   # Regenerate client for production
   ```
 
@@ -255,7 +255,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Pending migrations applied (if any)**
   ```bash
-  npm run db:migrate:deploy
+  bun run db:migrate:deploy
   # Apply production migrations
   ```
 
@@ -277,13 +277,13 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Database seeded (if new instance)**
   ```bash
-  npm run db:seed
+  bun run db:seed
   # Only for new databases
   ```
 
 - [ ] **Data consistency verified**
   ```bash
-  npm run db:studio
+  bun run db:studio
   # Spot-check data for consistency
   ```
 
@@ -305,13 +305,13 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Dependencies installed**
   ```bash
-  npm install --production
+  bun install --production
   # Install only production dependencies
   ```
 
 - [ ] **Build completes successfully**
   ```bash
-  npm run build
+  bun run build
   # Should complete without errors
   ```
 
@@ -336,7 +336,7 @@ Complete checklist for deploying IxStats to production. Follow these steps to en
 
 - [ ] **Start production build locally**
   ```bash
-  NODE_ENV=production npm run start
+  NODE_ENV=production bun run start
   # Test on port 3550
   ```
 
@@ -429,7 +429,7 @@ Choose your deployment method:
   ```
 
 - [ ] **Build settings configured**
-  - Build command: `npm run build`
+  - Build command: `bun run build`
   - Output directory: `.next`
   - Node version: 18.x
 
@@ -479,12 +479,12 @@ Choose your deployment method:
 
 - [ ] **Install dependencies**
   ```bash
-  npm install --production
+  bun install --production
   ```
 
 - [ ] **Build application**
   ```bash
-  npm run build
+  bun run build
   ```
 
 - [ ] **Stop current application**
@@ -798,12 +798,12 @@ Immediately rollback if:
 
 - [ ] **Reinstall dependencies**
   ```bash
-  npm install --production
+  bun install --production
   ```
 
 - [ ] **Rebuild application**
   ```bash
-  npm run build
+  bun run build
   ```
 
 - [ ] **Restore database (if needed)**
@@ -854,7 +854,7 @@ After successful deployment (wait 24-48 hours):
 
 - [ ] **Clean up build artifacts**
   ```bash
-  npm run clean
+  bun run clean
   ```
 
 - [ ] **Update documentation**

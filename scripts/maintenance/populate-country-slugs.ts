@@ -1,6 +1,6 @@
 /**
  * Migration script to populate slug field for all existing countries
- * Run with: npx tsx scripts/populate-country-slugs.ts
+ * Run with: bunx tsx scripts/populate-country-slugs.ts
  */
 
 import { PrismaClient } from "@prisma/client";

@@ -53,7 +53,7 @@ async function optimizeMemory() {
     "build:memory": "NODE_OPTIONS=--max-old-space-size=6144 next build",
     "lint:memory": "NODE_OPTIONS=--max-old-space-size=2048 next lint",
     "typecheck:memory": "NODE_OPTIONS=--max-old-space-size=2048 tsc --noEmit",
-    "check:memory": "npm run lint:memory && npm run typecheck:memory",
+    "check:memory": "bun run lint:memory && bun run typecheck:memory",
     "start:memory": "NODE_OPTIONS=--max-old-space-size=4096 --expose-gc next start",
     "dev:memory": "NODE_OPTIONS=--max-old-space-size=2048 next dev",
   };
@@ -61,20 +61,17 @@ async function optimizeMemory() {
   fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2));
   console.log("   ✅ Added memory-optimized scripts");
 
-  // Create .npmrc for better caching
-  console.log("\n📦 Optimizing npm configuration...");
+  // Create bunfig.toml for better caching
+  console.log("\n📦 Optimizing bun configuration...");
 
-  const npmrcContent = `
-# Optimize npm for better performance
-cache-min=3600
-prefer-offline=true
-audit=false
-fund=false
-progress=false
+  const bunfigContent = `
+# Bun configuration
+[install]
+peer = false
 `.trim();
 
-  fs.writeFileSync(path.join(process.cwd(), ".npmrc"), npmrcContent);
-  console.log("   ✅ Created optimized .npmrc");
+  fs.writeFileSync(path.join(process.cwd(), "bunfig.toml"), bunfigContent);
+  console.log("   ✅ Created optimized bunfig.toml");
 
   // Create memory monitoring script
   console.log("\n📊 Creating memory monitoring script...");
@@ -259,9 +256,9 @@ module.exports = nextConfig;
 
   console.log("\n🎉 Memory optimization completed!");
   console.log("\n📋 Next steps:");
-  console.log("   1. Run: npm run build:memory");
-  console.log("   2. Run: npm run start:memory");
-  console.log("   3. Monitor: npm run monitor:memory");
+  console.log("   1. Run: bun run build:memory");
+  console.log("   2. Run: bun run start:memory");
+  console.log("   3. Monitor: bun run monitor:memory");
   console.log("\n💡 Tips:");
   console.log("   - Use --max-old-space-size=6144 for builds");
   console.log("   - Use --max-old-space-size=4096 for production");

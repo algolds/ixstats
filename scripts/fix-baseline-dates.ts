@@ -10,8 +10,8 @@
  *  2. Fixes projected2040* fields (baseline IS 2040, so projected = baseline)
  *
  * Usage:
- *   npx tsx scripts/fix-baseline-dates.ts             # Live fix
- *   npx tsx scripts/fix-baseline-dates.ts --dry-run    # Preview only
+ *   bunx tsx scripts/fix-baseline-dates.ts             # Live fix
+ *   bunx tsx scripts/fix-baseline-dates.ts --dry-run    # Preview only
  */
 
 process.env.SKIP_ENV_VALIDATION = "1";
@@ -140,7 +140,7 @@ async function main() {
   }
 
   console.log("\n=== Done ===");
-  console.log("Next step: run `npx tsx scripts/sync-current-stats.ts` to recalculate all current values");
+  console.log("Next step: run `bunx tsx scripts/sync-current-stats.ts` to recalculate all current values");
 
   await prisma.$disconnect();
 }

@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env bunx tsx
 /**
  * Country Geographic Report Generator
  *
@@ -6,9 +6,9 @@
  * using GeoJSON data layers (political, altitude, climate, rivers, lakes, icecaps).
  *
  * Usage:
- *   npx tsx scripts/country-geo-report.ts "Burgundie"
- *   npx tsx scripts/country-geo-report.ts "Burgundie" --json
- *   npx tsx scripts/country-geo-report.ts --list
+ *   bunx tsx scripts/country-geo-report.ts "Burgundie"
+ *   bunx tsx scripts/country-geo-report.ts "Burgundie" --json
+ *   bunx tsx scripts/country-geo-report.ts --list
  *
  * Output is always saved to scripts/reports/<country-slug>-geo-report.md (or .json)
  */
@@ -1896,8 +1896,8 @@ async function main() {
 
   const countryName = positionalArgs.join(" ");
   if (!countryName) {
-    console.error("Usage: npx tsx scripts/country-geo-report.ts \"Country Name\" [--json]");
-    console.error("       npx tsx scripts/country-geo-report.ts --list");
+    console.error("Usage: bunx tsx scripts/country-geo-report.ts \"Country Name\" [--json]");
+    console.error("       bunx tsx scripts/country-geo-report.ts --list");
     process.exit(1);
   }
 

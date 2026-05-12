@@ -1,7 +1,7 @@
 /**
  * Export World Template - CLI script to export current map state as a JSON template.
  *
- * Run: npx tsx scripts/export-world-template.ts --name "IxEarth v2" --output template.json
+ * Run: bunx tsx scripts/export-world-template.ts --name "IxEarth v2" --output template.json
  *
  * Options:
  *   --name <name>      Template name (required)
@@ -25,7 +25,7 @@ async function main() {
   const description = getArg("--description");
 
   if (!name) {
-    console.error("Usage: npx tsx scripts/export-world-template.ts --name <name> [--output <file>] [--description <d>]");
+    console.error("Usage: bunx tsx scripts/export-world-template.ts --name <name> [--output <file>] [--description <d>]");
     process.exit(1);
   }
 

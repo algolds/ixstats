@@ -29,20 +29,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Setup database
         run: |
-          npm run db:generate
-          npm run db:push
+          bun run db:generate
+          bun run db:push
 
       - name: Run image validation
         id: validate
         run: |
-          npx tsx scripts/validate-military-equipment-images.ts | tee validation-output.txt
+          bunx tsx scripts/validate-military-equipment-images.ts | tee validation-output.txt
           echo "validation_exit_code=$?" >> $GITHUB_OUTPUT
         continue-on-error: true
 

@@ -31,7 +31,7 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 
 | Area | Details |
 |------|---------|
-| Runtime | Node.js >= 18.17, npm >= 9.0 |
+| Runtime | Node.js >= 18.17, bun >= 1.2 |
 | Framework | Next.js 16.1.3, React 19.1.3 |
 | Language | TypeScript 5.8.3 |
 | API Layer | tRPC 11.4 with SuperJSON + Clerk auth context |
@@ -44,16 +44,16 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 
 ### Prerequisites
 
-- Node.js 18.17+ and npm 9+
+- Node.js 18.17+ and bun 1.2+
 - PostgreSQL database (port 5433, database `ixstats`)
 - Optional: Clerk credentials for authentication (demo mode works without)
 
 ### Installation
 
 ```bash
-npm install
-npm run db:setup   # prisma generate + db push + seed
-npm run dev        # launches Next.js on http://localhost:3000
+bun install
+bun run db:setup   # prisma generate + db push + seed
+bun run dev        # launches Next.js on http://localhost:3000
 ```
 
 The dev script loads `.env.local.dev` or `.env.local`. At minimum set:
@@ -69,19 +69,19 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 ### Database
 
 - Prisma migrations: `prisma/migrations/`
-- Initialize: `npm run db:setup`
-- Prisma Studio: `npm run db:studio` (dev) or `npm run db:studio:prod` (production)
+- Initialize: `bun run db:setup`
+- Prisma Studio: `bun run db:studio` (dev) or `bun run db:studio:prod` (production)
 
 ## Build & Quality
 
 | Command | Purpose |
 |---------|---------|
-| `npm run build` | Production build |
-| `npm run start:prod` | Production server (port 3550) |
-| `npm run lint` | ESLint with cache |
-| `npm run dev` | Development server with incremental type checking |
+| `bun run build` | Production build |
+| `bun run start:prod` | Production server (port 3550) |
+| `bun run lint` | ESLint with cache |
+| `bun run dev` | Development server with incremental type checking |
 
-> **Note:** Do not run `tsc --noEmit` globally — the project is too large and will exhaust server memory. Use `npm run dev` for incremental checking.
+> **Note:** Do not run `tsc --noEmit` globally — the project is too large and will exhaust server memory. Use `bun run dev` for incremental checking.
 
 ## Project Structure
 
@@ -131,6 +131,6 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 ## Contributing
 
 1. Branch from `v2`
-2. `npm install && npm run db:setup`
-3. Keep linting clean: `npm run lint`
+2. `bun install && bun run db:setup`
+3. Keep linting clean: `bun run lint`
 4. Update relevant docs when adding or changing features

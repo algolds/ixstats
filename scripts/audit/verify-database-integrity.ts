@@ -3,7 +3,7 @@
  * Database Integrity Audit Script for IxStats v1.0
  * Verifies database schema, relationships, constraints, and data quality
  *
- * Usage: npx tsx scripts/audit/verify-database-integrity.ts
+ * Usage: bunx tsx scripts/audit/verify-database-integrity.ts
  */
 
 import { db } from "../../src/server/db";

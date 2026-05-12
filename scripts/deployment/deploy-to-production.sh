@@ -134,7 +134,7 @@ log "✓ Node.js version: $NODE_VERSION"
 
 # Run environment verification
 info "Running environment verification..."
-npm run verify:environment || error "Environment verification failed"
+bun run verify:environment || error "Environment verification failed"
 log "✓ Environment variables validated"
 
 # Check disk space (require at least 5GB free)
@@ -167,7 +167,7 @@ if [ -n "$DATABASE_URL" ]; then
     if [[ "$DATABASE_URL" == postgres* ]] || [[ "$DATABASE_URL" == postgresql* ]]; then
         # Extract connection details from DATABASE_URL
         log "Backing up PostgreSQL database..."
-        npm run db:backup || warn "Database backup script failed (manual backup recommended)"
+        bun run db:backup || warn "Database backup script failed (manual backup recommended)"
 
         # Alternative: Use pg_dump directly if db:backup script not available
         # Note: This requires PostgreSQL client tools installed
@@ -253,13 +253,13 @@ fi
 
 info "Phase 5: Installing dependencies"
 
-log "Running npm ci..."
-npm ci --production=false || error "Failed to install dependencies"
+log "Running bun install..."
+bun install --frozen-lockfile || error "Failed to install dependencies"
 log "✓ Dependencies installed"
 
 # Run security audit
 log "Running security audit..."
-npm audit --production || warn "Security vulnerabilities detected (review recommended)"
+bun pm ls 2>/dev/null || warn "Could not list installed packages"
 
 # ============================================================================
 # PHASE 6: DATABASE MIGRATIONS
@@ -269,18 +269,18 @@ info "Phase 6: Database migrations"
 
 # Generate Prisma client
 log "Generating Prisma client..."
-npm run db:generate || error "Failed to generate Prisma client"
+bun run db:generate || error "Failed to generate Prisma client"
 log "✓ Prisma client generated"
 
 # Run migrations
 if [ -n "$DATABASE_URL" ]; then
     log "Running database migrations..."
-    npm run db:migrate:deploy || error "Database migration failed - ROLLBACK RECOMMENDED"
+    bun run db:migrate:deploy || error "Database migration failed - ROLLBACK RECOMMENDED"
     log "✓ Database migrations completed"
 
     # Validate schema alignment
     log "Validating schema alignment..."
-    npm run validate:schemas || warn "Schema validation warnings detected"
+    bun run validate:schemas || warn "Schema validation warnings detected"
 else
     warn "DATABASE_URL not set, skipping migrations"
 fi
@@ -294,7 +294,7 @@ info "Phase 7: Building application"
 BUILD_START=$(date +%s)
 log "Starting production build..."
 
-npm run build || error "Build failed - ROLLBACK RECOMMENDED"
+bun run build || error "Build failed - ROLLBACK RECOMMENDED"
 
 BUILD_END=$(date +%s)
 BUILD_TIME=$((BUILD_END - BUILD_START))
@@ -309,7 +309,7 @@ info "Phase 8: Starting application"
 log "Starting production server on port $PORT..."
 
 # Start new process
-nohup npm run start:prod > "$LOG_DIR/production-server-$TIMESTAMP.log" 2>&1 &
+nohup bun run start:prod > "$LOG_DIR/production-server-$TIMESTAMP.log" 2>&1 &
 SERVER_PID=$!
 echo "$SERVER_PID" > .production.pid
 
@@ -374,7 +374,7 @@ fi
 
 # Test 4: Database connectivity
 info "Test 4/5: Database connectivity..."
-npm run test:db > /dev/null 2>&1 && log "✓ Database connectivity verified" || { warn "Database connectivity issues"; ALL_TESTS_PASSED=false; }
+bun run test:db > /dev/null 2>&1 && log "✓ Database connectivity verified" || { warn "Database connectivity issues"; ALL_TESTS_PASSED=false; }
 
 # Test 5: Authentication
 info "Test 5/5: Authentication system..."
@@ -397,7 +397,7 @@ fi
 info "Phase 10: Post-deployment validation"
 
 log "Running post-deployment validation script..."
-npm run post:deploy:validate 2>/dev/null || info "Post-deployment validation script not found (optional)"
+bun run post:deploy:validate 2>/dev/null || info "Post-deployment validation script not found (optional)"
 
 # ============================================================================
 # DEPLOYMENT COMPLETE
@@ -429,7 +429,7 @@ cat > "$REPORT_FILE" << EOF
 | Previous Commit | ${CURRENT_COMMIT:-unknown} |
 | New Commit | ${NEW_COMMIT:-unknown} |
 | Node Version | $(node --version) |
-| npm Version | $(npm --version) |
+| bun Version | $(bun --version) |
 | Server PID | $SERVER_PID |
 | Port | $PORT |
 

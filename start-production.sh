@@ -79,18 +79,18 @@ echo "   MediaWiki URL: $NEXT_PUBLIC_MEDIAWIKI_URL"
 
 # Validate Clerk configuration
 echo "🔐 Validating Clerk configuration..."
-if npm run auth:validate:prod --silent > /dev/null 2>&1; then
+if bun run auth:validate:prod --silent > /dev/null 2>&1; then
     echo "   Authentication: ✅ Clerk (Production keys validated)"
 else
     echo "   Authentication: ⚠️  Clerk keys need attention"
-    echo "   Run 'npm run auth:validate:prod' for details"
+    echo "   Run 'bun run auth:validate:prod' for details"
 fi
 
 echo ""
 
 # Verify build exists
 if [ ! -d ".next" ]; then
-    echo "❌ Error: Production build not found. Run 'npm run build' first."
+    echo "❌ Error: Production build not found. Run 'bun run build' first."
     exit 1
 fi
 

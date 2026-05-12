@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Schema Watcher - Automatically syncs prod DB when schema.prisma changes
-# Usage: npm run db:watch
+# Usage: bun run db:watch
 
 echo "👀 Watching Prisma schema for changes..."
 echo "   Any changes to schema.prisma will automatically sync to prod database"
@@ -19,7 +19,7 @@ LAST_MODIFIED=""
 sync_databases() {
     echo ""
     echo "🔄 Schema change detected! Syncing databases..."
-    npm run db:sync
+    bun run db:sync
     if [ $? -eq 0 ]; then
         echo "✅ Auto-sync completed successfully"
         echo ""

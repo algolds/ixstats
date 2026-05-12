@@ -263,7 +263,7 @@ REDIS_URL="redis://localhost:6379"  # Update with your Redis URL
 
 ```bash
 # Install dependencies (if not already installed)
-npm install ioredis
+bun install ioredis
 
 # Test Redis connection
 node -e "const Redis = require('ioredis'); const client = new Redis(process.env.REDIS_URL); client.ping().then(r => console.log('Redis:', r)).catch(e => console.error(e)).finally(() => client.quit());"
@@ -273,10 +273,10 @@ node -e "const Redis = require('ioredis'); const client = new Redis(process.env.
 
 ```bash
 # Build production bundle
-npm run build
+bun run build
 
 # Start production server
-npm run start:prod
+bun run start:prod
 
 # Verify rate limiting is active
 curl -I http://localhost:3550/api/trpc/health.check
@@ -841,7 +841,7 @@ if (!result.success) {
    ```bash
    npm list ioredis
    # If not installed:
-   npm install ioredis
+   bun install ioredis
    ```
 
 ### Issue 3: Rate Limit Too Restrictive

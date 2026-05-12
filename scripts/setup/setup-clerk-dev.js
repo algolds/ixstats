@@ -32,7 +32,7 @@ async function main() {
 
   if (setupChoice.toLowerCase() !== "y") {
     console.log("\n✅ Skipping Clerk setup. The app will run in demo mode (no authentication).");
-    console.log("📝 You can set up Clerk later by running: npm run clerk:setup\n");
+    console.log("📝 You can set up Clerk later by running: bun run clerk:setup\n");
     rl.close();
     return;
   }
@@ -99,9 +99,9 @@ async function main() {
 
     console.log("\n✅ Clerk keys have been saved to .env.local");
     console.log("🔄 Please restart your development server:");
-    console.log("   npm run dev");
+    console.log("   bun run dev");
     console.log("\n🧪 Test your setup by visiting: http://localhost:3000");
-    console.log("📊 Check configuration with: npm run auth:check:dev");
+    console.log("📊 Check configuration with: bun run auth:check:dev");
   } catch (error) {
     console.log("❌ Error updating .env.local:", error.message);
   }

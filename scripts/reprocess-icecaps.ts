@@ -7,7 +7,7 @@
  *    ~-180° to ~+180° (like polar ice caps), shifts the pre-jump portion
  *    by +360° so the runtime splitting algorithm works correctly
  *
- * Run: npx tsx scripts/reprocess-icecaps.ts
+ * Run: bunx tsx scripts/reprocess-icecaps.ts
  */
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from "fs";

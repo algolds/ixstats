@@ -8,7 +8,7 @@
  * - Coverage percentage by model and router
  * - Recommendations for missing operations
  *
- * Usage: npx tsx scripts/audit/audit-schema-coverage.ts
+ * Usage: bunx tsx scripts/audit/audit-schema-coverage.ts
  */
 
 import { readFileSync, readdirSync, writeFileSync } from "fs";

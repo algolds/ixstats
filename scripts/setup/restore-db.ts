@@ -47,8 +47,8 @@ async function restoreDatabase() {
         console.log(`  ${index + 1}. ${backup}`);
       });
 
-      console.log("\n💡 Usage: npm run db:restore -- <backup-filename>");
-      console.log("💡 Example: npm run db:restore -- backup_2024-01-15T10-30-00.sql");
+      console.log("\n💡 Usage: bun run db:restore -- <backup-filename>");
+      console.log("💡 Example: bun run db:restore -- backup_2024-01-15T10-30-00.sql");
       process.exit(0);
     }
 

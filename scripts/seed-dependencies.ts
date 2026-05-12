@@ -4,8 +4,8 @@
  * Creates Country records (wiki-sourced data where available) and
  * CountrySovereignty relationships for all dependency territories.
  *
- * Usage: npx tsx scripts/seed-dependencies.ts
- *        npx tsx scripts/seed-dependencies.ts --dry-run
+ * Usage: bunx tsx scripts/seed-dependencies.ts
+ *        bunx tsx scripts/seed-dependencies.ts --dry-run
  */
 
 import { PrismaClient } from "@prisma/client";

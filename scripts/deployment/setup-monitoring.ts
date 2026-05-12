@@ -391,7 +391,7 @@ function createCronJobs(): string {
 0 * * * * df -h /ixwiki/public/projects/ixstats | tail -1 | awk '{if ($5+0 > 90) print "Disk usage warning: " $5 " at " strftime("%Y-%m-%d %H:%M:%S")}' >> /ixwiki/public/projects/ixstats/logs/disk-space.log
 
 # Database backup daily at 2 AM
-0 2 * * * cd /ixwiki/public/projects/ixstats && npm run db:backup >> /ixwiki/public/projects/ixstats/logs/backup.log 2>&1
+0 2 * * * cd /ixwiki/public/projects/ixstats && bun run db:backup >> /ixwiki/public/projects/ixstats/logs/backup.log 2>&1
 
 # Clean old logs weekly (Sunday at 3 AM)
 0 3 * * 0 find /ixwiki/public/projects/ixstats/logs -name "*.log" -mtime +30 -delete
@@ -420,7 +420,7 @@ WorkingDirectory=/ixwiki/public/projects/ixstats
 Environment=NODE_ENV=production
 Environment=PORT=3550
 EnvironmentFile=/ixwiki/public/projects/ixstats/.env.production
-ExecStart=/usr/bin/npm run start:prod
+ExecStart=/usr/bin/bun run start:prod
 Restart=on-failure
 RestartSec=10
 StandardOutput=append:/ixwiki/public/projects/ixstats/logs/systemd-stdout.log
@@ -627,7 +627,7 @@ All logs are stored in: \`${logsDir}\`
 ### Discord Notifications Not Working
 1. Check DISCORD_WEBHOOK_URL in .env.production
 2. Verify DISCORD_WEBHOOK_ENABLED=true
-3. Test webhook manually: \`npm run test:webhook\`
+3. Test webhook manually: \`bun run test:webhook\`
 
 ### Logs Not Rotating
 1. Check logrotate configuration: \`sudo cat /etc/logrotate.d/ixstats\`
@@ -686,7 +686,7 @@ All logs are stored in: \`${logsDir}\`
       : "   5. Configure Discord webhook in .env.production",
     "reset"
   );
-  print("   6. Test monitoring: npm run test:monitoring", "reset");
+  print("   6. Test monitoring: bun run test:monitoring", "reset");
 
   print("", "reset");
   print("📚 Documentation: monitoring-config/README.md", "cyan");

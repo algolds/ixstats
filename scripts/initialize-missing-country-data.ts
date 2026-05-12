@@ -4,7 +4,7 @@
  * This script populates missing NationalIdentity and GovernmentStructure records
  * for countries that were created but never completed the builder process.
  *
- * Run with: npx tsx scripts/initialize-missing-country-data.ts
+ * Run with: bunx tsx scripts/initialize-missing-country-data.ts
  */
 
 import { PrismaClient } from "@prisma/client";

@@ -4,7 +4,7 @@
  * Generates worlds and outputs geometry quality metrics.
  * Compares against real IxWorld MapLayer data from DB.
  *
- * Usage: npx tsx scripts/test-world-gen.ts
+ * Usage: bunx tsx scripts/test-world-gen.ts
  */
 
 import { generateWorld, PRESETS, DEFAULT_PARAMS, type WorldGenParams } from "../src/lib/procedural/world-generator";

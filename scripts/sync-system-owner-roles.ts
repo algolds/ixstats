@@ -118,7 +118,7 @@ async function syncSystemOwnerRoles(): Promise<void> {
 
   console.log("\n✅ System owner role sync completed!");
   console.log("\n💡 Next steps:");
-  console.log("1. Restart your development server: npm run dev");
+  console.log("1. Restart your development server: bun run dev");
   console.log("2. Sign in and verify you have admin access");
   console.log("3. Check /admin to confirm system owner privileges");
 }
