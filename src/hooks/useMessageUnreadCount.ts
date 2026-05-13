@@ -38,9 +38,14 @@ export function useMessageUnreadCount() {
     [folderCounts]
   );
 
+  const totalUnreadCount = useMemo(() => {
+    return Object.values(counts).reduce((acc, count) => acc + count, 0);
+  }, [counts]);
+
   return {
-    totalUnread: counts.inbox,
+    totalUnread: totalUnreadCount,
     counts,
-    hasUnread: counts.inbox > 0,
+    hasUnread: totalUnreadCount > 0,
   };
 }
+

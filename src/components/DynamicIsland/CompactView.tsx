@@ -618,6 +618,18 @@ function CompactViewComponent({
                                 <Crown className="relative z-10 mr-2 h-4 w-4" />
                                 <span className="relative z-10 font-medium">Profile</span>
                               </Button>
+                              
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  (window.location.href = createAbsoluteUrl("/profile"))
+                                }
+                                className="group relative overflow-hidden border border-indigo-400/50 bg-gradient-to-r from-indigo-500/30 to-purple-500/25 text-indigo-800 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-indigo-500/70 hover:from-indigo-500/40 hover:to-purple-500/35 hover:text-indigo-900 hover:shadow-lg dark:border-indigo-300/30 dark:from-indigo-500/20 dark:to-purple-500/20 dark:text-indigo-200 dark:hover:border-indigo-300/50 dark:hover:from-indigo-500/30 dark:hover:to-purple-500/30 dark:hover:text-indigo-100"
+                              >
+                                <Link2 className="relative z-10 mr-2 h-4 w-4" />
+                                <span className="relative z-10 font-medium">IxnayID</span>
+                              </Button>
+
                               {!isStandalone && (
                                 <Button
                                   size="sm"
@@ -687,14 +699,26 @@ function CompactViewComponent({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onSwitchMode("notifications")}
+                    onClick={() => {
+                      if (messageUnreadCount > 0) {
+                        router.push("/messages");
+                      } else {
+                        onSwitchMode("notifications");
+                      }
+                    }}
                     className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
                       isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}
                   >
-                    <Bell
-                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                    />
+                    {messageUnreadCount > 0 ? (
+                      <MessageCircle
+                        className={`text-blue-400 transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                      />
+                    ) : (
+                      <Bell
+                        className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                      />
+                    )}
                     <AnimatePresence>
                       {totalUnreadCount > 0 && (
                         <motion.div

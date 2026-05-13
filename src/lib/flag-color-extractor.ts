@@ -135,6 +135,10 @@ function generateFlagColors(countryName: string): FlagColors {
   }
 
   // Generate colors based on hash
+  if (!countryName || countryName.trim() === "") {
+    return DEFAULT_COLORS;
+  }
+
   const hue1 = Math.abs(hash) % 360;
   const hue2 = (hue1 + 120) % 360;
   const hue3 = (hue1 + 240) % 360;
@@ -157,6 +161,11 @@ function generateFlagColors(countryName: string): FlagColors {
  * Converts HSL to hex color
  */
 function hslToHex(h: number, s: number, l: number): string {
+  // Safety check to prevent #NaNNaNNaN
+  if (isNaN(h) || isNaN(s) || isNaN(l)) {
+    return DEFAULT_COLORS.primary;
+  }
+
   l /= 100;
   const a = (s * Math.min(l, 1 - l)) / 100;
   const f = (n: number) => {

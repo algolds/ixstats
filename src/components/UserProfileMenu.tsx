@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { User, Crown, Home, ChevronDown, LogOut, AlertCircle, Settings } from "lucide-react";
+import { User, Crown, Home, ChevronDown, LogOut, AlertCircle, Settings, Link2 } from "lucide-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+import { getNationUrl } from "~/lib/slug-utils";
+import { isStandaloneClient } from "~/lib/standalone-detection";
 
 interface UserProfileMenuProps {
   user: any;
@@ -30,7 +32,7 @@ export function UserProfileMenu({
         <button className="bg-accent/10 hover:bg-accent/20 text-foreground flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-200">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            <span className="hidden text-sm md:block">Sign In</span>
+            <span className="hidden text-sm md:block">Sign In with IxnayID</span>
           </div>
         </button>
       </SignInButton>
@@ -94,7 +96,7 @@ export function UserProfileMenu({
           <div className="py-1">
             {setupStatus === "complete" && userProfile?.country && (
               <Link
-                href={`/countries/${userProfile.country.slug}`}
+                href={getNationUrl(userProfile.country.name)}
                 className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center gap-3 px-4 py-2 text-sm transition-colors"
               >
                 <Crown className="h-4 w-4" />
@@ -123,6 +125,13 @@ export function UserProfileMenu({
             >
               <User className="h-4 w-4" />
               Profile Settings
+            </Link>
+            <Link
+              href="/profile#ixnayid"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Link2 className="h-4 w-4" />
+              IxnayID Connections
             </Link>
             <a
               href="https://accounts.ixwiki.com/user"

@@ -272,6 +272,22 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
               return bTime - aTime;
             });
 
+          // Add messages as a notification entry if unread count > 0
+          if (messageUnreadCount > 0) {
+            allNotifications.unshift({
+              id: "unread-messages",
+              source: "messages",
+              title: "Unread Messages",
+              description: `You have ${messageUnreadCount} unread message${messageUnreadCount > 1 ? "s" : ""} in your inbox.`,
+              timestamp: new Date().getTime(),
+              priority: "high",
+              category: "social",
+              href: "/messages",
+              read: false,
+              type: "info",
+            });
+          }
+
           // Group notifications iOS-style by category and time
           const groupedNotifications = allNotifications.reduce((groups: any, notification: any) => {
             const category = notification.category || notification.type || "general";

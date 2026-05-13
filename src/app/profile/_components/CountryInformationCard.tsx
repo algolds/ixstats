@@ -1,4 +1,5 @@
-import { Crown, Edit3, Save, X } from "lucide-react";
+import { useState } from "react";
+import { Crown, Image as ImageIcon, Type as TypeIcon, Save, X, Activity, ArrowLeftRight, TrendingUp, Users, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { getCountryPath } from "~/lib/slug-utils";
@@ -12,13 +13,16 @@ interface CountryInformationCardProps {
     economicTier: string | null;
     currentPopulation: number | null;
     currentGdpPerCapita: number | null;
+    currentTotalGdp?: number | null;
+    populationGrowthRate?: number | null;
+    adjustedGdpGrowth?: number | null;
     slug?: string | null;
   };
   uploadedFlagUrl: string | null;
   flagUploadMode: boolean;
   isEditingCountry: boolean;
   newCountryName: string;
-  updateCountryNameMutation: any;
+  updateCountryNameMutation: unknown;
   onEditCountry: () => void;
   onUpdateCountryName: () => void;
   onCancelEdit: () => void;
@@ -28,7 +32,7 @@ interface CountryInformationCardProps {
   onFlagSave: () => void;
   onCancelFlagUpload: () => void;
   isUploadingFlag: boolean;
-  updateCountryFlagMutation: any;
+  updateCountryFlagMutation: unknown;
 }
 
 export function CountryInformationCard({
@@ -49,6 +53,8 @@ export function CountryInformationCard({
   isUploadingFlag,
   updateCountryFlagMutation,
 }: CountryInformationCardProps) {
+  const [economyView, setEconomyView] = useState<"per-capita" | "total">("per-capita");
+  const [populationView, setPopulationView] = useState<"total" | "growth">("total");
   const countryPath = getCountryPath({
     id: country.id,
     name: country.name,
@@ -56,134 +62,190 @@ export function CountryInformationCard({
   });
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center">
-          <Crown className="mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">My Country</h2>
-        </div>
-        <Link
-          href={createUrl(countryPath)}
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
-        >
-          View Details →
-        </Link>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Country Name
-          </label>
-          {isEditingCountry ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={newCountryName}
-                onChange={(e) => onSetNewCountryName(e.target.value)}
-                className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
-                placeholder={country.name}
-              />
-              <button
-                onClick={onUpdateCountryName}
-                disabled={updateCountryNameMutation.isPending}
-                className="rounded-md bg-green-600 px-3 py-2 text-white hover:bg-green-700 disabled:opacity-50 dark:bg-green-500 dark:hover:bg-green-600"
-              >
-                <Save className="h-4 w-4" />
-              </button>
-              <button
-                onClick={onCancelEdit}
-                className="rounded-md bg-gray-600 px-3 py-2 text-white hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
+    <div className="glass-surface glass-refraction group overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+      <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+              <Crown className="h-6 w-6" />
             </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {uploadedFlagUrl ? (
-                  <img
-                    src={uploadedFlagUrl}
-                    alt="Custom flag"
-                    className="h-6 w-auto rounded shadow-sm"
-                  />
-                ) : (
-                  <CountryFlag
-                    countryCode={country.name.substring(0, 2).toUpperCase()}
-                    countryName={country.name}
-                    className="rounded shadow-sm"
-                  />
-                )}
-                <p className="text-gray-900 dark:text-white">{country.name}</p>
-              </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">National Identity</h2>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Country Configuration</p>
+            </div>
+          </div>
+          <Link
+            href={createUrl(countryPath)}
+            className="glass-interactive flex items-center gap-2 rounded-xl bg-white/50 px-4 py-2 text-sm font-semibold text-indigo-600 transition-all hover:bg-white dark:bg-slate-800/50 dark:text-indigo-400 dark:hover:bg-slate-800"
+          >
+             View MyCountry
+          </Link>
+        </div>
+
+        <div className="space-y-6">
+          <div className="rounded-2xl bg-slate-50/50 p-5 dark:bg-slate-800/30">
+            <label className="mb-3 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Primary Country
+            </label>
+            {isEditingCountry ? (
               <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newCountryName}
+                  onChange={(e) => onSetNewCountryName(e.target.value)}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white/80 px-4 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900/80 dark:text-white"
+                  placeholder={country.name}
+                />
                 <button
-                  onClick={onToggleFlagUpload}
-                  className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                  title="Upload custom flag"
+                  onClick={onUpdateCountryName}
+                  disabled={updateCountryNameMutation.isPending}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 disabled:opacity-50"
                 >
-                  <Edit3 className="h-4 w-4" />
+                  <Save className="h-5 w-5" />
                 </button>
                 <button
-                  onClick={onEditCountry}
-                  className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
-                  title="Edit country name"
+                  onClick={onCancelEdit}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-200 text-slate-600 transition-all hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
                 >
-                  <Edit3 className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="relative h-12 w-20 overflow-hidden rounded-lg border border-slate-200 shadow-sm dark:border-slate-700">
+                    {uploadedFlagUrl ? (
+                      <img
+                        src={uploadedFlagUrl}
+                        alt="Custom flag"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <CountryFlag
+                        countryCode={country.name.substring(0, 2).toUpperCase()}
+                        countryName={country.name}
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{country.name}</p>
+                    <p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-tighter">Active Player Country</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={onToggleFlagUpload}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm transition-all hover:scale-110 dark:bg-slate-800"
+                    title="Update Insignia"
+                  >
+                    <ImageIcon className="h-4 w-4 text-blue-500" />
+                  </button>
+                  <button
+                    onClick={onEditCountry}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm transition-all hover:scale-110 dark:bg-slate-800"
+                    title="Rename Sovereignty"
+                  >
+                    <TypeIcon className="h-4 w-4 text-indigo-500" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {flagUploadMode && (
+            <div className="rounded-2xl border-2 border-dashed border-slate-200 p-4 dark:border-slate-700">
+              <FlagUploadSection
+                uploadedFlagUrl={uploadedFlagUrl}
+                isUploadingFlag={isUploadingFlag}
+                updateCountryFlagMutation={updateCountryFlagMutation}
+                onFlagUpload={onFlagUpload}
+                onFlagSave={onFlagSave}
+                onCancel={onCancelFlagUpload}
+              />
             </div>
           )}
-        </div>
 
-        {flagUploadMode && (
-          <FlagUploadSection
-            uploadedFlagUrl={uploadedFlagUrl}
-            isUploadingFlag={isUploadingFlag}
-            updateCountryFlagMutation={updateCountryFlagMutation}
-            onFlagUpload={onFlagUpload}
-            onFlagSave={onFlagSave}
-            onCancel={onCancelFlagUpload}
-          />
-        )}
+          <div className="mt-4 border-t border-slate-100 pt-6 dark:border-slate-800">
+            <div className="mb-4 flex items-center gap-2">
+              <Activity className="h-4 w-4 text-emerald-500" />
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white">MyCountry at a glance</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Economic Vitality
+                  </label>
+                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-medium text-slate-500">GDP Growth</span>
+                    <span className={`text-[10px] font-bold ${(country.adjustedGdpGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {(country.adjustedGdpGrowth ?? 0) >= 0 ? '+' : ''}{((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-medium text-slate-500">Stability</span>
+                    <span className="text-[10px] font-bold text-indigo-600">
+                      {(country.economicTier)}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Economic Tier
-          </label>
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              country.economicTier === "Advanced"
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                : country.economicTier === "Developed"
-                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                  : country.economicTier === "Emerging"
-                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                    : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-            }`}
-          >
-            {country.economicTier}
-          </span>
-        </div>
+              <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Population {populationView === "growth" ? "Expansion" : "Metrics"}
+                  </label>
+                  <button 
+                    onClick={() => setPopulationView(populationView === "total" ? "growth" : "total")}
+                    className="rounded-lg p-1 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <ArrowLeftRight className="h-3 w-3 text-slate-400" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                    {populationView === "total" 
+                      ? Math.round(country.currentPopulation ?? 0).toLocaleString()
+                      : `${((country.populationGrowthRate ?? 0) * 100).toFixed(2)}%`
+                    }
+                    {populationView === "growth" && <span className="ml-1 text-[10px] font-medium text-slate-500">Growth</span>}
+                  </p>
+                </div>
+              </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Population
-          </label>
-          <p className="text-gray-900 dark:text-white">
-            {Math.round(country.currentPopulation ?? 0).toLocaleString() || "N/A"}
-          </p>
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            GDP per Capita
-          </label>
-          <p className="text-gray-900 dark:text-white">
-            ${country.currentGdpPerCapita?.toLocaleString() || "N/A"}
-          </p>
-        </div>
+              <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Financials {economyView === "per-capita" ? "(P/C)" : "(Total)"}
+                  </label>
+                  <button 
+                    onClick={() => setEconomyView(economyView === "per-capita" ? "total" : "per-capita")}
+                    className="rounded-lg p-1 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <ArrowLeftRight className="h-3 w-3 text-slate-400" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-amber-500" />
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">
+                    {economyView === "per-capita"
+                      ? `$${(country.currentGdpPerCapita ?? 0).toLocaleString()}`
+                      : `$${(Math.round(country.currentTotalGdp ?? (country.currentGdpPerCapita ?? 0) * (country.currentPopulation ?? 0))).toLocaleString()}`
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
       </div>
     </div>
+  </div>
   );
 }

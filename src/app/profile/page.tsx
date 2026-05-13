@@ -15,6 +15,10 @@ import {
   Key,
   Palette,
   Disc,
+  Settings,
+  UserCircle,
+  BookOpen,
+  Link2,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -40,10 +44,13 @@ export const dynamic = "force-dynamic";
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
 
 function ProfileContent() {
-  const { user, isLoaded, userProfile, isLoading: profileLoading } = useUserCountry();
+  const { user, isLoaded, userProfile, country, isLoading: profileLoading } = useUserCountry();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [showPreferences, setShowPreferences] = useState(false);
+  const [showLore, setShowLore] = useState(false);
+  const [showThinkpages, setShowThinkpages] = useState(false);
+  const [showIxnayID, setShowIxnayID] = useState(false);
 
   const profileSettings = useProfileSettings({
     userProfileCountryId: userProfile?.countryId ?? undefined,
@@ -79,24 +86,56 @@ function ProfileContent() {
   return (
     <>
       <SignedIn>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-            <div className="mb-8">
+        <div className="relative min-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
+          {/* Animated Background Elements */}
+          <div className="pointer-events-none absolute inset-0 z-0">
+            <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/10 blur-[120px] dark:bg-indigo-500/20" />
+            <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-blue-500/10 blur-[100px] dark:bg-blue-500/15" />
+            <div className="absolute -bottom-[10%] left-[20%] h-[40%] w-[40%] rounded-full bg-purple-500/10 blur-[120px] dark:bg-purple-500/20" />
+          </div>
+
+          <div className="relative z-10 mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+            <div className="mb-12">
               <Link
                 href={createUrl("/dashboard")}
-                className="mb-4 inline-flex items-center text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                className="group mb-6 inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
                 Back to Dashboard
               </Link>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile Settings</h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-300">
-                Manage your account and country settings
-              </p>
+              
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <div className="mb-2 flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                    <Settings className="h-5 w-5" />
+                    <span className="text-xs font-bold uppercase tracking-widest">User Control Center</span>
+                  </div>
+                  <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+                    Profile <span className="text-indigo-600 dark:text-indigo-400">Settings</span>
+                  </h1>
+                 
+                </div>
+                
+                {user && (
+                  <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/50 p-2 pr-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/50">
+                    <div className="h-12 w-12 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                      <img 
+                        src={user.imageUrl} 
+                        alt={user.username || "User"} 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Authenticated as</div>
+                      <div className="font-bold text-slate-900 dark:text-white">{user.username || user.firstName || "Diplomat"}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-              <div className="space-y-6 lg:col-span-2">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+              <div className="space-y-8 lg:col-span-8">
                 <AccountInformationCard
                   user={user as any}
                   setupStatus={setupStatus}
@@ -105,7 +144,7 @@ function ProfileContent() {
 
                 {setupStatus === "complete" && userProfile?.country && (
                   <CountryInformationCard
-                    country={userProfile.country}
+                    country={country?.newStats ?? userProfile.country}
                     uploadedFlagUrl={profileSettings.uploadedFlagUrl}
                     flagUploadMode={profileSettings.flagUploadMode}
                     isEditingCountry={profileSettings.isEditingCountry}
@@ -156,61 +195,114 @@ function ProfileContent() {
                     </Link>
                   </div>
                 )}
+                {showPreferences && (
+                  <div id="interface-section">
+                    <UserPreferencesCard theme={theme} onThemeChange={setTheme} />
+                  </div>
+                )}
 
-                {showPreferences && <UserPreferencesCard theme={theme} onThemeChange={setTheme} />}
+                {showLore && (
+                  <div id="lore-section">
+                    <WikiPreferencesCard />
+                  </div>
+                )}
 
-                <WikiPreferencesCard />
+                {showThinkpages && thinkpagesAccount && (
+                  <div id="thinkpages-section">
+                    <ThinkPagesSettingsCard
+                      thinkpagesAccount={thinkpagesAccount}
+                      updateThinkpagesAccountMutation={updateThinkpagesAccountMutation}
+                      onRefetch={refetchThinkpagesAccount}
+                    />
+                  </div>
+                )}
 
-                <IxnayIDCard />
-
-                {thinkpagesAccount && (
-                  <ThinkPagesSettingsCard
-                    thinkpagesAccount={thinkpagesAccount}
-                    updateThinkpagesAccountMutation={updateThinkpagesAccountMutation}
-                    onRefetch={refetchThinkpagesAccount}
-                  />
+                {showIxnayID && (
+                  <div id="ixnayid-section">
+                    <IxnayIDCard />
+                  </div>
                 )}
               </div>
+                <div className="glass-surface glass-refraction h-fit overflow-hidden rounded-3xl p-1 lg:col-span-4">
+                  <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
+                    <div className="mb-6 flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+                        <UserCircle className="h-5 w-5" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        Account Settings
+                      </h3>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          const next = !showIxnayID;
+                          setShowIxnayID(next);
+                          if (next) setTimeout(() => document.getElementById('ixnayid-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+                        }}
+                        className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                      >
+                        <div className="flex items-center">
+                          <Link2 className="mr-3 h-4 w-4 text-indigo-600" />
+                          IxnayID Sync
+                        </div>
+                        <div className={`h-2 w-2 rounded-full ${showIxnayID ? 'bg-indigo-600 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                      </button>
 
-              <div className="space-y-6">
-                <QuickActionsSection
-                  setupStatus={setupStatus}
-                  countryId={userProfile?.country?.id}
-                />
+                      <button
+                        onClick={() => {
+                          const next = !showPreferences;
+                          setShowPreferences(next);
+                          if (next) setTimeout(() => document.getElementById('interface-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+                        }}
+                        className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                      >
+                        <div className="flex items-center">
+                          <Palette className="mr-3 h-4 w-4 text-indigo-500" />
+                          Interface Preferences
+                        </div>
+                        <div className={`h-2 w-2 rounded-full ${showPreferences ? 'bg-indigo-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          const next = !showLore;
+                          setShowLore(next);
+                          if (next) setTimeout(() => document.getElementById('lore-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+                        }}
+                        className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                      >
+                        <div className="flex items-center">
+                          <BookOpen className="mr-3 h-4 w-4 text-blue-500" />
+                          LoreScanner Preferences
+                        </div>
+                        <div className={`h-2 w-2 rounded-full ${showLore ? 'bg-blue-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                      </button>
 
-                <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                  <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-                    Account Settings
-                  </h3>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => setShowPreferences(!showPreferences)}
-                      className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                    >
-                      <Palette className="mr-2 h-4 w-4" />
-                      Preferences
-                    </button>
-                    <button className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                      <Shield className="mr-2 h-4 w-4" />
-                      Privacy & Security
-                    </button>
-                    <button
-                      onClick={() => document.getElementById("ixnayid-card")?.scrollIntoView({ behavior: "smooth" })}
-                      className="flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                    >
-                      <Key className="mr-2 h-4 w-4" />
-                      Connected Accounts
-                    </button>
+                      <button
+                        onClick={() => {
+                          const next = !showThinkpages;
+                          setShowThinkpages(next);
+                          if (next) setTimeout(() => document.getElementById('thinkpages-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+                        }}
+                        className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                      >
+                        <div className="flex items-center">
+                          <User className="mr-3 h-4 w-4 text-purple-500" />
+                          Thinkpages Preferences
+                        </div>
+                        <div className={`h-2 w-2 rounded-full ${showThinkpages ? 'bg-purple-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                      </button>
+
+                    </div>
                   </div>
                 </div>
-
-                {/* Discord Account section removed — now in IxnayID card */}
-              </div>
-            </div>
           </div>
         </div>
-      </SignedIn>
-      <SignedOut>
+      </div>
+    </SignedIn>
+    <SignedOut>
         <div className="flex min-h-screen flex-col items-center justify-center">
           <SignInButton mode="modal" />
         </div>

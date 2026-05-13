@@ -54,101 +54,114 @@ export function ThinkPagesSettingsCard({
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center">
-          <User className="mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Thinkpages Account Settings
-          </h2>
-        </div>
-        <div>
-          {isEditing ? (
-            <div className="flex gap-2">
-              <button
-                onClick={handleSave}
-                disabled={updateThinkpagesAccountMutation.isPending}
-                className="rounded-md bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700 disabled:opacity-50 dark:bg-green-500 dark:hover:bg-green-600"
-              >
-                <Save className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleCancel}
-                className="rounded-md bg-gray-600 px-3 py-1 text-sm text-white hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
+    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+      <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
+              <User className="h-6 w-6" />
             </div>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
-            >
-              <Edit3 className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Posting Frequency
-          </label>
-          {isEditing ? (
-            <Select value={postingFrequency} onValueChange={setPostingFrequency}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="moderate">Moderate</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <p className="text-gray-900 capitalize dark:text-white">{postingFrequency}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Political Lean
-          </label>
-          {isEditing ? (
-            <Select value={politicalLean} onValueChange={setPoliticalLean}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select lean" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="left">Left</SelectItem>
-                <SelectItem value="center">Center</SelectItem>
-                <SelectItem value="right">Right</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <p className="text-gray-900 capitalize dark:text-white">{politicalLean}</p>
-          )}
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Thinkpages Persona
+              </h2>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Algorithmic Social Identity</p>
+            </div>
+          </div>
+          <div>
+            {isEditing ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSave}
+                  disabled={updateThinkpagesAccountMutation.isPending}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 disabled:opacity-50"
+                >
+                  <Save className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-200 text-slate-600 transition-all hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="glass-interactive flex items-center gap-2 rounded-xl bg-white/50 px-4 py-2 text-sm font-semibold text-indigo-600 transition-all hover:bg-white dark:bg-slate-800/50 dark:text-indigo-400 dark:hover:bg-slate-800"
+              >
+                Configure
+              </button>
+            )}
+          </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Personality
-          </label>
-          {isEditing ? (
-            <Select value={personality} onValueChange={setPersonality}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select personality" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="serious">Serious</SelectItem>
-                <SelectItem value="casual">Casual</SelectItem>
-                <SelectItem value="satirical">Satirical</SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <p className="text-gray-900 capitalize dark:text-white">{personality}</p>
-          )}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+            <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Engagement Cadence
+            </label>
+            {isEditing ? (
+              <Select value={postingFrequency} onValueChange={setPostingFrequency}>
+                <SelectTrigger className="border-slate-200 bg-white/80 dark:border-slate-700 dark:bg-slate-900/80">
+                  <SelectValue placeholder="Frequency" />
+                </SelectTrigger>
+                <SelectContent className="glass-modal">
+                  <SelectItem value="active">High Output</SelectItem>
+                  <SelectItem value="moderate">Balanced</SelectItem>
+                  <SelectItem value="low">Subtle</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">{postingFrequency}</p>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+            <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Ideological Pivot
+            </label>
+            {isEditing ? (
+              <Select value={politicalLean} onValueChange={setPoliticalLean}>
+                <SelectTrigger className="border-slate-200 bg-white/80 dark:border-slate-700 dark:bg-slate-900/80">
+                  <SelectValue placeholder="Lean" />
+                </SelectTrigger>
+                <SelectContent className="glass-modal">
+                  <SelectItem value="left">Progressive</SelectItem>
+                  <SelectItem value="center">Neutral</SelectItem>
+                  <SelectItem value="right">Traditional</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">{politicalLean}</p>
+            )}
+          </div>
+
+          <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+            <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Output Modality
+            </label>
+            {isEditing ? (
+              <Select value={personality} onValueChange={setPersonality}>
+                <SelectTrigger className="border-slate-200 bg-white/80 dark:border-slate-700 dark:bg-slate-900/80">
+                  <SelectValue placeholder="Modality" />
+                </SelectTrigger>
+                <SelectContent className="glass-modal">
+                  <SelectItem value="serious">Analytic</SelectItem>
+                  <SelectItem value="casual">Conversational</SelectItem>
+                  <SelectItem value="satirical">Provocative</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">{personality}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl bg-purple-500/5 p-4 dark:bg-purple-500/10">
+          <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            Your Thinkpages persona dictates how our autonomous systems generate content on your behalf. These settings influence public perception across the Ixnay network.
+          </p>
         </div>
       </div>
     </div>

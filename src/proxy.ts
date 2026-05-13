@@ -41,6 +41,7 @@ const IXWORLD_ALLOWED_PREFIXES = [
   "/_next",
   "/sign-in",
   "/sign-up",
+  "/messages",
 ];
 
 // Check if Clerk is configured with valid keys
@@ -67,13 +68,11 @@ const isClerkConfigured = Boolean(
 function buildCSPTemplate(standalone: boolean): string {
   const isDevelopment = process.env.NODE_ENV === "development";
 
-  // IxWorld standalone: relaxed CSP since nonce propagation doesn't work
-  // reliably and the map viewer is public content only
+  // Use nonce-based script-src for both main app and standalone IxWorld
+  // strict-dynamic allows scripts with a valid nonce to load additional scripts
   const scriptSrc = isDevelopment
     ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
-    : standalone
-      ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://static.cloudflareinsights.com`
-      : `script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`;
+    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://static.cloudflareinsights.com`;
 
   const directives = [
     `default-src 'self'`,
@@ -81,7 +80,7 @@ function buildCSPTemplate(standalone: boolean): string {
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https: http:`,
     `font-src 'self' https://fonts.gstatic.com data:`,
-    `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://api.clerk.com https://ixwiki.com https://maps.ixwiki.com https://commons.wikimedia.org https://api.unsplash.com https://*.tile.openstreetmap.org https://demotiles.maplibre.org https://protomaps.github.io wss: ws:`,
+    `connect-src 'self' https: wss: ws:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com`,
     `worker-src 'self' blob:`,
     `object-src 'none'`,
@@ -178,6 +177,14 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
     pathname === "/favicon.ico" ||
     IXWORLD_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))
   ) {
+    return null;
+  }
+
+  // Everything else → allow if it's a potential country slug (one path segment)
+  // or redirect to main IxStats for anything else
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 1) {
+    // Allow single-segment paths (could be country slugs)
     return null;
   }
 

@@ -395,7 +395,7 @@ const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
  * Cached for 60 seconds to avoid excessive DB reads during batch calculations.
  */
 export async function getEconomicConfigFromDB(
-  db: PrismaClient
+  db: any
 ): Promise<EconomicConfig> {
   // Return cached value if still fresh
   if (configCache && Date.now() < configCache.expires) {
@@ -410,8 +410,8 @@ export async function getEconomicConfigFromDB(
     });
 
     const m = configs.reduce(
-      (acc, c) => {
-        acc[c.key] = c.value;
+      (acc: Record<string, string>, c: any) => {
+        acc[c.key as string] = c.value as string;
         return acc;
       },
       {} as Record<string, string>

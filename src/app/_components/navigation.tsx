@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Activity,
@@ -101,17 +101,17 @@ interface ContextualMenuDefinition {
 
 // ── Nav item color config (ShineBorder hex + icon glow/hover classes) ──
 const NAV_COLORS: Record<string, { shine: string[]; glow: string; hover: string }> = {
-  "MyCountry®":   { shine: ["#f59e0b", "#eab308", "#fbbf24"], glow: "text-amber-400",   hover: "group-hover:text-amber-400" },
-  "ThinkPages":   { shine: ["#3b82f6", "#1d4ed8", "#60a5fa"], glow: "text-blue-400",    hover: "group-hover:text-blue-400" },
-  "Dashboard":    { shine: ["#10b981", "#059669", "#34d399"], glow: "text-emerald-400", hover: "group-hover:text-emerald-400" },
-  "Feed":         { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400",  hover: "group-hover:text-purple-400" },
-  "Explore":      { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400",  hover: "group-hover:text-purple-400" },
-  "Countries":    { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400",  hover: "group-hover:text-purple-400" },
-  "Intelligence": { shine: ["#6366f1", "#4f46e5", "#818cf8"], glow: "text-indigo-400",  hover: "group-hover:text-indigo-400" },
-  "Admin":        { shine: ["#ef4444", "#dc2626", "#f87171"], glow: "text-red-400",     hover: "group-hover:text-red-400" },
-  "Cards":        { shine: ["#06b6d4", "#0891b2", "#22d3ee"], glow: "text-cyan-400",    hover: "group-hover:text-cyan-400" },
-  "Help":         { shine: ["#fb923c", "#f97316", "#fdba74"], glow: "text-orange-400",  hover: "group-hover:text-orange-400" },
-  "Forum":        { shine: ["#f97316", "#ea580c", "#fb923c"], glow: "text-orange-400",  hover: "group-hover:text-orange-400" },
+  "MyCountry®": { shine: ["#f59e0b", "#eab308", "#fbbf24"], glow: "text-amber-400", hover: "group-hover:text-amber-400" },
+  "ThinkPages": { shine: ["#3b82f6", "#1d4ed8", "#60a5fa"], glow: "text-blue-400", hover: "group-hover:text-blue-400" },
+  "Dashboard": { shine: ["#10b981", "#059669", "#34d399"], glow: "text-emerald-400", hover: "group-hover:text-emerald-400" },
+  "Feed": { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400", hover: "group-hover:text-purple-400" },
+  "Explore": { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400", hover: "group-hover:text-purple-400" },
+  "Countries": { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400", hover: "group-hover:text-purple-400" },
+  "Intelligence": { shine: ["#6366f1", "#4f46e5", "#818cf8"], glow: "text-indigo-400", hover: "group-hover:text-indigo-400" },
+  "Admin": { shine: ["#ef4444", "#dc2626", "#f87171"], glow: "text-red-400", hover: "group-hover:text-red-400" },
+  "Cards": { shine: ["#06b6d4", "#0891b2", "#22d3ee"], glow: "text-cyan-400", hover: "group-hover:text-cyan-400" },
+  "Help": { shine: ["#fb923c", "#f97316", "#fdba74"], glow: "text-orange-400", hover: "group-hover:text-orange-400" },
+  "Forum": { shine: ["#f97316", "#ea580c", "#fb923c"], glow: "text-orange-400", hover: "group-hover:text-orange-400" },
 };
 const DEFAULT_NAV = { shine: ["#3b82f6", "#8b5cf6", "#06b6d4"], glow: "text-blue-400", hover: "group-hover:text-blue-400" };
 
@@ -263,7 +263,7 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
         items: [
           {
             name: "Social Feed",
-            href: "/dashboard",
+            href: "/thinkpages",
             icon: Rss,
             description: "Public declarations, diplomatic announcements, and intelligence broadcasts.",
           },
@@ -430,7 +430,7 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
           },
           {
             name: "ThinkPages",
-            href: "/dashboard",
+            href: "/thinkpages",
             icon: Rss,
             description: "Diplomatic communications and intelligence sharing.",
           },
@@ -518,9 +518,6 @@ export function Navigation() {
 
   // Get premium status
   const { isPremium } = usePremium();
-
-  // Hide the global navigation entirely on maps pages since MapDynamicIsland handles it
-  if (pathname?.startsWith("/maps")) return null;
 
   const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
@@ -628,137 +625,129 @@ export function Navigation() {
     };
   }, []);
 
-  const navigationItems: NavigationItem[] = [
-    {
-      name: "Dashboard",
-      href: "/dashboard",
-      icon: BarChart3,
-      requiresAuth: true,
-    },
-    {
-      name: "Explore",
-      href: "/countries",
-      icon: Globe,
-      requiresAuth: false,
-    },
-    {
-      name: "MyCountry®",
-      href: "/mycountry",
-      icon: Crown,
-      requiresAuth: true,
-      requiresCountry: true,
-      description: "Your national dashboard and executive command center",
-    },
-    {
-      name: "Maps",
-      href: "/maps",
-      icon: Compass,
-      requiresAuth: false,
-      description: "Interactive world map and geographic exploration",
-    },
-    {
-      name: "ThinkPages",
-      href: "/dashboard",
-      icon: Rss,
-      requiresAuth: false,
-      description: "Diplomatic communications and intelligence sharing platform",
-      isDropdown: true,
-      dropdownItems: [
-        {
-          name: "Social Feed",
-          href: "/dashboard",
-          icon: MessageSquare,
-          description: "Public declarations and diplomatic announcements",
-        },
-        {
-          name: "ThinkTanks",
-          href: "/messages/groups",
-          icon: Users,
-          description: "Intelligence networks and diplomatic working groups",
-        },
-        {
-          name: "Messages",
-          href: "/messages",
-          icon: Send,
-          description: "Unified messaging — DMs, diplomatic, wiki, forum",
-        },
-      ],
-    },
-    {
-      name: "Forum",
-      href: "/forum",
-      icon: MessageSquare,
-      requiresAuth: false,
-      description: "Community discussion forums",
-    },
-    {
-      name: "Admin",
-      href: "/admin",
-      icon: Settings,
-      requiresAuth: true,
-      adminOnly: true,
-    },
-    {
-      name: "Wiki",
-      href: "/wiki",
-      icon: FaWikipediaW,
-      requiresAuth: false,
-    },
-    {
-      name: "Cards",
-      href: "/vault",
-      icon: GiCardRandom,
-      requiresAuth: true,
-      adminOnly: true,
-      description: "IxCards trading card system (Admin Only)",
-    },
-    {
-      name: "Labs",
-      href: "",
-      icon: GiSoapExperiment,
-      requiresAuth: true,
-      isDropdown: true,
-      dropdownItems: [
-        {
-          name: "Vexel",
-          href: "/labs/vexel",
-          icon: GiVibratingShield,
-          description: "Heraldry generator",
-        },
-        {
-          name: "Onoma",
-          href: "/labs/onoma",
-          icon: Database,
-          description: "Markov name generator",
-        },
-        {
-          name: "Strata",
-          href: "/labs/strata",
-          icon: FaTreeCity,
-          description: "City/roadmap generator",
-        },
-        {
-          name: "Dynas",
-          href: "/labs/dynas",
-          icon: GiFamilyTree,
-          description: "Family/Dynasty Generator",
-        },
-        {
-          name: "Nomora",
-          href: "/labs/nomora",
-          icon: FaLanguage,
-          description: "Conlang Generator",
-        },
-      ],
-    },
-    {
-      name: "Help",
-      href: "/help",
-      icon: BookOpen,
-      requiresAuth: false,
-      description: "Documentation and guides",
-    },
-  ];
+
+  const navigationItems: NavigationItem[] = useMemo(() => {
+    const items: NavigationItem[] = [
+      {
+        name: "Dashboard",
+        href: "/dashboard",
+        icon: BarChart3,
+        requiresAuth: true,
+      },
+      {
+        name: "Explore",
+        href: "/countries",
+        icon: Globe,
+        requiresAuth: false,
+      },
+      {
+        name: "MyCountry®",
+        href: "/mycountry",
+        icon: Crown,
+        requiresAuth: true,
+        requiresCountry: true,
+        description: "Your national dashboard and executive command center",
+      },
+      {
+        name: "Maps",
+        href: "/maps",
+        icon: Compass,
+        requiresAuth: false,
+        description: "Interactive world map and geographic exploration",
+      },
+      {
+        name: "ThinkPages",
+        href: "/thinkpages",
+        icon: Rss,
+        requiresAuth: false,
+        description: "Diplomatic communications and intelligence sharing platform",
+      },
+      {
+        name: "Forum",
+        href: "https://forum.ixwiki.com/",
+        icon: MessageSquare,
+        requiresAuth: false,
+        description: "Community discussion forums",
+      },
+
+      {
+        name: "Admin",
+        href: "/admin",
+        icon: Settings,
+        requiresAuth: true,
+        adminOnly: true,
+      },
+      {
+        name: "Wiki",
+        href: "/wiki",
+        icon: FaWikipediaW,
+        requiresAuth: false,
+      },
+      {
+        name: "Cards",
+        href: "/vault",
+        icon: GiCardRandom,
+        requiresAuth: true,
+        adminOnly: true,
+        description: "IxCards trading card system (Admin Only)",
+      },
+      {
+        name: "Labs",
+        href: "",
+        icon: GiSoapExperiment,
+        requiresAuth: true,
+        isDropdown: true,
+        dropdownItems: [
+          {
+            name: "Vexel",
+            href: "/labs/vexel",
+            icon: GiVibratingShield,
+            description: "Heraldry generator",
+          },
+          {
+            name: "Onoma",
+            href: "/labs/onoma",
+            icon: Database,
+            description: "Markov name generator",
+          },
+          {
+            name: "Strata",
+            href: "/labs/strata",
+            icon: FaTreeCity,
+            description: "City/roadmap generator",
+          },
+          {
+            name: "Dynas",
+            href: "/labs/dynas",
+            icon: GiFamilyTree,
+            description: "Family/Dynasty Generator",
+          },
+          {
+            name: "Nomora",
+            href: "/labs/nomora",
+            icon: FaLanguage,
+            description: "Conlang Generator",
+          },
+        ],
+      },
+      {
+        name: "Help",
+        href: "/help",
+        icon: BookOpen,
+        requiresAuth: false,
+        description: "Documentation and guides",
+      },
+    ];
+
+    if (isStandalone) {
+      // Simplified navbar for standalone maps build
+      return items.filter(item =>
+        ["Explore", "Maps", "Forum", "ThinkPages"].includes(item.name)
+      );
+    }
+
+    return items;
+  }, [isStandalone]);
 
   const isCurrentPage = (href: string) => {
     const cleanedHref = href.split("?")[0].split("#")[0] || "/";
@@ -777,17 +766,8 @@ export function Navigation() {
   const setupStatus = getSetupStatus();
 
   // Debug logging for navigation visibility
-  console.log("[Navigation] Debug info:", {
-    isLoaded,
-    user: !!user,
-    profileLoading,
-    userProfile: userProfile
-      ? { countryId: userProfile.countryId, hasCountry: !!userProfile.countryId }
-      : null,
-    setupStatus,
-    isAdmin,
-    isPremium,
-  });
+  // Navigation rendering logic follows
+
 
   // Filter visible navigation items based on user state and admin settings
   const visibleNavItems = navigationItems
@@ -851,13 +831,15 @@ export function Navigation() {
   const leftNavItems = visibleNavItems.slice(0, leftCount);
   const rightNavItems = visibleNavItems.slice(leftCount);
 
+  // Hide the global navigation entirely on maps pages since MapDynamicIsland handles it
+  if (pathname?.startsWith("/maps")) return null;
+
   return (
     <>
-      <nav className={`navigation-bar relative z-[10005] border-b backdrop-blur-xl transition-colors duration-300 ${
-        isWikiPage
+      <nav className={`navigation-bar relative z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${isWikiPage
           ? "bg-[var(--wikios-bg)] border-[var(--wikios-border)] shadow-lg"
           : "from-background/95 via-secondary/95 to-background/95 border-border bg-gradient-to-r shadow-2xl"
-      }`}>
+        }`}>
         {!isWikiPage && (
           <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
         )}
@@ -865,7 +847,7 @@ export function Navigation() {
         <div className="mx-auto max-w-none px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="relative hidden h-16 w-full items-center justify-between lg:flex">
             {/* Left Side Navigation */}
-            <div className="z-[9995] flex flex-1 items-center justify-start gap-2 xl:gap-3">
+            <div className="z-[var(--z-floating)] flex flex-1 items-center justify-start gap-2 xl:gap-3">
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   {leftNavItems.map((item) => {
@@ -950,8 +932,7 @@ export function Navigation() {
                             <div className="relative">
                               <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
                                 <Icon
-                                  className={`h-4 w-4 ${
-                                    item.name === "MyCountry®"
+                                  className={`h-4 w-4 ${item.name === "MyCountry®"
                                       ? "text-amber-400"
                                       : item.name === "ThinkPages"
                                         ? "text-blue-400"
@@ -970,12 +951,11 @@ export function Navigation() {
                                                     : item.name === "Help"
                                                       ? "text-orange-400"
                                                       : "text-blue-400"
-                                  }`}
+                                    }`}
                                 />
                               </div>
                               <Icon
-                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
-                                  item.name === "MyCountry®"
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${item.name === "MyCountry®"
                                     ? "group-hover:text-amber-400"
                                     : item.name === "ThinkPages"
                                       ? "group-hover:text-blue-400"
@@ -992,7 +972,7 @@ export function Navigation() {
                                                 : item.name === "Help"
                                                   ? "group-hover:text-orange-400"
                                                   : "group-hover:text-blue-400"
-                                }`}
+                                  }`}
                                 aria-hidden="true"
                               />
                             </div>
@@ -1045,13 +1025,13 @@ export function Navigation() {
             </div>
 
             {/* Desktop Command Palette */}
-            <div className="absolute top-1/2 left-1/2 z-[10010] -translate-x-1/2 -translate-y-1/2 transform max-w-[400px]">
+            <div className="absolute top-1/2 left-1/2 z-[var(--z-command)] -translate-x-1/2 -translate-y-1/2 transform max-w-[400px]">
               <div className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 opacity-60 blur-3xl" />
               {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
             </div>
 
             {/* Right Side Navigation */}
-            <div className="z-[9995] flex flex-1 items-center justify-end gap-2 xl:gap-3">
+            <div className="z-[var(--z-floating)] flex flex-1 items-center justify-end gap-2 xl:gap-3">
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   {rightNavItems.map((item) => {
@@ -1149,8 +1129,7 @@ export function Navigation() {
                             <div className="relative">
                               <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
                                 <Icon
-                                  className={`h-4 w-4 ${
-                                    item.name === "MyCountry®"
+                                  className={`h-4 w-4 ${item.name === "MyCountry®"
                                       ? "text-amber-400"
                                       : item.name === "ThinkPages"
                                         ? "text-blue-400"
@@ -1169,12 +1148,11 @@ export function Navigation() {
                                                     : item.name === "Help"
                                                       ? "text-orange-400"
                                                       : "text-blue-400"
-                                  }`}
+                                    }`}
                                 />
                               </div>
                               <Icon
-                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
-                                  item.name === "MyCountry®"
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${item.name === "MyCountry®"
                                     ? "group-hover:text-amber-400"
                                     : item.name === "ThinkPages"
                                       ? "group-hover:text-blue-400"
@@ -1191,7 +1169,7 @@ export function Navigation() {
                                                 : item.name === "Help"
                                                   ? "group-hover:text-orange-400"
                                                   : "group-hover:text-blue-400"
-                                }`}
+                                  }`}
                                 aria-hidden="true"
                               />
                             </div>
@@ -1271,7 +1249,7 @@ export function Navigation() {
       <AnimatePresence>
         {isMobile && mobileMenuOpen && (
           <motion.div
-            className="fixed inset-0 z-[10030]"
+            className="fixed inset-0 z-[calc(var(--z-navigation)+100)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1391,18 +1369,16 @@ export function Navigation() {
                           key={item.name}
                           href={item.href}
                           onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[60px] ${
-                            current
+                          className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[60px] ${current
                               ? "border-primary/40 bg-primary/10 text-foreground shadow-sm"
                               : "border-border/40 text-muted-foreground hover:border-border hover:bg-accent/10 hover:text-foreground"
-                          }`}
+                            }`}
                         >
                           <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0 ${
-                              current
+                            className={`flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0 ${current
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted/60 text-foreground"
-                            }`}
+                              }`}
                           >
                             <Icon className="h-5 w-5" />
                           </span>
@@ -1454,16 +1430,14 @@ export function Navigation() {
                             key={item.name}
                             href={item.href}
                             onClick={() => setMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[56px] ${
-                              active
+                            className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[56px] ${active
                                 ? "border-primary/40 bg-primary/10 text-foreground shadow-sm"
                                 : "border-border/40 text-muted-foreground hover:border-border hover:bg-accent/10 hover:text-foreground"
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 ${
-                                active ? "bg-primary text-primary-foreground" : "bg-muted/60"
-                              }`}
+                              className={`flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 ${active ? "bg-primary text-primary-foreground" : "bg-muted/60"
+                                }`}
                             >
                               <Icon className="h-4 w-4" />
                             </span>
@@ -1505,9 +1479,8 @@ export function Navigation() {
 
       {!isMobile && (
         <div
-          className={`fixed z-[10020] will-change-transform ${
-            isSticky ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
+          className={`fixed z-[var(--z-command)] will-change-transform ${isSticky ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
           style={{
             top: isSticky ? "8px" : "64px",
             left: "50%",
@@ -1518,6 +1491,9 @@ export function Navigation() {
           <CommandPalette isSticky={isSticky} scrollY={scrollY} />
         </div>
       )}
+      
+      {/* Spacer to push content down since navbar is fixed */}
+      <div className="h-14 lg:h-16" />
     </>
   );
 }

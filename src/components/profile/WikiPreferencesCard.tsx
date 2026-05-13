@@ -88,102 +88,100 @@ export function WikiPreferencesCard() {
   }
 
   return (
-    <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <BookOpen className="h-5 w-5 text-indigo-500" />
-          Wiki &amp; Lore Preferences
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Wiki Auto-Scan Toggle */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="space-y-0.5">
-            <Label htmlFor="wiki-auto-scan" className="text-sm font-medium text-foreground">
-              Wiki Auto-Scan
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Automatically show wiki lore sections in all tabs
-            </p>
-          </div>
-          <Switch
-            id="wiki-auto-scan"
-            checked={localPrefs.wikiAutoScan}
-            onCheckedChange={(checked) => handleUpdate({ wikiAutoScan: checked })}
-            disabled={updateMutation.isPending}
-          />
-        </div>
-
-        <div className="h-px bg-border/50" />
-
-        {/* Wiki Source Priority */}
-        <div className="space-y-3">
-          <div>
-            <Label className="text-sm font-medium text-foreground">Wiki Source Priority</Label>
-            <p className="text-xs text-muted-foreground">
-              Choose which wiki source to check first for articles
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {SOURCE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleUpdate({ wikiSourcePriority: option.value })}
-                disabled={updateMutation.isPending}
-                className={cn(
-                  "rounded-lg border px-3 py-2.5 text-left transition-all duration-150",
-                  localPrefs.wikiSourcePriority === option.value
-                    ? "border-indigo-500/50 bg-indigo-500/10 text-foreground shadow-sm"
-                    : "border-border/50 bg-background/50 text-muted-foreground hover:border-border hover:bg-background/80"
-                )}
-              >
-                <span className="block text-sm font-medium">{option.label}</span>
-                <span className="block text-xs opacity-70">{option.description}</span>
-              </button>
-            ))}
+    <div className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+      <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+              <BookOpen className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">LoreScanner</h2>
+            </div>
           </div>
         </div>
 
-        <div className="h-px bg-border/50" />
+        <div className="space-y-6">
+          <div className="flex items-center justify-between rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
+            <div>
+              <Label htmlFor="wiki-auto-scan" className="text-sm font-bold text-slate-900 dark:text-white">
+                Autonomous Intelligence
+              </Label>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Auto-scan for relevant lore
+              </p>
+            </div>
+            <Switch
+              id="wiki-auto-scan"
+              checked={localPrefs.wikiAutoScan}
+              onCheckedChange={(checked) => handleUpdate({ wikiAutoScan: checked })}
+              disabled={updateMutation.isPending}
+              className="data-[state=checked]:bg-indigo-600"
+            />
+          </div>
 
-        {/* Lore Display Mode */}
-        <div className="space-y-3">
-          <div>
-            <Label className="text-sm font-medium text-foreground">Lore Display Mode</Label>
-            <p className="text-xs text-muted-foreground">
-              Control how wiki lore content appears throughout the app
-            </p>
+          <div className="space-y-3">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Primary Knowledge Base
+            </label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {SOURCE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleUpdate({ wikiSourcePriority: option.value })}
+                  disabled={updateMutation.isPending}
+                  className={cn(
+                    "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
+                    localPrefs.wikiSourcePriority === option.value
+                      ? "border-indigo-500/50 bg-indigo-500/10 text-slate-900 dark:text-white shadow-inner shadow-indigo-500/5"
+                      : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400 dark:hover:bg-slate-800"
+                  )}
+                >
+                  <span className="text-xs font-bold uppercase tracking-widest">{option.label}</span>
+                  <span className="text-[10px] font-medium opacity-70">{option.description}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {DISPLAY_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => handleUpdate({ loreDisplayMode: option.value })}
-                disabled={updateMutation.isPending}
-                className={cn(
-                  "rounded-lg border px-3 py-2.5 text-left transition-all duration-150",
-                  localPrefs.loreDisplayMode === option.value
-                    ? "border-indigo-500/50 bg-indigo-500/10 text-foreground shadow-sm"
-                    : "border-border/50 bg-background/50 text-muted-foreground hover:border-border hover:bg-background/80"
-                )}
-              >
-                <span className="block text-sm font-medium">{option.label}</span>
-                <span className="block text-xs opacity-70">{option.description}</span>
-              </button>
-            ))}
+
+          <div className="space-y-3">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Interface Integration
+            </label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {DISPLAY_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleUpdate({ loreDisplayMode: option.value })}
+                  disabled={updateMutation.isPending}
+                  className={cn(
+                    "glass-interactive flex flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-150",
+                    localPrefs.loreDisplayMode === option.value
+                      ? "border-indigo-500/50 bg-indigo-500/10 text-slate-900 dark:text-white shadow-inner shadow-indigo-500/5"
+                      : "border-slate-200 bg-white/30 text-slate-600 hover:bg-white dark:border-slate-800 dark:bg-slate-900/30 dark:text-slate-400 dark:hover:bg-slate-800"
+                  )}
+                >
+                  <span className="text-xs font-bold uppercase tracking-widest">{option.label}</span>
+                  <span className="text-[10px] font-medium opacity-70">{option.description}</span>
+                </button>
+              ))}
+            </div>
           </div>
+
+          {(updateMutation.isPending || updateMutation.isError) && (
+            <div className="mt-4 flex items-center justify-center">
+              {updateMutation.isPending && (
+                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 animate-pulse">Synchronizing State...</p>
+              )}
+              {updateMutation.isError && (
+                <p className="text-[10px] font-bold uppercase tracking-widest text-red-500">Transmission Failed</p>
+              )}
+            </div>
+          )}
         </div>
-
-        {/* Saving indicator */}
-        {updateMutation.isPending && (
-          <p className="text-xs text-muted-foreground animate-pulse">Saving preferences...</p>
-        )}
-        {updateMutation.isError && (
-          <p className="text-xs text-destructive">Failed to save. Please try again.</p>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

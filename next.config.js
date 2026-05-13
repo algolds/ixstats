@@ -26,11 +26,16 @@ const normalizeBasePath = (value) => {
 };
 
 const resolveBasePath = () => {
+  // If explicitly building for IxWorld standalone (maps.ixwiki.com), ALWAYS use empty base path
+  if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
+    return "";
+  }
+
   const hasBasePathEnv = Object.prototype.hasOwnProperty.call(process.env, "BASE_PATH");
   const rawBasePath = hasBasePathEnv
     ? process.env.BASE_PATH
     : process.env.NODE_ENV === "production"
-      ? "/projects/ixstates"
+      ? "/projects/ixstats"
       : "";
   return normalizeBasePath(rawBasePath);
 };
@@ -303,7 +308,7 @@ const config = {
   },
 
   async rewrites() {
-    return [
+    const baseRewrites = [
       {
         source: "/api/ixwiki-proxy/:path*",
         destination: "https://ixwiki.com/:path*",
@@ -317,6 +322,22 @@ const config = {
         destination: "https://althistory.fandom.com/:path*",
       },
     ];
+
+    if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
+      return {
+        beforeFiles: [
+          {
+            // Map root-level slugs to countries/[slug] for standalone mode
+            // Exclude reserved top-level paths
+            source: "/:slug((?!maps|api|profile|sign-in|sign-up|flags|_next|favicon.ico|placeholder|messages).*)",
+            destination: "/countries/:slug",
+          },
+        ],
+        fallback: baseRewrites,
+      };
+    }
+
+    return baseRewrites;
   },
 
   async headers() {

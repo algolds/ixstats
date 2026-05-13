@@ -583,16 +583,20 @@
 [data-radix-select-content],
 [data-radix-dropdown-menu-content],
 [data-radix-popover-content],
-[data-radix-tooltip-content],
+[data-radix-tooltip-content] {
+  z-index: var(--z-popover) !important;
+  position: fixed !important;
+}
+
 [data-radix-dialog-content],
 [data-radix-alert-dialog-content] {
-  z-index: 13050 !important;
+  z-index: var(--z-modal) !important;
   position: fixed !important;
 }
 
 /* Radix Portal elements (where most dropdowns render) */
 [data-radix-portal] {
-  z-index: 13050 !important;
+  z-index: var(--z-popover) !important;
 }
 
 /* Specific Tailwind/Radix components by attribute selectors */
@@ -600,7 +604,7 @@
 [data-state="open"][role="listbox"],
 [data-state="open"][role="combobox"],
 [data-side="top"], [data-side="bottom"], [data-side="left"], [data-side="right"] {
-  z-index: 13050 !important;
+  z-index: var(--z-popover) !important;
 }
 
 /* Additional comprehensive dropdown selectors */
@@ -611,12 +615,12 @@
 [role="listbox"],
 [role="combobox"],
 [data-radix-popper-content-wrapper] {
-  z-index: 13050 !important;
+  z-index: var(--z-popover) !important;
 }
 
 /* Ensure dialog overlays are properly layered */
 [data-radix-dialog-overlay] {
-  z-index: 13040 !important;
+  z-index: var(--z-backdrop) !important;
 }
 
 /* Glass hierarchy base z-indices (much lower than dropdowns) */
@@ -670,12 +674,12 @@
   }
 }
 
-/* MapLibre GL Controls - Ensure they appear above navigation (z-10005) */
+/* MapLibre GL Controls - Ensure they appear above navigation (var(--z-navigation)) */
 .maplibregl-ctrl-top-right,
 .maplibregl-ctrl-top-left,
 .maplibregl-ctrl-bottom-right,
 .maplibregl-ctrl-bottom-left {
-  z-index: 10100 !important;
+  z-index: calc(var(--z-navigation) + 100) !important;
 }
 
 /* Hide MapLibre's built-in loading indicator and attribution */

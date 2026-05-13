@@ -14,6 +14,7 @@ import {
   Crown, BookOpen, Shield, Swords, ChevronDown, ChevronRight, Image as ImageIcon,
   Pencil,
 } from "lucide-react";
+import Link from "next/link";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/map-config";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";

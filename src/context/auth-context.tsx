@@ -9,6 +9,8 @@ import {
   UserButton as ClerkUserButton,
 } from "@clerk/nextjs";
 import type { GetTokenOptions, SignOutOptions, UserResource } from "@clerk/types";
+import { Link2 } from "lucide-react";
+import { IxnayIDCard } from "~/app/profile/_components/IxnayIDCard";
 
 interface AuthContextType {
   user: UserResource | null;
@@ -136,5 +138,15 @@ export function SignInButton(props: React.ComponentProps<typeof ClerkSignInButto
 
 export function UserButton(props: React.ComponentProps<typeof ClerkUserButton>) {
   assertClerkConfigured("UserButton");
-  return <ClerkUserButton {...props} />;
+  return (
+    <ClerkUserButton {...props}>
+      <ClerkUserButton.UserProfilePage
+        label="IxnayID"
+        url="ixnayid"
+        labelIcon={<Link2 className="h-4 w-4" />}
+      >
+        <IxnayIDCard />
+      </ClerkUserButton.UserProfilePage>
+    </ClerkUserButton>
+  );
 }

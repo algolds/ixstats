@@ -20,11 +20,13 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   Search, X, Settings, Globe, MapPin, Hexagon, Landmark,
   Loader2, Sun, Moon, Monitor, User, LogIn, Crown, Map as MapIcon,
-  Clock, Calendar,
+  Clock, Calendar, Bell, MessageCircle, Link2,
 } from "lucide-react";
 import { useUser, SignInButton } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
 import { useIxTime } from "~/contexts/IxTimeContext";
+import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
+import { useNotificationStore } from "~/stores/notificationStore";
 import { useDebounce } from "~/hooks/useDebounce";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
@@ -139,6 +141,16 @@ export function MapDynamicIsland({
   });
   const countryName = userProfile?.country?.name;
 
+  // Notification stats
+  const { stats: notificationStats } = useNotificationStore();
+  const unreadNotifications = notificationStats.unread || 0;
+
+  // Messages unread count
+  const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
+
+  // Unified unread count for the main pill (optional, currently using separate badges)
+  const totalUnread = unreadNotifications + messageUnreadCount;
+
   // ---------------------------------------------------------------------------
   // Geo Search
   // ---------------------------------------------------------------------------
@@ -240,7 +252,7 @@ export function MapDynamicIsland({
   return (
     <div
       ref={containerRef}
-      className="absolute left-1/2 top-3 z-30 -translate-x-1/2"
+      className="absolute left-1/2 top-3 z-[var(--z-floating)] -translate-x-1/2"
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
@@ -413,6 +425,26 @@ export function MapDynamicIsland({
                 <Search className="h-3.5 w-3.5" />
               </button>
 
+              {/* Unified Notification/Messages Badge */}
+              {user && totalUnread > 0 && (
+                <button
+                  onClick={() => router.push(messageUnreadCount > 0 ? "/messages" : "/notifications")}
+                  className="relative flex-shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  title={messageUnreadCount > 0 ? `${messageUnreadCount} unread messages` : `${unreadNotifications} notifications`}
+                >
+                  {messageUnreadCount > 0 ? (
+                    <MessageCircle className="h-3.5 w-3.5 text-blue-500" />
+                  ) : (
+                    <Bell className="h-3.5 w-3.5" />
+                  )}
+                  <span className={`absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-background ${
+                    messageUnreadCount > 0 ? "bg-red-500" : "bg-gradient-to-r from-blue-500 to-indigo-500"
+                  }`}>
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                </button>
+              )}
+
               {/* Settings */}
               <MapSettingsPopover
                 projectionMode={projectionMode}
@@ -550,7 +582,7 @@ function AuthSection({
       <PopoverContent
         side="bottom"
         align="center"
-        className="glass-none z-[10002] mt-2 w-64 rounded-2xl border border-border bg-popover p-0 shadow-2xl"
+        className="glass-none mt-2 w-64 rounded-2xl border border-border bg-popover p-0 shadow-2xl"
         sideOffset={8}
       >
         {/* Header */}
@@ -584,6 +616,13 @@ function AuthSection({
           >
             <User className="h-3.5 w-3.5" />
             User Settings
+          </button>
+          <button
+            onClick={() => router.push("/profile")}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            IxnayID Sync
           </button>
           {countryName && (
             <button
@@ -629,7 +668,7 @@ function MapSettingsPopover({
       <PopoverContent
         side="bottom"
         align="end"
-        className="glass-none z-[10002] mt-2 w-56 rounded-2xl border border-border bg-popover p-3 shadow-2xl"
+        className="glass-none mt-2 w-56 rounded-2xl border border-border bg-popover p-3 shadow-2xl"
         sideOffset={8}
       >
         {/* Theme */}

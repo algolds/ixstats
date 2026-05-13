@@ -110,6 +110,7 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
         <ChunkLoadErrorBoundary>
           <ClerkProvider
             publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+            nonce={headersList.get("x-csp-nonce") ?? undefined}
           >
             <AuthProvider>
               <AppContent />

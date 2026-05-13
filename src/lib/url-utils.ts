@@ -6,7 +6,10 @@
  */
 
 // Get base path from environment (must match next.config.js)
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
+const BASE_PATH = 
+  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true" 
+    ? "" 
+    : (process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "");
 
 /**
  * Creates a properly prefixed URL for the current environment
@@ -17,11 +20,12 @@ export function createUrl(path: string): string {
   // Ensure path starts with /
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
-  // Next.js Link and router automatically handle basePath
-  // BUT window.location.href assignments need manual prefix
-  // Since we can't detect the caller, always return the path with prefix
-  // Next.js will handle duplicate prefix in Link/router cases
-  return normalizedPath;
+  // Don't double-prefix if already has base path
+  if (BASE_PATH && normalizedPath.startsWith(BASE_PATH)) {
+    return normalizedPath;
+  }
+
+  return `${BASE_PATH}${normalizedPath}`;
 }
 
 /**

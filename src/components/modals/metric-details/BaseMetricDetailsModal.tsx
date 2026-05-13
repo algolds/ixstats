@@ -161,8 +161,6 @@ export function BaseMetricDetailsModal({
           "max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)]",
           "sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]",
           "lg:max-w-5xl",
-          // Z-index for proper stacking
-          "z-[12001]",
           // Scrolling
           "overflow-y-auto"
         )}

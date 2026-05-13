@@ -27,6 +27,9 @@ interface ChoroplethOverlayProps {
 
 /** Interpolate a hex color between stops based on a 0–1 value */
 function interpolateColor(value: number, stops: [number, string][]): string {
+  // Guard against non-numeric values
+  if (value === null || value === undefined || isNaN(value)) return stops[0]![1];
+  
   if (value <= stops[0]![0]) return stops[0]![1];
   if (value >= stops[stops.length - 1]![0]) return stops[stops.length - 1]![1];
 
@@ -35,10 +38,18 @@ function interpolateColor(value: number, stops: [number, string][]): string {
     const [t1, c1] = stops[i + 1]!;
     if (value >= t0 && value <= t1) {
       const t = (value - t0) / (t1 - t0);
-      const r = Math.round(parseInt(c0.slice(1, 3), 16) * (1 - t) + parseInt(c1.slice(1, 3), 16) * t);
-      const g = Math.round(parseInt(c0.slice(3, 5), 16) * (1 - t) + parseInt(c1.slice(3, 5), 16) * t);
-      const b = Math.round(parseInt(c0.slice(5, 7), 16) * (1 - t) + parseInt(c1.slice(5, 7), 16) * t);
-      return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+      // Ensure t is a valid number
+      const safeT = isNaN(t) ? 0 : t;
+      const r = Math.round(parseInt(c0.slice(1, 3), 16) * (1 - safeT) + parseInt(c1.slice(1, 3), 16) * safeT);
+      const g = Math.round(parseInt(c0.slice(3, 5), 16) * (1 - safeT) + parseInt(c1.slice(3, 5), 16) * safeT);
+      const b = Math.round(parseInt(c0.slice(5, 7), 16) * (1 - safeT) + parseInt(c1.slice(5, 7), 16) * safeT);
+      
+      // Ensure r, g, b are valid numbers
+      const safeR = isNaN(r) ? 0 : Math.max(0, Math.min(255, r));
+      const safeG = isNaN(g) ? 0 : Math.max(0, Math.min(255, g));
+      const safeB = isNaN(b) ? 0 : Math.max(0, Math.min(255, b));
+
+      return `#${safeR.toString(16).padStart(2, "0")}${safeG.toString(16).padStart(2, "0")}${safeB.toString(16).padStart(2, "0")}`;
     }
   }
   return stops[stops.length - 1]![1];
@@ -90,7 +101,7 @@ export function ChoroplethOverlay({ map, data, visible, colorScale = "neutral" }
 
     for (const feature of data.features) {
       const props = feature.properties;
-      if (!props?.id || props.value === undefined) continue;
+      if (!props?.id || props.value === undefined || props.value === null) continue;
 
       const color = interpolateColor(props.value as number, stops);
       matchExpr.push(props.id as string);

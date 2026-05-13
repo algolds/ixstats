@@ -12,11 +12,14 @@
   /* Z-depth levels */
   --z-background: -1;
   --z-surface: 0;
-  --z-floating: 10;
-  --z-overlay: 100;
-  --z-modal: 1000;
-  --z-tooltip: 10000;
-  --z-command: 10001;
+  --z-floating: 100;
+  --z-overlay: 1000;
+  --z-navigation: 5000;
+  --z-popover: 10000;
+  --z-toast: 50000;
+  --z-backdrop: 100000;
+  --z-modal: 100001;
+  --z-command: 110000;
   
   /* Blur intensity levels */
   --blur-subtle: 8px;

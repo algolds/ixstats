@@ -74,6 +74,10 @@
   ],
   "exclude": [
     "node_modules",
+    "public",
+    "docs",
+    "prisma/migrations",
+    "prisma/backups",
     "scripts",
     ".next",
     "dist",

@@ -80,7 +80,7 @@ fi
 echo ""
 
 # Check if port is available
-if netstat -tlnp 2>/dev/null | grep -q ":$DEVELOPMENT_PORT "; then
+if ss -tln | grep -q ":$DEVELOPMENT_PORT "; then
     echo "❌ Error: Port $DEVELOPMENT_PORT is already in use"
     echo "   To stop existing service: kill \$(lsof -ti:$DEVELOPMENT_PORT)"
     exit 1
@@ -91,10 +91,10 @@ echo "✅ Port $DEVELOPMENT_PORT is available"
 # Check PostgreSQL database connection
 if [[ "$DATABASE_URL" == postgresql://* ]]; then
     echo "✅ PostgreSQL database configured (with PostGIS support)"
-    # Test connection via Docker (uses trust auth for local socket)
-    docker exec ixstats-postgres psql -U postgres -d ixstats -tAc "SELECT COUNT(*) FROM \"Country\";" > /dev/null 2>&1 && \
-        echo "   Database connection verified ✓" || \
-        echo "   ⚠️  Warning: Could not verify database connection"
+    # Test connection via Docker (uses trust auth for local socket) - Backgrounded for speed
+    (docker exec ixstats-postgres psql -U postgres -d ixstats -tAc "SELECT 1;" > /dev/null 2>&1 && \
+        echo "   Database connection verified ✓") &
+    DB_CHECK_PID=$!
 else
     echo "⚠️  Warning: DATABASE_URL is not configured for PostgreSQL"
     echo "   Current: $DATABASE_URL"
@@ -113,20 +113,17 @@ echo "✅ Dependencies installed"
 echo ""
 
 # Clean stale production build artifacts from .next/ (prevents conflicts with dev server)
-if [ -d ".next/server" ] || [ -d ".next/static" ] || [ -f ".next/BUILD_ID" ]; then
+# Optimized cleanup: removes all except cache to preserve incremental compilation
+if [ -d ".next" ]; then
     echo "🧹 Cleaning stale production build artifacts from .next/..."
-    rm -rf .next/build .next/server .next/static .next/standalone .next/BUILD_ID \
-           .next/build-manifest.json .next/app-path-routes-manifest.json \
-           .next/export-marker.json .next/images-manifest.json \
-           .next/prerender-manifest.json .next/required-server-files.* \
-           .next/next-server.js.nft.json .next/next-minimal-server.js.nft.json \
-           .next/fallback-build-manifest.json .next/node_modules .next/package.json
+    find .next -mindepth 1 -maxdepth 1 ! -name 'cache' -exec rm -rf {} +
     echo "   Stale artifacts removed ✓"
 fi
 
-# Start Redis cache for rate limiting and caching
-echo "💾 Starting Redis cache server..."
-./scripts/setup-redis.sh start
+# Start Redis cache in background to avoid blocking
+echo "💾 Starting Redis cache server (background)..."
+./scripts/setup-redis.sh start > /dev/null 2>&1 &
+REDIS_PID=$!
 echo ""
 
 # Start the development server
@@ -152,10 +149,6 @@ echo "   Run 'bun run auth:check:dev' to verify auth configuration"
 echo ""
 
 # Memory optimization for development server (7.2GB total server RAM)
-# --max-old-space-size=4096: 4GB heap. Leaves ~3.2GB for wiki, forum, PostgreSQL, OS.
-#   With module graph optimizations (lucide-react manual registry, react-icons tree-shaking),
-#   actual usage stays ~1.5-2.5GB. Next.js 16 auto-restarts at 80% (3.2GB).
-# --expose-gc: Enable programmatic garbage collection (called by MemoryOptimizer at 65% threshold)
 export NODE_OPTIONS="--max-old-space-size=4096 --expose-gc"
 
 echo "   Memory config:"
@@ -164,6 +157,11 @@ echo "   • Proactive GC: enabled (--expose-gc)"
 echo "   • Cache sizes: reduced for dev (see dev-memory-config.ts)"
 echo ""
 
-# Start Next.js development server with Turbopack (default in Next.js 16, uses incremental compilation)
-# Pass --webpack to fall back to Webpack if Turbopack has issues with specific features
-exec bunx next dev --port "$DEVELOPMENT_PORT"
+# Wait for DB check to finish before starting (safety first, but it's been running in background)
+if [ -n "$DB_CHECK_PID" ]; then
+    wait $DB_CHECK_PID || echo "   ⚠️  Warning: Database connection verification failed"
+fi
+
+# Start Next.js development server with Turbopack
+# Use 'bun run next' instead of 'bunx next' to avoid overhead
+exec bun run next dev --port "$DEVELOPMENT_PORT"
