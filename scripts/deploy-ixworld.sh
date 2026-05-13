@@ -17,10 +17,19 @@ cd "$IXSTATS_DIR"
 echo "=== IxWorld Standalone Build & Deploy ==="
 
 # Step 1: Build
+# NEXT_PUBLIC_* vars are inlined at build time by Next.js, so we must
+# override all Clerk redirect URLs here (not just at PM2 runtime).
 echo "[1/3] Building..."
 BASE_PATH="" \
 NEXT_PUBLIC_BASE_PATH="" \
 NEXT_PUBLIC_IXWORLD_STANDALONE=true \
+NEXT_PUBLIC_CLERK_DOMAIN="clerk.ixwiki.com" \
+NEXT_PUBLIC_CLERK_SIGN_IN_URL="https://accounts.ixwiki.com/sign-in" \
+NEXT_PUBLIC_CLERK_SIGN_UP_URL="https://accounts.ixwiki.com/sign-up" \
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL="https://maps.ixwiki.com/maps" \
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL="https://maps.ixwiki.com/maps" \
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="https://maps.ixwiki.com/maps" \
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="https://maps.ixwiki.com/maps" \
 NODE_ENV=production \
 bunx next build 2>&1 | grep -E "Route|✓|✗|Error|error" | tail -5
 

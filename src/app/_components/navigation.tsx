@@ -58,6 +58,7 @@ import { stripBasePath } from "~/lib/base-path";
 import { UserProfileMenu } from "~/components/UserProfileMenu";
 import { useCountryFlag } from "~/hooks/useCountryFlags";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
+import { isStandaloneClient } from "~/lib/standalone-detection";
 
 interface NavigationItem {
   name: string;
@@ -518,6 +519,11 @@ export function Navigation() {
   // Get premium status
   const { isPremium } = usePremium();
 
+  // Hide the global navigation entirely on maps pages since MapDynamicIsland handles it
+  if (pathname?.startsWith("/maps")) return null;
+
+  const isStandalone = typeof window !== "undefined" && isStandaloneClient();
+
   // Get navigation settings from admin
   const { data: navigationSettings } = api.admin.getNavigationSettings.useQuery(undefined, {
     // Default to showing all tabs if query fails
@@ -799,6 +805,12 @@ export function Navigation() {
       if (item.requiresCountry && setupStatus !== "complete") return false;
       if (item.adminOnly && !isAdmin) return false;
       if (item.premiumOnly && !isPremium) return false;
+
+      // In standalone mode (IxWorld), heavily simplify the navbar
+      if (isStandalone) {
+        const allowedStandalone = ["Explore", "Maps", "Forum", "ThinkPages"];
+        if (!allowedStandalone.includes(item.name)) return false;
+      }
 
       // Check admin navigation settings
       if (navigationSettings) {

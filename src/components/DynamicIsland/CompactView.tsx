@@ -32,12 +32,15 @@ import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge
 import { usePermissions } from "~/hooks/usePermissions";
 import { withBasePath } from "~/lib/base-path";
 import type { CompactViewProps } from "./types";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { BookOpen, Trophy, Flame, History } from "lucide-react";
 import { HealthRing } from "../ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
 import { debugLog } from "~/lib/console-utils";
+import { isStandaloneClient } from "~/lib/standalone-detection";
+
+const isStandalone = typeof window !== "undefined" && isStandaloneClient();
 
 // Helper functions
 const getGreeting = (ixTime: number): string => {
@@ -71,6 +74,8 @@ function CompactViewComponent({
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
   const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
+  const diPathname = usePathname();
+  const isOnMapsPage = diPathname?.startsWith("/maps") || false;
 
   // Get user role information
   const { user: roleUser, permissions } = usePermissions();
@@ -307,7 +312,7 @@ function CompactViewComponent({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => (window.location.href = createAbsoluteUrl("/"))}
+                    onClick={() => (window.location.href = createAbsoluteUrl(isStandalone ? "/maps" : "/"))}
                     className={`group relative flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-110 active:scale-95 ${
                       isSticky ? "h-6 w-6" : "h-7 w-7"
                     }`}
@@ -463,6 +468,13 @@ function CompactViewComponent({
                     </button>
                   ) : isOnWikiPage ? (
                     <WikiProfileButton onSwitchMode={onSwitchMode} />
+                  ) : isOnMapsPage ? (
+                    <MapsProfileDropdown
+                      user={user}
+                      isLoaded={isLoaded}
+                      userProfile={userProfile}
+                      greeting={currentTime.greeting}
+                    />
                   ) : (
                   <Popover>
                     <PopoverTrigger>
@@ -592,7 +604,7 @@ function CompactViewComponent({
                             )}
 
                             {/* Action buttons */}
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className={`grid gap-3 ${isStandalone ? "grid-cols-1" : "grid-cols-2"}`}>
                               <Button
                                 size="sm"
                                 onClick={() =>
@@ -606,25 +618,27 @@ function CompactViewComponent({
                                 <Crown className="relative z-10 mr-2 h-4 w-4" />
                                 <span className="relative z-10 font-medium">Profile</span>
                               </Button>
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  (window.location.href = createAbsoluteUrl("/mycountry"))
-                                }
-                                className="group relative overflow-hidden border border-blue-400/50 bg-gradient-to-r from-blue-500/30 to-cyan-500/25 text-blue-800 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-blue-500/70 hover:from-blue-500/40 hover:to-cyan-500/35 hover:text-blue-900 hover:shadow-lg dark:border-blue-300/30 dark:from-blue-500/20 dark:to-cyan-500/20 dark:text-blue-200 dark:hover:border-blue-300/50 dark:hover:from-blue-500/30 dark:hover:to-cyan-500/30 dark:hover:text-blue-100"
-                              >
-                                <Target className="relative z-10 mr-2 h-4 w-4" />
-                                <span className="relative z-10 font-medium">MyCountry</span>
-                              </Button>
+                              {!isStandalone && (
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    (window.location.href = createAbsoluteUrl("/mycountry"))
+                                  }
+                                  className="group relative overflow-hidden border border-blue-400/50 bg-gradient-to-r from-blue-500/30 to-cyan-500/25 text-blue-800 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-blue-500/70 hover:from-blue-500/40 hover:to-cyan-500/35 hover:text-blue-900 hover:shadow-lg dark:border-blue-300/30 dark:from-blue-500/20 dark:to-cyan-500/20 dark:text-blue-200 dark:hover:border-blue-300/50 dark:hover:from-blue-500/30 dark:hover:to-cyan-500/30 dark:hover:text-blue-100"
+                                >
+                                  <Target className="relative z-10 mr-2 h-4 w-4" />
+                                  <span className="relative z-10 font-medium">MyCountry</span>
+                                </Button>
+                              )}
                             </div>
                           </div>
                         ) : (
                           <div className="py-6 text-center">
                             <div className="bg-muted/30 rounded-xl p-4">
                               <User className="mx-auto mb-3 h-12 w-12 text-blue-400" />
-                              <div className="text-muted-foreground mb-2">Welcome to IxStats!</div>
+                              <div className="text-muted-foreground mb-2">{isStandalone ? "Welcome to IxWorld!" : "Welcome to IxStats!"}</div>
                               <div className="text-muted-foreground mb-4 text-sm">
-                                Sign in to access your personalized dashboard
+                                {isStandalone ? "Sign in with IxnayID to edit maps" : "Sign in to access your personalized dashboard"}
                               </div>
                               <Button
                                 size="sm"
@@ -730,6 +744,131 @@ function CompactViewComponent({
 }
 
 export const CompactView = React.memo(CompactViewComponent);
+
+// ---------------------------------------------------------------------------
+// Maps Profile Dropdown — shown in DI on /maps page instead of greeting popover
+// ---------------------------------------------------------------------------
+
+import { SignInButton } from "~/context/auth-context";
+import { LogIn, Map } from "lucide-react";
+
+function MapsProfileDropdown({
+  user,
+  isLoaded,
+  userProfile,
+  greeting,
+}: {
+  user: any;
+  isLoaded: boolean;
+  userProfile: any;
+  greeting: string;
+}) {
+  const router = useRouter();
+
+  if (!isLoaded) {
+    return (
+      <span className="text-foreground/50 text-xs font-medium px-1.5 py-0.5 whitespace-nowrap">
+        Loading...
+      </span>
+    );
+  }
+
+  if (!user) {
+    // Not signed in — show sign-in prompt in the greeting area
+    return (
+      <SignInButton mode="modal">
+        <button className="flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 cursor-pointer">
+          <LogIn className="h-3 w-3 text-blue-400 opacity-70" />
+          <span className="text-foreground/70 text-xs font-medium whitespace-nowrap">
+            Sign in with IxnayID
+          </span>
+        </button>
+      </SignInButton>
+    );
+  }
+
+  // Signed in — show user profile popover
+  const countryName = userProfile?.country?.name;
+
+  return (
+    <Popover>
+      <PopoverTrigger>
+        <span className="flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-colors hover:bg-white/10 cursor-pointer">
+          {user.imageUrl ? (
+            <img
+              src={user.imageUrl}
+              alt=""
+              className="h-4 w-4 rounded-full object-cover ring-1 ring-white/20"
+            />
+          ) : (
+            <User className="h-3 w-3 text-blue-400 opacity-70" />
+          )}
+          <span className="text-foreground/70 text-xs font-medium whitespace-nowrap">
+            {greeting}{user.firstName ? `, ${user.firstName}` : ""}
+          </span>
+        </span>
+      </PopoverTrigger>
+      <PopoverContent
+        side="bottom"
+        align="center"
+        className="bg-card/95 border-border z-[10002] mt-2 w-72 rounded-xl p-0 shadow-2xl backdrop-blur-xl"
+        sideOffset={8}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 border-b border-border/50 px-4 py-3">
+          {user.imageUrl ? (
+            <img
+              src={user.imageUrl}
+              alt=""
+              className="h-8 w-8 rounded-full object-cover ring-2 ring-blue-400/30"
+            />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20">
+              <User className="h-4 w-4 text-blue-400" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold truncate">
+              {user.firstName || user.emailAddresses?.[0]?.emailAddress || "User"}
+            </div>
+            {countryName && (
+              <div className="text-[11px] text-muted-foreground truncate">
+                {countryName}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        <div className="p-2 space-y-0.5">
+          <button
+            onClick={() => router.push("/profile")}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-foreground/70 hover:bg-accent/10 hover:text-foreground transition-colors"
+          >
+            <User className="h-3.5 w-3.5" />
+            <span>Profile & Settings</span>
+          </button>
+          {countryName && (
+            <button
+              onClick={() => router.push(getNationUrl(countryName))}
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-foreground/70 hover:bg-accent/10 hover:text-foreground transition-colors"
+            >
+              <Crown className="h-3.5 w-3.5" />
+              <span>View {countryName}</span>
+            </button>
+          )}
+          <button
+            onClick={() => router.push("/maps")}
+            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-foreground/70 hover:bg-accent/10 hover:text-foreground transition-colors"
+          >
+            <Map className="h-3.5 w-3.5" />
+            <span>IxWorld Maps</span>
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Wiki Profile Button — shown in Dynamic Island on wiki pages without an article

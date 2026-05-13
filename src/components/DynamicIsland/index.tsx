@@ -234,6 +234,11 @@ function CommandPaletteContent({
 }
 
 export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteProps) {
+  const pathname = usePathname();
+
+  // On /maps pages, the MapDynamicIsland provides a dedicated map-specific DI
+  if (pathname?.startsWith("/maps")) return null;
+
   return (
     <div
       className={`z-[10000] flex items-center justify-center ${className || ""}`}

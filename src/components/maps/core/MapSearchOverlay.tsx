@@ -7,6 +7,7 @@ import { useDebounce } from "~/hooks/useDebounce";
 import { useTheme } from "~/context/theme-context";
 import { flagService } from "~/lib/flag-service";
 import { api } from "~/trpc/react";
+import { isStandaloneClient } from "~/lib/standalone-detection";
 
 export interface SearchResult {
   type: string;
@@ -128,7 +129,9 @@ export function MapSearchOverlay({ onSelectResult, projectionMode, onProjectionC
   return (
     <div
       ref={containerRef}
-      className="absolute left-1/2 top-3 z-20 w-[calc(100vw-24px)] -translate-x-1/2 sm:w-96"
+      className={`absolute left-1/2 z-20 w-[calc(100vw-24px)] -translate-x-1/2 sm:w-96 ${
+        isStandaloneClient() ? "top-16" : "top-3"
+      }`}
       onMouseDown={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >

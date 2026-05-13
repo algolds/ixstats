@@ -16,7 +16,7 @@ import { FeatureInfoPanel } from "./FeatureInfoPanel";
 import { StoryPinModal } from "./StoryPinModal";
 import { RouteInfoPanel } from "./RouteInfoPanel";
 import MapPinInfoPanel from "./MapPinInfoPanel";
-import { MapSearchOverlay } from "./MapSearchOverlay";
+import { MapDynamicIsland } from "./MapDynamicIsland";
 import { AnalyticsLegend } from "./AnalyticsLegend";
 import { MeasureTool } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
@@ -502,12 +502,12 @@ export function MapContainer({
       {/* MeasureTool (headless — button is in MapControls, this handles map logic + readout) */}
       {toolsVisible && <MeasureTool ref={measureToolRef} mapRef={mapRef} onActiveChange={setIsMeasuring} headless />}
 
-      {/* Search overlay (includes settings panel with theme + projection) */}
+      {/* Dynamic Island — unified auth, geo search, and settings */}
       {toolsVisible && (
-        <MapSearchOverlay
-          onSelectResult={handleSearchResult}
+        <MapDynamicIsland
           projectionMode={projectionMode}
           onProjectionChange={setProjectionMode}
+          onSearchResult={handleSearchResult}
         />
       )}
 

@@ -15,10 +15,8 @@ import {
   Pencil,
 } from "lucide-react";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/map-config";
-import { isStandaloneClient } from "~/lib/standalone-detection";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
-import Link from "next/link";
 import type { SelectedCountry } from "./IxWorldMap";
 import { SwipeableBottomSheet } from "./SwipeableBottomSheet";
 import { useCountryPanelData } from "~/hooks/useCountryPanelData";
@@ -594,10 +592,10 @@ export const CountryInfoPanel = memo(function CountryInfoPanel({ country, onClos
                   Edit Map
                 </button>
               )}
-              {summary.slug && !isStandaloneClient() && (
+              {summary.slug && (
                 <Link
                   href={`/countries/${summary.slug}`}
-                  className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-50 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-950/50"
                 >
                   View Full Profile
                   <ExternalLink className="h-3 w-3" />

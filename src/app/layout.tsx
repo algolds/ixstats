@@ -73,7 +73,10 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
                   <WebGLErrorHandler />
                   <MapPrefetcher />
                   {isStandalone ? (
-                    <main className="min-h-screen">{children}</main>
+                    <div className="flex min-h-screen flex-col">
+                      <Navigation />
+                      <main className="flex-1">{children}</main>
+                    </div>
                   ) : (
                     <div className="flex min-h-screen flex-col">
                       <Navigation />

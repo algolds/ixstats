@@ -36,6 +36,7 @@ const IXWORLD_ALLOWED_PREFIXES = [
   "/maps",
   "/api",
   "/countries",
+  "/profile",
   "/flags",
   "/_next",
   "/sign-in",
@@ -180,9 +181,9 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
     return null;
   }
 
-  // Everything else → redirect to main IxStates
+  // Everything else → redirect to main IxStats
   return NextResponse.redirect(
-    `https://ixwiki.com/projects/ixstates${pathname}`
+    `https://ixwiki.com/projects/ixstats${pathname}`
   );
 }
 
