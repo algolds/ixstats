@@ -46,7 +46,9 @@ import {
   MAP_DEFAULTS,
   OCEAN_COLOR,
   LAYER_CONFIGS,
+  MAP_SYMBOL_FONTS,
 } from "~/lib/map-config";
+import { getMapGlyphsUrl } from "~/lib/base-path";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -416,6 +418,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           style: {
             version: 8,
             name: "IxEarth-Editor",
+            glyphs: getMapGlyphsUrl(),
             sources: {},
             layers: [
               {
@@ -748,6 +751,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             "text-ignore-placement": false,
             "text-max-angle": 90,
             "text-offset": [0, -0.6],
+            "text-font": [...MAP_SYMBOL_FONTS.regular],
           },
           paint: {
             "text-color": "#64748b",
@@ -844,6 +848,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             "text-offset": [0, 1.2],
             "text-anchor": "top",
             "text-allow-overlap": false,
+            "text-font": [...MAP_SYMBOL_FONTS.regular],
           },
           paint: {
             "text-color": "#374151",
@@ -898,6 +903,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             "text-ignore-placement": false,
             "text-optional": true,
             "symbol-sort-key": 1,
+            "text-font": [...MAP_SYMBOL_FONTS.regular],
           },
           paint: {
             "text-color": "#6d28d9",

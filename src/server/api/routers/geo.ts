@@ -39,6 +39,7 @@ import {
   SOVEREIGNTY_TYPES,
   SOVEREIGNTY_TYPE_MAP,
   getSovereigntyColor,
+  DEMOTED_COUNTRY_NAMES,
 } from "~/lib/map-config";
 import { ActivityGenerator } from "~/lib/activity-generator";
 import { getTerrainForArea } from "~/lib/base-layer-query";
@@ -206,31 +207,33 @@ function setCache(key: string, data: FeatureCollection): void {
   }
 }
 
-/**
- * Pre-populate the layer cache for all map layers on startup.
- * Call this during server initialization so the first user request is instant.
- */
 export async function warmGeoCache(db: any): Promise<void> {
   const start = Date.now();
-  const layers = ["background", "altitudes", "political", "rivers", "icecaps", "climate", "lakes"];
+  const layers = ["background", "altitudes", "political", "rivers", "icecaps", "climate", "lakes", "country_labels"];
   let warmed = 0;
 
+  console.log(`[GeoCache] Warming cache for ${layers.length} layers...`);
+  const zoomBuckets: ZoomBucket[] = [0, 1, 2];
+
   let totalBytes = 0;
-  for (const layerType of layers) {
-    try {
-      const result = await loadLayerFromDB(db, layerType);
-      if (result) {
-        warmed++;
-        const bytes = JSON.stringify(result).length;
-        totalBytes += bytes;
-        console.log(`[GeoCache]   ${layerType}: ${(bytes / 1024 / 1024).toFixed(2)}MB, ${result.features.length} features`);
+  for (const zoomBucket of zoomBuckets) {
+    console.log(`[GeoCache]   Zoom Bucket ${zoomBucket}:`);
+    for (const layerType of layers) {
+      try {
+        const result = await loadLayerFromDB(db, layerType, zoomBucket);
+        if (result) {
+          warmed++;
+          const bytes = JSON.stringify(result).length;
+          totalBytes += bytes;
+          console.log(`[GeoCache]     ${layerType}: ${(bytes / 1024 / 1024).toFixed(2)}MB, ${result.features.length} features`);
+        }
+      } catch (err) {
+        console.warn(`[GeoCache] Failed to warm ${layerType} (z${zoomBucket}):`, err);
       }
-    } catch (err) {
-      console.warn(`[GeoCache] Failed to warm ${layerType}:`, err);
     }
   }
 
-  console.log(`[GeoCache] Warmed ${warmed}/${layers.length} layers in ${Date.now() - start}ms — total ${(totalBytes / 1024 / 1024).toFixed(2)}MB`);
+  console.log(`[GeoCache] Warmed ${warmed} layer-zoom combinations in ${Date.now() - start}ms — total ${(totalBytes / 1024 / 1024).toFixed(2)}MB`);
 }
 
 // ──────────────────────────────────────────────
@@ -252,6 +255,51 @@ function extractAllPositions(geometry: Geometry): [number, number][] {
     scan((geometry as { coordinates: unknown }).coordinates);
   }
   return positions;
+}
+
+/**
+ * Compute the visual center of a polygon ring (approximate center of its bounding box).
+ * Handles antimeridian wrapping by normalizing longitudes.
+ */
+function computeVisualCenter(geometry: any): [number, number] {
+  const rings: number[][][] = [];
+  const geomType = geometry?.type;
+  const coords = geometry?.coordinates;
+  if (geomType === "Polygon" && coords) {
+    rings.push(coords[0]);
+  } else if (geomType === "MultiPolygon" && coords) {
+    for (const poly of coords) rings.push(poly[0]);
+  }
+  if (rings.length === 0) return [0, 0];
+
+  let largestRing = rings[0];
+  for (let i = 1; i < rings.length; i++) {
+    if (rings[i].length > largestRing.length) largestRing = rings[i];
+  }
+
+  let minLng = Infinity, maxLng = -Infinity;
+  let minLat = Infinity, maxLat = -Infinity;
+  for (const [lng, lat] of largestRing) {
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+
+  // Handle antimeridian wrap: if bbox width > 300deg, it likely wraps
+  if (maxLng - minLng > 300) {
+    minLng = Infinity; maxLng = -Infinity;
+    for (const [lng] of largestRing) {
+      const norm = lng < 0 ? lng + 360 : lng;
+      if (norm < minLng) minLng = norm;
+      if (norm > maxLng) maxLng = norm;
+    }
+    let centerLng = (minLng + maxLng) / 2;
+    if (centerLng > 180) centerLng -= 360;
+    return [centerLng, (minLat + maxLat) / 2];
+  }
+
+  return [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
 }
 
 // ──────────────────────────────────────────────
@@ -287,6 +335,78 @@ async function loadLayerFromDB(
   const cacheKey = `${layerType}:z${zoomBucket}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
+
+  // Virtual layer: country_labels is derived from the political layer
+  if (layerType === "country_labels") {
+    const politicalFC = await loadLayerFromDB(db, "political", zoomBucket);
+    if (!politicalFC) return null;
+
+    // Build deduplicated point source: one centroid per unique country name
+    const seen = new Map<string, {
+      lng: number; lat: number; area: number; name: string;
+      continent?: string; region?: string; ringSize: number;
+      importance: number;
+    }>();
+
+    // Get top countries set (could be injected but we'll use a local fetch if needed)
+    // For now we'll just use the DEMOTED list and area-based importance
+    const demotedSet = new Set(DEMOTED_COUNTRY_NAMES);
+    
+    for (const feat of politicalFC.features) {
+      const p = feat.properties;
+      if (!p?._displayName || p._sovereignId) continue;
+      const name = p._displayName as string;
+      const area = (p._areaSqKm as number) ?? 0;
+      const existing = seen.get(name);
+
+      const [lng, lat] = computeVisualCenter(feat.geometry);
+
+      const geom = feat.geometry as any;
+      let ringSize = 0;
+      if (geom?.type === "Polygon") ringSize = geom.coordinates?.[0]?.length ?? 0;
+      else if (geom?.type === "MultiPolygon") {
+        for (const poly of geom.coordinates ?? []) ringSize += poly[0]?.length ?? 0;
+      }
+
+      if (!existing || ringSize > existing.ringSize) {
+        seen.set(name, {
+          lng, lat, area, name, ringSize,
+          continent: p._continent as string | undefined,
+          region: p._region as string | undefined,
+          importance: demotedSet.has(name) ? -1 : 0,
+        });
+      }
+    }
+
+    // Sort by area to find top countries for base importance
+    const sortedByArea = Array.from(seen.values()).sort((a, b) => b.area - a.area);
+    const topNames = new Set(sortedByArea.slice(0, 30).map(c => c.name));
+
+    const features: Feature[] = sortedByArea.map((c, i) => {
+      let importance = 0;
+      if (demotedSet.has(c.name)) importance = -1;
+      else if (topNames.has(c.name)) importance = 1;
+
+      return {
+        type: "Feature" as const,
+        id: i,
+        geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
+        properties: {
+          _displayName: c.name,
+          _areaSqKm: c.area,
+          _continent: c.continent,
+          _region: c.region,
+          _importance: importance,
+          _distFade: 1
+        },
+      };
+    });
+
+    const fc: FeatureCollection = { type: "FeatureCollection", features };
+    console.log(`[GeoRouter] Generated ${features.length} labels for country_labels layer`);
+    setCache(cacheKey, fc);
+    return fc;
+  }
 
   const layers = await db.mapLayer.findMany({
     where: { layerType, isActive: true },
@@ -520,6 +640,7 @@ export const geoRouter = createTRPCRouter({
         "lakes",
         "rivers",
         "icecaps",
+        "country_labels",
       ];
       const zoomBucket = getZoomBucket(input?.zoom);
 
@@ -567,6 +688,7 @@ export const geoRouter = createTRPCRouter({
         "lakes",
         "rivers",
         "icecaps",
+        "country_labels",
       ];
       const zoomBucket = getZoomBucket(input?.zoom);
 

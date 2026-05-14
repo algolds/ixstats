@@ -72,7 +72,7 @@ function buildCSPTemplate(standalone: boolean): string {
   // strict-dynamic allows scripts with a valid nonce to load additional scripts
   const scriptSrc = isDevelopment
     ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
-    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' 'strict-dynamic' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://static.cloudflareinsights.com`;
+    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://static.cloudflareinsights.com`;
 
   const directives = [
     `default-src 'self'`,

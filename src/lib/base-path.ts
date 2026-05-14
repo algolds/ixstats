@@ -36,6 +36,27 @@ export function withBasePath(path: string): string {
   return `${BASE_PATH}${normalizedPath}`;
 }
 
+/** Protomaps basemaps-assets (GitHub Pages) — `access-control-allow-origin: *` */
+const MAP_GLYPHS_CORS_CDN =
+  "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf";
+
+/**
+ * MapLibre glyph PBF URL template (`{fontstack}` / `{range}`).
+ * IxWorld standalone often serves the app from `maps.*` while `/fonts` redirects to the main site, which breaks CORS; standalone builds therefore use a public CDN.
+ *
+ * @see MAP_SYMBOL_FONTS in map-config.ts — font names must exist under this URL.
+ */
+export function getMapGlyphsUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_MAP_GLYPHS_URL;
+  if (typeof explicit === "string" && explicit.trim().length > 0) {
+    return explicit.trim();
+  }
+  if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
+    return MAP_GLYPHS_CORS_CDN;
+  }
+  return withBasePath("/fonts/{fontstack}/{range}.pbf");
+}
+
 /**
  * Removes the BASE_PATH from a given path
  * Useful for checking pathname matches

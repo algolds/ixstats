@@ -60,6 +60,13 @@ export async function register() {
       registerNodeProcessErrorHandlers();
 
       console.log("[Instrumentation] Production optimizations initialized successfully");
+
+      // Signal PM2 that we are ready (for zero-downtime cluster reloads)
+      const p = process as any;
+      if (p.send) {
+        p.send("ready");
+        console.log("[Instrumentation] Signal sent to PM2: ready");
+      }
     } catch (error) {
       // Log but don't crash the server
       console.error("[Instrumentation] Failed to initialize optimizations:", error);

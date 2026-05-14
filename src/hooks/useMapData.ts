@@ -34,6 +34,7 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
   "political",
   "rivers",
   "lakes",
+  "country_labels",
 ];
 
 /** Layers to pre-fetch on initial load.

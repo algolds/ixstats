@@ -21,9 +21,18 @@ export const MAP_LAYER_TYPES = [
   "icecaps",
   "cities",
   "trade_routes",
+  "country_labels",
 ] as const;
 
 export type MapLayerType = (typeof MAP_LAYER_TYPES)[number];
+
+/** Countries whose labels are demoted (only shown at high zoom) */
+export const DEMOTED_COUNTRY_NAMES = [
+  "Ugarit",
+  "Orenstia",
+  "Trade Island 5",
+] as const;
+
 
 /** Layer rendering configuration */
 export interface LayerConfig {
@@ -123,6 +132,14 @@ export const LAYER_CONFIGS: Record<MapLayerType, LayerConfig> = {
     strokeColor: "#8B4513",
     strokeWidth: 1.5,
     type: "line",
+  },
+  country_labels: {
+    label: "Country Names",
+    zIndex: 8,
+    defaultVisible: true,
+    fillColor: "#000",
+    fillOpacity: 1,
+    type: "fill", // placeholder, handled as symbol in IxWorldMap
   },
 };
 
@@ -260,21 +277,37 @@ export const SOVEREIGNTY_TYPE_MAP = Object.fromEntries(
   SOVEREIGNTY_TYPES.map((t) => [t.value, t])
 ) as Record<SovereigntyType, (typeof SOVEREIGNTY_TYPES)[number]>;
 
-/** Parse hex color to [r, g, b] */
+/** Parse hex color to [r, g, b]. Returns [0,0,0] if invalid. */
 function hexToRgb(hex: string): [number, number, number] {
+  if (!hex || typeof hex !== "string") return [0, 0, 0];
   const h = hex.replace("#", "");
+  if (h.length !== 6 && h.length !== 3) return [0, 0, 0];
+  
+  if (h.length === 3) {
+    return [
+      parseInt(h[0] + h[0], 16),
+      parseInt(h[1] + h[1], 16),
+      parseInt(h[2] + h[2], 16),
+    ];
+  }
+
   return [
-    parseInt(h.substring(0, 2), 16),
-    parseInt(h.substring(2, 4), 16),
-    parseInt(h.substring(4, 6), 16),
+    parseInt(h.substring(0, 2), 16) || 0,
+    parseInt(h.substring(2, 4), 16) || 0,
+    parseInt(h.substring(4, 6), 16) || 0,
   ];
 }
 
 /** Convert [r, g, b] to hex string */
 function rgbToHex(r: number, g: number, b: number): string {
+  // Guard against NaN
+  const safeR = isNaN(r) ? 0 : r;
+  const safeG = isNaN(g) ? 0 : g;
+  const safeB = isNaN(b) ? 0 : b;
+
   return (
     "#" +
-    [r, g, b]
+    [safeR, safeG, safeB]
       .map((v) =>
         Math.round(Math.max(0, Math.min(255, v)))
           .toString(16)
@@ -288,10 +321,12 @@ function rgbToHex(r: number, g: number, b: number): string {
 export function blendColors(color1: string, color2: string, ratio: number): string {
   const [r1, g1, b1] = hexToRgb(color1);
   const [r2, g2, b2] = hexToRgb(color2);
+  const safeRatio = isNaN(ratio) ? 0 : Math.max(0, Math.min(1, ratio));
+  
   return rgbToHex(
-    r1 + (r2 - r1) * ratio,
-    g1 + (g2 - g1) * ratio,
-    b1 + (b2 - b1) * ratio
+    r1 + (r2 - r1) * safeRatio,
+    g1 + (g2 - g1) * safeRatio,
+    b1 + (b2 - b1) * safeRatio
   );
 }
 
@@ -306,7 +341,9 @@ export function getSovereigntyColor(
   sovereignColor: string,
   autonomy: number
 ): string {
-  const sovereignWeight = 0.8 - autonomy * 0.6; // Range: 0.8 → 0.2
+  if (!subjectColor || !sovereignColor) return subjectColor || sovereignColor || "#888";
+  const safeAutonomy = typeof autonomy === "number" ? autonomy : 0.5;
+  const sovereignWeight = 0.8 - safeAutonomy * 0.6; // Range: 0.8 → 0.2
   return blendColors(subjectColor, sovereignColor, sovereignWeight);
 }
 
@@ -530,12 +567,31 @@ export const WATER_BODY_LABELS: WaterBodyLabel[] = [
   },
 ];
 
+import { getMapGlyphsUrl } from "./base-path";
+
+/**
+ * Symbol-layer `text-font` stacks. Must match PBFs available at `getMapGlyphsUrl()`
+ * (self-hosted DejaVu under IxStats vs Noto on protomaps CDN for standalone IxWorld).
+ */
+export const MAP_SYMBOL_FONTS =
+  process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true"
+    ? {
+        regular: ["Noto Sans Regular"] as [string],
+        bold: ["Noto Sans Medium"] as [string],
+        sans: ["Noto Sans Regular"] as [string],
+      }
+    : {
+        regular: ["DejaVu Sans Regular"] as [string],
+        bold: ["DejaVu Sans Bold"] as [string],
+        sans: ["DejaVu Sans"] as [string],
+      };
+
 /** Build the base MapLibre style with no data sources (added dynamically) */
 export function buildBaseStyle(): Record<string, unknown> {
   return {
     version: 8,
     name: "IxEarth",
-    glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+    glyphs: getMapGlyphsUrl(),
     sources: {},
     layers: [
       {

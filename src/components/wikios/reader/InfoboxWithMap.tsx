@@ -26,7 +26,7 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle }: InfoboxWithMapProp
   const matchedCountry = useMemo(() => {
     if (!countries || countries.length === 0) return null;
     return countries.find(
-      (c) => c.name?.toLowerCase() === articleTitle.toLowerCase()
+      (c: { name: string; }) => c.name?.toLowerCase() === articleTitle.toLowerCase()
     ) ?? null;
   }, [countries, articleTitle]);
 

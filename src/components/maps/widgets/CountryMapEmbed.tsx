@@ -10,7 +10,7 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
-import { buildBaseStyle, getCountryColor } from "~/lib/map-config";
+import { buildBaseStyle, getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/map-config";
 import { MapPin, Loader2 } from "lucide-react";
 
 export interface CountryMapEmbedProps {
@@ -172,7 +172,7 @@ export function CountryMapEmbed({
               "text-size": 10,
               "text-allow-overlap": false,
               "text-optional": true,
-              "text-font": ["DejaVu Sans Regular"],
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
             },
             paint: {
               "text-color": "#64748b",
@@ -324,7 +324,7 @@ export function CountryMapEmbed({
               "text-anchor": "top",
               "text-allow-overlap": false,
               "text-optional": true,
-              "text-font": ["DejaVu Sans Regular"],
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
             },
             paint: {
               "text-color": "#333",

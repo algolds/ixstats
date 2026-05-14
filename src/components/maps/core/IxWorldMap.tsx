@@ -23,12 +23,14 @@ import type { FeatureCollection } from "geojson";
 import {
   LAYER_CONFIGS,
   MAP_DEFAULTS,
-  OCEAN_COLOR,
   INTERACTION_COLORS,
   WATER_BODY_LABELS,
+  buildBaseStyle,
+  MAP_SYMBOL_FONTS,
   getProjectionSpec,
   type MapLayerType,
   type ProjectionMode,
+  DEMOTED_COUNTRY_NAMES,
 } from "~/lib/map-config";
 
 import { lazy, Suspense } from "react";
@@ -45,44 +47,14 @@ type MapLibreMap = import("maplibre-gl").Map;
 /** Data-driven opacity for country labels.
  *  Combines zoom/importance/area progressive reveal with distance-from-viewport fade.
  *  _distFade (0–1) is updated on camera move; labels far from center fade out when zoomed in.
- *  Top-20 countries (_importance=1) always visible, demoted (_importance=-1) only at zoom>=5.5. */
-const COUNTRY_LABEL_OPACITY: unknown = [
-  "step", ["zoom"],
-  // zoom < 2.5: top-20 + area >= 2M sqkm (demoted hidden)
-  ["*", ["get", "_distFade"], ["case",
-    ["==", ["get", "_importance"], -1], 0,
-    ["==", ["get", "_importance"], 1], 1,
-    [">=", ["get", "_areaSqKm"], 2000000], 1,
-    0]],
-  2.5,
-  // zoom 2.5–3.5: top-20 + area >= 500K sqkm (demoted hidden)
-  ["*", ["get", "_distFade"], ["case",
-    ["==", ["get", "_importance"], -1], 0,
-    ["==", ["get", "_importance"], 1], 1,
-    [">=", ["get", "_areaSqKm"], 500000], 1,
-    0]],
-  3.5,
-  // zoom 3.5–4.5: top-20 + area >= 50K sqkm (demoted hidden)
-  ["*", ["get", "_distFade"], ["case",
-    ["==", ["get", "_importance"], -1], 0,
-    ["==", ["get", "_importance"], 1], 1,
-    [">=", ["get", "_areaSqKm"], 50000], 1,
-    0]],
-  4.5,
-  // zoom 4.5–5.5: all except demoted
-  ["*", ["get", "_distFade"], ["case", ["==", ["get", "_importance"], -1], 0, 1]],
-  5.5,
-  // zoom 5.5+: everything including demoted
-  ["get", "_distFade"],
-];
+ *  Top-25 countries (_importance=1) always visible, demoted (_importance=-1) only at zoom>=5.5. */
+const COUNTRY_LABEL_OPACITY: unknown = ["coalesce", ["get", "_distFade"], 0];
 
 /** Escape HTML entities for safe insertion into popup innerHTML */
 function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-/** NPC / placeholder countries whose labels only appear at high zoom (not default) */
-const DEMOTED_COUNTRY_LABELS = new Set(["Ugarit", "Orenstia", "Trade Island 5"]);
 
 /** Area thresholds for progressive feature loading based on zoom */
 const PROGRESSIVE_THRESHOLDS: Record<string, [number, number][]> = {
@@ -341,6 +313,80 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       getMap: () => mapRef.current,
     }));
 
+    const updateDistanceFade = useCallback(() => {
+      const map = mapRef.current;
+      if (!map) return;
+
+      const baseFeatures = labelFeaturesRef.current;
+      if (!baseFeatures || baseFeatures.features.length === 0) return;
+      const source = map.getSource("source-country-labels") as { setData: (data: unknown) => void } | undefined;
+      if (!source) return;
+
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+
+      // Compute visible radius in degrees based on viewport bounds
+      const bounds = map.getBounds();
+      const visibleLngSpan = bounds.getEast() - bounds.getWest();
+      const visibleLatSpan = bounds.getNorth() - bounds.getSouth();
+      const viewRadius = Math.sqrt(visibleLngSpan * visibleLngSpan + visibleLatSpan * visibleLatSpan) / 2;
+
+      const updated: FeatureCollection = {
+        ...baseFeatures,
+        features: baseFeatures.features.map((f) => {
+          const props = f.properties as Record<string, any>;
+          const name = props?._displayName as string;
+          const isTop = topCountryNames?.has(name);
+          const isDemoted = DEMOTED_COUNTRY_NAMES.includes(name as any);
+
+          // Always show top 25 countries at any zoom/position
+          if (isTop) {
+            return {
+              ...f,
+              properties: { ...props, _importance: 1, _distFade: 1 },
+            };
+          }
+
+          // Demoted countries (small islands, etc.) only show at high zoom
+          if (isDemoted) {
+            if (zoom < 5.5) {
+              return { ...f, properties: { ...props, _importance: -1, _distFade: 0 } };
+            }
+          }
+
+          // Normal countries: progressive reveal based on zoom and distance from center
+          const geometry = f.geometry;
+          if (!("coordinates" in geometry)) return f;
+          const coords = geometry.coordinates as [number, number];
+          const dlng = coords[0] - center.lng;
+          const dlat = coords[1] - center.lat;
+          const dist = Math.sqrt(dlng * dlng + dlat * dlat);
+
+          // Normalize: 0 at center, 1 at edge of viewport
+          const normDist = dist / Math.max(viewRadius, 1);
+
+          // Fade: full opacity within inner 60% of view, fading to 0 at 120%
+          const rawFade = Math.max(0, Math.min(1, (1.2 - normDist) / 0.6));
+
+          // Progressive zoom reveal: non-top countries start appearing at z=2.5, fully active at z=4.0
+          const zoomFade = Math.max(0, Math.min(1, (zoom - 2.5) / 1.5));
+          const fade = zoomFade * rawFade;
+
+          return {
+            ...f,
+            properties: {
+              ...props,
+              _importance: isDemoted ? -1 : 0,
+              _distFade: Math.round(fade * 100) / 100,
+            },
+          };
+        }),
+      };
+
+      labelFeaturesRef.current = updated;
+      source.setData(updated as unknown as GeoJSON.GeoJSON);
+    }, [topCountryNames]);
+
     // Update projection when mode changes
     useEffect(() => {
       const map = mapRef.current;
@@ -371,21 +417,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
 
           const map = new maplibregl.Map({
             container: containerRef.current,
-            style: {
-              version: 8,
-              name: "IxEarth",
-              sources: {},
-              layers: [
-                {
-                  id: "ocean-background",
-                  type: "background",
-                  paint: { "background-color": OCEAN_COLOR },
-                },
-              ],
-              projection: {
-                type: ["interpolate", ["linear"], ["zoom"], 2.5, "globe", 4, "mercator"],
-              },
-            } as maplibregl.StyleSpecification,
+            style: buildBaseStyle() as maplibregl.StyleSpecification,
             center: initialCenter || MAP_DEFAULTS.center,
             zoom: initialZoom ?? MAP_DEFAULTS.zoom,
             minZoom: MAP_DEFAULTS.minZoom,
@@ -466,7 +498,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               source: "source-ocean-labels",
               layout: {
                 "text-field": ["get", "name"] as unknown as string,
-                "text-font": ["DejaVu Sans Regular"],
+                "text-font": [...MAP_SYMBOL_FONTS.regular],
                 "text-size": [
                   "interpolate", ["linear"], ["zoom"],
                   0.5, ["match", ["get", "rank"], "major", 14, "medium", 10, 8],
@@ -654,7 +686,6 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
                 }
 
                 // Relationship label at subject territory centroids
-                // Shows: "Territory Name\nRelationType of SovereignName"
                 if (!map.getLayer("sovereignty-labels")) {
                   map.addLayer({
                     id: "sovereignty-labels",
@@ -682,129 +713,59 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
                     minzoom: 4,
                   });
                 }
-
-                // Country name labels (Google Maps style — one per country, largest first)
-                {
-                  // Compute visual center of a polygon ring (bbox center of largest ring)
-                  const computeVisualCenter = (geometry: any): [number, number] => {
-                    const rings: number[][][] = [];
-                    const geomType = geometry?.type;
-                    const coords = geometry?.coordinates;
-                    if (geomType === "Polygon" && coords) {
-                      rings.push(coords[0]);
-                    } else if (geomType === "MultiPolygon" && coords) {
-                      for (const poly of coords) rings.push(poly[0]);
-                    }
-                    if (rings.length === 0) return [0, 0];
-
-                    let largestRing = rings[0];
-                    for (let i = 1; i < rings.length; i++) {
-                      if (rings[i].length > largestRing.length) largestRing = rings[i];
-                    }
-
-                    let minLng = Infinity, maxLng = -Infinity;
-                    let minLat = Infinity, maxLat = -Infinity;
-                    for (const [lng, lat] of largestRing) {
-                      if (lng < minLng) minLng = lng;
-                      if (lng > maxLng) maxLng = lng;
-                      if (lat < minLat) minLat = lat;
-                      if (lat > maxLat) maxLat = lat;
-                    }
-
-                    if (maxLng - minLng > 300) {
-                      minLng = Infinity; maxLng = -Infinity;
-                      for (const [lng] of largestRing) {
-                        const norm = lng < 0 ? lng + 360 : lng;
-                        if (norm < minLng) minLng = norm;
-                        if (norm > maxLng) maxLng = norm;
-                      }
-                      let centerLng = (minLng + maxLng) / 2;
-                      if (centerLng > 180) centerLng -= 360;
-                      return [centerLng, (minLat + maxLat) / 2];
-                    }
-
-                    return [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
-                  };
-
-                  // Build deduplicated point source: one centroid per unique country name
-                  const seen = new Map<string, { lng: number; lat: number; area: number; name: string; continent?: string; region?: string; ringSize: number }>();
-                  for (const feat of layer.data.features) {
-                    const p = feat.properties;
-                    if (!p?._displayName || p._sovereignId) continue;
-                    const name = p._displayName as string;
-                    const area = (p._areaSqKm as number) ?? 0;
-                    const existing = seen.get(name);
-
-                    const [lng, lat] = computeVisualCenter(feat.geometry);
-
-                    const geom = feat.geometry as any;
-                    let ringSize = 0;
-                    if (geom?.type === "Polygon") ringSize = geom.coordinates?.[0]?.length ?? 0;
-                    else if (geom?.type === "MultiPolygon") {
-                      for (const poly of geom.coordinates ?? []) ringSize += poly[0]?.length ?? 0;
-                    }
-
-                    if (!existing || ringSize > existing.ringSize) {
-                      seen.set(name, {
-                        lng, lat, area, name, ringSize,
-                        continent: p._continent as string | undefined,
-                        region: p._region as string | undefined,
-                      });
-                    }
-                  }
-                  const labelPoints: FeatureCollection = {
-                    type: "FeatureCollection",
-                    features: Array.from(seen.values()).map((c, i) => ({
-                      type: "Feature" as const,
-                      id: i,
-                      geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
-                      properties: { _displayName: c.name, _areaSqKm: c.area, _continent: c.continent, _region: c.region, _importance: DEMOTED_COUNTRY_LABELS.has(c.name) ? -1 : topCountryNames?.has(c.name) ? 1 : 0, _distFade: 1 },
-                    })),
-                  };
-
-                  // Store base features for distance-fade updates
-                  labelFeaturesRef.current = labelPoints;
-
-                  // Update existing source or create new one
-                  const existingSource = map.getSource("source-country-labels") as maplibregl.GeoJSONSource | undefined;
-                  if (existingSource) {
-                    existingSource.setData(labelPoints as unknown as GeoJSON.GeoJSON);
-                  } else {
-                    map.addSource("source-country-labels", {
-                      type: "geojson",
-                      data: labelPoints as unknown as GeoJSON.GeoJSON,
-                    });
-                    map.addLayer({
-                      id: "country-name-labels",
-                      type: "symbol",
-                      source: "source-country-labels",
-                      layout: {
-                        "text-field": ["get", "_displayName"] as unknown as string,
-                        "text-font": ["DejaVu Sans Bold"],
-                        "text-size": [
-                          "interpolate", ["linear"], ["zoom"],
-                          1.5, 10,
-                          3, 12,
-                          5, 14,
-                        ] as unknown as number,
-                        "text-allow-overlap": false,
-                        "text-ignore-placement": false,
-                        "text-optional": true,
-                        "text-padding": 2,
-                        "text-max-width": 8,
-                      },
-                      paint: {
-                        "text-color": "#2c2c2c",
-                        "text-halo-color": "#ffffff",
-                        "text-halo-width": 1.8,
-                        "text-halo-blur": 0.5,
-                        "text-opacity": COUNTRY_LABEL_OPACITY as unknown as number,
-                      },
-                      minzoom: 1.5,
-                    });
-                  }
-                }
               }
+            }
+
+            // Handle country_labels layer: update source-country-labels
+            if (layer.type === "country_labels") {
+              labelFeaturesRef.current = layer.data;
+              const existingLabelSource = map.getSource("source-country-labels") as maplibregl.GeoJSONSource | undefined;
+              if (existingLabelSource) {
+                existingLabelSource.setData(layer.data as unknown as GeoJSON.GeoJSON);
+                updateDistanceFade();
+              } else {
+                console.log("[IxWorldMap] Initializing country labels layer", {
+                  featureCount: (layer.data as any)?.features?.length,
+                });
+                map.addSource("source-country-labels", {
+                  type: "geojson",
+                  data: layer.data as unknown as GeoJSON.GeoJSON,
+                });
+                map.addLayer({
+                  id: "country-name-labels",
+                  type: "symbol",
+                  source: "source-country-labels",
+                  layout: {
+                    "text-field": ["get", "_displayName"] as unknown as string,
+                    "text-font": [...MAP_SYMBOL_FONTS.regular],
+                    "text-size": [
+                      "interpolate", ["linear"], ["zoom"],
+                      1.5, 10,
+                      3, 12,
+                      5, 14,
+                    ] as unknown as number,
+                    "text-allow-overlap": false,
+                    "text-ignore-placement": false,
+                    "text-optional": true,
+                    "text-padding": 2,
+                    "text-max-width": 8,
+                  },
+                  paint: {
+                    "text-color": "#2c2c2c",
+                    "text-halo-color": "#ffffff",
+                    "text-halo-width": 1.8,
+                    "text-halo-blur": 0.5,
+                    "text-opacity": COUNTRY_LABEL_OPACITY as unknown as number,
+                  },
+                  minzoom: 1.5,
+                });
+                updateDistanceFade();
+              }
+              // Ensure visibility is synced
+              if (map.getLayer("country-name-labels")) {
+                map.setLayoutProperty("country-name-labels", "visibility", layer.visible ? "visible" : "none");
+              }
+              continue;
             }
           }
         } catch (err) {
@@ -874,8 +835,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
           }
         }
       }
-
-    }, [layers, isLoaded, topCountryNames]);
+    }, [layers, isLoaded, topCountryNames, updateDistanceFade]);
 
     // Geography filter — dim non-matching countries when a continent/region badge is clicked
     useEffect(() => {
@@ -925,71 +885,6 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
       const map = mapRef.current;
       if (!map || !isLoaded) return;
 
-      const updateDistanceFade = () => {
-        const baseFeatures = labelFeaturesRef.current;
-        if (!baseFeatures || baseFeatures.features.length === 0) return;
-        const source = map.getSource("source-country-labels") as { setData: (data: unknown) => void } | undefined;
-        if (!source) return;
-
-        const center = map.getCenter();
-        const zoom = map.getZoom();
-
-        // At low zoom (fully zoomed out), all labels should be full opacity (no fade).
-        // Fade starts kicking in above zoom ~3 and gets stronger as you zoom in.
-        const fadeStrength = Math.max(0, Math.min(1, (zoom - 2.5) / 2)); // 0 at z≤2.5, 1 at z≥4.5
-
-        if (fadeStrength === 0) {
-          // No fading needed — ensure all _distFade are 1
-          const needsUpdate = baseFeatures.features.some(
-            (f) => (f.properties as Record<string, unknown>)?._distFade !== 1
-          );
-          if (needsUpdate) {
-            const updated: FeatureCollection = {
-              ...baseFeatures,
-              features: baseFeatures.features.map((f) => ({
-                ...f,
-                properties: { ...f.properties, _distFade: 1 },
-              })),
-            };
-            labelFeaturesRef.current = updated;
-            source.setData(updated as unknown as GeoJSON.GeoJSON);
-          }
-          return;
-        }
-
-        // Compute visible radius in degrees based on viewport bounds
-        const bounds = map.getBounds();
-        const visibleLngSpan = bounds.getEast() - bounds.getWest();
-        const visibleLatSpan = bounds.getNorth() - bounds.getSouth();
-        const viewRadius = Math.sqrt(visibleLngSpan * visibleLngSpan + visibleLatSpan * visibleLatSpan) / 2;
-
-        const updated: FeatureCollection = {
-          ...baseFeatures,
-          features: baseFeatures.features.map((f) => {
-            const coords = (f.geometry as { coordinates: [number, number] }).coordinates;
-            const dlng = coords[0] - center.lng;
-            const dlat = coords[1] - center.lat;
-            const dist = Math.sqrt(dlng * dlng + dlat * dlat);
-
-            // Normalize: 0 at center, 1 at edge of viewport, >1 beyond
-            const normDist = dist / Math.max(viewRadius, 1);
-
-            // Fade: full opacity within inner 60% of view, fading to 0 at 120%
-            // Apply fadeStrength so low-zoom labels aren't faded
-            const rawFade = Math.max(0, Math.min(1, (1.2 - normDist) / 0.6));
-            const fade = 1 - fadeStrength * (1 - rawFade);
-
-            return {
-              ...f,
-              properties: { ...f.properties, _distFade: Math.round(fade * 100) / 100 },
-            };
-          }),
-        };
-
-        labelFeaturesRef.current = updated;
-        source.setData(updated as unknown as GeoJSON.GeoJSON);
-      };
-
       map.on("moveend", updateDistanceFade);
       map.on("zoomend", updateDistanceFade);
 
@@ -1004,7 +899,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
         map.off("zoomend", updateDistanceFade);
         map.off("zoomend", handleZoomChange);
       };
-    }, [isLoaded, onZoomChange]);
+    }, [isLoaded, onZoomChange, updateDistanceFade]);
 
     // Render capital city markers
     useEffect(() => {
@@ -1071,7 +966,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               "text-anchor": "top",
               "text-allow-overlap": false,
               "text-optional": true,
-              "text-font": ["DejaVu Sans Regular"],
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
             },
             paint: {
               "text-color": "#333",
@@ -1147,6 +1042,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               "text-allow-overlap": false,
               "text-optional": true,
               "text-padding": 8 as unknown as number,
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
               // Larger regions show labels first via area-based priority
               "symbol-sort-key": ["case",
                 ["has", "areaSqKm"],
@@ -1223,6 +1119,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               layout: {
                 "text-field": "{point_count_abbreviated}",
                 "text-size": 11,
+                "text-font": [...MAP_SYMBOL_FONTS.regular],
               },
               paint: { "text-color": "#fff" },
               minzoom: 3,
@@ -1259,6 +1156,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               "text-anchor": "top" as const,
               "text-allow-overlap": false,
               "text-optional": true,
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
               // Priority by population — larger cities get labels first
               "symbol-sort-key": ["case",
                 ["has", "population"],
@@ -1313,7 +1211,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               type: "symbol",
               source: poiSource,
               filter: ["has", "point_count"],
-              layout: { "text-field": "{point_count_abbreviated}", "text-size": 10 },
+              layout: { "text-field": "{point_count_abbreviated}", "text-size": 10, "text-font": [...MAP_SYMBOL_FONTS.regular] },
               paint: { "text-color": "#78350f" },
               minzoom: 5,
             });
@@ -1344,6 +1242,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               "text-anchor": "top" as const,
               "text-allow-overlap": false,
               "text-optional": true,
+              "text-font": [...MAP_SYMBOL_FONTS.regular],
             },
             paint: { "text-color": "#92400e", "text-halo-color": "#fff", "text-halo-width": 1.2 },
             minzoom: 8,
@@ -1416,6 +1315,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
               layout: {
                 "text-field": ["get", "point_count_abbreviated"] as unknown as string,
                 "text-size": 12,
+                "text-font": [...MAP_SYMBOL_FONTS.regular],
               },
               paint: {
                 "text-color": "#ffffff",
@@ -1488,8 +1388,8 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
                 "text-font": [
                   "case",
                   [">=", ["coalesce", ["get", "importance"], 0], 1],
-                  ["literal", ["DejaVu Sans Bold"]],
-                  ["literal", ["DejaVu Sans"]],
+                  ["literal", [...MAP_SYMBOL_FONTS.bold]],
+                  ["literal", [...MAP_SYMBOL_FONTS.sans]],
                 ] as unknown as string[],
               },
               paint: {
@@ -1532,8 +1432,8 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
                 "text-font": [
                   "case",
                   ["==", ["get", "fontWeight"], "bold"],
-                  ["literal", ["DejaVu Sans Bold"]],
-                  ["literal", ["DejaVu Sans Regular"]],
+                  ["literal", [...MAP_SYMBOL_FONTS.bold]],
+                  ["literal", [...MAP_SYMBOL_FONTS.regular]],
                 ] as unknown as string[],
                 "text-allow-overlap": false,
                 "text-optional": true,

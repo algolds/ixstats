@@ -91,12 +91,12 @@ fi
 # Step 3: PM2 Management
 log "[3/3] Updating PM2 process..."
 if pm2 show "$PM2_APP_NAME" &>/dev/null; then
-    log "Reloading existing PM2 process..."
-    pm2 reload "$PM2_APP_NAME" --silent
-else
-    log "Starting new PM2 process..."
-    pm2 start "$IXWORLD_DIR/$ECOSYSTEM_FILE" --silent
+    log "Restarting PM2 process (ensuring mode changes)..."
+    pm2 delete "$PM2_APP_NAME" --silent
 fi
+
+log "Starting PM2 process..."
+pm2 start "$IXWORLD_DIR/$ECOSYSTEM_FILE" --silent
 
 pm2 save --silent &>/dev/null
 

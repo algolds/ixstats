@@ -30,6 +30,7 @@ const DEFAULT_VISIBLE: MapLayerType[] = [
   "political",
   "rivers",
   "lakes",
+  "country_labels",
 ];
 
 // Climate is NOT prefetched — lazy-loaded when user toggles the layer.

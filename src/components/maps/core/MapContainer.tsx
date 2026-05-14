@@ -215,9 +215,9 @@ export function MapContainer({
   // Capitals come from batched query
   const capitalsGeoJson = batchedCapitalsGeoJson;
 
-  // Top-20 countries by composite importance (population + GDP + GDP/capita)
+  // Top-25 countries by composite importance (population + GDP + GDP/capita)
   const { data: topCountryNames } = api.countries.getTopCountriesByImportance.useQuery(
-    { limit: 20 },
+    { limit: 25 },
     { staleTime: 5 * 60_000, gcTime: 30 * 60_000 }
   );
   const topCountrySet = useMemo(
