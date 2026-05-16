@@ -30,7 +30,7 @@ import {
   ComponentType as PrismaComponentType,
   EconomicComponentType,
   TaxComponentType,
-} from "@prisma/client";
+} from "~/lib/enums";
 import {
   generateAtomicIntelligence,
   calculateAtomicGovernmentStability,

@@ -144,7 +144,7 @@ function ProfileContent() {
 
                 {setupStatus === "complete" && userProfile?.country && (
                   <CountryInformationCard
-                    country={country?.newStats ?? userProfile.country}
+                    country={(country?.newStats ?? userProfile.country) as any}
                     uploadedFlagUrl={profileSettings.uploadedFlagUrl}
                     flagUploadMode={profileSettings.flagUploadMode}
                     isEditingCountry={profileSettings.isEditingCountry}

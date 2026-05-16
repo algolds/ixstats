@@ -50,10 +50,11 @@ class DatabaseIntegrationService {
       timeout: 10000,
       ...config,
     };
+  }
 
-    if (typeof window !== "undefined" && this.config.enableWebSocket) {
-      this.initializeWebSocket();
-    }
+  public connect(): void {
+    if (this.websocket || !this.config.enableWebSocket || typeof window === "undefined") return;
+    this.initializeWebSocket();
   }
 
   /**

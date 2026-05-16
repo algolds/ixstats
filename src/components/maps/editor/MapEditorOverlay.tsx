@@ -21,6 +21,7 @@ import { useUser } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { useMapEditor } from "~/hooks/useMapEditor";
 import { useMapData } from "~/hooks/useMapData";
+import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
@@ -69,6 +70,10 @@ export default function MapEditorOverlay({
   onExit,
 }: MapEditorOverlayProps) {
   const mapRef = useRef<EditorMapRef>(null);
+
+  // Real-time sync: invalidate map caches when any geo mutation succeeds
+  useMapLiveSync();
+
   const [panelCollapsed, setPanelCollapsed] = useState(false);
   const [cursorCoords, setCursorCoords] = useState<[number, number] | null>(null);
   const [cursorZoom, setCursorZoom] = useState<number | undefined>(undefined);
@@ -308,10 +313,6 @@ export default function MapEditorOverlay({
     }
   }, [editor]);
 
-  const isLinked = !!editor.linkage?.isLinked;
-  const hasGeometry = !!editor.countryGeo;
-  const toolsDisabled = !isLinked || !hasGeometry;
-
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -384,6 +385,7 @@ export default function MapEditorOverlay({
         return;
       }
 
+      const toolsDisabled = !editor.linkage?.isLinked || !editor.countryGeo;
       if (inInput || toolsDisabled) return;
 
       switch (e.key.toLowerCase()) {
@@ -402,7 +404,7 @@ export default function MapEditorOverlay({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [editor, importer, onExit, toolsDisabled, handleDeleteFeature, handleSubmit]);
+  }, [editor, importer, onExit, handleDeleteFeature, handleSubmit]);
 
   // Track map cursor position + hovered features for status bar & tooltip
   const handleMapMouseMove = useCallback((e: any) => {
@@ -441,8 +443,30 @@ export default function MapEditorOverlay({
     return () => { map.off("mousemove", handleMapMouseMove); };
   }, [mapInstance, handleMapMouseMove]);
 
+  // ── Derived State & Tools ──
+  const isLinked = !!editor.linkage?.isLinked;
+  const linkageLoading = editor.linkageLoading;
+  const hasGeometry = !!editor.countryGeo;
+  const toolsDisabled = !isLinked || !hasGeometry;
+
+  // featureCounts - extracted from inline to top-level to ensure hook stability
+  const featureCounts = useMemo(
+    () => ({
+      regions: editor.allFeatures.filter((f) => f.type === "subdivision").length,
+      cities: editor.allFeatures.filter((f) => f.type === "city").length,
+      pois: editor.allFeatures.filter((f) => f.type === "poi").length,
+      stories: editor.allFeatures.filter((f) => f.type === "storyPin").length,
+      labels: editor.allFeatures.filter((f) => f.type === "mapLabel").length,
+    }),
+    [editor.allFeatures]
+  );
+
+  // ── Loading & Initialization States ──
+  const showLoadingScreen = linkageLoading || (isLinked && (!hasGeometry || editor.featuresLoading));
+
   // ── Not linked warning ──
-  if (!isLinked) {
+  // IMPORTANT: This early return must happen AFTER all hooks have been called
+  if (!linkageLoading && !isLinked) {
     return (
       <div className="absolute inset-0 z-30 flex flex-col bg-background">
         <div className="flex h-10 items-center gap-2 border-b border-border bg-card px-3">
@@ -465,13 +489,11 @@ export default function MapEditorOverlay({
     );
   }
 
-  // ── Editor Loading Screen ──
-  const editorReady = hasGeometry && !editor.featuresLoading;
-
+  // ── Editor Render ──
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-background">
       {/* Loading splash — fades out when data is ready */}
-      {!editorReady && (
+      {showLoadingScreen && (
         <EditorLoadingScreen countryName={countryInfo?.name} />
       )}
 
@@ -912,13 +934,7 @@ export default function MapEditorOverlay({
                 onOpacityChange={(id, opacity) => {
                   setLayerStates((s) => ({ ...s, [id]: { ...s[id]!, opacity } }));
                 }}
-                featureCounts={{
-                  regions: editor.allFeatures.filter((f) => f.type === "subdivision").length,
-                  cities: editor.allFeatures.filter((f) => f.type === "city").length,
-                  pois: editor.allFeatures.filter((f) => f.type === "poi").length,
-                  stories: editor.allFeatures.filter((f) => f.type === "storyPin").length,
-                  labels: editor.allFeatures.filter((f) => f.type === "mapLabel").length,
-                }}
+                featureCounts={featureCounts}
               />
             }
             wikiContent={<WikiScannerPanel scanner={wikiScanner} />}

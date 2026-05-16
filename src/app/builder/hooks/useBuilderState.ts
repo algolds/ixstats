@@ -15,10 +15,12 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import type { BuilderStep } from "../components/enhanced/builderConfig";
 import type { RealCountryData, EconomicInputs } from "../lib/economy-data-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
+import type { GovernmentDepartment } from "~/types/government";
 import { createDefaultEconomicInputs } from "../lib/economy-data-service";
+import { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
 import { api } from "~/trpc/react";
 
@@ -225,14 +227,15 @@ export function useBuilderState(
       // Populate with live country data
       inputs.countryName = existingCountry.name;
 
-      const calculatedStats = (existingCountry as any).calculatedStats;
+      const typedCountry = existingCountry as CountryWithEditorFields;
+      const calculatedStats = typedCountry.calculatedStats;
       const currentPop =
         Number(calculatedStats?.currentPopulation) ||
-        Number((existingCountry as any).baselinePopulation) ||
+        Number(typedCountry.baselinePopulation) ||
         0;
       const currentGdpPerCap =
         Number(calculatedStats?.currentGdpPerCapita) ||
-        Number((existingCountry as any).baselineGdpPerCapita) ||
+        Number(typedCountry.baselineGdpPerCapita) ||
         0;
       const currentTotalGdp = Number(calculatedStats?.currentTotalGdp) || 0;
 
@@ -240,63 +243,63 @@ export function useBuilderState(
         totalPopulation: !isNaN(currentPop) ? currentPop : 0,
         gdpPerCapita: !isNaN(currentGdpPerCap) ? currentGdpPerCap : 0,
         nominalGDP: !isNaN(currentTotalGdp) ? currentTotalGdp : 0,
-        realGDPGrowthRate: (existingCountry as any).realGDPGrowthRate ?? 0,
-        inflationRate: (existingCountry as any).inflationRate ?? 0,
-        currencyExchangeRate: (existingCountry as any).currencyExchangeRate ?? 1.0,
+        realGDPGrowthRate: typedCountry.realGDPGrowthRate ?? 0,
+        inflationRate: typedCountry.inflationRate ?? 0,
+        currencyExchangeRate: typedCountry.currencyExchangeRate ?? 1.0,
       };
 
       // Labor & Employment
-      inputs.laborEmployment.unemploymentRate = (existingCountry as any).unemploymentRate ?? 0;
+      inputs.laborEmployment.unemploymentRate = typedCountry.unemploymentRate ?? 0;
       inputs.laborEmployment.laborForceParticipationRate =
-        (existingCountry as any).laborForceParticipationRate ?? 0;
-      inputs.laborEmployment.employmentRate = (existingCountry as any).employmentRate ?? 0;
-      inputs.laborEmployment.totalWorkforce = (existingCountry as any).totalWorkforce ?? 0;
+        typedCountry.laborForceParticipationRate ?? 0;
+      inputs.laborEmployment.employmentRate = typedCountry.employmentRate ?? 0;
+      inputs.laborEmployment.totalWorkforce = typedCountry.totalWorkforce ?? 0;
       inputs.laborEmployment.averageWorkweekHours =
-        (existingCountry as any).averageWorkweekHours ?? 0;
-      inputs.laborEmployment.minimumWage = (existingCountry as any).minimumWage ?? 0;
+        typedCountry.averageWorkweekHours ?? 0;
+      inputs.laborEmployment.minimumWage = typedCountry.minimumWage ?? 0;
       inputs.laborEmployment.averageAnnualIncome =
-        (existingCountry as any).averageAnnualIncome ?? 0;
+        typedCountry.averageAnnualIncome ?? 0;
 
       // Fiscal system
-      inputs.fiscalSystem.taxRevenueGDPPercent = (existingCountry as any).taxRevenueGDPPercent ?? 0;
+      inputs.fiscalSystem.taxRevenueGDPPercent = typedCountry.taxRevenueGDPPercent ?? 0;
       inputs.fiscalSystem.governmentRevenueTotal =
-        (existingCountry as any).governmentRevenueTotal ?? 0;
-      inputs.fiscalSystem.totalDebtGDPRatio = (existingCountry as any).totalDebtGDPRatio ?? 0;
-      inputs.fiscalSystem.budgetDeficitSurplus = (existingCountry as any).budgetDeficitSurplus ?? 0;
+        typedCountry.governmentRevenueTotal ?? 0;
+      inputs.fiscalSystem.totalDebtGDPRatio = typedCountry.totalDebtGDPRatio ?? 0;
+      inputs.fiscalSystem.budgetDeficitSurplus = typedCountry.budgetDeficitSurplus ?? 0;
       inputs.fiscalSystem.governmentBudgetGDPPercent =
-        (existingCountry as any).governmentBudgetGDPPercent ?? 0;
+        typedCountry.governmentBudgetGDPPercent ?? 0;
       inputs.fiscalSystem.internalDebtGDPPercent =
-        (existingCountry as any).internalDebtGDPPercent ?? 0;
+        typedCountry.internalDebtGDPPercent ?? 0;
       inputs.fiscalSystem.externalDebtGDPPercent =
-        (existingCountry as any).externalDebtGDPPercent ?? 0;
-      inputs.fiscalSystem.interestRates = (existingCountry as any).interestRates ?? 0;
-      inputs.fiscalSystem.debtServiceCosts = (existingCountry as any).debtServiceCosts ?? 0;
+        typedCountry.externalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.interestRates = typedCountry.interestRates ?? 0;
+      inputs.fiscalSystem.debtServiceCosts = typedCountry.debtServiceCosts ?? 0;
 
       // Demographics
-      inputs.demographics.lifeExpectancy = (existingCountry as any).lifeExpectancy ?? 0;
-      inputs.demographics.literacyRate = (existingCountry as any).literacyRate ?? 0;
-      if ((existingCountry as any).urbanPopulationPercent !== undefined) {
+      inputs.demographics.lifeExpectancy = typedCountry.lifeExpectancy ?? 0;
+      inputs.demographics.literacyRate = typedCountry.literacyRate ?? 0;
+      if (typedCountry.urbanPopulationPercent !== undefined) {
         inputs.demographics.urbanRuralSplit = {
-          urban: (existingCountry as any).urbanPopulationPercent,
-          rural: 100 - (existingCountry as any).urbanPopulationPercent,
+          urban: typedCountry.urbanPopulationPercent,
+          rural: 100 - typedCountry.urbanPopulationPercent,
         };
       }
 
       // Income & Wealth Distribution
-      inputs.incomeWealth.povertyRate = (existingCountry as any).povertyRate ?? 0;
-      inputs.incomeWealth.incomeInequalityGini = (existingCountry as any).incomeInequalityGini ?? 0;
-      inputs.incomeWealth.socialMobilityIndex = (existingCountry as any).socialMobilityIndex ?? 0;
+      inputs.incomeWealth.povertyRate = typedCountry.povertyRate ?? 0;
+      inputs.incomeWealth.incomeInequalityGini = typedCountry.incomeInequalityGini ?? 0;
+      inputs.incomeWealth.socialMobilityIndex = typedCountry.socialMobilityIndex ?? 0;
 
       // Government Spending
       inputs.governmentSpending.totalSpending =
-        (existingCountry as any).totalGovernmentSpending ?? 0;
+        typedCountry.totalGovernmentSpending ?? 0;
       inputs.governmentSpending.spendingGDPPercent =
-        (existingCountry as any).spendingGDPPercent ?? 0;
-      inputs.governmentSpending.spendingPerCapita = (existingCountry as any).spendingPerCapita ?? 0;
-      inputs.governmentSpending.deficitSurplus = (existingCountry as any).budgetDeficitSurplus ?? 0;
+        typedCountry.spendingGDPPercent ?? 0;
+      inputs.governmentSpending.spendingPerCapita = typedCountry.spendingPerCapita ?? 0;
+      inputs.governmentSpending.deficitSurplus = typedCountry.budgetDeficitSurplus ?? 0;
 
       // National Identity
-      const nationalIdentity = (existingCountry as any).nationalIdentity;
+      const nationalIdentity = typedCountry.nationalIdentity;
       inputs.nationalIdentity = {
         countryName: nationalIdentity?.countryName || existingCountry.name || "",
         officialName: nationalIdentity?.officialName || "",
@@ -307,20 +310,20 @@ export function useBuilderState(
         capitalCity: nationalIdentity?.capitalCity || "",
         largestCity: nationalIdentity?.largestCity || "",
         demonym: nationalIdentity?.demonym || "",
-        currency: nationalIdentity?.currency || (existingCountry as any).currencyName || "",
+        currency: nationalIdentity?.currency || typedCountry.currencyName || "",
         currencySymbol:
-          nationalIdentity?.currencySymbol || (existingCountry as any).currencySymbol || "$",
+          nationalIdentity?.currencySymbol || typedCountry.currencySymbol || "$",
         officialLanguages: nationalIdentity?.officialLanguages || "",
         nationalLanguage: nationalIdentity?.nationalLanguage || "",
         nationalAnthem: nationalIdentity?.nationalAnthem || "",
         nationalReligion:
-          nationalIdentity?.nationalReligion || (existingCountry as any).religion || "",
+          nationalIdentity?.nationalReligion || typedCountry.religion || "",
         nationalDay: nationalIdentity?.nationalDay || "",
         callingCode: nationalIdentity?.callingCode || "",
         internetTLD: nationalIdentity?.internetTLD || "",
         drivingSide: nationalIdentity?.drivingSide || "right",
         timeZone: nationalIdentity?.timeZone || "",
-        isoCode: nationalIdentity?.isoCode || (existingCountry as any).countryCode || "",
+        isoCode: nationalIdentity?.isoCode || typedCountry.countryCode || "",
         coordinatesLatitude: nationalIdentity?.coordinatesLatitude || "",
         coordinatesLongitude: nationalIdentity?.coordinatesLongitude || "",
         emergencyNumber: nationalIdentity?.emergencyNumber || "",
@@ -354,7 +357,7 @@ export function useBuilderState(
             fiscalYear: existingGovernment.fiscalYear,
             budgetCurrency: existingGovernment.budgetCurrency,
           },
-          departments: (existingGovernment.departments as any[]).map((dept: any) => ({
+          departments: (existingGovernment.departments as GovernmentDepartment[]).map((dept) => ({
             name: dept.name,
             shortName: dept.shortName ?? undefined,
             category: dept.category,

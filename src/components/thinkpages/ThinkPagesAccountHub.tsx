@@ -23,11 +23,12 @@ function ThinkPagesAccountHubInner() {
 
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
     enabled: !!user?.id,
+    staleTime: 5 * 60_000,
   });
 
-  const { data: countryData } = api.countries.getByIdAtTime.useQuery(
-    { id: userProfile?.countryId || "" },
-    { enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "", retry: false }
+  const { data: countryData } = api.countries.getMapSummary.useQuery(
+    { countryId: userProfile?.countryId || "" },
+    { enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "", staleTime: 5 * 60_000, retry: false }
   );
 
   const { data: accountsData } = api.thinkpages.getAccountsByCountry.useQuery(

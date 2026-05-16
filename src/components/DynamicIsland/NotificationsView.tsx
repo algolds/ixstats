@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Plus,
 } from "lucide-react";
+import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import type { NotificationsViewProps } from "./types";
 
 // Helper: resolve icon by category/type
@@ -140,8 +141,12 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
   const unreadNotifications = notificationsData?.unreadCount || 0;
   const enhancedUnreadCount = enhancedStats.unread || 0;
+  const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const totalUnreadCount =
-    unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0) + enhancedUnreadCount;
+    unreadNotifications +
+    (isExecutiveMode ? executiveUnreadCount : 0) +
+    enhancedUnreadCount +
+    messageUnreadCount;
 
   return (
     <div className="p-6">

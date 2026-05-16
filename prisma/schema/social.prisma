@@ -365,6 +365,8 @@ model PostBookmark {
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
+  @@index([userId], map: "PostBookmark_userId_idx")
+  @@index([postId], map: "PostBookmark_postId_idx")
 }
 
 model PostFlag {
@@ -375,6 +377,8 @@ model PostFlag {
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
+  @@index([userId], map: "PostFlag_userId_idx")
+  @@index([postId], map: "PostFlag_postId_idx")
 }
 
 model ActivityFeed {

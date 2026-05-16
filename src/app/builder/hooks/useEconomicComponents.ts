@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { EconomicComponentType } from "@prisma/client";
+import { EconomicComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
 
 export interface UseEconomicComponentsProps {

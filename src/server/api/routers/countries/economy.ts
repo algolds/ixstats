@@ -256,7 +256,7 @@ export const economyProcedures = {
     }),
 
   getByIdAtTime: publicProcedure
-    .input(z.object({ id: z.string(), timestamp: z.number() }))
+    .input(z.object({ id: z.string(), timestamp: z.number().optional() }))
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
@@ -265,6 +265,7 @@ export const economyProcedures = {
 
       if (!country) throw new Error("Country not found");
 
+      const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const econCfg = await getEconomicConfigFromDB(ctx.db);
       const baselineDate = country.baselineDate ? country.baselineDate.getTime() : Date.now();
       const calc = new IxStatsCalculator(econCfg, baselineDate);
@@ -276,7 +277,7 @@ export const economyProcedures = {
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
 
-      return calc.calculateTimeProgression(baselineStats, input.timestamp, effects);
+      return calc.calculateTimeProgression(baselineStats, targetTime, effects);
     }),
 
   getGlobalStats: cachedStaticProcedure.query(async ({ ctx }) => {
@@ -338,6 +339,150 @@ export const economyProcedures = {
           { country: "Economic Ally", volume: totalVolume * 0.12 },
         ],
       };
+    }),
+
+  getActivityRingsData: rateLimitedPublicProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          include: {
+            storytellerEffects: {
+              where: { isActive: true },
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
+          },
+        });
+
+        if (!country) {
+          throw new Error(`Country with ID ${input.countryId} not found`);
+        }
+
+        const currentTime = IxTime.getCurrentIxTime();
+        const econCfg = await getEconomicConfigFromDB(ctx.db);
+        const baselineDate = country.baselineDate.getTime();
+        const calc = new IxStatsCalculator(econCfg, baselineDate);
+        const base = prepareBaseCountryData(country);
+        const baselineStats = calc.initializeCountryStats(base);
+        const effects = (country.storytellerEffects as any[]).map((i: any) => ({
+          ...i,
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
+        }));
+        const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, effects);
+
+        const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
+
+        const calculateEconomicVitality = () => {
+          const gdpScore = Math.min(100, (currentStats.newStats.currentGdpPerCapita / 50000) * 100);
+          const growthBonus = Math.min(
+            20,
+            Math.max(-20, currentStats.newStats.adjustedGdpGrowth * 400)
+          );
+          return Math.min(100, Math.max(0, gdpScore * 0.7 + growthBonus + 30));
+        };
+
+        const calculatePopulationWellbeing = () => {
+          const growthHealth = popGrowthRate > 0 ? 70 : 40;
+          const densityFactor = country.populationDensity
+            ? Math.max(50, 100 - country.populationDensity / 500)
+            : 60;
+          return (growthHealth + densityFactor) / 2;
+        };
+
+        const calculateDiplomaticStanding = () => {
+          return Math.min(
+            100,
+            Math.max(
+              40,
+              ((country as any).globalDiplomaticInfluence || 50) +
+                ((country as any).tradeRelationshipStrength || 10) +
+                ((country as any).allianceStrength || 15) -
+                ((country as any).diplomaticTensions || 5)
+            )
+          );
+        };
+
+        const calculateGovernmentalEfficiency = () => {
+          const economicTierScore =
+            {
+              Extravagant: 95,
+              "Very Strong": 85,
+              Strong: 75,
+              Healthy: 65,
+              Developed: 50,
+              Developing: 35,
+              Impoverished: 25,
+            }[currentStats.newStats.economicTier] || 25;
+          return economicTierScore * 0.8;
+        };
+
+        const economicVitality =
+          country.economicVitality && country.economicVitality > 5
+            ? country.economicVitality
+            : calculateEconomicVitality();
+
+        const populationWellbeing =
+          country.populationWellbeing && country.populationWellbeing > 5
+            ? country.populationWellbeing
+            : calculatePopulationWellbeing();
+
+        const diplomaticStanding =
+          country.diplomaticStanding && country.diplomaticStanding > 5
+            ? country.diplomaticStanding
+            : calculateDiplomaticStanding();
+
+        const governmentalEfficiency =
+          country.governmentalEfficiency && country.governmentalEfficiency > 5
+            ? country.governmentalEfficiency
+            : calculateGovernmentalEfficiency();
+
+        return {
+          economicVitality: Math.round(economicVitality),
+          populationWellbeing: Math.round(populationWellbeing),
+          diplomaticStanding: Math.round(diplomaticStanding),
+          governmentalEfficiency: Math.round(governmentalEfficiency),
+          economicMetrics: {
+            gdpPerCapita: `$${currentStats.newStats.currentGdpPerCapita.toLocaleString()}`,
+            growthRate: `${(currentStats.newStats.adjustedGdpGrowth * 100).toFixed(1)}%`,
+            tier: currentStats.newStats.economicTier,
+          },
+          populationMetrics: {
+            population: `${Math.round(currentStats.newStats.currentPopulation / 1000000)}M`,
+            growthRate: `${(popGrowthRate * 100).toFixed(2)}%`,
+            tier: currentStats.newStats.populationTier,
+          },
+          diplomaticMetrics: {
+            allies: `${Math.floor(((country as any).globalDiplomaticInfluence || 50) / 10) + 3}`,
+            reputation:
+              diplomaticStanding > 75
+                ? "Strong"
+                : diplomaticStanding > 50
+                  ? "Stable"
+                  : "Developing",
+            treaties: `${Math.floor(((country as any).tradeRelationshipStrength || 25) / 2) + 5}`,
+          },
+          governmentMetrics: {
+            approval: `${Math.round(Math.min(95, Math.max(25, 50 + currentStats.newStats.adjustedGdpGrowth * 1500)))}%`,
+            efficiency:
+              governmentalEfficiency > 80
+                ? "Excellent"
+                : governmentalEfficiency > 60
+                  ? "Good"
+                  : "Improving",
+            stability:
+              diplomaticStanding > 70 && governmentalEfficiency > 60 ? "Stable" : "Monitored",
+          },
+          generatedAt: currentTime,
+        };
+      } catch (error) {
+        console.error("Failed to generate activity rings data:", error);
+        throw new Error("Failed to generate activity rings data");
+      }
     }),
 };
 

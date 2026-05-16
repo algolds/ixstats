@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, CheckCircle, AlertCircle, Eye, EyeOff, Disc, Shield, MessageSquare, BookOpen, Link2 } from "lucide-react";
+import { User, CheckCircle, AlertCircle, Eye, EyeOff, Disc, Shield, MessageSquare, BookOpen, Link } from "lucide-react";
 import { UserButton } from "~/context/auth-context";
 import type { UserResource } from "@clerk/types";
 import { api } from "~/trpc/react";
@@ -107,7 +107,7 @@ export function AccountInformationCard({
 
         <div className="mt-8 border-t border-slate-100 pt-8 dark:border-slate-800">
           <div className="mb-4 flex items-center gap-2">
-            <Link2 className="h-4 w-4 text-indigo-500" />
+            <Link className="h-4 w-4 text-indigo-500" />
             <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white">IxnayID© </h3>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

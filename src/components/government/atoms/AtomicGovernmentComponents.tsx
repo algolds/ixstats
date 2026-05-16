@@ -30,7 +30,7 @@ import {
   MetricsPanel,
   TemplateSelector,
 } from "~/components/government/atomic";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 
 export interface AtomicGovernmentComponentsProps {
@@ -328,7 +328,7 @@ export function AtomicGovernmentComponents({
 }
 
 // Re-export types and utilities for convenience
-export { ComponentType } from "@prisma/client";
+export { ComponentType } from "~/lib/enums";
 export { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/atomic-government-data";
 export type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
 export {

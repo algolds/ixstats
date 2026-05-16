@@ -532,12 +532,7 @@ export class DatabaseOptimizer {
    */
   static async optimizeConnection(): Promise<void> {
     try {
-      // Set SQLite optimization pragmas
-      await db.$executeRaw`PRAGMA journal_mode = WAL`;
-      await db.$executeRaw`PRAGMA synchronous = NORMAL`;
-      await db.$executeRaw`PRAGMA cache_size = 10000`;
-      await db.$executeRaw`PRAGMA temp_store = MEMORY`;
-      await db.$executeRaw`PRAGMA mmap_size = 268435456`;
+      // PostgreSQL connection settings applied via DATABASE_URL connection parameters
 
       console.log("[DatabaseOptimizer] Connection optimized for production");
     } catch (error) {

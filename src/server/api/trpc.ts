@@ -153,7 +153,12 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
   }
 
   // Get rate limit identifier from headers (set by middleware)
-  const rateLimitIdentifier = opts.headers.get("x-ratelimit-identifier") || "anonymous";
+  // Fallback to IP-based identifier to prevent bypass when custom header is missing
+  const rateLimitIdentifier =
+    opts.headers.get("x-ratelimit-identifier") ||
+    opts.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    opts.headers.get("x-real-ip") ||
+    "anonymous";
 
   return {
     db,
@@ -697,12 +702,6 @@ const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }
 });
 
 // Category-specific rate limit middleware
-const heavyMutationRateLimit = createRateLimitMiddleware({
-  max: 10,
-  windowMs: 60000,
-  namespace: "heavy_mutations",
-});
-
 const standardMutationRateLimit = createRateLimitMiddleware({
   max: 60,
   windowMs: 60000,
@@ -788,39 +787,16 @@ export const executiveProcedure = t.procedure
  *   Examples: publicSearch, publicStats, publicData
  */
 
-// Heavy mutation procedures (10 req/min) - for resource-intensive operations
-export const heavyMutationProcedure = protectedProcedure
-  .use(heavyMutationRateLimit)
-  .use(inputValidationMiddleware)
-  .use(auditLogMiddleware);
-
-export const heavyMutationCountryOwnerProcedure = countryOwnerProcedure
-  .use(heavyMutationRateLimit)
-  .use(inputValidationMiddleware)
-  .use(auditLogMiddleware);
-
-// Standard mutation procedures (60 req/min) - for normal mutations
-export const standardMutationProcedure = protectedProcedure
-  .use(standardMutationRateLimit)
-  .use(inputValidationMiddleware);
-
+// Mutation procedures (60 req/min) - used by routers
 export const standardMutationCountryOwnerProcedure = countryOwnerProcedure
-  .use(standardMutationRateLimit)
-  .use(inputValidationMiddleware);
-
-export const standardMutationPremiumProcedure = premiumProcedure
   .use(standardMutationRateLimit)
   .use(inputValidationMiddleware);
 
 // Light mutation procedures (100 req/min) - for lightweight mutations
 export const lightMutationProcedure = protectedProcedure.use(lightMutationRateLimit);
 
-export const lightMutationCountryOwnerProcedure = countryOwnerProcedure.use(lightMutationRateLimit);
-
 // Read-only procedures (120 req/min) - for read-heavy operations
 export const readOnlyProcedure = protectedProcedure.use(readOnlyRateLimit);
-
-export const readOnlyPublicProcedure = publicProcedure.use(readOnlyRateLimit);
 
 // Public rate-limited procedures (30 req/min)
 export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);

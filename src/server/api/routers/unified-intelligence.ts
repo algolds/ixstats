@@ -2164,7 +2164,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
 
         const categoryPolicies = policies
           .map((p) => ({ id: p.id, ...JSON.parse(p.value) }))
-          .filter((p: any) => p.category === input.category && p.status === "implemented");
+          .filter((p: Record<string, unknown>) => p.category === input.category && p.status === "implemented");
 
         // Get policy effects for this country's economic model
         let policyEffects: any[] = [];
@@ -2179,7 +2179,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
         // Calculate effectiveness metrics
         const totalPolicies = categoryPolicies.length;
         const activePolicies = categoryPolicies.filter(
-          (p: any) => p.status === "implemented"
+          (p: Record<string, unknown>) => p.status === "implemented"
         ).length;
 
         // Calculate aggregate impact
@@ -2203,7 +2203,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
 
         // Get related policy effects
         const relatedEffects = policyEffects.filter((effect: any) =>
-          categoryPolicies.some((p: any) => p.title === effect.name)
+          categoryPolicies.some((p: Record<string, unknown>) => p.title === effect.name)
         );
 
         const effectivenessScore =
@@ -2982,11 +2982,11 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
       // --- Economic findings ---
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        select: { gdp: true, gdpGrowth: true, population: true, name: true },
+        select: { currentTotalGdp: true, adjustedGdpGrowth: true, currentPopulation: true, name: true },
       });
 
       if (country) {
-        const gdpGrowth = country.gdpGrowth ?? 0;
+        const gdpGrowth = country.adjustedGdpGrowth ?? 0;
         const severity = gdpGrowth < -2 ? "critical" : gdpGrowth < 0 ? "warning" : "info";
         findings.push({
           id: "econ-gdp-growth",
@@ -2994,7 +2994,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
           severity,
           title: gdpGrowth >= 0 ? "GDP Growth Positive" : "GDP Growth Declining",
           description: gdpGrowth >= 0
-            ? `The economy is growing at ${gdpGrowth.toFixed(2)}% annually. Current GDP stands at $${((country.gdp ?? 0) / 1e9).toFixed(1)}B.`
+            ? `The economy is growing at ${gdpGrowth.toFixed(2)}% annually. Current GDP stands at $${((country.currentTotalGdp ?? 0) / 1e9).toFixed(1)}B.`
             : `The economy is contracting at ${gdpGrowth.toFixed(2)}%. Fiscal intervention may be required.`,
           metric: { value: gdpGrowth, change: gdpGrowth, unit: "% growth" },
           timestamp: now.toISOString(),
@@ -3140,7 +3140,7 @@ export const unifiedIntelligenceRouter = createTRPCRouter({
 /**
  * Calculate volatility metrics from historical data
  */
-function calculateVolatility(data: any[]) {
+function calculateVolatility(data: Record<string, unknown>[]) {
   if (data.length < 2) return { gdp: 0, population: 0, overall: 0 };
 
   const gdpValues = data.map((d) => d.totalGdp).filter(Boolean);
@@ -3157,7 +3157,7 @@ function calculateVolatility(data: any[]) {
 /**
  * Calculate trend analysis from historical data
  */
-function calculateTrends(data: any[]) {
+function calculateTrends(data: Record<string, unknown>[]) {
   if (data.length < 3) return { gdp: "stable", population: "stable", overall: "stable" };
 
   const recent = data.slice(0, 10);
@@ -3183,7 +3183,7 @@ function calculateTrends(data: any[]) {
 /**
  * Calculate correlation analysis (simplified)
  */
-function calculateCorrelations(data: any[]) {
+function calculateCorrelations(data: Record<string, unknown>[]) {
   // Simplified correlation analysis
   return {
     gdpPopulation: 0.85,
@@ -3205,7 +3205,7 @@ function calculateStandardDeviation(values: number[]) {
 /**
  * Generate AI-powered recommendations based on country data
  */
-function generateAIRecommendations(country: any, recentData: any[]) {
+function generateAIRecommendations(country: Record<string, unknown>, recentData: Record<string, unknown>[]) {
   const recommendations = [];
 
   if (country.currentGdpPerCapita && country.currentGdpPerCapita < 25000) {
@@ -3245,7 +3245,7 @@ function generateAIRecommendations(country: any, recentData: any[]) {
 /**
  * Generate predictive economic models
  */
-function generatePredictiveModels(country: any, historicalData: any[], input: any) {
+function generatePredictiveModels(country: Record<string, unknown>, historicalData: Record<string, unknown>[], input: Record<string, unknown>) {
   const timeframePeriods = {
     "6_months": 6,
     "1_year": 12,
@@ -3286,7 +3286,7 @@ function generatePredictiveModels(country: any, historicalData: any[], input: an
 /**
  * Calculate real-time country metrics (social, security, political)
  */
-async function calculateRealTimeMetrics(db: any, countryId: string) {
+async function calculateRealTimeMetrics(db: Record<string, unknown>, countryId: string) {
   // Get recent security threats
   const securityThreats = await db.intelligenceAlert.findMany({
     where: {
@@ -3331,7 +3331,7 @@ async function calculateRealTimeMetrics(db: any, countryId: string) {
 
   const baseSocialScore = economicTierScores[country?.economicTier as string] ?? 50;
   const socialPolicies = policies.filter(
-    (p: any) => p.policyType === "social" || p.policyType === "SOCIAL"
+    (p: Record<string, unknown>) => p.policyType === "social" || p.policyType === "SOCIAL"
   );
   const socialScore = Math.min(100, baseSocialScore + socialPolicies.length * 3);
 

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { ComponentType } from "@prisma/client";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { ComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
 import { UnifiedAtomicStateManager, type UnifiedAtomicState } from "~/lib/unified-atomic-state";
 
@@ -252,18 +252,32 @@ export function AtomicStateProvider({ children, countryId, userId }: AtomicState
     };
   }, [manager]);
 
-  const contextValue: AtomicStateContextValue = {
-    state,
-    manager,
-    isLoading,
-    error,
-    setSelectedComponents,
-    addComponent,
-    removeComponent,
-    refreshCalculations,
-    getComponentContribution,
-    getSystemHealth,
-  };
+  const contextValue = useMemo<AtomicStateContextValue>(
+    () => ({
+      state,
+      manager,
+      isLoading,
+      error,
+      setSelectedComponents,
+      addComponent,
+      removeComponent,
+      refreshCalculations,
+      getComponentContribution,
+      getSystemHealth,
+    }),
+    [
+      state,
+      manager,
+      isLoading,
+      error,
+      setSelectedComponents,
+      addComponent,
+      removeComponent,
+      refreshCalculations,
+      getComponentContribution,
+      getSystemHealth,
+    ]
+  );
 
   return <AtomicStateContext.Provider value={contextValue}>{children}</AtomicStateContext.Provider>;
 }

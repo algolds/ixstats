@@ -13,6 +13,7 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   publicProcedure,
+  rateLimitedPublicProcedure,
   cachedPublicProcedure,
   adminProcedure,
   countryOwnerProcedure,
@@ -20,6 +21,7 @@ import {
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/trpc-cache";
+import { broadcastMapUpdate } from "~/lib/map-update-bus";
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { createHash } from "crypto";
@@ -919,7 +921,7 @@ export const geoRouter = createTRPCRouter({
   /**
    * Get country at a given point using PostGIS ST_Contains.
    */
-  getCountryAtPoint: publicProcedure
+  getCountryAtPoint: rateLimitedPublicProcedure
     .input(
       z.object({
         lng: z.number().min(-180).max(180),
@@ -970,7 +972,7 @@ export const geoRouter = createTRPCRouter({
    * Get comprehensive info at a map point: elevation, climate, country, subdivision.
    * Queries all relevant layers via PostGIS ST_Contains in a single call.
    */
-  getPointInfo: publicProcedure
+  getPointInfo: rateLimitedPublicProcedure
     .input(
       z.object({
         lng: z.number().min(-180).max(180),
@@ -1477,6 +1479,7 @@ export const geoRouter = createTRPCRouter({
       // Invalidate caches
       layerCache.delete("political");
       await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage", "geo.getCountryLinkage"]);
+      broadcastMapUpdate("linkage", input.countryId);
 
       return {
         featureId: input.featureId,
@@ -1519,6 +1522,7 @@ export const geoRouter = createTRPCRouter({
 
       layerCache.delete("political");
       await invalidateCache(["geo.listCountries", "geo.getWorldMap", "geo.validateLinkage", "geo.getCountryLinkage"]);
+      broadcastMapUpdate("linkage", previousCountryId ?? undefined);
 
       return { featureId: input.featureId, previousCountryId };
     }),
@@ -2444,6 +2448,7 @@ export const geoRouter = createTRPCRouter({
       if (input.isNationalCapital) {
         await invalidateCache(["geo.getCapitalCities"]);
       }
+      broadcastMapUpdate("city", input.countryId);
 
       return { id: city.id, name: city.name, status: "approved" as const };
     }),
@@ -2502,6 +2507,7 @@ export const geoRouter = createTRPCRouter({
       });
 
       await invalidateCache(["geo.getAllMapFeatures"]);
+      broadcastMapUpdate("city", input.countryId);
       return { id: updated.id, name: updated.name };
     }),
 
@@ -2534,6 +2540,7 @@ export const geoRouter = createTRPCRouter({
       if (wasCapital) {
         await invalidateCache(["geo.getCapitalCities"]);
       }
+      broadcastMapUpdate("city", input.countryId);
       return { id: input.cityId, deleted: true };
     }),
 
@@ -2586,6 +2593,7 @@ export const geoRouter = createTRPCRouter({
       }
 
       await invalidateCache(["geo.getAllMapFeatures"]);
+      broadcastMapUpdate("subdivision", input.countryId);
       return {
         id: subdivision.id,
         name: subdivision.name,
@@ -2644,6 +2652,7 @@ export const geoRouter = createTRPCRouter({
       });
 
       await invalidateCache(["geo.getAllMapFeatures"]);
+      broadcastMapUpdate("subdivision", input.countryId);
       return { id: updated.id, name: updated.name };
     }),
 
@@ -2672,6 +2681,7 @@ export const geoRouter = createTRPCRouter({
 
       await ctx.db.subdivision.delete({ where: { id: input.subdivisionId } });
       await invalidateCache(["geo.getAllMapFeatures"]);
+      broadcastMapUpdate("subdivision", input.countryId);
       return { id: input.subdivisionId, deleted: true };
     }),
 
@@ -2909,6 +2919,7 @@ export const geoRouter = createTRPCRouter({
       });
 
       await invalidateCache(["geo.getAllMapFeatures"]);
+      broadcastMapUpdate("poi", input.countryId);
       return { id: poi.id, name: poi.name, status: "approved" as const };
     }),
 
@@ -2962,6 +2973,7 @@ export const geoRouter = createTRPCRouter({
       });
 
       await invalidateCache(["geo.getAllMapFeatures"]);
+      broadcastMapUpdate("poi", input.countryId);
       return { id: updated.id, name: updated.name };
     }),
 
@@ -2990,6 +3002,7 @@ export const geoRouter = createTRPCRouter({
 
       await ctx.db.pointOfInterest.delete({ where: { id: input.poiId } });
       await invalidateCache(["geo.getAllMapFeatures"]);
+      broadcastMapUpdate("poi", input.countryId);
       return { id: input.poiId, deleted: true };
     }),
 
@@ -3047,6 +3060,7 @@ export const geoRouter = createTRPCRouter({
         },
       });
       await invalidateCache(["geo.getAllMapFeatures", "geo.getAllStoryPins"]);
+      broadcastMapUpdate("storyPin", input.countryId);
 
       // Auto-generate ThinkPages news for major/legendary story pins
       if (input.importance >= 1) {
@@ -3114,6 +3128,7 @@ export const geoRouter = createTRPCRouter({
         },
       });
       await invalidateCache(["geo.getAllMapFeatures", "geo.getAllStoryPins"]);
+      broadcastMapUpdate("storyPin", input.countryId);
       return { id: updated.id, title: updated.title };
     }),
 
@@ -3128,6 +3143,7 @@ export const geoRouter = createTRPCRouter({
       if (!pin) throw new TRPCError({ code: "NOT_FOUND", message: "Story pin not found" });
       await ctx.db.storyPin.delete({ where: { id: input.pinId } });
       await invalidateCache(["geo.getAllMapFeatures", "geo.getAllStoryPins"]);
+      broadcastMapUpdate("storyPin", input.countryId);
       return { id: input.pinId, deleted: true };
     }),
 
@@ -3402,6 +3418,7 @@ export const geoRouter = createTRPCRouter({
         },
       });
       await invalidateCache(["geo.getAllMapFeatures", "geo.getAllMapLabels"]);
+      broadcastMapUpdate("mapLabel", input.countryId);
       return { id: label.id, text: label.text, status: "approved" as const };
     }),
 
@@ -3442,6 +3459,7 @@ export const geoRouter = createTRPCRouter({
         data: Object.fromEntries(Object.entries(updateData).filter(([, v]) => v !== undefined)),
       });
       await invalidateCache(["geo.getAllMapFeatures", "geo.getAllMapLabels"]);
+      broadcastMapUpdate("mapLabel", input.countryId);
       return { id: updated.id, text: updated.text };
     }),
 
@@ -3456,6 +3474,7 @@ export const geoRouter = createTRPCRouter({
       if (!label) throw new TRPCError({ code: "NOT_FOUND", message: "Map label not found" });
       await ctx.db.mapLabel.delete({ where: { id: input.labelId } });
       await invalidateCache(["geo.getAllMapFeatures", "geo.getAllMapLabels"]);
+      broadcastMapUpdate("mapLabel", input.countryId);
       return { id: input.labelId, deleted: true };
     }),
 
@@ -3680,6 +3699,7 @@ export const geoRouter = createTRPCRouter({
       layerCache.delete("political");
       // Invalidate server-side tRPC cache so queries return fresh data
       await invalidateCache(["geo.getSovereigntyRelations", "geo.getCountrySovereignty", "geo.getWorldMap"]);
+      broadcastMapUpdate("sovereignty");
 
       return relation;
     }),
@@ -3716,6 +3736,7 @@ export const geoRouter = createTRPCRouter({
 
       layerCache.delete("political");
       await invalidateCache(["geo.getSovereigntyRelations", "geo.getCountrySovereignty", "geo.getWorldMap"]);
+      broadcastMapUpdate("sovereignty");
       return updated;
     }),
 
@@ -3726,6 +3747,7 @@ export const geoRouter = createTRPCRouter({
       await ctx.db.countrySovereignty.delete({ where: { id: input.id } });
       layerCache.delete("political");
       await invalidateCache(["geo.getSovereigntyRelations", "geo.getCountrySovereignty", "geo.getWorldMap"]);
+      broadcastMapUpdate("sovereignty");
       return { success: true };
     }),
 
@@ -4806,6 +4828,7 @@ export const geoRouter = createTRPCRouter({
       // Clear cache for this layer
       layerCache.delete(upload.layerType);
       await invalidateCache(["geo.getWorldMap", "geo.getLayerGeoJSON", "geo.getMapStats", "geo.getAllMapFeatures", "geo.listCountries"]);
+      broadcastMapUpdate("bulk", upload.countryId ?? undefined);
 
       return {
         success: true,
@@ -4915,6 +4938,7 @@ export const geoRouter = createTRPCRouter({
 
       layerCache.delete(targetUpload.layerType);
       await invalidateCache(["geo.getWorldMap", "geo.getLayerGeoJSON", "geo.getMapStats", "geo.getAllMapFeatures", "geo.listCountries"]);
+      broadcastMapUpdate("bulk");
 
       return { success: true, restoredUploadId: targetUpload.id };
     }),
@@ -5597,7 +5621,7 @@ export const geoRouter = createTRPCRouter({
   /**
    * Get shared vertices for a specific feature (used by border editor).
    */
-  getSharedVertices: publicProcedure
+  getSharedVertices: rateLimitedPublicProcedure
     .input(z.object({ featureId: z.string() }))
     .query(async ({ ctx, input }) => {
       const vertices = await ctx.db.sharedVertex.findMany({

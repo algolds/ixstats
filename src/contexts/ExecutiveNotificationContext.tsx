@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 
 interface ExecutiveNotification {
   id: string;
@@ -67,15 +67,18 @@ export function ExecutiveNotificationProvider({ children }: ExecutiveNotificatio
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }, []);
 
-  const contextValue: ExecutiveNotificationContextType = {
-    notifications,
-    unreadCount,
-    isExecutiveMode,
-    setNotifications,
-    setExecutiveMode,
-    markAsRead,
-    markAllAsRead,
-  };
+  const contextValue = useMemo<ExecutiveNotificationContextType>(
+    () => ({
+      notifications,
+      unreadCount,
+      isExecutiveMode,
+      setNotifications,
+      setExecutiveMode,
+      markAsRead,
+      markAllAsRead,
+    }),
+    [notifications, unreadCount, isExecutiveMode, setNotifications, setExecutiveMode, markAsRead, markAllAsRead]
+  );
 
   return (
     <ExecutiveNotificationContext.Provider value={contextValue}>

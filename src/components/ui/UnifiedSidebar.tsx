@@ -265,7 +265,7 @@ export function UnifiedSidebar({
             {/* Clerk UserButton absolutely positioned over avatar shadow */}
             <div className="absolute inset-0 flex items-center justify-center">
               <UserButton
-                afterSignOutUrl="/"
+                signOutFallbackRedirectUrl="/"
                 appearance={{ elements: { userButtonBox: "w-full h-full" } }}
               />
             </div>

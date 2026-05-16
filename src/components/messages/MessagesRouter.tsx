@@ -115,11 +115,7 @@ function MessagesRouterInner() {
   );
 
   // ── WebSocket ──
-  const {
-    clientState: rawClientState,
-    sendTypingIndicator,
-    subscribeToConversation,
-  } = useThinkPagesWebSocket({
+  const wsOptions = useMemo(() => ({
     accountId: currentUserId,
     autoReconnect: true,
     onMessageUpdate: () => {
@@ -128,7 +124,13 @@ function MessagesRouterInner() {
     onConversationUpdate: () => {
       void refetchConversations();
     },
-  });
+  }), [currentUserId, refetchConversations]);
+
+  const {
+    clientState: rawClientState,
+    sendTypingIndicator,
+    subscribeToConversation,
+  } = useThinkPagesWebSocket(wsOptions);
 
   const clientState = useMemo(
     () => ({

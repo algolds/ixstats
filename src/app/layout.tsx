@@ -26,8 +26,7 @@ import { headers } from "next/headers";
 import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
-import { WikiContextProvider } from "~/components/wikios/shared/WikiContext";
-import { ForumContextProvider } from "~/components/forum/shared/ForumContext";
+
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -61,8 +60,6 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
 
   const AppContent = () => (
     <TRPCReactProvider>
-      <WikiContextProvider>
-      <ForumContextProvider>
       <GlobalLinkTooltipProvider>
       <ThemeProvider>
         <IxTimeProvider>
@@ -92,8 +89,6 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
         </IxTimeProvider>
       </ThemeProvider>
       </GlobalLinkTooltipProvider>
-      </ForumContextProvider>
-    </WikiContextProvider>
     </TRPCReactProvider>
   );
 
@@ -111,6 +106,9 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
           <ClerkProvider
             publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
             nonce={headersList.get("x-csp-nonce") ?? undefined}
+            signInUrl={signInPath}
+            signUpUrl={signUpPath}
+            signInFallbackRedirectUrl={dashboardPath}
           >
             <AuthProvider>
               <AppContent />

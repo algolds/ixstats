@@ -7,7 +7,18 @@
  * Client-side compatible (no server dependencies).
  */
 
-import * as turf from "@turf/turf";
+import {
+  area,
+  bbox,
+  buffer,
+  centroid,
+  difference,
+  feature,
+  featureCollection,
+  intersect,
+  kinks,
+  union,
+} from "@turf/turf";
 import type { Feature, Polygon, MultiPolygon, Position } from "geojson";
 import type {
   ProvinceFeature,
@@ -98,8 +109,8 @@ export function detectGaps(
     let unionGeom: Feature<Polygon | MultiPolygon> | null = provincePolygons[0]!;
     for (let i = 1; i < provincePolygons.length; i++) {
       try {
-        const result = turf.union(
-          turf.featureCollection([unionGeom!, provincePolygons[i]!])
+        const result = union(
+          featureCollection([unionGeom!, provincePolygons[i]!])
         );
         if (result) unionGeom = result as Feature<Polygon | MultiPolygon>;
       } catch {
@@ -113,8 +124,8 @@ export function detectGaps(
     const countryFeature = toTurfFeature(countryBorder);
     if (!countryFeature) return [];
 
-    const diff = turf.difference(
-      turf.featureCollection([countryFeature, unionGeom])
+    const diff = difference(
+      featureCollection([countryFeature, unionGeom])
     );
 
     if (!diff || !diff.geometry) return [];
@@ -169,7 +180,7 @@ export function detectOverlaps(provinces: ProvinceFeature[]): OverlapReport[] {
         const featB = toTurfFeature(b.geometry);
         if (!featA || !featB) continue;
 
-        const intersection = turf.intersect(turf.featureCollection([featA, featB]));
+        const intersection = intersect(featureCollection([featA, featB]));
         if (!intersection || !intersection.geometry) continue;
 
         const areaSqKm = computeAreaSqKm(intersection.geometry as Polygon | MultiPolygon);
@@ -238,7 +249,7 @@ export function autoFillGaps(
     if (areaPercent >= 0.01) continue; // Skip gaps > 1% of country
 
     // Find nearest included province
-    const gapCentroid = turf.centroid(toTurfFeature(gap.geometry)!);
+    const gapCentroid = centroid(toTurfFeature(gap.geometry)!);
     const gapCenter = gapCentroid.geometry.coordinates as Position;
 
     let nearestIdx = -1;
@@ -259,7 +270,7 @@ export function autoFillGaps(
         const provFeat = toTurfFeature(province.geometry);
         const gapFeat = toTurfFeature(gap.geometry);
         if (provFeat && gapFeat) {
-          const merged = turf.union(turf.featureCollection([provFeat, gapFeat]));
+          const merged = union(featureCollection([provFeat, gapFeat]));
           if (merged && merged.geometry) {
             result[nearestIdx] = {
               ...province,
@@ -301,7 +312,7 @@ export function resolveOverlaps(
       const loserFeat = toTurfFeature(result[loserIdx]!.geometry);
       const overlapFeat = toTurfFeature(overlap.geometry);
       if (loserFeat && overlapFeat) {
-        const diff = turf.difference(turf.featureCollection([loserFeat, overlapFeat]));
+        const diff = difference(featureCollection([loserFeat, overlapFeat]));
         if (diff && diff.geometry) {
           result[loserIdx] = {
             ...result[loserIdx]!,
@@ -409,9 +420,9 @@ function validateIndividualFeatures(
     try {
       const feature = toTurfFeature(p.geometry);
       if (feature) {
-        const kinks = turf.kinks(feature);
-        if (kinks.features.length > 0) {
-          featureIssues.push(`Self-intersecting geometry (${kinks.features.length} kinks)`);
+        const kinkResult = kinks(feature);
+        if (kinkResult.features.length > 0) {
+          featureIssues.push(`Self-intersecting geometry (${kinkResult.features.length} kinks)`);
         }
       }
     } catch {
@@ -451,7 +462,7 @@ function computeAreaSqKm(geometry: Polygon | MultiPolygon): number {
   try {
     const feat = toTurfFeature(geometry);
     if (!feat) return 0;
-    return turf.area(feat) / 1_000_000; // m² to km²
+    return area(feat) / 1_000_000; // m² to km²
   } catch {
     return 0;
   }
@@ -477,7 +488,7 @@ function findAdjacentProvinces(
   provinces: ProvinceFeature[]
 ): string[] {
   const adjacent: string[] = [];
-  const gapBbox = turf.bbox(makeFeature(gapGeom)) as [number, number, number, number];
+  const gapBbox = bbox(makeFeature(gapGeom)) as [number, number, number, number];
 
   for (const p of provinces) {
     if (!p.included) continue;
@@ -489,9 +500,9 @@ function findAdjacentProvinces(
       if (!provFeat) continue;
 
       // Check if they share any boundary (buffered check)
-      const buffered = turf.buffer(gapFeat, 0.001, { units: "degrees" });
+      const buffered = buffer(gapFeat, 0.001, { units: "degrees" });
       if (buffered) {
-        const intersection = turf.intersect(turf.featureCollection([buffered, provFeat]));
+        const intersection = intersect(featureCollection([buffered, provFeat]));
         if (intersection) adjacent.push(p.name);
       }
     } catch {
@@ -537,8 +548,8 @@ export function clipProvincesToBorder(
 
     try {
       const provFeat = makeFeature(p.geometry);
-      const clipped = turf.intersect(
-        turf.featureCollection([provFeat as Feature<Polygon | MultiPolygon>, countryFeat as Feature<Polygon | MultiPolygon>])
+      const clipped = intersect(
+        featureCollection([provFeat as Feature<Polygon | MultiPolygon>, countryFeat as Feature<Polygon | MultiPolygon>])
       );
 
       if (!clipped) {
@@ -549,8 +560,8 @@ export function clipProvincesToBorder(
       }
 
       // Check if geometry was actually modified
-      const originalArea = turf.area(provFeat);
-      const clippedArea = turf.area(clipped);
+      const originalArea = area(provFeat);
+      const clippedArea = area(clipped);
       if (originalArea > 0 && Math.abs(originalArea - clippedArea) / originalArea > 0.001) {
         clippedIndices.push(i);
         clippedNames.push(p.name);
@@ -580,14 +591,14 @@ export function clipGeometryToBorder(
   try {
     const feat = makeFeature(geometry);
     const borderFeat = makeFeature(countryBorder);
-    const clipped = turf.intersect(
-      turf.featureCollection([feat as Feature<Polygon | MultiPolygon>, borderFeat as Feature<Polygon | MultiPolygon>])
+    const clipped = intersect(
+      featureCollection([feat as Feature<Polygon | MultiPolygon>, borderFeat as Feature<Polygon | MultiPolygon>])
     );
 
     if (!clipped) return { geometry, wasClipped: true };
 
-    const origArea = turf.area(feat);
-    const clipArea = turf.area(clipped);
+    const origArea = area(feat);
+    const clipArea = area(clipped);
     const wasClipped = origArea > 0 && Math.abs(origArea - clipArea) / origArea > 0.001;
 
     return { geometry: clipped.geometry as Polygon | MultiPolygon, wasClipped };

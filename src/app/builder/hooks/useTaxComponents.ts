@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { TaxComponentType } from "@prisma/client";
+import { TaxComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
 
 export interface UseTaxComponentsProps {

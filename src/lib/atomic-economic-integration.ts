@@ -1,9 +1,9 @@
 // src/lib/atomic-economic-integration.ts
-import {
-  ComponentType,
-  type Country,
-  type GovernmentComponent,
-  type AtomicEffectiveness,
+import { ComponentType } from "~/lib/enums";
+import type {
+  Country,
+  GovernmentComponent,
+  AtomicEffectiveness,
 } from "@prisma/client";
 
 export interface AtomicEconomicModifiers {

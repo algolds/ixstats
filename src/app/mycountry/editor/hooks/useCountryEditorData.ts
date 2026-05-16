@@ -9,6 +9,7 @@ import {
   type GovernmentType,
 } from "~/types/government";
 import { useUserCountry } from "~/hooks/useUserCountry";
+import { CountryWithEditorFields } from "~/types/country-editor";
 import type { EditorFeedback, ValidationError } from "~/types/editor";
 
 function calculatePopulationTier(population: number): string {
@@ -66,18 +67,19 @@ export function useCountryEditorData() {
   // Initialize economic inputs when country data loads with LIVE data
   useEffect(() => {
     if (country && !economicInputs) {
+      const typedCountry = country as CountryWithEditorFields;
       console.log("=== useCountryEditorData - FULL COUNTRY DATA ===");
       console.log("Country name:", country.name);
-      console.log("Has nationalIdentity?:", !!(country as any).nationalIdentity);
-      console.log("Has calculatedStats?:", !!(country as any).calculatedStats);
+      console.log("Has nationalIdentity?:", !!typedCountry.nationalIdentity);
+      console.log("Has calculatedStats?:", !!typedCountry.calculatedStats);
 
       // Log the data structure to understand what we're getting
-      const calculatedStats = (country as any).calculatedStats;
+      const calculatedStats = typedCountry.calculatedStats;
       console.log("calculatedStats object:", calculatedStats);
-      console.log("baselinePopulation:", (country as any).baselinePopulation);
-      console.log("baselineGdpPerCapita:", (country as any).baselineGdpPerCapita);
-      console.log("currentPopulation (direct):", (country as any).currentPopulation);
-      console.log("currentGdpPerCapita (direct):", (country as any).currentGdpPerCapita);
+      console.log("baselinePopulation:", typedCountry.baselinePopulation);
+      console.log("baselineGdpPerCapita:", typedCountry.baselineGdpPerCapita);
+      console.log("currentPopulation (direct):", typedCountry.currentPopulation);
+      console.log("currentGdpPerCapita (direct):", typedCountry.currentGdpPerCapita);
       console.log("calculatedStats.currentPopulation:", calculatedStats?.currentPopulation);
       console.log("calculatedStats.currentGdpPerCapita:", calculatedStats?.currentGdpPerCapita);
       console.log("calculatedStats.currentTotalGdp:", calculatedStats?.currentTotalGdp);
@@ -93,11 +95,11 @@ export function useCountryEditorData() {
       // NO DEFAULTS - Show actual data or 0 if missing (makes missing data obvious in prod)
       const currentPop =
         Number(calculatedStats?.currentPopulation) ||
-        Number((country as any).baselinePopulation) ||
+        Number(typedCountry.baselinePopulation) ||
         0;
       const currentGdpPerCap =
         Number(calculatedStats?.currentGdpPerCapita) ||
-        Number((country as any).baselineGdpPerCapita) ||
+        Number(typedCountry.baselineGdpPerCapita) ||
         0;
       const currentTotalGdp = Number(calculatedStats?.currentTotalGdp) || 0;
 
@@ -110,9 +112,9 @@ export function useCountryEditorData() {
         totalPopulation: !isNaN(currentPop) ? currentPop : 0,
         gdpPerCapita: !isNaN(currentGdpPerCap) ? currentGdpPerCap : 0,
         nominalGDP: !isNaN(currentTotalGdp) ? currentTotalGdp : 0,
-        realGDPGrowthRate: (country as any).realGDPGrowthRate ?? 0,
-        inflationRate: (country as any).inflationRate ?? 0,
-        currencyExchangeRate: (country as any).currencyExchangeRate ?? 1.0,
+        realGDPGrowthRate: typedCountry.realGDPGrowthRate ?? 0,
+        inflationRate: typedCountry.inflationRate ?? 0,
+        currencyExchangeRate: typedCountry.currencyExchangeRate ?? 1.0,
       };
 
       // VALIDATE core indicators are never NaN (convert to 0 to make missing data obvious)
@@ -121,26 +123,26 @@ export function useCountryEditorData() {
       if (isNaN(inputs.coreIndicators.nominalGDP)) inputs.coreIndicators.nominalGDP = 0;
 
       // Labor & Employment - use database values or 0 if missing (no fake placeholders)
-      inputs.laborEmployment.unemploymentRate = (country as any).unemploymentRate ?? 0;
+      inputs.laborEmployment.unemploymentRate = typedCountry.unemploymentRate ?? 0;
       inputs.laborEmployment.laborForceParticipationRate =
-        (country as any).laborForceParticipationRate ?? 0;
-      inputs.laborEmployment.employmentRate = (country as any).employmentRate ?? 0;
-      inputs.laborEmployment.totalWorkforce = (country as any).totalWorkforce ?? 0;
-      inputs.laborEmployment.averageWorkweekHours = (country as any).averageWorkweekHours ?? 0;
-      inputs.laborEmployment.minimumWage = (country as any).minimumWage ?? 0;
-      inputs.laborEmployment.averageAnnualIncome = (country as any).averageAnnualIncome ?? 0;
+        typedCountry.laborForceParticipationRate ?? 0;
+      inputs.laborEmployment.employmentRate = typedCountry.employmentRate ?? 0;
+      inputs.laborEmployment.totalWorkforce = typedCountry.totalWorkforce ?? 0;
+      inputs.laborEmployment.averageWorkweekHours = typedCountry.averageWorkweekHours ?? 0;
+      inputs.laborEmployment.minimumWage = typedCountry.minimumWage ?? 0;
+      inputs.laborEmployment.averageAnnualIncome = typedCountry.averageAnnualIncome ?? 0;
 
       // Fiscal system - use database values or 0 if missing (no fake placeholders)
-      inputs.fiscalSystem.taxRevenueGDPPercent = (country as any).taxRevenueGDPPercent ?? 0;
-      inputs.fiscalSystem.governmentRevenueTotal = (country as any).governmentRevenueTotal ?? 0;
-      inputs.fiscalSystem.totalDebtGDPRatio = (country as any).totalDebtGDPRatio ?? 0;
-      inputs.fiscalSystem.budgetDeficitSurplus = (country as any).budgetDeficitSurplus ?? 0;
+      inputs.fiscalSystem.taxRevenueGDPPercent = typedCountry.taxRevenueGDPPercent ?? 0;
+      inputs.fiscalSystem.governmentRevenueTotal = typedCountry.governmentRevenueTotal ?? 0;
+      inputs.fiscalSystem.totalDebtGDPRatio = typedCountry.totalDebtGDPRatio ?? 0;
+      inputs.fiscalSystem.budgetDeficitSurplus = typedCountry.budgetDeficitSurplus ?? 0;
       inputs.fiscalSystem.governmentBudgetGDPPercent =
-        (country as any).governmentBudgetGDPPercent ?? 0;
-      inputs.fiscalSystem.internalDebtGDPPercent = (country as any).internalDebtGDPPercent ?? 0;
-      inputs.fiscalSystem.externalDebtGDPPercent = (country as any).externalDebtGDPPercent ?? 0;
-      inputs.fiscalSystem.interestRates = (country as any).interestRates ?? 0;
-      inputs.fiscalSystem.debtServiceCosts = (country as any).debtServiceCosts ?? 0;
+        typedCountry.governmentBudgetGDPPercent ?? 0;
+      inputs.fiscalSystem.internalDebtGDPPercent = typedCountry.internalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.externalDebtGDPPercent = typedCountry.externalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.interestRates = typedCountry.interestRates ?? 0;
+      inputs.fiscalSystem.debtServiceCosts = typedCountry.debtServiceCosts ?? 0;
 
       // Recalculate government revenue total with valid data
       inputs.fiscalSystem.governmentRevenueTotal =
@@ -175,15 +177,15 @@ export function useCountryEditorData() {
       });
 
       // Demographics - use database values or 0 if missing (no fake placeholders)
-      inputs.demographics.lifeExpectancy = (country as any).lifeExpectancy ?? 0;
-      inputs.demographics.literacyRate = (country as any).literacyRate ?? 0;
+      inputs.demographics.lifeExpectancy = typedCountry.lifeExpectancy ?? 0;
+      inputs.demographics.literacyRate = typedCountry.literacyRate ?? 0;
       if (
-        (country as any).urbanPopulationPercent !== undefined &&
-        (country as any).urbanPopulationPercent !== null
+        typedCountry.urbanPopulationPercent !== undefined &&
+        typedCountry.urbanPopulationPercent !== null
       ) {
         inputs.demographics.urbanRuralSplit = {
-          urban: (country as any).urbanPopulationPercent,
-          rural: 100 - (country as any).urbanPopulationPercent,
+          urban: typedCountry.urbanPopulationPercent,
+          rural: 100 - typedCountry.urbanPopulationPercent,
         };
       } else {
         inputs.demographics.urbanRuralSplit = {
@@ -193,24 +195,24 @@ export function useCountryEditorData() {
       }
 
       // Income & Wealth Distribution - use database values or 0 if missing (no fake placeholders)
-      inputs.incomeWealth.povertyRate = (country as any).povertyRate ?? 0;
-      inputs.incomeWealth.incomeInequalityGini = (country as any).incomeInequalityGini ?? 0;
-      inputs.incomeWealth.socialMobilityIndex = (country as any).socialMobilityIndex ?? 0;
+      inputs.incomeWealth.povertyRate = typedCountry.povertyRate ?? 0;
+      inputs.incomeWealth.incomeInequalityGini = typedCountry.incomeInequalityGini ?? 0;
+      inputs.incomeWealth.socialMobilityIndex = typedCountry.socialMobilityIndex ?? 0;
 
       // Government Spending - use database values or 0 if missing (no fake placeholders)
-      inputs.governmentSpending.totalSpending = (country as any).totalGovernmentSpending ?? 0;
-      inputs.governmentSpending.spendingGDPPercent = (country as any).spendingGDPPercent ?? 0;
-      inputs.governmentSpending.spendingPerCapita = (country as any).spendingPerCapita ?? 0;
-      inputs.governmentSpending.deficitSurplus = (country as any).budgetDeficitSurplus ?? 0;
+      inputs.governmentSpending.totalSpending = typedCountry.totalGovernmentSpending ?? 0;
+      inputs.governmentSpending.spendingGDPPercent = typedCountry.spendingGDPPercent ?? 0;
+      inputs.governmentSpending.spendingPerCapita = typedCountry.spendingPerCapita ?? 0;
+      inputs.governmentSpending.deficitSurplus = typedCountry.budgetDeficitSurplus ?? 0;
 
       // National Identity - populate from saved nationalIdentity relation or country fields
-      const nationalIdentity = (country as any).nationalIdentity;
+      const nationalIdentity = typedCountry.nationalIdentity;
       console.log("useCountryEditorData - Loading nationalIdentity:", nationalIdentity);
       console.log("useCountryEditorData - Country data:", {
         name: country.name,
         governmentType: country.governmentType,
         capital: nationalIdentity?.capitalCity,
-        religion: (country as any).religion,
+        religion: typedCountry.religion,
       });
 
       inputs.nationalIdentity = {
@@ -222,18 +224,18 @@ export function useCountryEditorData() {
         capitalCity: nationalIdentity?.capitalCity || "",
         largestCity: nationalIdentity?.largestCity || "",
         demonym: nationalIdentity?.demonym || "",
-        currency: nationalIdentity?.currency || (country as any).currencyName || "",
-        currencySymbol: nationalIdentity?.currencySymbol || (country as any).currencySymbol || "$",
+        currency: nationalIdentity?.currency || typedCountry.currencyName || "",
+        currencySymbol: nationalIdentity?.currencySymbol || typedCountry.currencySymbol || "$",
         officialLanguages: nationalIdentity?.officialLanguages || "",
         nationalLanguage: nationalIdentity?.nationalLanguage || "",
         nationalAnthem: nationalIdentity?.nationalAnthem || "",
-        nationalReligion: (country as any).religion || "",
+        nationalReligion: typedCountry.religion || "",
         nationalDay: nationalIdentity?.nationalDay || "",
         callingCode: nationalIdentity?.callingCode || "",
         internetTLD: nationalIdentity?.internetTLD || "",
         drivingSide: nationalIdentity?.drivingSide || "right",
         timeZone: nationalIdentity?.timeZone || "",
-        isoCode: nationalIdentity?.isoCode || (country as any).countryCode || "",
+        isoCode: nationalIdentity?.isoCode || typedCountry.countryCode || "",
         coordinatesLatitude: nationalIdentity?.coordinatesLatitude || "",
         coordinatesLongitude: nationalIdentity?.coordinatesLongitude || "",
         emergencyNumber: nationalIdentity?.emergencyNumber || "",

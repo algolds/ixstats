@@ -215,15 +215,6 @@ function CollapsibleSection({
 }: CollapsibleSectionProps) {
   const Icon: React.ComponentType<any> = icon as React.ComponentType<any>;
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Load expanded state from localStorage, respecting content hierarchy defaults
   useEffect(() => {
@@ -265,12 +256,12 @@ function CollapsibleSection({
     >
       {/* Section Header - Mobile Enhanced */}
       <motion.div
-        className={`glass-hierarchy-child ${isMobile ? "p-3" : "p-4"} ${!disableHeaderClick ? "cursor-pointer" : ""} ${isMobile ? "touch-manipulation" : ""}`}
+        className={`glass-hierarchy-child p-3 md:p-4 touch-manipulation ${!disableHeaderClick ? "cursor-pointer" : ""}`}
         onClick={!disableHeaderClick ? toggleExpanded : undefined}
         whileHover={
           !disableHeaderClick ? { backgroundColor: "rgba(255, 255, 255, 0.05)" } : undefined
         }
-        whileTap={isMobile && !disableHeaderClick ? { scale: 0.98 } : undefined}
+        whileTap={!disableHeaderClick ? { scale: 0.98 } : undefined}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

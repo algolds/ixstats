@@ -1906,6 +1906,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
         <Suspense fallback={null}>
           {isLoaded && overlayData?.wealth && (
             <ChoroplethOverlay
+              key="wealth-overlay"
               map={mapRef.current}
               data={overlayData.wealth}
               visible={overlayVisibility?.wealth ?? false}
@@ -1916,6 +1917,7 @@ const IxWorldMap = memo(forwardRef<IxWorldMapRef, IxWorldMapProps>(
           )}
           {isLoaded && overlayData?.population && (
             <ChoroplethOverlay
+              key="population-overlay"
               map={mapRef.current}
               data={overlayData.population}
               visible={overlayVisibility?.population ?? false}

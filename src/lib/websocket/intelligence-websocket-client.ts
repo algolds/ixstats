@@ -179,6 +179,14 @@ export class IntelligenceWebSocketClient {
   private setupIntelligenceEventHandlers(): void {
     if (!this.socket) return;
 
+    // Remove existing listeners before re-registering to prevent duplicate handlers on reconnect
+    this.socket.off("intelligence:update");
+    this.socket.off("intelligence:alert");
+    this.socket.off("intelligence:initial");
+    this.socket.off("vitality:update");
+    this.socket.off("heartbeat_ack");
+    this.socket.off("server:shutdown");
+
     // Intelligence updates
     this.socket.on("intelligence:update", (event: WebSocketIntelligenceEvent) => {
       this.options.onUpdate(event.data);

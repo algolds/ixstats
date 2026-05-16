@@ -44,7 +44,10 @@ import { notificationAPI } from "~/lib/notification-api";
 /** Fetch from XenForo API (server-level, no user impersonation) */
 async function xfFetch<T>(endpoint: string): Promise<T | null> {
   const apiKey = getXfApiKey();
-  if (!apiKey) return null;
+  if (!apiKey) {
+    console.error("[Forum Router] XENFORO_API_KEY is missing. Forum features will be disabled.");
+    return null;
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);

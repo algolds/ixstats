@@ -73,9 +73,9 @@ export class DiplomaticNetworkService {
    * Based on: # of embassies, embassy levels, relationship strengths, active missions
    */
   static calculateNetworkPower(data: {
-    embassies: any[];
-    relationships: any[];
-    missions: any[];
+    embassies: Record<string, any>[];
+    relationships: Record<string, any>[];
+    missions: Record<string, any>[];
   }): NetworkPowerCalculation {
     const { embassies, relationships, missions } = data;
 
@@ -123,7 +123,7 @@ export class DiplomaticNetworkService {
 
     // Mission Contribution Calculation
     // Formula: (active_missions * avg_success_rate * difficulty_multiplier) / 10
-    const activeMissions = missions.filter((m: any) => m.status === "active");
+    const activeMissions = missions.filter((m: { status: string }) => m.status === "active");
     const missionContribution = activeMissions.reduce((sum: number, mission: any) => {
       const successRate = mission.successChance || 70; // 0-100 scale
 
@@ -249,19 +249,19 @@ export class DiplomaticNetworkService {
    */
   static getSynergyBonuses(networkData: {
     networkPower: number;
-    embassies: any[];
-    relationships: any[];
-    exchanges: any[];
+    embassies: Record<string, any>[];
+    relationships: Record<string, any>[];
+    exchanges: Record<string, any>[];
   }): SynergyBonuses {
     const { networkPower, embassies, relationships, exchanges } = networkData;
 
     // Economic Multiplier (1.0 - 2.0)
     // Based on trade relationships and embassy economic specializations
     const tradeRelationships = relationships.filter(
-      (r: any) => r.treaties?.includes("Trade Agreement") || r.tradeVolume > 100000
+      (r: { relationship: string; treaties: string[]; tradeVolume: number }) => r.treaties?.includes("Trade Agreement") || r.tradeVolume > 100000
     ).length;
     const economicEmbassies = embassies.filter(
-      (e: any) => e.specialization === "economic" || e.specialization === "trade"
+      (e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.specialization === "economic" || e.specialization === "trade"
     ).length;
 
     const baseEconomicBonus = Math.min(0.5, tradeRelationships * 0.05 + economicEmbassies * 0.08);
@@ -270,11 +270,11 @@ export class DiplomaticNetworkService {
 
     // Research Speed Bonus (0-50%)
     // Based on research cooperation treaties and cultural exchanges
-    const researchTreaties = relationships.filter((r: any) =>
+    const researchTreaties = relationships.filter((r: { relationship: string; treaties: string[]; tradeVolume: number }) =>
       r.treaties?.includes("Research Cooperation")
     ).length;
     const culturalPrograms = exchanges.filter(
-      (e: any) => e.type === "technology" || e.type === "education"
+      (e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.type === "technology" || e.type === "education"
     ).length;
 
     const researchSpeedBonus = Math.min(
@@ -284,10 +284,10 @@ export class DiplomaticNetworkService {
 
     // Cultural Influence Bonus (0-100 points)
     // Based on cultural exchanges and embassy cultural specializations
-    const culturalEmbassies = embassies.filter((e: any) => e.specialization === "cultural").length;
-    const activeExchanges = exchanges.filter((e: any) => e.status === "active").length;
+    const culturalEmbassies = embassies.filter((e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.specialization === "cultural").length;
+    const activeExchanges = exchanges.filter((e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.status === "active").length;
     const totalParticipants = exchanges.reduce(
-      (sum: number, e: any) => sum + (e.metrics?.participants || 0),
+      (sum: number, e: { metrics: { participants: number } }) => sum + (e.metrics?.participants || 0),
       0
     );
 
@@ -299,10 +299,10 @@ export class DiplomaticNetworkService {
     // Intelligence Gathering Bonus (0-30%)
     // Based on embassy network coverage and security specializations
     const securityEmbassies = embassies.filter(
-      (e: any) => e.specialization === "security" || e.level >= 3
+      (e: { specialization: string; level: number; type: string; status: string; metrics: { participants: number } }) => e.specialization === "security" || e.level >= 3
     ).length;
     const allianceRelationships = relationships.filter(
-      (r: any) => r.relationship === "alliance"
+      (r: { relationship: string; treaties: string[]; tradeVolume: number }) => r.relationship === "alliance"
     ).length;
 
     const intelligenceGatheringBonus = Math.min(
@@ -324,8 +324,8 @@ export class DiplomaticNetworkService {
    */
   static getStrategicOpportunities(context: {
     myCountryId: string;
-    embassies: any[];
-    relationships: any[];
+    embassies: Record<string, any>[];
+    relationships: Record<string, any>[];
     goals?: string[];
   }): StrategicOpportunity[] {
     const { embassies, relationships, goals = [] } = context;
@@ -416,7 +416,7 @@ export class DiplomaticNetworkService {
 
     if (
       allianceCandidates.length > 0 &&
-      relationships.filter((r: any) => r.relationship === "alliance").length < 3
+      relationships.filter((r: { relationship: string; treaties: string[]; tradeVolume: number }) => r.relationship === "alliance").length < 3
     ) {
       const target = allianceCandidates.sort((a: any, b: any) => b.strength - a.strength)[0];
       opportunities.push({

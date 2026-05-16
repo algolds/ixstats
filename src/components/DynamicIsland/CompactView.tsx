@@ -17,6 +17,8 @@ import {
   BarChart3,
   Users,
   Activity,
+  Link2,
+  MessageCircle,
 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
@@ -251,23 +253,22 @@ function CompactViewComponent({
 
   // Flash animation when new notifications arrive
   useEffect(() => {
-    if (mounted && totalUnreadCount > previousNotificationCountRef.current) {
-      debugLog("CompactView", "New notification detected! Flashing dynamic island");
-      setIsFlashing(true);
+    if (!mounted) return;
 
-      // Stop flashing after animation completes
+    if (totalUnreadCount > previousNotificationCountRef.current) {
+      debugLog("CompactView", "New notification detected! Flashing dynamic island");
+      setIsFlashing(true);  
+
       const timeout = setTimeout(() => {
         setIsFlashing(false);
-      }, 1000); // 1 second flash duration
+      }, 1000);
 
-      // Update the previous count
       previousNotificationCountRef.current = totalUnreadCount;
 
       return () => clearTimeout(timeout);
-    } else if (mounted) {
-      // Update count without flashing if count decreased (notifications dismissed)
-      previousNotificationCountRef.current = totalUnreadCount;
     }
+
+    previousNotificationCountRef.current = totalUnreadCount;
   }, [totalUnreadCount, mounted]);
 
   // Debug sticky state changes - only in development
@@ -619,17 +620,7 @@ function CompactViewComponent({
                                 <span className="relative z-10 font-medium">Profile</span>
                               </Button>
                               
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  (window.location.href = createAbsoluteUrl("/profile"))
-                                }
-                                className="group relative overflow-hidden border border-indigo-400/50 bg-gradient-to-r from-indigo-500/30 to-purple-500/25 text-indigo-800 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-indigo-500/70 hover:from-indigo-500/40 hover:to-purple-500/35 hover:text-indigo-900 hover:shadow-lg dark:border-indigo-300/30 dark:from-indigo-500/20 dark:to-purple-500/20 dark:text-indigo-200 dark:hover:border-indigo-300/50 dark:hover:from-indigo-500/30 dark:hover:to-purple-500/30 dark:hover:text-indigo-100"
-                              >
-                                <Link2 className="relative z-10 mr-2 h-4 w-4" />
-                                <span className="relative z-10 font-medium">IxnayID</span>
-                              </Button>
-
+                         
                               {!isStandalone && (
                                 <Button
                                   size="sm"
@@ -942,12 +933,12 @@ function WikiProfileButton({ onSwitchMode }: { onSwitchMode: (mode: any) => void
             <div className="flex gap-4">
               <div className="flex items-center gap-1.5">
                 <Trophy className="h-3 w-3 text-amber-400" />
-                <span className="text-xs text-foreground/80">{lorewardStats.totalScore ?? 0}</span>
+                <span className="text-xs text-foreground/80">{lorewardStats.stats?.totalScore ?? 0}</span>
                 <span className="text-[10px] text-muted-foreground">score</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Flame className="h-3 w-3 text-orange-400" />
-                <span className="text-xs text-foreground/80">{lorewardStats.currentStreak ?? 0}</span>
+                <span className="text-xs text-foreground/80">{lorewardStats.stats?.currentStreak ?? 0}</span>
                 <span className="text-[10px] text-muted-foreground">streak</span>
               </div>
             </div>

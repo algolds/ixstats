@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import { useBuilderState, type UseBuilderStateReturn } from "../../../hooks/useBuilderState";
 
@@ -106,13 +106,16 @@ export function BuilderStateProvider({
     return results;
   }, [autoSyncRegistry]);
 
-  const contextValue: BuilderContextValue = {
-    ...builderStateValue,
-    autoSyncRegistry,
-    registerAutoSync,
-    unregisterAutoSync,
-    syncAllNow,
-  };
+  const contextValue = useMemo<BuilderContextValue>(
+    () => ({
+      ...builderStateValue,
+      autoSyncRegistry,
+      registerAutoSync,
+      unregisterAutoSync,
+      syncAllNow,
+    }),
+    [builderStateValue, autoSyncRegistry, registerAutoSync, unregisterAutoSync, syncAllNow]
+  );
 
   return (
     <BuilderStateContext.Provider value={contextValue}>

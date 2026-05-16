@@ -13,22 +13,6 @@ const selectiveLogger = {
   },
 };
 
-/**
- * Cache time constants for consistent query caching strategy
- * - staleTime: How long data is considered fresh (won't refetch)
- * - gcTime: How long to keep data in cache after all observers unmount
- */
-export const CACHE_TIMES = {
-  /** Static/reference data that rarely changes (1hr stale / 24hr gc) */
-  static: { staleTime: 60 * 60 * 1000, gcTime: 24 * 60 * 60 * 1000 },
-  /** Slow-changing data like country profiles (5min stale / 30min gc) */
-  slow: { staleTime: 5 * 60 * 1000, gcTime: 30 * 60 * 1000 },
-  /** Standard data like lists and dashboards (30s stale / 5min gc) */
-  standard: { staleTime: 30 * 1000, gcTime: 5 * 60 * 1000 },
-  /** Fast-changing data like real-time feeds (10s stale / 1min gc) */
-  fast: { staleTime: 10 * 1000, gcTime: 60 * 1000 },
-} as const;
-
 export const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {

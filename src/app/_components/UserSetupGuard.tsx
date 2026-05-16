@@ -39,7 +39,6 @@ export function UserSetupGuard() {
     "/_next",
     "/favicon.ico",
     "/admin",
-    "/test-user-creation", // Add test pages
   ];
 
   const shouldSkipSetup = skipSetupPaths.some((path) => pathname?.startsWith(path) ?? false);

@@ -664,7 +664,7 @@ export function Navigation() {
       },
       {
         name: "Forum",
-        href: "https://forum.ixwiki.com/",
+        href: "/forum",
         icon: MessageSquare,
         requiresAuth: false,
         description: "Community discussion forums",

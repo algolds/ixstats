@@ -705,7 +705,7 @@ export const commands = [
   },
   {
     name: "Trading Cards",
-    path: "/cards",
+    path: "/vault/cards",
     icon: Activity,
     description: "Collect and trade country cards",
   },
@@ -909,7 +909,7 @@ export const features = [
   },
   {
     name: "Trading Cards",
-    path: "/cards",
+    path: "/vault/cards",
     icon: Activity,
     description: "Country trading card collection and management",
   },

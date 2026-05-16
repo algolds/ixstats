@@ -691,6 +691,22 @@ export const notificationsRouter = createTRPCRouter({
 
       return { success: true, message: "Preferences reset to defaults" };
     }),
+  // Delete all notifications (admin only)
+  deleteAllNotifications: adminProcedure
+    .input(
+      z.object({
+        adminUserId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx }) => {
+      const { db } = ctx;
+
+      // Admin role verified by adminProcedure middleware
+
+      const result = await db.notification.deleteMany({});
+
+      return { success: true, count: result.count };
+    }),
 });
 
 // Helper function to emit notification events (to be called when creating notifications)

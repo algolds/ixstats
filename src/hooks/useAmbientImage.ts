@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { env } from "~/env";
 
 // Theme-specific queries for Unsplash
 const THEME_QUERIES: Record<string, string[]> = {
@@ -95,7 +96,7 @@ export function useAmbientImage(
     }
 
     // Get Unsplash API key from environment
-    const accessKey = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
+    const accessKey = env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
 
     if (!accessKey) {
       // No API key - use fallback gradient
@@ -170,7 +171,7 @@ export function usePreloadAmbientImages(themes: string[]): void {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const accessKey = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
+    const accessKey = env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
     if (!accessKey) return;
 
     // Preload images for themes that aren't cached

@@ -13,6 +13,17 @@ import {
   ParagraphPlugin,
 } from "platejs/react";
 import { Transforms, Editor } from "slate";
+import type { HTMLAttributes, ReactNode } from "react";
+
+interface RenderNodeProps {
+  children: ReactNode;
+  element?: Record<string, unknown>;
+  attributes?: HTMLAttributes<HTMLElement>;
+}
+
+// Custom Slate node type with flexible properties for wiki content
+type WikiNode = { children: WikiNode[]; [key: string]: unknown } | { text: string; [key: string]: unknown };
+type WikiDescendant = WikiNode;
 import {
   Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered,
   Quote, Image as ImageIcon, Puzzle, Eye,
@@ -29,7 +40,7 @@ const HeadingPlugin = createPlatePlugin({
   key: "heading",
   node: { isElement: true },
   render: {
-    node: ({ children, element, attributes }: any) => {
+    node: ({ children, element, attributes }: RenderNodeProps) => {
       const level = element.level ?? 2;
       const Tag = `h${Math.min(Math.max(level, 1), 6)}` as keyof JSX.IntrinsicElements;
       return <Tag {...attributes} style={{ marginTop: 24, marginBottom: 8 }}>{children}</Tag>;
@@ -41,7 +52,7 @@ const BlockquotePlugin = createPlatePlugin({
   key: "blockquote",
   node: { isElement: true },
   render: {
-    node: ({ children, attributes }: any) => (
+    node: ({ children, attributes }: RenderNodeProps) => (
       <blockquote {...attributes} style={{ borderLeft: "3px solid #3b82f6", paddingLeft: 16, margin: "12px 0", color: "#a1a1aa" }}>
         {children}
       </blockquote>
@@ -53,7 +64,7 @@ const ImagePlugin = createPlatePlugin({
   key: "img",
   node: { isElement: true, isVoid: true },
   render: {
-    node: ({ element, attributes, children }: any) => (
+    node: ({ element, attributes, children }: RenderNodeProps) => (
       <div {...attributes} contentEditable={false} style={{ margin: "8px 0" }}>
         <img src={element.src} alt={element.alt ?? ""} style={{ maxWidth: "100%", height: "auto", borderRadius: 4 }} referrerPolicy="no-referrer" />
         {children}
@@ -67,7 +78,7 @@ const TemplatePlugin = createPlatePlugin({
   key: "template",
   node: { isElement: true, isVoid: true },
   render: {
-    node: ({ element, attributes, children }: any) => (
+    node: ({ element, attributes, children }: RenderNodeProps) => (
       <TemplateBlock element={element} attributes={attributes}>
         {children}
       </TemplateBlock>
@@ -75,7 +86,7 @@ const TemplatePlugin = createPlatePlugin({
   },
 });
 
-function TemplateBlock({ element, attributes, children }: any) {
+function TemplateBlock({ element, attributes, children }: RenderNodeProps) {
   const [showPreview, setShowPreview] = useState(false);
   const templateName = element.templateName ?? "Template";
 
@@ -183,7 +194,7 @@ const ItalicPlugin = createPlatePlugin({
 // Parsoid HTML → Slate nodes deserializer
 // ---------------------------------------------------------------------------
 
-function parsoidHtmlToSlate(html: string): any[] {
+function parsoidHtmlToSlate(html: string): WikiDescendant[] {
   const clean = html
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<link[^>]*>/gi, "")
@@ -201,8 +212,8 @@ function parsoidHtmlToSlate(html: string): any[] {
   return nodes.length > 0 ? nodes : [{ type: "p", children: [{ text: "" }] }];
 }
 
-function deserializeElement(el: Element): any[] {
-  const nodes: any[] = [];
+function deserializeElement(el: Element): WikiDescendant[] {
+  const nodes: WikiDescendant[] = [];
   for (const child of Array.from(el.childNodes)) {
     if (child.nodeType === Node.TEXT_NODE) {
       const text = child.textContent ?? "";
@@ -267,15 +278,15 @@ function deserializeElement(el: Element): any[] {
   return nodes;
 }
 
-function deserializeInline(el: Element): any[] {
-  const result: any[] = [];
+function deserializeInline(el: Element): WikiDescendant[] {
+  const result: WikiDescendant[] = [];
   for (const child of Array.from(el.childNodes)) {
     if (child.nodeType === Node.TEXT_NODE) { result.push({ text: child.textContent ?? "" }); continue; }
     if (child.nodeType !== Node.ELEMENT_NODE) continue;
     const elem = child as HTMLElement;
     const tag = elem.tagName.toLowerCase();
-    if (tag === "b" || tag === "strong") { const inner = deserializeInline(elem); inner.forEach((n: any) => { n.bold = true; }); result.push(...inner); continue; }
-    if (tag === "i" || tag === "em") { const inner = deserializeInline(elem); inner.forEach((n: any) => { n.italic = true; }); result.push(...inner); continue; }
+    if (tag === "b" || tag === "strong") { const inner = deserializeInline(elem); inner.forEach((n: Record<string, unknown>) => { n.bold = true; }); result.push(...inner); continue; }
+    if (tag === "i" || tag === "em") { const inner = deserializeInline(elem); inner.forEach((n: Record<string, unknown>) => { n.italic = true; }); result.push(...inner); continue; }
     if (tag === "a") { result.push({ text: elem.textContent ?? "" }); continue; }
     if (tag === "img") continue;
     if (tag === "sup" || tag === "sub" || tag === "small") { result.push({ text: elem.textContent ?? "" }); continue; }
@@ -287,8 +298,8 @@ function deserializeInline(el: Element): any[] {
   return result;
 }
 
-function deserializeListItems(el: Element): any[] {
-  const items: any[] = [];
+function deserializeListItems(el: Element): WikiDescendant[] {
+  const items: WikiDescendant[] = [];
   for (const li of Array.from(el.querySelectorAll(":scope > li"))) {
     const children = deserializeInline(li as HTMLElement);
     items.push({ type: "li", children: children.length > 0 ? children : [{ text: "" }] });
@@ -296,10 +307,10 @@ function deserializeListItems(el: Element): any[] {
   return items.length > 0 ? items : [{ type: "li", children: [{ text: "" }] }];
 }
 
-function deserializeTable(el: Element): any[] {
-  const rows: any[] = [];
+function deserializeTable(el: Element): WikiDescendant[] {
+  const rows: WikiDescendant[] = [];
   for (const tr of Array.from(el.querySelectorAll("tr"))) {
-    const cells: any[] = [];
+    const cells: WikiDescendant[] = [];
     for (const cell of Array.from(tr.querySelectorAll("td, th"))) {
       const tag = cell.tagName.toLowerCase();
       const children = deserializeInline(cell as HTMLElement);
@@ -314,14 +325,14 @@ function deserializeTable(el: Element): any[] {
 // Toolbar helpers
 // ---------------------------------------------------------------------------
 
-function isMarkActive(editor: any, mark: string): boolean {
+function isMarkActive(editor: Editor, mark: string): boolean {
   try {
     const marks = Editor.marks(editor);
     return marks ? marks[mark] === true : false;
   } catch { return false; }
 }
 
-function toggleMark(editor: any, mark: string) {
+function toggleMark(editor: Editor, mark: string) {
   const isActive = isMarkActive(editor, mark);
   if (isActive) {
     Editor.removeMark(editor, mark);
@@ -330,7 +341,7 @@ function toggleMark(editor: any, mark: string) {
   }
 }
 
-function isBlockActive(editor: any, type: string, level?: number): boolean {
+function isBlockActive(editor: Editor, type: string, level?: number): boolean {
   try {
     const [match] = Editor.nodes(editor, {
       match: (n: any) => n.type === type && (level === undefined || n.level === level),
@@ -339,12 +350,12 @@ function isBlockActive(editor: any, type: string, level?: number): boolean {
   } catch { return false; }
 }
 
-function toggleBlock(editor: any, type: string, props?: Record<string, any>) {
+function toggleBlock(editor: Editor, type: string, props?: Record<string, any>) {
   const isActive = isBlockActive(editor, type, props?.level);
   Transforms.setNodes(
     editor,
     isActive ? { type: "p" } : { type, ...props },
-    { match: (n: any) => Editor.isBlock(editor, n) }
+    { match: (n: Record<string, unknown>) => Editor.isBlock(editor, n) }
   );
 }
 
@@ -363,7 +374,7 @@ interface WikiPlateEditorProps {
 export function WikiPlateEditor({ initialHtml, title, onSave, onCancel, onSwitchToSource }: WikiPlateEditorProps) {
   const summaryRef = useRef("");
   const minorRef = useRef(false);
-  const [ready, setReady] = useState(false);
+  const [ready] = useState(true);
   const [showTemplateInserter, setShowTemplateInserter] = useState(false);
 
   const editor = useMemo(() => {
@@ -380,7 +391,7 @@ export function WikiPlateEditor({ initialHtml, title, onSave, onCancel, onSwitch
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { setReady(true); }, []);
+
 
   const handleSave = useCallback(() => {
     try {

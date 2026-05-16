@@ -178,7 +178,6 @@ const nextConfig = {
     optimizePackageImports: [
       '@radix-ui/react-icons',
       'lucide-react',
-      '@chakra-ui/react',
       '@emotion/react',
       '@prisma/client'
     ],

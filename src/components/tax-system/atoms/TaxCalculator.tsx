@@ -40,7 +40,7 @@ import type {
 import type { CoreEconomicIndicatorsData } from "~/types/economics";
 import type { GovernmentBuilderState } from "~/types/government";
 import { TaxCalculatorEngine } from "~/lib/tax-calculator";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import {
   calculateUnifiedAtomicModifiers,

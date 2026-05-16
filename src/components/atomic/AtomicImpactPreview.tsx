@@ -14,7 +14,7 @@ import {
   Info,
   Settings,
 } from "lucide-react";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 import { cn } from "~/lib/utils";
 import type { AtomicEconomicModifiers } from "~/lib/atomic-builder-state";
 

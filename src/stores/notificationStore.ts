@@ -64,6 +64,7 @@ interface NotificationActions {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   dismissNotification: (id: string) => void;
+  clearAll: () => void;
 
   // Batch operations
   processBatches: () => void;
@@ -287,9 +288,26 @@ export const useNotificationStore = create<NotificationStore>()(
       });
     },
 
-    dismissNotification: (id) => {
+    dismissNotification: (id: string) => {
       get().updateNotification(id, { status: "dismissed" });
       get().recordEngagement(id, "dismiss");
+    },
+
+    clearAll: () => {
+      set({
+        notifications: [],
+        batches: [],
+        stats: {
+          total: 0,
+          unread: 0,
+          byCategory: {} as Record<NotificationCategory, number>,
+          byPriority: {} as Record<NotificationPriority, number>,
+          delivered: 0,
+          dismissed: 0,
+          engaged: 0,
+        },
+        lastUpdate: Date.now(),
+      });
     },
 
     processBatches: () => {

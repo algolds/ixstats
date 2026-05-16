@@ -684,15 +684,21 @@ export const thinkpagesRouter = createTRPCRouter({
         ixTimeTimestamp: new Date(), // Store real-world time for social media timestamps
       },
       include: {
-        account: true,
+        account: {
+          select: { id: true, username: true, displayName: true, avatar: true, clerkUserId: true },
+        },
         parentPost: {
           include: {
-            account: true,
+            account: {
+              select: { id: true, username: true, displayName: true, avatar: true, clerkUserId: true },
+            },
           },
         },
         repostOf: {
           include: {
-            account: true,
+            account: {
+              select: { id: true, username: true, displayName: true, avatar: true, clerkUserId: true },
+            },
           },
         },
       },
@@ -763,7 +769,13 @@ export const thinkpagesRouter = createTRPCRouter({
     if (input.parentPostId && post.parentPost) {
       const parentPost = await db.thinkpagesPost.findUnique({
         where: { id: input.parentPostId },
-        include: { account: true },
+        select: {
+          id: true,
+          accountId: true,
+          account: {
+            select: { id: true, username: true, displayName: true, avatar: true, clerkUserId: true },
+          },
+        },
       });
 
       if (parentPost && parentPost.accountId !== input.accountId) {

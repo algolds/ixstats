@@ -148,6 +148,21 @@ interface UseMapEditorOptions {
 
 export function useMapEditor(countryId: string | undefined, options?: UseMapEditorOptions) {
   const utils = api.useUtils();
+
+  /** Invalidate ALL client-side map data caches after a mutation.
+   *  Server-side caches (Redis/memory) are cleared by invalidateCache() in geo.ts.
+   *  This covers React Query cache entries used by the main map and editor. */
+  const invalidateAllMapData = useCallback(() => {
+    utils.geo.getMapBundle.invalidate();
+    utils.geo.getWorldMap.invalidate();
+    utils.geo.getCountryFeatures.invalidate();
+    utils.geo.getAllStoryPins.invalidate();
+    utils.geo.getAllMapLabels.invalidate();
+    utils.geo.getCapitalCities.invalidate();
+    utils.geo.getCountryGeometry.invalidate();
+    utils.geo.getCountryLinkage.invalidate();
+  }, [utils]);
+
   const [mode, setModeRaw] = useState<EditorMode>("view");
   const setMode = useCallback((newMode: EditorMode) => {
     setModeRaw(newMode);
@@ -320,13 +335,13 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   );
 
   // Check if country is linked to a map feature (non-throwing)
-  const { data: linkage } = api.geo.getCountryLinkage.useQuery(
+  const { data: linkage, isLoading: linkageLoading } = api.geo.getCountryLinkage.useQuery(
     { countryId: countryId ?? "" },
     { enabled: !!countryId, staleTime: 5 * 60_000 }
   );
 
   // Fetch country geometry (boundary for display + validation) — only if linked (or skipLinkageGate for admin Forge)
-  const { data: countryGeo } = api.geo.getCountryGeometry.useQuery(
+  const { data: countryGeo, isLoading: geometryLoading } = api.geo.getCountryGeometry.useQuery(
     { countryId: countryId ?? "" },
     { enabled: !!countryId && (!!linkage?.isLinked || !!options?.skipLinkageGate), staleTime: 5 * 60_000 }
   );
@@ -351,14 +366,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   // Mutations
   const createCity = api.geo.createCity.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
-      utils.geo.getCapitalCities.invalidate();
       continuePlacing("add-city");
     },
   });
 
   const updateCity = api.geo.updateCity.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       resetForm();
     },
@@ -366,14 +382,15 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const deleteCity = api.geo.deleteCity.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
-      utils.geo.getCapitalCities.invalidate();
       setSelectedFeature(null);
     },
   });
 
   const createSubdivision = api.geo.createSubdivision.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       continuePlacing("add-subdivision");
     },
@@ -381,6 +398,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const updateSubdivision = api.geo.updateSubdivision.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       resetForm();
     },
@@ -388,6 +406,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const deleteSubdivision = api.geo.deleteSubdivision.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       setSelectedFeature(null);
     },
@@ -395,6 +414,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const createPOI = api.geo.createPOI.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       continuePlacing("add-poi");
     },
@@ -402,6 +422,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const updatePOI = api.geo.updatePOI.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       resetForm();
     },
@@ -409,6 +430,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const deletePOI = api.geo.deletePOI.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       setSelectedFeature(null);
     },
@@ -417,29 +439,31 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   // Story Pin mutations
   const createStoryPin = api.geo.createStoryPin.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       continuePlacing("add-story-pin");
     },
   });
   const updateStoryPin = api.geo.updateStoryPin.useMutation({
-    onSuccess: () => { debouncedRefetch(); resetForm(); },
+    onSuccess: () => { invalidateAllMapData(); debouncedRefetch(); resetForm(); },
   });
   const deleteStoryPin = api.geo.deleteStoryPin.useMutation({
-    onSuccess: () => { debouncedRefetch(); setSelectedFeature(null); },
+    onSuccess: () => { invalidateAllMapData(); debouncedRefetch(); setSelectedFeature(null); },
   });
 
   // Map Label mutations
   const createMapLabel = api.geo.createMapLabel.useMutation({
     onSuccess: () => {
+      invalidateAllMapData();
       debouncedRefetch();
       continuePlacing("add-label");
     },
   });
   const updateMapLabel = api.geo.updateMapLabel.useMutation({
-    onSuccess: () => { debouncedRefetch(); resetForm(); },
+    onSuccess: () => { invalidateAllMapData(); debouncedRefetch(); resetForm(); },
   });
   const deleteMapLabel = api.geo.deleteMapLabel.useMutation({
-    onSuccess: () => { debouncedRefetch(); setSelectedFeature(null); },
+    onSuccess: () => { invalidateAllMapData(); debouncedRefetch(); setSelectedFeature(null); },
   });
 
   // Route mutation
@@ -1078,7 +1102,9 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     features,
     allFeatures,
     countryGeo,
+    geometryLoading,
     linkage,
+    linkageLoading,
     featuresLoading,
     pendingPointInfo,
     isPendingPointInfoLoading,

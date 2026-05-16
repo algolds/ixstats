@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": [],
+    "isolatedModules": true
+  },
+  "include": [
+    "src/lib/**/*",
+    "src/types/**/*",
+    "src/contexts/**/*",
+    "src/context/**/*",
+    "src/stores/**/*",
+    "src/env.ts"
+  ]
+}

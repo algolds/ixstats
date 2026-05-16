@@ -94,6 +94,8 @@ export const env = createEnv({
     NEXT_PUBLIC_APP_URL: z.string().url().optional(),
     // Enable intel suggestions feature flag
     NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS: z.string().optional().default("false"),
+    // Unsplash API (for country card images) - required for client-side fetching
+    NEXT_PUBLIC_UNSPLASH_ACCESS_KEY: z.string().optional(),
   },
 
   /**
@@ -149,6 +151,7 @@ export const env = createEnv({
     IXWIKI_IMAGE_BASE_URL: process.env.IXWIKI_IMAGE_BASE_URL,
     // Unsplash
     UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
+    NEXT_PUBLIC_UNSPLASH_ACCESS_KEY: process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY || process.env.UNSPLASH_ACCESS_KEY,
     // Server
     PORT: process.env.PORT,
     VERCEL_URL: process.env.VERCEL_URL,

@@ -627,8 +627,11 @@ export const governmentRouter = createTRPCRouter({
         },
         include: {
           department: {
-            include: {
-              governmentStructure: true,
+            select: {
+              name: true,
+              governmentStructure: {
+                select: { countryId: true },
+              },
             },
           },
         },

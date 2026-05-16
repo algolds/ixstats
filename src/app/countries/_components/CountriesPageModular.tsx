@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Search, X } from "lucide-react";
 import { CountriesHeader } from "./CountriesHeader";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
@@ -147,7 +148,10 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   // Tab key handler for command palette and clickaway for expanded cards
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Tab" && !e.ctrlKey) {
+      const target = e.target as HTMLElement;
+      const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT";
+
+      if (e.key === "Tab" && !e.ctrlKey && !inInput) {
         e.preventDefault();
         setShowDynamicIsland((prev) => !prev);
       }
@@ -155,7 +159,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
         e.preventDefault();
         handleImFeelingLucky();
       }
-      if (e.key === "r" && showDynamicIsland) {
+      if (e.key === "r" && showDynamicIsland && !inInput) {
         e.preventDefault();
         handleReshuffle();
       }
@@ -219,6 +223,31 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
       <div className="relative z-50 container mx-auto px-4 py-8">
         {/* Header */}
         <CountriesHeader onOpenCommandPalette={() => setShowDynamicIsland(true)} />
+
+        {/* Inline search bar */}
+        <div className="relative mx-auto mb-8 w-full max-w-xl">
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search countries by name, tier, continent, region..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring h-10 w-full rounded-lg border pl-10 pr-10 text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
+          />
+          {searchInput && (
+            <button
+              onClick={() => setSearchInput("")}
+              className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center pr-3"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          <div className="text-muted-foreground mt-1.5 text-center text-xs">
+            {searchInput
+              ? `${processedCountries.length} country${processedCountries.length !== 1 ? "ies" : "y"} match${processedCountries.length !== 1 ? "es" : ""}`
+              : `${countries.length} total countries`}
+          </div>
+        </div>
 
         {/* Stats */}
         <CountriesStats

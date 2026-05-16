@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { io, Socket } from "socket.io-client";
 import { useUser } from "~/context/auth-context";
 
 interface IntelligenceUpdate {
@@ -58,101 +59,83 @@ export function useRealTimeIntelligence(
   const [latestUpdate, setLatestUpdate] = useState<IntelligenceUpdate | null>(null);
   const [updates, setUpdates] = useState<IntelligenceUpdate[]>([]);
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   const connect = useCallback(() => {
     if (!countryId || !user?.id) {
       return;
     }
 
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+    if (socketRef.current?.connected) {
       return;
     }
 
     setConnectionState((prev) => ({ ...prev, status: "connecting" }));
 
-    try {
-      // Always use development WebSocket configuration (port 3555)
-      const wsUrl = `ws://localhost:3555/ws/intelligence?countryId=${countryId}&userId=${user.id}`;
-      wsRef.current = new WebSocket(wsUrl);
+    const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
+    const protocol = window.location.protocol === "https:" ? "https" : "http";
+    const host = window.location.host;
+    
+    const url = process.env.NODE_ENV === "production"
+      ? `${protocol}://${host}`
+      : `http://localhost:${wsPort}`;
 
-      wsRef.current.onopen = () => {
-        setConnectionState({
-          status: "connected",
-          lastUpdate: new Date(),
-          reconnectAttempts: 0,
+    socketRef.current = io(url, {
+      transports: ["websocket", "polling"],
+      reconnectionAttempts: maxReconnectAttempts,
+    });
+
+    socketRef.current.on("connect", () => {
+      setConnectionState({
+        status: "connected",
+        lastUpdate: new Date(),
+        reconnectAttempts: 0,
+      });
+
+      if (socketRef.current) {
+        socketRef.current.emit("authenticate", { userId: user.id, countryId });
+        
+        subscriptions.forEach(channel => {
+          if (channel === "all" || channel === "global") {
+            socketRef.current?.emit("subscribe:global");
+          } else {
+            socketRef.current?.emit(`subscribe:${channel}`);
+          }
         });
+      }
+    });
 
-        // Subscribe to channels
-        if (wsRef.current) {
-          wsRef.current.send(
-            JSON.stringify({
-              type: "subscribe",
-              channels: subscriptions,
-            })
-          );
-        }
+    socketRef.current.on("authenticated", () => {
+      setConnectionState((prev) => ({ ...prev, lastUpdate: new Date() }));
+    });
 
-        // Start ping/pong for connection health
-        pingIntervalRef.current = setInterval(() => {
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({ type: "ping" }));
-          }
-        }, 30000); // Ping every 30 seconds
+    socketRef.current.on("intelligence:update", (data: any) => {
+      const update: IntelligenceUpdate = {
+        type: "intelligence_update",
+        ...data,
+        timestamp: new Date(data.timestamp || Date.now()),
       };
 
-      wsRef.current.onmessage = (event) => {
-        try {
-          const update: IntelligenceUpdate = JSON.parse(event.data);
+      setLatestUpdate(update);
+      setConnectionState((prev) => ({ ...prev, lastUpdate: new Date() }));
+      setUpdates((prev) => [update, ...prev].slice(0, 50));
 
-          setLatestUpdate(update);
-          setConnectionState((prev) => ({ ...prev, lastUpdate: new Date() }));
+      console.log(`📊 Intelligence update: ${update.category} for ${update.countryId}`);
+    });
 
-          // Only store intelligence updates (not connection/ping messages)
-          if (update.type === "intelligence_update") {
-            setUpdates((prev) => [update, ...prev].slice(0, 50)); // Keep last 50 updates
+    socketRef.current.on("intelligence:initial", (data: any) => {
+      console.log("📥 Initial intelligence received", data);
+    });
 
-            console.log(`📊 Intelligence update: ${update.category} for ${update.countryId}`);
-          }
-        } catch (error) {
-          console.error("❌ Failed to parse WebSocket message:", error);
-        }
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.error("❌ WebSocket error:", error);
-        setConnectionState((prev) => ({ ...prev, status: "error" }));
-      };
-
-      wsRef.current.onclose = (event) => {
-        console.log("❌ WebSocket connection closed:", event.code, event.reason);
-        setConnectionState((prev) => ({ ...prev, status: "disconnected" }));
-
-        // Clear ping interval
-        if (pingIntervalRef.current) {
-          clearInterval(pingIntervalRef.current);
-          pingIntervalRef.current = null;
-        }
-
-        // Attempt reconnection if enabled
-        if (autoReconnect && connectionState.reconnectAttempts < maxReconnectAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, connectionState.reconnectAttempts), 30000);
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            setConnectionState((prev) => ({
-              ...prev,
-              reconnectAttempts: prev.reconnectAttempts + 1,
-            }));
-            connect();
-          }, delay);
-        }
-      };
-    } catch (error) {
-      console.error("❌ Failed to create WebSocket connection:", error);
+    socketRef.current.on("connect_error", (error) => {
+      console.error("❌ WebSocket error:", error);
       setConnectionState((prev) => ({ ...prev, status: "error" }));
-    }
+    });
+
+    socketRef.current.on("disconnect", (reason) => {
+      console.log("❌ WebSocket connection closed:", reason);
+      setConnectionState((prev) => ({ ...prev, status: "disconnected" }));
+    });
   }, [
     countryId,
     user?.id,
@@ -163,19 +146,9 @@ export function useRealTimeIntelligence(
   ]);
 
   const disconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-      pingIntervalRef.current = null;
-    }
-
-    if (wsRef.current) {
-      wsRef.current.close(1000, "Client disconnect");
-      wsRef.current = null;
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
     }
 
     setConnectionState({
@@ -186,24 +159,22 @@ export function useRealTimeIntelligence(
   }, []);
 
   const subscribe = useCallback((channels: string[]) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(
-        JSON.stringify({
-          type: "subscribe",
-          channels,
-        })
-      );
+    if (socketRef.current?.connected) {
+      channels.forEach(channel => {
+        if (channel === "all" || channel === "global") {
+          socketRef.current?.emit("subscribe:global");
+        } else {
+          socketRef.current?.emit(`subscribe:${channel}`);
+        }
+      });
     }
   }, []);
 
   const unsubscribe = useCallback((channels: string[]) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(
-        JSON.stringify({
-          type: "unsubscribe",
-          channels,
-        })
-      );
+    if (socketRef.current?.connected) {
+      channels.forEach(channel => {
+        socketRef.current?.emit("unsubscribe", channel);
+      });
     }
   }, []);
 

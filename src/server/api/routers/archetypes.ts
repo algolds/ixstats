@@ -163,7 +163,9 @@ export const archetypesRouter = createTRPCRouter({
         where: { userId: ctx.user.id },
         include: {
           archetype: {
-            include: { category: true },
+            include: {
+              category: { select: { id: true, name: true, priority: true } },
+            },
           },
         },
         orderBy: { selectedAt: "desc" },
@@ -208,9 +210,12 @@ export const archetypesRouter = createTRPCRouter({
           where: { userId: ctx.user.id },
           include: {
             archetype: {
-              include: { category: true },
+              include: {
+                category: { select: { id: true, name: true, priority: true } },
+              },
             },
           },
+          orderBy: { selectedAt: "desc" },
         });
 
         return updatedSelections;

@@ -70,11 +70,19 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const deferredQuery = React.useDeferredValue(debouncedQuery);
+
   const { data: searchData } = api.wikios.advancedSearch.useQuery(
-    { query, limit: 8 },
-    { enabled: open && query.length >= 2, staleTime: 30_000 }
+    { query: deferredQuery, limit: 8 },
+    { enabled: open && deferredQuery.length >= 2, staleTime: 30_000 }
   );
 
   const items = searchData?.results ?? [];

@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <p className="mb-6 text-muted-foreground">
             You do not have permission to view this page.
           </p>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton signOutFallbackRedirectUrl="/" />
         </div>
       </div>
     );

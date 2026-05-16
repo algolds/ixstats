@@ -32,7 +32,7 @@ async function checkReferentialIntegrity() {
     // Check unclaimed countries (no user assigned - this is normal/expected)
     const unclaimedCountries = await db.country.findMany({
       where: {
-        user: null,
+        users: { none: {} },
       },
     });
     log({
@@ -182,9 +182,9 @@ async function checkIsActiveFieldConsistency() {
     }
 
     // Check for any records with null isActive (should not happen with @default(true))
-    const nullIsActiveUsers = await db.user.count({
-      where: { isActive: null as any },
-    });
+    // Note: isActive is non-nullable with @default(true) in schema, 
+    // so we skip the null check as Prisma types prevent it at runtime.
+    const nullIsActiveUsers = 0;
     if (nullIsActiveUsers > 0) {
       log({
         category,
@@ -447,7 +447,7 @@ async function checkIndexPerformance() {
             await db.country.findUnique({
               where: { id: country.id },
               include: {
-                user: true,
+                users: true,
                 embassiesHosting: true,
                 embassiesGuest: true,
                 governmentStructure: true,

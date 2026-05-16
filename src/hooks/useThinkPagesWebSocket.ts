@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { io, Socket } from "socket.io-client";
 import type {
   ThinkPagesWebSocketEvent,
   ThinkPagesClientState,
@@ -26,13 +27,18 @@ const createInitialState = (accountId?: string): ThinkPagesClientState => ({
 
 export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) {
   // All hooks must be called unconditionally (Rules of Hooks)
-  const [clientState, setClientState] = useState<ThinkPagesClientState>(() => 
+  const [clientState, setClientState] = useState<ThinkPagesClientState>(() =>
     createInitialState(options.accountId)
   );
 
-  const ws = useRef<WebSocket | null>(null);
-  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
-  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  const socket = useRef<Socket | null>(null);
+  const optionsRef = useRef(options);
+  
+  // Update ref when options change
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
   const typingTimeout = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const retryCount = useRef(0);
   const maxRetries = 3;
@@ -45,27 +51,22 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       // Skip on server
       if (isServer) return;
       
-      if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
-        ws.current.send(
-          JSON.stringify({
-            type: "presence:update",
-            accountId: options.accountId,
-            status,
-            timestamp: Date.now(),
-          })
-        );
+    if (socket.current?.connected && optionsRef.current.accountId) {
+      socket.current.emit("presence:update", {
+        accountId: optionsRef.current.accountId,
+        status,
+        timestamp: Date.now(),
+      });
 
-        setClientState((prev) => ({ ...prev, presenceStatus: status }));
-      }
-    },
-    [options.accountId]
-  );
+      setClientState((prev) => ({ ...prev, presenceStatus: status }));
+    }
+  }, []);
 
   const connect = useCallback(() => {
     // Skip on server
     if (isServer) return;
     
-    if (ws.current?.readyState === WebSocket.OPEN) {
+    if (socket.current?.connected) {
       return;
     }
 
@@ -76,195 +77,136 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     }
 
     const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
+    const protocol = window.location.protocol === "https:" ? "https" : "http";
+    const host = window.location.host;
+    
+    // In production, we connect to the same host but with Socket.IO path
+    const url = process.env.NODE_ENV === "production"
+      ? `${protocol}://${host}`
+      : `http://localhost:${wsPort}`;
 
-    try {
-      const wsUrl =
-        process.env.NODE_ENV === "production"
-          ? `wss://${window.location.host}/ws/thinkpages`
-          : `ws://localhost:${wsPort}/thinkpages`;
+    socket.current = io(url, {
+      path: "/ws/thinkpages",
+      transports: ["websocket", "polling"],
+      reconnectionAttempts: maxRetries,
+      reconnectionDelay: 2000,
+    });
 
-      ws.current = new WebSocket(wsUrl);
+    socket.current.on("connect", () => {
+      retryCount.current = 0;
+      setClientState((prev) => ({ ...prev, connected: true }));
 
-      ws.current.onopen = () => {
-        retryCount.current = 0;
+      if (optionsRef.current.accountId) {
+        socket.current?.emit("auth", { accountId: optionsRef.current.accountId });
+      }
 
-        setClientState((prev) => ({ ...prev, connected: true }));
+      updatePresence("online");
+      optionsRef.current.onConnect?.();
+    });
 
-        if (options.accountId) {
-          ws.current?.send(
-            JSON.stringify({
-              type: "auth",
-              accountId: options.accountId,
-            })
-          );
-        }
+    socket.current.on("authenticated", () => {
+      setClientState((prev) => ({ ...prev, authenticated: true }));
+    });
 
-        updatePresence("online");
+    socket.current.on("presence:update", (data: PresenceUpdate) => {
+      optionsRef.current.onPresenceUpdate?.(data);
+    });
 
-        if (heartbeatInterval.current) {
-          clearInterval(heartbeatInterval.current);
-        }
-        heartbeatInterval.current = setInterval(() => {
-          ws.current?.send(JSON.stringify({ type: "ping" }));
-          setClientState((prev) => ({ ...prev, lastHeartbeat: Date.now() }));
-        }, options.heartbeatInterval || 30000);
+    socket.current.on("typing:update", (data: TypingIndicator) => {
+      setClientState((prev) => {
+        const newTyping = new Map(prev.typingIndicators);
+        const key = `${data.conversationId || data.groupId}_${data.accountId}`;
 
-        options.onConnect?.();
-      };
+        if (data.isTyping) {
+          newTyping.set(key, data);
+          const timeout = setTimeout(() => {
+            setClientState((current) => {
+              const updatedTyping = new Map(current.typingIndicators);
+              updatedTyping.delete(key);
+              return { ...current, typingIndicators: updatedTyping };
+            });
+          }, 3000);
 
-      ws.current.onmessage = (event) => {
-        try {
-          const data: ThinkPagesWebSocketEvent = JSON.parse(event.data);
-
-          switch (data.type) {
-            case "presence:update":
-              const presenceUpdate = data.data as PresenceUpdate;
-              options.onPresenceUpdate?.(presenceUpdate);
-              break;
-
-            case "typing:update":
-              const typingUpdate = data.data as TypingIndicator;
-              setClientState((prev) => {
-                const newTyping = new Map(prev.typingIndicators);
-                const key = `${typingUpdate.conversationId || typingUpdate.groupId}_${typingUpdate.accountId}`;
-
-                if (typingUpdate.isTyping) {
-                  newTyping.set(key, typingUpdate);
-
-                  const timeout = setTimeout(() => {
-                    setClientState((current) => {
-                      const updatedTyping = new Map(current.typingIndicators);
-                      updatedTyping.delete(key);
-                      return { ...current, typingIndicators: updatedTyping };
-                    });
-                  }, 3000);
-
-                  if (typingTimeout.current.has(key)) {
-                    clearTimeout(typingTimeout.current.get(key)!);
-                  }
-                  typingTimeout.current.set(key, timeout);
-                } else {
-                  newTyping.delete(key);
-                  if (typingTimeout.current.has(key)) {
-                    clearTimeout(typingTimeout.current.get(key)!);
-                    typingTimeout.current.delete(key);
-                  }
-                }
-
-                return { ...prev, typingIndicators: newTyping };
-              });
-              options.onTypingUpdate?.(typingUpdate);
-              break;
-
-            case "message:update":
-              const messageUpdate = data.data as MessageUpdate;
-              options.onMessageUpdate?.(messageUpdate);
-              break;
-
-            case "read:receipt":
-              const readReceipt = data.data as ReadReceipt;
-              options.onReadReceipt?.(readReceipt);
-              break;
-
-            case "group:update":
-              options.onGroupUpdate?.(data.data as any);
-              break;
-
-            case "conversation:update":
-              options.onConversationUpdate?.(data.data as any);
-              break;
+          if (typingTimeout.current.has(key)) {
+            clearTimeout(typingTimeout.current.get(key)!);
           }
-        } catch (error) {
-          console.error("Failed to parse WebSocket message:", error);
-          options.onError?.(error as Error);
+          typingTimeout.current.set(key, timeout);
+        } else {
+          newTyping.delete(key);
+          if (typingTimeout.current.has(key)) {
+            clearTimeout(typingTimeout.current.get(key)!);
+            typingTimeout.current.delete(key);
+          }
         }
-      };
+        return { ...prev, typingIndicators: newTyping };
+      });
+      optionsRef.current.onTypingUpdate?.(data);
+    });
 
-      ws.current.onclose = () => {
-        setClientState((prev) => ({ ...prev, connected: false, authenticated: false }));
+    socket.current.on("message:update", (data: MessageUpdate) => {
+      optionsRef.current.onMessageUpdate?.(data);
+    });
 
-        if (heartbeatInterval.current) {
-          clearInterval(heartbeatInterval.current);
-          heartbeatInterval.current = null;
-        }
+    socket.current.on("read:receipt", (data: ReadReceipt) => {
+      optionsRef.current.onReadReceipt?.(data);
+    });
 
-        options.onDisconnect?.();
+    socket.current.on("group:update", (data: any) => {
+      optionsRef.current.onGroupUpdate?.(data);
+    });
 
-        if (options.autoReconnect !== false && retryCount.current < maxRetries) {
-          retryCount.current++;
-          const backoffDelay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
+    socket.current.on("conversation:update", (data: any) => {
+      optionsRef.current.onConversationUpdate?.(data);
+    });
 
-          reconnectTimeout.current = setTimeout(() => {
-            connect();
-          }, backoffDelay);
-        }
-      };
+    socket.current.on("disconnect", () => {
+      setClientState((prev) => ({ ...prev, connected: false, authenticated: false }));
+      optionsRef.current.onDisconnect?.();
+    });
 
-      ws.current.onerror = () => {
-        console.warn(
-          "ThinkPages WebSocket connection failed - continuing without real-time features"
-        );
-      };
-    } catch (error) {
-      console.warn("WebSocket not available - continuing without real-time features");
-    }
-  }, [options, updatePresence]);
+    socket.current.on("connect_error", (error) => {
+      console.warn("ThinkPages WebSocket connection failed - continuing without real-time features", error);
+      optionsRef.current.onError?.(error);
+    });
+  }, [updatePresence]);
 
   const disconnect = useCallback(() => {
-    // Skip on server
     if (isServer) return;
     
-    if (heartbeatInterval.current) {
-      clearInterval(heartbeatInterval.current);
-      heartbeatInterval.current = null;
-    }
-
-    if (reconnectTimeout.current) {
-      clearTimeout(reconnectTimeout.current);
-      reconnectTimeout.current = null;
-    }
-
     typingTimeout.current.forEach((timeout) => clearTimeout(timeout));
     typingTimeout.current.clear();
 
     updatePresence("offline");
 
-    if (ws.current) {
-      ws.current.close();
-      ws.current = null;
+    if (socket.current) {
+      socket.current.disconnect();
+      socket.current = null;
     }
   }, [updatePresence]);
-
   const sendTypingIndicator = useCallback(
-    (conversationId?: string, groupId?: string, isTyping: boolean = true) => {
+    (conversationId?: string, groupId?: string, isTyping = true) => {
       if (isServer) return;
-      
-      if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
-        ws.current.send(
-          JSON.stringify({
-            type: "typing:update",
-            accountId: options.accountId,
-            conversationId,
-            groupId,
-            isTyping,
-            timestamp: Date.now(),
-          })
-        );
+
+      if (socket.current?.connected && optionsRef.current.accountId) {
+        socket.current.emit("typing:update", {
+          accountId: optionsRef.current.accountId,
+          conversationId,
+          groupId,
+          isTyping,
+          timestamp: Date.now(),
+        });
       }
     },
-    [options.accountId]
+    []
   );
 
   const subscribeToConversation = useCallback((conversationId: string) => {
     if (isServer) return;
     
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(
-        JSON.stringify({
-          type: "subscribe",
-          channel: `conversation:${conversationId}`,
-        })
-      );
+    if (socket.current?.connected) {
+      socket.current.emit("subscribe", {
+        channel: `conversation:${conversationId}`,
+      });
 
       setClientState((prev) => ({
         ...prev,
@@ -277,13 +219,10 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   const unsubscribeFromConversation = useCallback((conversationId: string) => {
     if (isServer) return;
     
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(
-        JSON.stringify({
-          type: "unsubscribe",
-          channel: `conversation:${conversationId}`,
-        })
-      );
+    if (socket.current?.connected) {
+      socket.current.emit("unsubscribe", {
+        channel: `conversation:${conversationId}`,
+      });
 
       setClientState((prev) => {
         const newConversations = new Set(prev.activeConversations);
@@ -303,13 +242,10 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   const subscribeToGroup = useCallback((groupId: string) => {
     if (isServer) return;
     
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(
-        JSON.stringify({
-          type: "subscribe",
-          channel: `group:${groupId}`,
-        })
-      );
+    if (socket.current?.connected) {
+      socket.current.emit("subscribe", {
+        channel: `group:${groupId}`,
+      });
 
       setClientState((prev) => ({
         ...prev,
@@ -322,21 +258,18 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
   const markMessageAsRead = useCallback(
     (messageId: string, conversationId?: string, groupId?: string) => {
       if (isServer) return;
-      
-      if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
-        ws.current.send(
-          JSON.stringify({
-            type: "read:receipt",
-            messageId,
-            conversationId,
-            groupId,
-            accountId: options.accountId,
-            timestamp: Date.now(),
-          })
-        );
+
+      if (socket.current?.connected && optionsRef.current.accountId) {
+        socket.current.emit("read:receipt", {
+          messageId,
+          conversationId,
+          groupId,
+          accountId: optionsRef.current.accountId,
+          readAt: Date.now(),
+        });
       }
     },
-    [options.accountId]
+    []
   );
 
   // Initialize connection (only runs on client)

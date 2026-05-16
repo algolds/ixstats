@@ -23,7 +23,25 @@ import {
 } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import type { Polygon, MultiPolygon, Position } from "geojson";
+import type { Polygon, MultiPolygon, Position, Feature, FeatureCollection, Geometry } from "geojson";
+import type { GeoJSONSource } from "maplibre-gl";
+
+// Helper to get a typed GeoJSON source from the map
+function getGeoJSONSource(map: MapLibreMap | null, id: string): GeoJSONSource | undefined {
+  if (!map) return;
+  try {
+    return map.getSource(id) as GeoJSONSource;
+  } catch {
+    return undefined;
+  }
+}
+
+// Helper to safely extract coordinates from a feature's geometry
+function getFeatureCoords(geometry: Geometry): Position | undefined {
+  if (geometry.type === "Point") return geometry.coordinates;
+  if (geometry.type === "MultiPoint") return geometry.coordinates[0];
+  return undefined;
+}
 import {
   getVertices,
   getAllRings,
@@ -96,7 +114,7 @@ interface EditorMapProps {
   layerVisibility?: Record<string, boolean>;
 }
 
-const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as any[] };
+const EMPTY_FC = { type: "FeatureCollection" as const, features: [] as Feature[] };
 
 const SNAP_GUIDE_SOURCE = "editor-snap-guide";
 const SNAP_GUIDE_LAYER = "editor-snap-guide-line";
@@ -128,7 +146,7 @@ function updateSnapGuide(
 
   const source = map.getSource(SNAP_GUIDE_SOURCE);
   if (source && "setData" in source) {
-    (source as any).setData(fc);
+    (source as GeoJSONSource).setData(fc);
   } else {
     map.addSource(SNAP_GUIDE_SOURCE, { type: "geojson", data: fc });
     map.addLayer({
@@ -232,7 +250,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           properties: {},
         }],
       };
-      (map.getSource("editor-vedit-polygon") as any)?.setData(polyFc);
+      getGeoJSONSource(map, "editor-vedit-polygon")?.setData(polyFc);
 
       // Vertices
       const verts = getVertices(geo);
@@ -244,7 +262,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           properties: { ringIndex: v.ringIndex, vertexIndex: v.vertexIndex },
         })),
       };
-      (map.getSource("editor-vedit-vertices") as any)?.setData(vertFc);
+      getGeoJSONSource(map, "editor-vedit-vertices")?.setData(vertFc);
 
       // Midpoints (for adding new vertices)
       const rings = getAllRings(geo);
@@ -265,7 +283,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           });
         }
       }
-      (map.getSource("editor-vedit-midpoints") as any)?.setData({
+      getGeoJSONSource(map, "editor-vedit-midpoints")?.setData({
         type: "FeatureCollection",
         features: midFeatures,
       });
@@ -274,9 +292,9 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
     const clearVertexEditVis = useCallback(() => {
       const map = mapRef.current;
       if (!map) return;
-      (map.getSource("editor-vedit-polygon") as any)?.setData(EMPTY_FC);
-      (map.getSource("editor-vedit-vertices") as any)?.setData(EMPTY_FC);
-      (map.getSource("editor-vedit-midpoints") as any)?.setData(EMPTY_FC);
+      getGeoJSONSource(map, "editor-vedit-polygon")?.setData(EMPTY_FC);
+      getGeoJSONSource(map, "editor-vedit-vertices")?.setData(EMPTY_FC);
+      getGeoJSONSource(map, "editor-vedit-midpoints")?.setData(EMPTY_FC);
     }, []);
 
     const finishVertexEdit = useCallback(() => {
@@ -502,11 +520,11 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           // Add or update source — same pattern as IxWorldMap
           const existingSource = map.getSource(sourceId);
           if (existingSource) {
-            (existingSource as any).setData(layer.data);
+            (existingSource as GeoJSONSource).setData(layer.data as FeatureCollection);
           } else {
             map.addSource(sourceId, {
               type: "geojson",
-              data: layer.data as any,
+              data: layer.data as FeatureCollection,
               generateId: true,
             });
 
@@ -518,11 +536,10 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
                 source: sourceId,
                 paint: {
                   "line-color": config.strokeColor ?? "#7cb5d2",
-                  "line-width": [
-                    "interpolate", ["linear"], ["zoom"],
-                    0, config.strokeWidth ?? 1,
-                    6, (config.strokeWidth ?? 1) * 3,
-                  ] as any,
+                  "line-width": ["interpolate", ["linear"], ["zoom"],
+                  0, config.strokeWidth ?? 1,
+                  6, (config.strokeWidth ?? 1) * 3,
+                ] as [string, ...unknown[]],
                   "line-opacity": layer.visible ? 0.7 : 0,
                 },
                 layout: { "line-cap": "round", "line-join": "round" },
@@ -544,7 +561,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
                 id: fillLayerId,
                 type: "fill",
                 source: sourceId,
-                paint: fillPaint as any,
+                paint: fillPaint as Record<string, unknown>,
               });
 
               if (config.strokeColor) {
@@ -602,7 +619,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       };
 
       if (map.getSource(sourceId)) {
-        (map.getSource(sourceId) as any).setData(geojson);
+        getGeoJSONSource(map, sourceId)?.setData(geojson);
       } else {
         map.addSource(sourceId, { type: "geojson", data: geojson });
         // Subtle brightening fill — makes the country stand out from the darkened non-player areas
@@ -722,7 +739,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       const gridFc: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: lines };
 
       if (map.getSource(gridSourceId)) {
-        (map.getSource(gridSourceId) as any).setData(gridFc);
+        getGeoJSONSource(map, gridSourceId)?.setData(gridFc);
         if (map.getLayer(gridLayerId)) map.setLayoutProperty(gridLayerId, "visibility", "visible");
         if (map.getLayer(gridLabelId)) map.setLayoutProperty(gridLabelId, "visibility", "visible");
       } else {
@@ -799,7 +816,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       const pointsGeoJson = { type: "FeatureCollection" as const, features: pointFeatures };
 
       if (map.getSource("editor-points")) {
-        (map.getSource("editor-points") as any).setData(pointsGeoJson);
+        getGeoJSONSource(map, "editor-points")?.setData(pointsGeoJson);
       } else {
         map.addSource("editor-points", { type: "geojson", data: pointsGeoJson });
         map.addLayer({
@@ -863,14 +880,14 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         .filter((f) => f.geometry)
         .map((f) => ({
           type: "Feature" as const,
-          geometry: f.geometry as any,
+          geometry: f.geometry as Geometry,
           properties: { id: f.id, name: f.name, color: f.properties.color },
         }));
 
       const polysGeoJson = { type: "FeatureCollection" as const, features: polyFeatures };
 
       if (map.getSource("editor-subdivisions")) {
-        (map.getSource("editor-subdivisions") as any).setData(polysGeoJson);
+        getGeoJSONSource(map, "editor-subdivisions")?.setData(polysGeoJson);
       } else {
         map.addSource("editor-subdivisions", { type: "geojson", data: polysGeoJson });
         map.addLayer({
@@ -945,7 +962,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         : EMPTY_FC;
 
       if (map.getSource("editor-pending-point")) {
-        (map.getSource("editor-pending-point") as any).setData(geojson);
+        getGeoJSONSource(map, "editor-pending-point")?.setData(geojson);
       } else {
         map.addSource("editor-pending-point", { type: "geojson", data: geojson });
         map.addLayer({
@@ -998,7 +1015,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       };
 
       if (map.getSource("editor-route-line")) {
-        (map.getSource("editor-route-line") as any).setData(lineGeoJson);
+        getGeoJSONSource(map, "editor-route-line")?.setData(lineGeoJson);
       } else {
         map.addSource("editor-route-line", { type: "geojson", data: lineGeoJson });
         map.addLayer({
@@ -1014,7 +1031,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
       }
 
       if (map.getSource("editor-route-points")) {
-        (map.getSource("editor-route-points") as any).setData(pointGeoJson);
+        getGeoJSONSource(map, "editor-route-points")?.setData(pointGeoJson);
       } else {
         map.addSource("editor-route-points", { type: "geojson", data: pointGeoJson });
         map.addLayer({
@@ -1132,7 +1149,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           properties: {},
         })),
       };
-      (map.getSource("editor-draw-vertices") as any)?.setData(verticesGeoJson);
+      getGeoJSONSource(map, "editor-draw-vertices")?.setData(verticesGeoJson);
 
       if (vertices.length >= 3) {
         const polyGeoJson = {
@@ -1148,7 +1165,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             },
           ],
         };
-        (map.getSource("editor-draw-polygon") as any)?.setData(polyGeoJson);
+        getGeoJSONSource(map, "editor-draw-polygon")?.setData(polyGeoJson);
       } else if (vertices.length >= 2) {
         const lineGeoJson = {
           type: "FeatureCollection" as const,
@@ -1163,9 +1180,9 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             },
           ],
         };
-        (map.getSource("editor-draw-polygon") as any)?.setData(lineGeoJson);
+        getGeoJSONSource(map, "editor-draw-polygon")?.setData(lineGeoJson);
       } else {
-        (map.getSource("editor-draw-polygon") as any)?.setData(EMPTY_FC);
+        getGeoJSONSource(map, "editor-draw-polygon")?.setData(EMPTY_FC);
       }
     }, []);
 
@@ -1269,7 +1286,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
               target = {
                 ringIndex: f.properties!.ringIndex as number,
                 vertexIndex: f.properties!.vertexIndex as number,
-                coord: (f.geometry as any).coordinates as Position,
+                coord: getFeatureCoords(f.geometry) as Position,
               };
             }
           }
@@ -1452,7 +1469,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
 
         const ri = f.properties.ringIndex as number;
         const vi = f.properties.vertexIndex as number;
-        const coord = (f.geometry as any).coordinates as Position;
+        const coord = getFeatureCoords(f.geometry) as Position;
         draggingRef.current = { ringIndex: ri, vertexIndex: vi, coord };
         map.dragPan.disable();
         map.getCanvas().style.cursor = "grabbing";
@@ -1466,7 +1483,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
 
         const ri = f.properties.ringIndex as number;
         const si = f.properties.startIndex as number;
-        const midCoord = (f.geometry as any).coordinates as Position;
+        const midCoord = getFeatureCoords(f.geometry) as Position;
 
         const rings = getAllRings(vertexEditRef.current.currentGeometry);
         const ring = rings[ri];
@@ -1547,7 +1564,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         const f = hits[0]!;
         const ri = f.properties!.ringIndex as number;
         const vi = f.properties!.vertexIndex as number;
-        const coord = (f.geometry as any).coordinates as Position;
+        const coord = getFeatureCoords(f.geometry) as Position;
 
         const result = removeVertex(
           vertexEditRef.current.currentGeometry,
@@ -1568,7 +1585,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
             hoveredVertexRef.current = {
               ringIndex: f.properties.ringIndex as number,
               vertexIndex: f.properties.vertexIndex as number,
-              coord: (f.geometry as any).coordinates as Position,
+              coord: getFeatureCoords(f.geometry) as Position,
             };
           }
         }
@@ -1612,7 +1629,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
         const f = hits[0]!;
         const ri = f.properties!.ringIndex as number;
         const vi = f.properties!.vertexIndex as number;
-        const coord = (f.geometry as any).coordinates as Position;
+        const coord = getFeatureCoords(f.geometry) as Position;
 
         const result = removeVertex(
           vertexEditRef.current.currentGeometry,
@@ -1653,7 +1670,7 @@ const EditorMap = memo(forwardRef<EditorMapRef, EditorMapProps>(
           const f = hits[0]!;
           const ri = f.properties!.ringIndex as number;
           const vi = f.properties!.vertexIndex as number;
-          const coord = (f.geometry as any).coordinates as Position;
+          const coord = getFeatureCoords(f.geometry) as Position;
           draggingRef.current = { ringIndex: ri, vertexIndex: vi, coord };
           map.dragPan.disable();
 

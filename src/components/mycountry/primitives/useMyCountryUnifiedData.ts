@@ -35,7 +35,7 @@ interface UseMyCountryUnifiedDataReturn {
   refetchQuickActionPolicies: ReturnType<typeof api.quickActions.getPolicies.useQuery>["refetch"];
 }
 
-function deriveDiplomaticMetrics(relations: any[] | undefined): DiplomaticMetrics {
+function deriveDiplomaticMetrics(relations: Record<string, unknown>[] | undefined): DiplomaticMetrics {
   if (!relations || relations.length === 0) {
     return {
       treatyCount: 0,
@@ -71,7 +71,7 @@ function buildExecutiveIntelligencePayload(
   const vitalityIntelligence = [
     {
       area: "economic" as const,
-      score: (overview as any)?.vitality?.economic || 0,
+      score: (overview as Record<string, unknown>)?.vitality?.economic || 0,
       trend: "stable" as const,
       change: {
         value: 0,
@@ -83,7 +83,7 @@ function buildExecutiveIntelligencePayload(
         {
           id: "gdp-growth",
           label: "GDP Growth",
-          value: ((overview as any)?.vitality?.economic || 0).toFixed(1),
+          value: ((overview as Record<string, unknown>)?.vitality?.economic || 0).toFixed(1),
           unit: "/100",
           trend: "stable" as const,
           changeValue: 0,
@@ -94,7 +94,7 @@ function buildExecutiveIntelligencePayload(
         {
           id: "economic-tier",
           label: "Economic Tier",
-          value: (overview as any)?.country?.economicTier || "N/A",
+          value: (overview as Record<string, unknown>)?.country?.economicTier || "N/A",
           unit: "",
           trend: "stable" as const,
           changeValue: 0,
@@ -107,12 +107,12 @@ function buildExecutiveIntelligencePayload(
       recommendations: [],
       forecast: {
         shortTerm: {
-          projected: (overview as any)?.vitality?.economic || 0,
+          projected: (overview as Record<string, unknown>)?.vitality?.economic || 0,
           confidence: 70,
           factors: ["Current economic indicators", "Historical trends"],
         },
         longTerm: {
-          projected: (overview as any)?.vitality?.economic || 0,
+          projected: (overview as Record<string, unknown>)?.vitality?.economic || 0,
           confidence: 50,
           factors: ["Long-term growth patterns", "Global economic outlook"],
         },
@@ -127,7 +127,7 @@ function buildExecutiveIntelligencePayload(
     },
     {
       area: "population" as const,
-      score: (overview as any)?.vitality?.social || 0,
+      score: (overview as Record<string, unknown>)?.vitality?.social || 0,
       trend: "stable" as const,
       change: {
         value: 0,
@@ -139,7 +139,7 @@ function buildExecutiveIntelligencePayload(
         {
           id: "population-tier",
           label: "Population Tier",
-          value: (overview as any)?.country?.populationTier || "N/A",
+          value: (overview as Record<string, unknown>)?.country?.populationTier || "N/A",
           unit: "",
           trend: "stable" as const,
           changeValue: 0,
@@ -150,7 +150,7 @@ function buildExecutiveIntelligencePayload(
         {
           id: "wellbeing",
           label: "Wellbeing",
-          value: String((overview as any)?.country?.overallNationalHealth || 0),
+          value: String((overview as Record<string, unknown>)?.country?.overallNationalHealth || 0),
           unit: "/100",
           trend: "stable" as const,
           changeValue: 0,
@@ -163,12 +163,12 @@ function buildExecutiveIntelligencePayload(
       recommendations: [],
       forecast: {
         shortTerm: {
-          projected: (overview as any)?.vitality?.social || 0,
+          projected: (overview as Record<string, unknown>)?.vitality?.social || 0,
           confidence: 70,
           factors: ["Social indicators", "Population trends"],
         },
         longTerm: {
-          projected: (overview as any)?.vitality?.social || 0,
+          projected: (overview as Record<string, unknown>)?.vitality?.social || 0,
           confidence: 50,
           factors: ["Demographic projections", "Social policy impact"],
         },
@@ -183,7 +183,7 @@ function buildExecutiveIntelligencePayload(
     },
     {
       area: "diplomatic" as const,
-      score: (overview as any)?.vitality?.diplomatic || 0,
+      score: (overview as Record<string, unknown>)?.vitality?.diplomatic || 0,
       trend: "stable" as const,
       change: {
         value: 0,
@@ -243,12 +243,12 @@ function buildExecutiveIntelligencePayload(
       recommendations: [],
       forecast: {
         shortTerm: {
-          projected: (overview as any)?.vitality?.diplomatic || 0,
+          projected: (overview as Record<string, unknown>)?.vitality?.diplomatic || 0,
           confidence: 70,
           factors: ["Current diplomatic relations", "International standing"],
         },
         longTerm: {
-          projected: (overview as any)?.vitality?.diplomatic || 0,
+          projected: (overview as Record<string, unknown>)?.vitality?.diplomatic || 0,
           confidence: 50,
           factors: ["Geopolitical trends", "Alliance developments"],
         },
@@ -263,7 +263,7 @@ function buildExecutiveIntelligencePayload(
     },
     {
       area: "governance" as const,
-      score: (overview as any)?.vitality?.governance || 0,
+      score: (overview as Record<string, unknown>)?.vitality?.governance || 0,
       trend: "stable" as const,
       change: {
         value: 0,
@@ -275,7 +275,7 @@ function buildExecutiveIntelligencePayload(
         {
           id: "active-policies",
           label: "Active Policies",
-          value: String((overview as any)?.activity?.activePolicies || 0),
+          value: String((overview as Record<string, unknown>)?.activity?.activePolicies || 0),
           unit: "",
           trend: "stable" as const,
           changeValue: 0,
@@ -286,7 +286,7 @@ function buildExecutiveIntelligencePayload(
         {
           id: "pending-decisions",
           label: "Pending Decisions",
-          value: String((overview as any)?.activity?.pendingDecisions || 0),
+          value: String((overview as Record<string, unknown>)?.activity?.pendingDecisions || 0),
           unit: "",
           trend: "stable" as const,
           changeValue: 0,
@@ -299,12 +299,12 @@ function buildExecutiveIntelligencePayload(
       recommendations: [],
       forecast: {
         shortTerm: {
-          projected: (overview as any)?.vitality?.governance || 0,
+          projected: (overview as Record<string, unknown>)?.vitality?.governance || 0,
           confidence: 70,
           factors: ["Policy throughput", "Decision velocity"],
         },
         longTerm: {
-          projected: (overview as any)?.vitality?.governance || 0,
+          projected: (overview as Record<string, unknown>)?.vitality?.governance || 0,
           confidence: 50,
           factors: ["Institutional reforms", "Administrative capacity"],
         },
@@ -319,8 +319,8 @@ function buildExecutiveIntelligencePayload(
     },
   ];
 
-  const criticalAlerts = (overview as any)?.alerts?.items
-    ? (overview as any).alerts.items
+  const criticalAlerts = (overview as Record<string, unknown>)?.alerts?.items
+    ? (overview as Record<string, unknown>).alerts.items
         .filter((alert: any) => alert.severity?.toString().toLowerCase() === "critical")
         .map((alert: any) => ({
           id: alert.id ?? `critical-${alert.title}`,
@@ -337,8 +337,8 @@ function buildExecutiveIntelligencePayload(
         }))
     : [];
 
-  const trendingInsights = (overview as any)?.briefings?.items
-    ? (overview as any).briefings.items.map((briefing: any) => ({
+  const trendingInsights = (overview as Record<string, unknown>)?.briefings?.items
+    ? (overview as Record<string, unknown>).briefings.items.map((briefing: any) => ({
         id: briefing.id ?? `briefing-${briefing.title}`,
         title: briefing.title,
         description: briefing.description ?? "",
@@ -362,8 +362,8 @@ function buildExecutiveIntelligencePayload(
       }))
     : [];
 
-  const quickActionList = Array.isArray((quickActions as any)?.actions)
-    ? (quickActions as any).actions
+  const quickActionList = Array.isArray((quickActions as Record<string, unknown>[])?.actions)
+    ? (quickActions as Record<string, unknown>[]).actions
     : [];
 
   const urgentActions = quickActionList.map((action: any) => ({

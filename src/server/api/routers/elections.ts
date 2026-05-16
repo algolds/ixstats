@@ -393,7 +393,7 @@ export const electionsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const candidate = await ctx.db.electionCandidate.findUnique({
         where: { id: input.id },
-        include: { election: true },
+        include: { election: { select: { countryId: true } } },
       });
       if (!candidate) {
         throw new TRPCError({ code: "NOT_FOUND" });

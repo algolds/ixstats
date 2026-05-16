@@ -96,6 +96,8 @@ model NSVerification {
   createdAt        DateTime  @default(now())
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade, map: "NSVerification_userId_fkey")
 
+  @@index([userId], map: "NSVerification_userId_idx")
+  @@index([expiresAt], map: "NSVerification_expiresAt_idx")
   @@map("ns_verifications")
 }
 
@@ -214,6 +216,11 @@ model CardPack {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @default(now())
   UserPack         UserPack[]
+
+  @@index([isActive], map: "CardPack_isActive_idx")
+  @@index([packType, isActive], map: "CardPack_packType_isActive_idx")
+  @@index([season], map: "CardPack_season_idx")
+  @@index([cardType], map: "CardPack_cardType_idx")
 }
 
 model UserPack {
@@ -326,6 +333,13 @@ model CardTrade {
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @default(now())
+
+  @@index([fromUserId], map: "CardTrade_fromUserId_idx")
+  @@index([toUserId], map: "CardTrade_toUserId_idx")
+  @@index([status], map: "CardTrade_status_idx")
+  @@index([expiresAt], map: "CardTrade_expiresAt_idx")
+  @@index([fromUserId, status], map: "CardTrade_fromUserId_status_idx")
+  @@index([toUserId, status], map: "CardTrade_toUserId_status_idx")
 }
 
 /// Crafting Recipe Model

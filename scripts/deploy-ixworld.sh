@@ -62,6 +62,7 @@ export NEXT_PUBLIC_CLERK_SIGN_IN_URL="https://accounts.ixwiki.com/sign-in"
 export NEXT_PUBLIC_CLERK_SIGN_UP_URL="https://accounts.ixwiki.com/sign-up"
 export NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL="https://maps.ixwiki.com/maps"
 export NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL="https://maps.ixwiki.com/maps"
+# Deprecated: removed NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL / AFTER_SIGN_UP_URL in favor of fallback redirect URLs above
 export NODE_ENV=production
 
 # Clean old build

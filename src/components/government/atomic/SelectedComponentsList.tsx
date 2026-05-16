@@ -13,7 +13,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { X, Package } from "lucide-react";
 import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 
 export interface SelectedComponentsListProps {
   selectedComponents: AtomicGovernmentComponent[];

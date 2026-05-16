@@ -10,7 +10,7 @@
 
 import { useRef, useCallback, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, AlertCircle, Map, ChevronRight, List } from "lucide-react";
+import { ArrowLeft, AlertCircle, Map, ChevronRight, List, Loader2 } from "lucide-react";
 import { useCountryData } from "./primitives";
 import type { MyCountrySection } from "./MyCountrySidebarNav";
 import { useMapEditor } from "~/hooks/useMapEditor";
@@ -140,6 +140,8 @@ export function EnhancedMapEditorContent({
     }
   }, [editor]);
 
+  const linkageLoading = editor.linkageLoading;
+  const geometryLoading = editor.geometryLoading;
   const isLinked = !!editor.linkage?.isLinked;
   const hasGeometry = !!editor.countryGeo;
   const toolsDisabled = !isLinked || !hasGeometry;
@@ -270,7 +272,16 @@ export function EnhancedMapEditorContent({
       <div className="relative flex min-h-0 flex-1">
         {/* Map area */}
         <div className="relative min-w-0 flex-1" data-map-container>
-          {!isLinked ? (
+          {linkageLoading ? (
+            <div className="flex h-full items-center justify-center bg-muted">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+                <p className="text-sm text-muted-foreground">
+                  Checking map linkage...
+                </p>
+              </div>
+            </div>
+          ) : !isLinked ? (
             <div className="flex h-full items-center justify-center bg-muted">
               <div className="text-center">
                 <AlertCircle className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
@@ -284,7 +295,7 @@ export function EnhancedMapEditorContent({
                 </p>
               </div>
             </div>
-          ) : !hasGeometry ? (
+          ) : geometryLoading ? (
             <div className="flex h-full items-center justify-center bg-muted">
               <div className="flex flex-col items-center gap-3">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground/20 border-t-emerald-500" />

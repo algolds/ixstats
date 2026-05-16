@@ -14,6 +14,7 @@ export const runtime = "nodejs";
 const createContext = async (req: NextRequest) => {
   return createTRPCContext({
     headers: req.headers,
+    req,
   });
 };
 

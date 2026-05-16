@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useUser } from "~/context/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import { IxTime } from "~/lib/ixtime";
@@ -424,22 +424,40 @@ export function UnifiedNotificationProvider({
   }, [isExecutiveMode]);
 
   // Context value
-  const contextValue: UnifiedNotificationContextType = {
-    createNotification,
-    getNotifications,
-    markAsRead,
-    dismiss,
-    clearAll,
-    notifications,
-    unreadCount,
-    isLoading,
-    preferences,
-    updatePreferences,
-    analytics,
-    currentIslandNotification,
-    dismissIslandNotification,
-    currentContext,
-  };
+  const contextValue = useMemo<UnifiedNotificationContextType>(
+    () => ({
+      createNotification,
+      getNotifications,
+      markAsRead,
+      dismiss,
+      clearAll,
+      notifications,
+      unreadCount,
+      isLoading,
+      preferences,
+      updatePreferences,
+      analytics,
+      currentIslandNotification,
+      dismissIslandNotification,
+      currentContext,
+    }),
+    [
+      createNotification,
+      getNotifications,
+      markAsRead,
+      dismiss,
+      clearAll,
+      notifications,
+      unreadCount,
+      isLoading,
+      preferences,
+      updatePreferences,
+      analytics,
+      currentIslandNotification,
+      dismissIslandNotification,
+      currentContext,
+    ]
+  );
 
   return (
     <UnifiedNotificationContext.Provider value={contextValue}>

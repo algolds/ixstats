@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "motion/react";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 import {
   Settings,
   Lightbulb,

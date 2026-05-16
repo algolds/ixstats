@@ -48,7 +48,7 @@ import {
   Palette,
 } from "lucide-react";
 import Link from "next/link";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 
 // Component categories mapping
 const COMPONENT_CATEGORIES = {

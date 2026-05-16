@@ -20,6 +20,8 @@ const path = require('path');
  */
 function loadEnvFile(filePath) {
   const vars = {};
+  if (!fs.existsSync(filePath)) return vars;
+
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
     for (const line of content.split('\n')) {
@@ -35,7 +37,7 @@ function loadEnvFile(filePath) {
           (value.startsWith("'") && value.endsWith("'"))) {
         value = value.slice(1, -1);
       }
-      if (key && value) vars[key] = value;
+      if (key) vars[key] = value;
     }
   } catch (err) {
     console.warn(`[PM2] Could not load ${filePath}: ${err.message}`);
@@ -45,8 +47,13 @@ function loadEnvFile(filePath) {
 
 const projectDir = '/ixwiki/public/projects/ixstats';
 
-// Load secrets from .env.production.local (highest priority)
-const localSecrets = loadEnvFile(path.join(projectDir, '.env.production.local'));
+// Merge strategy matching Next.js: .env.production.local > .env.local > .env.production > .env
+const localSecrets = {
+  ...loadEnvFile(path.join(projectDir, '.env')),
+  ...loadEnvFile(path.join(projectDir, '.env.production')),
+  ...loadEnvFile(path.join(projectDir, '.env.local')),
+  ...loadEnvFile(path.join(projectDir, '.env.production.local')),
+};
 
 module.exports = {
   apps: [
@@ -77,8 +84,6 @@ module.exports = {
         NEXT_PUBLIC_CLERK_SIGN_UP_URL: 'https://accounts.ixwiki.com/sign-up',
         NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: 'https://ixwiki.com/projects/ixstates',
         NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: 'https://ixwiki.com/projects/ixstates',
-        NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: 'https://ixwiki.com/projects/ixstates',
-        NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: 'https://ixwiki.com/projects/ixstates',
         // Secrets loaded from .env.production.local
         ...localSecrets,
       },

@@ -420,7 +420,11 @@ export function MediaSearchModal({
                       </>
                     ) : (
                       <div className="text-muted-foreground col-span-1 xs:col-span-2 p-4 sm:p-6 md:p-8 text-center md:col-span-3 text-sm">
-                        No images found. Try a different search query.
+                        {debouncedRepoQuery && !isLoadingRepo
+                          ? 'No images found. Try a different search query, or use the "Upload" tab to add your own image.'
+                          : debouncedRepoQuery
+                            ? "Searching..."
+                            : "Enter a search term above to find images."}
                       </div>
                     )}
                   </div>
@@ -506,7 +510,11 @@ export function MediaSearchModal({
                       </>
                     ) : (
                       <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
-                        No images found. Try a different search query.
+                        {debouncedCommonsQuery && !isLoadingWikiCommons
+                          ? 'No images found. Try a different search query, or use the "Upload" tab to add your own image.'
+                          : debouncedCommonsQuery
+                            ? "Searching..."
+                            : "Enter a search term above to find images from Wikimedia Commons."}
                       </div>
                     )}
                   </div>
@@ -685,7 +693,7 @@ export function MediaSearchModal({
                       </>
                     ) : debouncedWikiQuery ? (
                       <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
-                        No images found for "{debouncedWikiQuery}". Try a different search query.
+                        No images found for "{debouncedWikiQuery}". Try a different search query, or use the "Upload" tab to add your own image.
                       </div>
                     ) : (
                       <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
@@ -783,12 +791,25 @@ export function MediaSearchModal({
                               onImageSelect(result.url);
                               onClose();
                               notify.success("Image uploaded successfully");
+                            } else if (response.status === 401) {
+                              notify.error(
+                                "Authentication required",
+                                "You need to be signed in to upload images. Try using the Repository or Wiki tabs instead."
+                              );
+                            } else if (response.status === 429) {
+                              const retryAfter = result.retryAfter
+                                ? `Please try again in ${result.retryAfter} seconds.`
+                                : "Please try again later.";
+                              notify.error("Upload limit reached", retryAfter);
                             } else {
                               notify.error(result.error || "Failed to upload image");
                             }
                           } catch (error) {
                             console.error("Upload error:", error);
-                            notify.error("Failed to upload image");
+                            notify.error(
+                              "Upload failed",
+                              "Could not connect to the server. Make sure you have a stable connection."
+                            );
                           } finally {
                             setIsUploading(false);
                             // Reset file input

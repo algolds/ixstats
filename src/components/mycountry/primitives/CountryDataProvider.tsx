@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type { ReactNode } from "react";
 import { api } from "~/trpc/react";
 import { mapCountryToEconomyData } from "~/lib/economy-data-mapper";
@@ -167,17 +167,30 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     );
   }
 
-  const value: CountryDataContextValue = {
-    userProfile,
-    country,
-    economyData,
-    systemStatus,
-    activityRingsData,
-    currentIxTime,
-    isLoading: false,
-    error: profileError?.message || countryError?.message || null,
-    isViewingOtherCountry,
-  };
+  const value = useMemo<CountryDataContextValue>(
+    () => ({
+      userProfile,
+      country,
+      economyData,
+      systemStatus,
+      activityRingsData,
+      currentIxTime,
+      isLoading: false,
+      error: profileError?.message || countryError?.message || null,
+      isViewingOtherCountry,
+    }),
+    [
+      userProfile,
+      country,
+      economyData,
+      systemStatus,
+      activityRingsData,
+      currentIxTime,
+      profileError?.message,
+      countryError?.message,
+      isViewingOtherCountry,
+    ]
+  );
 
   return <CountryDataContext.Provider value={value}>{children}</CountryDataContext.Provider>;
 }

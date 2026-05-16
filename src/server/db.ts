@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import { env } from "~/env";
 // Import from standalone query-monitor to avoid circular dependency with database-optimizations
@@ -196,7 +197,21 @@ const globalForPrisma = globalThis as unknown as {
   prisma: ReturnType<typeof createPrismaClient> | undefined;
 };
 
-export const db = globalForPrisma.prisma ?? createPrismaClient();
+export const db =
+  globalForPrisma.prisma ??
+  createPrismaClient().$extends({
+    query: {
+      $allModels: {
+        async findMany({ args, query }) {
+          if (!args.take && !args.cursor) {
+            args.take = 1000;
+          }
+          return query(args);
+        },
+      },
+    },
+  });
+
 export { db as prisma };
 
 // Export read-only mode flag for use in other parts of the application

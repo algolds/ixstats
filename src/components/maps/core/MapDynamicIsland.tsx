@@ -617,13 +617,7 @@ function AuthSection({
             <User className="h-3.5 w-3.5" />
             User Settings
           </button>
-          <button
-            onClick={() => router.push("/profile")}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          >
-            <Link2 className="h-3.5 w-3.5" />
-            IxnayID Sync
-          </button>
+        
           {countryName && (
             <button
               onClick={() => router.push(getNationUrl(countryName))}

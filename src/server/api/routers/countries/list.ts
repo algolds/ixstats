@@ -264,5 +264,77 @@ export const listProcedures = {
       }
       return result;
     }),
-};
 
+  /**
+   * Top countries by composite importance (population × GDP per capita).
+   * Used by the world map to highlight prominent nations.
+   */
+  getTopCountriesByImportance: cachedStaticProcedure
+    .input(z.object({ limit: z.number().min(1).max(100).default(25) }))
+    .query(async ({ ctx, input }) => {
+      const countries = await ctx.db.country.findMany({
+        where: { isDemo: false },
+        orderBy: [
+          { currentPopulation: "desc" },
+          { currentGdpPerCapita: "desc" },
+        ],
+        take: input.limit,
+        select: { name: true, currentPopulation: true, currentGdpPerCapita: true },
+      });
+
+      // Sort by composite importance score (population × GDP per capita)
+      const scored = countries.map((c) => ({
+        name: c.name,
+        score: (c.currentPopulation ?? 0) * (c.currentGdpPerCapita ?? 0),
+      }));
+      scored.sort((a, b) => b.score - a.score);
+
+      return scored.map((c) => c.name);
+    }),
+
+  getTopCountriesByGdpPerCapita: cachedPublicProcedure
+    .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
+    .query(async ({ ctx, input }) => {
+      const countries = await ctx.db.country.findMany({
+        where: { isDemo: false },
+        orderBy: { currentGdpPerCapita: "desc" },
+        take: input.limit,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          flag: true,
+          currentGdpPerCapita: true,
+          economicTier: true,
+        },
+      });
+
+      return countries.map((c) => ({
+        ...c,
+        flagUrl: normalizeFlagUrl(c.flag),
+      }));
+    }),
+
+  getTopCountriesByPopulation: cachedPublicProcedure
+    .input(z.object({ limit: z.number().min(1).max(100).default(10) }))
+    .query(async ({ ctx, input }) => {
+      const countries = await ctx.db.country.findMany({
+        where: { isDemo: false },
+        orderBy: { currentPopulation: "desc" },
+        take: input.limit,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          flag: true,
+          currentPopulation: true,
+          populationTier: true,
+        },
+      });
+
+      return countries.map((c) => ({
+        ...c,
+        flagUrl: normalizeFlagUrl(c.flag),
+      }));
+    }),
+};

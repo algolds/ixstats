@@ -32,7 +32,7 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 
 export interface GovernmentTemplate {
   name: string;

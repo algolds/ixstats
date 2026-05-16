@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, type ReactNode } from "react";
+import React, { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
@@ -39,11 +39,14 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: false,
   });
 
-  const value: DemoModeContextValue = {
-    isDemoActive: !!data?.isActive,
-    demoCountryId: data?.isActive ? (data.demoCountryId ?? null) : null,
-    isLoading: isAuthenticated && isLoading,
-  };
+  const value = useMemo<DemoModeContextValue>(
+    () => ({
+      isDemoActive: !!data?.isActive,
+      demoCountryId: data?.isActive ? (data.demoCountryId ?? null) : null,
+      isLoading: isAuthenticated && isLoading,
+    }),
+    [data?.isActive, data?.demoCountryId, isAuthenticated, isLoading]
+  );
 
   return <DemoModeContext.Provider value={value}>{children}</DemoModeContext.Provider>;
 }

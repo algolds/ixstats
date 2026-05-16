@@ -3,7 +3,7 @@
  * Phase 2: AI-powered component suggestions based on country profile and current selection
  */
 
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 import { SYNERGY_RULES, CONFLICT_RULES } from "./atomic-builder-state";
 
 export interface SmartRecommendation {

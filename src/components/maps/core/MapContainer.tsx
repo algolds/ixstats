@@ -9,6 +9,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useMapDataBatched } from "~/hooks/useMapDataBatched";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
+import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
 import { MapControls } from "./MapControls";
 import { CountryInfoPanel } from "./CountryInfoPanel";
@@ -76,6 +77,10 @@ export function MapContainer({
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
   const measureToolRef = useRef<{ toggle: () => void }>(null);
+
+  // Real-time sync: invalidate map caches when any geo mutation succeeds
+  useMapLiveSync();
+
   const [selectedCountry, setSelectedCountry] =
     useState<SelectedCountry | null>(null);
   const [_hoveredCountry, setHoveredCountry] =
@@ -353,9 +358,13 @@ export function MapContainer({
   }, []);
 
   const handleOpenMyEditor = useCallback(() => {
+    console.log("[MapContainer] handleOpenMyEditor triggered", { userCountryId });
     if (userCountryId) {
       setEditingCountryId(userCountryId);
       setIsEditing(true);
+    } else {
+      console.warn("[MapContainer] Cannot open editor: userCountryId is missing");
+      alert("You must have a country to edit the map. Go to /mycountry to create or claim one.");
     }
   }, [userCountryId]);
 

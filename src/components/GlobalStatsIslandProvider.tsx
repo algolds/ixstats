@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 interface GlobalStatsIslandContextType {
   isVisible: boolean;
@@ -52,12 +52,15 @@ export function GlobalStatsIslandProvider({ children }: GlobalStatsIslandProvide
     };
   }, []);
 
-  const contextValue = {
-    isVisible,
-    setIsVisible,
-    mode,
-    setMode,
-  };
+  const contextValue = useMemo(
+    () => ({
+      isVisible,
+      setIsVisible,
+      mode,
+      setMode,
+    }),
+    [isVisible, setIsVisible, mode, setMode]
+  );
 
   return (
     <GlobalStatsIslandContext.Provider value={contextValue}>

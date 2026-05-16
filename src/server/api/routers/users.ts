@@ -768,7 +768,9 @@ export const usersRouter = createTRPCRouter({
             include: {
               rolePermissions: {
                 include: {
-                  permission: true,
+                  permission: {
+                    select: { id: true, name: true, description: true },
+                  },
                 },
               },
             },
@@ -1128,17 +1130,15 @@ export const usersRouter = createTRPCRouter({
               include: {
                 rolePermissions: {
                   include: {
-                    permission: true,
+                    permission: {
+                      select: { id: true, name: true, description: true },
+                    },
                   },
                 },
               },
             },
             country: {
-              select: {
-                id: true,
-                name: true,
-                economicTier: true,
-              },
+              select: { id: true, name: true, economicTier: true },
             },
           },
         });

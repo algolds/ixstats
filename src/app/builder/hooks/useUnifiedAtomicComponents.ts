@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
-import { EconomicComponentType, TaxComponentType } from "@prisma/client";
+import { EconomicComponentType, TaxComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
 
 export interface UseUnifiedAtomicComponentsProps {

@@ -59,5 +59,5 @@ export function getNationUrl(countryName: string): string {
     : process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true";
   
   const slug = generateSlug(countryName);
-  return isStandalone ? `/${slug}` : `/countries/${slug}`;
+  return `/countries/${slug}`;
 }

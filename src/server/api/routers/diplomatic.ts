@@ -157,17 +157,74 @@ export const diplomaticRouter = createTRPCRouter({
           description?: string;
         }> = [];
 
-        // 1. Recent diplomatic events (relationship changes, embassy events, mission completions)
-        const diplomaticEvents = await ctx.db.diplomaticEvent.findMany({
-          where: {
-            OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
-            createdAt: { gte: cutoffDate },
-          },
-          orderBy: { createdAt: "desc" },
-          take: 10,
-        });
+        // Run all 5 independent queries in parallel
+        const [diplomaticEvents, recentEmbassies, recentMissions, recentExchanges, recentTreaties] =
+          await Promise.all([
+            ctx.db.diplomaticEvent.findMany({
+              where: {
+                OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
+                createdAt: { gte: cutoffDate },
+              },
+              orderBy: { createdAt: "desc" },
+              take: 10,
+            }),
+            ctx.db.embassy.findMany({
+              where: {
+                OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
+                updatedAt: { gte: cutoffDate },
+              },
+              orderBy: { updatedAt: "desc" },
+              take: 10,
+              include: {
+                hostCountry: { select: { name: true } },
+                guestCountry: { select: { name: true } },
+              },
+            }),
+            ctx.db.embassyMission.findMany({
+              where: {
+                embassy: {
+                  OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
+                },
+                status: { in: ["completed", "failed"] },
+                updatedAt: { gte: cutoffDate },
+              },
+              orderBy: { updatedAt: "desc" },
+              take: 10,
+              include: {
+                embassy: {
+                  include: {
+                    hostCountry: { select: { name: true } },
+                    guestCountry: { select: { name: true } },
+                  },
+                },
+              },
+            }),
+            ctx.db.culturalExchange.findMany({
+              where: {
+                OR: [
+                  { hostCountryId: input.countryId },
+                  {
+                    participatingCountries: {
+                      some: { countryId: input.countryId },
+                    },
+                  },
+                ],
+                updatedAt: { gte: cutoffDate },
+              },
+              orderBy: { updatedAt: "desc" },
+              take: 10,
+            }),
+            ctx.db.treaty.findMany({
+              where: {
+                parties: { contains: input.countryId },
+                updatedAt: { gte: cutoffDate },
+              },
+              orderBy: { updatedAt: "desc" },
+              take: 10,
+            }),
+          ]);
 
-        // Fetch country names for all events
+        // Fetch country names for diplomatic events
         const countryIds = new Set<string>();
         diplomaticEvents.forEach((event) => {
           countryIds.add(event.country1Id);
@@ -182,7 +239,6 @@ export const diplomaticRouter = createTRPCRouter({
         const countryMap = new Map(countries.map((c) => [c.id, c.name]));
 
         for (const event of diplomaticEvents) {
-          // Determine target country based on which country is the input
           const targetCountryId =
             event.country1Id === input.countryId
               ? event.country2Id
@@ -198,20 +254,6 @@ export const diplomaticRouter = createTRPCRouter({
           });
         }
 
-        // 2. Recent embassy status changes
-        const recentEmbassies = await ctx.db.embassy.findMany({
-          where: {
-            OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
-            updatedAt: { gte: cutoffDate },
-          },
-          orderBy: { updatedAt: "desc" },
-          take: 10,
-          include: {
-            hostCountry: { select: { name: true } },
-            guestCountry: { select: { name: true } },
-          },
-        });
-
         for (const embassy of recentEmbassies) {
           const isHost = embassy.hostCountryId === input.countryId;
           const partnerCountry = isHost ? embassy.guestCountry : embassy.hostCountry;
@@ -225,27 +267,6 @@ export const diplomaticRouter = createTRPCRouter({
             description: `Embassy ${embassy.status === "ACTIVE" ? "operational" : embassy.status}`,
           });
         }
-
-        // 3. Recent missions completed/failed
-        const recentMissions = await ctx.db.embassyMission.findMany({
-          where: {
-            embassy: {
-              OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
-            },
-            status: { in: ["completed", "failed"] },
-            updatedAt: { gte: cutoffDate },
-          },
-          orderBy: { updatedAt: "desc" },
-          take: 10,
-          include: {
-            embassy: {
-              include: {
-                hostCountry: { select: { name: true } },
-                guestCountry: { select: { name: true } },
-              },
-            },
-          },
-        });
 
         for (const mission of recentMissions) {
           const isGuest = mission.embassy.guestCountryId === input.countryId;
@@ -263,23 +284,6 @@ export const diplomaticRouter = createTRPCRouter({
           });
         }
 
-        // 4. Recent cultural exchanges
-        const recentExchanges = await ctx.db.culturalExchange.findMany({
-          where: {
-            OR: [
-              { hostCountryId: input.countryId },
-              {
-                participatingCountries: {
-                  some: { countryId: input.countryId },
-                },
-              },
-            ],
-            updatedAt: { gte: cutoffDate },
-          },
-          orderBy: { updatedAt: "desc" },
-          take: 10,
-        });
-
         for (const exchange of recentExchanges) {
           changes.push({
             id: exchange.id,
@@ -290,16 +294,6 @@ export const diplomaticRouter = createTRPCRouter({
             description: `${exchange.title} - ${exchange.type}`,
           });
         }
-
-        // 5. Recent treaties signed
-        const recentTreaties = await ctx.db.treaty.findMany({
-          where: {
-            parties: { contains: input.countryId },
-            updatedAt: { gte: cutoffDate },
-          },
-          orderBy: { updatedAt: "desc" },
-          take: 10,
-        });
 
         for (const treaty of recentTreaties) {
           changes.push({
@@ -843,7 +837,18 @@ export const diplomaticRouter = createTRPCRouter({
       if (input.embassyMissionId) {
         const mission = await ctx.db.embassyMission.findUnique({
           where: { id: input.embassyMissionId },
-          include: { embassy: true },
+          include: {
+            embassy: {
+              select: {
+                id: true,
+                hostCountryId: true,
+                guestCountryId: true,
+                name: true,
+                influence: true,
+                status: true,
+              },
+            },
+          },
         });
 
         if (!mission) {
@@ -4460,8 +4465,8 @@ export const diplomaticRouter = createTRPCRouter({
           ...statusFilter,
         },
         include: {
-          initiator: { select: { id: true, name: true, flagUrl: true } },
-          target: { select: { id: true, name: true, flagUrl: true } },
+          initiator: { select: { id: true, name: true, flag: true } },
+          target: { select: { id: true, name: true, flag: true } },
         },
         orderBy: { createdAt: "desc" },
       });
@@ -4497,11 +4502,11 @@ export const diplomaticRouter = createTRPCRouter({
         const [country1, country2] = await Promise.all([
           ctx.db.country.findUnique({
             where: { id: c1 },
-            select: { id: true, name: true, gdpPerCapita: true, population: true },
+            select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
           }),
           ctx.db.country.findUnique({
             where: { id: c2 },
-            select: { id: true, name: true, gdpPerCapita: true, population: true },
+            select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
           }),
         ]);
 
@@ -4509,9 +4514,9 @@ export const diplomaticRouter = createTRPCRouter({
           throw new TRPCError({ code: "NOT_FOUND", message: "One or both countries not found" });
         }
 
-        // Estimate GDP: gdpPerCapita * population
-        const gdp1 = (country1.gdpPerCapita ?? 10000) * (country1.population ?? 1000000);
-        const gdp2 = (country2.gdpPerCapita ?? 10000) * (country2.population ?? 1000000);
+        // Estimate GDP: currentGdpPerCapita * currentPopulation
+        const gdp1 = (country1.currentGdpPerCapita ?? 10000) * (country1.currentPopulation ?? 1000000);
+        const gdp2 = (country2.currentGdpPerCapita ?? 10000) * (country2.currentPopulation ?? 1000000);
 
         // Check diplomatic relationship for modifier
         const relation = await ctx.db.diplomaticRelation.findFirst({
@@ -4537,8 +4542,8 @@ export const diplomaticRouter = createTRPCRouter({
             lastCalculatedIx: 0,
           },
           include: {
-            country1: { select: { id: true, name: true, gdpPerCapita: true, population: true } },
-            country2: { select: { id: true, name: true, gdpPerCapita: true, population: true } },
+            country1: { select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true } },
+            country2: { select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true } },
           },
         });
       }
@@ -4561,11 +4566,11 @@ export const diplomaticRouter = createTRPCRouter({
       const [initiator, target] = await Promise.all([
         ctx.db.country.findUnique({
           where: { id: input.initiatorId },
-          select: { id: true, name: true, gdpPerCapita: true, population: true },
+          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
         }),
         ctx.db.country.findUnique({
           where: { id: input.targetId },
-          select: { id: true, name: true, gdpPerCapita: true, population: true },
+          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
         }),
       ]);
 
@@ -4573,8 +4578,8 @@ export const diplomaticRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      const gdp1 = (initiator.gdpPerCapita ?? 10000) * (initiator.population ?? 1000000);
-      const gdp2 = (target.gdpPerCapita ?? 10000) * (target.population ?? 1000000);
+      const gdp1 = (initiator.currentGdpPerCapita ?? 10000) * (initiator.currentPopulation ?? 1000000);
+      const gdp2 = (target.currentGdpPerCapita ?? 10000) * (target.currentPopulation ?? 1000000);
 
       // Get bilateral trade for trade share calculation
       const [c1, c2] =
@@ -4731,11 +4736,11 @@ export const diplomaticRouter = createTRPCRouter({
       const [initiator, target] = await Promise.all([
         ctx.db.country.findUnique({
           where: { id: initiatorId },
-          select: { id: true, name: true, gdpPerCapita: true, population: true },
+          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
         }),
         ctx.db.country.findUnique({
           where: { id: input.targetId },
-          select: { id: true, name: true, gdpPerCapita: true, population: true },
+          select: { id: true, name: true, currentGdpPerCapita: true, currentPopulation: true },
         }),
       ]);
 
@@ -4743,8 +4748,8 @@ export const diplomaticRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Country not found" });
       }
 
-      const gdp1 = (initiator.gdpPerCapita ?? 10000) * (initiator.population ?? 1000000);
-      const gdp2 = (target.gdpPerCapita ?? 10000) * (target.population ?? 1000000);
+      const gdp1 = (initiator.currentGdpPerCapita ?? 10000) * (initiator.currentPopulation ?? 1000000);
+      const gdp2 = (target.currentGdpPerCapita ?? 10000) * (target.currentPopulation ?? 1000000);
 
       // Normalize country ordering for bilateral trade lookup
       const [c1, c2] =
@@ -5019,7 +5024,7 @@ export const diplomaticRouter = createTRPCRouter({
               members: {
                 where: { isActive: true },
                 include: {
-                  country: { select: { id: true, name: true, flagUrl: true } },
+                  country: { select: { id: true, name: true, flag: true } },
                 },
               },
               _count: { select: { actions: true, documents: true } },
@@ -5047,7 +5052,7 @@ export const diplomaticRouter = createTRPCRouter({
             where: { isActive: true },
             include: {
               country: {
-                select: { id: true, name: true, flagUrl: true, gdpPerCapita: true, population: true },
+                select: { id: true, name: true, flag: true, currentGdpPerCapita: true, currentPopulation: true },
               },
             },
             orderBy: { role: "asc" },
@@ -5071,12 +5076,12 @@ export const diplomaticRouter = createTRPCRouter({
       // Calculate aggregate stats
       const totalGdp = alliance.members.reduce((sum, m) => {
         const gdp =
-          (m.country.gdpPerCapita ?? 0) * (m.country.population ?? 0);
+          (m.country.currentGdpPerCapita ?? 0) * (m.country.currentPopulation ?? 0);
         return sum + gdp;
       }, 0);
 
       const totalPop = alliance.members.reduce(
-        (sum, m) => sum + (m.country.population ?? 0),
+        (sum, m) => sum + (m.country.currentPopulation ?? 0),
         0
       );
 

@@ -570,8 +570,8 @@ export class ProductionStartup {
 
       // Query top 20 countries by GDP to pre-load the most frequently accessed data
       const topCountries = await db.country.findMany({
-        where: { totalGDP: { not: null } },
-        orderBy: { totalGDP: "desc" },
+        where: { currentTotalGdp: { gt: 0 } },
+        orderBy: { currentTotalGdp: "desc" },
         take: 20,
         select: { id: true },
       });

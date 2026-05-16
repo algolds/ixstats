@@ -34,13 +34,13 @@ export function transformToExecutiveIntelligence(
       id: alert.id,
       title: alert.title,
       message: alert.description,
-      severity: alert.severity as any,
-      category: alert.category as any,
-      priority: "high" as any,
+      severity: alert.severity,
+      category: alert.category,
+      priority: "high",
       actionRequired: alert.severity === "critical",
-      timeframe: "immediate" as any,
+      timeframe: "immediate",
       estimatedImpact: {
-        magnitude: alert.severity === "critical" ? "high" : ("medium" as any),
+        magnitude: alert.severity === "critical" ? "high" : "medium",
         areas: ["Economic"],
       },
       recommendedActions: [`Address ${alert.title.toLowerCase()}`],
@@ -53,14 +53,14 @@ export function transformToExecutiveIntelligence(
         id: insight.id,
         title: insight.title,
         description: insight.insight,
-        category: "performance" as any,
+        category: "performance",
         icon: require("lucide-react").TrendingUp,
-        trend: insight.trend as any,
+        trend: insight.trend,
         significance:
           (insight.impact as string) === "high" ? ("major" as const) : ("moderate" as const),
         metrics: [],
         context: {
-          comparison: "historical" as any,
+          comparison: "historical",
           timeframe: "30 days",
           confidence: insight.confidence || 85,
         },
@@ -75,7 +75,7 @@ export function transformToExecutiveIntelligence(
         id: `action_${rec.area.toLowerCase()}_${Date.now()}`,
         title: `${rec.area} Initiative`,
         description: rec.action,
-        category: rec.area as any,
+        category: rec.area,
         urgency:
           rec.impact === "high"
             ? ("urgent" as const)
@@ -110,7 +110,7 @@ export function transformToExecutiveIntelligence(
       {
         area: "economic",
         score: healthCheck.score,
-        status: healthCheck.status.toLowerCase() as any,
+        status: healthCheck.status.toLowerCase(),
         trend:
           healthCheck.trend === "Improving"
             ? ("up" as const)
@@ -128,22 +128,22 @@ export function transformToExecutiveIntelligence(
             label: "Overall Grade",
             value: healthCheck.overallGrade,
             unit: "",
-            trend: "stable" as any,
+            trend: "stable",
             changeValue: 0,
             changePercent: 0,
             changePeriod: "30d",
-            status: "good" as any,
+            status: "good",
           },
           {
             id: "growth-status",
             label: "Growth Status",
             value: healthCheck.healthIndicators.growth,
             unit: "",
-            trend: "stable" as any,
+            trend: "stable",
             changeValue: 0,
             changePercent: 0,
             changePeriod: "30d",
-            status: "good" as any,
+            status: "good",
           },
         ],
         criticalAlerts: criticalAlerts,
@@ -171,33 +171,30 @@ export function transformToExecutiveIntelligence(
     ];
 
     return {
-      overallStatus: (healthCheck.status || "good").toLowerCase() as any,
+      overallStatus: (healthCheck.status || "good").toLowerCase(),
       confidenceLevel: 85,
       criticalAlerts,
       trendingInsights,
       urgentActions,
       vitalityIntelligence,
       // executiveSummary removed as it's not part of ExecutiveIntelligence interface
-    } as any;
+    } as ExecutiveIntelligence;
   } catch (error) {
     console.error("Failed to transform economic data to executive intelligence:", error);
 
     // Return fallback intelligence
     return {
-      overallStatus: "concerning" as any,
+      overallStatus: "concerning",
       confidenceLevel: 0,
       criticalAlerts: [],
       trendingInsights: [],
       urgentActions: [],
       vitalityIntelligence: [],
       // executiveSummary removed as it's not part of ExecutiveIntelligence interface
-    } as any;
+    } as ExecutiveIntelligence;
   }
 }
 
-/**
- * Transform enhanced economic data into vitality intelligence format
- */
 export function transformToVitalityIntelligence(
   countryStats: CountryStats,
   economyData: EconomyData
@@ -209,7 +206,7 @@ export function transformToVitalityIntelligence(
     const economicVitality: VitalityIntelligence = {
       area: "economic",
       score: healthCheck.score,
-      status: healthCheck.status.toLowerCase() as any,
+      status: healthCheck.status.toLowerCase(),
       trend:
         healthCheck.trend === "Improving"
           ? "up"
@@ -227,47 +224,47 @@ export function transformToVitalityIntelligence(
           label: "GDP per Capita",
           value: countryStats.currentGdpPerCapita.toLocaleString(),
           unit: "USD",
-          trend: "stable" as any,
+          trend: "stable",
           changeValue: 0,
           changePercent: 0,
           changePeriod: "1y",
-          status: "good" as any,
+          status: "good",
         },
         {
           id: "growth-rate",
           label: "Growth Rate",
           value: (countryStats.adjustedGdpGrowth * 100).toFixed(1),
           unit: "%",
-          trend: countryStats.adjustedGdpGrowth > 0 ? ("up" as any) : ("down" as any),
+          trend: countryStats.adjustedGdpGrowth > 0 ? "up" : "down",
           changeValue: countryStats.adjustedGdpGrowth * 100,
           changePercent: 0,
           changePeriod: "1y",
-          status: countryStats.adjustedGdpGrowth > 0 ? ("good" as any) : ("concerning" as any),
+          status: countryStats.adjustedGdpGrowth > 0 ? "good" : "concerning",
         },
         {
           id: "unemployment",
           label: "Unemployment",
           value: Number(economyData.labor.unemploymentRate ?? 0).toFixed(1),
           unit: "%",
-          trend: "stable" as any,
+          trend: "stable",
           changeValue: 0,
           changePercent: 0,
           changePeriod: "1y",
-          status: economyData.labor.unemploymentRate < 6 ? ("good" as any) : ("concerning" as any),
+          status: economyData.labor.unemploymentRate < 6 ? "good" : "concerning",
         },
         {
           id: "economic-health",
           label: "Economic Health",
           value: healthCheck.overallGrade,
           unit: "",
-          trend: "stable" as any,
+          trend: "stable",
           changeValue: 0,
           changePercent: 0,
           changePeriod: "1y",
-          status: "good" as any,
+          status: "good",
         },
       ],
-      criticalAlerts: intelligenceData.executiveIntelligence.criticalAlerts as any,
+      criticalAlerts: intelligenceData.executiveIntelligence.criticalAlerts,
       recommendations: [],
       forecast: {
         shortTerm: { projected: healthCheck.score, confidence: 85, factors: ["Economic analysis"] },
@@ -355,7 +352,7 @@ export function generateEconomicIntelligenceMetrics(
           label: "Unemployment Rate",
           value: economyData.labor.unemploymentRate,
           unit: "%",
-          trend: economyData.labor.unemploymentRate > 8 ? ("concerning" as any) : "stable",
+          trend: economyData.labor.unemploymentRate > 8 ? "concerning" : "stable",
           status: economyData.labor.unemploymentRate > 12 ? "concerning" : "good",
           changeValue: 0,
           changePercent: 0,

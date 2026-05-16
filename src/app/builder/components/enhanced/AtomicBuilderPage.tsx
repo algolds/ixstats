@@ -16,7 +16,7 @@ import { cn } from "~/lib/utils";
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { builderTutorialSteps, quickStartSteps } from "../../data/onboarding-tutorial";
 import { safeGetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
-import { ComponentType as PrismaComponentType } from "@prisma/client";
+import { ComponentType as PrismaComponentType } from "~/lib/enums";
 import { useNotify } from "~/hooks/useNotify";
 
 // Import modular architecture

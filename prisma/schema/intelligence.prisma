@@ -17,6 +17,13 @@ model IntelligenceItem {
   severity          Priority @default(medium)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@index([category], map: "IntelligenceItem_category_idx")
+  @@index([priority], map: "IntelligenceItem_priority_idx")
+  @@index([timestamp], map: "IntelligenceItem_timestamp_idx")
+  @@index([isActive], map: "IntelligenceItem_isActive_idx")
+  @@index([category, priority, timestamp], map: "IntelligenceItem_category_priority_timestamp_idx")
+  @@index([itemType], map: "IntelligenceItem_itemType_idx")
 }
 
 model IntelligenceBriefing {

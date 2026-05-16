@@ -42,6 +42,12 @@ const IXWORLD_ALLOWED_PREFIXES = [
   "/sign-in",
   "/sign-up",
   "/messages",
+  "/thinkpages",
+  "/forum",
+  "/admin",
+  "/mycountry",
+  "/ws",
+  "/socket.io",
 ];
 
 // Check if Clerk is configured with valid keys
@@ -213,6 +219,10 @@ function simpleMiddleware(req: NextRequest) {
   return enhanceResponse(response, req, null);
 }
 
+// SSE endpoints must bypass Clerk middleware — streaming ReadableStream
+// responses are incompatible with Clerk's cookie/session header rewriting.
+const SSE_ENDPOINTS = ["/api/sse/map-updates", "/api/sse"];
+
 export default isClerkConfigured
   ? clerkMiddleware(async (auth, req) => {
       // Block spoofed internal headers (defense in depth for CVE-2025-29927)
@@ -222,6 +232,13 @@ export default isClerkConfigured
           `[Security] Blocked spoofed x-middleware-subrequest header from ${req.headers.get("x-forwarded-for") || "unknown"}`
         );
         return new NextResponse("Forbidden", { status: 403 });
+      }
+
+      // SSE endpoints must bypass Clerk — streaming responses are incompatible
+      // with Clerk's session token/cookie rewriting. Return early with headers only.
+      if (SSE_ENDPOINTS.some((p) => req.nextUrl.pathname.startsWith(p))) {
+        const response = NextResponse.next();
+        return enhanceResponse(response, req, null);
       }
 
       // IxWorld standalone route guard

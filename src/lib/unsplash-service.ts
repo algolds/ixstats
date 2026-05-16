@@ -102,6 +102,11 @@ class UnsplashService {
       page: (params.page || 1).toString(),
     });
 
+    if (!this.accessKey) {
+      console.warn("Unsplash API access key is missing, using fallback images");
+      return this.getFallbackImages(params.query);
+    }
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
@@ -116,7 +121,11 @@ class UnsplashService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        console.warn(`Unsplash API returned ${response.status}, using fallback images`);
+        if (response.status === 401) {
+          console.error("Unsplash API unauthorized (401). Check UNSPLASH_ACCESS_KEY.");
+        } else {
+          console.warn(`Unsplash API returned ${response.status}, using fallback images`);
+        }
         return this.getFallbackImages(params.query);
       }
 
@@ -163,6 +172,8 @@ class UnsplashService {
       "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&h=400&fit=crop&crop=entropy&auto=format",
       "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1200&h=400&fit=crop&crop=entropy&auto=format",
       "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=1200&h=400&fit=crop&crop=entropy&auto=format",
+      "https://images.unsplash.com/photo-1449156001437-3a1661acda71?w=1200&h=400&fit=crop&crop=entropy&auto=format",
+      "https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1200&h=400&fit=crop&crop=entropy&auto=format",
     ];
 
     return fallbackUrls.map((url, index) => ({

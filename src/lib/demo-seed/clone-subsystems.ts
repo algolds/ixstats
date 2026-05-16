@@ -13,6 +13,9 @@ import * as fallbacks from "./seed-fallbacks";
 
 type Prisma = PrismaClient;
 
+// Allow dynamic model access for seed cloning (model names match Prisma keys)
+type PrismaDynamic = Record<string, { findMany: (args?: unknown) => Promise<unknown[]>; create: (args: { data: unknown }) => Promise<unknown> }>;
+
 // ─── Phase 1: Economics (1:1 flat models) ──────────────────────────
 
 /** Map model name → fallback seeder function (takes prisma, countryId, [countryName]) */
@@ -101,7 +104,7 @@ export async function cloneGovernmentTree(
   const demoGovId = demoGov.id;
 
   // Clone GovernmentDepartment (self-referential: two-pass)
-  const sourceDepts: any[] = await prisma.governmentDepartment.findMany({
+  const sourceDepts = await prisma.governmentDepartment.findMany({
     where: { governmentStructureId: sourceGovId },
   });
   if (sourceDepts.length === 0) {
@@ -116,7 +119,7 @@ export async function cloneGovernmentTree(
       countryField: "governmentStructureId",
       extraStrip: ["parentDepartmentId"],
     });
-    const newDept = await (prisma as any).governmentDepartment.create({ data });
+    const newDept = await prisma.governmentDepartment.create({ data });
     deptIdMap.set(dept.id, newDept.id);
     count++;
   }
@@ -136,7 +139,7 @@ export async function cloneGovernmentTree(
   }
 
   // Clone GovernmentOfficial
-  const sourceOfficials: any[] = await prisma.governmentOfficial.findMany({
+  const sourceOfficials = await prisma.governmentOfficial.findMany({
     where: { governmentStructureId: sourceGovId },
   });
   for (const official of sourceOfficials) {
@@ -146,12 +149,12 @@ export async function cloneGovernmentTree(
         departmentId: (val: string | null) => val ? (deptIdMap.get(val) ?? null) : null,
       },
     });
-    await (prisma as any).governmentOfficial.create({ data });
+    await prisma.governmentOfficial.create({ data });
     count++;
   }
 
   // Clone BudgetAllocation
-  const sourceBudgets: any[] = await (prisma as any).budgetAllocation.findMany({
+  const sourceBudgets = await prisma.budgetAllocation.findMany({
     where: { governmentStructureId: sourceGovId },
   });
   for (const budget of sourceBudgets) {
@@ -161,12 +164,12 @@ export async function cloneGovernmentTree(
       countryField: "governmentStructureId",
       transforms: { departmentId: () => newDeptId },
     });
-    await (prisma as any).budgetAllocation.create({ data });
+    await prisma.budgetAllocation.create({ data });
     count++;
   }
 
   // Clone SubBudgetCategory
-  const sourceSubBudgets: any[] = await (prisma as any).subBudgetCategory.findMany({
+  const sourceSubBudgets = await prisma.subBudgetCategory.findMany({
     where: { departmentId: { in: Array.from(deptIdMap.keys()) } },
   });
   for (const sub of sourceSubBudgets) {
@@ -177,7 +180,7 @@ export async function cloneGovernmentTree(
       transforms: { departmentId: () => newDeptId },
     });
     delete data["___skip___"];
-    await (prisma as any).subBudgetCategory.create({ data });
+    await prisma.subBudgetCategory.create({ data });
     count++;
   }
 
@@ -201,7 +204,7 @@ export async function cloneComponents(
   let count = 0;
 
   // GovernmentComponent
-  const sourceGovComps: any[] = await prisma.governmentComponent.findMany({
+  const sourceGovComps = await prisma.governmentComponent.findMany({
     where: { countryId: sourceCountryId },
   });
 
@@ -216,14 +219,14 @@ export async function cloneComponents(
   const govCompIdMap = new Map<string, string>();
   for (const comp of sourceGovComps) {
     const data = stripRecord(comp, demoCountryId);
-    const newComp = await (prisma as any).governmentComponent.create({ data });
+    const newComp = await prisma.governmentComponent.create({ data });
     govCompIdMap.set(comp.id, newComp.id);
     count++;
   }
 
   // ComponentSynergy (remap primaryComponentId + secondaryComponentId)
   if (govCompIdMap.size > 0) {
-    const sourceSynergies: any[] = await prisma.componentSynergy.findMany({
+    const sourceSynergies = await prisma.componentSynergy.findMany({
       where: { countryId: sourceCountryId },
     });
     for (const syn of sourceSynergies) {
@@ -236,7 +239,7 @@ export async function cloneComponents(
           secondaryComponentId: () => newSecondary,
         },
       });
-      await (prisma as any).componentSynergy.create({ data });
+      await prisma.componentSynergy.create({ data });
       count++;
     }
   }
@@ -299,7 +302,7 @@ export async function cloneTaxTree(
   const demoTaxSystemId = demoTaxSystem.id;
 
   // TaxCategory
-  const sourceCategories: any[] = await prisma.taxCategory.findMany({
+  const sourceCategories = await prisma.taxCategory.findMany({
     where: { taxSystemId: sourceTaxSystemId },
   });
   const categoryIdMap = new Map<string, string>();
@@ -315,7 +318,7 @@ export async function cloneTaxTree(
   }
 
   // TaxBracket (taxSystemId + categoryId)
-  const sourceBrackets: any[] = await prisma.taxBracket.findMany({
+  const sourceBrackets = await prisma.taxBracket.findMany({
     where: { taxSystemId: sourceTaxSystemId },
   });
   for (const bracket of sourceBrackets) {
@@ -334,7 +337,7 @@ export async function cloneTaxTree(
   }
 
   // TaxExemption (taxSystemId + optional categoryId)
-  const sourceExemptions: any[] = await prisma.taxExemption.findMany({
+  const sourceExemptions = await prisma.taxExemption.findMany({
     where: { taxSystemId: sourceTaxSystemId },
   });
   for (const exemption of sourceExemptions) {
@@ -354,7 +357,7 @@ export async function cloneTaxTree(
   // TaxDeduction (categoryId only)
   const sourceCategoryIds = Array.from(categoryIdMap.keys());
   if (sourceCategoryIds.length > 0) {
-    const sourceDeductions: any[] = await prisma.taxDeduction.findMany({
+    const sourceDeductions = await prisma.taxDeduction.findMany({
       where: { categoryId: { in: sourceCategoryIds } },
     });
     for (const deduction of sourceDeductions) {
@@ -371,7 +374,7 @@ export async function cloneTaxTree(
   }
 
   // TaxPolicy (taxSystemId)
-  const sourcePolicies: any[] = await prisma.taxPolicy.findMany({
+  const sourcePolicies = await prisma.taxPolicy.findMany({
     where: { taxSystemId: sourceTaxSystemId },
   });
   for (const policy of sourcePolicies) {
@@ -473,7 +476,7 @@ export async function cloneSecurity(
     count++;
 
     // NeighborThreatAssessment
-    const sourceNeighbors: any[] = await prisma.neighborThreatAssessment.findMany({
+    const sourceNeighbors = await prisma.neighborThreatAssessment.findMany({
       where: { borderSecurityId: sourceBorder.id },
     });
     for (const neighbor of sourceNeighbors) {
@@ -488,7 +491,7 @@ export async function cloneSecurity(
   }
 
   // SecurityThreat → ThreatIncident
-  const sourceThreats: any[] = await prisma.securityThreat.findMany({
+  const sourceThreats = await prisma.securityThreat.findMany({
     where: { countryId: sourceCountryId },
   });
   const threatIdMap = new Map<string, string>();
@@ -503,7 +506,7 @@ export async function cloneSecurity(
 
   if (threatIdMap.size > 0) {
     for (const [oldThreatId, newThreatId] of threatIdMap) {
-      const sourceIncidents: any[] = await prisma.threatIncident.findMany({
+      const sourceIncidents = await prisma.threatIncident.findMany({
         where: { threatId: oldThreatId },
       });
       for (const incident of sourceIncidents) {
@@ -542,7 +545,7 @@ export async function cloneGeography(
   count += terCount;
 
   // Subdivision → City, PointOfInterest
-  const sourceSubdivisions: any[] = await prisma.subdivision.findMany({
+  const sourceSubdivisions = await prisma.subdivision.findMany({
     where: { countryId: sourceCountryId },
   });
   const subdivIdMap = new Map<string, string>();
@@ -554,7 +557,7 @@ export async function cloneGeography(
   }
 
   // City
-  const sourceCities: any[] = await prisma.city.findMany({
+  const sourceCities = await prisma.city.findMany({
     where: { countryId: sourceCountryId },
   });
   for (const city of sourceCities) {
@@ -568,7 +571,7 @@ export async function cloneGeography(
   }
 
   // PointOfInterest
-  const sourcePois: any[] = await prisma.pointOfInterest.findMany({
+  const sourcePois = await prisma.pointOfInterest.findMany({
     where: { countryId: sourceCountryId },
   });
   for (const poi of sourcePois) {
@@ -609,7 +612,7 @@ export async function cloneOrSeedMeetings(
   let count = 0;
 
   // Clone CabinetMeeting → children
-  const sourceMeetings: any[] = await prisma.cabinetMeeting.findMany({
+  const sourceMeetings = await prisma.cabinetMeeting.findMany({
     where: { countryId: sourceCountryId },
   });
 
@@ -628,9 +631,9 @@ export async function cloneOrSeedMeetings(
       "meetingActionItem",
     ];
     for (const childModel of childModels) {
-      const model = (prisma as any)[childModel];
+      const model = (prisma as unknown as PrismaDynamic)[childModel];
       if (!model) continue;
-      const children: any[] = await model.findMany({
+      const children = await model.findMany({
         where: { meetingId: meeting.id },
       });
       for (const child of children) {
@@ -669,7 +672,7 @@ export async function cloneOrSeedPolicies(
 
   let count = 0;
 
-  const sourcePolicies: any[] = await prisma.policy.findMany({
+  const sourcePolicies = await prisma.policy.findMany({
     where: { countryId: sourceCountryId },
   });
 
@@ -685,7 +688,7 @@ export async function cloneOrSeedPolicies(
     count++;
 
     // PolicyEffectLog
-    const effectLogs: any[] = await (prisma as any).policyEffectLog.findMany({
+    const effectLogs = await prisma.policyEffectLog.findMany({
       where: { policyId: policy.id },
     });
     for (const log of effectLogs) {
@@ -694,7 +697,7 @@ export async function cloneOrSeedPolicies(
         transforms: { policyId: () => newPolicy.id },
       });
       delete logData["___skip___"];
-      await (prisma as any).policyEffectLog.create({ data: logData });
+      await prisma.policyEffectLog.create({ data: logData });
       count++;
     }
   }
@@ -720,7 +723,7 @@ export async function cloneOrSeedElections(
   let count = 0;
 
   // Clone PoliticalParty
-  const sourceParties: any[] = await prisma.politicalParty.findMany({
+  const sourceParties = await prisma.politicalParty.findMany({
     where: { countryId: sourceCountryId },
   });
   const partyIdMap = new Map<string, string>();
@@ -743,7 +746,7 @@ export async function cloneOrSeedElections(
     count++;
 
     // Clone LegislativeSeat (legislatureId + partyId)
-    const sourceSeats: any[] = await prisma.legislativeSeat.findMany({
+    const sourceSeats = await prisma.legislativeSeat.findMany({
       where: { legislatureId: sourceLeg.id },
     });
     for (const seat of sourceSeats) {
@@ -763,7 +766,7 @@ export async function cloneOrSeedElections(
   }
 
   // Clone Elections
-  const sourceElections: any[] = await prisma.election.findMany({
+  const sourceElections = await prisma.election.findMany({
     where: { countryId: sourceCountryId },
   });
   for (const election of sourceElections) {
@@ -776,7 +779,7 @@ export async function cloneOrSeedElections(
     count++;
 
     // Clone ElectionCandidate
-    const sourceCandidates: any[] = await prisma.electionCandidate.findMany({
+    const sourceCandidates = await prisma.electionCandidate.findMany({
       where: { electionId: election.id },
     });
     const candidateIdMap = new Map<string, string>();
@@ -796,7 +799,7 @@ export async function cloneOrSeedElections(
     }
 
     // Clone ElectionResult
-    const sourceResults: any[] = await prisma.electionResult.findMany({
+    const sourceResults = await prisma.electionResult.findMany({
       where: { electionId: election.id },
     });
     for (const result of sourceResults) {
@@ -836,7 +839,7 @@ export async function cloneOrSeedDefense(
   let count = 0;
 
   // Clone MilitaryBranch → MilitaryUnit
-  const sourceBranches: any[] = await prisma.militaryBranch.findMany({
+  const sourceBranches = await prisma.militaryBranch.findMany({
     where: { countryId: sourceCountryId },
   });
   for (const branch of sourceBranches) {
@@ -844,7 +847,7 @@ export async function cloneOrSeedDefense(
     const newBranch = await prisma.militaryBranch.create({ data });
     count++;
 
-    const sourceUnits: any[] = await prisma.militaryUnit.findMany({
+    const sourceUnits = await prisma.militaryUnit.findMany({
       where: { branchId: branch.id },
     });
     for (const unit of sourceUnits) {
@@ -891,7 +894,7 @@ export async function cloneOrSeedIntelligence(
   let count = 0;
 
   // Clone IntelligenceBriefing → IntelligenceRecommendation
-  const sourceBriefings: any[] = await prisma.intelligenceBriefing.findMany({
+  const sourceBriefings = await prisma.intelligenceBriefing.findMany({
     where: { countryId: sourceCountryId },
   });
   for (const briefing of sourceBriefings) {
@@ -900,7 +903,7 @@ export async function cloneOrSeedIntelligence(
     count++;
 
     // IntelligenceRecommendation
-    const sourceRecs: any[] = await prisma.intelligenceRecommendation.findMany({
+    const sourceRecs = await prisma.intelligenceRecommendation.findMany({
       where: { briefingId: briefing.id },
     });
     for (const rec of sourceRecs) {
@@ -958,7 +961,7 @@ export async function cloneOrSeedNationalIssues(
     const newIssue = await prisma.nationalIssue.create({ data });
     count++;
 
-    const sourceConsequences: any[] = await (prisma as any).nationalIssueConsequence.findMany({
+    const sourceConsequences = await prisma.nationalIssueConsequence.findMany({
       where: { issueId: issue.id },
     });
     for (const consequence of sourceConsequences) {
@@ -967,7 +970,7 @@ export async function cloneOrSeedNationalIssues(
         transforms: { issueId: () => newIssue.id },
       });
       delete consData["___skip___"];
-      await (prisma as any).nationalIssueConsequence.create({ data: consData });
+      await prisma.nationalIssueConsequence.create({ data: consData });
       count++;
     }
   }

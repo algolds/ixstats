@@ -12,6 +12,8 @@
     /* Strictness */
     "strict": true,
     "noUncheckedIndexedAccess": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
     "checkJs": false,
     /* Bundled projects */
     "lib": [
@@ -30,6 +32,7 @@
     ],
     "incremental": true,
     "tsBuildInfoFile": ".next/cache/tsbuildinfo",
+    "importHelpers": true,
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
@@ -59,6 +62,7 @@
       ]
     },
     /* Performance Optimizations */
+    "types": [],
     "assumeChangesOnlyAffectDirectDependencies": true,
     "disableSourceOfProjectReferenceRedirect": true,
     "skipDefaultLibCheck": true,
@@ -66,14 +70,13 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": [
-    "next-env.d.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx",
+    "src",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
+    "**/node_modules",
+    "**/.*",
     "public",
     "docs",
     "prisma/migrations",

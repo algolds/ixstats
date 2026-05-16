@@ -97,7 +97,7 @@ export const meetingsRouter = createTRPCRouter({
 
       const oldMeeting = await ctx.db.cabinetMeeting.findUnique({
         where: { id },
-        include: { attendances: true },
+        include: { attendances: { select: { officialId: true } } },
       });
 
       const meeting = await ctx.db.cabinetMeeting.update({

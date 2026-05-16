@@ -10,7 +10,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {
   calculateNetworkMetrics,
@@ -57,6 +57,7 @@ export interface NewExchangeData {
 interface CountryOption {
   id: string;
   name: string;
+  label: string;
   flagUrl?: string | null;
 }
 
@@ -77,12 +78,12 @@ export interface UseDiplomaticOperationsReturn {
   handleTabChange: (value: string) => void;
 
   // Data
-  embassies: any[] | undefined;
-  missions: any[] | undefined;
-  exchanges: any[] | undefined;
-  relationships: any[] | undefined;
-  availableUpgrades: any[] | undefined;
-  hostCountryOptions: any[];
+  embassies: Embassy[] | undefined;
+  missions: Mission[] | undefined;
+  exchanges: CulturalExchange[] | undefined;
+  relationships: Record<string, any>[] | undefined;
+  availableUpgrades: { upgradeType: string; [key: string]: any }[] | undefined;
+  hostCountryOptions: CountryOption[];
 
   // Loading states
   embassiesLoading: boolean;
@@ -93,9 +94,9 @@ export interface UseDiplomaticOperationsReturn {
 
   // Computed values
   networkMetrics: NetworkMetrics | null;
-  filteredMissions: any[];
-  filteredExchanges: any[];
-  selectedUpgrade: any | null;
+  filteredMissions: Mission[];
+  filteredExchanges: CulturalExchange[];
+  selectedUpgrade: { upgradeType: string; [key: string]: any } | null;
   embassyCount: number;
   activeEmbassyCount: number;
   existingGuestEmbassyHosts: Set<string>;
@@ -163,12 +164,12 @@ export interface UseDiplomaticOperationsReturn {
   openCreateExchangeDialog: () => void;
 
   // Mutation states
-  establishEmbassyMutation: any;
-  startMissionMutation: any;
-  completeMissionMutation: any;
-  createExchangeMutation: any;
-  allocateBudgetMutation: any;
-  upgradeEmbassyMutation: any;
+  establishEmbassyMutation: ReturnType<typeof api.diplomatic.establishEmbassy.useMutation>;
+  startMissionMutation: ReturnType<typeof api.diplomatic.startMission.useMutation>;
+  completeMissionMutation: ReturnType<typeof api.diplomatic.completeMission.useMutation>;
+  createExchangeMutation: ReturnType<typeof api.diplomatic.createCulturalExchange.useMutation>;
+  allocateBudgetMutation: ReturnType<typeof api.diplomatic.allocateBudget.useMutation>;
+  upgradeEmbassyMutation: ReturnType<typeof api.diplomatic.upgradeEmbassy.useMutation>;
 }
 
 /**
@@ -243,7 +244,7 @@ export function useDiplomaticOperations({
       "closed",
     ];
 
-    return embassies.map((embassy: any) => ({
+    return embassies.map((embassy: Embassy) => ({
       id: embassy.id ?? `embassy-${Math.random().toString(36).slice(2)}`,
       country: embassy.country ?? embassy.hostCountryName ?? "Unknown",
       status: validStatuses.includes(embassy.status) ? embassy.status : "neutral",
@@ -266,7 +267,7 @@ export function useDiplomaticOperations({
   const normalizedMissions = useMemo<Mission[]>(() => {
     if (!Array.isArray(missions)) return [];
 
-    return missions.map((mission: any) => ({
+    return missions.map((mission: Mission) => ({
       id: mission.id ?? `mission-${Math.random().toString(36).slice(2)}`,
       name: mission.name ?? mission.title ?? "Unknown Mission",
       status: (mission.status ?? "available") as MissionStatus,
@@ -280,7 +281,7 @@ export function useDiplomaticOperations({
   const normalizedExchanges = useMemo<CulturalExchange[]>(() => {
     if (!Array.isArray(exchanges)) return [];
 
-    return exchanges.map((exchange: any) => ({
+    return exchanges.map((exchange: CulturalExchange) => ({
       id: exchange.id ?? `exchange-${Math.random().toString(36).slice(2)}`,
       title: exchange.title ?? "Untitled Exchange",
       status: (exchange.status ?? "planning") as ExchangeStatus,
@@ -303,10 +304,11 @@ export function useDiplomaticOperations({
     if (!Array.isArray(countryOptionsData)) return [];
 
     return countryOptionsData
-      .filter((country: any) => country?.id !== countryId)
-      .map((country: any) => ({
+      .filter((country: { id: string; name: string }) => country?.id !== countryId)
+      .map((country: { id: string; name: string; label?: string; flagUrl?: string | null }) => ({
         id: country.id,
         name: country.name ?? country.label ?? "Unknown",
+        label: country.label ?? country.name ?? "Unknown",
         flagUrl: country.flagUrl ?? null,
       }));
   }, [countryOptionsData, countryId]);
@@ -381,7 +383,7 @@ export function useDiplomaticOperations({
   // Mutations
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      notify.success("Embassy Established", `Your embassy is now active in ${(data as any).hostCountryName || "the host nation"}.`);
+      notify.success("Embassy Established", `Your embassy is now active in ${data.hostCountryName || "the host nation"}.`);
       setEstablishEmbassyOpen(false);
       setNewEmbassyData({ hostCountry: "", name: "", location: "", ambassador: "" });
       void refetchEmbassies();
@@ -621,9 +623,9 @@ export function useDiplomaticOperations({
 
     startMissionMutation.mutate({
       embassyId: selectedEmbassy,
-      missionType: newMissionData.type as any,
+      missionType: newMissionData.type,
       staffAssigned: newMissionData.staff,
-      priorityLevel: newMissionData.priority as any,
+      priorityLevel: newMissionData.priority,
     });
   }, [selectedEmbassy, newMissionData, startMissionMutation]);
 
@@ -642,7 +644,7 @@ export function useDiplomaticOperations({
 
     createExchangeMutation.mutate({
       title: newExchangeData.title,
-      type: newExchangeData.type as any,
+      type: newExchangeData.type,
       description: newExchangeData.description,
       hostCountryId: countryId,
       hostCountryName: countryName,
@@ -671,7 +673,7 @@ export function useDiplomaticOperations({
     }
 
     const upgrade = availableUpgrades?.find(
-      (option: any) => option?.upgradeType === selectedUpgradeType
+      (option: { upgradeType: string }) => option?.upgradeType === selectedUpgradeType
     );
     if (!upgrade) {
       notify.error("Upgrade Unavailable", "No upgrades available for this embassy.");
@@ -680,7 +682,7 @@ export function useDiplomaticOperations({
 
     upgradeEmbassyMutation.mutate({
       embassyId: selectedEmbassy,
-      upgradeType: upgrade.upgradeType as any,
+      upgradeType: upgrade.upgradeType,
       level: upgrade.nextLevel,
     });
   }, [selectedEmbassy, availableUpgrades, selectedUpgradeType, upgradeEmbassyMutation]);

@@ -7,16 +7,6 @@ export { GlassChart, chartTheme } from "./GlassChart";
 // Recharts Integration
 export { GlassBarChart, GlassLineChart, GlassPieChart } from "./RechartsIntegration";
 
-// Google Charts Integration
-export {
-  GoogleLineChart,
-  GoogleBarChart,
-  GooglePieChart,
-  GoogleGeoChart,
-  GoogleGaugeChart,
-  GoogleAreaChart,
-} from "./GoogleChartsIntegration";
-
 // Interactive Controls
 export {
   GlassNumberPicker,

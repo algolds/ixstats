@@ -10,7 +10,7 @@
 import React from "react";
 import { ComponentCard } from "./ComponentCard";
 import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
-import { ComponentType } from "@prisma/client";
+import { ComponentType } from "~/lib/enums";
 
 export interface ComponentLibraryProps {
   components: Partial<Record<ComponentType, AtomicGovernmentComponent>>;
