@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Link2,
   Unlink,
@@ -95,7 +95,11 @@ function ServiceRow({
   );
 }
 
-export function IxnayIDCard() {
+interface IxnayIDCardProps {
+  hasDiscordAccount?: boolean;
+}
+
+export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   const utils = api.useUtils();
   const { data: status, isLoading } = api.ixnayid.getStatus.useQuery();
 
@@ -144,6 +148,21 @@ export function IxnayIDCard() {
     onSuccess: () => utils.ixnayid.getStatus.invalidate(),
   });
 
+  // Auto-link Discord if user signed in via Discord but IxnayID is not yet linked
+  const autoLinked = useRef(false);
+  useEffect(() => {
+    if (
+      hasDiscordAccount &&
+      status &&
+      !status.discord.linked &&
+      !linkDiscord.isPending &&
+      !autoLinked.current
+    ) {
+      autoLinked.current = true;
+      linkDiscord.mutate();
+    }
+  }, [hasDiscordAccount, status, linkDiscord]);
+
   // Lookup queries (manual trigger via refetch)
   const forumLookupQuery = api.ixnayid.lookupForumUser.useQuery(
     { username: forumInput },
@@ -179,7 +198,6 @@ export function IxnayIDCard() {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center gap-2">
-          <Link2 className="h-5 w-5 text-gray-500" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">IxnayID</h2>
         </div>
         <div className="mt-4 flex justify-center py-4">
@@ -194,12 +212,8 @@ export function IxnayIDCard() {
       <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
-              <Link2 className="h-6 w-6" />
-            </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">IxnayID©</h2>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Universal Account Manager</p>
             </div>
           </div>
           <div className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:bg-slate-800 dark:text-slate-400">

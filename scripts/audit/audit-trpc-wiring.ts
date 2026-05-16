@@ -65,63 +65,67 @@ interface AuditResults {
 }
 
 const projectRoot = path.resolve(__dirname, "../..");
-const schemaPath = path.join(projectRoot, "prisma", "schema.prisma");
+const schemaDirPath = path.join(projectRoot, "prisma", "schema");
 const routersPath = path.join(projectRoot, "src", "server", "api", "routers");
 
 /**
- * Parse Prisma schema to extract all models
+ * Parse Prisma schema to extract all models from multiple files
  */
 function parsePrismaSchema(): PrismaModel[] {
-  const schemaContent = fs.readFileSync(schemaPath, "utf-8");
-  const lines = schemaContent.split("\n");
   const models: PrismaModel[] = [];
+  const schemaFiles = glob.sync("*.prisma", { cwd: schemaDirPath, absolute: true });
 
-  let currentModel: PrismaModel | null = null;
-  let inModel = false;
+  for (const schemaPath of schemaFiles) {
+    const schemaContent = fs.readFileSync(schemaPath, "utf-8");
+    const lines = schemaContent.split("\n");
 
-  lines.forEach((line, index) => {
-    const trimmed = line.trim();
+    let currentModel: PrismaModel | null = null;
+    let inModel = false;
 
-    // Start of model
-    if (trimmed.startsWith("model ")) {
-      const modelName = trimmed.split(" ")[1];
-      currentModel = {
-        name: modelName,
-        fields: [],
-        relations: [],
-        lineNumber: index + 1,
-      };
-      inModel = true;
-    }
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
 
-    // End of model
-    else if (inModel && trimmed === "}") {
-      if (currentModel) {
-        models.push(currentModel);
+      // Start of model
+      if (trimmed.startsWith("model ")) {
+        const modelName = trimmed.split(/\s+/)[1];
+        currentModel = {
+          name: modelName,
+          fields: [],
+          relations: [],
+          lineNumber: index + 1,
+        };
+        inModel = true;
       }
-      currentModel = null;
-      inModel = false;
-    }
 
-    // Field within model
-    else if (
-      inModel &&
-      currentModel &&
-      trimmed &&
-      !trimmed.startsWith("@@") &&
-      !trimmed.startsWith("//")
-    ) {
-      const fieldName = trimmed.split(/\s+/)[0];
-      if (fieldName && !fieldName.startsWith("@")) {
-        currentModel.fields.push(fieldName);
+      // End of model
+      else if (inModel && trimmed === "}") {
+        if (currentModel) {
+          models.push(currentModel);
+        }
+        currentModel = null;
+        inModel = false;
+      }
 
-        // Check if it's a relation
-        if (trimmed.includes("@relation")) {
-          currentModel.relations.push(fieldName);
+      // Field within model
+      else if (
+        inModel &&
+        currentModel &&
+        trimmed &&
+        !trimmed.startsWith("@@") &&
+        !trimmed.startsWith("//")
+      ) {
+        const fieldName = trimmed.split(/\s+/)[0];
+        if (fieldName && !fieldName.startsWith("@")) {
+          currentModel.fields.push(fieldName);
+
+          // Check if it's a relation
+          if (trimmed.includes("@relation")) {
+            currentModel.relations.push(fieldName);
+          }
         }
       }
-    }
-  });
+    });
+  }
 
   return models;
 }

@@ -1120,7 +1120,7 @@ export const forumRouter = createTRPCRouter({
   linkAccount: protectedProcedure
     .input(z.object({ forumUsername: z.string().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
-      const result = await linkForumAccount(ctx.user.id, input.forumUsername);
+      const result = await linkForumAccount(ctx.user.id, input.forumUsername, ctx.auth.userId);
 
       if (!result.success) {
         throw new TRPCError({

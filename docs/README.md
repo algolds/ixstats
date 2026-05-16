@@ -57,7 +57,7 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`processes/contributing.md`](processes/contributing.md) – coding standards, review expectations, and release management
 
 ### Reference
-- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (927 endpoints across 61 routers)
+- [`reference/api-complete.md`](reference/api-complete.md) – complete tRPC API catalog (1205 endpoints across 73 routers)
 - [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
 - [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
 - [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs
@@ -124,4 +124,4 @@ Completed implementation docs, audit reports, and historical documentation are p
 4. Move outdated docs to `docs/archive/<date>` instead of deleting them when retiring features.
 5. Keep root directory clean—only active documents (README, CLAUDE, CHANGELOG, IMPLEMENTATION_PLAN, IMPLEMENTATION_STATUS).
 
-The documentation was last refreshed February 2026 (v2). Treat the structure as the source of truth going forward.
+The documentation was last refreshed May 2026 (v2.1). Treat the structure as the source of truth going forward.

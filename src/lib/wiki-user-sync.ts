@@ -9,6 +9,7 @@
 
 import { db } from "~/server/db";
 import { getUserInfo } from "~/lib/wiki-bridge";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -48,7 +49,8 @@ export async function lookupWikiUser(
  */
 export async function linkWikiAccount(
   userId: string,
-  wikiUsername: string
+  wikiUsername: string,
+  clerkUserId?: string
 ): Promise<{ success: boolean; wikiUsername?: string; error?: string }> {
   // Look up the wiki user
   const wikiUser = await lookupWikiUser(wikiUsername);
@@ -56,20 +58,22 @@ export async function linkWikiAccount(
     return { success: false, error: `Wiki user "${wikiUsername}" not found` };
   }
 
-  // Check if this wiki account is already linked to another user
-  const existingLink = await db.user.findFirst({
-    where: {
-      wikiUsername: wikiUser.username,
-      id: { not: userId },
-    },
-    select: { id: true },
-  });
+  // System owners can link the same wiki account to multiple IxStats users
+  if (!clerkUserId || !isSystemOwner(clerkUserId)) {
+    const existingLink = await db.user.findFirst({
+      where: {
+        wikiUsername: wikiUser.username,
+        id: { not: userId },
+      },
+      select: { id: true },
+    });
 
-  if (existingLink) {
-    return {
-      success: false,
-      error: "This wiki account is already linked to another IxStats user",
-    };
+    if (existingLink) {
+      return {
+        success: false,
+        error: "This wiki account is already linked to another IxStats user",
+      };
+    }
   }
 
   // Store the link

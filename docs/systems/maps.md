@@ -2,7 +2,7 @@
 
 ## Overview
 
-The IxWorld map system provides interactive visualization of IxEarth, a fictional planet with six continents, four oceans, and 60+ countries. Built with MapLibre GL JS, it replaces the v1 Leaflet-based IxMaps system (deprecated November 2025, rebuilt January–March 2026).
+The IxWorld map system provides interactive visualization of IxEarth, a fictional planet with six continents, four oceans, and 60+ countries. Built with MapLibre GL JS, it replaces the v1 Leaflet-based IxMaps system (deprecated November 2025, rebuilt January–May 2026).
 
 **Deployed at:**
 - Standalone: `maps.ixwiki.com` (IxWorld — port 3002)

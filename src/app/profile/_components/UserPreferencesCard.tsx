@@ -12,9 +12,6 @@ export function UserPreferencesCard({ theme, onThemeChange }: UserPreferencesCar
       <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
-              <Palette className="h-6 w-6" />
-            </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Display Configuration</h2>
             </div>
@@ -26,7 +23,6 @@ export function UserPreferencesCard({ theme, onThemeChange }: UserPreferencesCar
 
         <div className="space-y-6">
           <div>
-          
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={() => onThemeChange("light")}
@@ -63,7 +59,6 @@ export function UserPreferencesCard({ theme, onThemeChange }: UserPreferencesCar
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>

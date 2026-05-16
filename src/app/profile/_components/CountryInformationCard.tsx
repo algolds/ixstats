@@ -66,12 +66,8 @@ export function CountryInformationCard({
       <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
-              <Crown className="h-6 w-6" />
-            </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">National Identity</h2>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Country Configuration</p>
             </div>
           </div>
           <Link
@@ -244,8 +240,8 @@ export function CountryInformationCard({
               </div>
             </div>
           </div>
+        </div>
       </div>
     </div>
-  </div>
   );
 }

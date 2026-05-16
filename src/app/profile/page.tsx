@@ -86,7 +86,7 @@ function ProfileContent() {
   return (
     <>
       <SignedIn>
-        <div className="relative min-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
+        <div className="relative bg-slate-50 dark:bg-slate-950">
           {/* Animated Background Elements */}
           <div className="pointer-events-none absolute inset-0 z-0">
             <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-indigo-500/10 blur-[120px] dark:bg-indigo-500/20" />
@@ -94,26 +94,13 @@ function ProfileContent() {
             <div className="absolute -bottom-[10%] left-[20%] h-[40%] w-[40%] rounded-full bg-purple-500/10 blur-[120px] dark:bg-purple-500/20" />
           </div>
 
-          <div className="relative z-10 mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-            <div className="mb-12">
-              <Link
-                href={createUrl("/dashboard")}
-                className="group mb-6 inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                Back to Dashboard
-              </Link>
-              
+          <div className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mb-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <div className="mb-2 flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
-                    <Settings className="h-5 w-5" />
-                    <span className="text-xs font-bold uppercase tracking-widest">User Control Center</span>
-                  </div>
                   <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
                     Profile <span className="text-indigo-600 dark:text-indigo-400">Settings</span>
                   </h1>
-                 
                 </div>
                 
                 {user && (
@@ -219,16 +206,13 @@ function ProfileContent() {
 
                 {showIxnayID && (
                   <div id="ixnayid-section">
-                    <IxnayIDCard />
+                    <IxnayIDCard hasDiscordAccount={hasDiscordAccount} />
                   </div>
                 )}
               </div>
                 <div className="glass-surface glass-refraction h-fit overflow-hidden rounded-3xl p-1 lg:col-span-4">
                   <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
                     <div className="mb-6 flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
-                        <UserCircle className="h-5 w-5" />
-                      </div>
                       <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                         Account Settings
                       </h3>
@@ -298,15 +282,15 @@ function ProfileContent() {
                     </div>
                   </div>
                 </div>
+            </div>
           </div>
         </div>
-      </div>
-    </SignedIn>
-    <SignedOut>
-        <div className="flex min-h-screen flex-col items-center justify-center">
-          <SignInButton mode="modal" />
-        </div>
-      </SignedOut>
+      </SignedIn>
+      <SignedOut>
+          <div className="flex min-h-screen flex-col items-center justify-center">
+            <SignInButton mode="modal" />
+          </div>
+        </SignedOut>
     </>
   );
 }

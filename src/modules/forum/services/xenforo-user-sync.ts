@@ -11,6 +11,7 @@
 
 import { db } from "~/server/db";
 import { getXfApiKey, getXfApiUrl, xfPost } from "./xenforo-service";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 // ─── Custom Field Definitions ────────────────────────────────────────────────
 
@@ -241,7 +242,8 @@ export async function syncUserToForum(userId: string): Promise<boolean> {
  */
 export async function linkForumAccount(
   userId: string,
-  forumUsername: string
+  forumUsername: string,
+  clerkUserId?: string
 ): Promise<{ success: boolean; forumUserId?: number; error?: string }> {
   // Look up XenForo user
   const forumUser = await lookupForumUser(forumUsername);
@@ -249,16 +251,18 @@ export async function linkForumAccount(
     return { success: false, error: `Forum user "${forumUsername}" not found` };
   }
 
-  // Check if this forum account is already linked to another user
-  const existingLink = await db.user.findFirst({
-    where: { forumUserId: forumUser.userId, id: { not: userId } },
-    select: { id: true },
-  });
-  if (existingLink) {
-    return {
-      success: false,
-      error: "This forum account is already linked to another IxStats user",
-    };
+  // System owners can link the same forum account to multiple IxStats users
+  if (!clerkUserId || !isSystemOwner(clerkUserId)) {
+    const existingLink = await db.user.findFirst({
+      where: { forumUserId: forumUser.userId, id: { not: userId } },
+      select: { id: true },
+    });
+    if (existingLink) {
+      return {
+        success: false,
+        error: "This forum account is already linked to another IxStats user",
+      };
+    }
   }
 
   // Store the link

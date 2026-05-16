@@ -1,19 +1,18 @@
 # Complete tRPC API Reference
 
-**Last updated:** February 2026
+**Last updated:** May 2026
 
-Comprehensive reference for all 61 tRPC routers with 927 procedures across the IxStats platform.
+Comprehensive reference for all 73 tRPC routers with 1205 procedures across the IxStats platform.
 
 ## Quick Navigation
-- [Core Systems](#core-systems) (10 routers, 147 procedures)
-- [Government & Economics](#government--economics) (12 routers, 115 procedures)
-- [Intelligence & Diplomacy](#intelligence--diplomacy) (9 routers, 152 procedures)
-- [Defense & Security](#defense--security) (4 routers, 81 procedures)
-- [Social & Collaboration](#social--collaboration) (5 routers, 120 procedures)
-- [Operations](#operations) (7 routers, 79 procedures)
-- [Cards & MyVault](#cards--myvault) (11 routers, ~100 procedures)
-- [Elections & Politics](#elections--politics) (1 router, ~13 procedures)
-- ~~[Maps & Geography](#maps--geography)~~ (DEPRECATED - removed November 2025)
+- [Core Systems](#core-systems) (14 routers, 212 procedures)
+- [Government & Economics](#government--economics) (16 routers, 245 procedures)
+- [Intelligence & Diplomacy](#intelligence--diplomacy) (10 routers, 182 procedures)
+- [Defense & Security](#defense--security) (6 routers, 112 procedures)
+- [Social & Collaboration](#social--collaboration) (7 routers, 165 procedures)
+- [Operations](#operations) (10 routers, 142 procedures)
+- [Cards & MyVault](#cards--myvault) (10 routers, 147 procedures)
+- [Maps & Geography](#maps--geography) (active January–May 2026)
 
 ---
 

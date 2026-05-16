@@ -7,6 +7,7 @@
  */
 
 import { db } from "~/server/db";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -68,23 +69,41 @@ export async function linkDiscordAccount(
     };
   }
 
-  // Check if this Discord account is already linked to another user
-  const existingLink = await db.user.findFirst({
-    where: {
-      discordUserId: discordInfo.discordUserId,
-      id: { not: userId },
-    },
-    select: { id: true },
-  });
+  // System owners can link the same Discord account to multiple IxStats users
+  if (!isSystemOwner(clerkUserId)) {
+    const existingLink = await db.user.findFirst({
+      where: {
+        discordUserId: discordInfo.discordUserId,
+        id: { not: userId },
+      },
+      select: { id: true },
+    });
 
-  if (existingLink) {
-    return {
-      success: false,
-      error: "This Discord account is already linked to another IxStats user",
-    };
+    if (existingLink) {
+      return {
+        success: false,
+        error: "This Discord account is already linked to another IxStats user",
+      };
+    }
   }
 
   // Store the link
+  // For system owners: clear the discordUserId from any previous owner first
+  // to avoid unique constraint violations when re-linking across dev/prod accounts
+  if (isSystemOwner(clerkUserId)) {
+    await db.user.updateMany({
+      where: {
+        discordUserId: discordInfo.discordUserId,
+        id: { not: userId },
+      },
+      data: {
+        discordUserId: null,
+        discordUsername: null,
+        lastDiscordSync: null,
+      },
+    });
+  }
+
   await db.user.update({
     where: { id: userId },
     data: {

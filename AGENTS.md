@@ -3,7 +3,7 @@
 ## Critical Constraints
 
 - **Package manager**: `bun` (never npm/yarn/pnpm). Lockfile: `bun.lock`.
-- **NEVER run global `tsc --noEmit`** — 206 Prisma models + 645+ components + 927 tRPC endpoints will exhaust server memory (7.2GB total, 4GB Node heap). Use IDE TypeScript or `bun run dev` for incremental checking.
+- **NEVER run global `tsc --noEmit`** — 236 Prisma models + 813+ components + 1205 tRPC endpoints will exhaust server memory (7.2GB total, 4GB Node heap). Use IDE TypeScript or `bun run dev` for incremental checking.
 - **Database write commands are blocked**: `db:migrate`, `db:push`, `db:reset` exit with error to protect 82 nations of production data. Use `db:migrate:force` or `db:push:force` only when explicitly intended.
 - **Active branch**: `v2`.
 
@@ -59,13 +59,13 @@ bun run ts:build          # build with project references (lib + server)
 
 | Layer | Location | Notes |
 |-------|----------|-------|
-| Pages | `src/app/` | Next.js 16.2 App Router, 124 routes |
-| Components | `src/components/` | 645+ UI components, glass physics design system |
-| API (tRPC) | `src/server/api/routers/` | 61 routers, 927 endpoints. Register new routers in `src/server/api/root.ts` |
-| Database | `prisma/schema/` | 206 models split across 12 `.prisma` files |
+| Pages | `src/app/` | Next.js 16.2 App Router, 182 routes |
+| Components | `src/components/` | 813+ UI components, glass physics design system |
+| API (tRPC) | `src/server/api/routers/` | 73 routers, 1205 endpoints. Register new routers in `src/server/api/root.ts` |
+| Database | `prisma/schema/` | 236 models split across 12 `.prisma` files |
 | Middleware | `src/proxy.ts` | Clerk auth + CSP + security headers (NOT `middleware.ts`) |
 | Custom server | `server.mjs` | WebSocket (Socket.IO) + cron jobs (production only) |
-| Hooks | `src/hooks/` | 80+ custom React hooks |
+| Hooks | `src/hooks/` | 100+ custom React hooks |
 | Lib | `src/lib/` | Utilities, rate limiter, WebSocket server, memory config |
 
 ### Key pages
@@ -74,7 +74,7 @@ bun run ts:build          # build with project references (lib + server)
 - `/vault` — IxCards & MyVault
 - `/thinkpages` — Social knowledge sharing
 - `/maps` — IxWorld interactive map (also standalone at maps.ixwiki.com)
-- `/admin` — 20 admin CMS interfaces (system-owner or admin role required)
+- `/admin` — 26 admin CMS interfaces (system-owner or admin role required)
 
 ### Path aliases
 - `~/*` → `./src/*`
@@ -160,6 +160,6 @@ Used for rate limiting and caching. Start with `bun run redis:start`. Falls back
 
 - `CLAUDE.md` — Detailed architecture, design system, MyCountry routing, maps system
 - `docs/README.md` — Documentation hub
-- `docs/reference/api-complete.md` — Full tRPC API catalog (927 endpoints)
+- `docs/reference/api-complete.md` — Full tRPC API catalog (1205 endpoints)
 - `docs/systems/` — System-specific guides
 - `IMPLEMENTATION_STATUS.md` — Feature maturity matrix (archived, gitignored)

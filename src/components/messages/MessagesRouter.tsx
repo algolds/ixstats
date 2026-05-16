@@ -114,6 +114,9 @@ function MessagesRouterInner() {
     [activeFolderConversations, selectedConversationId]
   );
 
+  // ── Presence Tracking ──
+  const [presenceMap, setPresenceMap] = useState<Record<string, string>>({});
+
   // ── WebSocket ──
   const wsOptions = useMemo(() => ({
     accountId: currentUserId,
@@ -123,6 +126,14 @@ function MessagesRouterInner() {
     },
     onConversationUpdate: () => {
       void refetchConversations();
+    },
+    onPresenceUpdate: (data: any) => {
+      if (data.accountId) {
+        setPresenceMap((prev) => ({
+          ...prev,
+          [data.accountId]: data.status,
+        }));
+      }
     },
   }), [currentUserId, refetchConversations]);
 
@@ -136,13 +147,14 @@ function MessagesRouterInner() {
     () => ({
       presenceStatus: rawClientState.presenceStatus,
       typingIndicators: rawClientState.typingIndicators,
+      presenceMap,
       connectionStatus: rawClientState.connected
         ? ("connected" as const)
         : ("disconnected" as const),
       lastSyncTime: new Date(rawClientState.lastHeartbeat),
       unreadCount: 0,
     }),
-    [rawClientState]
+    [rawClientState, presenceMap]
   );
 
   // Subscribe to selected conversation

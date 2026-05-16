@@ -31,6 +31,7 @@ export function MessagesChatPanel({
   const notify = useNotify();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch messages
   const {
@@ -138,10 +139,27 @@ export function MessagesChatPanel({
 
   // Scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messagesData?.messages?.length]);
+    if (!searchQuery) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messagesData?.messages?.length, searchQuery]);
 
-  const messages = messagesData?.messages ?? [];
+  const messages = useMemo(() => {
+    const rawMessages = messagesData?.messages ?? [];
+    if (!searchQuery) return rawMessages;
+    
+    return rawMessages.filter((msg: any) => 
+      msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      msg.account?.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [messagesData?.messages, searchQuery]);
+
+  const participantStatus = useMemo(() => {
+    if (conversation.type === "group") return undefined;
+    const otherParticipant = conversation.otherParticipants[0];
+    if (!otherParticipant) return undefined;
+    return clientState.presenceMap?.[otherParticipant.accountId] as any;
+  }, [conversation, clientState.presenceMap]);
 
   return (
     <div className="flex h-full flex-col">
@@ -149,6 +167,8 @@ export function MessagesChatPanel({
         conversation={conversation}
         currentUserId={currentUserId}
         activeFolder={activeFolder}
+        participantStatus={participantStatus}
+        onSearch={setSearchQuery}
       />
 
       {/* Messages area */}
@@ -160,7 +180,7 @@ export function MessagesChatPanel({
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <p className="text-sm text-muted-foreground">
-              No messages yet. Say hello!
+              {searchQuery ? "No messages matching your search." : "No messages yet. Say hello!"}
             </p>
           </div>
         ) : (

@@ -16,7 +16,7 @@ export function useMessageUnreadCount() {
   const { user } = useUser();
   const userId = user?.id ?? "";
 
-  const { data: folderCounts } = api.messages.getFolderCounts.useQuery(
+  const { data: folderCounts, refetch } = api.messages.getFolderCounts.useQuery(
     { userId },
     {
       enabled: !!userId,
@@ -46,6 +46,6 @@ export function useMessageUnreadCount() {
     totalUnread: totalUnreadCount,
     counts,
     hasUnread: totalUnreadCount > 0,
+    refetch,
   };
 }
-

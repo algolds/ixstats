@@ -58,14 +58,10 @@ export function ThinkPagesSettingsCard({
       <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
-              <User className="h-6 w-6" />
-            </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                 Thinkpages Persona
               </h2>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Algorithmic Social Identity</p>
             </div>
           </div>
           <div>

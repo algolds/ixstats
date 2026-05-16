@@ -62,7 +62,7 @@ export const ixnayidRouter = createTRPCRouter({
   linkWiki: protectedProcedure
     .input(z.object({ wikiUsername: z.string().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
-      const result = await linkWikiAccount(ctx.user.id, input.wikiUsername);
+      const result = await linkWikiAccount(ctx.user.id, input.wikiUsername, ctx.auth.userId);
 
       if (!result.success) {
         throw new TRPCError({
@@ -126,7 +126,7 @@ export const ixnayidRouter = createTRPCRouter({
   linkForum: protectedProcedure
     .input(z.object({ forumUsername: z.string().min(1).max(100) }))
     .mutation(async ({ ctx, input }) => {
-      const result = await linkForumAccount(ctx.user.id, input.forumUsername);
+      const result = await linkForumAccount(ctx.user.id, input.forumUsername, ctx.auth.userId);
 
       if (!result.success) {
         throw new TRPCError({

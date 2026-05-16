@@ -28,6 +28,7 @@ import { useIxTime } from "~/contexts/IxTimeContext";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useDebounce } from "~/hooks/useDebounce";
+import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -36,6 +37,7 @@ import { flagService } from "~/lib/flag-service";
 import { isStandaloneClient } from "~/lib/standalone-detection";
 import { useRouter } from "next/navigation";
 import type { ProjectionMode } from "~/lib/map-config";
+import { cn } from "~/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -124,6 +126,7 @@ export function MapDynamicIsland({
   const [query, setQuery] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(-1);
   const [timeDisplayMode, setTimeDisplayMode] = useState<"time" | "date" | "both">("time");
+  const [isFlashing, setIsFlashing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -146,10 +149,23 @@ export function MapDynamicIsland({
   const unreadNotifications = notificationStats.unread || 0;
 
   // Messages unread count
-  const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
+  const { totalUnread: messageUnreadCount, refetch: refetchMessages } = useMessageUnreadCount();
 
   // Unified unread count for the main pill (optional, currently using separate badges)
   const totalUnread = unreadNotifications + messageUnreadCount;
+
+  // WebSocket for live notifications
+  const wsOptions = useMemo(() => ({
+    accountId: user?.id ?? "",
+    autoReconnect: true,
+    onMessageUpdate: () => {
+      void refetchMessages();
+      setIsFlashing(true);
+      setTimeout(() => setIsFlashing(false), 3000);
+    },
+  }), [user?.id, refetchMessages]);
+
+  useThinkPagesWebSocket(wsOptions);
 
   // ---------------------------------------------------------------------------
   // Geo Search
@@ -262,22 +278,36 @@ export function MapDynamicIsland({
         <motion.div
           layout
           transition={SPRING}
-          className="absolute inset-0 rounded-full opacity-60"
+          className={cn(
+            "absolute inset-0 rounded-full transition-opacity duration-500",
+            isFlashing ? "opacity-100" : "opacity-60"
+          )}
           style={{ willChange: "width, height" }}
         >
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 blur-xl" />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-300/15 via-purple-300/15 to-blue-300/15 blur-md" />
+          <div className={cn(
+            "absolute inset-0 rounded-full blur-xl transition-colors duration-500",
+            isFlashing ? "bg-red-500/50" : "bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30"
+          )} />
+          <div className={cn(
+            "absolute inset-0 rounded-full blur-lg transition-colors duration-500",
+            isFlashing ? "bg-orange-400/40" : "bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20"
+          )} />
         </motion.div>
 
         {/* Main glass pill */}
         <motion.div
           layout
           transition={SPRING}
-          className="relative overflow-hidden rounded-full border border-white/20 shadow-2xl shadow-black/40 dark:border-white/10"
+          animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+          className={cn(
+            "relative overflow-hidden rounded-full border shadow-2xl shadow-black/40 transition-colors duration-500",
+            isFlashing ? "border-red-500/50" : "border-white/20 dark:border-white/10"
+          )}
           style={{
             willChange: "width, height",
-            background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
+            background: isFlashing 
+              ? "linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(239,68,68,0.1) 100%)"
+              : "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
             backdropFilter: "blur(20px) saturate(180%)",
             WebkitBackdropFilter: "blur(20px) saturate(180%)",
           }}
@@ -290,7 +320,10 @@ export function MapDynamicIsland({
             <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
             {/* Inner shimmer */}
             <div
-              className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent will-change-transform"
+              className={cn(
+                "absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent will-change-transform",
+                isFlashing && "bg-red-500/10"
+              )}
               style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
             />
           </div>
@@ -429,17 +462,21 @@ export function MapDynamicIsland({
               {user && totalUnread > 0 && (
                 <button
                   onClick={() => router.push(messageUnreadCount > 0 ? "/messages" : "/notifications")}
-                  className="relative flex-shrink-0 rounded-full p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className={cn(
+                    "relative flex-shrink-0 rounded-full p-1 transition-all duration-300",
+                    isFlashing ? "bg-red-500/20 scale-125" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  )}
                   title={messageUnreadCount > 0 ? `${messageUnreadCount} unread messages` : `${unreadNotifications} notifications`}
                 >
                   {messageUnreadCount > 0 ? (
-                    <MessageCircle className="h-3.5 w-3.5 text-blue-500" />
+                    <MessageCircle className={cn("h-3.5 w-3.5 transition-colors", isFlashing ? "text-red-500" : "text-blue-500")} />
                   ) : (
-                    <Bell className="h-3.5 w-3.5" />
+                    <Bell className={cn("h-3.5 w-3.5 transition-colors", isFlashing ? "text-red-500" : "")} />
                   )}
-                  <span className={`absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-background ${
-                    messageUnreadCount > 0 ? "bg-red-500" : "bg-gradient-to-r from-blue-500 to-indigo-500"
-                  }`}>
+                  <span className={cn(
+                    "absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-background transition-colors duration-500",
+                    messageUnreadCount > 0 ? (isFlashing ? "bg-red-600 animate-bounce" : "bg-red-500") : "bg-gradient-to-r from-blue-500 to-indigo-500"
+                  )}>
                     {totalUnread > 99 ? "99+" : totalUnread}
                   </span>
                 </button>

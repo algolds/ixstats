@@ -21,7 +21,7 @@ export function MessagesLayout({
       {/* Column 1: Folder nav rail / sidebar */}
       <div
         className={cn(
-          "glass-hierarchy-parent shrink-0 border-r border-border/50 bg-background/80 backdrop-blur-md transition-[width] duration-200 ease-in-out",
+          "glass-hierarchy-parent shrink-0 z-10 border-r border-border/50 bg-background/80 backdrop-blur-md transition-[width] duration-200 ease-in-out",
           folderNavExpanded ? "w-48" : "w-14"
         )}
       >

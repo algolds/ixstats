@@ -14,6 +14,9 @@ export interface ThinkShareClientState {
   /** Map of active typing indicators by indicator ID */
   typingIndicators: Map<string, TypingIndicator>;
 
+  /** Map of other users' presence statuses */
+  presenceMap?: Record<string, string>;
+
   /** Connection status to real-time services */
   connectionStatus: "connected" | "connecting" | "disconnected" | "error";
 

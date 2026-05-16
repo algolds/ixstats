@@ -4,10 +4,10 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 
 ## Platform Overview
 
-- Next.js 16.1.3 App Router with client and server components under `src/app`
-- React 19.1.3 + TypeScript 5.8 with 645+ components in `src/components`
-- tRPC 11.4 API layer (`src/server/api/routers`) with **61 routers** and **927 typed procedures**
-- Prisma 6.19 ORM (`prisma/schema.prisma`) with **206 models** on PostgreSQL
+- Next.js 16.2.6 App Router with client and server components under `src/app`
+- React 19.2.6 + TypeScript 5.9.3 with 813+ components in `src/components`
+- tRPC 11.17 API layer (`src/server/api/routers`) with **73 routers** and **1205 typed procedures**
+- Prisma 6.19.3 ORM with **236 models** on PostgreSQL
 - Custom Node server (`server.mjs`) with layered env loading and Socket.IO realtime feeds
 - In-app help center at `/help` and Markdown docs in `docs/`
 
@@ -23,7 +23,7 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 | **IxCards & MyVault** | Trading card system with 13 card types, pack opening, crafting, P2P trading, marketplace |
 | **Elections & Politics** | D'Hondt/FPTP electoral systems, legislature management, hemicycle visualization |
 | **Crisis Management** | Dynamic natural disasters, economic crises, diplomatic incidents with player responses |
-| **Content Management** | 20 admin interfaces for dynamic content (scenarios, NPC personalities, equipment, archetypes) |
+| **Content Management** | 26 admin interfaces for dynamic content (scenarios, NPC personalities, equipment, archetypes) |
 | **IxWorld Maps** | Interactive world globe with MapLibre GL JS, 7 layers, border editor, procedural world generation, deployed at maps.ixwiki.com |
 | **Achievements & Leaderboards** | Global achievement tracking and ranking |
 
@@ -31,12 +31,12 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 
 | Area | Details |
 |------|---------|
-| Runtime | Node.js >= 18.17, bun >= 1.2 |
-| Framework | Next.js 16.1.3, React 19.1.3 |
-| Language | TypeScript 5.8.3 |
-| API Layer | tRPC 11.4 with SuperJSON + Clerk auth context |
-| Database | Prisma 6.19, PostgreSQL (port 5433) |
-| Styling | Tailwind CSS 4, custom glass physics design system, Lucide icons |
+| Runtime | Node.js >= 18.17, bun >= 1.3 |
+| Framework | Next.js 16.2.6, React 19.2.6 |
+| Language | TypeScript 5.9.3 |
+| API Layer | tRPC 11.17 with SuperJSON + Clerk auth context |
+| Database | Prisma 6.19.3, PostgreSQL (port 5433) |
+| Styling | Tailwind CSS 4.3, custom glass physics design system, Lucide icons |
 | Mapping | MapLibre GL JS with globe/mercator projection, PostGIS spatial queries |
 | Realtime | Socket.IO via `server.mjs` and `src/lib/websocket-server.ts` |
 
@@ -44,7 +44,7 @@ IxStats is a nation simulation and worldbuilding platform built with Next.js, tR
 
 ### Prerequisites
 
-- Node.js 18.17+ and bun 1.2+
+- Node.js 18.17+ and bun 1.3+
 - PostgreSQL database (port 5433, database `ixstats`)
 - Optional: Clerk credentials for authentication (demo mode works without)
 
@@ -87,7 +87,7 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 
 ```
 ├── src/
-│   ├── app/                     # Next.js App Router pages (124 routes)
+│   ├── app/                     # Next.js App Router pages (182 routes)
 │   │   ├── maps/                # World map viewer (IxWorld at maps.ixwiki.com)
 │   │   ├── mycountry/           # Executive command suite
 │   │   ├── dashboard/           # Signed-in dashboards
@@ -95,13 +95,13 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 │   │   ├── vault/               # IxCards & MyVault
 │   │   ├── help/                # In-app help center
 │   │   └── api/                 # API route handlers
-│   ├── components/              # UI and domain components (645+)
+│   ├── components/              # UI and domain components (813+)
 │   │   └── maps/               # Map core, editor, and widget components (27)
-│   ├── hooks/                   # Custom React hooks (80)
-│   ├── server/api/routers/      # tRPC routers (61)
+│   ├── hooks/                   # Custom React hooks (100)
+│   ├── server/api/routers/      # tRPC routers (73)
 │   ├── lib/                     # Utilities, rate limiter, formatting
 │   └── services/                # Domain services and adapters
-├── prisma/                      # Schema (206 models) and migrations
+├── prisma/                      # Schema (236 models) and migrations
 ├── scripts/                     # Operational utilities
 ├── docs/                        # Documentation (see docs/README.md)
 └── tests/                       # Test setup and utilities
@@ -110,7 +110,7 @@ IXTIME_BOT_URL="http://localhost:3001"            # optional
 ## API & Data Access
 
 - tRPC context: `src/server/api/trpc.ts` (Clerk auth, rate limiting, user provisioning)
-- Router index: `src/server/api/root.ts` (61 domain routers)
+- Router index: `src/server/api/root.ts` (73 domain routers)
 - Database: Prisma client helpers in `src/server/db`
 - Realtime: Socket.IO events from `src/lib/websocket-server.ts`
 
