@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, memo } from "react";
 import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -63,7 +63,8 @@ interface SectionState {
  * for National Identity, Core Indicators, Government Configuration, Economy Configuration,
  * and Tax System. All data is live-wired from the builder state context.
  */
-export function BuilderPreviewStep() {
+// Phase 2 optimization: Wrap with React.memo to prevent unnecessary re-renders
+export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
   const { builderState } = useBuilderContext();
 
   // Collapsible state for main sections
@@ -1160,4 +1161,7 @@ export function BuilderPreviewStep() {
       </Card>
     </div>
   );
-}
+});
+
+// Display name for debugging
+BuilderPreviewStep.displayName = "BuilderPreviewStep";

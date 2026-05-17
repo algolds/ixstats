@@ -97,6 +97,7 @@
     "test:db": "tsx scripts/audit/verify-database-integrity.ts",
     "test:economics": "tsx scripts/audit/verify-economic-calculations.ts",
     "test:wiring": "tsx scripts/audit/verify-live-data-wiring.ts",
+    "test:builder-perf": "tsx scripts/audit/test-builder-performance.ts",
     "test:critical": "tsx scripts/audit/run-all-tests.ts --only=crud,health,database",
     "validate:schemas": "tsx scripts/audit/validate-schema-alignment.ts",
     "audit:coverage": "tsx scripts/audit/audit-schema-coverage.ts",
@@ -264,6 +265,7 @@
     "eslint-config-next": "16.2.6",
     "eslint-plugin-unused-imports": "^4.4.1",
     "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.7.4",
@@ -292,14 +294,19 @@
   },
   "jest": {
     "preset": "ts-jest",
-    "testEnvironment": "node",
+    "testEnvironment": "jsdom",
+    "testEnvironmentOptions": {
+      "customExportConditions": [""]
+    },
     "roots": [
       "<rootDir>/src",
       "<rootDir>/tests"
     ],
     "testMatch": [
       "**/__tests__/**/*.test.ts",
-      "**/?(*.)+(spec|test).ts"
+      "**/__tests__/**/*.test.tsx",
+      "**/?(*.)+(spec|test).ts",
+      "**/?(*.)+(spec|test).tsx"
     ],
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}",
@@ -316,8 +323,28 @@
       "<rootDir>/tests/setup.ts"
     ],
     "moduleNameMapper": {
+      "^~/env$": "<rootDir>/tests/__mocks__/env.ts",
+      "^~/trpc/react$": "<rootDir>/tests/__mocks__/trpc-react.ts",
       "^~/(.*)$": "<rootDir>/src/$1",
+      "^@/(.*)$": "<rootDir>/src/$1",
       "^superjson$": "<rootDir>/tests/__mocks__/superjson.ts"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@t3-oss|zod)/)"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": [
+        "ts-jest",
+        {
+          "useESM": false,
+          "tsconfig": {
+            "module": "CommonJS",
+            "moduleResolution": "Node",
+            "esModuleInterop": true,
+            "allowSyntheticDefaultImports": true
+          }
+        }
+      ]
     }
   },
   "prettier": {

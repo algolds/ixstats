@@ -155,11 +155,7 @@ export function useGovernmentBuilderAutoSync(
         }
       } catch (err) {
         // If update failed due to missing record, fall back to create
-        const message = err instanceof Error ? err.message : String(err);
-        const looksLikeNotFound =
-          message.includes("No record was found") ||
-          message.includes("Record to update not found") ||
-          message.includes("P2025");
+        const looksLikeNotFound = (err as any)?.data?.code === "NOT_FOUND";
         if (attemptedUpdate && looksLikeNotFound) {
           result = await createMutation.mutateAsync({
             countryId,
@@ -343,11 +339,7 @@ export function useTaxBuilderAutoSync(
           skipConflictCheck: true,
         });
       } catch (updateErr) {
-        const updateMsg = updateErr instanceof Error ? updateErr.message : String(updateErr);
-        const notFound =
-          updateMsg.includes("No record was found") ||
-          updateMsg.includes("Record to update not found") ||
-          updateMsg.includes("P2025");
+        const notFound = (updateErr as any)?.data?.code === "NOT_FOUND";
         if (notFound) {
           try {
             // Create if no existing record
@@ -357,9 +349,7 @@ export function useTaxBuilderAutoSync(
               skipConflictCheck: true,
             });
           } catch (createErr) {
-            const createMsg = createErr instanceof Error ? createErr.message : String(createErr);
-            const uniqueViolation =
-              createMsg.includes("Unique constraint failed") || createMsg.includes("P2002");
+            const uniqueViolation = (createErr as any)?.data?.code === "CONFLICT";
             if (uniqueViolation) {
               // Another writer created it between our check and create; retry update
               result = await updateMutation.mutateAsync({

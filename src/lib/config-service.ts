@@ -1,6 +1,7 @@
 // src/lib/config-service.ts
 // Configuration service with DB-backed config reading and proper growth factor handling
 
+import { Cache } from "~/lib/cache";
 import type { PrismaClient } from "@prisma/client";
 import type { EconomicConfig, IxStatsConfig } from "../types/ixstats";
 
@@ -386,9 +387,12 @@ const ALL_ECONOMIC_CONFIG_KEYS = [
   "minGrowthFloor",
 ] as const;
 
-/** In-memory cache for DB config to avoid excessive reads during batch ops */
-let configCache: { data: EconomicConfig; expires: number } | null = null;
-const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
+const CACHE_KEY = "economic_config";
+
+const configCache = new Cache({
+  defaultTtlMs: 60_000, // 60 seconds
+  maxSize: 10,
+});
 
 /**
  * Read economic configuration from SystemConfig DB table, merging with defaults.
@@ -398,8 +402,9 @@ export async function getEconomicConfigFromDB(
   db: any
 ): Promise<EconomicConfig> {
   // Return cached value if still fresh
-  if (configCache && Date.now() < configCache.expires) {
-    return configCache.data;
+  const cached = configCache.get<EconomicConfig>(CACHE_KEY);
+  if (cached !== undefined) {
+    return cached;
   }
 
   const defaults = getDefaultEconomicConfig();
@@ -443,7 +448,7 @@ export async function getEconomicConfigFromDB(
       minGrowthFloor: parseFloat(m.minGrowthFloor ?? "-0.1"),
     };
 
-    configCache = { data: config, expires: Date.now() + CONFIG_CACHE_TTL_MS };
+    configCache.set(CACHE_KEY, config);
     return config;
   } catch (error) {
     console.warn("[Config] Failed to read from DB, using defaults:", error);
@@ -456,5 +461,5 @@ export async function getEconomicConfigFromDB(
  * Call this after admin.saveConfig to ensure next calculation uses fresh values.
  */
 export function invalidateConfigCache(): void {
-  configCache = null;
+  configCache.delete(CACHE_KEY);
 }

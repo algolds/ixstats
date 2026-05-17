@@ -424,6 +424,7 @@ model TaxComponent {
   @@index([countryId])
   @@index([componentType])
   @@index([isActive])
+  @@index([countryId, componentType, isActive]) // Compound index for active components by type (matching GovernmentComponent/EconomicComponent)
 }
 
 model ComponentChangeLog {

@@ -45,7 +45,7 @@ export function LivePreview({
     <div className="space-y-6" style={style}>
       <BlurFade delay={0.25} inView={isVisible} inViewMargin="-50px">
         <motion.div layout>
-          <GlassCard depth="modal" blur="heavy" theme="gold" className="z-60 p-4">
+          <GlassCard depth="modal" blur="heavy" theme="gold" className="z-[60] p-4">
             <GlassCardHeader>
               <div className="flex items-center gap-2">
                 <Eye className="h-5 w-5 text-amber-300" />

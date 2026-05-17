@@ -14,9 +14,12 @@
  * Caching: L1 in-memory LRU → L2 WikiCache DB table → L3 source
  */
 
+import { Cache } from "~/lib/cache";
+
 import mysql from "mysql2/promise";
 import type { Pool } from "mysql2/promise";
 import { parseInfobox, parseCoordTemplate } from "./wiki-infobox-parser";
+import { withRetrySafe } from "~/lib/with-retry";
 
 // ──────────────────────────────────────────────
 // Types
@@ -87,33 +90,17 @@ function getIxWikiPool(): Pool {
 // In-Memory LRU Cache (L1)
 // ──────────────────────────────────────────────
 
-const CACHE_MAX = 500;
-const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-
-interface CacheEntry<T> {
-  data: T;
-  expiry: number;
-}
-
-const memCache = new Map<string, CacheEntry<unknown>>();
+const wikiBridgeCache = new Cache({
+  defaultTtlMs: 30 * 60 * 1000, // 30 minutes
+  maxSize: 500,
+});
 
 function cacheGet<T>(key: string): T | null {
-  const entry = memCache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expiry) {
-    memCache.delete(key);
-    return null;
-  }
-  return entry.data as T;
+  return wikiBridgeCache.get<T>(key) ?? null;
 }
 
-function cacheSet<T>(key: string, data: T, ttlMs: number = CACHE_TTL_MS): void {
-  // Evict oldest if full
-  if (memCache.size >= CACHE_MAX) {
-    const firstKey = memCache.keys().next().value;
-    if (firstKey) memCache.delete(firstKey);
-  }
-  memCache.set(key, { data, expiry: Date.now() + ttlMs });
+function cacheSet<T>(key: string, data: T, ttlMs: number = 30 * 60 * 1000): void {
+  wikiBridgeCache.set(key, data, ttlMs);
 }
 
 // ──────────────────────────────────────────────
@@ -1178,30 +1165,31 @@ const USER_AGENT = "IxStats-Builder";
  * Returns null on persistent failures instead of throwing.
  */
 async function fetchExternalWiki(url: string, retries = 2): Promise<Response | null> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const response = await fetch(url, {
-        headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (response.ok) return response;
-      if (response.status === 403 && attempt < retries) {
-        console.warn(`[WikiBridge] ${new URL(url).hostname} returned 403, retry ${attempt + 1}/${retries}`);
-        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
-        continue;
-      }
-      console.warn(`[WikiBridge] ${new URL(url).hostname} returned ${response.status}`);
-      return null;
-    } catch (err) {
-      if (attempt < retries) {
-        await new Promise(r => setTimeout(r, 1000));
-        continue;
-      }
-      console.error(`[WikiBridge] ${new URL(url).hostname} fetch failed:`, (err as Error).message);
-      return null;
+  const result = await withRetrySafe(async (signal) => {
+    const response = await fetch(url, {
+      headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+      signal,
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+    return response;
+  }, {
+    maxAttempts: retries + 1,
+    strategy: "linear",
+    baseDelayMs: 1000,
+    timeoutMs: 15000,
+    retryIf: (err) => err.message.includes("HTTP 403"),
+    onRetry: (attempt, err) => {
+      console.warn(`[WikiBridge] ${new URL(url).hostname} returned 403, retry ${attempt}/${retries + 1}`);
+    },
+  });
+
+  if (!result.success) {
+    console.warn(`[WikiBridge] ${new URL(url).hostname} fetch failed:`, result.error.message);
+    return null;
   }
-  return null;
+  return result.value;
 }
 
 // ──────────────────────────────────────────────

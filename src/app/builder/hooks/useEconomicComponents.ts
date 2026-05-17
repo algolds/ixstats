@@ -6,11 +6,14 @@
  * - Database CRUD operations via tRPC
  * - Real-time effectiveness calculations
  * - Cross-builder synergy detection
+ *
+ * Phase 3 optimization: Added standardized staleTime values.
  */
 
 import { useState, useEffect } from "react";
 import { EconomicComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
+import { STALE_TIME } from "~/hooks/useCountryGovernment";
 
 export interface UseEconomicComponentsProps {
   countryId?: string;
@@ -26,15 +29,15 @@ export function useEconomicComponents({
     useState<EconomicComponentType[]>(initialComponents);
   const [isLoading, setIsLoading] = useState(false);
 
-  // tRPC queries and mutations
+  // tRPC queries and mutations with standardized staleTime
   const getComponentsQuery = api.atomicEconomic.getComponents.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STANDARD }
   );
 
   const getEffectivenessQuery = api.atomicEconomic.getEffectiveness.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STANDARD }
   );
 
   const bulkUpdateMutation = api.atomicEconomic.bulkUpdate.useMutation();

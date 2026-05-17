@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AppError } from "~/lib/app-error";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
@@ -403,10 +404,7 @@ export const taxSystemRouter = createTRPCRouter({
           },
         });
       } catch (e: any) {
-        const message = typeof e?.message === "string" ? e.message : "";
-        const uniqueViolation =
-          message.includes("Unique constraint failed") || message.includes("P2002");
-        if (!uniqueViolation) {
+        if (!(e instanceof AppError && e.code === "CONFLICT")) {
           throw e;
         }
         // Unique on countryId exists already: perform update path

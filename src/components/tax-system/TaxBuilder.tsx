@@ -261,8 +261,7 @@ export function TaxBuilder({
               skipConflictCheck: true,
             });
           } catch (updateErr) {
-            const msg = updateErr instanceof Error ? updateErr.message : String(updateErr);
-            const notFound = msg.includes("No record was found") || msg.includes("P2025");
+            const notFound = (updateErr as any)?.data?.code === "NOT_FOUND";
             if (notFound) {
               _result = await createMutation.mutateAsync({
                 countryId,

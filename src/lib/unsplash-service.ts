@@ -3,6 +3,8 @@
  * Generates contextual images based on country economic/population tiers
  */
 
+import { Cache } from "~/lib/cache";
+
 export interface UnsplashImageData {
   id: string;
   url: string;
@@ -23,8 +25,10 @@ interface UnsplashSearchParams {
 class UnsplashService {
   private readonly accessKey = process.env.UNSPLASH_ACCESS_KEY || "";
   private readonly baseUrl = "https://api.unsplash.com";
-  private readonly cache = new Map<string, { data: UnsplashImageData[]; timestamp: number }>();
-  private readonly cacheTtl = 1000 * 60 * 60 * 24; // 24 hours
+  private readonly unsplashCache = new Cache({
+    defaultTtlMs: 1000 * 60 * 60 * 24, // 24 hours
+    maxSize: 200,
+  });
 
   /**
    * Generate search query based on country tier and characteristics
@@ -89,10 +93,10 @@ class UnsplashService {
    */
   private async fetchImages(params: UnsplashSearchParams): Promise<UnsplashImageData[]> {
     const cacheKey = JSON.stringify(params);
-    const cached = this.cache.get(cacheKey);
+    const cached = this.unsplashCache.get<UnsplashImageData[]>(cacheKey);
 
-    if (cached && Date.now() - cached.timestamp < this.cacheTtl) {
-      return cached.data;
+    if (cached !== undefined) {
+      return cached;
     }
 
     const searchParams = new URLSearchParams({
@@ -146,7 +150,7 @@ class UnsplashService {
       }));
 
       // Cache the results
-      this.cache.set(cacheKey, { data: images, timestamp: Date.now() });
+      this.unsplashCache.set(cacheKey, images);
 
       return images;
     } catch (error) {

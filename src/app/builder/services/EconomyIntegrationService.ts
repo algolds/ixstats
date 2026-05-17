@@ -1,11 +1,14 @@
 /**
  * Economy Integration Service
  *
+ * Phase 3 refactored: Now extends BaseBuilderService for standardized pub/sub patterns.
+ *
  * This service handles real-time integration between atomic economic components
  * and the economy builder system, providing live-wired updates and intelligent
  * adjustments based on component selections and cross-builder synchronization.
  */
 
+import { BaseBuilderService } from "./base";
 import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -85,16 +88,15 @@ export interface EconomyUpdateEvent {
   message: string;
 }
 
-export class EconomyIntegrationService {
-  private state: EconomyIntegrationState;
-  private listeners: Array<(state: EconomyIntegrationState) => void> = [];
-  private updateQueue: EconomyUpdateEvent[] = [];
-  private isProcessingQueue = false;
-  private updateTimeout: NodeJS.Timeout | null = null;
-  private lastNotifiedState: EconomyIntegrationState | null = null;
-
-  constructor() {
-    this.state = {
+/**
+ * Phase 3 refactored: Extends BaseBuilderService for standardized patterns
+ */
+export class EconomyIntegrationService extends BaseBuilderService<
+  EconomyIntegrationState,
+  EconomyUpdateEvent
+> {
+  protected getInitialState(): EconomyIntegrationState {
+    return {
       selectedAtomicComponents: [],
       economyBuilder: null,
       economicInputs: null,
@@ -110,26 +112,6 @@ export class EconomyIntegrationService {
   }
 
   /**
-   * Subscribe to state changes
-   */
-  subscribe(listener: (state: EconomyIntegrationState) => void): () => void {
-    this.listeners.push(listener);
-    return () => {
-      const index = this.listeners.indexOf(listener);
-      if (index > -1) {
-        this.listeners.splice(index, 1);
-      }
-    };
-  }
-
-  /**
-   * Get current state
-   */
-  getState(): EconomyIntegrationState {
-    return { ...this.state };
-  }
-
-  /**
    * Get cross-builder analysis
    */
   getCrossBuilderAnalysis(): CrossBuilderAnalysis | null {
@@ -140,16 +122,19 @@ export class EconomyIntegrationService {
    * Update atomic economic components and trigger cascade updates
    */
   async updateEconomicComponents(components: EconomicComponentType[]): Promise<void> {
-    this.addToQueue({
-      type: "components_changed",
-      timestamp: Date.now(),
-      data: components,
-      message: `Updated economic components: ${components.join(", ")}`,
-    });
+    this.addToQueue(
+      {
+        type: "components_changed",
+        timestamp: Date.now(),
+        data: components,
+        message: `Updated economic components: ${components.join(", ")}`,
+      },
+      { debounceMs: 100 }
+    );
 
     this.state.selectedAtomicComponents = components;
     this.state.isUpdating = true;
-    this.notifyListeners();
+    this.notifyListeners({ deepEqual: true });
 
     try {
       // Generate economy builder from components
@@ -160,12 +145,15 @@ export class EconomyIntegrationService {
         );
 
         this.state.economyBuilder = generatedBuilder;
-        this.addToQueue({
-          type: "economy_updated",
-          timestamp: Date.now(),
-          data: generatedBuilder,
-          message: "Economy builder updated from atomic components",
-        });
+    this.addToQueue(
+      {
+        type: "economy_updated",
+        timestamp: Date.now(),
+        data: generatedBuilder,
+        message: "Economy builder updated from atomic components",
+      },
+      { debounceMs: 100 }
+    );
 
         // Sync with government and tax systems
         await this.syncWithGovernmentSystem();
@@ -179,15 +167,18 @@ export class EconomyIntegrationService {
       this.state.errors = [];
     } catch (error) {
       this.state.errors.push(error instanceof Error ? error.message : "Unknown error");
-      this.addToQueue({
-        type: "error",
-        timestamp: Date.now(),
-        data: error,
-        message: "Failed to update economic components",
-      });
+      this.addToQueue(
+        {
+          type: "error",
+          timestamp: Date.now(),
+          data: error,
+          message: "Failed to update economic components",
+        },
+        { immediate: true }
+      );
     } finally {
       this.state.isUpdating = false;
-      this.notifyListeners();
+      this.notifyListeners({ deepEqual: true });
     }
   }
 
@@ -212,7 +203,7 @@ export class EconomyIntegrationService {
 
     this.state.economyBuilder = builder;
     this.state.isUpdating = true;
-    this.notifyListeners();
+    this.notifyListeners({ deepEqual: true });
 
     try {
       // Sync with other systems
@@ -234,7 +225,7 @@ export class EconomyIntegrationService {
       });
     } finally {
       this.state.isUpdating = false;
-      this.notifyListeners();
+      this.notifyListeners({ deepEqual: true });
     }
   }
 
@@ -243,7 +234,7 @@ export class EconomyIntegrationService {
    */
   async updateEconomicInputs(inputs: EconomicInputs): Promise<void> {
     this.state.economicInputs = inputs;
-    this.notifyListeners();
+    this.notifyListeners({ deepEqual: true });
   }
 
   /**
@@ -257,7 +248,7 @@ export class EconomyIntegrationService {
       this.updateCrossBuilderAnalysis();
     }
 
-    this.notifyListeners();
+    this.notifyListeners({ deepEqual: true });
   }
 
   /**
@@ -939,35 +930,10 @@ export class EconomyIntegrationService {
   }
 
   /**
-   * Add event to update queue
+   * Process individual event from queue
+   * Overrides base class method
    */
-  private addToQueue(event: EconomyUpdateEvent): void {
-    this.updateQueue.push(event);
-    this.processQueue();
-  }
-
-  /**
-   * Process update queue
-   */
-  private async processQueue(): Promise<void> {
-    if (this.isProcessingQueue) return;
-
-    this.isProcessingQueue = true;
-
-    while (this.updateQueue.length > 0) {
-      const event = this.updateQueue.shift();
-      if (event) {
-        await this.processUpdate(event);
-      }
-    }
-
-    this.isProcessingQueue = false;
-  }
-
-  /**
-   * Process individual update
-   */
-  private async processUpdate(event: EconomyUpdateEvent): Promise<void> {
+  protected override async processEvent(event: EconomyUpdateEvent): Promise<void> {
     switch (event.type) {
       case "components_changed":
         await this.handleComponentsChanged(event.data);
@@ -1251,7 +1217,7 @@ export class EconomyIntegrationService {
       if (result.success) {
         this.state.lastUpdate = Date.now();
         this.state.errors = [];
-        this.notifyListeners();
+        this.notifyListeners({ deepEqual: true });
 
         return {
           success: true,
@@ -1267,7 +1233,7 @@ export class EconomyIntegrationService {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to save economy configuration";
       this.state.errors.push(errorMessage);
-      this.notifyListeners();
+      this.notifyListeners({ deepEqual: true });
 
       return {
         success: false,
@@ -1292,7 +1258,7 @@ export class EconomyIntegrationService {
 
       if (result.success) {
         this.state.lastUpdate = Date.now();
-        this.notifyListeners();
+        this.notifyListeners({ deepEqual: true });
         return { success: true };
       }
 
@@ -1326,7 +1292,7 @@ export class EconomyIntegrationService {
       if (result.success) {
         // Update cross-builder analysis after sync
         this.updateCrossBuilderAnalysis();
-        this.notifyListeners();
+        this.notifyListeners({ deepEqual: true });
         return { success: true };
       }
 
@@ -1358,7 +1324,7 @@ export class EconomyIntegrationService {
       });
 
       if (result.success) {
-        this.notifyListeners();
+        this.notifyListeners({ deepEqual: true });
         return { success: true };
       }
 
@@ -1398,38 +1364,16 @@ export class EconomyIntegrationService {
       this.state.selectedAtomicComponents = configuration.selectedAtomicComponents || [];
       this.state.lastUpdate = Date.now();
       this.state.errors = [];
-      this.notifyListeners();
+      this.notifyListeners({ deepEqual: true });
 
       return true;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to load economy configuration";
       this.state.errors.push(errorMessage);
-      this.notifyListeners();
+      this.notifyListeners({ deepEqual: true });
 
       return false;
-    }
-  }
-
-  /**
-   * Notify listeners of state changes
-   */
-  private notifyListeners(): void {
-    const newState = { ...this.state };
-
-    // Only notify if state actually changed (deep equality check)
-    if (
-      !this.lastNotifiedState ||
-      JSON.stringify(newState) !== JSON.stringify(this.lastNotifiedState)
-    ) {
-      this.lastNotifiedState = newState;
-      this.listeners.forEach((listener) => {
-        try {
-          listener(newState);
-        } catch (error) {
-          console.error("Error in economy integration listener:", error);
-        }
-      });
     }
   }
 }

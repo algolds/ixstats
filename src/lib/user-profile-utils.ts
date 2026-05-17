@@ -2,6 +2,7 @@
 // User profile lookup utility for ThinkTanks and ThinkShare components
 // Provides caching and batch lookup capabilities for user display names
 
+import { Cache } from "~/lib/cache";
 import { db } from "~/server/db";
 
 /**
@@ -21,48 +22,29 @@ export interface UserProfile {
  * TTL: 5 minutes (300000ms)
  */
 class UserProfileCache {
-  private cache: Map<string, { profile: UserProfile; timestamp: number }> = new Map();
-  private readonly TTL = 300000; // 5 minutes
+  private userCache = new Cache({
+    defaultTtlMs: 300000, // 5 minutes
+    maxSize: 100,
+  });
 
   set(clerkUserId: string, profile: UserProfile): void {
-    this.cache.set(clerkUserId, {
-      profile,
-      timestamp: Date.now(),
-    });
+    this.userCache.set(clerkUserId, profile);
   }
 
   get(clerkUserId: string): UserProfile | null {
-    const cached = this.cache.get(clerkUserId);
-    if (!cached) return null;
-
-    // Check if cache entry has expired
-    if (Date.now() - cached.timestamp > this.TTL) {
-      this.cache.delete(clerkUserId);
-      return null;
-    }
-
-    return cached.profile;
+    return this.userCache.get<UserProfile>(clerkUserId) ?? null;
   }
 
   has(clerkUserId: string): boolean {
-    const cached = this.cache.get(clerkUserId);
-    if (!cached) return false;
-
-    // Check if cache entry has expired
-    if (Date.now() - cached.timestamp > this.TTL) {
-      this.cache.delete(clerkUserId);
-      return false;
-    }
-
-    return true;
+    return this.userCache.has(clerkUserId);
   }
 
   clear(): void {
-    this.cache.clear();
+    this.userCache.clear();
   }
 
   getSize(): number {
-    return this.cache.size;
+    return this.userCache.size;
   }
 }
 

@@ -3,6 +3,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { AppError } from "~/lib/app-error";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -1779,8 +1780,7 @@ export const adminRouter = createTRPCRouter({
       } catch (error) {
         console.error("Failed to create diplomatic option:", error);
 
-        // Check for unique constraint violation
-        if (error instanceof Error && error.message.includes("Unique constraint")) {
+        if (error instanceof AppError && error.code === "CONFLICT") {
           throw new TRPCError({
             code: "CONFLICT",
             message: "A diplomatic option with this type and value already exists",

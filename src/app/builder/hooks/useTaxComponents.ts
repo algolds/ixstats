@@ -6,11 +6,14 @@
  * - Database CRUD operations via tRPC
  * - Real-time effectiveness calculations
  * - Cross-builder synergy detection
+ *
+ * Phase 3 optimization: Added standardized staleTime values.
  */
 
 import { useState, useEffect } from "react";
 import { TaxComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
+import { STALE_TIME } from "~/hooks/useCountryGovernment";
 
 export interface UseTaxComponentsProps {
   countryId?: string;
@@ -23,15 +26,15 @@ export function useTaxComponents({ countryId, initialComponents = [] }: UseTaxCo
     useState<TaxComponentType[]>(initialComponents);
   const [isLoading, setIsLoading] = useState(false);
 
-  // tRPC queries and mutations
+  // tRPC queries and mutations with standardized staleTime
   const getComponentsQuery = api.atomicTax.getComponents.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STANDARD }
   );
 
   const getEffectivenessQuery = api.atomicTax.getEffectiveness.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STANDARD }
   );
 
   const bulkUpdateMutation = api.atomicTax.bulkUpdate.useMutation();

@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import debounce from "lodash/debounce";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
@@ -69,10 +70,36 @@ export function EnhancedSlider({
         ? parseFloat(value)
         : safeMin;
 
+  // Local state for fast responsive 60fps drag updates
+  const [localValue, setLocalValue] = useState(numericValue);
+
+  // Sync local value when external value changes and we are not dragging
+  useEffect(() => {
+    if (!isDragging) {
+      setLocalValue(numericValue);
+    }
+  }, [numericValue, isDragging]);
+
+  // Stable debounced onChange for parent updates during active dragging
+  const debouncedOnChange = useMemo(
+    () =>
+      debounce((val: number) => {
+        onChange(val);
+      }, 100),
+    [onChange]
+  );
+
+  // Clean up debounced handler on unmount
+  useEffect(() => {
+    return () => {
+      debouncedOnChange.cancel();
+    };
+  }, [debouncedOnChange]);
+
   // Animated percentage for smooth value display with safe calculations
   const range = safeMax - safeMin;
   const animatedPercentage = useAnimatedPercentage(
-    range > 0 ? ((numericValue - safeMin) / range) * 100 : 0,
+    range > 0 ? ((localValue - safeMin) / range) * 100 : 0,
     1,
     { ...DEFAULT_ANIMATIONS.spring, duration: animationDuration }
   );
@@ -83,12 +110,12 @@ export function EnhancedSlider({
     thumb: thumbSize || (size === "sm" ? 20 : size === "lg" ? 32 : 24),
   };
 
-  // Calculate percentage position
-  const percentage = ((numericValue - min) / (max - min)) * 100;
+  // Calculate percentage position based on localValue
+  const percentage = ((localValue - min) / (max - min)) * 100;
 
   const calculateValueFromPosition = useCallback(
     (clientX: number, clientY: number) => {
-      if (!trackRef.current) return numericValue;
+      if (!trackRef.current) return localValue;
 
       const rect = trackRef.current.getBoundingClientRect();
 
@@ -108,10 +135,10 @@ export function EnhancedSlider({
       const rawValue = min + (percentage / 100) * range;
       const steppedValue = Math.round(rawValue / step) * step;
 
-      // Immediate onChange call for responsive feedback
+      // Clamp value safely
       return Math.max(min, Math.min(max, steppedValue));
     },
-    [min, max, step, orientation, numericValue]
+    [min, max, step, orientation, localValue]
   );
 
   const handleStart = useCallback(
@@ -120,6 +147,8 @@ export function EnhancedSlider({
 
       setIsDragging(true);
       const newValue = calculateValueFromPosition(clientX, clientY);
+      setLocalValue(newValue);
+      // Immediately notify parent of the start of dragging
       onChange(newValue);
     },
     [disabled, calculateValueFromPosition, onChange]
@@ -130,14 +159,19 @@ export function EnhancedSlider({
       if (!isDragging || disabled) return;
 
       const newValue = calculateValueFromPosition(clientX, clientY);
-      onChange(newValue);
+      setLocalValue(newValue);
+      // Debounce high frequency parent updates during dragging
+      debouncedOnChange(newValue);
     },
-    [isDragging, disabled, calculateValueFromPosition, onChange]
+    [isDragging, disabled, calculateValueFromPosition, debouncedOnChange]
   );
 
   const handleEnd = useCallback(() => {
     setIsDragging(false);
-  }, []);
+    debouncedOnChange.cancel();
+    // Immediately synchronize final value to parent on mouse release
+    onChange(localValue);
+  }, [onChange, localValue, debouncedOnChange]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -230,7 +264,7 @@ export function EnhancedSlider({
               {showValue && (
                 <motion.div className="text-foreground flex items-center gap-1 text-sm">
                   <motion.span>
-                    {!isNaN(numericValue) ? numericValue.toFixed(precision) : "0"}
+                    {!isNaN(localValue) ? localValue.toFixed(precision) : "0"}
                   </motion.span>
                   {unit && <span className="text-muted-foreground">{unit}</span>}
                 </motion.div>

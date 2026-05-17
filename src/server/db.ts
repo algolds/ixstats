@@ -5,6 +5,7 @@ import { env } from "~/env";
 // Import from standalone query-monitor to avoid circular dependency with database-optimizations
 import { queryMonitor } from "~/lib/query-monitor";
 import { isDevMode } from "~/lib/dev-memory-config";
+import { prismaErrorToAppError } from "~/lib/prisma-error";
 
 // Check if we're in read-only mode (development with production data)
 const isReadOnlyMode = process.env.DATABASE_READONLY === "true";
@@ -199,18 +200,32 @@ const globalForPrisma = globalThis as unknown as {
 
 export const db =
   globalForPrisma.prisma ??
-  createPrismaClient().$extends({
-    query: {
-      $allModels: {
-        async findMany({ args, query }) {
-          if (!args.take && !args.cursor) {
-            args.take = 1000;
-          }
-          return query(args);
+  createPrismaClient()
+    .$extends({
+      query: {
+        $allModels: {
+          async findMany({ args, query }) {
+            if (!args.take && !args.cursor) {
+              args.take = 1000;
+            }
+            return query(args);
+          },
         },
       },
-    },
-  });
+    })
+    .$extends({
+      query: {
+        $allModels: {
+          async $allOperations({ args, query }) {
+            try {
+              return await query(args);
+            } catch (error) {
+              prismaErrorToAppError(error);
+            }
+          },
+        },
+      },
+    });
 
 export { db as prisma };
 

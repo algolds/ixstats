@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { isEqual } from "lodash";
 import { useNotify } from "~/hooks/useNotify";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { economyIntegrationService } from "~/app/builder/services/EconomyIntegrationService";
 import { api } from "~/trpc/react";
+import { STALE_TIME } from "~/hooks/useCountryGovernment";
 
 export function useEconomyBuilderState(
   economicInputs: EconomicInputs,
@@ -136,11 +138,11 @@ export function useEconomyBuilderState(
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // tRPC queries and mutations
+  // tRPC queries and mutations with standardized staleTime
   const { data: existingConfiguration, isLoading: isLoadingConfig } =
     api.economics.getEconomyBuilderState.useQuery(
       { countryId: countryId! },
-      { enabled: !!countryId }
+      { enabled: !!countryId, staleTime: STALE_TIME.STANDARD }
     );
 
   const saveEconomyMutation = api.economics.saveEconomyBuilderState.useMutation({
@@ -218,10 +220,10 @@ export function useEconomyBuilderState(
       if (state.economyBuilder && state.economyBuilder !== economyBuilder) {
         setEconomyBuilder(state.economyBuilder);
       }
-      // Only call parent callback if truly different (deep equality check)
+      // Phase 3 optimization: Replaced JSON.stringify with isEqual
       if (
         state.economicInputs &&
-        JSON.stringify(state.economicInputs) !== JSON.stringify(economicInputs)
+        !isEqual(state.economicInputs, economicInputs)
       ) {
         onEconomicInputsChange(state.economicInputs);
       }

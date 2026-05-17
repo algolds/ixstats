@@ -6,6 +6,7 @@ import type {
   Bid,
   AuctionListing,
 } from "~/types/marketplace";
+import { withReconnect } from "~/lib/with-reconnect";
 
 type SubscriptionCallback<T> = (data: T) => void;
 
@@ -23,11 +24,21 @@ interface Subscription {
 export class MarketWebSocketClient {
   private ws: WebSocket | null = null;
   private subscriptions: Map<string, Subscription> = new Map();
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 10;
-  private reconnectDelay = 1000; // Start at 1 second
-  private maxReconnectDelay = 30000; // Cap at 30 seconds
-  private reconnectTimer: NodeJS.Timeout | null = null;
+  private reconnect = withReconnect(
+    () => this.connect(),
+    {
+      maxAttempts: 10,
+      strategy: "exponentialWithJitter",
+      baseDelayMs: 1000,
+      maxDelayMs: 30000,
+      onAttempt: (attempt, delayMs) => {
+        console.log(`[MarketWS] Reconnecting in ${(delayMs / 1000).toFixed(1)}s (attempt ${attempt}/10)`);
+      },
+      onGaveUp: () => {
+        console.error("[MarketWS] Max reconnection attempts reached. Giving up.");
+      },
+    }
+  );
   private isConnecting = false;
   private isIntentionallyClosed = false;
   private heartbeatInterval: NodeJS.Timeout | null = null;
@@ -78,10 +89,7 @@ export class MarketWebSocketClient {
     this.isIntentionallyClosed = true;
     this.isConnecting = false;
 
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
+    this.reconnect.cancel();
 
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
@@ -210,7 +218,7 @@ export class MarketWebSocketClient {
     return {
       connected: this.isConnected(),
       connecting: this.isConnecting,
-      reconnectAttempts: this.reconnectAttempts,
+      reconnectAttempts: this.reconnect.attempt,
       subscriptionCount: this.subscriptions.size,
     };
   }
@@ -220,8 +228,7 @@ export class MarketWebSocketClient {
   private handleOpen(): void {
     console.log("[MarketWS] Connected successfully");
     this.isConnecting = false;
-    this.reconnectAttempts = 0;
-    this.reconnectDelay = 1000;
+    this.reconnect.reset();
     this.lastPongTime = Date.now();
 
     // Start heartbeat
@@ -282,28 +289,7 @@ export class MarketWebSocketClient {
   }
 
   private scheduleReconnect(): void {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error(
-        "[MarketWS] Max reconnection attempts reached. Giving up."
-      );
-      return;
-    }
-
-    // Exponential backoff with jitter
-    const jitter = Math.random() * 1000;
-    const delay = Math.min(
-      this.reconnectDelay * Math.pow(2, this.reconnectAttempts) + jitter,
-      this.maxReconnectDelay
-    );
-
-    console.log(
-      `[MarketWS] Reconnecting in ${(delay / 1000).toFixed(1)}s (attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`
-    );
-
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectAttempts++;
-      this.connect();
-    }, delay);
+    this.reconnect.schedule();
   }
 
   private startHeartbeat(): void {

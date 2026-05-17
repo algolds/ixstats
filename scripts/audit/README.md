@@ -1,6 +1,6 @@
 # Audit & Verification Scripts
 
-**Last updated:** October 2025
+**Last updated:** May 2026
 
 Automation under `scripts/audit` provides fast confidence in API wiring, database health, and economic calculations. Invoke these scripts via `tsx` or the corresponding bun scripts.
 
@@ -10,6 +10,7 @@ Automation under `scripts/audit` provides fast confidence in API wiring, databas
 | `run-all-tests.ts` | `bun run test:all` | Runs the full audit suite with optional filters (`--only=crud,health`) |
 | `test-all-crud-operations.ts` | `bun run test:crud` | Exercises CRUD endpoints across countries, users, diplomacy, policies, and social content |
 | `test-api-health.ts` | `bun run test:health` | Pings every tRPC procedure for availability and latency |
+| `test-builder-performance.ts` | `bun run test:builder-perf` | **NEW:** Benchmarks builder system performance (government create, queries with limits) |
 | `verify-database-integrity.ts` | `bun run test:db` | Checks referential integrity, indexes, and record counts |
 | `verify-economic-calculations.ts` | `bun run test:economics` | Validates tier calculations, projections, and growth models |
 | `verify-live-data-wiring.ts` | `bun run audit:wiring` | Confirms React components consume live tRPC data rather than mock fixtures |

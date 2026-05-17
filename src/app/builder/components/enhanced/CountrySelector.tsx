@@ -173,24 +173,26 @@ export function CountrySelector({
               />
 
               {/* Countries Grid */}
-              <CountryGrid
-                countries={countries || []}
-                filteredCountries={filteredCountries}
-                searchTerm={searchTerm}
-                selectedArchetype={selectedArchetypes.join(",")} // Convert array to string for backward compatibility
-                onCountryHover={setHoveredCountry}
-                onCountryClick={(country) => {
-                  setSoftSelectedCountry(country);
-                  setHoveredCountry(null);
-                }}
-                onClearFilters={handleClearAll}
-                softSelectedCountryId={softSelectedCountry?.countryCode || null}
-                onMouseEnter={() => setIsMouseOverGrid(true)}
-                onMouseLeave={() => setIsMouseOverGrid(false)}
-                scrollPosition={scrollPosition}
-                onScroll={setScrollPosition}
-                flagUrls={flagUrls}
-              />
+              <div ref={countriesListRef}>
+                <CountryGrid
+                  countries={countries || []}
+                  filteredCountries={filteredCountries}
+                  searchTerm={searchTerm}
+                  selectedArchetype={selectedArchetypes.join(",")} // Convert array to string for backward compatibility
+                  onCountryHover={setHoveredCountry}
+                  onCountryClick={(country) => {
+                    setSoftSelectedCountry(country);
+                    setHoveredCountry(null);
+                  }}
+                  onClearFilters={handleClearAll}
+                  softSelectedCountryId={softSelectedCountry?.countryCode || null}
+                  onMouseEnter={() => setIsMouseOverGrid(true)}
+                  onMouseLeave={() => setIsMouseOverGrid(false)}
+                  scrollPosition={scrollPosition}
+                  onScroll={setScrollPosition}
+                  flagUrls={flagUrls}
+                />
+              </div>
             </div>
 
             {/* Right Sidebar - Live Preview Panel - 40% of remaining space */}

@@ -40,6 +40,8 @@ model ComponentSynergy {
   @@unique([primaryComponentId, secondaryComponentId])
   @@index([countryId])
   @@index([synergyType])
+  @@index([primaryComponentId])   // FK index for JOIN performance
+  @@index([secondaryComponentId]) // FK index for JOIN performance
 }
 
 model GovernmentStructure {

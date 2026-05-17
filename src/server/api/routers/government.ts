@@ -121,8 +121,65 @@ const revenueSourceInputSchema = z.object({
 const governmentBuilderStateSchema = GovernmentBuilderStateSchema;
 
 export const governmentRouter = createTRPCRouter({
-  // Get government structure by country ID
+  // Get government structure by country ID with configurable includes
+  // Phase 1 optimization: Added limits to prevent unbounded data fetching
   getByCountryId: publicProcedure
+    .input(
+      z.object({
+        countryId: z.string(),
+        // Pagination options for nested data (defaults are optimized for typical use)
+        budgetYearsLimit: z.number().min(1).max(10).default(3),
+        includeSubDepartments: z.boolean().default(false),
+        includeSubBudgets: z.boolean().default(false),
+        revenueSourcesLimit: z.number().min(1).max(100).default(50),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const {
+        countryId,
+        budgetYearsLimit,
+        includeSubDepartments,
+        includeSubBudgets,
+        revenueSourcesLimit,
+      } = input;
+
+      const governmentStructure = await ctx.db.governmentStructure.findUnique({
+        where: { countryId },
+        include: {
+          departments: {
+            include: {
+              // Conditionally include sub-departments to reduce payload
+              ...(includeSubDepartments && { subDepartments: true }),
+              budgetAllocations: {
+                orderBy: { budgetYear: "desc" },
+                take: budgetYearsLimit, // Limit budget history per department
+              },
+              ...(includeSubBudgets && { subBudgets: true }),
+            },
+            orderBy: { priority: "desc" },
+          },
+          budgetAllocations: {
+            include: { department: true },
+            orderBy: { budgetYear: "desc" },
+            take: budgetYearsLimit * 20, // Limit total allocations (years * estimated departments)
+          },
+          revenueSources: {
+            where: { isActive: true },
+            orderBy: { revenueAmount: "desc" },
+            take: revenueSourcesLimit,
+          },
+        },
+      });
+
+      if (!governmentStructure) {
+        return null;
+      }
+
+      return governmentStructure;
+    }),
+
+  // Get full government structure without limits (admin/export use cases)
+  getFullByCountryId: publicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       const governmentStructure = await ctx.db.governmentStructure.findUnique({
@@ -148,10 +205,6 @@ export const governmentRouter = createTRPCRouter({
           },
         },
       });
-
-      if (!governmentStructure) {
-        return null;
-      }
 
       return governmentStructure;
     }),
@@ -199,7 +252,8 @@ export const governmentRouter = createTRPCRouter({
         warnings = await detectGovernmentConflicts(ctx.db, countryId, data);
       }
 
-      // Create in transaction
+      // Create in transaction with batched operations for performance
+      // Phase 1 optimization: Reduces ~50 DB round-trips to ~5-10
       const result = await ctx.db.$transaction(async (tx) => {
         // Create government structure
         const governmentStructure = await tx.governmentStructure.create({
@@ -209,91 +263,117 @@ export const governmentRouter = createTRPCRouter({
           },
         });
 
-        // Create departments
+        // ============================================================
+        // BATCH DEPARTMENT CREATION (was N+1, now single insert + fetch)
+        // ============================================================
         const departmentIdMap = new Map<number, string>();
-        const departments = [];
 
-        for (let i = 0; i < data.departments.length; i++) {
-          const deptData = data.departments[i]!;
-          const department = await tx.governmentDepartment.create({
-            data: {
-              governmentStructureId: governmentStructure.id,
-              name: deptData.name,
-              shortName: deptData.shortName,
-              category: deptData.category,
-              description: deptData.description,
-              minister: deptData.minister,
-              ministerTitle: deptData.ministerTitle,
-              headquarters: deptData.headquarters,
-              established: deptData.established,
-              employeeCount: deptData.employeeCount,
-              icon: deptData.icon,
-              color: deptData.color,
-              priority: deptData.priority,
-              organizationalLevel: deptData.organizationalLevel,
-              functions: deptData.functions ? JSON.stringify(deptData.functions) : null,
-            },
+        if (data.departments.length > 0) {
+          // Prepare department data for batch insert
+          const departmentData = data.departments.map((deptData) => ({
+            governmentStructureId: governmentStructure.id,
+            name: deptData.name,
+            shortName: deptData.shortName ?? null,
+            category: deptData.category,
+            description: deptData.description ?? null,
+            minister: deptData.minister ?? null,
+            ministerTitle: deptData.ministerTitle ?? "Minister",
+            headquarters: deptData.headquarters ?? null,
+            established: deptData.established ?? null,
+            employeeCount: deptData.employeeCount ?? null,
+            icon: deptData.icon ?? null,
+            color: deptData.color ?? "#6366f1",
+            priority: deptData.priority ?? 50,
+            organizationalLevel: deptData.organizationalLevel ?? "Ministry",
+            functions: deptData.functions ? JSON.stringify(deptData.functions) : null,
+          }));
+
+          // Batch create all departments (single INSERT)
+          await tx.governmentDepartment.createMany({ data: departmentData });
+
+          // Fetch created departments to build ID map (ordered by creation)
+          const createdDepartments = await tx.governmentDepartment.findMany({
+            where: { governmentStructureId: governmentStructure.id },
+            orderBy: { createdAt: "asc" },
+            select: { id: true, name: true },
           });
 
-          departmentIdMap.set(i, department.id);
-          departments.push(department);
-        }
-
-        // Update parent department relationships
-        for (let i = 0; i < data.departments.length; i++) {
-          const deptData = data.departments[i]!;
-          if (deptData.parentDepartmentId) {
-            const parentIndex = parseInt(deptData.parentDepartmentId);
-            const parentId = departmentIdMap.get(parentIndex);
-            const currentId = departmentIdMap.get(i);
-
-            if (parentId && currentId) {
-              await tx.governmentDepartment.update({
-                where: { id: currentId },
-                data: { parentDepartmentId: parentId },
-              });
+          // Build ID map by matching names (maintains order relationship)
+          data.departments.forEach((deptData, index) => {
+            const created = createdDepartments.find((d) => d.name === deptData.name);
+            if (created) {
+              departmentIdMap.set(index, created.id);
             }
-          }
-        }
-
-        // Create budget allocations
-        for (const allocation of data.budgetAllocations) {
-          const departmentIndex = parseInt(allocation.departmentId);
-          const departmentId = departmentIdMap.get(departmentIndex);
-
-          if (departmentId) {
-            await tx.budgetAllocation.create({
-              data: {
-                governmentStructureId: governmentStructure.id,
-                departmentId,
-                budgetYear: allocation.budgetYear,
-                allocatedAmount: allocation.allocatedAmount,
-                allocatedPercent: allocation.allocatedPercent,
-                availableAmount: allocation.allocatedAmount, // Initially all available
-                notes: allocation.notes,
-              },
-            });
-          }
-        }
-
-        // Create revenue sources
-        for (const revenueSource of data.revenueSources) {
-          await tx.revenueSource.create({
-            data: {
-              governmentStructureId: governmentStructure.id,
-              name: revenueSource.name,
-              category: revenueSource.category,
-              description: revenueSource.description,
-              rate: revenueSource.rate,
-              revenueAmount: revenueSource.revenueAmount,
-              revenuePercent:
-                data.structure.totalBudget > 0
-                  ? (revenueSource.revenueAmount / data.structure.totalBudget) * 100
-                  : 0,
-              collectionMethod: revenueSource.collectionMethod,
-              administeredBy: revenueSource.administeredBy,
-            },
           });
+
+          // Update parent department relationships (parallelized where possible)
+          const parentUpdates = data.departments
+            .map((deptData, i) => {
+              if (!deptData.parentDepartmentId) return null;
+              const parentIndex = parseInt(deptData.parentDepartmentId);
+              const parentId = departmentIdMap.get(parentIndex);
+              const currentId = departmentIdMap.get(i);
+              if (!parentId || !currentId) return null;
+              return { id: currentId, parentDepartmentId: parentId };
+            })
+            .filter((u): u is { id: string; parentDepartmentId: string } => u !== null);
+
+          if (parentUpdates.length > 0) {
+            await Promise.all(
+              parentUpdates.map(({ id, parentDepartmentId }) =>
+                tx.governmentDepartment.update({
+                  where: { id },
+                  data: { parentDepartmentId },
+                })
+              )
+            );
+          }
+        }
+
+        // ============================================================
+        // BATCH BUDGET ALLOCATIONS (was N+1, now single createMany)
+        // ============================================================
+        const allocationData = data.budgetAllocations
+          .map((allocation) => {
+            const departmentIndex = parseInt(allocation.departmentId);
+            const departmentId = departmentIdMap.get(departmentIndex);
+            if (!departmentId) return null;
+            return {
+              governmentStructureId: governmentStructure.id,
+              departmentId,
+              budgetYear: allocation.budgetYear,
+              allocatedAmount: allocation.allocatedAmount,
+              allocatedPercent: allocation.allocatedPercent,
+              availableAmount: allocation.allocatedAmount,
+              notes: allocation.notes ?? null,
+            };
+          })
+          .filter((d): d is NonNullable<typeof d> => d !== null);
+
+        if (allocationData.length > 0) {
+          await tx.budgetAllocation.createMany({ data: allocationData });
+        }
+
+        // ============================================================
+        // BATCH REVENUE SOURCES (was N+1, now single createMany)
+        // ============================================================
+        if (data.revenueSources.length > 0) {
+          const revenueData = data.revenueSources.map((revenueSource) => ({
+            governmentStructureId: governmentStructure.id,
+            name: revenueSource.name,
+            category: revenueSource.category,
+            description: revenueSource.description ?? null,
+            rate: revenueSource.rate ?? null,
+            revenueAmount: revenueSource.revenueAmount,
+            revenuePercent:
+              data.structure.totalBudget > 0
+                ? (revenueSource.revenueAmount / data.structure.totalBudget) * 100
+                : 0,
+            collectionMethod: revenueSource.collectionMethod ?? null,
+            administeredBy: revenueSource.administeredBy ?? null,
+          }));
+
+          await tx.revenueSource.createMany({ data: revenueData });
         }
 
         return governmentStructure;
@@ -349,7 +429,7 @@ export const governmentRouter = createTRPCRouter({
           data: data.structure,
         });
 
-        // Delete existing related data
+        // Delete existing related data (batch deletes are already efficient)
         await tx.budgetAllocation.deleteMany({
           where: { governmentStructureId: governmentStructure.id },
         });
@@ -360,89 +440,117 @@ export const governmentRouter = createTRPCRouter({
           where: { governmentStructureId: governmentStructure.id },
         });
 
-        // Recreate departments and related data (same logic as create)
+        // ============================================================
+        // BATCH DEPARTMENT RECREATION (was N+1, now single insert + fetch)
+        // ============================================================
         const departmentIdMap = new Map<number, string>();
 
-        for (let i = 0; i < data.departments.length; i++) {
-          const deptData = data.departments[i]!;
-          const department = await tx.governmentDepartment.create({
-            data: {
-              governmentStructureId: governmentStructure.id,
-              name: deptData.name,
-              shortName: deptData.shortName,
-              category: deptData.category,
-              description: deptData.description,
-              minister: deptData.minister,
-              ministerTitle: deptData.ministerTitle,
-              headquarters: deptData.headquarters,
-              established: deptData.established,
-              employeeCount: deptData.employeeCount,
-              icon: deptData.icon,
-              color: deptData.color,
-              priority: deptData.priority,
-              organizationalLevel: deptData.organizationalLevel,
-              functions: deptData.functions ? JSON.stringify(deptData.functions) : null,
-            },
+        if (data.departments.length > 0) {
+          // Prepare department data for batch insert
+          const departmentData = data.departments.map((deptData) => ({
+            governmentStructureId: governmentStructure.id,
+            name: deptData.name,
+            shortName: deptData.shortName ?? null,
+            category: deptData.category,
+            description: deptData.description ?? null,
+            minister: deptData.minister ?? null,
+            ministerTitle: deptData.ministerTitle ?? "Minister",
+            headquarters: deptData.headquarters ?? null,
+            established: deptData.established ?? null,
+            employeeCount: deptData.employeeCount ?? null,
+            icon: deptData.icon ?? null,
+            color: deptData.color ?? "#6366f1",
+            priority: deptData.priority ?? 50,
+            organizationalLevel: deptData.organizationalLevel ?? "Ministry",
+            functions: deptData.functions ? JSON.stringify(deptData.functions) : null,
+          }));
+
+          // Batch create all departments (single INSERT)
+          await tx.governmentDepartment.createMany({ data: departmentData });
+
+          // Fetch created departments to build ID map
+          const createdDepartments = await tx.governmentDepartment.findMany({
+            where: { governmentStructureId: governmentStructure.id },
+            orderBy: { createdAt: "asc" },
+            select: { id: true, name: true },
           });
 
-          departmentIdMap.set(i, department.id);
-        }
-
-        // Update parent relationships
-        for (let i = 0; i < data.departments.length; i++) {
-          const deptData = data.departments[i]!;
-          if (deptData.parentDepartmentId) {
-            const parentIndex = parseInt(deptData.parentDepartmentId);
-            const parentId = departmentIdMap.get(parentIndex);
-            const currentId = departmentIdMap.get(i);
-
-            if (parentId && currentId) {
-              await tx.governmentDepartment.update({
-                where: { id: currentId },
-                data: { parentDepartmentId: parentId },
-              });
+          // Build ID map by matching names
+          data.departments.forEach((deptData, index) => {
+            const created = createdDepartments.find((d) => d.name === deptData.name);
+            if (created) {
+              departmentIdMap.set(index, created.id);
             }
-          }
-        }
-
-        // Recreate budget allocations
-        for (const allocation of data.budgetAllocations) {
-          const departmentIndex = parseInt(allocation.departmentId);
-          const departmentId = departmentIdMap.get(departmentIndex);
-
-          if (departmentId) {
-            await tx.budgetAllocation.create({
-              data: {
-                governmentStructureId: governmentStructure.id,
-                departmentId,
-                budgetYear: allocation.budgetYear,
-                allocatedAmount: allocation.allocatedAmount,
-                allocatedPercent: allocation.allocatedPercent,
-                availableAmount: allocation.allocatedAmount,
-                notes: allocation.notes,
-              },
-            });
-          }
-        }
-
-        // Recreate revenue sources
-        for (const revenueSource of data.revenueSources) {
-          await tx.revenueSource.create({
-            data: {
-              governmentStructureId: governmentStructure.id,
-              name: revenueSource.name,
-              category: revenueSource.category,
-              description: revenueSource.description,
-              rate: revenueSource.rate,
-              revenueAmount: revenueSource.revenueAmount,
-              revenuePercent:
-                data.structure.totalBudget > 0
-                  ? (revenueSource.revenueAmount / data.structure.totalBudget) * 100
-                  : 0,
-              collectionMethod: revenueSource.collectionMethod,
-              administeredBy: revenueSource.administeredBy,
-            },
           });
+
+          // Update parent relationships (parallelized)
+          const parentUpdates = data.departments
+            .map((deptData, i) => {
+              if (!deptData.parentDepartmentId) return null;
+              const parentIndex = parseInt(deptData.parentDepartmentId);
+              const parentId = departmentIdMap.get(parentIndex);
+              const currentId = departmentIdMap.get(i);
+              if (!parentId || !currentId) return null;
+              return { id: currentId, parentDepartmentId: parentId };
+            })
+            .filter((u): u is { id: string; parentDepartmentId: string } => u !== null);
+
+          if (parentUpdates.length > 0) {
+            await Promise.all(
+              parentUpdates.map(({ id, parentDepartmentId }) =>
+                tx.governmentDepartment.update({
+                  where: { id },
+                  data: { parentDepartmentId },
+                })
+              )
+            );
+          }
+        }
+
+        // ============================================================
+        // BATCH BUDGET ALLOCATIONS (was N+1, now single createMany)
+        // ============================================================
+        const allocationData = data.budgetAllocations
+          .map((allocation) => {
+            const departmentIndex = parseInt(allocation.departmentId);
+            const departmentId = departmentIdMap.get(departmentIndex);
+            if (!departmentId) return null;
+            return {
+              governmentStructureId: governmentStructure.id,
+              departmentId,
+              budgetYear: allocation.budgetYear,
+              allocatedAmount: allocation.allocatedAmount,
+              allocatedPercent: allocation.allocatedPercent,
+              availableAmount: allocation.allocatedAmount,
+              notes: allocation.notes ?? null,
+            };
+          })
+          .filter((d): d is NonNullable<typeof d> => d !== null);
+
+        if (allocationData.length > 0) {
+          await tx.budgetAllocation.createMany({ data: allocationData });
+        }
+
+        // ============================================================
+        // BATCH REVENUE SOURCES (was N+1, now single createMany)
+        // ============================================================
+        if (data.revenueSources.length > 0) {
+          const revenueData = data.revenueSources.map((revenueSource) => ({
+            governmentStructureId: governmentStructure.id,
+            name: revenueSource.name,
+            category: revenueSource.category,
+            description: revenueSource.description ?? null,
+            rate: revenueSource.rate ?? null,
+            revenueAmount: revenueSource.revenueAmount,
+            revenuePercent:
+              data.structure.totalBudget > 0
+                ? (revenueSource.revenueAmount / data.structure.totalBudget) * 100
+                : 0,
+            collectionMethod: revenueSource.collectionMethod ?? null,
+            administeredBy: revenueSource.administeredBy ?? null,
+          }));
+
+          await tx.revenueSource.createMany({ data: revenueData });
         }
 
         return governmentStructure;

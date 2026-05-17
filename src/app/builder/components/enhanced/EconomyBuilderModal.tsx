@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { isEqual } from "lodash";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -125,11 +126,12 @@ export function EconomyBuilderModal({
   }, []);
 
   // Consolidated effect for updating service with guards
+  // Phase 3 optimization: Replaced JSON.stringify with isEqual
   useEffect(() => {
     // Update components if changed
     if (
       selectedComponents.length > 0 &&
-      JSON.stringify(selectedComponents) !== JSON.stringify(lastSentComponentsRef.current)
+      !isEqual(selectedComponents, lastSentComponentsRef.current)
     ) {
       lastSentComponentsRef.current = [...selectedComponents];
       economyIntegrationService.updateEconomicComponents(selectedComponents);
@@ -139,7 +141,7 @@ export function EconomyBuilderModal({
     if (
       economyBuilder &&
       economyBuilder !== initialData &&
-      JSON.stringify(economyBuilder) !== JSON.stringify(lastSentBuilderRef.current)
+      !isEqual(economyBuilder, lastSentBuilderRef.current)
     ) {
       lastSentBuilderRef.current = economyBuilder;
       economyIntegrationService.updateEconomyBuilder(economyBuilder);
@@ -148,7 +150,7 @@ export function EconomyBuilderModal({
     // Update inputs if changed
     if (
       economicInputs &&
-      JSON.stringify(economicInputs) !== JSON.stringify(lastSentInputsRef.current)
+      !isEqual(economicInputs, lastSentInputsRef.current)
     ) {
       lastSentInputsRef.current = economicInputs;
       economyIntegrationService.updateEconomicInputs(economicInputs);

@@ -1,6 +1,7 @@
 // Enhanced Economic Service
 // Central service for integrating advanced economic calculations across the platform
 
+import { Cache } from "~/lib/cache";
 import { IntegratedEconomicAnalysis } from "./enhanced-economic-calculations";
 import { IntuitiveEconomicAnalysis } from "./intuitive-economic-analysis";
 import { runGroupedAnalysis, EconomicCalculationGroups } from "./economic-calculation-groups";
@@ -59,16 +60,16 @@ export class EnhancedEconomicService {
   private intuitiveAnalyzer: IntuitiveEconomicAnalysis;
   private groupCalculator: EconomicCalculationGroups;
   private config: EconomicConfig;
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+  private economicCache = new Cache({
+    defaultTtlMs: 300_000, // 5 minutes
+    maxSize: 200,
+  });
 
   constructor(config?: EconomicConfig) {
     this.config = config || getDefaultEconomicConfig();
     this.integratedAnalyzer = new IntegratedEconomicAnalysis(this.config);
     this.intuitiveAnalyzer = new IntuitiveEconomicAnalysis(this.config);
     this.groupCalculator = new EconomicCalculationGroups(this.config);
-
-    // Start cache cleanup interval
-    this.startCacheCleanup();
   }
 
   /**
@@ -279,30 +280,11 @@ export class EnhancedEconomicService {
   }
 
   private getFromCache(key: string): EconomicAnalysisResult | undefined {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < cached.ttl) {
-      return cached.data;
-    }
-    return undefined;
+    return this.economicCache.get<EconomicAnalysisResult>(key);
   }
 
   private setCache(key: string, data: any, ttl: number): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl,
-    });
-  }
-
-  private startCacheCleanup(): void {
-    setInterval(() => {
-      const now = Date.now();
-      for (const [key, value] of this.cache.entries()) {
-        if (now - value.timestamp > value.ttl) {
-          this.cache.delete(key);
-        }
-      }
-    }, 60000); // Clean every minute
+    this.economicCache.set(key, data, ttl);
   }
 
   private createEmptyIntuitiveAnalysis(): {

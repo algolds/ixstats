@@ -49,7 +49,7 @@ export function BuilderSidebarLayout({
         <div className="flex gap-3 sm:gap-4">
           {/* Desktop: Fixed sidebar column */}
           <div className={`relative z-30 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
-            <div className="sticky top-6 space-y-3">
+            <div className="sticky top-20 space-y-3">
               <BuilderSidebarNav
                 activeSection={activeSection}
                 onNavigate={onNavigate}

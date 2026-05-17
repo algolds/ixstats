@@ -47,8 +47,7 @@ export function TaxSystemStep({
         await onRefetch();
       } catch (updateError: any) {
         // If update fails because record doesn't exist, create it
-        const errorMessage = updateError?.message || "";
-        if (errorMessage.includes("No record was found") || errorMessage.includes("P2025")) {
+        if ((updateError as any)?.data?.code === "NOT_FOUND") {
           await onCreate(taxSystem);
           notify.success("Tax system created successfully");
           await onRefetch();

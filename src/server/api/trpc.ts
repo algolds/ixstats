@@ -19,6 +19,16 @@ import { db, isDatabaseReadOnly } from "~/server/db";
 // Set TRPC_VERBOSE=true to enable detailed logging for debugging
 const VERBOSE = process.env.TRPC_VERBOSE === "true";
 import { rateLimiter } from "~/lib/rate-limiter";
+import {
+  AppError,
+  NotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
+  ValidationError,
+  SecurityError,
+  RateLimitError,
+  InternalError,
+} from "~/lib/app-error";
 import { userLoggingMiddleware } from "~/lib/user-logging-middleware";
 import { UserManagementService } from "~/lib/user-management-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
@@ -40,28 +50,19 @@ import { createCacheMiddlewareFactory, cacheConfigs } from "~/lib/trpc-cache";
 // When a page loads, 5-15 tRPC calls fire simultaneously for the same user.
 // Without this cache, each call independently queries user+role+permissions from the DB.
 // TTL of 5 seconds is short enough that role/permission changes propagate quickly.
-const userContextCache = new Map<string, { user: any; timestamp: number }>();
-const USER_CONTEXT_TTL = 5000; // 5 seconds
+import { Cache } from "~/lib/cache";
+
+const userContextCache = new Cache({
+  defaultTtlMs: 5000, // 5 seconds
+  maxSize: 50,
+});
 
 function getCachedUserContext(clerkUserId: string): any | null {
-  const cached = userContextCache.get(clerkUserId);
-  if (!cached) return null;
-  if (Date.now() - cached.timestamp > USER_CONTEXT_TTL) {
-    userContextCache.delete(clerkUserId);
-    return null;
-  }
-  return cached.user;
+  return userContextCache.get(clerkUserId) ?? null;
 }
 
 function setCachedUserContext(clerkUserId: string, user: any): void {
-  userContextCache.set(clerkUserId, { user, timestamp: Date.now() });
-  // Lazy cleanup: if cache grows beyond 50 entries, purge expired ones
-  if (userContextCache.size > 50) {
-    const now = Date.now();
-    for (const [key, val] of userContextCache) {
-      if (now - val.timestamp > USER_CONTEXT_TTL) userContextCache.delete(key);
-    }
-  }
+  userContextCache.set(clerkUserId, user);
 }
 
 export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequest }) => {
@@ -90,7 +91,7 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
         } catch (tokenError) {
           console.error("[TRPC Context] Token verification failed:", tokenError);
           // Reject invalid tokens explicitly instead of silent continuation
-          throw new Error("UNAUTHORIZED: Invalid or expired authentication token");
+          throw new UnauthorizedError("Invalid or expired authentication token");
         }
       }
     }
@@ -202,6 +203,18 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
         });
     }
 
+    if (error.cause instanceof AppError) {
+      return {
+        ...shape,
+        data: {
+          ...shape.data,
+          httpStatus: error.cause.statusCode,
+          code: error.cause.trpcCode as any,
+          context: error.cause.context,
+        },
+      };
+    }
+
     return {
       ...shape,
       data: {
@@ -272,8 +285,8 @@ const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
       `[AUTH_MIDDLEWARE] Unauthenticated access attempt to: ${path || "unknown"}, ` +
       `IP: ${ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"}`
     );
-    throw new Error(
-      "UNAUTHORIZED: Authentication required. Please sign in to access this resource."
+    throw new UnauthorizedError(
+      "Authentication required. Please sign in to access this resource."
     );
   }
 
@@ -283,8 +296,8 @@ const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
       `[AUTH_MIDDLEWARE] User ${ctx.auth.userId} authenticated with Clerk but not found in database. ` +
       `This may indicate a first-time login that failed to create a user record.`
     );
-    throw new Error(
-      "UNAUTHORIZED: User account not found in system. Please try logging out and logging back in. " +
+    throw new UnauthorizedError(
+      "User account not found in system. Please try logging out and logging back in. " +
       "If the issue persists, contact support."
     );
   }
@@ -327,8 +340,8 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
     console.warn(
       `[COUNTRY_OWNERSHIP] User ${ctx.auth.userId} attempted to access country-specific endpoint without a linked country: ${path || "unknown"}`
     );
-    throw new Error(
-      "FORBIDDEN: Country ownership required. You must create or claim a country before accessing this feature. " +
+    throw new ForbiddenError(
+      "Country ownership required. You must create or claim a country before accessing this feature. " +
       "Visit the Country Builder to get started."
     );
   }
@@ -342,8 +355,8 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
     console.error(
       `[COUNTRY_OWNERSHIP] User ${ctx.auth.userId} has countryId ${ctx.user.countryId} but country record not found in database`
     );
-    throw new Error(
-      "INTERNAL_ERROR: Your linked country could not be found in the database. " +
+    throw new InternalError(
+      "Your linked country could not be found in the database. " +
       "This may indicate a data integrity issue. Please contact support."
     );
   }
@@ -391,8 +404,9 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
       console.warn(
         `[RATE_LIMIT] ${identifier} exceeded ${options.max} requests per ${options.windowMs}ms limit for ${path} (namespace: ${namespace})`
       );
-      throw new Error(
-        `RATE_LIMITED: Too many requests. Maximum ${options.max} requests per ${options.windowMs / 1000} seconds. Try again at ${result.resetAt.toISOString()}`
+      throw new RateLimitError(
+        `Too many requests. Maximum ${options.max} requests per ${options.windowMs / 1000} seconds. Try again at ${result.resetAt.toISOString()}`,
+        result.resetAt
       );
     }
 
@@ -522,7 +536,7 @@ const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
     console.warn(
       `[PREMIUM_ACCESS_DENIED] User ${ctx.auth.userId} (tier: ${membershipTier}) attempted premium content access`
     );
-    throw new Error("FORBIDDEN: MyCountry Premium membership required");
+    throw new ForbiddenError("MyCountry Premium membership required");
   }
 
   if (VERBOSE) console.log(`[PREMIUM_ACCESS] Premium user ${ctx.auth.userId} accessing premium content`);
@@ -542,8 +556,8 @@ const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
  */
 const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   // First ensure user is authenticated
-  if (!ctx.auth?.userId) {
-    throw new Error("UNAUTHORIZED: Authentication required");
+  if (!ctx.auth?.userId || !ctx.user) {
+    throw new UnauthorizedError("Authentication required");
   }
 
   // If user wasn't loaded in context, try to load it here
@@ -568,7 +582,7 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
       });
     } catch (error) {
       console.error(`[ADMIN_MIDDLEWARE] Failed to load user:`, error);
-      throw new Error("UNAUTHORIZED: Failed to load user");
+      throw new UnauthorizedError("Failed to load user");
     }
   }
 
@@ -589,7 +603,7 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   // For non-system-owners, require database user record
   if (!user) {
     console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} not found in database`);
-    throw new Error("UNAUTHORIZED: User not found");
+    throw new UnauthorizedError("User not found");
   }
 
   // SECURITY: Check if user has admin role - NEVER auto-assign roles in middleware
@@ -599,8 +613,8 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
       `[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId}). ` +
       `User record exists but roleId may be NULL or role record may be missing.`
     );
-    throw new Error(
-      "FORBIDDEN: Your account has no assigned role. This usually means your account was created before the role system was implemented. " +
+    throw new ForbiddenError(
+      "Your account has no assigned role. This usually means your account was created before the role system was implemented. " +
       "Please try logging out and logging back in, or contact support if the issue persists. " +
       `(User ID: ${ctx.auth.userId.substring(0, 8)}...)`
     );
@@ -616,8 +630,8 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     console.warn(
       `[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${roleName}, level: ${roleLevel}) attempted admin access to: ${ctx.headers.get("x-trpc-path") || "unknown"}`
     );
-    throw new Error(
-      `FORBIDDEN: Admin privileges required. Your current role is "${roleName}" (level ${roleLevel}), which does not have admin access. ` +
+    throw new ForbiddenError(
+      `Admin privileges required. Your current role is "${roleName}" (level ${roleLevel}), which does not have admin access. ` +
       "Contact a system administrator if you believe this is an error."
     );
   }
@@ -688,13 +702,13 @@ const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }
         console.error(
           `[SECURITY] Suspicious input detected from user ${ctx.auth?.userId}: ${pattern}`
         );
-        throw new Error("SECURITY_VIOLATION: Invalid input detected");
+        throw new SecurityError("Invalid input detected");
       }
     }
 
     // Check input size limits
     if (inputStr.length > 10000) {
-      throw new Error("VALIDATION_ERROR: Input too large");
+      throw new ValidationError("Input too large");
     }
   }
 

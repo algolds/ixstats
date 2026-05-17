@@ -1,6 +1,7 @@
 // Real-time WebSocket infrastructure for diplomatic intelligence updates
 import React from "react";
 import { IxTime } from "~/lib/ixtime";
+import { withReconnect } from "~/lib/with-reconnect";
 
 export interface DiplomaticEvent {
   id: string;
@@ -45,9 +46,17 @@ export interface DiplomaticEventSubscription {
 
 export class DiplomaticWebSocket {
   private ws: WebSocket | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
+  private reconnect = withReconnect(
+    () => this.connect(),
+    {
+      maxAttempts: 5,
+      strategy: "exponential",
+      baseDelayMs: 1000,
+      onAttempt: (attempt, delayMs) => {
+        console.log(`Attempting to reconnect in ${delayMs}ms (attempt ${attempt}/5)`);
+      },
+    }
+  );
   private pingInterval: NodeJS.Timeout | null = null;
   private subscriptions = new Set<string>();
   private messageQueue: any[] = [];
@@ -96,7 +105,7 @@ export class DiplomaticWebSocket {
         this.ws.onopen = () => {
           clearTimeout(connectionTimeout);
           this.isConnected = true;
-          this.reconnectAttempts = 0;
+          this.reconnect.reset();
           this.onStatusChange("connected");
 
           // Send authentication and subscription data
@@ -127,10 +136,7 @@ export class DiplomaticWebSocket {
           this.stopHeartbeat();
 
           // Only attempt reconnection for certain close codes
-          if (
-            this.shouldReconnect(event.code) &&
-            this.reconnectAttempts < this.maxReconnectAttempts
-          ) {
+          if (this.shouldReconnect(event.code)) {
             this.scheduleReconnect();
           }
         };
@@ -224,6 +230,7 @@ export class DiplomaticWebSocket {
 
   disconnect(): void {
     this.stopHeartbeat();
+    this.reconnect.cancel();
 
     if (this.ws) {
       this.ws.close();
@@ -410,18 +417,7 @@ export class DiplomaticWebSocket {
   }
 
   private scheduleReconnect(): void {
-    this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
-
-    console.log(
-      `Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
-    );
-
-    setTimeout(() => {
-      this.connect().catch((error) => {
-        console.error("Reconnection failed:", error);
-      });
-    }, delay);
+    this.reconnect.schedule();
   }
 
   // Utility methods for specific diplomatic events

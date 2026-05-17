@@ -1,7 +1,7 @@
 // src/app/economy/components/IncomeWealthDistribution.tsx
 "use client";
 
-import { useState } from "react";
+import React, { useState, memo } from "react";
 import {
   Users,
   Scale,
@@ -44,7 +44,8 @@ interface IncomeWealthDistributionProps {
   onIncomeDataChange: (incomeData: IncomeWealthData) => void;
 }
 
-export function IncomeWealthDistribution({
+// Phase 2 optimization: Wrap with React.memo to prevent unnecessary re-renders
+export const IncomeWealthDistribution = memo(function IncomeWealthDistribution({
   incomeData,
   totalPopulation,
   gdpPerCapita,
@@ -757,4 +758,7 @@ export function IncomeWealthDistribution({
       </div>
     </div>
   );
-}
+});
+
+// Display name for debugging
+IncomeWealthDistribution.displayName = "IncomeWealthDistribution";

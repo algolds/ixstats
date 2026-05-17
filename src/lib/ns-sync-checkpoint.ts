@@ -1,3 +1,5 @@
+import { AppError } from "~/lib/app-error";
+
 /**
  * NS Sync Checkpoint Manager
  *
@@ -194,7 +196,7 @@ export class CheckpointManager {
       console.log(`[Checkpoint] Cleared checkpoint for season ${season}`);
     } catch (error) {
       // Ignore error if checkpoint doesn't exist
-      if (error instanceof Error && error.message.includes("Record to delete does not exist")) {
+      if (error instanceof AppError && error.code === "NOT_FOUND") {
         console.log(`[Checkpoint] No checkpoint to clear for season ${season}`);
       } else {
         console.error(`[Checkpoint] Error clearing checkpoint for season ${season}:`, error);

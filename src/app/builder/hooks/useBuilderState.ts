@@ -12,6 +12,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { isEqual } from "lodash";
 import type { BuilderStep } from "../components/enhanced/builderConfig";
 import type { RealCountryData, EconomicInputs } from "../lib/economy-data-service";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -683,34 +684,35 @@ export function useBuilderState(
   taxSystemDataRef.current = builderState.taxSystemData;
 
   // Track last sent values to prevent redundant updates
-  const lastSentNationalIdentityRef = useRef<string>("");
-  const lastSentGovernmentComponentsRef: React.MutableRefObject<string> = useRef<string>(""); // Track last sent components
-  const lastSentGovernmentStructureRef = useRef<string>("");
-  const lastSentTaxSystemDataRef = useRef<string>("");
+  // Phase 2 optimization: Store actual values instead of JSON strings for isEqual comparison
+  const lastSentNationalIdentityRef = useRef<any>(null);
+  const lastSentGovernmentComponentsRef = useRef<ComponentType[]>([]);
+  const lastSentGovernmentStructureRef = useRef<any>(null);
+  const lastSentTaxSystemDataRef = useRef<TaxBuilderState | null>(null);
 
+  // Phase 2 optimization: Replaced JSON.stringify with isEqual for performance
   useEffect(() => {
     // Update national identity if changed
     if (economicInputsRef.current?.nationalIdentity) {
-      const identityKey = JSON.stringify(economicInputsRef.current.nationalIdentity);
-      if (identityKey !== lastSentNationalIdentityRef.current) {
-        lastSentNationalIdentityRef.current = identityKey;
+      const currentIdentity = economicInputsRef.current.nationalIdentity;
+      if (!isEqual(currentIdentity, lastSentNationalIdentityRef.current)) {
+        lastSentNationalIdentityRef.current = currentIdentity;
         unifiedBuilderService.updateNationalIdentity({
-          countryName: economicInputsRef.current.nationalIdentity.countryName,
-          capital: economicInputsRef.current.nationalIdentity.capitalCity,
-          currency: economicInputsRef.current.nationalIdentity.currency,
-          language: economicInputsRef.current.nationalIdentity.officialLanguages || "",
+          countryName: currentIdentity.countryName,
+          capital: currentIdentity.capitalCity,
+          currency: currentIdentity.currency,
+          language: currentIdentity.officialLanguages || "",
           flag: undefined,
-          anthem: economicInputsRef.current.nationalIdentity.nationalAnthem,
-          motto: economicInputsRef.current.nationalIdentity.motto,
+          anthem: currentIdentity.nationalAnthem,
+          motto: currentIdentity.motto,
         });
       }
     }
 
     // Update government components if changed
     if (governmentComponentsRef.current.length > 0) {
-      const componentsKey = JSON.stringify(governmentComponentsRef.current);
-      if (componentsKey !== lastSentGovernmentComponentsRef.current) {
-        lastSentGovernmentComponentsRef.current = componentsKey;
+      if (!isEqual(governmentComponentsRef.current, lastSentGovernmentComponentsRef.current)) {
+        lastSentGovernmentComponentsRef.current = [...governmentComponentsRef.current];
         unifiedBuilderService.updateGovernmentComponents(governmentComponentsRef.current);
         const suggested = unifiedBuilderService.getSuggestedEconomicComponents();
         console.log(`[UnifiedBuilder] Auto-selected ${suggested.length} economic components`);
@@ -719,18 +721,16 @@ export function useBuilderState(
 
     // Update government structure if changed
     if (governmentStructureRef.current) {
-      const structureKey = JSON.stringify(governmentStructureRef.current);
-      if (structureKey !== lastSentGovernmentStructureRef.current) {
-        lastSentGovernmentStructureRef.current = structureKey;
+      if (!isEqual(governmentStructureRef.current, lastSentGovernmentStructureRef.current)) {
+        lastSentGovernmentStructureRef.current = governmentStructureRef.current;
         unifiedBuilderService.updateGovernmentBuilder(governmentStructureRef.current);
       }
     }
 
     // Update tax system data if changed
     if (taxSystemDataRef.current) {
-      const taxKey = JSON.stringify(taxSystemDataRef.current);
-      if (taxKey !== lastSentTaxSystemDataRef.current) {
-        lastSentTaxSystemDataRef.current = taxKey;
+      if (!isEqual(taxSystemDataRef.current, lastSentTaxSystemDataRef.current)) {
+        lastSentTaxSystemDataRef.current = taxSystemDataRef.current;
         unifiedBuilderService.updateTaxBuilder(taxSystemDataRef.current);
       }
     }

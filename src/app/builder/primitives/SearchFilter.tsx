@@ -23,7 +23,7 @@ export const SearchFilter = forwardRef<HTMLDivElement, SearchFilterProps>(functi
   };
 
   return (
-    <GlassCard depth="base" blur="light" className="sticky top-56 z-40" ref={ref}>
+    <GlassCard depth="base" blur="light" className="sticky top-14 z-20" ref={ref}>
       <GlassCardContent>
         <div className="flex flex-col gap-4 sm:flex-row">
           <div className="relative flex-1">

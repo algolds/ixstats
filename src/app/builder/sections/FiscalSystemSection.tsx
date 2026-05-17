@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, memo } from "react";
 import {
   TrendingDown,
   DollarSign,
@@ -44,7 +44,8 @@ interface FiscalSystemSectionProps extends ExtendedSectionProps {
   fieldLocks?: Record<string, import("../components/enhanced/builderConfig").FieldLockConfig>;
 }
 
-export function FiscalSystemSection({
+// Phase 2 optimization: Wrap with React.memo to prevent unnecessary re-renders
+export const FiscalSystemSection = memo(function FiscalSystemSection({
   inputs,
   onInputsChange,
   showAdvanced = false,
@@ -824,4 +825,7 @@ export function FiscalSystemSection({
       />
     </SectionBase>
   );
-}
+});
+
+// Display name for debugging
+FiscalSystemSection.displayName = "FiscalSystemSection";

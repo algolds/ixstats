@@ -55,11 +55,11 @@ import type {
 import type { EconomicInputs } from "../../lib/economy-data-service";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { economyIntegrationService } from "../../services/EconomyIntegrationService";
+import { useEconomyBuilderSync } from "../../hooks/useEconomyBuilderSync";
 
 // Tab Components (lazy-loaded)
 import { Suspense } from "react";
 import { EconomySectorsTab, LaborEmploymentTab, DemographicsPopulationTab } from "./tabs";
-import { buildTaxSyncPayload } from "./utils/taxSync";
 import { getRegionColor } from "./tabs/utils/demographicsCalculations";
 import { TabLoadingFallback } from "../../components/LoadingFallback";
 
@@ -84,6 +84,9 @@ import { useEconomyBuilderAutoSync } from "~/hooks/useEconomyBuilderAutoSync";
 
 // Builder context
 import { useBuilderContextOptional } from "./context/BuilderStateContext";
+
+// Shared staleTime constants
+import { STALE_TIME } from "~/hooks/useCountryGovernment";
 
 /**
  * Props for the EconomyBuilderPage component
@@ -431,15 +434,31 @@ export function EconomyBuilderPage({
 
   // Track auto-selection to prevent loops
   const hasAutoSelectedRef = useRef(false);
-  const persistEconomyBuilderRef = useRef<typeof onPersistEconomyBuilder | undefined>(
-    onPersistEconomyBuilder
-  );
 
-  useEffect(() => {
-    persistEconomyBuilderRef.current = onPersistEconomyBuilder;
-  }, [onPersistEconomyBuilder]);
+  // Phase 2 optimization: Use consolidated sync hook for refs, integration service, and cross-builder sync
+  const {
+    economyBuilderRef,
+    economicInputsRef,
+    onEconomicInputsChangeRef: _onEconomicInputsChangeRef,
+    persistEconomyBuilderRef: _persistEconomyBuilderRef,
+    syncStatus,
+    syncGovernmentMutation: _syncGovernmentMutation,
+    syncTaxMutation: _syncTaxMutation,
+  } = useEconomyBuilderSync({
+    countryId,
+    economyBuilder,
+    economicInputs,
+    governmentComponents,
+    taxSystemData,
+    onEconomicInputsChange,
+    onPersistEconomyBuilder,
+    setEconomyBuilder,
+  });
 
-  // Government Revenue Integration Effect
+  // Track last processed revenue sources to prevent re-trigger loop
+  const lastProcessedRevenueSourcesRef = useRef<string | null>(null);
+
+  // Government Revenue Integration Effect (fixed to prevent re-trigger loop)
   useEffect(() => {
     if (
       !governmentBuilderData?.revenueSources ||
@@ -447,6 +466,13 @@ export function EconomyBuilderPage({
     ) {
       return;
     }
+
+    // Check if we've already processed these exact revenue sources
+    const revenueSourcesKey = JSON.stringify(governmentBuilderData.revenueSources);
+    if (revenueSourcesKey === lastProcessedRevenueSourcesRef.current) {
+      return; // Skip if already processed
+    }
+    lastProcessedRevenueSourcesRef.current = revenueSourcesKey;
 
     const revenueSources = governmentBuilderData.revenueSources as RevenueSource[];
 
@@ -465,8 +491,10 @@ export function EconomyBuilderPage({
       .filter((source) => source.category !== "Direct Tax" && source.category !== "Indirect Tax")
       .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
 
-    // Get GDP from economic inputs
-    const gdp = economicInputs.coreIndicators?.nominalGDP || economyBuilder.structure.totalGDP || 1;
+    // Get GDP from economic inputs (use ref for current values)
+    const currentEconomicInputs = economicInputsRef.current;
+    const currentEconomyBuilder = economyBuilderRef.current;
+    const gdp = currentEconomicInputs.coreIndicators?.nominalGDP || currentEconomyBuilder.structure.totalGDP || 1;
 
     // Calculate metrics
     const taxBurdenRatio = gdp > 0 ? (taxRevenue / gdp) * 100 : 0;
@@ -490,13 +518,13 @@ export function EconomyBuilderPage({
       governmentSizeIndicator,
     });
 
-    const adjustedBuilder = applyGovernmentRevenueAdjustments(economyBuilder, {
+    const adjustedBuilder = applyGovernmentRevenueAdjustments(currentEconomyBuilder, {
       taxBurdenRatio,
       revenueToGDPRatio,
       gdp,
     });
 
-    if (adjustedBuilder !== economyBuilder) {
+    if (adjustedBuilder !== currentEconomyBuilder) {
       handleEconomyBuilderChange(adjustedBuilder);
     }
 
@@ -508,11 +536,7 @@ export function EconomyBuilderPage({
       revenueToGDPRatio: `${revenueToGDPRatio.toFixed(1)}%`,
       governmentSizeIndicator,
     });
-  }, [
-    governmentBuilderData?.revenueSources,
-    economicInputs.coreIndicators?.nominalGDP,
-    economyBuilder,
-  ]);
+  }, [governmentBuilderData?.revenueSources, handleEconomyBuilderChange]); // Removed economyBuilder from deps to prevent loop
 
   // Auto-select economic components based on government components with comprehensive synergy scoring
   useEffect(() => {
@@ -608,33 +632,10 @@ export function EconomyBuilderPage({
     }
   }, [governmentComponents.length]); // Only trigger on count change
 
-  // Subscribe to integration service once (no dependencies to prevent loops)
-  useEffect(() => {
-    const unsubscribe = economyIntegrationService.subscribe((state) => {
-      if (state.economyBuilder && state.economyBuilder !== economyBuilder) {
-        setEconomyBuilder(state.economyBuilder);
-        persistEconomyBuilderRef.current?.(state.economyBuilder);
-      }
+  // NOTE: Integration service subscription and cross-builder sync effects have been
+  // moved to useEconomyBuilderSync hook (Phase 2 optimization)
 
-      // Only call parent callback if truly different (deep equality check)
-      if (
-        state.economicInputs &&
-        JSON.stringify(state.economicInputs) !== JSON.stringify(economicInputs)
-      ) {
-        onEconomicInputsChange(state.economicInputs);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []); // Empty deps - subscribe once
-
-  // Separate effects for updating service when props change from parent
-  useEffect(() => {
-    if (economicInputs) {
-      economyIntegrationService.updateEconomicInputs(economicInputs);
-    }
-  }, [economicInputs]);
-
+  // Update integration service when governmentBuilderData changes
   useEffect(() => {
     if (governmentBuilderData) {
       economyIntegrationService.updateGovernmentBuilder(governmentBuilderData);
@@ -678,30 +679,15 @@ export function EconomyBuilderPage({
     },
   });
 
-  const syncGovernmentMutation = api.economics.syncEconomyWithGovernment.useMutation({
-    onSuccess: () => {
-      notify.success("Economy synced with government components");
-    },
-    onError: (error: any) => {
-      notify.error(error.message || "Failed to sync with government");
-    },
-  });
+  // NOTE: syncGovernmentMutation and syncTaxMutation are now provided by useEconomyBuilderSync hook
 
-  const syncTaxMutation = api.economics.syncEconomyWithTax.useMutation({
-    onSuccess: () => {
-      notify.success("Economy synced with tax system");
-    },
-    onError: (error: any) => {
-      notify.error(error.message || "Failed to sync with tax system");
-    },
-  });
-
-  // Load existing economy builder state
+  // Load existing economy builder state with standardized staleTime
   const { data: existingConfiguration, isLoading: isLoadingConfig } =
     api.economics.getEconomyBuilderState.useQuery(
       { countryId: countryId! },
       {
         enabled: !!countryId,
+        staleTime: STALE_TIME.STANDARD,
       }
     );
 
@@ -861,69 +847,17 @@ export function EconomyBuilderPage({
     return { isValid: errors.length === 0, errors };
   }, [economyBuilder]);
 
-  // Cross-builder synchronization effects
-  useEffect(() => {
-    if (!countryId || !governmentComponents) return;
+  // NOTE: Cross-builder synchronization effects (government, tax) and sync status tracking
+  // have been moved to useEconomyBuilderSync hook (Phase 2 optimization)
+  // The syncStatus, syncGovernmentMutation, and syncTaxMutation are now provided by the hook
 
-    // Sync with government components when they change
-    const syncWithGovernment = async () => {
-      try {
-        await syncGovernmentMutation.mutateAsync({
-          countryId,
-          governmentComponents: governmentComponents.map((comp) => comp.toString()),
-        });
-      } catch (error) {
-        console.warn("Government sync failed:", error);
-      }
-    };
-
-    syncWithGovernment();
-  }, [countryId, governmentComponents, syncGovernmentMutation]);
-
-  useEffect(() => {
-    if (!countryId || !taxSystemData) return;
-
-    // Sync with tax system when it changes
-    const syncWithTax = async () => {
-      try {
-        const taxPayload = buildTaxSyncPayload(taxSystemData);
-        await syncTaxMutation.mutateAsync({
-          countryId,
-          taxData: taxPayload,
-        });
-      } catch (error) {
-        console.warn("Tax sync failed:", error);
-      }
-    };
-
-    syncWithTax();
-  }, [countryId, taxSystemData, syncTaxMutation]);
-
-  // Real-time sync status tracking
-  const [syncStatus, setSyncStatus] = useState<{
-    isSyncing: boolean;
-    lastSync: Date | null;
-    syncError: string | null;
-  }>({
-    isSyncing: false,
-    lastSync: null,
-    syncError: null,
-  });
-
-  // Update sync status based on mutation states
-  useEffect(() => {
-    const isAnyMutationLoading =
-      saveEconomyMutation.isPending ||
-      syncGovernmentMutation.isPending ||
-      syncTaxMutation.isPending;
-
-    setSyncStatus((prev) => ({
-      ...prev,
-      isSyncing: isAnyMutationLoading,
-      lastSync: isAnyMutationLoading ? prev.lastSync : new Date(),
-      syncError: null,
-    }));
-  }, [saveEconomyMutation.isPending, syncGovernmentMutation.isPending, syncTaxMutation.isPending]);
+  // Extended sync status that includes saveEconomyMutation
+  // TODO: Wire this to UI sync indicator when implementing sync status display
+  const _extendedSyncStatus = useMemo(() => ({
+    isSyncing: syncStatus.isSyncing || saveEconomyMutation.isPending,
+    lastSync: syncStatus.lastSync,
+    syncError: syncStatus.syncError,
+  }), [syncStatus, saveEconomyMutation.isPending]);
 
   // Validation Status - Memoized
   const validationStatus = useMemo(() => {

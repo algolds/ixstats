@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense } from "react";
+import { isEqual } from "lodash";
 import { motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
@@ -146,16 +147,15 @@ function AtomicBuilderPageInner({
   }, []);
 
   // Track last processed government components to prevent loops
-  const lastProcessedGovComponentsRef = useRef<string>("");
+  const lastProcessedGovComponentsRef = useRef<PrismaComponentType[]>([]);
 
   // Update economic inputs when government components change
+  // Phase 2 fix: Replaced JSON.stringify with isEqual for performance
   useEffect(() => {
     if (builderState.economicInputs && builderState.governmentComponents.length > 0) {
-      const componentsKey = JSON.stringify(builderState.governmentComponents);
-
-      // Only update if government components actually changed
-      if (componentsKey !== lastProcessedGovComponentsRef.current) {
-        lastProcessedGovComponentsRef.current = componentsKey;
+      // Only update if government components actually changed (using deep comparison)
+      if (!isEqual(builderState.governmentComponents, lastProcessedGovComponentsRef.current)) {
+        lastProcessedGovComponentsRef.current = [...builderState.governmentComponents];
 
         const updatedInputs = { ...builderState.economicInputs };
 
@@ -186,16 +186,15 @@ function AtomicBuilderPageInner({
   }, [builderState.governmentComponents, setBuilderState]);
 
   // Track last processed government structure to prevent loops
-  const lastProcessedGovStructureRef = useRef<string>("");
+  const lastProcessedGovStructureRef = useRef<any>(null);
 
   // Sync government structure to economic inputs
+  // Phase 2 fix: Replaced JSON.stringify with isEqual for performance
   useEffect(() => {
     if (builderState.governmentStructure && builderState.economicInputs) {
-      const structureKey = JSON.stringify(builderState.governmentStructure);
-
-      // Only update if government structure actually changed
-      if (structureKey !== lastProcessedGovStructureRef.current) {
-        lastProcessedGovStructureRef.current = structureKey;
+      // Only update if government structure actually changed (using deep comparison)
+      if (!isEqual(builderState.governmentStructure, lastProcessedGovStructureRef.current)) {
+        lastProcessedGovStructureRef.current = builderState.governmentStructure;
 
         const updatedInputs = { ...builderState.economicInputs };
 

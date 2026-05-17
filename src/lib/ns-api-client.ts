@@ -6,6 +6,8 @@
  * API Documentation: https://www.nationstates.net/pages/api.html
  */
 
+import { withRetry } from "~/lib/with-retry";
+
 export interface NSCard {
   id: string;
   season: string;
@@ -534,71 +536,55 @@ export class NSApiClient {
    */
   async fetchCardDump(season: number): Promise<string> {
     const dumpUrl = `https://www.nationstates.net/pages/cardlist_S${season}.xml.gz`;
-    const maxRetries = 3;
-    const timeoutMs = 60000; // 60 second timeout per attempt
 
     console.log(`[NS API] Fetching card dump for season ${season} from ${dumpUrl}`);
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`[NS API] Download attempt ${attempt}/${maxRetries} for season ${season}`);
+    return withRetry(async (signal) => {
+      console.log(`[NS API] Download attempt for season ${season}`);
 
-        // Create abort controller for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      const response = await fetch(dumpUrl, {
+        headers: {
+          "User-Agent": this.userAgent,
+          "Accept-Encoding": "gzip",
+        },
+        signal,
+      });
 
-        const response = await fetch(dumpUrl, {
-          headers: {
-            "User-Agent": this.userAgent,
-            "Accept-Encoding": "gzip",
-          },
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const contentLength = response.headers.get("content-length");
-        const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
-        console.log(`[NS API] Downloading ${totalBytes ? (totalBytes / 1024 / 1024).toFixed(2) + " MB" : "unknown size"}`);
-
-        // Read response as ArrayBuffer for gzip decompression
-        const arrayBuffer = await response.arrayBuffer();
-        const compressedBytes = new Uint8Array(arrayBuffer);
-
-        console.log(`[NS API] Downloaded ${(compressedBytes.length / 1024 / 1024).toFixed(2)} MB (compressed)`);
-
-        // Decompress gzip using Node.js zlib (requires 'zlib' import)
-        const zlib = await import("zlib");
-        const { promisify } = await import("util");
-        const gunzip = promisify(zlib.gunzip);
-
-        console.log(`[NS API] Decompressing gzip data...`);
-        const decompressed = await gunzip(Buffer.from(compressedBytes));
-        const xmlString = decompressed.toString("utf-8");
-
-        console.log(`[NS API] ✓ Successfully downloaded and decompressed season ${season} card dump (${(xmlString.length / 1024 / 1024).toFixed(2)} MB uncompressed)`);
-        return xmlString;
-
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        console.error(`[NS API] Attempt ${attempt}/${maxRetries} failed for season ${season}:`, errorMsg);
-
-        if (attempt === maxRetries) {
-          throw new Error(`Failed to fetch card dump for season ${season} after ${maxRetries} attempts: ${errorMsg}`);
-        }
-
-        // Exponential backoff: 2^attempt seconds
-        const delaySeconds = Math.pow(2, attempt);
-        console.log(`[NS API] Retrying in ${delaySeconds} seconds...`);
-        await new Promise((resolve) => setTimeout(resolve, delaySeconds * 1000));
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    }
 
-    throw new Error(`Failed to fetch card dump for season ${season}`);
+      const contentLength = response.headers.get("content-length");
+      const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+      console.log(`[NS API] Downloading ${totalBytes ? (totalBytes / 1024 / 1024).toFixed(2) + " MB" : "unknown size"}`);
+
+      // Read response as ArrayBuffer for gzip decompression
+      const arrayBuffer = await response.arrayBuffer();
+      const compressedBytes = new Uint8Array(arrayBuffer);
+
+      console.log(`[NS API] Downloaded ${(compressedBytes.length / 1024 / 1024).toFixed(2)} MB (compressed)`);
+
+      // Decompress gzip using Node.js zlib
+      const zlib = await import("zlib");
+      const { promisify } = await import("util");
+      const gunzip = promisify(zlib.gunzip);
+
+      console.log(`[NS API] Decompressing gzip data...`);
+      const decompressed = await gunzip(Buffer.from(compressedBytes));
+      const xmlString = decompressed.toString("utf-8");
+
+      console.log(`[NS API] ✓ Successfully downloaded and decompressed season ${season} card dump (${(xmlString.length / 1024 / 1024).toFixed(2)} MB uncompressed)`);
+      return xmlString;
+    }, {
+      maxAttempts: 3,
+      strategy: "exponential",
+      baseDelayMs: 2000,
+      timeoutMs: 60000,
+      onRetry: (attempt, err, delayMs) => {
+        console.error(`[NS API] Attempt ${attempt} failed for season ${season}:`, err.message);
+        console.log(`[NS API] Retrying in ${delayMs / 1000} seconds...`);
+      },
+    });
   }
 
   /**

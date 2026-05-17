@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -48,7 +48,8 @@ interface EconomicArchetypeDisplayProps {
   onArchetypeApplied?: (newState: EconomyBuilderState, archetypeId?: string) => void;
 }
 
-export function EconomicArchetypeDisplay({
+// Phase 2 optimization: Wrap with React.memo to prevent unnecessary re-renders
+export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
   className,
   currentState,
   onArchetypeApplied,
@@ -689,4 +690,7 @@ export function EconomicArchetypeDisplay({
       </Tabs>
     </div>
   );
-}
+});
+
+// Display name for debugging
+EconomicArchetypeDisplay.displayName = "EconomicArchetypeDisplay";

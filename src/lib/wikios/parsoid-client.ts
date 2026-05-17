@@ -2,7 +2,7 @@
 // Parsoid REST API client for fetching rendered HTML from MediaWiki
 // Uses localhost loopback for minimal latency (~10ms network + rendering time)
 
-
+import { Cache } from "~/lib/cache";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,30 +31,21 @@ export interface ParsoidTransformResult {
 // Cache (in-memory LRU, same pattern as wiki-bridge.ts)
 // ---------------------------------------------------------------------------
 
-const HTML_CACHE = new Map<string, { data: ParsoidArticle; expires: number }>();
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes — wiki content changes infrequently
-const MAX_CACHE_SIZE = 200;
+const parsoidCache = new Cache({
+  defaultTtlMs: 30 * 60 * 1000, // 30 minutes
+  maxSize: 200,
+});
 
 function getCached(key: string): ParsoidArticle | null {
-  const entry = HTML_CACHE.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expires) {
-    HTML_CACHE.delete(key);
-    return null;
-  }
-  return entry.data;
+  return parsoidCache.get<ParsoidArticle>(key) ?? null;
 }
 
 function setCache(key: string, data: ParsoidArticle) {
-  if (HTML_CACHE.size >= MAX_CACHE_SIZE) {
-    const firstKey = HTML_CACHE.keys().next().value;
-    if (firstKey) HTML_CACHE.delete(firstKey);
-  }
-  HTML_CACHE.set(key, { data, expires: Date.now() + CACHE_TTL });
+  parsoidCache.set(key, data);
 }
 
 export function invalidateCache(title: string) {
-  HTML_CACHE.delete(title);
+  parsoidCache.delete(title);
 }
 
 // ---------------------------------------------------------------------------

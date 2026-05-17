@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { isEqual } from "lodash";
 import type { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import type { GovernmentBuilderState } from "~/types/government";
 import type { EconomicInputs } from "../lib/economy-data-service";
@@ -213,11 +214,12 @@ export function useAtomicGovernmentIntegration(
   }, []);
 
   // Consolidated effect for updating service with guards
+  // Phase 3 optimization: Replaced JSON.stringify with isEqual
   useEffect(() => {
     // Update components if changed
     if (
       selectedComponents.length > 0 &&
-      JSON.stringify(selectedComponents) !== JSON.stringify(lastSentComponentsRef.current)
+      !isEqual(selectedComponents, lastSentComponentsRef.current)
     ) {
       lastSentComponentsRef.current = [...selectedComponents];
       atomicIntegrationService.updateComponents(selectedComponents);
@@ -226,7 +228,7 @@ export function useAtomicGovernmentIntegration(
     // Update government builder if changed
     if (
       governmentBuilder &&
-      JSON.stringify(governmentBuilder) !== JSON.stringify(lastSentGovernmentBuilderRef.current)
+      !isEqual(governmentBuilder, lastSentGovernmentBuilderRef.current)
     ) {
       lastSentGovernmentBuilderRef.current = governmentBuilder;
       atomicIntegrationService.updateGovernmentBuilder(governmentBuilder);
@@ -235,7 +237,7 @@ export function useAtomicGovernmentIntegration(
     // Update economic inputs if changed
     if (
       economicInputs &&
-      JSON.stringify(economicInputs) !== JSON.stringify(lastSentEconomicInputsRef.current)
+      !isEqual(economicInputs, lastSentEconomicInputsRef.current)
     ) {
       lastSentEconomicInputsRef.current = economicInputs;
       atomicIntegrationService.updateEconomicInputs(economicInputs);

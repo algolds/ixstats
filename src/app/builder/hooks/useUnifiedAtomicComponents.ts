@@ -6,12 +6,15 @@
  * - Combined effectiveness calculations
  * - Historical change tracking
  * - Real-time metrics and analytics
+ *
+ * Phase 3 optimization: Added standardized staleTime values.
  */
 
 import { useState } from "react";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { EconomicComponentType, TaxComponentType } from "~/lib/enums";
 import { api } from "~/trpc/react";
+import { STALE_TIME } from "~/hooks/useCountryGovernment";
 
 export interface UseUnifiedAtomicComponentsProps {
   countryId?: string;
@@ -29,31 +32,31 @@ export function useUnifiedAtomicComponents({
   // State
   const [isLoading, setIsLoading] = useState(false);
 
-  // tRPC queries
+  // tRPC queries with standardized staleTime
   const getAllQuery = api.unifiedAtomic.getAll.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STANDARD }
   );
 
   const detectSynergiesQuery = api.unifiedAtomic.detectSynergies.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STABLE }
   );
 
   const detectConflictsQuery = api.unifiedAtomic.detectConflicts.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STABLE }
   );
 
   const calculateCombinedEffectivenessQuery =
     api.unifiedAtomic.calculateCombinedEffectiveness.useQuery(
       { countryId: countryId || "" },
-      { enabled: !!countryId }
+      { enabled: !!countryId, staleTime: STALE_TIME.STANDARD }
     );
 
   const getHistoricalChangesQuery = api.unifiedAtomic.getHistoricalChanges.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STABLE }
   );
 
   const saveSynergiesMutation = api.unifiedAtomic.saveSynergies.useMutation();

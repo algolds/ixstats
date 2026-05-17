@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
+import debounce from "lodash/debounce";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
@@ -74,12 +75,28 @@ export function SliderWithDirectInput({
         ? parseFloat(value)
         : safeMin;
 
-  // Sync local value when external value changes
+  // Sync local value when external value changes (only if not focused or dragging)
   useEffect(() => {
-    if (!isFocused) {
+    if (!isFocused && !isDragging) {
       setLocalValue(numericValue.toFixed(precision));
     }
-  }, [numericValue, precision, isFocused]);
+  }, [numericValue, precision, isFocused, isDragging]);
+
+  // Stable debounced onChange for active slider dragging
+  const debouncedOnChange = useMemo(
+    () =>
+      debounce((val: number) => {
+        onChange(val);
+      }, 100),
+    [onChange]
+  );
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      debouncedOnChange.cancel();
+    };
+  }, [debouncedOnChange]);
 
   // Size configurations
   const config = {
@@ -88,8 +105,8 @@ export function SliderWithDirectInput({
     input: size === "sm" ? "text-sm" : size === "lg" ? "text-lg" : "text-base",
   };
 
-  // Calculate percentage position for slider
-  const percentage = ((numericValue - safeMin) / (safeMax - safeMin)) * 100;
+  // Calculate percentage position for slider based on localValue
+  const percentage = (((parseFloat(localValue) || safeMin) - safeMin) / (safeMax - safeMin)) * 100;
 
   // Handle input change
   const handleInputChange = useCallback(
@@ -119,10 +136,23 @@ export function SliderWithDirectInput({
   const handleSliderChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newValue = parseFloat(e.target.value);
-      onChange(newValue);
+      if (!isNaN(newValue)) {
+        setLocalValue(newValue.toFixed(precision));
+        debouncedOnChange(newValue);
+      }
     },
-    [onChange]
+    [precision, debouncedOnChange]
   );
+
+  // Handle slider drag end
+  const handleSliderDragEnd = useCallback(() => {
+    setIsDragging(false);
+    debouncedOnChange.cancel();
+    const finalValue = parseFloat(localValue);
+    if (!isNaN(finalValue)) {
+      onChange(finalValue);
+    }
+  }, [onChange, localValue, debouncedOnChange]);
 
   // Generate tick marks
   const ticks = showTicks
@@ -158,7 +188,7 @@ export function SliderWithDirectInput({
             <div className="flex items-center gap-2">
               {showValue && (
                 <motion.div className="text-foreground flex items-center gap-1 text-sm font-semibold">
-                  <span>{!isNaN(numericValue) ? numericValue.toFixed(precision) : "0"}</span>
+                  <span>{!isNaN(parseFloat(localValue)) ? (parseFloat(localValue) || 0).toFixed(precision) : "0"}</span>
                   {unit && <span className="text-muted-foreground">{unit}</span>}
                 </motion.div>
               )}
@@ -298,12 +328,12 @@ export function SliderWithDirectInput({
               min={safeMin}
               max={safeMax}
               step={safeStep}
-              value={numericValue}
+              value={parseFloat(localValue) || safeMin}
               onChange={handleSliderChange}
               onMouseDown={() => setIsDragging(true)}
-              onMouseUp={() => setIsDragging(false)}
+              onMouseUp={handleSliderDragEnd}
               onTouchStart={() => setIsDragging(true)}
-              onTouchEnd={() => setIsDragging(false)}
+              onTouchEnd={handleSliderDragEnd}
               disabled={disabled}
               className={cn(
                 "absolute inset-0 h-full w-full cursor-pointer opacity-0",

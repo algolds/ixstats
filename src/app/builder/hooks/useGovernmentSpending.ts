@@ -9,9 +9,12 @@
  * - Spending visualization data
  *
  * Refactored from GovernmentSpendingSectionEnhanced.tsx for modularity and reusability.
+ *
+ * Phase 3 optimization: Added standardized staleTime values and isEqual comparisons.
  */
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { isEqual } from "lodash";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { atomicIntegrationService } from "../services/AtomicIntegrationService";
 import { generateGovernmentBuilderFromAtomicComponents } from "../utils/atomicGovernmentIntegration";
@@ -20,6 +23,7 @@ import type { EconomicInputs } from "../lib/economy-data-service";
 import type { GovernmentBuilderState } from "~/types/government";
 import { SPENDING_POLICIES } from "../data/government-spending-policies";
 import { api } from "~/trpc/react";
+import { STALE_TIME } from "~/hooks/useCountryGovernment";
 
 const ALL_POLICY_IDS = SPENDING_POLICIES.map((policy) => policy.id);
 
@@ -182,11 +186,11 @@ export function useGovernmentSpending({
   );
   const [integrationState, setIntegrationState] = useState(atomicIntegrationService.getState());
 
-  // tRPC mutations for database operations
+  // tRPC mutations for database operations with standardized staleTime
   const savePolicySelectionsMutation = api.policies.savePolicySelections.useMutation();
   const calculatePolicyEffectsQuery = api.policies.calculatePolicyEffects.useQuery(
     { countryId: countryId || "" },
-    { enabled: !!countryId }
+    { enabled: !!countryId, staleTime: STALE_TIME.STANDARD }
   );
 
   // Validation
@@ -259,11 +263,12 @@ export function useGovernmentSpending({
   }, []);
 
   // Consolidated effect for updating service with guards
+  // Phase 3 optimization: Replaced JSON.stringify with isEqual
   useEffect(() => {
     // Update components if changed
     if (
       selectedAtomicComponents.length > 0 &&
-      JSON.stringify(selectedAtomicComponents) !== JSON.stringify(lastSentComponentsRef.current)
+      !isEqual(selectedAtomicComponents, lastSentComponentsRef.current)
     ) {
       lastSentComponentsRef.current = [...selectedAtomicComponents];
       atomicIntegrationService.updateComponents(selectedAtomicComponents);
@@ -272,14 +277,14 @@ export function useGovernmentSpending({
     // Update government builder if changed
     if (
       governmentBuilderData &&
-      JSON.stringify(governmentBuilderData) !== JSON.stringify(lastSentGovernmentBuilderRef.current)
+      !isEqual(governmentBuilderData, lastSentGovernmentBuilderRef.current)
     ) {
       lastSentGovernmentBuilderRef.current = governmentBuilderData;
       atomicIntegrationService.updateGovernmentBuilder(governmentBuilderData);
     }
 
     // Update inputs if changed
-    if (inputs && JSON.stringify(inputs) !== JSON.stringify(lastSentInputsRef.current)) {
+    if (inputs && !isEqual(inputs, lastSentInputsRef.current)) {
       lastSentInputsRef.current = inputs;
       atomicIntegrationService.updateEconomicInputs(inputs);
     }
