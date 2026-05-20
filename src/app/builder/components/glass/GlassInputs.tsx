@@ -10,7 +10,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 // Base interface for all glass inputs
 interface BaseGlassInputProps {
   className?: string;
-  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
+  theme?: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
   disabled?: boolean;
   error?: string;
   help?: string;
@@ -60,6 +60,8 @@ export function GlassSlider({
     blue: "border-blue-400/30 bg-gradient-to-r from-blue-400/20 to-blue-600/20",
     indigo: "border-indigo-400/30 bg-gradient-to-r from-indigo-400/20 to-indigo-600/20",
     red: "border-red-400/30 bg-gradient-to-r from-red-400/20 to-red-600/20",
+    emerald: "border-emerald-400/30 bg-gradient-to-r from-emerald-400/20 to-emerald-600/20",
+    teal: "border-teal-400/30 bg-gradient-to-r from-teal-400/20 to-teal-600/20",
     neutral: "border-slate-400/30 bg-gradient-to-r from-slate-400/20 to-slate-600/20",
   };
 
@@ -68,6 +70,8 @@ export function GlassSlider({
     blue: "bg-gradient-to-r from-blue-400 to-blue-600",
     indigo: "bg-gradient-to-r from-indigo-400 to-indigo-600",
     red: "bg-gradient-to-r from-red-400 to-red-600",
+    emerald: "bg-gradient-to-r from-emerald-400 to-emerald-600",
+    teal: "bg-gradient-to-r from-teal-400 to-teal-600",
     neutral: "bg-gradient-to-r from-slate-400 to-slate-600",
   };
 
@@ -239,6 +243,8 @@ export function GlassNumberInput({
     blue: "border-blue-400/30 focus:border-blue-400/60",
     indigo: "border-indigo-400/30 focus:border-indigo-400/60",
     red: "border-red-400/30 focus:border-red-400/60",
+    emerald: "border-emerald-400/30 focus:border-emerald-400/60",
+    teal: "border-teal-400/30 focus:border-teal-400/60",
     neutral: "border-slate-400/30 focus:border-slate-400/60",
   };
 
@@ -341,6 +347,8 @@ export function GlassToggle({
     blue: checked ? "bg-gradient-to-r from-blue-400 to-blue-600" : "bg-white/20",
     indigo: checked ? "bg-gradient-to-r from-indigo-400 to-indigo-600" : "bg-white/20",
     red: checked ? "bg-gradient-to-r from-red-400 to-red-600" : "bg-white/20",
+    emerald: checked ? "bg-gradient-to-r from-emerald-400 to-emerald-600" : "bg-white/20",
+    teal: checked ? "bg-gradient-to-r from-teal-400 to-teal-600" : "bg-white/20",
     neutral: checked ? "bg-gradient-to-r from-slate-400 to-slate-600" : "bg-white/20",
   };
 
@@ -398,7 +406,7 @@ interface GlassProgressRingProps {
   max?: number;
   size?: number;
   strokeWidth?: number;
-  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
+  theme?: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
   label?: string;
   showValue?: boolean;
   className?: string;
@@ -483,7 +491,7 @@ interface GlassMetricCardProps {
   unit?: string;
   change?: number;
   trend?: "up" | "down" | "neutral";
-  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
+  theme?: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
   icon?: React.ElementType;
   className?: string;
 }

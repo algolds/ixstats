@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2, Verified } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
@@ -88,7 +88,7 @@ export function AccountSettingsModal({
               <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <label htmlFor="verified-switch" className="flex items-center gap-2">
-                    <Verified className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                    <span className="text-lg" title="Verified">✅</span>
                     <span className="text-sm sm:text-base font-medium text-white">Verified</span>
                   </label>
                   <Switch id="verified-switch" checked={verified} onCheckedChange={setVerified} />

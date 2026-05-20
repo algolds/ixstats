@@ -12,6 +12,7 @@
 import { db } from "~/server/db";
 import { IxnayWikiService, type CountryInfoboxWithDynamicProps } from "~/lib/mediawiki-service";
 import { env } from "~/env";
+import { type WikiSource } from "~/lib/mediawiki-config";
 
 // Redis types
 type RedisClient = any; // ioredis types
@@ -51,6 +52,7 @@ interface WikiCountryProfile {
   flagUrl: string | null;
   lastUpdated: number;
   confidence: number;
+  wikiSource?: WikiSource;
 }
 
 // Cache TTLs (in milliseconds)
@@ -123,13 +125,21 @@ function cleanWikitextForDisplay(raw: string): string {
 }
 
 export class WikiCacheService {
-  private wikiService: IxnayWikiService;
+  private wikiServices = new Map<WikiSource, IxnayWikiService>();
   private redisClient: RedisClient | null = null;
   private redisEnabled: boolean;
   private redisInitializing: boolean = false;
 
+  private getWikiService(wikiSource: WikiSource): IxnayWikiService {
+    let service = this.wikiServices.get(wikiSource);
+    if (!service) {
+      service = new IxnayWikiService(wikiSource);
+      this.wikiServices.set(wikiSource, service);
+    }
+    return service;
+  }
+
   constructor() {
-    this.wikiService = new IxnayWikiService();
     this.redisEnabled = env.REDIS_ENABLED === "true" && !!env.REDIS_URL;
 
     if (this.redisEnabled) {
@@ -171,10 +181,11 @@ export class WikiCacheService {
    * Get country infobox with 3-layer caching
    */
   async getCountryInfobox(
-    countryName: string
+    countryName: string,
+    wikiSource: WikiSource = "ixwiki"
   ): Promise<WikiCacheEntry<CountryInfoboxWithDynamicProps | null>> {
-    const cacheKey = `infobox:${countryName.toLowerCase()}`;
-    const redisKey = REDIS_PREFIX.infobox + countryName.toLowerCase();
+    const cacheKey = `${wikiSource}:infobox:${countryName.toLowerCase()}`;
+    const redisKey = `${wikiSource}:${REDIS_PREFIX.infobox}${countryName.toLowerCase()}`;
 
     try {
       // Layer 1: Try Redis cache
@@ -183,7 +194,7 @@ export class WikiCacheService {
           const cached = await this.redisClient.get(redisKey);
           if (cached) {
             const parsed = JSON.parse(cached);
-            console.log(`[WikiCache] Redis hit for infobox: ${countryName}`);
+            console.log(`[WikiCache] Redis hit for infobox: ${countryName} (${wikiSource})`);
 
             // Update hit count in database asynchronously
             void this.incrementHitCount(cacheKey);
@@ -207,7 +218,7 @@ export class WikiCacheService {
       });
 
       if (dbCache && new Date(dbCache.expiresAt) > new Date()) {
-        console.log(`[WikiCache] Database hit for infobox: ${countryName}`);
+        console.log(`[WikiCache] Database hit for infobox: ${countryName} (${wikiSource})`);
 
         const data = JSON.parse(dbCache.data);
         const metadata = dbCache.metadata ? JSON.parse(dbCache.metadata) : {};
@@ -237,8 +248,8 @@ export class WikiCacheService {
       }
 
       // Layer 3: Fetch from MediaWiki API
-      console.log(`[WikiCache] Cache miss for infobox: ${countryName}, fetching from API`);
-      const infobox = await this.wikiService.getCountryInfobox(countryName);
+      console.log(`[WikiCache] Cache miss for infobox: ${countryName} (${wikiSource}), fetching from API`);
+      const infobox = await this.getWikiService(wikiSource).getCountryInfobox(countryName);
 
       const now = Date.now();
       const metadata = {
@@ -257,10 +268,10 @@ export class WikiCacheService {
 
       return entry;
     } catch (error) {
-      console.error(`[WikiCache] Error getting infobox for ${countryName}:`, error);
+      console.error(`[WikiCache] Error getting infobox for ${countryName} (${wikiSource}):`, error);
 
       // Return from API as fallback
-      const infobox = await this.wikiService.getCountryInfobox(countryName);
+      const infobox = await this.getWikiService(wikiSource).getCountryInfobox(countryName);
       return {
         data: infobox,
         metadata: {
@@ -274,9 +285,12 @@ export class WikiCacheService {
   /**
    * Get page wikitext with 3-layer caching
    */
-  async getPageWikitext(pageName: string): Promise<WikiCacheEntry<string | null>> {
-    const cacheKey = `page:${pageName.toLowerCase()}`;
-    const redisKey = REDIS_PREFIX.page + pageName.toLowerCase();
+  async getPageWikitext(
+    pageName: string,
+    wikiSource: WikiSource = "ixwiki"
+  ): Promise<WikiCacheEntry<string | null>> {
+    const cacheKey = `${wikiSource}:page:${pageName.toLowerCase()}`;
+    const redisKey = `${wikiSource}:${REDIS_PREFIX.page}${pageName.toLowerCase()}`;
 
     try {
       // Layer 1: Try Redis cache
@@ -285,7 +299,7 @@ export class WikiCacheService {
           const cached = await this.redisClient.get(redisKey);
           if (cached) {
             const parsed = JSON.parse(cached);
-            console.log(`[WikiCache] Redis hit for page: ${pageName}`);
+            console.log(`[WikiCache] Redis hit for page: ${pageName} (${wikiSource})`);
 
             void this.incrementHitCount(cacheKey);
 
@@ -308,7 +322,7 @@ export class WikiCacheService {
       });
 
       if (dbCache && new Date(dbCache.expiresAt) > new Date()) {
-        console.log(`[WikiCache] Database hit for page: ${pageName}`);
+        console.log(`[WikiCache] Database hit for page: ${pageName} (${wikiSource})`);
 
         const data = JSON.parse(dbCache.data);
         const metadata = dbCache.metadata ? JSON.parse(dbCache.metadata) : {};
@@ -337,8 +351,8 @@ export class WikiCacheService {
       }
 
       // Layer 3: Fetch from MediaWiki API
-      console.log(`[WikiCache] Cache miss for page: ${pageName}, fetching from API`);
-      const wikitext = await this.wikiService.getPageWikitext(pageName);
+      console.log(`[WikiCache] Cache miss for page: ${pageName} (${wikiSource}), fetching from API`);
+      const wikitext = await this.getWikiService(wikiSource).getPageWikitext(pageName);
 
       const content = typeof wikitext === "string" ? wikitext : null;
       const now = Date.now();
@@ -359,10 +373,10 @@ export class WikiCacheService {
 
       return entry;
     } catch (error) {
-      console.error(`[WikiCache] Error getting page ${pageName}:`, error);
+      console.error(`[WikiCache] Error getting page ${pageName} (${wikiSource}):`, error);
 
       // Return from API as fallback
-      const wikitext = await this.wikiService.getPageWikitext(pageName);
+      const wikitext = await this.getWikiService(wikiSource).getPageWikitext(pageName);
       const content = typeof wikitext === "string" ? wikitext : null;
 
       return {
@@ -378,9 +392,12 @@ export class WikiCacheService {
   /**
    * Get flag URL with 3-layer caching (longer TTL for flags)
    */
-  async getFlagUrl(countryName: string): Promise<WikiCacheEntry<string | null>> {
-    const cacheKey = `flag:${countryName.toLowerCase()}`;
-    const redisKey = REDIS_PREFIX.flag + countryName.toLowerCase();
+  async getFlagUrl(
+    countryName: string,
+    wikiSource: WikiSource = "ixwiki"
+  ): Promise<WikiCacheEntry<string | null>> {
+    const cacheKey = `${wikiSource}:flag:${countryName.toLowerCase()}`;
+    const redisKey = `${wikiSource}:${REDIS_PREFIX.flag}${countryName.toLowerCase()}`;
 
     try {
       // Layer 1: Try Redis cache
@@ -389,7 +406,7 @@ export class WikiCacheService {
           const cached = await this.redisClient.get(redisKey);
           if (cached) {
             const parsed = JSON.parse(cached);
-            console.log(`[WikiCache] Redis hit for flag: ${countryName}`);
+            console.log(`[WikiCache] Redis hit for flag: ${countryName} (${wikiSource})`);
 
             void this.incrementHitCount(cacheKey);
 
@@ -412,7 +429,7 @@ export class WikiCacheService {
       });
 
       if (dbCache && new Date(dbCache.expiresAt) > new Date()) {
-        console.log(`[WikiCache] Database hit for flag: ${countryName}`);
+        console.log(`[WikiCache] Database hit for flag: ${countryName} (${wikiSource})`);
 
         const data = JSON.parse(dbCache.data);
         const metadata = dbCache.metadata ? JSON.parse(dbCache.metadata) : {};
@@ -441,8 +458,8 @@ export class WikiCacheService {
       }
 
       // Layer 3: Fetch from MediaWiki API
-      console.log(`[WikiCache] Cache miss for flag: ${countryName}, fetching from API`);
-      const flagUrl = await this.wikiService.getFlagUrl(countryName);
+      console.log(`[WikiCache] Cache miss for flag: ${countryName} (${wikiSource}), fetching from API`);
+      const flagUrl = await this.getWikiService(wikiSource).getFlagUrl(countryName);
 
       const url = typeof flagUrl === "string" ? flagUrl : null;
       const now = Date.now();
@@ -462,10 +479,10 @@ export class WikiCacheService {
 
       return entry;
     } catch (error) {
-      console.error(`[WikiCache] Error getting flag for ${countryName}:`, error);
+      console.error(`[WikiCache] Error getting flag for ${countryName} (${wikiSource}):`, error);
 
       // Return from API as fallback
-      const flagUrl = await this.wikiService.getFlagUrl(countryName);
+      const flagUrl = await this.getWikiService(wikiSource).getFlagUrl(countryName);
       const url = typeof flagUrl === "string" ? flagUrl : null;
 
       return {
@@ -483,19 +500,20 @@ export class WikiCacheService {
    */
   async getCountryProfile(
     countryName: string,
-    pageVariants: string[]
+    pageVariants: string[],
+    wikiSource: WikiSource = "ixwiki"
   ): Promise<WikiCountryProfile> {
-    console.log(`[WikiCache] Getting full country profile for: ${countryName}`);
+    console.log(`[WikiCache] Getting full country profile for: ${countryName} (${wikiSource})`);
 
     // Fetch infobox and flag in parallel
     const [infoboxEntry, flagEntry] = await Promise.all([
-      this.getCountryInfobox(countryName),
-      this.getFlagUrl(countryName),
+      this.getCountryInfobox(countryName, wikiSource),
+      this.getFlagUrl(countryName, wikiSource),
     ]);
 
     // Fetch all page variants in parallel
     const sectionPromises = pageVariants.map(async (pageName) => {
-      const entry = await this.getPageWikitext(pageName);
+      const entry = await this.getPageWikitext(pageName, wikiSource);
       return {
         pageName,
         content: entry.data,
@@ -522,11 +540,18 @@ export class WikiCacheService {
         // Strip infobox, templates, categories, and wiki syntax for display
         const content = cleanWikitextForDisplay(rawContent);
 
+        let sourceUrl = `https://ixwiki.com/wiki/${encodeURIComponent(result.pageName)}`;
+        if (wikiSource === "iiwiki") {
+          sourceUrl = `https://iiwiki.com/wiki/${encodeURIComponent(result.pageName)}`;
+        } else if (wikiSource === "althistory") {
+          sourceUrl = `https://althistory.fandom.com/wiki/${encodeURIComponent(result.pageName)}`;
+        }
+
         return {
           id: cleanId || `section-${index}`,
           title: result.pageName,
           sourcePage: result.pageName,
-          sourceUrl: `https://ixwiki.com/wiki/${encodeURIComponent(result.pageName)}`,
+          sourceUrl,
           content,
           classification: "PUBLIC" as const,
           importance: "medium" as const,
@@ -549,6 +574,7 @@ export class WikiCacheService {
       flagUrl: flagEntry.data,
       lastUpdated: Date.now(),
       confidence: infoboxEntry.data ? 85 : 45,
+      wikiSource,
     };
   }
 
@@ -665,6 +691,9 @@ export class WikiCacheService {
           REDIS_PREFIX.infobox + countryName.toLowerCase(),
           REDIS_PREFIX.flag + countryName.toLowerCase(),
           REDIS_PREFIX.page + `*${countryName.toLowerCase()}*`,
+          `*:${REDIS_PREFIX.infobox}${countryName.toLowerCase()}`,
+          `*:${REDIS_PREFIX.flag}${countryName.toLowerCase()}`,
+          `*:${REDIS_PREFIX.page}*${countryName.toLowerCase()}*`,
         ];
 
         for (const pattern of patterns) {
@@ -679,8 +708,11 @@ export class WikiCacheService {
         }
       }
 
-      // Also clear from IxnayWikiService LRU cache
-      this.wikiService.clearCountryCache(countryName);
+      // Also clear from IxnayWikiService LRU cache for all sources
+      Array.from(this.wikiServices.values()).forEach((service) => {
+        service.clearCountryCache(countryName);
+      });
+      this.getWikiService("ixwiki").clearCountryCache(countryName);
 
       console.log(`[WikiCache] Successfully cleared cache for: ${countryName}`);
     } catch (error) {

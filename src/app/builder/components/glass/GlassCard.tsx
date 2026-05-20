@@ -12,7 +12,7 @@ interface GlassCardProps {
   blur?: "none" | "light" | "medium" | "heavy";
   gradient?: "none" | "subtle" | "dynamic";
   hover?: boolean;
-  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
+  theme?: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
   motionPreset?: "slide" | "fade" | "scale" | "none";
   onClick?: () => void;
   ref?: React.Ref<HTMLDivElement>; // Added ref prop
@@ -44,6 +44,8 @@ const themeStyles = {
   blue: "text-blue-400 border-blue-400/30",
   indigo: "text-indigo-400 border-indigo-400/30",
   red: "text-red-400 border-red-400/30",
+  emerald: "text-emerald-400 border-emerald-400/30",
+  teal: "text-teal-400 border-teal-400/30",
   neutral: "text-text-secondary border-border-primary",
 };
 

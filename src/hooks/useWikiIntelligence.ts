@@ -155,6 +155,13 @@ export function useWikiIntelligence({
     "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL"
   >("PUBLIC");
 
+  // Determine which wiki source to query based on settings
+  const wikiSource = wikiSettings.wikiBaseUrls.custom?.includes("althistory")
+    ? "althistory"
+    : wikiSettings.enableIIWiki
+    ? "iiwiki"
+    : "ixwiki";
+
   // tRPC query for fetching cached wiki profile data
   const {
     data: profileData,
@@ -166,6 +173,7 @@ export function useWikiIntelligence({
     includePageVariants: wikiSettings.autoDiscovery,
     maxSections: wikiSettings.maxSections,
     customPages: wikiSettings.customPages,
+    wikiSource,
   });
 
   // tRPC mutation for refreshing cache
@@ -185,6 +193,7 @@ export function useWikiIntelligence({
         confidence: 0,
         isLoading: true,
         error: undefined,
+        wikiSource,
       };
     }
 
@@ -211,6 +220,7 @@ export function useWikiIntelligence({
         confidence: 0,
         isLoading: false,
         error: error?.message || "Failed to load wiki data",
+        wikiSource,
       };
     }
 
@@ -223,8 +233,9 @@ export function useWikiIntelligence({
       confidence: profileData.confidence || 0,
       isLoading: false,
       error: undefined,
+      wikiSource: (profileData.wikiSource as "ixwiki" | "iiwiki" | "althistory") || wikiSource,
     };
-  }, [profileData, isLoading, error, countryName]);
+  }, [profileData, isLoading, error, countryName, wikiSource]);
 
   /**
    * Initialize all sections as open by default when data loads

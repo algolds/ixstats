@@ -13,7 +13,6 @@ import {
   EyeOff,
   Star,
   MoreHorizontal,
-  Verified,
   TrendingUp,
   MessageSquare,
 } from "lucide-react";
@@ -147,7 +146,14 @@ export function EnhancedAccountManager({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
                 <span className="truncate text-sm font-medium">{account.displayName}</span>
-                {account.verified && <Verified className="h-3 w-3 fill-current text-blue-500" />}
+                {account.verified && (
+                  <span className="inline-flex items-center justify-center h-3 w-3 text-xs leading-none" title="Verified">
+                    ✅
+                  </span>
+                )}
+                {(account as any).bio?.startsWith("Former Nation") && (
+                  <span className="text-[9px] text-gray-400">[Former Nation]</span>
+                )}
                 {isFavorite && <Star className="h-3 w-3 fill-current text-yellow-500" />}
               </div>
               <div className="text-muted-foreground text-xs">@{account.username}</div>

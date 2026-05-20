@@ -159,6 +159,20 @@ app.prepare().then(async () => {
         }
       }, { timezone: 'UTC' });
       console.log('[Cron] ✓ Lore card generation scheduled (daily at 02:00 UTC)');
+
+      // IxTwitter Discord channel sync (every hour)
+      cron.default.schedule('0 * * * *', async () => {
+        try {
+          const { syncIxTwitterToThinkPages } = await import('./src/lib/discord-ixtwitter-sync.js');
+          const result = await syncIxTwitterToThinkPages();
+          if (result.posted > 0) {
+            console.log(`[Cron] IxTwitter sync: ${result.posted} posted, ${result.skipped} skipped`);
+          }
+        } catch (error) {
+          console.error('[Cron] IxTwitter sync failed:', error);
+        }
+      }, { timezone: 'UTC' });
+      console.log('[Cron] ✓ IxTwitter Discord sync scheduled (every hour)');
     } catch (error) {
       console.error('[Cron] Failed to initialize cron jobs:', error.message);
       console.warn('[Cron] Continuing without scheduled jobs');

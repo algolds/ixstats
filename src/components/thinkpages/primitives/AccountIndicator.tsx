@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Crown, Newspaper, Users, Verified, ExternalLink } from "lucide-react";
+import { Crown, Newspaper, Users, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
@@ -118,7 +118,16 @@ export function AccountIndicator({
 
           {/* Verified Badge */}
           {account.verified && (
-            <Verified className={cn(iconSize, "flex-shrink-0 fill-current text-blue-500")} />
+            <span className="inline-flex items-center justify-center text-sm leading-none flex-shrink-0" title="Verified">
+              ✅
+            </span>
+          )}
+
+          {/* Former Nation Badge */}
+          {(account as any).bio?.startsWith("Former Nation") && (
+            <Badge variant="secondary" className="border-gray-500/30 bg-gray-500/20 text-xs text-gray-400 flex-shrink-0">
+              Former Nation
+            </Badge>
           )}
 
           {/* ThinkPages Account Indicator */}

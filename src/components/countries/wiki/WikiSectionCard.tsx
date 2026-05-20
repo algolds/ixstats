@@ -18,6 +18,8 @@ const CLASSIFICATION_STYLES = {
 } as const;
 import { parseWikiContent, truncateContent } from "~/lib/wiki-intelligence-parser";
 import type { WikiSection } from "~/lib/wiki-intelligence-parser";
+import { resolveImageUrl } from "~/lib/unified-wiki-parser";
+import { type WikiSource } from "~/lib/mediawiki-config";
 
 /**
  * Props for WikiSectionCard component
@@ -37,6 +39,8 @@ interface WikiSectionCardProps {
   flagColors: { primary: string; secondary: string; accent: string };
   /** Country name for context */
   countryName: string;
+  /** Resolved source for this country's intelligence profile */
+  wikiSource?: WikiSource;
 }
 
 /**
@@ -73,6 +77,7 @@ export function WikiSectionCard({
   handleWikiLinkClick,
   flagColors,
   countryName,
+  wikiSource = "ixwiki",
 }: WikiSectionCardProps): React.ReactElement {
   // Get the appropriate icon for this section
   const SectionIcon =
@@ -175,17 +180,23 @@ export function WikiSectionCard({
                   <div className="flex flex-wrap gap-2">
                     {section.images.map((imageLink: string, index: number) => {
                       const fileName = imageLink.replace(/\[\[File:([^|\\]+).*\]\]/, "$1");
+                      let imgBaseUrl = "https://ixwiki.com/wiki/";
+                      if (wikiSource === "iiwiki") {
+                        imgBaseUrl = "https://iiwiki.com/wiki/";
+                      } else if (wikiSource === "althistory") {
+                        imgBaseUrl = "https://althistory.fandom.com/wiki/";
+                      }
                       return (
                         <img
                           key={index}
-                          src={`https://ixwiki.com/wiki/Special:Filepath/${fileName}`}
+                          src={resolveImageUrl(fileName, wikiSource)}
                           alt={`Image from ${section.title}`}
                           className="border-muted-foreground/30 h-auto max-w-32 cursor-pointer rounded border"
                           onError={(e: React.SyntheticEvent<HTMLImageElement>) =>
                             (e.currentTarget.style.display = "none")
                           }
                           onClick={() =>
-                            window.open(`https://ixwiki.com/wiki/File:${fileName}`, "_blank")
+                            window.open(`${imgBaseUrl}File:${fileName}`, "_blank")
                           }
                         />
                       );
@@ -200,16 +211,20 @@ export function WikiSectionCard({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    // Use the section title directly as it's already the correct page name
+                    let pageBaseUrl = "https://ixwiki.com/wiki/";
+                    if (wikiSource === "iiwiki") {
+                      pageBaseUrl = "https://iiwiki.com/wiki/";
+                    } else if (wikiSource === "althistory") {
+                      pageBaseUrl = "https://althistory.fandom.com/wiki/";
+                    }
                     window.open(
-                      `https://ixwiki.com/wiki/${encodeURIComponent(section.title)}`,
+                      `${pageBaseUrl}${encodeURIComponent(section.sourcePage || section.title)}`,
                       "_blank"
                     );
                   }}
-                  className="flex-1"
+                  className="text-xs"
                 >
-                  <RiExternalLinkLine className="mr-1 h-3 w-3" />
-                  View Full Article
+                  <RiExternalLinkLine className="mr-1 h-3.5 w-3.5" /> View Wiki Source
                 </Button>
 
                 {section.images && section.images.length > 0 && (

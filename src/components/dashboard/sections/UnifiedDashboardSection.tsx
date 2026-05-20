@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import {
   AlertTriangle, Newspaper, Users, TrendingUp, Clock, Shield, Zap,
@@ -26,7 +26,8 @@ import { CrisisStatusModal } from "~/components/dashboard/modals/CrisisStatusMod
 import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
 import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
-import { LiveHeadlinesTicker } from "~/components/shared/LiveHeadlinesTicker";
+import { renderDiscordEmojis } from "~/lib/text-formatter";
+import { sanitizeUserContent } from "~/lib/sanitize-html";
 
 // Lazy-load the heavy social platform component
 const ThinkpagesSocialPlatform = dynamic(
@@ -95,11 +96,21 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
   const userId = user?.id ?? "";
 
   // ── Feed state ──
-  const [activeTab, setActiveTab] = useState<FeedTab>("all");
+  const [activeTab, setActiveTab] = useState<FeedTab>(() => {
+    // Logged-out users default to Social tab
+    if (!user?.id) return "thinkpages";
+    return "all";
+  });
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
   const [showAccountCreation, setShowAccountCreation] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [settingsAccount, setSettingsAccount] = useState<any>(null);
+
+  // ── Trending Settings States ──
+  const [trendingLimit, setTrendingLimit] = useState<5 | 6 | 7>(6);
+  const [trendingBias, setTrendingBias] = useState<"balanced" | "social" | "wiki" | "forum">("balanced");
+  const [trendingRecency, setTrendingRecency] = useState<"hot" | "balanced" | "classic">("balanced");
+  const [showTrendingSettings, setShowTrendingSettings] = useState(false);
 
   // ── Snapshot data ──
   const { data: headlineData } = api.activities.getGlobalHeadlines.useQuery(
@@ -108,7 +119,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
   );
   const { data: activityStats } = api.activities.getActivityStats.useQuery({ timeRange: "24h" });
   const { data: trendingData } = api.activities.getUnifiedTrending.useQuery(
-    { limit: 8 },
+    { limit: 50 },
     { refetchInterval: 5 * 60_000 }
   );
   const { data: crisisStats } = api.crisisEvents.getStatistics.useQuery({ timeframe: "month" });
@@ -157,7 +168,76 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
   // ── Derived data ──
   const headlines = headlineData?.headlines ?? [];
-  const trendingItems = trendingData?.items ?? [];
+  // ── Advanced Client-Side Trending Algorithm ──
+  const trendingItems = useMemo(() => {
+    const rawItems = trendingData?.items ?? [];
+    if (rawItems.length === 0) return [];
+
+    const nowMs = Date.now();
+
+    // Map and score all candidates based on interactive parameters
+    const scored = rawItems.map((item: any) => {
+      const { source, engagement, timestamp } = item;
+      const likes = engagement?.likes ?? 0;
+      const replies = engagement?.replies ?? 0;
+      const reposts = engagement?.reposts ?? 0;
+      const views = engagement?.views ?? 0;
+
+      // 1. Calculate source-specific raw base score
+      let baseInteraction = 0;
+      if (source === "thinkpages") {
+        baseInteraction = likes + replies * 3 + reposts * 5 + views * 0.05;
+      } else if (source === "wiki") {
+        // Wiki uses excerpt info to parse out edit stats (since views are 0 on Wiki recent changes)
+        const editsMatch = item.excerpt?.match(/(\d+)\s+edit/);
+        const editorsMatch = item.excerpt?.match(/(\d+)\s+editor/);
+        const bytesMatch = item.excerpt?.match(/([+-]?\d+)\s+bytes/);
+        
+        const edits = editsMatch ? parseInt(editsMatch[1], 10) : 1;
+        const editors = editorsMatch ? parseInt(editorsMatch[1], 10) : 1;
+        const bytes = bytesMatch ? Math.abs(parseInt(bytesMatch[1], 10)) : 100;
+        
+        baseInteraction = edits * 8 + editors * 15 + Math.min(bytes / 50, 30) + (item.isNew ? 25 : 0);
+      } else if (source === "forum") {
+        baseInteraction = replies * 4 + views * 0.1;
+      } else {
+        // ixstats / other activities
+        baseInteraction = likes * 2 + replies * 4 + reposts * 6 + views * 0.05;
+      }
+
+      // Ensure base interactions is always at least 1 to avoid zero issues
+      const scoreBase = Math.max(1, baseInteraction);
+
+      // 2. Compute recency time decay
+      const ageHours = Math.max(0.1, (nowMs - new Date(timestamp).getTime()) / 3600000);
+      
+      // Decay power P based on user recency selection
+      // hot = fast decay (power 2.0), balanced = medium decay (power 1.4), classic = no decay (power 0.0)
+      let decayPower = 1.4;
+      if (trendingRecency === "hot") decayPower = 2.0;
+      else if (trendingRecency === "classic") decayPower = 0.0;
+
+      const decayFactor = 1 / Math.pow(ageHours + 2, decayPower);
+
+      // 3. Apply selected Source Bias Weighting
+      let biasMultiplier = 1.0;
+      if (trendingBias === "social" && source === "thinkpages") biasMultiplier = 1.8;
+      else if (trendingBias === "wiki" && source === "wiki") biasMultiplier = 1.8;
+      else if (trendingBias === "forum" && source === "forum") biasMultiplier = 1.8;
+
+      const finalScore = scoreBase * decayFactor * biasMultiplier;
+
+      return {
+        ...item,
+        computedScore: finalScore,
+      };
+    });
+
+    // Sort by computedScore descending and slice to the user-specified limit (5, 6, 7)
+    return scored
+      .sort((a, b) => b.computedScore - a.computedScore)
+      .slice(0, trendingLimit);
+  }, [trendingData, trendingLimit, trendingBias, trendingRecency]);
   const activeCrisesCount = crisisStats?.activeEvents ?? 0;
   const totalEmbassies = (leaderboard ?? []).reduce((sum: number, e: any) => sum + (e.activeEmbassies ?? 0), 0);
   const totalEvents24h = activityStats?.totalActivities ?? 0;
@@ -168,8 +248,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
   const isCountryDataReady =
     userProfile && countryData &&
     userProfile.countryId?.trim() &&
-    countryData.id?.trim() &&
-    countryData.name?.trim();
+    countryData.newStats?.name?.trim();
 
   const TABS = useMemo(
     () => (hasCountry ? BASE_TABS : BASE_TABS.filter((t) => t.id !== "following")),
@@ -284,11 +363,6 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
         </div>
       </motion.div>
 
-      {/* Live Headlines Ticker */}
-      <motion.div variants={staggerItem}>
-        <LiveHeadlinesTicker />
-      </motion.div>
-
       {/* Feed Tab Bar */}
       <motion.div variants={staggerItem}>
         <div className="flex gap-1 rounded-xl border border-border/50 bg-muted/30 p-1">
@@ -321,6 +395,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
           <ThinkPagesTabContent
             isSignedIn={isSignedIn}
             isCountryDataReady={!!isCountryDataReady}
+            countryId={userProfile?.countryId ?? ""}
             countryData={countryData}
             selectedAccount={selectedAccount}
             accounts={accounts}
@@ -346,15 +421,109 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
           {/* Sidebar (right 2/5): Trending + Headlines */}
           <div className="space-y-4 lg:col-span-2">
             {/* Trending Now */}
-            <Card>
-              <CardHeader className="pb-3">
+            <Card className="relative overflow-visible">
+              <CardHeader className="pb-3 relative">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-1.5 text-sm">
-                    <Flame className="h-3.5 w-3.5 text-orange-400" />
+                    <Flame className="h-3.5 w-3.5 text-orange-400 animate-pulse" />
                     Trending Now
                   </CardTitle>
-                  <Badge variant="outline" className="px-1.5 py-0 text-[10px]">Cross-platform</Badge>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setShowTrendingSettings(!showTrendingSettings)}
+                      className={cn(
+                        "rounded-md p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                        showTrendingSettings && "bg-muted text-foreground"
+                      )}
+                      title="Trending Algorithm Controls"
+                    >
+                      <Shield className={cn("h-3.5 w-3.5 transition-transform duration-500", showTrendingSettings && "rotate-45 text-orange-400")} />
+                    </button>
+                    <Badge variant="outline" className="px-1.5 py-0 text-[10px]">Algorithm</Badge>
+                  </div>
                 </div>
+
+                {/* Sliding Glass Settings Panel */}
+                <AnimatePresence>
+                  {showTrendingSettings && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute inset-x-0 top-full z-[1000] mx-3 rounded-xl border border-border/50 bg-popover/95 p-3.5 shadow-xl backdrop-blur-xl"
+                    >
+                      <div className="space-y-3 text-xs">
+                        <div className="flex items-center justify-between border-b border-border/40 pb-1.5 font-medium text-foreground">
+                          <span>Trending Settings</span>
+                          <span className="text-[10px] text-muted-foreground">Adjust Curation Weights</span>
+                        </div>
+
+                        {/* Limit Selector */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Display Count</label>
+                          <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/50 bg-muted/20 p-0.5">
+                            {([5, 6, 7] as const).map((l) => (
+                              <button
+                                key={l}
+                                onClick={() => setTrendingLimit(l)}
+                                className={cn(
+                                  "rounded px-1.5 py-1 text-center font-medium transition-all text-[11px]",
+                                  trendingLimit === l
+                                    ? "bg-background text-foreground shadow-xs"
+                                    : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {l} items
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Bias Selector */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Source Bias Weight</label>
+                          <div className="grid grid-cols-4 gap-1 rounded-lg border border-border/50 bg-muted/20 p-0.5">
+                            {(["balanced", "social", "wiki", "forum"] as const).map((b) => (
+                              <button
+                                key={b}
+                                onClick={() => setTrendingBias(b)}
+                                className={cn(
+                                  "rounded px-1 py-1 text-center font-medium capitalize transition-all text-[10px]",
+                                  trendingBias === b
+                                    ? "bg-background text-foreground shadow-xs"
+                                    : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {b}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Recency Selector */}
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-muted-foreground">Recency Decay Bias</label>
+                          <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/50 bg-muted/20 p-0.5">
+                            {(["hot", "balanced", "classic"] as const).map((r) => (
+                              <button
+                                key={r}
+                                onClick={() => setTrendingRecency(r)}
+                                className={cn(
+                                  "rounded px-1.5 py-1 text-center font-medium capitalize transition-all text-[10px]",
+                                  trendingRecency === r
+                                    ? "bg-background text-foreground shadow-xs"
+                                    : "text-muted-foreground hover:text-foreground"
+                                )}
+                              >
+                                {r}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-2">
@@ -366,15 +535,22 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                     const SrcIcon = src.icon;
                     const W = item.url ? "a" : "div";
                     const wp = item.url ? { href: item.url, target: "_blank", rel: "noopener noreferrer" } : {};
-                    return (
-                      <W key={item.id} {...wp} className={cn("flex items-start gap-2.5 rounded-lg border border-border/40 p-2.5 transition-colors hover:bg-muted/30", item.url && "cursor-pointer")}>
+
+                    // Extract titles for wiki and forum previews
+                    const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
+                    const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
+                    const wikiTitle = wikiMatch ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ") : null;
+                    const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
+
+                    const el = (
+                      <W key={item.id} {...wp} className={cn("flex items-start gap-2.5 rounded-lg border border-border/40 p-2.5 transition-all duration-200 hover:glass-hierarchy-interactive hover:bg-muted/40 cursor-pointer shadow-xs hover:scale-[1.01]")}>
                         <span className="mt-0.5 w-3 text-[10px] font-bold text-muted-foreground">{i + 1}</span>
                         <div className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded", src.bg)}>
                           <SrcIcon className={cn("h-3 w-3", src.color)} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="truncate text-xs font-medium">{item.title}</span>
+                            <span className="truncate text-xs font-medium text-foreground">{item.title}</span>
                             {item.url && <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />}
                           </div>
                           {item.excerpt && <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{item.excerpt}</p>}
@@ -382,10 +558,15 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                             <Badge variant="outline" className={cn("px-1 py-0 text-[8px]", src.color, "border-current/30")}>{src.label}</Badge>
                             {item.engagement?.views > 0 && <span>{item.engagement.views.toLocaleString()} views</span>}
                             {item.engagement?.replies > 0 && <span>{item.engagement.replies} replies</span>}
+                            {item.computedScore && <span className="text-[9px] text-muted-foreground/60">Hotness: {Math.round(item.computedScore * 10) / 10}</span>}
                           </div>
                         </div>
                       </W>
                     );
+
+                    if (wikiTitle) return <WikiLinkPreview key={item.id} title={wikiTitle} wiki="ixwiki">{el}</WikiLinkPreview>;
+                    if (forumThreadId) return <ForumLinkPreview key={item.id} threadId={forumThreadId}>{el}</ForumLinkPreview>;
+                    return el;
                   })}
                 </div>
               </CardContent>
@@ -465,17 +646,17 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 // ─── ThinkPages Tab Content ──────────────────────────────────────
 
 function ThinkPagesTabContent({
-  isSignedIn, isCountryDataReady, countryData, selectedAccount, accounts,
+  isSignedIn, isCountryDataReady, countryId, countryData, selectedAccount, accounts,
   onAccountSelect, onAccountSettings, onCreateAccount,
 }: {
-  isSignedIn: boolean | undefined; isCountryDataReady: boolean; countryData: any;
+  isSignedIn: boolean | undefined; isCountryDataReady: boolean; countryId: string; countryData: any;
   selectedAccount: any; accounts: any[]; onAccountSelect: (a: any) => void;
   onAccountSettings: (a: any) => void; onCreateAccount: () => void;
 }) {
   if (isSignedIn && isCountryDataReady) {
     return (
       <ThinkpagesSocialPlatform
-        countryId={countryData.id} countryName={countryData.name} isOwner
+        countryId={countryId} countryName={countryData.newStats.name} isOwner
         selectedAccount={selectedAccount} accounts={accounts}
         onAccountSelect={onAccountSelect} onAccountSettings={onAccountSettings}
         onCreateAccount={onCreateAccount}
@@ -587,6 +768,13 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
   const metadata = activity.content?.metadata ?? {};
   const externalUrl = metadata.wikiUrl ?? metadata.forumUrl;
 
+  const titleHtml = activity.content?.title
+    ? sanitizeUserContent(renderDiscordEmojis(activity.content.title))
+    : "";
+  const descHtml = activity.content?.description
+    ? sanitizeUserContent(renderDiscordEmojis(activity.content.description))
+    : "";
+
   return (
     <div className="group rounded-xl border border-border/50 bg-muted/20 p-3 transition-colors hover:bg-muted/40">
       <div className="flex items-start gap-3">
@@ -595,10 +783,10 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">{activity.content?.title}</span>
+            <span className="truncate text-sm font-medium text-foreground" dangerouslySetInnerHTML={{ __html: titleHtml }} />
             <Badge variant="outline" className={cn("shrink-0 text-[10px]", config.color, "border-current/30")}>{config.label}</Badge>
           </div>
-          <p className="line-clamp-2 text-xs text-muted-foreground">{activity.content?.description}</p>
+          <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: descHtml }} />
           <div className="mt-1.5 flex items-center gap-3 text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{formatTimeAgo(new Date(activity.timestamp))}</span>
             {activity.user?.name && <span>by {activity.user.name}</span>}

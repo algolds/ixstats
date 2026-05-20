@@ -8,6 +8,7 @@
   --glass-global: #2563eb;         /* blue-600 */
   --glass-eci: #4f46e5;           /* indigo-600 */
   --glass-sdi: #dc2626;           /* red-600 */
+  --glass-builder: #10b981;       /* emerald-500 */
   
   /* Z-depth levels */
   --z-background: -1;
@@ -439,6 +440,23 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
     inset 0 1px 0 rgba(239, 68, 68, 0.3);
 }
 
+.glass-builder {
+  position: relative;
+  backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: var(--z-floating);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(16, 185, 129, var(--refraction-medium)) 0%, 
+    rgba(16, 185, 129, 0.05) 50%,
+    rgba(255, 255, 255, 0.05) 100%);
+  box-shadow: 
+    0 8px 32px rgba(16, 185, 129, 0.1),
+    0 4px 16px rgba(16, 185, 129, 0.05),
+    inset 0 1px 0 rgba(52, 211, 153, 0.3);
+}
+
 /* ===================================
    INTERACTIVE STATES
    =================================== */
@@ -497,6 +515,14 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
     0 6px 24px rgba(220, 38, 38, 0.1),
     inset 0 1px 0 rgba(239, 68, 68, 0.4);
   border-color: rgba(220, 38, 38, 0.5);
+}
+
+.glass-builder.glass-interactive:hover {
+  box-shadow: 
+    0 12px 48px rgba(16, 185, 129, 0.2),
+    0 6px 24px rgba(16, 185, 129, 0.1),
+    inset 0 1px 0 rgba(52, 211, 153, 0.4);
+  border-color: rgba(16, 185, 129, 0.5);
 }
 
 /* ===================================
@@ -993,6 +1019,18 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
     inset 0 1px 0 rgba(239, 68, 68, 0.2);
 }
 
+.dark .glass-builder {
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: linear-gradient(135deg, 
+    rgba(16, 185, 129, calc(var(--refraction-medium) * 0.7)) 0%, 
+    rgba(16, 185, 129, 0.025) 50%,
+    rgba(255, 255, 255, 0.015) 100%);
+  box-shadow: 
+    0 8px 32px rgba(16, 185, 129, 0.15),
+    0 4px 16px rgba(16, 185, 129, 0.08),
+    inset 0 1px 0 rgba(52, 211, 153, 0.2);
+}
+
 /* Dark mode interactive states */
 .dark .glass-interactive:hover {
   box-shadow: 
@@ -1033,6 +1071,14 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
     0 8px 32px rgba(220, 38, 38, 0.15),
     inset 0 2px 0 rgba(239, 68, 68, 0.3);
   border-color: rgba(220, 38, 38, 0.4);
+}
+
+.dark .glass-builder.glass-interactive:hover {
+  box-shadow: 
+    0 16px 64px rgba(16, 185, 129, 0.25),
+    0 8px 32px rgba(16, 185, 129, 0.15),
+    inset 0 2px 0 rgba(52, 211, 153, 0.3);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 /* Dark mode refraction effects */

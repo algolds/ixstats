@@ -199,6 +199,15 @@ const formatContentEnhanced = (content: string) => {
 
   let formattedContent = content;
 
+  // Handle Discord custom emoji markup <:name:id> and <a:name:id>
+  formattedContent = formattedContent.replace(
+    /<(a)?:([a-zA-Z0-9_]+):(\d{17,20})>/g,
+    (_match: string, animated: string, name: string, id: string) => {
+      const ext = animated ? "gif" : "png";
+      return `<img src="https://cdn.discordapp.com/emojis/${id}.${ext}" alt=":${name}:" class="inline-block h-5 w-5" />`;
+    }
+  );
+
   // Handle broken emoji format: "text https://cdn.discordapp.com/emojis/123.png" alt=":emoji:" class="..." title="..." />"
   // This happens when the opening <img src=" is missing
   formattedContent = formattedContent.replace(

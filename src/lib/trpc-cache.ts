@@ -68,6 +68,11 @@ interface MemoryCacheEntry {
 }
 
 const memoryCache = new Map<string, MemoryCacheEntry>();
+
+if (process.env.NODE_ENV === "development") {
+  memoryCache.clear(); // HMR cache bust trigger
+}
+
 const MAX_MEMORY_CACHE_SIZE = memoryConfig.trpc.maxCacheSize;
 
 // Clean up expired entries periodically

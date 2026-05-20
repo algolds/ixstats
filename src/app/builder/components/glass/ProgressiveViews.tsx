@@ -69,7 +69,7 @@ interface ViewToggleProps {
   basicLabel?: string;
   advancedLabel?: string;
   className?: string;
-  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
+  theme?: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
 }
 
 export function ViewToggle({
@@ -131,7 +131,7 @@ interface SectionContainerProps {
   showAdvanced: boolean;
   onToggleAdvanced: () => void;
   children: React.ReactNode;
-  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
+  theme?: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
   className?: string;
   headerActions?: React.ReactNode;
   hideViewToggle?: boolean;
@@ -217,7 +217,7 @@ interface MetricOverviewProps {
     trend?: "up" | "down" | "neutral";
     change?: number;
     icon?: React.ElementType;
-    theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
+    theme?: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
   }[];
   className?: string;
 }

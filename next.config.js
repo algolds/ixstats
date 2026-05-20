@@ -185,14 +185,6 @@ const config = {
         source: "/api/ixwiki-proxy/:path*",
         destination: "https://ixwiki.com/:path*",
       },
-      {
-        source: "/api/iiwiki-proxy/:path*",
-        destination: "https://iiwiki.com/:path*",
-      },
-      {
-        source: "/api/althistory-wiki-proxy/:path*",
-        destination: "https://althistory.fandom.com/:path*",
-      },
     ];
 
     if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {

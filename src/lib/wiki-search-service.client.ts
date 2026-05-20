@@ -1,35 +1,92 @@
-import type { WikiConfig } from "./wiki-search-service.shared";
-import { getWikiConfigs, getImageUrl } from "./wiki-search-service.shared";
+// Wiki search service supporting both ixwiki.com and iiwiki.com
+// Client-side version: uses direct browser fetch (bypasses Cloudflare for iiwiki)
+import type { CountryInfoboxWithDynamicProps } from "./mediawiki-service";
+import { unifiedFlagService } from "./unified-flag-service";
+import { BASE_PATH } from "./base-path";
 
-/**
- * Create appropriate wiki URL for the site
- */
-export function createWikiUrl(
-  title: string,
-  _config: WikiConfig,
-  site: "ixwiki" | "iiwiki" | "althistory"
-): string {
-  // Generate actual external wiki URLs, not API proxy URLs
-  const siteUrls: Record<string, string> = {
-    ixwiki: "https://ixwiki.com",
-    iiwiki: "https://iiwiki.com",
-    althistory: "https://althistory.fandom.com",
+export interface WikiConfig {
+  baseUrl: string;
+  apiEndpoint: string;
+  searchNamespace?: number[];
+}
+
+// Helper function to get the base URL for API requests
+function getApiBaseUrl(): string {
+  const normalizedBasePath = BASE_PATH
+    ? BASE_PATH.startsWith("/")
+      ? BASE_PATH
+      : `/${BASE_PATH}`
+    : "";
+
+  const ensureBasePath = (origin: string): string => {
+    const trimmedOrigin = origin.endsWith("/") ? origin.slice(0, -1) : origin;
+    if (!normalizedBasePath) {
+      return trimmedOrigin;
+    }
+    return trimmedOrigin.endsWith(normalizedBasePath)
+      ? trimmedOrigin
+      : `${trimmedOrigin}${normalizedBasePath}`;
   };
 
-  const baseUrl = siteUrls[site];
-  const wikiPath = "/wiki";
-  const titleParam = `/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+  // Client-side: include base path so fetch works when deployed under a sub-path
+  return normalizedBasePath || "";
+}
 
-  return `${baseUrl}${wikiPath}${titleParam}`;
+// Function to get wiki configs with proper URLs
+function getWikiConfigs(): Record<string, WikiConfig> {
+  const baseUrl = getApiBaseUrl();
+  return {
+    ixwiki: {
+      baseUrl: `${baseUrl}/api/ixwiki-proxy`,
+      apiEndpoint: "/api.php",
+      searchNamespace: [0, 6],
+    },
+    iiwiki: {
+      // Route through server-side proxy — required for whitelisted User-Agent
+      baseUrl: `${baseUrl}/api/iiwiki-proxy`,
+      apiEndpoint: "/api.php",
+      searchNamespace: [0, 6],
+    },
+    althistory: {
+      baseUrl: `${baseUrl}/api/althistory-wiki-proxy`,
+      apiEndpoint: "/api.php",
+      searchNamespace: [0, 6],
+    },
+  };
+}
+
+export interface SearchResult {
+  title: string;
+  snippet: string;
+  url: string;
+  namespace?: number;
+}
+
+interface ParsedCountryData {
+  name: string;
+  population?: number;
+  gdpPerCapita?: number;
+  gdp?: number;
+  capital?: string;
+  area?: number;
+  government?: string;
+  currency?: string;
+  languages?: string;
+  flag?: string;
+  coatOfArms?: string;
+  flagUrl?: string;
+  coatOfArmsUrl?: string;
+  infobox: CountryInfoboxWithDynamicProps;
 }
 
 /**
- * Search for images only in the File namespace
+ * Search for countries on a specific wiki
  */
-export async function searchWikiImages(
+export async function searchWiki(
   query: string,
-  site: "ixwiki" | "iiwiki" | "althistory"
-): Promise<Array<{ name: string; path: string; url?: string; description?: string }>> {
+  site: "ixwiki" | "iiwiki" | "althistory",
+  categoryFilter?: string
+): Promise<SearchResult[]> {
   const wikiConfigs = getWikiConfigs();
   const config = wikiConfigs[site];
   if (!config) {
@@ -37,72 +94,56 @@ export async function searchWikiImages(
   }
 
   try {
-    // Search only in File namespace (namespace 6)
+    // Use comprehensive category search for both sites when category filter is provided
+    if (categoryFilter) {
+      console.log(
+        `[WikiSearch] Using comprehensive category search for ${site} with category: ${categoryFilter}`
+      );
+      return await searchWithCategoryFilter(query, categoryFilter, config, site);
+    }
+
+    // Fallback to regular search when no category filter
     const searchParams = new URLSearchParams({
       action: "query",
       format: "json",
       list: "search",
       srsearch: query,
       srprop: "snippet",
-      srlimit: "20",
-      srnamespace: "6", // File namespace only
     });
 
     const response = await fetch(
       `${config.baseUrl}${config.apiEndpoint}?${searchParams.toString()}`,
       {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
-          Referer: "https://iiwiki.com/",
+          "User-Agent": "IxStats-Builder",
         },
       }
     );
 
     if (!response.ok) {
-      console.warn(`[WikiSearch] ${site} returned HTTP ${response.status} — skipping`);
-      return [];
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
 
     if (data.error) {
-      console.warn(`[WikiSearch] ${site} API error: ${data.error.info || data.error.code}`);
-      return [];
+      throw new Error(`Wiki API Error: ${data.error.info || data.error.code}`);
     }
 
-    const searchResults = data.query?.search || [];
+    const results = data.query?.search || [];
 
-    // Filter for actual image files and get their URLs
-    const imageResults = [];
-
-    for (const result of searchResults) {
-      // Check if it's an actual image file
-      if (
-        result.title &&
-        result.title.startsWith("File:") &&
-        /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(result.title)
-      ) {
-        // Get the image URL
-        const filename = result.title.replace("File:", "");
-        const imageUrl = await getImageUrl(filename, site);
-
-        if (imageUrl) {
-          imageResults.push({
-            name: result.title,
-            path: imageUrl,
-            url: imageUrl,
-            description: result.snippet || "",
-          });
-        }
-      }
-    }
-
-    return imageResults;
+    return results.map((result: any) => {
+      return {
+        title: result.title,
+        snippet: result.snippet || "",
+        url: createWikiUrl(result.title, config, site),
+        namespace: result.ns,
+      };
+    });
   } catch (error) {
-    console.error(`Wiki image search failed for ${site}:`, error);
+    console.error(`Wiki search failed for ${site}:`, error);
     throw new Error(
-      `Failed to search ${site} images: ${error instanceof Error ? error.message : "Unknown error"}`
+      `Failed to search ${site}: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }

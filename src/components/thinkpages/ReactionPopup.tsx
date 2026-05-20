@@ -208,7 +208,9 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                   {isDiscordEmoji ? (
                     <img
                       src={
-                        DISCORD_EMOJI_REACTIONS.find((e) => type === `discord:${e.name}`)?.url || ""
+                        DISCORD_EMOJI_REACTIONS.find((e) => type === `discord:${e.name}`)?.url ||
+                        discordEmojis?.emojis?.find((e: any) => type === `discord:${e.name}`)?.url ||
+                        ""
                       }
                       alt={type}
                       className="h-3 w-3"

@@ -137,7 +137,7 @@ const createPrismaClient = () => {
     // Activity feed & achievements (seeded/cleaned by demo seed system)
     "ActivityFeed", "UserAchievement",
     // Wiki cache (written by WikiCacheService for 3-layer caching)
-    "WikiCache",
+    "WikiCache", "ExternalApiCache",
     // WikiOS Lore Stash — save-for-later with annotations
     "LoreStash", "LoreStashItem", "LoreStashAnnotation",
     // WikiOS Template Registry
@@ -232,4 +232,4 @@ export { db as prisma };
 // Export read-only mode flag for use in other parts of the application
 export const isDatabaseReadOnly = isReadOnlyMode;
 
-if (env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+if (env.NODE_ENV !== "production") globalForPrisma.prisma = undefined;

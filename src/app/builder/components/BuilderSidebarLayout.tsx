@@ -33,7 +33,7 @@ export function BuilderSidebarLayout({
   accessibleSteps,
 }: BuilderSidebarLayoutProps) {
   return (
-    <div className="space-y-0">
+    <div className="space-y-0" data-builder-content>
       {/* Hero Section */}
       {heroSection && (
         <div className="container mx-auto px-3 pt-3 sm:px-4 sm:pt-4">
@@ -48,31 +48,35 @@ export function BuilderSidebarLayout({
         {/* Main Layout — sidebar + content */}
         <div className="flex gap-3 sm:gap-4">
           {/* Desktop: Fixed sidebar column */}
-          <div className={`relative z-30 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
-            <div className="sticky top-20 space-y-3">
-              <BuilderSidebarNav
-                activeSection={activeSection}
-                onNavigate={onNavigate}
-                completedSteps={completedSteps}
-                accessibleSteps={accessibleSteps}
-                variant={sidebarExtra ? "expanded" : "desktop"}
-              />
-              {sidebarExtra}
+          {activeSection !== "import" && (
+            <div className={`relative z-20 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
+              <div className="sticky top-4 space-y-3">
+                <BuilderSidebarNav
+                  activeSection={activeSection}
+                  onNavigate={onNavigate}
+                  completedSteps={completedSteps}
+                  accessibleSteps={accessibleSteps}
+                  variant={sidebarExtra ? "expanded" : "desktop"}
+                />
+                {sidebarExtra}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
             {/* Mobile: Horizontal nav strip */}
-            <div className="mb-3 lg:hidden">
-              <BuilderSidebarNav
-                activeSection={activeSection}
-                onNavigate={onNavigate}
-                completedSteps={completedSteps}
-                accessibleSteps={accessibleSteps}
-                variant="mobile"
-              />
-            </div>
+            {activeSection !== "import" && (
+              <div className="mb-3 lg:hidden">
+                <BuilderSidebarNav
+                  activeSection={activeSection}
+                  onNavigate={onNavigate}
+                  completedSteps={completedSteps}
+                  accessibleSteps={accessibleSteps}
+                  variant="mobile"
+                />
+              </div>
+            )}
 
             <div className="space-y-3 sm:space-y-4">
               {children}

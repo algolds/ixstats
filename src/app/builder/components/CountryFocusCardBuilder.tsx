@@ -3,21 +3,23 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware"; // Import route-aware flag hook
-import { Globe } from "lucide-react"; // Import Globe icon for fallback
+import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
+import { Globe } from "lucide-react";
 
 export interface CountryCardData {
   id: string;
   name: string;
-  originalId?: string; // Optional original ID for infinite scroll duplicates
+  originalId?: string;
 }
 
 interface CountryFocusCardProps {
   country: CountryCardData;
   onHoverChange: (countryId: string | null) => void;
-  onCountryClick?: (countryId: string) => void; // Add click handler
+  onCountryClick?: (countryId: string) => void;
   cardSize?: "default" | "small";
-  softSelectedCountryId?: string | null; // New prop
+  softSelectedCountryId?: string | null;
+  /** Pre-resolved flag URL from server cache. If provided, skips browser-side Commons API call. */
+  flagUrl?: string | null;
 }
 
 export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
@@ -25,13 +27,31 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
     country,
     onHoverChange,
     onCountryClick,
-    cardSize = "default", // Default to 'default' size
+    cardSize = "default",
     softSelectedCountryId,
+    flagUrl: serverFlagUrl,
   }) => {
     const [isHovered, setIsHovered] = useState(false);
-    const { flag, loading, error } = useCountryFlagRouteAware(country.name); // Fetch flag data with route awareness
+    const [imgError, setImgError] = useState(false);
 
-    const cardHeightClass = cardSize === "small" ? "h-48" : "h-80"; // h-80 for default, h-48 for small
+    // Only fetch from browser if no server-provided flag URL
+    const { flag, loading, error } = useCountryFlagRouteAware(
+      serverFlagUrl ? "" : country.name
+    );
+
+    const resolvedFlagUrl = serverFlagUrl ?? flag?.flagUrl ?? null;
+
+    // Reset error when resolved flag changes
+    React.useEffect(() => {
+      setImgError(false);
+    }, [resolvedFlagUrl, country.name]);
+
+    const _isLoaded = !!resolvedFlagUrl;
+    const isLoading = !serverFlagUrl && (loading || (!flag && !error));
+    const hasError = !serverFlagUrl && (error || imgError);
+    const showFlag = resolvedFlagUrl && !imgError;
+
+    const cardHeightClass = cardSize === "small" ? "h-48" : "h-80";
 
     return (
       <motion.div
@@ -54,14 +74,12 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
         animate={
           isHovered
             ? {
-                // Apply hover animation when hovered
-                scale: 1.08, // Increased scale
-                y: -10, // Lift effect
-                rotateZ: 0.5, // Subtle Z-axis rotation
-                rotateY: 0.5, // Subtle Y-axis rotation
+                scale: 1.08,
+                y: -10,
+                rotateZ: 0.5,
+                rotateY: 0.5,
               }
             : {
-                // Revert to default state when not hovered
                 scale: 1,
                 y: 0,
                 rotateZ: 0,
@@ -71,13 +89,11 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
         transition={
           isHovered
             ? {
-                // Apply hover transition when hovered
                 type: "spring",
-                stiffness: 150, // Adjusted stiffness
-                damping: 20, // Adjusted damping
+                stiffness: 150,
+                damping: 20,
               }
             : {
-                // Revert to default state with a simple transition
                 duration: 0.1,
                 ease: "easeInOut",
               }
@@ -93,20 +109,23 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
               "shadow-2xl ring-2 shadow-blue-500/20 ring-blue-400/60 ring-offset-2 ring-offset-black/20"
           )}
         >
-          {/* Animated Flag Background */}
-          <div
-            className="absolute inset-0 h-full w-full bg-cover bg-center transition-opacity duration-300"
-            style={{
-              backgroundImage: flag?.flagUrl ? `url('${flag.flagUrl}')` : "none",
-              opacity: loading || error || !flag?.flagUrl ? 0.2 : 1, // Dim if loading/error
-            }}
-          >
-            {(loading || error || !flag?.flagUrl) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50">
-                <Globe className="h-12 w-12 text-gray-400" />
-              </div>
-            )}
-          </div>
+          {/* Flag Background */}
+          {showFlag ? (
+            <img
+              src={resolvedFlagUrl}
+              alt={`Flag of ${country.name}`}
+              className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-300"
+              style={{
+                opacity: isLoading || hasError ? 0.2 : 1,
+              }}
+              referrerPolicy="no-referrer"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50">
+              <Globe className="h-12 w-12 text-gray-400" />
+            </div>
+          )}
 
           {/* Content Overlay */}
           <div
@@ -115,13 +134,12 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
               isHovered ? "opacity-100" : "opacity-0"
             )}
           >
-            {/* Country Name */}
             <motion.div
               animate={{
                 scale: isHovered ? 1.05 : 1,
-                opacity: isHovered ? 0.9 : 1, // Keep text visible on hover
+                opacity: isHovered ? 0.9 : 1,
               }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }} // Added damping for smoother opacity transition
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
             >
               <span className="text-xl font-medium text-white antialiased [text-shadow:0_0_10px_rgba(255,255,255,0.3)] md:text-2xl">
                 {country.name}

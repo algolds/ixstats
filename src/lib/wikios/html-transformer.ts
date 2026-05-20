@@ -33,7 +33,11 @@ export interface TocEntry {
  * Transform raw MediaWiki parse HTML into WikiOS-ready content.
  * Extracts infobox, builds TOC from headings, transforms links.
  */
-export function transformArticleHtml(html: string, basePath: string): TransformedArticle {
+export function transformArticleHtml(
+  html: string,
+  basePath: string,
+  wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki"
+): TransformedArticle {
   let processed = html;
 
   // 1. Strip the outer mw-parser-output wrapper if present
@@ -57,7 +61,7 @@ export function transformArticleHtml(html: string, basePath: string): Transforme
   processed = transformLinks(processed, basePath);
 
   // 6. Transform image URLs to be absolute
-  processed = transformImages(processed);
+  processed = transformImages(processed, wikiSource);
 
   // 7. Add section edit links styling class
   processed = styleEditSectionLinks(processed);
@@ -67,8 +71,8 @@ export function transformArticleHtml(html: string, basePath: string): Transforme
 
   return {
     contentHtml: processed,
-    infoboxHtml: infoboxHtml ? transformLinks(transformImages(infoboxHtml), basePath) : null,
-    noticesHtml: noticesHtml ? transformLinks(transformImages(noticesHtml), basePath) : null,
+    infoboxHtml: infoboxHtml ? transformLinks(transformImages(infoboxHtml, wikiSource), basePath) : null,
+    noticesHtml: noticesHtml ? transformLinks(transformImages(noticesHtml, wikiSource), basePath) : null,
     toc,
     images,
   };
@@ -268,30 +272,87 @@ function transformLinks(html: string, basePath: string): string {
   return result;
 }
 
-function transformImages(html: string): string {
-  const origin = "https://ixwiki.com";
+function transformImages(
+  html: string,
+  wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki"
+): string {
+  let origin = "https://ixwiki.com";
+  let proxyBase = "/api/ixwiki-proxy";
 
-  // 1. Make relative image/asset URLs absolute
+  if (wikiSource === "iiwiki") {
+    origin = "https://iiwiki.com";
+    proxyBase = "/api/iiwiki-proxy";
+  } else if (wikiSource === "althistory") {
+    origin = "https://althistory.fandom.com";
+    proxyBase = "/api/althistory-wiki-proxy";
+  }
+
+  // 1. Make relative image/asset URLs absolute or proxied
   // Handles /images/, /data/, and other MediaWiki-served paths
-  let result = html
-    .replace(/src="\/images\//g, `src="${origin}/images/`)
-    .replace(/src="\/data\//g, `src="${origin}/data/`)
-    .replace(/src="\/load\.php/g, `src="${origin}/load.php`)
-    .replace(
-      /srcset="([^"]*)"/g,
-      (_match, srcset: string) => {
-        const transformed = srcset
-          .replace(/\/images\//g, `${origin}/images/`)
-          .replace(/\/data\//g, `${origin}/data/`);
-        return `srcset="${transformed}"`;
-      }
-    );
+  let result = html;
+
+  if (wikiSource === "ixwiki") {
+    result = result
+      .replace(/src="\/images\//g, `src="${origin}/images/`)
+      .replace(/src="\/data\//g, `src="${origin}/data/`)
+      .replace(/src="\/load\.php/g, `src="${origin}/load.php`)
+      .replace(
+        /srcset="([^"]*)"/g,
+        (_match, srcset: string) => {
+          const transformed = srcset
+            .replace(/\/images\//g, `${origin}/images/`)
+            .replace(/\/data\//g, `${origin}/data/`);
+          return `srcset="${transformed}"`;
+        }
+      );
+  } else {
+    // For iiwiki and althistory, map relative /images/ to proxy
+    result = result
+      .replace(/src="\/images\//g, `src="${proxyBase}/images/`)
+      .replace(/src="\/data\//g, `src="${proxyBase}/data/`)
+      .replace(/src="\/load\.php/g, `src="${origin}/load.php`) // load.php remains original
+      // Also map full URL paths if they are in the HTML
+      .replace(
+        /src="https?:\/\/(?:www\.)?iiwiki\.com\/images\//g,
+        `src="${proxyBase}/images/`
+      )
+      .replace(
+        /src="https?:\/\/(?:www\.)?iiwiki\.com\/wiki\/Special:FilePath\//g,
+        `src="${proxyBase}/wiki/Special:FilePath/`
+      )
+      .replace(
+        /src="https?:\/\/(?:www\.)?althistory\.fandom\.com\/wiki\/Special:FilePath\//g,
+        `src="${proxyBase}/wiki/Special:FilePath/`
+      )
+      .replace(
+        /srcset="([^"]*)"/g,
+        (_match, srcset: string) => {
+          const transformed = srcset
+            .replace(/\/images\//g, `${proxyBase}/images/`)
+            .replace(/\/data\//g, `${proxyBase}/data/`)
+            .replace(/https?:\/\/(?:www\.)?iiwiki\.com\/images\//g, `${proxyBase}/images/`);
+          return `srcset="${transformed}"`;
+        }
+      );
+  }
 
   // 2. Transform url() references in inline CSS (background-image, etc.)
-  result = result.replace(
-    /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/g,
-    (_match, path: string) => `url("${origin}${path}")`
-  );
+  if (wikiSource === "ixwiki") {
+    result = result.replace(
+      /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/g,
+      (_match, path: string) => `url("${origin}${path}")`
+    );
+  } else {
+    result = result
+      .replace(
+        /url\(["']?(\/(?:images|data|load\.php)[^"')\s]*)["']?\)/g,
+        (_match, path: string) => `url("${proxyBase}${path}")`
+      )
+      .replace(
+        /url\(["']?https?:\/\/(?:www\.)?iiwiki\.com(\/(?:images|data)[^"')\s]*)["']?\)/g,
+        (_match, path: string) => `url("${proxyBase}${path}")`
+      );
+  }
 
   // 3. Transform href for stylesheets (/load.php)
   result = result.replace(

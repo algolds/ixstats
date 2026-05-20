@@ -23,6 +23,7 @@ interface CountriesFocusGridModularProps {
   softSelectedCountryId?: string | null;
   parallaxOffsets?: number[];
   isAutoScrolling?: boolean;
+  flagUrls?: Record<string, string | null>;
 }
 
 const CountryCard: React.FC<{
@@ -33,6 +34,7 @@ const CountryCard: React.FC<{
   cardSize?: "default" | "small";
   softSelectedCountryId?: string | null;
   parallaxOffset: number;
+  flagUrl?: string | null;
 }> = ({
   country,
   index,
@@ -41,6 +43,7 @@ const CountryCard: React.FC<{
   cardSize,
   softSelectedCountryId,
   parallaxOffset,
+  flagUrl,
 }) => {
   const controls = useAnimation();
   const [isHovered, setIsHovered] = useState(false);
@@ -92,6 +95,7 @@ const CountryCard: React.FC<{
             onCountryClick={onCountryClick}
             cardSize={cardSize}
             softSelectedCountryId={softSelectedCountryId}
+            flagUrl={flagUrl}
           />
         </motion.div>
         {rowIndex > 1 && (
@@ -123,6 +127,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
   softSelectedCountryId,
   parallaxOffsets = [],
   isAutoScrolling = false,
+  flagUrls = {},
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const visibleCountries = countries.slice(0, visibleCount);
@@ -150,6 +155,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
           {visibleCountries.map((country, index) => {
             const columnIndex = index % 4;
             const parallaxOffset = parallaxOffsets[columnIndex] ?? 0;
+            const flagUrl = flagUrls[country.name] ?? null;
             return (
               <CountryCard
                 key={country.id}
@@ -160,6 +166,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
                 cardSize={cardSize}
                 softSelectedCountryId={softSelectedCountryId}
                 parallaxOffset={parallaxOffset}
+                flagUrl={flagUrl}
               />
             );
           })}

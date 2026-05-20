@@ -10,6 +10,7 @@
  */
 
 export interface InfoboxField {
+  value: unknown;
   key: string;
   /** Raw wiki markup value */
   rawValue: string;

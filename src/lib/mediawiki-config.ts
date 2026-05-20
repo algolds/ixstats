@@ -51,7 +51,6 @@ export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
 };
 
 // Multi-wiki support configuration
-// IMPORTANT: iiwiki MUST use direct access (not proxy) with exact User-Agent "IxStats-Builder"
 export const WIKI_SOURCES = {
   ixwiki: {
     name: "IxWiki",
@@ -63,11 +62,17 @@ export const WIKI_SOURCES = {
   },
   iiwiki: {
     name: "IIWiki",
-    baseUrl: "https://iiwiki.com", // CORRECT: iiwiki.com, NOT iiwiki.us
-    apiEndpoint: "/api.php", // Direct path — /mediawiki/api.php no longer exists
+    baseUrl: "https://iiwiki.com",
+    apiEndpoint: "/api.php",
     description: "SimFic and Alt-History Encyclopedia",
-    userAgent: "IxStats-Builder", // REQUIRED: Must be exactly "IxStats-Builder" for iiwiki
-    // NOTE: iiwiki MUST be accessed directly, NOT through proxy (Cloudflare blocks proxy)
+    userAgent: "IxStats-Builder",
+  },
+  althistory: {
+    name: "AltHistory Wiki",
+    baseUrl: "https://althistory.fandom.com",
+    apiEndpoint: "/api.php",
+    description: "Alternative History and Speculative Fiction Encyclopedia",
+    userAgent: "IxStats-Builder",
   },
 } as const;
 
@@ -75,30 +80,9 @@ export type WikiSource = keyof typeof WIKI_SOURCES;
 
 /**
  * Get the appropriate MediaWiki API URL based on context and wiki source
- * - iiwiki: ALWAYS use direct URL (Cloudflare blocks proxy)
- * - ixwiki Client-side: Use proxy route for same-server optimization
- * - ixwiki Server-side: Use direct URL or local path if available
  */
 export function getMediaWikiApiUrl(source: WikiSource = "ixwiki"): string {
   const wikiConfig = WIKI_SOURCES[source];
-
-  // CRITICAL: iiwiki MUST use direct access (Cloudflare blocks proxy)
-  if (source === "iiwiki") {
-    return `${wikiConfig.baseUrl}${wikiConfig.apiEndpoint}`;
-  }
-
-  // Client-side: use proxy route for IxWiki only (same server optimization)
-  if (typeof window !== "undefined" && source === "ixwiki") {
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-    return `${basePath}/api/ixwiki-proxy/api.php`;
-  }
-
-  // Server-side: use direct URL or local path (IxWiki only)
-  if (source === "ixwiki" && process.env.IXWIKI_LOCAL_PATH) {
-    return `${process.env.IXWIKI_LOCAL_PATH}/api.php`;
-  }
-
-  // Default: use the configured base URL for the wiki source
   return `${wikiConfig.baseUrl}${wikiConfig.apiEndpoint}`;
 }
 

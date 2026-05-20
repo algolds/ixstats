@@ -98,7 +98,8 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
       })
     | null = useMemo(() => {
     if (!wikiDataRaw) return null;
-    const infobox = (wikiDataRaw as any).infobox || {};
+    // UnifiedInfoboxData has fields at top level; legacy format has them in .infobox
+    const infobox = (wikiDataRaw as any).infobox || wikiDataRaw;
 
     const normalizeList = (value: unknown): string | null => {
       if (!value) return null;
@@ -120,7 +121,8 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
 
     const fallbackImage = (file?: string | null) => {
       if (!file) return undefined;
-      return `https://ixwiki.com/wiki/Special:Filepath/${file}`;
+      const clean = file.replace(/^(File|Image|file|image):/i, "").trim();
+      return `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(clean)}`;
     };
 
     return {

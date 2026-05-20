@@ -1,10 +1,10 @@
 // Country flag service using Wiki Commons API
-import { searchWikiImages } from "./wiki-search-service.client";
+import { searchWiki } from "./wiki-search-service.client";
 
 interface CountryFlag {
   country: string;
   flagUrl: string | null;
-  source: "wikimedia" | "ixwiki" | "cached";
+  source: "wikimedia" | "ixwiki" | "cached" | "server-cache";
   error?: string;
   timestamp?: number; // Added timestamp for cache invalidation
 }
@@ -25,12 +25,35 @@ class CountryFlagService {
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
   private readonly WIKIMEDIA_COMMONS_API = "https://commons.wikimedia.org/w/api.php";
   private options: CountryFlagServiceOptions;
+  private serverCachePromise: Promise<Record<string, string | null>> | null = null;
 
   constructor(options: CountryFlagServiceOptions = {}) {
     this.options = {
       enableIiwikiFallback: false, // Disabled: iiwiki proxy blocked by Cloudflare (502)
       ...options,
     };
+  }
+
+  /**
+   * Preload all flags from server cache once per session.
+   */
+  async preloadServerCache(): Promise<Record<string, string | null>> {
+    if (this.serverCachePromise) return this.serverCachePromise;
+    this.serverCachePromise = (async () => {
+      try {
+        const resp = await fetch("/api/trpc/countries.flags.getAll?input=%7B%7D");
+        const text = await resp.text();
+        const json = JSON.parse(text.startsWith("}") ? text.slice(1) : text);
+        const data = json.result?.data;
+        if (data && typeof data === "object") {
+          return (data.json ?? data) as Record<string, string | null>;
+        }
+        return {};
+      } catch {
+        return {};
+      }
+    })();
+    return this.serverCachePromise;
   }
 
   /**
@@ -52,7 +75,56 @@ class CountryFlagService {
         source: "cached",
       };
 
-      // Method 1: Try Wikimedia Commons first (best quality flags)
+      // Method 0: Try server-side cache first (no Commons API calls from browser)
+      try {
+        const serverCache = await this.preloadServerCache();
+        const serverKey = countryName.toLowerCase().trim();
+        if (serverCache[serverKey] !== undefined) {
+          const serverUrl = serverCache[serverKey];
+          result = {
+            country: countryName,
+            flagUrl: serverUrl, // Can be null
+            source: "server-cache",
+            timestamp: Date.now(),
+          };
+          this.flagCache.set(normalizedName, result);
+          return result;
+        }
+      } catch {
+        // Server cache unavailable, fall through to direct fetch
+      }
+
+      // Method 1: Try server-side batch resolver (avoid direct browser-to-Commons calls)
+      let resolvedFlag: string | null = null;
+      let serverResolved = false;
+      try {
+        resolvedFlag = await this.resolveFlagOnServer(countryName);
+        serverResolved = true;
+      } catch (error) {
+        console.warn(`[CountryFlag] Server resolution failed for ${countryName}:`, error);
+      }
+
+      if (serverResolved) {
+        result = {
+          country: countryName,
+          flagUrl: resolvedFlag, // Can be null
+          source: "server-cache",
+          timestamp: Date.now(),
+        };
+        this.flagCache.set(normalizedName, result);
+
+        // Update preloaded server cache so it's locally available for future checks
+        try {
+          const cache = await this.preloadServerCache();
+          cache[countryName.toLowerCase().trim()] = resolvedFlag;
+        } catch {
+          // Ignore
+        }
+
+        return result;
+      }
+
+      // Method 2: Try Wikimedia Commons directly as fallback (best quality flags, but subject to 429)
       try {
         const commonsFlag = await this.searchWikimediaCommons(countryName);
         if (commonsFlag) {
@@ -66,13 +138,13 @@ class CountryFlagService {
           return result;
         }
       } catch (error) {
-        console.warn(`[CountryFlag] Commons search failed for ${countryName}:`, error);
+        console.warn(`[CountryFlag] Commons search fallback failed for ${countryName}:`, error);
       }
 
       // Method 3: Try IIWiki search as fallback (only if enabled)
       if (this.options.enableIiwikiFallback) {
         try {
-          const iiwikiFlags = await searchWikiImages(`flag ${countryName}`, "iiwiki");
+          const iiwikiFlags = await searchWiki(`flag ${countryName}`, "iiwiki");
           if (iiwikiFlags.length > 0 && iiwikiFlags[0]?.url) {
             result = {
               country: countryName,
@@ -138,7 +210,7 @@ class CountryFlagService {
             console.log(`[CountryFlag] Found Commons flag: ${pattern} -> ${fileUrl}`);
             return fileUrl;
           }
-        } catch (error) {
+        } catch {
           // Continue to next pattern
         }
       }
@@ -338,6 +410,35 @@ class CountryFlagService {
     scoredResults.sort((a, b) => b.score - a.score);
 
     return scoredResults[0] || null;
+  }
+
+  /**
+   * Request server-side resolution for a flag to avoid direct Commons API calls from the browser.
+   */
+  private async resolveFlagOnServer(countryName: string): Promise<string | null> {
+    try {
+      const inputObj = { json: { countryNames: [countryName] } };
+      const url = `/api/trpc/countries.flags.resolveBatch?input=${encodeURIComponent(JSON.stringify(inputObj))}`;
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const text = await resp.text();
+      const json = JSON.parse(text.startsWith("}") ? text.slice(1) : text);
+      const data = json.result?.data;
+      const resolved = data?.json ?? data;
+      if (resolved && typeof resolved === "object") {
+        if (countryName in resolved) {
+          return (resolved[countryName] || null) as string | null;
+        }
+        const key = Object.keys(resolved).find((k) => k.toLowerCase() === countryName.toLowerCase());
+        if (key) {
+          return (resolved[key] || null) as string | null;
+        }
+      }
+      return null;
+    } catch (e) {
+      console.warn(`[CountryFlag] Server resolution failed for ${countryName}:`, e);
+      throw e;
+    }
   }
 
   /**

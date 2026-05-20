@@ -1167,7 +1167,12 @@ const USER_AGENT = "IxStats-Builder";
 async function fetchExternalWiki(url: string, retries = 2): Promise<Response | null> {
   const result = await withRetrySafe(async (signal) => {
     const response = await fetch(url, {
-      headers: { "User-Agent": USER_AGENT, "Api-User-Agent": USER_AGENT },
+      headers: {
+        "User-Agent": USER_AGENT,
+        "Api-User-Agent": USER_AGENT,
+        "Accept": "application/json, text/html, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
       signal,
     });
     if (!response.ok) {
@@ -1177,8 +1182,8 @@ async function fetchExternalWiki(url: string, retries = 2): Promise<Response | n
   }, {
     maxAttempts: retries + 1,
     strategy: "linear",
-    baseDelayMs: 1000,
-    timeoutMs: 15000,
+    baseDelayMs: 2000,
+    timeoutMs: 20000,
     retryIf: (err) => err.message.includes("HTTP 403"),
     onRetry: (attempt, err) => {
       console.warn(`[WikiBridge] ${new URL(url).hostname} returned 403, retry ${attempt}/${retries + 1}`);
@@ -1193,13 +1198,19 @@ async function fetchExternalWiki(url: string, retries = 2): Promise<Response | n
 }
 
 // ──────────────────────────────────────────────
-// IIWiki HTTP API (external)
+// IIWiki HTTP API (direct access — Cloudflare whitelisted)
 // ──────────────────────────────────────────────
 
-const IIWIKI_API = "https://iiwiki.com/api.php";
+function getIiwikiApiBaseUrl(): string {
+  return "https://iiwiki.com";
+}
+
+function getFullIiwikiApiUrl(): string {
+  return "https://iiwiki.com/api.php";
+}
 
 async function iiwikiApiCall(params: Record<string, string>): Promise<unknown | null> {
-  const url = new URL(IIWIKI_API);
+  const url = new URL(getFullIiwikiApiUrl());
   url.searchParams.set("format", "json");
   url.searchParams.set("origin", "*");
   for (const [k, v] of Object.entries(params)) {
@@ -1598,7 +1609,7 @@ export async function getPageImages(
 
   const sources = [
     { wiki: "ixwiki" as WikiSource, base: "https://ixwiki.com" },
-    { wiki: "iiwiki" as WikiSource, base: "https://iiwiki.com" },
+    { wiki: "iiwiki" as WikiSource, base: getIiwikiApiBaseUrl() },
   ];
 
   const thumbWidth = opts?.thumbWidth ?? 200;

@@ -76,7 +76,7 @@ function getWikiConfigs(): Record<string, WikiConfig> {
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     iiwiki: {
-      // Access iiwiki directly - proxy gets blocked by Cloudflare
+      // Direct access — iiwiki admin whitelisted IxStats-Builder UA + server IP
       baseUrl: "https://iiwiki.com",
       apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
@@ -150,6 +150,7 @@ export async function searchWiki(
       {
         headers: {
           "User-Agent": "IxStats-Builder",
+          "Api-User-Agent": "IxStats-Builder",
         },
       }
     );
@@ -262,6 +263,7 @@ async function searchFilesFulltext(
     const response = await fetch(url, {
       headers: {
         "User-Agent": "IxStats-Builder",
+          "Api-User-Agent": "IxStats-Builder",
       },
     });
 
@@ -470,6 +472,7 @@ async function getAllCategoryMembers(categoryFilter: string, config: WikiConfig)
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
         "User-Agent": "IxStats-Builder",
+          "Api-User-Agent": "IxStats-Builder",
       },
     });
 
@@ -523,6 +526,7 @@ async function getCategorySubcategories(
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
         "User-Agent": "IxStats-Builder",
+          "Api-User-Agent": "IxStats-Builder",
       },
     });
 
@@ -632,6 +636,7 @@ async function performTargetedSearch(
     const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
       headers: {
         "User-Agent": "IxStats-Builder",
+          "Api-User-Agent": "IxStats-Builder",
       },
     });
 
@@ -762,6 +767,7 @@ async function getPageWikitext(pageName: string, config: WikiConfig): Promise<st
   const response = await fetch(`${config.baseUrl}${config.apiEndpoint}?${params.toString()}`, {
     headers: {
       "User-Agent": "IxStats-Builder",
+          "Api-User-Agent": "IxStats-Builder",
     },
   });
 
@@ -1442,6 +1448,7 @@ async function getImageUrl(
     const response = await fetch(url, {
       headers: {
         "User-Agent": "IxStats-Builder",
+          "Api-User-Agent": "IxStats-Builder",
         Accept: "application/json",
         "Accept-Language": "en-US,en;q=0.9",
         Connection: "keep-alive",
@@ -1575,6 +1582,7 @@ export async function searchWikiImagesWithPagination(
     const response = await fetch(url, {
       headers: {
         "User-Agent": "IxStats-Builder",
+          "Api-User-Agent": "IxStats-Builder",
         Accept: "application/json",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate, br",

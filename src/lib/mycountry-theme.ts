@@ -196,6 +196,7 @@ export const SECTION_THEME_CLASSES = {
   defense:      { gradient: "from-red-500 to-orange-500",     activeGlow: "shadow-red-500/30",     border: "border-red-500/30",     darkBorder: "dark:border-red-500/20",     text: "text-red-500",     ring: "#ef4444" },
   politics:     { gradient: "from-indigo-500 to-violet-500",  activeGlow: "shadow-indigo-500/30",  border: "border-indigo-500/30",  darkBorder: "dark:border-indigo-500/20",  text: "text-indigo-500",  ring: "#6366f1" },
   "map-editor": { gradient: "from-emerald-500 to-teal-500",   activeGlow: "shadow-emerald-500/30", border: "border-emerald-500/30", darkBorder: "dark:border-emerald-500/20", text: "text-emerald-500", ring: "#10b981" },
+  builder:      { gradient: "from-amber-500 to-yellow-500",   activeGlow: "shadow-amber-500/30", border: "border-amber-500/30", darkBorder: "dark:border-amber-500/20", text: "text-amber-500", ring: "#f59e0b" },
 } as const;
 
 /**

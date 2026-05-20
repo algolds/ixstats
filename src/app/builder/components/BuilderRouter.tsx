@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo, Suspense } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
 import { useUser } from "~/context/auth-context";
@@ -14,6 +14,8 @@ import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
 import { BuilderSectionHero } from "./BuilderSectionHero";
+import { BuilderContextualHelp } from "./BuilderContextualHelp";
+import { ImportSection } from "./sections/ImportSection";
 import {
   type BuilderSection,
   BUILD_STEPS,
@@ -28,29 +30,19 @@ import { withBasePath } from "~/lib/base-path";
 function SectionSkeleton() {
   return (
     <div className="animate-pulse space-y-4 p-6">
-      <div className="h-8 w-48 rounded bg-white/5" />
-      <div className="h-64 rounded-xl bg-white/5" />
+      <div className="h-8 w-48 rounded bg-emerald-500/5" />
+      <div className="h-64 rounded-xl bg-emerald-500/5" />
       <div className="grid grid-cols-2 gap-4">
-        <div className="h-32 rounded-lg bg-white/5" />
-        <div className="h-32 rounded-lg bg-white/5" />
+        <div className="h-32 rounded-lg bg-emerald-500/5" />
+        <div className="h-32 rounded-lg bg-emerald-500/5" />
       </div>
     </div>
   );
 }
 
-// ─── Eagerly imported sections (most common path) ───
-
-import { BuilderOnboardingWizard } from "./BuilderOnboardingWizard";
-
 // ─── Lazy-loaded sections ───
 
-const ImportSection = dynamic(
-  () => import("./sections/ImportSection").then((m) => ({ default: m.ImportSection })),
-  { loading: () => <SectionSkeleton /> }
-);
-
 // The existing AtomicBuilderPage inner content will be rendered for build steps
-// We import the step renderer and related components
 const AtomicBuilderInner = dynamic(
   () => import("./enhanced/AtomicBuilderPage").then((m) => ({ default: m.AtomicBuilderPage })),
   { loading: () => <SectionSkeleton /> }
@@ -59,31 +51,29 @@ const AtomicBuilderInner = dynamic(
 // ─── Section title map ───
 
 const SECTION_TITLES: Record<BuilderSection, string> = {
-  welcome: "Nation Builder",
-  import: "Import from Wiki",
   foundation: "Foundation",
   identity: "National Identity",
   government: "Government",
   economics: "Economics",
   preview: "Preview & Create",
+  import: "Import from Wiki",
 };
 
 // ─── URL helpers ───
 
 function getSectionFromUrl(): BuilderSection {
-  if (typeof window === "undefined") return "welcome";
+  if (typeof window === "undefined") return "foundation";
   const params = new URLSearchParams(window.location.search);
   const section = params.get("section");
-  if (section && SECTION_TITLES[section as BuilderSection]) {
+  if (section && (section === "import" || SECTION_TITLES[section as BuilderSection])) {
     return section as BuilderSection;
   }
-  // Legacy support: ?import=true
-  if (params.get("import") === "true") return "import";
-  return "welcome";
+  // Default to foundation (no more welcome screen)
+  return "foundation";
 }
 
 function buildSectionUrl(section: BuilderSection): string {
-  if (section === "welcome") return "/builder";
+  if (section === "foundation") return "/builder";
   return `/builder?section=${section}`;
 }
 
@@ -95,10 +85,35 @@ function BuilderRouterInner() {
   const {
     builderState,
     setBuilderState,
+    clearDraft,
+    lastSaved,
+    isAutoSaving,
   } = useBuilderContext();
 
-  // Initialize section from URL
+  // Initialize section from URL - default to foundation
   const [activeSection, setActiveSection] = useState<BuilderSection>(getSectionFromUrl);
+
+  // Ref to track current builderState.step for use in callbacks without stale closures
+  const builderStepRef = useRef(builderState.step);
+  useEffect(() => {
+    builderStepRef.current = builderState.step;
+  }, [builderState.step]);
+
+  // Sync activeSection when builderState.step changes (handles clear button, footer nav, etc.)
+  useEffect(() => {
+    const mappedSection = legacyStepToSection(builderState.step) as BuilderSection;
+    if (mappedSection !== activeSection && BUILD_STEPS.includes(mappedSection)) {
+      setActiveSection(mappedSection);
+      window.history.pushState(null, "", withBasePath(buildSectionUrl(mappedSection)));
+      document.title = `${SECTION_TITLES[mappedSection]} - MyCountry Builder - IxStats`;
+    }
+  }, [builderState.step]);
+
+  // Advanced mode state
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false);
+  
+  // Manual save state
+  const [isManualSaving, setIsManualSaving] = useState(false);
 
   // Compute completed and accessible steps from builder state
   const completedSteps = useMemo(() => {
@@ -110,7 +125,7 @@ function BuilderRouterInner() {
   }, [builderState.completedSteps]);
 
   const accessibleSteps = useMemo(() => {
-    const set = new Set<BuilderSection>(["welcome", "import", "foundation"]);
+    const set = new Set<BuilderSection>(["foundation"]);
     // Foundation is always accessible
     // Other steps accessible if previous steps completed
     const stepOrder = BUILD_STEPS;
@@ -146,18 +161,21 @@ function BuilderRouterInner() {
       window.history.pushState(null, "", withBasePath(buildSectionUrl(section)));
 
       // Update document title
-      document.title = `${SECTION_TITLES[section]} - Nation Builder - IxStats`;
+      document.title = `${SECTION_TITLES[section]} - MyCountry Builder - IxStats`;
 
       // Scroll to top
       window.scrollTo({ top: 0, behavior: "instant" });
 
-      // If navigating to a build step, sync the legacy builder state
-      const legacyStep = sectionToLegacyStep(section);
-      if (BUILD_STEPS.includes(section) && legacyStep !== builderState.step) {
-        setBuilderState((prev) => ({ ...prev, step: legacyStep as BuilderStep }));
+      // Sync the legacy builder state using ref to avoid stale closure
+      // Skip for import section since it's not a builder step
+      if (section !== "import") {
+        const legacyStep = sectionToLegacyStep(section);
+        if (BUILD_STEPS.includes(section) && legacyStep !== builderStepRef.current) {
+          setBuilderState((prev) => ({ ...prev, step: legacyStep as BuilderStep }));
+        }
       }
     },
-    [activeSection, builderState.step, setBuilderState]
+    [activeSection, setBuilderState]
   );
 
   // Handle browser back/forward
@@ -173,19 +191,44 @@ function BuilderRouterInner() {
 
   // Set initial page title
   useEffect(() => {
-    document.title = `${SECTION_TITLES[activeSection]} - Nation Builder - IxStats`;
+    document.title = `${SECTION_TITLES[activeSection]} - MyCountry Builder - IxStats`;
   }, [activeSection]);
 
-  // Auth guard
+  // Handle import completion
+  const handleImportComplete = useCallback((data: any) => {
+    // Import data is stored in localStorage by ImportSection
+    // Navigate to identity to continue building
+    handleNavigate("identity");
+  }, [handleNavigate]);
+
+  // Manual save handler
+  const handleManualSave = useCallback(async () => {
+    setIsManualSaving(true);
+    try {
+      // Trigger a sync - the context handles the actual save
+      // For now just wait a bit to show the save indicator
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } finally {
+      setIsManualSaving(false);
+    }
+  }, []);
+
+  // Toggle advanced mode
+  const handleToggleAdvanced = useCallback(() => {
+    setIsAdvancedMode(prev => !prev);
+    setBuilderState(prev => ({ ...prev, showAdvancedMode: !prev.showAdvancedMode }));
+  }, [setBuilderState]);
+
+  // Auth guard - using MyCountry gold theme
   if (!user) {
     return (
-      <div className="from-background via-background flex min-h-screen items-center justify-center bg-gradient-to-br to-amber-50/20 p-4">
+      <div className="from-background via-background flex min-h-screen items-center justify-center bg-gradient-to-br to-amber-50/20 p-4 dark:to-amber-950/20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="mx-auto max-w-md border-2 shadow-xl">
+          <Card className="mx-auto max-w-md border-2 border-amber-500/20 shadow-xl">
             <CardContent className="space-y-6 p-8 text-center">
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10">
                 <Lock className="h-10 w-10 text-amber-500" />
@@ -193,7 +236,7 @@ function BuilderRouterInner() {
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold">Authentication Required</h2>
                 <p className="text-muted-foreground">
-                  Sign in to access the Nation Builder and create your custom nation
+                  Sign in to access the MyCountry Builder and create your custom nation
                 </p>
               </div>
               <Button
@@ -214,98 +257,77 @@ function BuilderRouterInner() {
   // Country name from builder state
   const countryName = builderState.economicInputs?.countryName;
 
-  // Determine if we should show sidebar layout (not on welcome)
-  const showSidebar = activeSection !== "welcome";
-
   // Render the active section
   const renderSection = () => {
-    switch (activeSection) {
-      case "welcome":
-        return (
-          <BuilderOnboardingWizard
-            onStartBuilding={() => handleNavigate("foundation")}
-            onSkipToImport={() => handleNavigate("import")}
-          />
-        );
-
-      case "import":
-        return (
-          <ImportSection
-            onNavigate={handleNavigate}
-            onImportComplete={() => {
-              // Import data stored in localStorage by ImportSection
-              // Navigate to foundation to continue
-              handleNavigate("foundation");
-            }}
-          />
-        );
-
-      // For all build steps, render the existing AtomicBuilderPage which handles
-      // the step-specific content via StepRenderer and BuilderStateContext
-      case "foundation":
-      case "identity":
-      case "government":
-      case "economics":
-      case "preview":
-        return (
-          <AtomicBuilderInner
-            onBackToIntro={() => handleNavigate("welcome")}
-            mode="create"
-          />
-        );
-
-      default:
-        return null;
+    if (activeSection === "import") {
+      return (
+        <ImportSection
+          onNavigate={handleNavigate}
+          onImportComplete={(data) => {
+            handleNavigate("identity");
+          }}
+        />
+      );
     }
+
+    // All build steps use AtomicBuilderPage
+    return (
+      <AtomicBuilderInner
+        onBackToIntro={() => {
+          // Just navigate to foundation, no more welcome screen
+          handleNavigate("foundation");
+        }}
+        mode="create"
+      />
+    );
   };
 
-  if (!showSidebar) {
-    // Welcome section: full-width, no sidebar
-    return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeSection}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-        >
-          {renderSection()}
-        </motion.div>
-      </AnimatePresence>
-    );
-  }
-
-  // Build steps and import: sidebar layout
+  // Always use sidebar layout now (no welcome screen)
   return (
-    <BuilderSidebarLayout
-      activeSection={activeSection}
-      onNavigate={handleNavigate}
-      completedSteps={completedSteps}
-      accessibleSteps={accessibleSteps}
-      heroSection={
-        <BuilderSectionHero
-          section={activeSection}
-          countryName={countryName}
-          completionPercent={completionPercent}
-          completedCount={BUILD_STEPS.filter((s) => completedSteps.has(s)).length}
-        />
-      }
-    >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeSection}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Suspense fallback={<SectionSkeleton />}>
-            {renderSection()}
-          </Suspense>
-        </motion.div>
-      </AnimatePresence>
-    </BuilderSidebarLayout>
+    <>
+      <BuilderSidebarLayout
+        activeSection={activeSection}
+        onNavigate={handleNavigate}
+        completedSteps={completedSteps}
+        accessibleSteps={accessibleSteps}
+        heroSection={
+          activeSection !== "import" && activeSection !== "foundation" ? (
+            <BuilderSectionHero
+              section={activeSection}
+              countryName={countryName}
+              completionPercent={completionPercent}
+              completedCount={BUILD_STEPS.filter((s) => completedSteps.has(s)).length}
+              lastSaved={lastSaved}
+              isAutoSaving={isAutoSaving}
+              onManualSave={handleManualSave}
+              isSaving={isManualSaving}
+              onClearDraft={clearDraft}
+              onToggleAdvanced={handleToggleAdvanced}
+              isAdvancedMode={isAdvancedMode}
+              mode="create"
+            />
+          ) : (
+            <div className="flex justify-end">
+              <BuilderContextualHelp activeSection={activeSection} />
+            </div>
+          )
+        }
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Suspense fallback={<SectionSkeleton />}>
+              {renderSection()}
+            </Suspense>
+          </motion.div>
+        </AnimatePresence>
+      </BuilderSidebarLayout>
+    </>
   );
 }
 

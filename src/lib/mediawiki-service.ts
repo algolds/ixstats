@@ -2197,6 +2197,9 @@ export class IxnayWikiService {
     // Handle common MediaWiki templates before general wiki syntax
     cleaned = this.processCommonTemplates(cleaned);
 
+    // Handle file/image links specially - extract just the filename
+    cleaned = cleaned.replace(/\[\[(?:File|Image|file|image):([^\|\]]+)(?:\|[^\]]+)?\]\]/gi, "$1");
+
     // Handle wiki links - convert to proper HTML links with the specified color
     // Convert [[Page|Display Text]] to HTML link
     cleaned = cleaned.replace(
@@ -2211,9 +2214,6 @@ export class IxnayWikiService {
       const cleanPage = page.trim();
       return this.createWikiLink(cleanPage, cleanPage);
     });
-
-    // Handle file links specially - extract just the filename
-    cleaned = cleaned.replace(/\[\[File:([^\|\]]+)(?:\|[^\]]+)?\]\]/g, "$1");
 
     // Remove wiki formatting
     cleaned = cleaned

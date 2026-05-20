@@ -5,7 +5,7 @@
 
 "use client";
 
-import { type ReactNode, useState, useEffect, useRef, useCallback } from "react";
+import { type ReactNode, type KeyboardEvent, useState, useEffect, useRef, useCallback, useDeferredValue } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -78,7 +78,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
     return () => clearTimeout(timer);
   }, [query]);
 
-  const deferredQuery = React.useDeferredValue(debouncedQuery);
+  const deferredQuery = useDeferredValue(debouncedQuery);
 
   const { data: searchData } = api.wikios.advancedSearch.useQuery(
     { query: deferredQuery, limit: 8 },
@@ -119,7 +119,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
     [router, onClose]
   );
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex((prev) => Math.min(prev + 1, items.length - 1));

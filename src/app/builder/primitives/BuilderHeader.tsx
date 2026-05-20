@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Crown, Settings, Sparkles, Grid3X3, Zap } from "lucide-react";
+import { ArrowLeft, Globe as GlobeIcon, Settings, Sparkles, Grid3X3, Zap } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { GlassCard, GlassCardContent } from "../components/glass/GlassCard";
 import type { BuilderStyle, BuilderMode } from "../components/glass/BuilderStyleToggle";
@@ -73,7 +73,7 @@ export function BuilderHeader({
 
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Crown className="h-8 w-8 text-amber-400" />
+                  <GlobeIcon className="h-8 w-8 text-emerald-400" />
                   <motion.div
                     animate={{
                       scale: [1, 1.1, 1],
@@ -86,7 +86,7 @@ export function BuilderHeader({
                     }}
                     className="absolute -top-1 -right-1"
                   >
-                    <Sparkles className="h-4 w-4 text-purple-400" />
+                    <Sparkles className="h-4 w-4 text-teal-400" />
                   </motion.div>
                 </div>
 

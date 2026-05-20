@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { api } from "~/trpc/react";
 
 // Single flag hook result
 export interface UseFlagResult {
@@ -107,6 +108,7 @@ export function useFlag(countryName?: string): UseFlagResult {
 
 /**
  * Hook for loading multiple flags efficiently
+ * Uses server-side cache first to avoid 429 rate-limit errors from browser-side Commons API calls.
  *
  * @param countryNames - Array of country names
  * @returns Bulk flag data and loading state
@@ -119,6 +121,13 @@ export function useBulkFlags(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch server-side cached flags via tRPC
+  const { data: serverFlags, isLoading: serverLoading } =
+    api.countries.flags.getAll.useQuery(undefined, {
+      staleTime: 1000 * 60 * 60, // 1 hour
+      retry: 1,
+    });
+
   // Create a stable key for the country names to prevent unnecessary re-renders
   const countryNamesKey = useMemo(() => {
     return countryNames.sort().join(",");
@@ -129,7 +138,7 @@ export function useBulkFlags(
     return countryNames.sort();
   }, [countryNamesKey]);
 
-  // Main fetch function
+  // Main fetch function - uses server cache only, no browser-side Commons API calls
   const fetchFlags = useCallback(
     async (forceRefetch = false) => {
       if (memoizedCountryNames.length === 0) {
@@ -141,40 +150,28 @@ export function useBulkFlags(
       setError(null);
 
       try {
-        // Step 1: Get all cached flags immediately (unless force refetching)
-        const cachedFlags: Record<string, string | null> = {};
-        const uncachedCountries: string[] = [];
+        // Use server-side cached flags only. No browser-side Commons API calls.
+        // The server warmup (module load) populates the cache on startup.
+        // Uncached flags get placeholders until server resolves them.
+        const resultFlags: Record<string, string | null> = {};
 
-        if (!forceRefetch) {
+        if (serverFlags && !forceRefetch) {
           for (const countryName of memoizedCountryNames) {
-            const cachedFlag = unifiedFlagService.getCachedFlagUrl(countryName);
-            if (cachedFlag) {
-              cachedFlags[countryName] = cachedFlag;
-            } else {
-              uncachedCountries.push(countryName);
-            }
+            const key = countryName.toLowerCase().trim();
+            resultFlags[countryName] = serverFlags[key] ?? "/placeholder-flag.svg";
           }
-
-          // Set cached flags immediately for instant display
-          setFlagUrls(cachedFlags);
         } else {
-          uncachedCountries.push(...memoizedCountryNames);
+          for (const countryName of memoizedCountryNames) {
+            resultFlags[countryName] = "/placeholder-flag.svg";
+          }
         }
 
-        // Step 2: Batch fetch uncached flags only if needed
-        if (uncachedCountries.length > 0) {
-          const fetchedFlags = await unifiedFlagService.batchGetFlags(uncachedCountries);
-
-          // Merge cached and fetched flags
-          const finalFlags = { ...cachedFlags, ...fetchedFlags };
-          setFlagUrls(finalFlags);
-        }
+        setFlagUrls(resultFlags);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         setError(errorMessage);
         console.error("[useBulkFlags] Fetch failed:", error);
 
-        // Set placeholder URLs for all countries on error
         const placeholderFlags: Record<string, string | null> = {};
         memoizedCountryNames.forEach((country) => {
           placeholderFlags[country] = "/placeholder-flag.svg";
@@ -184,7 +181,7 @@ export function useBulkFlags(
         setIsLoading(false);
       }
     },
-    [memoizedCountryNames, source]
+    [memoizedCountryNames, serverFlags, source]
   );
 
   // Initial fetch
@@ -212,7 +209,7 @@ export function useBulkFlags(
 
   return {
     flagUrls,
-    isLoading,
+    isLoading: isLoading || serverLoading,
     error,
     localCount,
     placeholderCount,

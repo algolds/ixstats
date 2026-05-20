@@ -358,16 +358,6 @@ interface StepRendererProps {
   onGovernmentStructureSave: (structure: any) => Promise<void>;
 }
 
-/**
- * StepRenderer - Renders step-specific content
- *
- * Handles all step-specific rendering logic including:
- * - Foundation (country selection)
- * - Core (identity + indicators)
- * - Government (components + structure + spending + preview)
- * - Economics (economy builder)
- * - Preview (summary)
- */
 export const StepRenderer = memo(function StepRenderer({
   countries,
   isLoadingCountries,

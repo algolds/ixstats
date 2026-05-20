@@ -401,6 +401,32 @@ class UnifiedFlagService {
     const cacheKey = this.normalizeCountryName(countryName);
     const now = Date.now();
 
+    // Client-side: route requests to server-side API to bypass Commons direct hits (CORS/429)
+    if (typeof window !== "undefined") {
+      try {
+        const basePath = getBasePath();
+        const resp = await fetch(`${basePath}/api/flags/${encodeURIComponent(countryName)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.flagUrl) {
+            const cachedFlag: CachedFlag = {
+              url: data.flagUrl,
+              source: { name: "Server", baseUrl: "", priority: 1 },
+              cachedAt: Date.now(),
+              lastAccessed: Date.now(),
+            };
+            this.memoryCache[cacheKey] = cachedFlag;
+            this.saveLocalMetadata(); // Save metadata (localStorage wrapper)
+            return data.flagUrl;
+          }
+        }
+        return null;
+      } catch (e) {
+        console.warn("[UnifiedFlagService] Client-side fetch via API route failed, falling back:", e);
+        return null;
+      }
+    }
+
     // Check if global fetch is disabled but should be re-enabled
     if (
       this.globalFetchDisabled &&
@@ -603,6 +629,9 @@ class UnifiedFlagService {
 
       const response = await fetch(batchUrl, {
         signal: AbortSignal.timeout(8000), // Slightly longer timeout for batch request
+        headers: {
+          "User-Agent": "IxStats/2.0 (https://ixwiki.com/projects/ixstats; contact@ixwiki.com) NextJS-Server",
+        },
       });
 
       if (!response.ok) {

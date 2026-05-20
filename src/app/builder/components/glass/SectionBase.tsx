@@ -21,7 +21,7 @@ export interface BaseSectionProps {
   showAdvanced: boolean;
   onToggleAdvanced?: () => void;
   referenceCountry?: RealCountryData;
-  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
+  theme?: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
   className?: string;
   hideViewToggle?: boolean;
 }
@@ -39,7 +39,7 @@ export interface SectionConfig {
   title: string;
   subtitle?: string;
   icon?: React.ElementType;
-  theme: "gold" | "blue" | "indigo" | "red" | "neutral";
+  theme: "gold" | "blue" | "indigo" | "red" | "emerald" | "teal" | "neutral";
   showMetricOverview?: boolean;
   validation?: {
     rules: ValidationRule[];

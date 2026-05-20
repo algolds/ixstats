@@ -113,7 +113,8 @@ export const wikiosRouter = createTRPCRouter({
 
         const transformed = transformArticleHtml(
           stripConflictingStyles(data.parse.text),
-          ""
+          "",
+          wikiSource
         );
 
         return {
@@ -137,7 +138,8 @@ export const wikiosRouter = createTRPCRouter({
 
       const transformed = transformArticleHtml(
         stripConflictingStyles(article.html),
-        ""
+        "",
+        "ixwiki"
       );
 
       return {

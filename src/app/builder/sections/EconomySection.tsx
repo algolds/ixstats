@@ -51,7 +51,6 @@ import {
 
 // Economy Builder Integration
 import type { EconomyBuilderState } from "~/types/economy-builder";
-import { EconomyBuilderModal } from "../components/enhanced/EconomyBuilderModal";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 interface EconomySectionComponentProps extends ExtendedSectionProps {
@@ -87,28 +86,8 @@ export function EconomySection({
   // Get builder context to update global state
   const builderContext = useBuilderContext?.();
 
-  // Economy Builder State
-  const [isEconomyBuilderOpen, setIsEconomyBuilderOpen] = useState(false);
-  const [economyBuilderState, setEconomyBuilderState] = useState<EconomyBuilderState | null>(null);
-
-  // Economy Builder Handlers
-  const handleOpenEconomyBuilder = () => {
-    setIsEconomyBuilderOpen(true);
-  };
-
-  const handleSaveEconomyBuilder = (builder: EconomyBuilderState) => {
-    setEconomyBuilderState(builder); // Update local state for UI
-
-    // Update global builder state if context is available
-    if (builderContext?.updateEconomyBuilderState) {
-      builderContext.updateEconomyBuilderState(builder);
-      console.log("✅ Economy builder saved to global state:", builder);
-    } else {
-      console.warn(
-        "⚠️ Builder context not available - economy state not persisted to global state"
-      );
-    }
-  };
+  // Economy Builder State (read from context if available)
+  const economyBuilderState = builderContext?.builderState?.economyBuilder || null;
 
   // Calculate component effectiveness if we have economy builder state
   const componentEffectiveness = useMemo(() => {
@@ -240,59 +219,52 @@ export function EconomySection({
   // Basic view content - Essential economic indicators
   const basicContent = (
     <>
-      {/* Economy Builder Trigger */}
-      <div className="mb-6 md:col-span-2">
-        <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 dark:border-blue-800 dark:from-blue-900/20 dark:to-indigo-900/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="rounded-lg bg-blue-100 p-3 dark:bg-blue-900/20">
-                <Settings className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+      {/* Economy Builder Summary (read-only view - full configuration in Economics step) */}
+      {economyBuilderState && (
+        <div className="mb-6 md:col-span-2">
+          <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-6 dark:border-emerald-800 dark:from-emerald-900/20 dark:to-teal-900/20">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="rounded-lg bg-emerald-100 p-3 dark:bg-emerald-900/20">
+                <Settings className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Economy Builder</h3>
+                <h3 className="text-lg font-semibold">Economy Configuration</h3>
                 <p className="text-muted-foreground text-sm">
-                  Configure your economic system with atomic components and advanced settings
+                  Your economic system configuration summary
                 </p>
               </div>
             </div>
-            <Button onClick={handleOpenEconomyBuilder} className="bg-blue-600 hover:bg-blue-700">
-              <Play className="mr-2 h-4 w-4" />
-              Configure Economy
-            </Button>
-          </div>
 
-          {/* Economy Builder Summary */}
-          {economyBuilderState && (
-            <div className="mt-4 border-t border-blue-200 pt-4 dark:border-blue-800">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {economyBuilderState.selectedAtomicComponents.length}
-                  </div>
-                  <div className="text-muted-foreground text-xs">Components</div>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="text-center">
+                <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  {economyBuilderState.selectedAtomicComponents?.length || 0}
                 </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                    {componentEffectiveness.toFixed(0)}%
-                  </div>
-                  <div className="text-muted-foreground text-xs">Effectiveness</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                    {economyBuilderState.sectors.length}
-                  </div>
-                  <div className="text-muted-foreground text-xs">Sectors</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                    {economyBuilderState.structure.economicModel}
-                  </div>
-                  <div className="text-muted-foreground text-xs">Model</div>
-                </div>
+                <div className="text-muted-foreground text-xs">Components</div>
               </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {componentEffectiveness.toFixed(0)}%
+                </div>
+                <div className="text-muted-foreground text-xs">Effectiveness</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-teal-600 dark:text-teal-400">
+                  {economyBuilderState.sectors?.length || 0}
+                </div>
+                <div className="text-muted-foreground text-xs">Sectors</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                  {economyBuilderState.structure?.economicModel || "Not set"}
+                </div>
+                <div className="text-muted-foreground text-xs">Model</div>
+              </div>
+            </div>
 
-              {/* Selected Components */}
-              <div className="mt-3">
+            {/* Selected Components */}
+            {economyBuilderState.selectedAtomicComponents && economyBuilderState.selectedAtomicComponents.length > 0 && (
+              <div className="mt-3 border-t border-emerald-200 pt-3 dark:border-emerald-800">
                 <div className="mb-2 text-sm font-medium">Selected Components:</div>
                 <div className="flex flex-wrap gap-1">
                   {economyBuilderState.selectedAtomicComponents.slice(0, 5).map((componentType) => {
@@ -311,10 +283,10 @@ export function EconomySection({
                   )}
                 </div>
               </div>
-            </div>
-          )}
-        </Card>
-      </div>
+            )}
+          </Card>
+        </div>
+      )}
 
       {/* Overview Metrics */}
       <div className="grid grid-cols-2 gap-4 md:col-span-2 md:grid-cols-4">
@@ -639,16 +611,6 @@ export function EconomySection({
           advancedColumns={2}
         />
       </SectionBase>
-
-      {/* Economy Builder Modal */}
-      <EconomyBuilderModal
-        isOpen={isEconomyBuilderOpen}
-        onClose={() => setIsEconomyBuilderOpen(false)}
-        onSave={handleSaveEconomyBuilder}
-        initialData={economyBuilderState || undefined}
-        economicInputs={inputs}
-        countryId={countryId}
-      />
     </>
   );
 }

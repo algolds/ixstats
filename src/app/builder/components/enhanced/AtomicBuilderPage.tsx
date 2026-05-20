@@ -22,13 +22,10 @@ import { useNotify } from "~/hooks/useNotify";
 
 // Import modular architecture
 import { BuilderStateProvider, useBuilderContext } from "./context/BuilderStateContext";
-import { BuilderHeader, StepContent, BuilderFooter } from "./sections";
+import { StepContent, BuilderFooter } from "./sections";
 import { StepRenderer } from "./sections/StepRenderer";
-import { StepIndicator } from "./StepIndicator";
 import { BuilderStepLoading } from "../GlobalBuilderLoading";
-import { BUILDER_GOLD, BUILDER_GOLD_HOVER } from "./builderConfig";
 import type { BuilderStep } from "./builderConfig";
-import { useBuilderActions } from "../../hooks/useBuilderActions";
 
 /**
  * Props for the AtomicBuilderPage component
@@ -83,15 +80,8 @@ function AtomicBuilderPageInner({
   const { user } = useUser();
   const router = useRouter();
   const notify = useNotify();
-  const { builderState, setBuilderState, clearDraft, mode: contextMode, syncAllNow } = useBuilderContext();
+  const { builderState, setBuilderState } = useBuilderContext();
   const isEditMode = mode === "edit";
-
-  // Get navigation handlers from useBuilderActions
-  const { handleStepClick } = useBuilderActions({
-    builderState,
-    setBuilderState,
-    mode: contextMode,
-  });
 
   // Country data state
   const [countries, setCountries] = useState<RealCountryData[]>([]);
@@ -110,9 +100,6 @@ function AtomicBuilderPageInner({
   // Submission lock to prevent double-submits
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionLockRef = useRef(false);
-
-  // Manual save state
-  const [isManualSaving, setIsManualSaving] = useState(false);
 
   // Government structure handlers
   const handleGovernmentStructureChange = useCallback(
@@ -302,64 +289,6 @@ function AtomicBuilderPageInner({
     isLoading: false,
   };
 
-  // Manual save handler - saves to localStorage AND triggers database sync (edit mode)
-  const handleManualSave = useCallback(async () => {
-    if (isManualSaving) {
-      console.warn("[Builder] Manual save already in progress");
-      return;
-    }
-
-    setIsManualSaving(true);
-
-    try {
-      // Step 1: Save to localStorage (always)
-      const stateKey = mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
-      const savedKey = mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
-      const now = new Date();
-
-      try {
-        localStorage.setItem(stateKey, JSON.stringify(builderState));
-        localStorage.setItem(savedKey, now.toISOString());
-        console.log("[Builder] Manual save to localStorage successful");
-      } catch (storageError) {
-        // Try sessionStorage as fallback
-        try {
-          sessionStorage.setItem(stateKey, JSON.stringify(builderState));
-          sessionStorage.setItem(savedKey, now.toISOString());
-          console.log("[Builder] Manual save to sessionStorage successful (fallback)");
-        } catch (sessionError) {
-          throw new Error("Failed to save to both local and session storage");
-        }
-      }
-
-      // Step 2: Trigger database sync for all sections (edit mode only)
-      if (mode === "edit" && countryId) {
-        console.log("[Builder] Triggering database sync for all sections...");
-        const syncResults = await syncAllNow();
-
-        if (syncResults.failed > 0) {
-          console.warn("[Builder] Some sections failed to sync:", syncResults.errors);
-          notify.warning("Partially Saved", `${syncResults.success} section(s) saved. ${syncResults.failed} section(s) failed to sync to database.`);
-        } else if (syncResults.success > 0) {
-          notify.success("All Changes Saved!", `Successfully saved ${syncResults.success} section(s) to database.`);
-        } else {
-          // No sections registered for sync (likely in create mode or no changes)
-          notify.success("Progress Saved!", "All builder data has been saved locally.");
-        }
-      } else {
-        // Create mode - only localStorage
-        notify.success("Progress Saved!", "All builder data has been saved locally.");
-      }
-
-      console.log("[Builder] Manual save completed successfully");
-    } catch (error) {
-      console.error("[Builder] Manual save failed:", error);
-      notify.error("Save Failed", "Failed to save builder data. Please try again.");
-    } finally {
-      setIsManualSaving(false);
-    }
-  }, [builderState, isManualSaving, mode, countryId, syncAllNow]);
-
   const handleCreateCountry = useCallback(async () => {
     // Prevent double-submit with ref-based lock
     if (submissionLockRef.current || isSubmitting) {
@@ -507,70 +436,50 @@ function AtomicBuilderPageInner({
   }
 
   return (
-    <div className="from-background via-background min-h-screen bg-gradient-to-br to-amber-50/10">
-      {/* Header */}
-      <BuilderHeader
-        onBackToIntro={onBackToIntro}
-        onClearDraft={clearDraft}
-        mode={mode}
-        onManualSave={handleManualSave}
-        isSaving={isManualSaving}
-        countryId={countryId}
-      />
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Step Progress Indicator */}
-        <StepIndicator
-          currentStep={builderState.step}
-          completedSteps={builderState.completedSteps}
-          onStepClick={handleStepClick}
-          mode={contextMode}
-        />
-
-        {/* Main Content Area with Animations */}
-        {builderState.step === "foundation" && !isEditMode ? (
-          // Foundation step is rendered without StepContent wrapper (only in create mode)
-          <motion.div
-            key="foundation"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-          >
-            <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
-              <StepRenderer
-                countries={countries}
-                isLoadingCountries={isLoadingCountries}
-                countryLoadError={countryLoadError}
-                onBackToIntro={onBackToIntro}
-                onGovernmentStructureChange={handleGovernmentStructureChange}
-                onGovernmentStructureSave={handleGovernmentStructureSave}
-              />
-            </Suspense>
-          </motion.div>
-        ) : (
-          // All other steps are wrapped in StepContent
-          <StepContent>
-            <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
-              <StepRenderer
-                countries={countries}
-                isLoadingCountries={isLoadingCountries}
-                countryLoadError={countryLoadError}
-                onBackToIntro={onBackToIntro}
-                onGovernmentStructureChange={handleGovernmentStructureChange}
-                onGovernmentStructureSave={handleGovernmentStructureSave}
-              />
-            </Suspense>
-
-            {/* Footer with navigation */}
-            <BuilderFooter
-              onCreateCountry={handleCreateCountry}
-              isCreating={createCountryMutation?.isLoading || isSubmitting}
+    <div className="space-y-6">
+      {/* Main Content Area with Animations */}
+      {builderState.step === "foundation" && !isEditMode ? (
+        // Foundation step is rendered without StepContent wrapper (only in create mode)
+        <motion.div
+          key="foundation"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-6"
+        >
+          <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
+            <StepRenderer
+              countries={countries}
+              isLoadingCountries={isLoadingCountries}
+              countryLoadError={countryLoadError}
+              onBackToIntro={onBackToIntro}
+              onGovernmentStructureChange={handleGovernmentStructureChange}
+              onGovernmentStructureSave={handleGovernmentStructureSave}
             />
-          </StepContent>
-        )}
-      </div>
+          </Suspense>
+        </motion.div>
+      ) : (
+        // All other steps are wrapped in StepContent
+        <StepContent>
+          <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
+            <StepRenderer
+              countries={countries}
+              isLoadingCountries={isLoadingCountries}
+              countryLoadError={countryLoadError}
+              onBackToIntro={onBackToIntro}
+              onGovernmentStructureChange={handleGovernmentStructureChange}
+              onGovernmentStructureSave={handleGovernmentStructureSave}
+            />
+          </Suspense>
+
+          {/* Footer with navigation */}
+          <BuilderFooter
+            onCreateCountry={handleCreateCountry}
+            isCreating={createCountryMutation?.isLoading || isSubmitting}
+          />
+        </StepContent>
+      )}
 
       {/* Tutorial Intro Disclosure Components */}
       <IntroDisclosure

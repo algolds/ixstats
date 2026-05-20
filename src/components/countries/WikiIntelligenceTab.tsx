@@ -15,6 +15,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { RiAlertLine, RiRefreshLine } from "react-icons/ri";
+import { resolveImageUrl } from "~/lib/unified-wiki-parser";
 
 /**
  * WikiIntelligenceTab Component
@@ -78,9 +79,16 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
   // Handle wiki link clicks
   const handleWikiLinkClick = useCallback((pageName: string) => {
     console.log(`[WikiIntelligence] Wiki link clicked: ${pageName}`);
-    const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(pageName)}`;
+    const source = wikiData.wikiSource ?? "ixwiki";
+    let baseUrl = "https://ixwiki.com/wiki/";
+    if (source === "iiwiki") {
+      baseUrl = "https://iiwiki.com/wiki/";
+    } else if (source === "althistory") {
+      baseUrl = "https://althistory.fandom.com/wiki/";
+    }
+    const wikiUrl = `${baseUrl}${encodeURIComponent(pageName)}`;
     window.open(wikiUrl, "_blank", "noopener,noreferrer");
-  }, []);
+  }, [wikiData.wikiSource]);
 
   // Handle settings apply
   const handleApplySettings = useCallback(async () => {
@@ -129,7 +137,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
   // Get flag image URL for header background
   const flagImageUrl =
     wikiData.infobox?.image_flag || wikiData.infobox?.flag
-      ? `https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_flag || wikiData.infobox.flag}`
+      ? resolveImageUrl(wikiData.infobox.image_flag || wikiData.infobox.flag, wikiData.wikiSource)
       : undefined;
 
   return (
@@ -176,6 +184,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
                         handleWikiLinkClick={handleWikiLinkClick}
                         flagColors={flagColors}
                         countryName={countryName}
+                        wikiSource={wikiData.wikiSource}
                       />
                     ))}
                 </div>
@@ -188,6 +197,7 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
                     onRefresh={handleRefresh}
                     flagColors={flagColors}
                     viewerClearanceLevel={viewerClearanceLevel}
+                    wikiSource={wikiData.wikiSource}
                   />
                 </div>
               </div>

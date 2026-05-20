@@ -17,6 +17,8 @@ import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { formatTimeAgo } from "~/lib/time-utils";
 import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
+import { renderDiscordEmojis, formatThinkpagesContentForDisplay } from "~/lib/text-formatter";
+import { sanitizeUserContent } from "~/lib/sanitize-html";
 
 type FeedTab = "all" | "following" | "thinkpages" | "wiki" | "forum";
 
@@ -456,6 +458,13 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
   const metadata = activity.content?.metadata ?? {};
   const externalUrl = metadata.wikiUrl ?? metadata.forumUrl;
 
+  const titleHtml = activity.content?.title
+    ? formatThinkpagesContentForDisplay(activity.content.title)
+    : "";
+  const descHtml = activity.content?.description
+    ? formatThinkpagesContentForDisplay(activity.content.description)
+    : "";
+
   return (
     <div className="group rounded-xl border border-border/50 bg-muted/20 p-3 transition-colors hover:bg-muted/40">
       <div className="flex items-start gap-3">
@@ -464,16 +473,96 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground">
-              {activity.content?.title}
-            </span>
+            <span className="truncate text-sm font-medium text-foreground" dangerouslySetInnerHTML={{ __html: titleHtml }} />
             <Badge variant="outline" className={cn("shrink-0 text-[10px]", config.color, "border-current/30")}>
               {config.label}
             </Badge>
           </div>
-          <p className="line-clamp-2 text-xs text-muted-foreground">
-            {activity.content?.description}
-          </p>
+          <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: descHtml }} />
+          {/* Media Attachments */}
+          {activity.content?.mediaAttachments && activity.content.mediaAttachments.length > 0 && (
+            <div
+              className={cn(
+                "mt-2 overflow-hidden rounded-lg",
+                activity.content.mediaAttachments.length === 1 && "max-w-xs",
+                activity.content.mediaAttachments.length > 1 && "grid grid-cols-2 gap-1"
+              )}
+            >
+              {activity.content.mediaAttachments.map((media: any, index: number) => (
+                <div
+                  key={media.id || index}
+                  className={cn(
+                    "bg-muted relative overflow-hidden rounded-lg bg-white/5",
+                    activity.content.mediaAttachments.length === 1 && "aspect-video",
+                    activity.content.mediaAttachments.length > 1 && "aspect-square"
+                  )}
+                >
+                  <img
+                    src={media.url}
+                    alt={media.filename || `Image ${index + 1}`}
+                    className="h-full w-full cursor-pointer object-cover transition-opacity hover:opacity-90"
+                    onClick={() => {
+                      window.open(media.url, "_blank");
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Post Reactions */}
+          {(() => {
+            const reactionCounts = activity.content?.reactionCounts;
+            if (reactionCounts && Object.keys(reactionCounts).length > 0) {
+              return (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border/20 pt-1.5">
+                  {Object.entries(reactionCounts).map(([type, count]) => {
+                    if ((count as number) <= 0) return null;
+                    
+                    // Render custom Discord reactions
+                    if (type.startsWith("discord:")) {
+                      const parts = type.split(":");
+                      const emojiName = parts[1] || "";
+                      const emojiId = parts[2] || "";
+                      
+                      const url = `https://cdn.discordapp.com/emojis/${emojiId}.png`;
+                      return (
+                        <div
+                          key={type}
+                          className="flex items-center gap-1 rounded bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground border border-border/10 transition-colors hover:bg-muted/50"
+                        >
+                          <img src={url} alt={emojiName} className="h-3.5 w-3.5 object-contain" />
+                          <span>{count as number}</span>
+                        </div>
+                      );
+                    }
+
+                    // Render standard reactions or unicode characters
+                    const emojiMap: Record<string, string> = {
+                      like: "❤️",
+                      laugh: "😂",
+                      angry: "😡",
+                      fire: "🔥",
+                      thumbsup: "👍",
+                      thumbsdown: "👎",
+                    };
+                    
+                    const displayEmoji = emojiMap[type] || type;
+                    
+                    return (
+                      <div
+                        key={type}
+                        className="flex items-center gap-1 rounded bg-muted/30 px-1.5 py-0.5 text-[10px] text-muted-foreground border border-border/10 transition-colors hover:bg-muted/50"
+                      >
+                        <span className="text-[11px]">{displayEmoji}</span>
+                        <span>{count as number}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }
+            return null;
+          })()}
           <div className="mt-1.5 flex items-center gap-3 text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1">
               <Clock className="h-3 w-3" />

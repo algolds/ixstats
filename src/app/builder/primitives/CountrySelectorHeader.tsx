@@ -319,17 +319,7 @@ export function CountrySelectorHeader({
                   Selected as your economic foundation template
                 </p>
               </>
-            ) : (
-              <>
-                <p className="text-lg text-[var(--color-text-secondary)]">
-                  Select up to 5 Archetype presets or{" "}
-                  <Highlighter action="underline" color="#FFC107">
-                    build your country from scratch
-                  </Highlighter>{" "}
-                  to get started
-                </p>
-              </>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

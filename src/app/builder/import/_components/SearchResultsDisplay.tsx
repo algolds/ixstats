@@ -1,11 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 import { Search } from "lucide-react";
-import {
-  GlassCard,
-  GlassCardContent,
-  GlassCardHeader,
-} from "~/app/builder/components/glass/GlassCard";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
 import { SearchResultItem } from "./SearchResultItem";
 import { CountryPreview } from "./CountryPreview";
@@ -41,7 +37,7 @@ interface SearchResultsDisplayProps {
   selectedSite: WikiSite;
   loadMoreResults: () => void;
   hasMoreResults: boolean;
-  formatNumber: (num: number | undefined) => string;
+  formatNumber: (num: number | undefined, _decimals?: number) => string;
   onCountryPreview?: (result: SearchResult) => void;
   onContinueWithCountry?: (result: SearchResult) => void;
 }
@@ -60,6 +56,8 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
   onContinueWithCountry,
 }) => {
   const [previewingCountry, setPreviewingCountry] = useState<SearchResult | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const resultRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const handleCountrySelect = (result: SearchResult) => {
     if (
@@ -77,6 +75,7 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
 
   const handleCancelPreview = () => {
     setPreviewingCountry(null);
+    setFocusedIndex(-1);
   };
 
   const handleContinueWithPreview = () => {
@@ -89,6 +88,55 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
       setPreviewingCountry(null);
     }
   };
+
+  // Keyboard navigation within result list
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (previewingCountry) {
+        if (e.key === "Escape") {
+          handleCancelPreview();
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setFocusedIndex((i) => Math.min(i + 1, displayedResults.length - 1));
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setFocusedIndex((i) => Math.max(i - 1, 0));
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (focusedIndex >= 0 && displayedResults[focusedIndex]) {
+            handleCountrySelect(displayedResults[focusedIndex]);
+          }
+          break;
+        case "Escape":
+          e.preventDefault();
+          setFocusedIndex(-1);
+          break;
+      }
+    },
+    [displayedResults, focusedIndex, previewingCountry]
+  );
+
+  // Scroll focused item into view
+  useEffect(() => {
+    if (focusedIndex >= 0 && resultRefs.current[focusedIndex]) {
+      resultRefs.current[focusedIndex]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [focusedIndex]);
+
+  // Reset focus when results change
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [displayedResults.length]);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -104,71 +152,77 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
         }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <GlassCard depth="elevated" blur="medium" theme="neutral" motionPreset="slide">
-          <GlassCardHeader>
+        <Card className="border-blue-500/20 bg-card/60 backdrop-blur-md">
+          <CardHeader>
             <div className="flex items-center gap-3">
-              <div
-                className="border-border-secondary/30 rounded-lg border p-2"
-                style={{ backgroundColor: "rgba(245, 158, 11, 0.2)" }}
-              >
-                <Search className="text-text-secondary h-5 w-5" />
+              <div className="rounded-lg border border-border/30 bg-amber-500/20 p-2">
+                <Search className="h-5 w-5 text-amber-500" />
               </div>
               <div>
-                <h2 className="text-text-primary text-lg font-semibold">
+                <CardTitle className="text-lg">
                   Search Results ({searchResults.length})
-                </h2>
+                </CardTitle>
                 {selectedSite.name === "iiwiki" &&
                   searchResults.some((r) => r.snippet.includes("subcategory")) && (
-                    <p className="text-text-muted mt-1 text-sm">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       Results include pages from subcategories
                     </p>
                   )}
               </div>
             </div>
-          </GlassCardHeader>
-          <GlassCardContent className="relative">
-            <div className="relative">
+          </CardHeader>
+          <CardContent className="relative">
+            <div
+              className="relative"
+              onKeyDown={handleKeyDown}
+              role="listbox"
+              aria-label="Search results"
+              tabIndex={-1}
+            >
               <div className="hide-scrollbar max-h-96 space-y-3 overflow-y-auto">
                 {displayedResults.map((result, index) => (
-                  <SearchResultItem
+                  <div
                     key={index}
-                    result={result}
-                    index={index}
-                    selectedResult={selectedResult}
-                    handleSelectResult={handleCountrySelect}
-                    categoryFilter={categoryFilter}
-                    formatNumber={formatNumber}
-                  />
+                    ref={(el) => {
+                      resultRefs.current[index] = el;
+                    }}
+                    role="option"
+                    aria-selected={focusedIndex === index}
+                    tabIndex={focusedIndex === index ? 0 : -1}
+                  >
+                    <SearchResultItem
+                      result={result}
+                      index={index}
+                      selectedResult={selectedResult}
+                      handleSelectResult={handleCountrySelect}
+                      categoryFilter={categoryFilter}
+                      formatNumber={formatNumber}
+                      isFocused={focusedIndex === index}
+                      onFocus={() => setFocusedIndex(index)}
+                    />
+                  </div>
                 ))}
               </div>
 
-              {/* Progressive Blur for scroll fade */}
               <ProgressiveBlur className="bottom-2" position="bottom" height="27%" />
             </div>
 
-            {/* Load More Button */}
             {hasMoreResults && (
               <div className="mt-6 text-center">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={loadMoreResults}
-                  className="rounded-lg border px-6 py-3 transition-all duration-200"
-                  style={{
-                    backgroundColor: "var(--color-bg-secondary)",
-                    borderColor: "var(--color-border-primary)",
-                    color: "var(--color-text-primary)",
-                  }}
+                  className="rounded-lg border border-border bg-muted/50 px-6 py-3 text-foreground transition-all duration-200 hover:bg-muted"
                 >
                   Load More Results ({searchResults.length - displayedResults.length} remaining)
                 </motion.button>
               </div>
             )}
-          </GlassCardContent>
-        </GlassCard>
+          </CardContent>
+        </Card>
       </motion.div>
 
-      {/* Country Preview Overlay */}
       {previewingCountry && (
         <CountryPreview
           selectedResult={previewingCountry}

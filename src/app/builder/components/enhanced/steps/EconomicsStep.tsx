@@ -59,7 +59,7 @@ export function EconomicsStep({
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4 text-center"
       >
-        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg">
+        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
           <TrendingUp className="h-8 w-8 text-white" />
         </div>
         <div className="flex items-center justify-center gap-2">

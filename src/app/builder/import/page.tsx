@@ -16,7 +16,7 @@ export default function ImportFromWikiPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="animate-pulse text-muted-foreground">Redirecting to Nation Builder...</div>
+      <div className="animate-pulse text-muted-foreground">Redirecting to MyCountry Builder...</div>
     </div>
   );
 }

@@ -23,6 +23,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { type CountryInfobox } from "~/lib/mediawiki-service";
 import { parseInfoboxValue } from "~/lib/wiki-intelligence-parser";
+import { resolveImageUrl } from "~/lib/unified-wiki-parser";
+import { type WikiSource } from "~/lib/mediawiki-config";
 
 /**
  * Props for WikiInfoBoxSidebar component
@@ -42,6 +44,8 @@ interface WikiInfoBoxSidebarProps {
   };
   /** Viewer's clearance level for data access */
   viewerClearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  /** Resolved source for this country's intelligence profile */
+  wikiSource?: WikiSource;
 }
 
 /**
@@ -63,6 +67,7 @@ export const WikiInfoBoxSidebar: React.FC<WikiInfoBoxSidebarProps> = ({
   onRefresh,
   flagColors,
   viewerClearanceLevel,
+  wikiSource = "ixwiki",
 }) => {
   // Key fields to display in sidebar
   const keyFields = [
@@ -78,10 +83,17 @@ export const WikiInfoBoxSidebar: React.FC<WikiInfoBoxSidebarProps> = ({
    * Renders the national symbols section (flag and coat of arms)
    */
   const renderNationalSymbols = () => {
-    const hasFlag = infobox?.image_flag || infobox?.flag;
-    const hasCoat = infobox?.image_coat || infobox?.coat_of_arms;
+    const flagFile = infobox?.image_flag || infobox?.flag;
+    const coatFile = infobox?.image_coat || infobox?.coat_of_arms;
 
-    if (!hasFlag && !hasCoat) return null;
+    if (!flagFile && !coatFile) return null;
+
+    let baseUrl = "https://ixwiki.com/wiki/";
+    if (wikiSource === "iiwiki") {
+      baseUrl = "https://iiwiki.com/wiki/";
+    } else if (wikiSource === "althistory") {
+      baseUrl = "https://althistory.fandom.com/wiki/";
+    }
 
     return (
       <div className="rounded-lg border border-amber-500/20 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 p-3">
@@ -90,18 +102,17 @@ export const WikiInfoBoxSidebar: React.FC<WikiInfoBoxSidebarProps> = ({
           National Symbols
         </h4>
         <div className="flex items-center justify-center gap-4">
-          {hasFlag && (
+          {flagFile && (
             <div
               className="group cursor-pointer"
               onClick={() => {
-                const flagFile = infobox?.image_flag || infobox?.flag;
-                if (flagFile) window.open(`https://ixwiki.com/wiki/File:${flagFile}`, "_blank");
+                window.open(`${baseUrl}File:${flagFile}`, "_blank");
               }}
             >
               <div className="text-center">
                 <div className="relative mb-1 rounded-lg border border-blue-400/30 bg-blue-500/10 p-2 transition-all duration-300 group-hover:border-blue-400/50">
                   <img
-                    src={`https://ixwiki.com/wiki/Special:Filepath/${infobox?.image_flag || infobox?.flag}`}
+                    src={resolveImageUrl(flagFile, wikiSource)}
                     alt="National Flag"
                     className="h-7 w-12 rounded object-cover shadow-lg transition-transform duration-300 group-hover:scale-105"
                     onError={(e) => {
@@ -115,18 +126,17 @@ export const WikiInfoBoxSidebar: React.FC<WikiInfoBoxSidebarProps> = ({
             </div>
           )}
 
-          {hasCoat && (
+          {coatFile && (
             <div
               className="group cursor-pointer"
               onClick={() => {
-                const coatFile = infobox?.image_coat || infobox?.coat_of_arms;
-                if (coatFile) window.open(`https://ixwiki.com/wiki/File:${coatFile}`, "_blank");
+                window.open(`${baseUrl}File:${coatFile}`, "_blank");
               }}
             >
               <div className="text-center">
                 <div className="relative mb-1 rounded-lg border border-amber-400/30 bg-amber-500/10 p-2 transition-all duration-300 group-hover:border-amber-400/50">
                   <img
-                    src={`https://ixwiki.com/wiki/Special:Filepath/${infobox?.image_coat || infobox?.coat_of_arms}`}
+                    src={resolveImageUrl(coatFile, wikiSource)}
                     alt="Coat of Arms"
                     className="h-7 w-7 rounded object-cover shadow-lg transition-transform duration-300 group-hover:scale-105"
                     onError={(e) => {

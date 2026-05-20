@@ -59,7 +59,7 @@ export function BuilderHeader({
               className="hidden items-center gap-1 border-amber-500/20 md:flex"
             >
               <Zap className="h-3 w-3 text-amber-500" />
-              {isEditMode ? "Editor" : "Builder"} v1.1
+              {isEditMode ? "Editor" : "Builder"} v1.5
             </Badge>
           </div>
           <div className="flex items-center gap-3">

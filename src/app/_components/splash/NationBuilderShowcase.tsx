@@ -11,6 +11,7 @@ import {
   Sparkles,
   Lock,
   ArrowRight,
+  Download,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -23,6 +24,7 @@ const STEP_ICONS: Record<(typeof BUILD_STEPS)[number], typeof Crown> = {
   government: Building2,
   economics: TrendingUp,
   preview: CheckCircle,
+  import: Download,
 };
 
 /** Per-step icon tiles: distinct hues + hover motion (scale / lift / tilt). */
@@ -49,6 +51,10 @@ const STEP_ICON_STYLES: Record<
   preview: {
     box: "border-rose-400/50 bg-gradient-to-br from-rose-500 to-orange-800 shadow-md shadow-rose-500/20",
     hoverRotate: -6,
+  },
+  import: {
+    box: "border-blue-400/50 bg-gradient-to-br from-blue-500 to-slate-900 shadow-md shadow-blue-500/20",
+    hoverRotate: 12,
   },
 };
 

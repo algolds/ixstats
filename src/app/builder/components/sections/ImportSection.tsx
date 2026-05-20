@@ -1,20 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
-import type { CountryInfoboxWithDynamicProps } from "~/lib/mediawiki-service";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
-import { ImportPageHeader } from "../../import/_components/ImportPageHeader";
 import { WikiSourceSelector } from "../../import/_components/WikiSourceSelector";
-import { CategoryFilterSidebar } from "../../import/_components/CategoryFilterSidebar";
-import { SearchBar } from "../../import/_components/SearchBar";
+import { DynamicIslandSearch } from "../../import/_components/DynamicIslandSearch";
+import { ImportSidebar } from "../../import/_components/ImportSidebar";
 import { BackButton } from "../../import/_components/BackButton";
-import { DynamicIslandStatus } from "../../import/_components/DynamicIslandStatus";
-import { StatusMessageDisplay } from "../../import/_components/StatusMessageDisplay";
-import { ParsedDataPreview } from "../../import/_components/ParsedDataPreview";
-import { SearchResultsDisplay } from "../../import/_components/SearchResultsDisplay";
+import { InteractiveInfoboxPreview } from "../../import/_components/InteractiveInfoboxPreview";
+import { EligibleCountryGrid } from "../../import/_components/EligibleCountryGrid";
 import type { BuilderSection } from "../../lib/builder-theme";
+import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
 
 // ─── Types ───
 
@@ -40,21 +36,8 @@ interface SearchResult {
   government?: string;
 }
 
-interface ParsedCountryData {
-  name: string;
-  population?: number;
-  gdpPerCapita?: number;
-  gdp?: number;
-  capital?: string;
-  area?: number;
-  government?: string;
-  currency?: string;
-  languages?: string;
-  flag?: string;
-  coatOfArms?: string;
-  flagUrl?: string;
-  coatOfArmsUrl?: string;
-  infobox: CountryInfoboxWithDynamicProps;
+interface ParsedCountryData extends UnifiedInfoboxData {
+  wikiIntro?: string;
 }
 
 // ─── Constants ───
@@ -103,7 +86,7 @@ export const ImportSection = React.memo(function ImportSection({
   onNavigate,
   onImportComplete,
 }: ImportSectionProps) {
-  const [selectedSite, setSelectedSite] = useState<WikiSite>(wikiSites[0]!);
+  const [selectedSite, setSelectedSite] = useState<WikiSite>(wikiSites[1]!);
   const [categoryFilter, setCategoryFilter] = useState("Countries");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -158,7 +141,9 @@ export const ImportSection = React.memo(function ImportSection({
       setParsedData(null);
 
       try {
-        const results = await searchWikiMutation.mutateAsync({
+        let results: SearchResult[];
+
+        results = await searchWikiMutation.mutateAsync({
           query: currentSearchTerm,
           site: currentSite.name as "ixwiki" | "iiwiki" | "althistory",
           categoryFilter,
@@ -170,28 +155,36 @@ export const ImportSection = React.memo(function ImportSection({
           categoryFilter.toLowerCase() === "countries" ||
           categoryFilter.toLowerCase() === "nations"
         ) {
+          // Fetch infobox data for each result to show in search results
           const resultsWithFlags = await Promise.all(
             results.map(async (result) => {
               try {
                 const flagUrl = await unifiedFlagService.getFlagUrl(result.title);
-                let additionalData = {};
+                let additionalData: Record<string, unknown> = {};
                 try {
                   const countryData = await parseInfoboxMutation.mutateAsync({
                     pageName: result.title,
                     site: currentSite.name as "ixwiki" | "iiwiki" | "althistory",
                   });
-                  additionalData = {
-                    population: countryData?.population,
-                    gdpPerCapita: countryData?.gdpPerCapita,
-                    capital: countryData?.capital,
-                    government: countryData?.government,
-                  };
+
+                  if (countryData) {
+                    const d = countryData as Record<string, unknown>;
+                    const wikiIntro = d.wikiIntro as string | undefined;
+                    additionalData = {
+                      population: d.population ?? d.population_estimate ?? d.population_total,
+                      gdpPerCapita: d.gdpPerCapita ?? d.GDP_nominal_per_capita ?? d.GDP_PPP_per_capita,
+                      capital: d.capital,
+                      government: d.government_type ?? d.government,
+                      snippet: wikiIntro || d.conventional_long_name || d.official_name || d.common_name || result.snippet,
+                    };
+                  }
                 } catch {
-                  // Continue without additional data
+                  // Parsing failed - use wiki search snippet as fallback
+                  additionalData = { snippet: result.snippet };
                 }
                 return { ...result, flagUrl, ...additionalData };
               } catch {
-                return { ...result, flagUrl: null };
+                return { ...result, flagUrl: null, snippet: result.snippet };
               }
             })
           );
@@ -234,15 +227,18 @@ export const ImportSection = React.memo(function ImportSection({
     setTimeout(() => setSearchResults([]), 200);
 
     try {
-      const data = await parseInfoboxMutation.mutateAsync({
+      let data: Record<string, unknown> | null;
+
+      // All wikis use tRPC (server-side proxy)
+      data = await parseInfoboxMutation.mutateAsync({
         pageName: result.title,
         site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
       });
 
-      if (data?.flagUrl) setSelectedCountryFlag(data.flagUrl);
+      if (data?.flagUrl) setSelectedCountryFlag(data.flagUrl as string);
 
       if (data) {
-        setParsedData(data);
+        setParsedData(data as ParsedCountryData);
       } else {
         setError("Could not parse data from this page.");
       }
@@ -251,10 +247,6 @@ export const ImportSection = React.memo(function ImportSection({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCountryPreview = (_result: SearchResult) => {
-    // Preview handled by rendering state
   };
 
   const handleContinueWithCountry = (result: SearchResult) => {
@@ -309,7 +301,7 @@ export const ImportSection = React.memo(function ImportSection({
     }
   };
 
-  const formatNumber = (num: number | undefined): string => {
+  const formatNumber = (num: number | undefined, _decimals?: number): string => {
     if (!num) return "Unknown";
     if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
     if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
@@ -319,9 +311,6 @@ export const ImportSection = React.memo(function ImportSection({
 
   return (
     <div>
-      {/* Header */}
-      <ImportPageHeader onBackClick={() => onNavigate("welcome")} />
-
       {/* Wiki Site Selection */}
       <WikiSourceSelector
         wikiSites={wikiSites}
@@ -329,92 +318,75 @@ export const ImportSection = React.memo(function ImportSection({
         onSelectSite={setSelectedSite}
       />
 
-      {/* Main Content with Sidebar Layout */}
-      <div className="grid gap-6 lg:grid-cols-4 mt-4">
-        {/* Sidebar - Category Filter */}
-        <div className="lg:col-span-1">
-          <CategoryFilterSidebar
-            categoryFilter={categoryFilter}
-            setCategoryFilter={setCategoryFilter}
-            popularCategories={popularCategories}
+      {/* Main Content with Sidebar */}
+      <div className="mt-4 grid gap-6 lg:grid-cols-[240px_1fr]">
+        {/* Sidebar */}
+        <div className="hidden lg:block">
+          <ImportSidebar
             selectedSite={selectedSite}
+            searchTerm={searchTerm}
+            isSearching={isSearching}
+            selectedResult={selectedResult}
+            parsedData={parsedData}
+            isLoading={isLoading}
           />
         </div>
 
-        {/* Main Content Area */}
-        <div className="space-y-6 lg:col-span-3">
+        {/* Main Content */}
+        <div className="space-y-6">
           {(selectedResult || parsedData) && (
             <div className="sticky top-4 z-20">
               <BackButton onClick={handleBackFromSelection} />
             </div>
           )}
 
-          <div className="bg-background sticky top-0 z-10 pb-4">
-            <SearchBar
+          <div className="sticky top-0 z-10 pb-4">
+            <DynamicIslandSearch
+              selectedSite={selectedSite}
+              wikiSites={wikiSites}
+              onSelectSite={setSelectedSite}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               isSearching={isSearching}
+              searchResults={searchResults}
+              displayedResults={displayedResults}
+              hasMoreResults={hasMoreResults}
+              selectedResult={selectedResult}
+              isLoading={isLoading}
+              parsedData={parsedData}
+              error={error}
+              selectedCountryFlag={selectedCountryFlag}
               categoryFilter={categoryFilter}
-              selectedSite={selectedSite}
+              setCategoryFilter={setCategoryFilter}
+              popularCategories={popularCategories}
+              handleSelectResult={handleSelectResult}
+              loadMoreResults={loadMoreResults}
+              onContinueWithCountry={handleContinueWithCountry}
+              formatNumber={formatNumber}
+              onBackFromSelection={handleBackFromSelection}
             />
           </div>
 
-          {selectedResult && !parsedData && (
-            <DynamicIslandStatus
-              selectedResultTitle={selectedResult?.title}
-              selectedCountryFlag={selectedCountryFlag}
-              isLoading={isLoading}
-            />
+          {isLoading && !parsedData && (
+            <div className="flex items-center justify-center gap-3 rounded-xl border border-border/50 bg-card/60 px-6 py-8 backdrop-blur-md">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-blue-500" />
+              <span className="text-sm text-muted-foreground">
+                Parsing {selectedResult?.title}...
+              </span>
+            </div>
           )}
 
-          {isSearching && searchTerm.trim() && (
-            <StatusMessageDisplay
-              type="searching"
-              searchTerm={searchTerm}
-              categoryFilter={categoryFilter}
-              selectedSiteDisplayName={selectedSite.displayName}
-              isIiwiki={selectedSite.name === "iiwiki"}
-            />
+          {!searchTerm.trim() && !selectedResult && !parsedData && !isLoading && (selectedSite.name === "iiwiki" || selectedSite.name === "althistory") && (
+            <div className="mt-6">
+              <EligibleCountryGrid site={selectedSite.name as "iiwiki" | "althistory"} />
+            </div>
           )}
-
-          <AnimatePresence>
-            {!isSearching && displayedResults.length > 0 && (
-              <SearchResultsDisplay
-                searchResults={searchResults}
-                displayedResults={displayedResults}
-                selectedResult={selectedResult}
-                handleSelectResult={handleSelectResult}
-                categoryFilter={categoryFilter}
-                selectedSite={selectedSite}
-                loadMoreResults={loadMoreResults}
-                hasMoreResults={hasMoreResults}
-                formatNumber={formatNumber}
-                onCountryPreview={handleCountryPreview}
-                onContinueWithCountry={handleContinueWithCountry}
-              />
-            )}
-          </AnimatePresence>
-
-          {!isSearching && searchTerm.trim() && searchResults.length === 0 && (
-            <StatusMessageDisplay
-              type="no-results"
-              searchTerm={searchTerm}
-              categoryFilter={categoryFilter}
-              selectedSiteDisplayName={selectedSite.displayName}
-            />
-          )}
-
-          {isLoading && (
-            <StatusMessageDisplay type="searching" searchTerm={selectedResult?.title} />
-          )}
-
-          {error && <StatusMessageDisplay type="error" error={error} />}
 
           {parsedData && (
-            <ParsedDataPreview
-              parsedData={parsedData}
-              handleContinueWithData={handleContinueWithData}
-              formatNumber={formatNumber}
+            <InteractiveInfoboxPreview
+              data={parsedData}
+              onContinue={handleContinueWithData}
+              isLoading={isLoading}
             />
           )}
         </div>

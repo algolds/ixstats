@@ -1,6 +1,6 @@
 "use client";
-import { GlobalLoader } from "../../components/ui/loader";
+import { GlobalBuilderLoading } from "./components/GlobalBuilderLoading";
 
 export default function Loading() {
-  return <GlobalLoader />;
+  return <GlobalBuilderLoading variant="full" message="Preparing your nation builder..." />;
 }

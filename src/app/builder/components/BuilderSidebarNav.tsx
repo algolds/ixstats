@@ -2,18 +2,16 @@
 
 import { cn } from "~/lib/utils";
 import {
-  Crown,
+  Globe,
   Flag,
   Building2,
   TrendingUp,
   CheckCircle,
-  Sparkles,
-  Import,
   Lock,
   Check,
   type LucideIcon,
 } from "lucide-react";
-import { type BuilderSection, BUILDER_THEME, BUILD_STEPS } from "../lib/builder-theme";
+import { type BuilderSection, BUILDER_SECTION_THEMES, BUILD_STEPS } from "../lib/builder-theme";
 
 // ─── Nav item config ───
 
@@ -26,62 +24,47 @@ interface BuilderNavItem {
   activeGlow: string;
 }
 
+// Only include build steps - no welcome/import
 const NAV_ITEMS: BuilderNavItem[] = [
   {
-    id: "welcome",
-    icon: Sparkles,
-    title: "Welcome",
-    shortTitle: "Start",
-    gradient: BUILDER_THEME.welcome.gradient,
-    activeGlow: BUILDER_THEME.welcome.activeGlow,
-  },
-  {
-    id: "import",
-    icon: Import,
-    title: "Import from Wiki",
-    shortTitle: "Import",
-    gradient: BUILDER_THEME.import.gradient,
-    activeGlow: BUILDER_THEME.import.activeGlow,
-  },
-  {
     id: "foundation",
-    icon: Crown,
+    icon: Globe,
     title: "Foundation",
     shortTitle: "Found.",
-    gradient: BUILDER_THEME.foundation.gradient,
-    activeGlow: BUILDER_THEME.foundation.activeGlow,
+    gradient: BUILDER_SECTION_THEMES.foundation.gradient,
+    activeGlow: BUILDER_SECTION_THEMES.foundation.activeGlow,
   },
   {
     id: "identity",
     icon: Flag,
     title: "National Identity",
     shortTitle: "Identity",
-    gradient: BUILDER_THEME.identity.gradient,
-    activeGlow: BUILDER_THEME.identity.activeGlow,
+    gradient: BUILDER_SECTION_THEMES.identity.gradient,
+    activeGlow: BUILDER_SECTION_THEMES.identity.activeGlow,
   },
   {
     id: "government",
     icon: Building2,
     title: "Government",
     shortTitle: "Govt.",
-    gradient: BUILDER_THEME.government.gradient,
-    activeGlow: BUILDER_THEME.government.activeGlow,
+    gradient: BUILDER_SECTION_THEMES.government.gradient,
+    activeGlow: BUILDER_SECTION_THEMES.government.activeGlow,
   },
   {
     id: "economics",
     icon: TrendingUp,
     title: "Economics",
     shortTitle: "Econ.",
-    gradient: BUILDER_THEME.economics.gradient,
-    activeGlow: BUILDER_THEME.economics.activeGlow,
+    gradient: BUILDER_SECTION_THEMES.economics.gradient,
+    activeGlow: BUILDER_SECTION_THEMES.economics.activeGlow,
   },
   {
     id: "preview",
     icon: CheckCircle,
     title: "Preview & Create",
     shortTitle: "Preview",
-    gradient: BUILDER_THEME.preview.gradient,
-    activeGlow: BUILDER_THEME.preview.activeGlow,
+    gradient: BUILDER_SECTION_THEMES.preview.gradient,
+    activeGlow: BUILDER_SECTION_THEMES.preview.activeGlow,
   },
 ];
 

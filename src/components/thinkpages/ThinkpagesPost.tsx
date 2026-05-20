@@ -11,7 +11,6 @@ import {
   Bookmark,
   BookOpen,
   Flag,
-  Verified,
   Smile,
   Angry,
   ThumbsUp,
@@ -25,6 +24,9 @@ import {
   Users,
   Repeat2,
   MessageCircle,
+  ExternalLink,
+  Eye,
+  MessageSquare,
 } from "lucide-react";
 import { withBasePath } from "~/lib/base-path";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -32,6 +34,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Textarea } from "~/components/ui/textarea";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { PostActions } from "./primitives/PostActions";
 import { ReactionsDialog } from "./ReactionsDialog";
 import { api } from "~/trpc/react";
@@ -99,6 +102,32 @@ const REACTION_ICONS: { [key: string]: React.ElementType } = {
   thumbsdown: ThumbsDown,
 };
 
+const DISCORD_EMOJI_REACTIONS = [
+  { name: "ixnay", url: "https://cdn.discordapp.com/emojis/559232409451888640.png" },
+  { name: "heky_boi", url: "https://cdn.discordapp.com/emojis/580813300733157376.png" },
+  { name: "pog", url: "https://cdn.discordapp.com/emojis/739969522139209748.png" },
+];
+
+function getDiscordEmojiUrl(reactionType: string, apiEmojis?: Array<{ name: string; url: string }>): string | null {
+  if (!reactionType.startsWith("discord:")) return null;
+  
+  // Handle new format: discord:name:id
+  const parts = reactionType.split(":");
+  const emojiName = parts[1] || "";
+  const emojiId = parts[2] || "";
+  
+  if (emojiId) {
+    return `https://cdn.discordapp.com/emojis/${emojiId}.png`;
+  }
+  
+  // Fallback for legacy formats
+  const hardcoded = DISCORD_EMOJI_REACTIONS.find((e) => e.name === emojiName);
+  if (hardcoded) return hardcoded.url;
+  const fromApi = apiEmojis?.find((e) => e.name === emojiName);
+  if (fromApi) return fromApi.url;
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Blurb detection — parses structured [blurb:slug|title] prefix from content
 // ---------------------------------------------------------------------------
@@ -161,6 +190,69 @@ const ThinkpagesPostComponent = ({
 }: ThinkpagesPostProps) => {
   const notify = useNotify();
   const blurbMeta = parseBlurbMeta(post);
+
+  // Extract any raw image URLs embedded directly in the text body
+  const rawImageUrls = React.useMemo(() => {
+    const content = post.content ?? "";
+    const imageRegex = /https?:\/\/[^\s<"']+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s<"']*)?/gi;
+    const matches = content.match(imageRegex);
+    return matches ? Array.from(new Set(matches)) : [];
+  }, [post.content]);
+
+  const mediaAttachments = React.useMemo(() => {
+    return [
+      ...(post.mediaAttachments ?? []),
+      ...rawImageUrls.map((url, i) => ({
+        id: `raw_${i}`,
+        url,
+        type: "image",
+        filename: `image_${i + 1}`,
+      })),
+    ];
+  }, [post.mediaAttachments, rawImageUrls]);
+
+  // Remove raw image URLs from the content string we pass to formatters
+  const cleanPostContent = React.useMemo(() => {
+    let c = blurbMeta.isBlurb ? blurbMeta.cleanContent : post.content;
+    if (!c) return "";
+    rawImageUrls.forEach((url) => {
+      const escapedUrl = url.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const reg = new RegExp(`\\s*${escapedUrl}\\s*`, "gi");
+      c = c.replace(reg, " ");
+    });
+    return c.trim();
+  }, [blurbMeta.isBlurb, blurbMeta.cleanContent, post.content, rawImageUrls]);
+
+  const repostImageUrls = React.useMemo(() => {
+    const content = post.repostOf?.content ?? "";
+    const imageRegex = /https?:\/\/[^\s<"']+\.(?:png|jpg|jpeg|gif|webp)(?:\?[^\s<"']*)?/gi;
+    const matches = content.match(imageRegex);
+    return matches ? Array.from(new Set(matches)) : [];
+  }, [post.repostOf?.content]);
+
+  const repostMediaAttachments = React.useMemo(() => {
+    return [
+      ...(post.repostOf?.mediaAttachments ?? []),
+      ...repostImageUrls.map((url, i) => ({
+        id: `repost_raw_${i}`,
+        url,
+        type: "image",
+        filename: `repost_image_${i + 1}`,
+      })),
+    ];
+  }, [post.repostOf?.mediaAttachments, repostImageUrls]);
+
+  const cleanRepostContent = React.useMemo(() => {
+    let c = post.repostOf?.content;
+    if (!c) return "";
+    repostImageUrls.forEach((url) => {
+      const escapedUrl = url.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const reg = new RegExp(`\\s*${escapedUrl}\\s*`, "gi");
+      c = c.replace(reg, " ");
+    });
+    return c.trim();
+  }, [post.repostOf?.content, repostImageUrls]);
+
   const [showReplies, setShowReplies] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
@@ -171,6 +263,12 @@ const ThinkpagesPostComponent = ({
   const [showFlagDialog, setShowFlagDialog] = useState(false);
   const [flagReason, setFlagReason] = useState("");
   const [showReactionsDialog, setShowReactionsDialog] = useState(false);
+
+  const { data: discordEmojisData } = api.thinkpages.getDiscordEmojis.useQuery(
+    {},
+    { staleTime: 5 * 60_000 }
+  );
+  const apiDiscordEmojis = discordEmojisData?.emojis;
 
   // Close more options when clicking outside
   useEffect(() => {
@@ -332,9 +430,9 @@ const ThinkpagesPostComponent = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:bg-white/10",
+        "glass-hierarchy-child transition-all duration-300 hover:glass-hierarchy-interactive hover:bg-white/5 dark:hover:bg-white/5 shadow-sm",
         compact ? "p-3" : "p-4",
-        post.pinned && "border-amber-500/30 bg-amber-500/5"
+        post.pinned && "border-amber-500/30 bg-amber-500/5 dark:border-amber-500/20 dark:bg-amber-500/5"
       )}
     >
       {post.pinned && (
@@ -427,7 +525,17 @@ const ThinkpagesPostComponent = ({
               {post.account.displayName}
             </button>
 
-            {post.account.verified && <Verified className="h-4 w-4 fill-current text-blue-500" />}
+            {post.account.verified && (
+              <span className="inline-flex items-center justify-center h-4 w-4 text-sm leading-none" title="Verified">
+                ✅
+              </span>
+            )}
+
+            {post.account.bio?.startsWith("Former Nation") && (
+              <Badge variant="secondary" className="bg-gray-500/20 text-xs text-gray-400 border-gray-500/30">
+                Former Nation
+              </Badge>
+            )}
 
             <div
               className={`rounded p-1 ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
@@ -471,52 +579,105 @@ const ThinkpagesPostComponent = ({
                     @{post.repostOf.account.username}
                   </span>
                 </div>
-                <WikiHtmlContent html={formatThinkpagesContentForDisplay(post.repostOf.content)} />
+                <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanRepostContent)} />
+                {repostMediaAttachments && repostMediaAttachments.length > 0 && (
+                  <div
+                    className={cn(
+                      "mt-2 overflow-hidden rounded-lg border border-border/50 dark:border-white/10 shadow-sm",
+                      repostMediaAttachments.length === 1 && "max-w-md",
+                      repostMediaAttachments.length > 1 && "grid grid-cols-2 gap-0.5"
+                    )}
+                  >
+                    {repostMediaAttachments.map((media: any, index: number) => {
+                      const isSingle = repostMediaAttachments.length === 1;
+                      return (
+                        <div
+                          key={media.id || index}
+                          className={cn(
+                            "bg-neutral-900/40 relative overflow-hidden flex items-center justify-center",
+                            isSingle && "w-full max-h-[220px] aspect-[16/10]",
+                            repostMediaAttachments.length === 2 && "aspect-square",
+                            repostMediaAttachments.length === 3 && index === 0
+                              ? "col-span-2 aspect-[16/10]"
+                              : "aspect-square",
+                            repostMediaAttachments.length === 4 && "aspect-square"
+                          )}
+                        >
+                          <img
+                            src={media.url}
+                            alt={media.filename || `Image ${index + 1}`}
+                            className="h-full w-full cursor-pointer object-cover transition-all duration-300 hover:scale-[1.01] hover:opacity-90"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(media.url, "_blank");
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </Card>
             ) : (
               <WikiHtmlContent
-                html={formatThinkpagesContentForDisplay(blurbMeta.isBlurb ? blurbMeta.cleanContent : post.content)}
+                html={formatThinkpagesContentForDisplay(cleanPostContent)}
               />
             )}
           </div>
 
           {/* Media Attachments */}
-          {post.mediaAttachments && post.mediaAttachments.length > 0 && (
+          {mediaAttachments && mediaAttachments.length > 0 && (
             <div
               className={cn(
-                "mt-3 overflow-hidden rounded-lg",
-                post.mediaAttachments.length === 1 && "max-w-md",
-                post.mediaAttachments.length === 2 && "grid grid-cols-2 gap-1",
-                post.mediaAttachments.length === 3 && "grid grid-cols-2 gap-1",
-                post.mediaAttachments.length === 4 && "grid grid-cols-2 gap-1"
+                "mt-3 overflow-hidden rounded-xl border border-border/50 dark:border-white/10 shadow-md",
+                mediaAttachments.length === 1 && "max-w-xl",
+                mediaAttachments.length > 1 && "grid grid-cols-2 gap-1"
               )}
             >
-              {post.mediaAttachments.map((media: any, index: number) => (
-                <div
-                  key={media.id}
-                  className={cn(
-                    "bg-muted relative overflow-hidden rounded-lg",
-                    post.mediaAttachments.length === 1 && "aspect-video",
-                    post.mediaAttachments.length === 2 && "aspect-square",
-                    post.mediaAttachments.length === 3 && index === 0
-                      ? "col-span-2 aspect-video"
-                      : "aspect-square",
-                    post.mediaAttachments.length === 4 && "aspect-square"
-                  )}
-                >
-                  <img
-                    src={media.url}
-                    alt={media.filename || `Image ${index + 1}`}
-                    className="h-full w-full cursor-pointer object-cover transition-opacity hover:opacity-90"
-                    onClick={() => {
-                      // Open image in new tab
-                      window.open(media.url, "_blank");
-                    }}
-                  />
-                </div>
-              ))}
+              {mediaAttachments.map((media: any, index: number) => {
+                const isSingle = mediaAttachments.length === 1;
+                return (
+                  <div
+                    key={media.id || index}
+                    className={cn(
+                      "bg-neutral-900/40 relative overflow-hidden flex items-center justify-center",
+                      isSingle && "w-full max-h-[360px] aspect-[16/10]",
+                      mediaAttachments.length === 2 && "aspect-square",
+                      mediaAttachments.length === 3 && index === 0
+                        ? "col-span-2 aspect-[16/10]"
+                        : "aspect-square",
+                      mediaAttachments.length === 4 && "aspect-square"
+                    )}
+                  >
+                    <img
+                      src={media.url}
+                      alt={media.filename || `Image ${index + 1}`}
+                      className="h-full w-full cursor-pointer object-cover transition-all duration-300 hover:scale-[1.01] hover:opacity-90"
+                      onClick={() => {
+                        window.open(media.url, "_blank");
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
+
+          {/* Inline Link Previews (Wiki / Forum) */}
+          {(() => {
+            const content = post.content ?? "";
+            const matchedLink = (() => {
+              const wikiMatch = content.match(/(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i);
+              if (wikiMatch) return wikiMatch[0];
+              const forumMatch = content.match(/(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i);
+              if (forumMatch) return forumMatch[0];
+              return null;
+            })();
+            if (matchedLink) {
+              return <PostInlineLinkPreview url={matchedLink} />;
+            }
+            return null;
+          })()}
 
           {post.hashtags && post.hashtags.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-1">
@@ -559,6 +720,82 @@ const ThinkpagesPostComponent = ({
               postAccountUsername: post.account?.username,
             });
 
+            return null;
+          })()}
+
+          {/* Reactions row above actions */}
+          {(() => {
+            try {
+              const reactionCounts =
+                typeof post.reactionCounts === "string"
+                  ? JSON.parse(post.reactionCounts)
+                  : post.reactionCounts || {};
+
+              if (reactionCounts && Object.keys(reactionCounts).length > 0) {
+                let hasVisible = false;
+                for (const count of Object.values(reactionCounts)) {
+                  if ((count as number) > 0) hasVisible = true;
+                }
+                if (!hasVisible) return null;
+
+                return (
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5 w-full">
+                    {Object.entries(reactionCounts).map(([type, count]) => {
+                      if ((count as number) <= 0) return null;
+                      
+                      const discordUrl = getDiscordEmojiUrl(type, apiDiscordEmojis);
+                      const isDiscordImported = 
+                        !!post.discordMsgId || 
+                        !!post.content?.includes("[DiscordMsg:") || 
+                        Object.keys(reactionCounts).some(k => k.startsWith("discord:"));
+
+                      const pillContent = (
+                        <div
+                          className={cn(
+                            "flex items-center gap-1 rounded-full bg-muted/50 border border-border/50 dark:bg-white/5 dark:border-white/10 px-2 py-0.5 text-xs text-muted-foreground transition-all duration-200 shadow-xs hover:scale-[1.03]",
+                            isDiscordImported 
+                              ? "cursor-help" 
+                              : "cursor-pointer hover:bg-muted dark:hover:bg-white/10 hover:border-border dark:hover:border-white/20"
+                          )}
+                          onClick={isDiscordImported ? undefined : () => setShowReactionsDialog(true)}
+                        >
+                          {discordUrl ? (
+                            <img src={discordUrl} alt={type.split(":")[1] || type} className="h-3.5 w-3.5 object-contain" />
+                          ) : REACTION_ICONS[type] ? (
+                            React.createElement(REACTION_ICONS[type]!, { className: "h-3.5 w-3.5 text-purple-400" })
+                          ) : (
+                            <span className="text-sm">{type}</span>
+                          )}
+                          <span className="font-medium">{count as number}</span>
+                        </div>
+                      );
+
+                      if (isDiscordImported) {
+                        return (
+                          <Tooltip key={type}>
+                            <TooltipTrigger asChild>
+                              {pillContent}
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs max-w-[240px]">
+                              These reactions were synchronized directly from our official{" "}
+                              <span className="text-[#5865F2] font-semibold">#ixtwitter</span> Discord channel!
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      }
+
+                      return (
+                        <div key={type}>
+                          {pillContent}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+            } catch (error) {
+              console.warn("Failed to parse reactionCounts in pills row:", error);
+            }
             return null;
           })()}
 
@@ -681,42 +918,6 @@ const ThinkpagesPostComponent = ({
               </AnimatePresence>
             </div>
           </div>
-
-          {(() => {
-            try {
-              const reactionCounts =
-                typeof post.reactionCounts === "string"
-                  ? JSON.parse(post.reactionCounts)
-                  : post.reactionCounts || {};
-
-              if (reactionCounts && Object.keys(reactionCounts).length > 0) {
-                return (
-                  <button
-                    onClick={() => setShowReactionsDialog(true)}
-                    className="hover:bg-muted/30 mt-2 flex w-full items-center gap-2 rounded border-t border-white/10 px-2 py-1 pt-2 transition-colors"
-                  >
-                    {Object.entries(reactionCounts).map(([type, count]) => {
-                      const Icon = REACTION_ICONS[type];
-                      if (!Icon || (count as number) === 0) return null;
-                      return (
-                        <div
-                          key={type}
-                          className="text-muted-foreground flex items-center gap-1 text-sm"
-                        >
-                          {React.createElement(Icon, { className: "h-4 w-4" })}
-                          <span>{typeof count === "number" ? count : 0}</span>
-                        </div>
-                      );
-                    })}
-                  </button>
-                );
-              }
-              return null;
-            } catch (error) {
-              console.warn("Failed to display reaction counts:", error);
-              return null;
-            }
-          })()}
 
           {/* Edit Composer */}
           <AnimatePresence>
@@ -949,6 +1150,10 @@ const ThinkpagesPostComponent = ({
             isOpen={showReactionsDialog}
             onClose={() => setShowReactionsDialog(false)}
             onAccountClick={onAccountClick}
+            discordMsgId={(() => {
+              const match = post.content?.match(/\[DiscordMsg:(\d+)\]/);
+              return match ? match[1] : null;
+            })()}
           />
         </div>
       </div>
@@ -970,3 +1175,154 @@ export const ThinkpagesPost = React.memo(ThinkpagesPostComponent, (prevProps, ne
 });
 
 ThinkpagesPost.displayName = "ThinkpagesPost";
+
+// ──────────────────────────────────────────────
+// Premium Native Inline Link Previews
+// ──────────────────────────────────────────────
+
+function PostInlineLinkPreview({ url }: { url: string }) {
+  const wikiMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(ixwiki\.com|iiwiki\.com)\/wiki\/([^#?\s)]+)/i);
+  const forumMatch = url.match(/(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i);
+
+  if (wikiMatch) {
+    const domain = wikiMatch[1] || "ixwiki.com";
+    const wiki = domain.toLowerCase().includes("iiwiki") ? "iiwiki" : "ixwiki";
+    const title = decodeURIComponent(wikiMatch[2]!).replace(/_/g, " ");
+    return <WikiInlinePreview title={title} wiki={wiki} url={url} />;
+  }
+
+  if (forumMatch) {
+    const threadId = parseInt(forumMatch[1]!, 10);
+    if (!isNaN(threadId) && threadId > 0) {
+      return <ForumInlinePreview threadId={threadId} url={url} />;
+    }
+  }
+
+  return null;
+}
+
+function WikiInlinePreview({ title, wiki, url }: { title: string; wiki: "ixwiki" | "iiwiki"; url: string }) {
+  const { data: intro, isLoading } = api.wiki.getIntro.useQuery(
+    { title, wiki },
+    { staleTime: 10 * 60_000 }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="glass-hierarchy-child mt-3 animate-pulse p-3.5">
+        <div className="h-4 w-1/3 rounded bg-muted/50 dark:bg-white/10 mb-2" />
+        <div className="h-3 w-2/3 rounded bg-muted/30 dark:bg-white/5" />
+      </div>
+    );
+  }
+
+  if (!intro?.text) return null;
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="glass-hierarchy-child group mt-3 block p-3.5 transition-all duration-300 hover:glass-hierarchy-interactive hover:-translate-y-0.5"
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500">
+          <BookOpen className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-semibold text-sm text-foreground truncate group-hover:text-amber-400 transition-colors">
+              {title}
+            </span>
+            <Badge variant="outline" className="text-[9px] shrink-0 border-amber-500/30 text-amber-400 bg-amber-500/5">
+              {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
+            </Badge>
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground line-clamp-3">
+            {intro.text}
+          </p>
+          <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-medium text-amber-500/80">
+            <span>Read full article</span>
+            <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover:translate-x-0.5" />
+          </div>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+function ForumInlinePreview({ threadId, url }: { threadId: number; url: string }) {
+  const { data: thread, isLoading } = api.wiki.getForumThreadPreview.useQuery(
+    { threadId },
+    { staleTime: 10 * 60_000 }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="glass-hierarchy-child mt-3 animate-pulse p-3.5">
+        <div className="h-4 w-1/3 rounded bg-muted/50 dark:bg-white/10 mb-2" />
+        <div className="h-3 w-2/3 rounded bg-muted/30 dark:bg-white/5" />
+      </div>
+    );
+  }
+
+  if (!thread) return null;
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="glass-hierarchy-child group mt-3 block p-3.5 transition-all duration-300 hover:glass-hierarchy-interactive hover:-translate-y-0.5"
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-500">
+          <MessageSquare className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-semibold text-sm text-foreground truncate group-hover:text-violet-400 transition-colors">
+              {thread.title}
+            </span>
+            {thread.forumName && (
+              <Badge variant="outline" className="text-[9px] shrink-0 border-violet-500/30 text-violet-400 bg-violet-500/5">
+                {thread.forumName}
+              </Badge>
+            )}
+          </div>
+          {thread.excerpt && (
+            <p className="text-xs leading-relaxed text-muted-foreground line-clamp-3">
+              {thread.excerpt}
+            </p>
+          )}
+          <div className="mt-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+              {thread.author && (
+                <span className="flex items-center gap-0.5">
+                  <Users className="h-2.5 w-2.5" />
+                  {thread.author}
+                </span>
+              )}
+              {thread.replyCount !== undefined && (
+                <span className="flex items-center gap-0.5">
+                  <MessageSquare className="h-2.5 w-2.5" />
+                  {thread.replyCount} replies
+                </span>
+              )}
+              {thread.viewCount !== undefined && (
+                <span className="flex items-center gap-0.5">
+                  <Eye className="h-2.5 w-2.5" />
+                  {thread.viewCount} views
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-medium text-violet-500/80">
+              <span>Open forum thread</span>
+              <ExternalLink className="h-2.5 w-2.5 transition-transform group-hover:translate-x-0.5" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </a>
+  );
+}

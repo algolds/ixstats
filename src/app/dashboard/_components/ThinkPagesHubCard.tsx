@@ -22,6 +22,8 @@ import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { renderDiscordEmojis } from "~/lib/text-formatter";
+import { sanitizeUserContent } from "~/lib/sanitize-html";
 
 interface ThinkPagesHubCardProps {
   userProfile?: {
@@ -170,16 +172,21 @@ export function ThinkPagesHubCard({ userProfile, className }: ThinkPagesHubCardP
                   <RefreshCw className="h-3 w-3" />
                   <span>Recent from your accounts</span>
                 </div>
-                {recentPosts.map((post: any) => (
-                  <div key={post.id} className="glass-hierarchy-child rounded-lg p-2">
-                    <div className="text-muted-foreground text-xs">@{post.account.username}</div>
-                    <div className="truncate text-sm">
-                      {post.content.length > 60
-                        ? post.content.substring(0, 60) + "..."
-                        : post.content}
+                {recentPosts.map((post: any) => {
+                  const previewHtml = sanitizeUserContent(
+                    renderDiscordEmojis(
+                      post.content.length > 120
+                        ? post.content.substring(0, 120) + "..."
+                        : post.content
+                    )
+                  );
+                  return (
+                    <div key={post.id} className="glass-hierarchy-child rounded-lg p-2">
+                      <div className="text-muted-foreground text-xs">@{post.account.username}</div>
+                      <div className="text-sm break-words" dangerouslySetInnerHTML={{ __html: previewHtml }} />
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

@@ -94,6 +94,9 @@ export interface WikiIntelligenceData {
 
   /** Optional error message if data fetching failed */
   error?: string;
+
+  /** Resolved source for this country's intelligence profile */
+  wikiSource?: "ixwiki" | "iiwiki" | "althistory";
 }
 
 /**

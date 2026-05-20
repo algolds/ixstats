@@ -1,16 +1,27 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
+import { Download, FilePlus } from "lucide-react";
 import { useBulkFlags } from "~/hooks/useUnifiedFlags";
 import { CountrySelectorHeader } from "../../primitives/CountrySelectorHeader";
-import { FoundationArchetypeSelector } from "../../primitives/FoundationArchetypeSelector";
+import { FoundationFiltersPanel } from "../../primitives/FoundationFiltersPanel";
 import { SearchFilter } from "../../primitives/SearchFilter";
 import { CountryGrid } from "../../primitives/CountryGrid";
 import { LivePreview } from "../../primitives/LivePreview";
 import { filterCountries } from "../../utils/country-selector-utils";
 import { archetypes } from "../../utils/country-archetypes";
 import type { RealCountryData } from "../../lib/economy-data-service";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+import { Button } from "~/components/ui/button";
 
 interface CountrySelectorProps {
   countries: RealCountryData[];
@@ -31,102 +42,51 @@ export function CountrySelector({
   const [hoveredCountry, setHoveredCountry] = useState<RealCountryData | null>(null);
   const [softSelectedCountry, setSoftSelectedCountry] = useState<RealCountryData | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
-  const [livePreviewTop, setLivePreviewTop] = useState(96);
-  const [isSearchStickyAndInView, setIsSearchStickyAndInView] = useState(false);
-  const [isMouseOverGrid, setIsMouseOverGrid] = useState(false);
+  const [showScratchDialog, setShowScratchDialog] = useState(false);
 
   const searchCardRef = useRef<HTMLDivElement>(null);
   const countriesListRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  const isLivePreviewVisible = useMemo(() => {
-    return isSearchStickyAndInView && (hoveredCountry !== null || softSelectedCountry !== null);
-  }, [isSearchStickyAndInView, hoveredCountry, softSelectedCountry]);
-
   // Preload flags for all countries
   const countryNames = useMemo(() => countries?.map((c) => c.name) || [], [countries]);
   const { flagUrls } = useBulkFlags(countryNames, "irl");
+  
   const filteredCountries = useMemo(() => {
     return filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes);
   }, [countries, searchTerm, selectedArchetypes]);
 
-  // Handle wheel events for smart scroll coordination
-  const handleWheel = useCallback(
-    (e: WheelEvent) => {
-      if (!isMouseOverGrid) return;
-
-      // If scrolling down and page is at bottom, start scrolling grid
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const atBottom = scrollY + windowHeight >= documentHeight - 20;
-
-      if (e.deltaY > 0 && atBottom) {
-        e.preventDefault();
-      }
-    },
-    [isMouseOverGrid]
-  );
-
-  // Global wheel event listener for smart scroll coordination
-  useEffect(() => {
-    document.addEventListener("wheel", handleWheel, { passive: false });
-    return () => document.removeEventListener("wheel", handleWheel);
-  }, [handleWheel]);
-
-  // Effect to measure countries list height and update livePreviewTop
-  useEffect(() => {
-    const updateLivePreviewTop = () => {
-      if (countriesListRef.current && gridContainerRef.current) {
-        const countriesListRect = countriesListRef.current.getBoundingClientRect();
-        const gridContainerRect = gridContainerRef.current.getBoundingClientRect();
-        const newTop = countriesListRect.top - gridContainerRect.top;
-        setLivePreviewTop(newTop);
-      }
-    };
-
-    updateLivePreviewTop();
-    window.addEventListener("resize", updateLivePreviewTop);
-    return () => window.removeEventListener("resize", updateLivePreviewTop);
-  }, [filteredCountries]);
-
-  // Effect to observe search card sticky state
-  useEffect(() => {
-    const searchCardElement = searchCardRef.current;
-    if (!searchCardElement) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry) {
-          setIsSearchStickyAndInView(entry.isIntersecting && entry.boundingClientRect.top <= 56);
-        }
-      },
-      { root: null, rootMargin: "0px", threshold: 0 }
-    );
-
-    observer.observe(searchCardElement);
-    return () => {
-      if (searchCardElement) observer.unobserve(searchCardElement);
-    };
-  }, []);
-
-  const handleCountrySelect = (country: RealCountryData, customName: string) => {
+  const handleCountrySelect = useCallback((country: RealCountryData, customName: string) => {
     const finalCountry = {
       ...country,
       name: customName,
       foundationCountryName: country.name,
     };
     onCountrySelect(finalCountry);
-  };
+  }, [onCountrySelect]);
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     setSearchTerm("");
     setSelectedArchetypes([]);
-  };
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setSoftSelectedCountry(null);
-  };
+  }, []);
+
+  const handleScratchConfirm = useCallback(() => {
+    setShowScratchDialog(false);
+    onCreateFromScratch?.();
+  }, [onCreateFromScratch]);
+
+  const handleImportClick = useCallback(() => {
+    window.history.pushState(null, "", "/builder?section=import");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  // Live preview is visible when we have a hovered or selected country
+  const isLivePreviewVisible = hoveredCountry !== null || softSelectedCountry !== null;
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-primary)]">
@@ -139,76 +99,129 @@ export function CountrySelector({
         squaresClassName="fill-[var(--color-brand-primary)]/10 stroke-[var(--color-brand-primary)]/20 [&:nth-child(4n+1):hover]:fill-amber-500/30 [&:nth-child(4n+1):hover]:stroke-amber-500/50 [&:nth-child(4n+2):hover]:fill-blue-500/30 [&:nth-child(4n+2):hover]:stroke-blue-500/50 [&:nth-child(4n+3):hover]:fill-emerald-500/30 [&:nth-child(4n+3):hover]:stroke-emerald-500/50 [&:nth-child(4n+4):hover]:fill-purple-500/30 [&:nth-child(4n+4):hover]:stroke-purple-500/50 transition-all duration-300"
       />
 
-      {/* Left Sidebar - Foundation Archetypes */}
-      <FoundationArchetypeSelector
-        countries={countries || []}
-        selectedArchetypes={selectedArchetypes}
-        onArchetypeSelect={setSelectedArchetypes}
-        onCreateFromScratch={onCreateFromScratch}
-      />
+      {/* Main Content - No Sidebar */}
+      <div className="p-4">
+        {/* Header */}
+        <div className="mb-4">
+          <CountrySelectorHeader
+            softSelectedCountry={softSelectedCountry}
+            onBackToIntro={onBackToIntro}
+          />
+        </div>
 
-      {/* Header - Full Width Centered */}
-      <div className="relative z-10 p-6">
-        <CountrySelectorHeader
-          softSelectedCountry={softSelectedCountry}
-          onBackToIntro={onBackToIntro}
-        />
-      </div>
+        {/* Content: Center Panel (Search/Countries) + Right Sidebar (Quick Filters + Preview) */}
+        <div className="flex gap-6" ref={gridContainerRef}>
+          {/* Center Panel */}
+          <div className="min-w-0 flex-1 space-y-4">
+            {/* Search and Filters */}
+            <SearchFilter
+              ref={searchCardRef}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onClearAll={handleClearAll}
+            />
 
-      {/* Main Content Area - Center 60% + Right Sidebar */}
-      {/* Main Content Area - Center 60% + Right Sidebar */}
-      {/* Main Content Area - Center 60% + Right Sidebar */}
-      <div className="pr-6 pl-92">
-        <div className="relative z-10 max-w-7xl p-6 pt-0">
-          {/* Main Content: Center Panel (Search/Countries) + Right Preview */}
-          <div className="relative z-20 flex gap-8" ref={gridContainerRef}>
-            {/* Center Panel - 60% of remaining space */}
-            <div className="flex-1 space-y-6">
-              {/* Search and Filters */}
-              <SearchFilter
-                ref={searchCardRef}
+            {/* Countries Grid */}
+            <div ref={countriesListRef}>
+              <CountryGrid
+                countries={countries || []}
+                filteredCountries={filteredCountries}
                 searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                onClearAll={handleClearAll}
-              />
-
-              {/* Countries Grid */}
-              <div ref={countriesListRef}>
-                <CountryGrid
-                  countries={countries || []}
-                  filteredCountries={filteredCountries}
-                  searchTerm={searchTerm}
-                  selectedArchetype={selectedArchetypes.join(",")} // Convert array to string for backward compatibility
-                  onCountryHover={setHoveredCountry}
-                  onCountryClick={(country) => {
-                    setSoftSelectedCountry(country);
-                    setHoveredCountry(null);
-                  }}
-                  onClearFilters={handleClearAll}
-                  softSelectedCountryId={softSelectedCountry?.countryCode || null}
-                  onMouseEnter={() => setIsMouseOverGrid(true)}
-                  onMouseLeave={() => setIsMouseOverGrid(false)}
-                  scrollPosition={scrollPosition}
-                  onScroll={setScrollPosition}
-                  flagUrls={flagUrls}
-                />
-              </div>
-            </div>
-
-            {/* Right Sidebar - Live Preview Panel - 40% of remaining space */}
-            <div className="w-80 flex-shrink-0">
-              <LivePreview
-                softSelectedCountry={softSelectedCountry}
-                hoveredCountry={hoveredCountry}
-                isVisible={isLivePreviewVisible}
-                onCountrySelect={handleCountrySelect}
-                onCancel={handleCancel}
-                style={{ paddingTop: livePreviewTop }}
+                selectedArchetype={selectedArchetypes.join(",")}
+                onCountryHover={setHoveredCountry}
+                onCountryClick={(country) => {
+                  setSoftSelectedCountry(country);
+                  setHoveredCountry(null);
+                }}
+                onClearFilters={handleClearAll}
+                softSelectedCountryId={softSelectedCountry?.countryCode || null}
+                onMouseEnter={() => {}}
+                onMouseLeave={() => {}}
+                scrollPosition={scrollPosition}
+                onScroll={setScrollPosition}
+                flagUrls={flagUrls}
               />
             </div>
           </div>
+
+          {/* Right Sidebar - Quick Filters + Actions + Live Preview */}
+          <div className="w-80 flex-shrink-0 space-y-4">
+            {/* Quick Filters */}
+            <FoundationFiltersPanel
+              countries={countries || []}
+              selectedArchetypes={selectedArchetypes}
+              onArchetypeSelect={setSelectedArchetypes}
+              filteredCount={filteredCountries.length}
+            />
+
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowScratchDialog(true)}
+                className="group relative w-full overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 px-4 py-3 text-left transition-all duration-300 hover:border-emerald-400/40 hover:from-emerald-500/20 hover:via-teal-500/15 hover:to-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/10"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <div className="relative flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 transition-all duration-300 group-hover:bg-emerald-500/30 group-hover:shadow-lg group-hover:shadow-emerald-500/20">
+                    <FilePlus className="h-4 w-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-emerald-300">Start from Scratch</span>
+                    <p className="text-xs text-emerald-400/60">Build your nation from nothing</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={handleImportClick}
+                className="group relative w-full overflow-hidden rounded-xl border border-blue-500/20 bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-blue-500/10 px-4 py-3 text-left transition-all duration-300 hover:border-blue-400/40 hover:from-blue-500/20 hover:via-indigo-500/15 hover:to-blue-500/20 hover:shadow-lg hover:shadow-blue-500/10"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <div className="relative flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 transition-all duration-300 group-hover:bg-blue-500/30 group-hover:shadow-lg group-hover:shadow-blue-500/20">
+                    <Download className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-blue-300">Import from Wiki</span>
+                    <p className="text-xs text-blue-400/60">Load data from IxWiki, IIWiki, or AltHistory</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Live Preview Panel */}
+            <LivePreview
+              softSelectedCountry={softSelectedCountry}
+              hoveredCountry={hoveredCountry}
+              isVisible={isLivePreviewVisible}
+              onCountrySelect={handleCountrySelect}
+              onCancel={handleCancel}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Start from Scratch confirmation dialog */}
+      <AlertDialog open={showScratchDialog} onOpenChange={setShowScratchDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start from Scratch?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Start with a blank slate? You'll create your nation entirely from scratch with no
+              pre-filled data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose>Cancel</AlertDialogClose>
+            <AlertDialogClose
+              onClick={handleScratchConfirm}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+            >
+              Start Fresh
+            </AlertDialogClose>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

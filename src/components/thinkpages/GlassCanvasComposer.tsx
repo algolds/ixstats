@@ -84,6 +84,11 @@ export function GlassCanvasComposer({
   const lastScrollY = useRef(0);
   const hasContent = content.trim().length > 0 || selectedImages.length > 0 || selectedVisualizations.length > 0;
 
+  const accountAvatarUrl = account.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(account.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
+
+  const getAccountAvatar = (acc: any) =>
+    acc.profileImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(acc.displayName || "A")}&background=3B82F6&color=fff&size=128&bold=true`;
+
   // Auto-collapse on scroll down (only if no content is being composed)
   useEffect(() => {
     const handleScroll = () => {
@@ -396,7 +401,7 @@ export function GlassCanvasComposer({
               className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-white/5"
             >
               <Avatar className="h-7 w-7">
-                <AvatarImage src={account.profileImageUrl} alt={account.displayName} />
+                <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
                   {account.displayName.charAt(0)}
                 </AvatarFallback>
@@ -419,7 +424,7 @@ export function GlassCanvasComposer({
                 <Collapsible open={showAccountManager} onOpenChange={setShowAccountManager}>
                   <div className="flex items-center gap-2.5">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={account.profileImageUrl} alt={account.displayName} />
+                      <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
                       <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
                         {account.displayName.charAt(0)}
                       </AvatarFallback>
@@ -480,7 +485,7 @@ export function GlassCanvasComposer({
                             )}
                           >
                             <Avatar className="h-5 w-5">
-                              <AvatarImage src={acc.profileImageUrl} />
+                              <AvatarImage src={getAccountAvatar(acc)} />
                               <AvatarFallback className="text-[0.6rem]">
                                 {acc.displayName.charAt(0)}
                               </AvatarFallback>

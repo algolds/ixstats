@@ -83,10 +83,11 @@ export const wikiCacheRouter = createTRPCRouter({
         includePageVariants: z.boolean().default(true),
         maxSections: z.number().min(1).max(20).default(8),
         customPages: z.array(z.string()).default([]),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
     .query(async ({ input }) => {
-      const { countryName, includePageVariants, maxSections, customPages } = input;
+      const { countryName, includePageVariants, maxSections, customPages, wikiSource } = input;
 
       // Build page variants based on settings
       const pageVariants: string[] = [countryName];
@@ -112,7 +113,11 @@ export const wikiCacheRouter = createTRPCRouter({
         pageVariants.push(...customPages);
       }
 
-      const profile = await wikiCacheService.getCountryProfile(countryName, pageVariants);
+      const profile = await wikiCacheService.getCountryProfile(
+        countryName,
+        pageVariants,
+        wikiSource as "ixwiki" | "iiwiki" | "althistory"
+      );
 
       return profile;
     }),

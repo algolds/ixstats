@@ -13,7 +13,7 @@ export { PolicyAdvisor } from "./PolicyAdvisor";
 export { SectionHeader } from "./SectionHeader";
 
 // Country Selector Primitives
-export { FoundationArchetypeSelector } from "./FoundationArchetypeSelector";
+export { FoundationFiltersPanel } from "./FoundationFiltersPanel";
 export { SearchFilter } from "./SearchFilter";
 export { CountryPreview } from "./CountryPreview";
 export { CountrySelectionCard } from "./CountrySelectionCard";

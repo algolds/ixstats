@@ -1491,9 +1491,6 @@ export function Navigation() {
           <CommandPalette isSticky={isSticky} scrollY={scrollY} />
         </div>
       )}
-      
-      {/* Spacer to push content down since navbar is fixed */}
-      <div className="h-14 lg:h-16" />
     </>
   );
 }

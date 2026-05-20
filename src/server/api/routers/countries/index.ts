@@ -7,6 +7,7 @@ import { diplomacyProcedures } from "./diplomacy";
 import { wikiProcedures } from "./wiki";
 import { atomicProcedures } from "./atomic";
 import { geographyProcedures } from "./geography";
+import { flagsProcedures } from "./flags";
 
 export const countriesRouter = createTRPCRouter({
   ...listProcedures,
@@ -17,5 +18,6 @@ export const countriesRouter = createTRPCRouter({
   ...wikiProcedures,
   ...atomicProcedures,
   ...geographyProcedures,
+  flags: flagsProcedures,
 });
 
