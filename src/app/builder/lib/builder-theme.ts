@@ -349,7 +349,8 @@ export function getBuilderThemeClasses(section: BuilderSection) {
  */
 export function legacyStepToSection(step: string): BuilderSection {
   if (step === "core") return "identity";
-  if (step === "welcome" || step === "import") return "foundation";
+  if (step === "import") return "import";
+  if (step === "welcome") return "foundation";
   if (BUILDER_SECTIONS.includes(step as BuilderSection)) return step as BuilderSection;
   return "foundation";
 }

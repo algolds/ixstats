@@ -84,41 +84,6 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
               borderColor: "var(--color-border-primary)",
             }}
           >
-            <div className="mb-3 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-400" />
-              <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                How It Works
-              </span>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-xs font-bold text-blue-400">1</span>
-                <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
-                  <span className="font-medium" style={{ color: "var(--color-text-primary)" }}>Search</span> — Find a country on {selectedSite.displayName}
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-xs font-bold text-blue-400">2</span>
-                <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
-                  <span className="font-medium" style={{ color: "var(--color-text-primary)" }}>Preview</span> — See extracted data before importing
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-xs font-bold text-blue-400">3</span>
-                <p className="text-xs leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
-                  <span className="font-medium" style={{ color: "var(--color-text-primary)" }}>Build</span> — Data flows into the builder to auto-fill government, economy, and identity steps
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className="rounded-xl border p-4 backdrop-blur-sm"
-            style={{
-              backgroundColor: "var(--color-bg-secondary)",
-              borderColor: "var(--color-border-primary)",
-            }}
-          >
             <div className="mb-2 flex items-center gap-2">
               <Database className="h-4 w-4 text-amber-400" />
               <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
@@ -128,10 +93,10 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
             <div className="space-y-1.5">
               {[
                 { icon: Users, label: "Population", color: "text-blue-400" },
-                { icon: DollarSign, label: "GDP per Capita", color: "text-green-400" },
+                { icon: DollarSign, label: "GDP / GDP per Capita", color: "text-green-400" },
                 { icon: MapPin, label: "Capital City", color: "text-red-400" },
                 { icon: Building, label: "Government Type", color: "text-purple-400" },
-                { icon: Globe, label: "Flag / National ID", color: "text-cyan-400" },
+                { icon: Globe, label: "Flag / National Symbols", color: "text-cyan-400" },
               ].map(({ icon: Icon, label, color }) => (
                 <div key={label} className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
                   <Icon className={`h-3 w-3 ${color}`} />
@@ -148,19 +113,35 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
               borderColor: "var(--color-border-primary)",
             }}
           >
-            <div className="mb-2 flex items-center gap-2">
+            <div className="mb-3 flex items-center gap-2">
               <ArrowRight className="h-4 w-4 text-emerald-400" />
               <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
                 After Import
               </span>
             </div>
-            <ul className="space-y-1 text-xs" style={{ color: "var(--color-text-muted)" }}>
-              <li>Population drives tax revenue and workforce size</li>
-              <li>GDP per capita affects trade power and living standards</li>
-              <li>Government type unlocks unique policy branches</li>
-              <li>Capital becomes your diplomatic hub for relations</li>
-              <li>All values feed into the world economy simulation</li>
-            </ul>
+
+            <div className="space-y-3.5 text-xs animate-fade-in" style={{ color: "var(--color-text-muted)" }}>
+              <div>
+                <p className="font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>📊 World Baseline</p>
+                <p className="leading-relaxed pl-3 border-l border-emerald-500/30">
+                  Your imported Population and GDP are parsed to calculate starting GDP per Capita and establish your initial <span className="text-emerald-400 font-medium">Economic Tier</span>.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>⚡ Dynamic Scaling</p>
+                <p className="leading-relaxed pl-3 border-l border-emerald-500/30">
+                  Workforce size scales from population demographics, which determines baseline industrial capacity, productiveness, and gross tax revenue.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>⚙️ Customizing Specifics</p>
+                <p className="leading-relaxed pl-3 border-l border-emerald-500/30">
+                  Proceed through the builder steps to customize details: set corporate/income taxes, configure public service funding under <span className="text-blue-400 font-medium">MyGovernment</span>, and select national policies.
+                </p>
+              </div>
+            </div>
           </div>
         </motion.div>
       )}

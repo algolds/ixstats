@@ -91,6 +91,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
   onBackFromSelection,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showResults, setShowResults] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [previewingCountry, setPreviewingCountry] = useState<SearchResult | null>(null);
@@ -109,16 +110,20 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
     setFlagImgError(false);
   }, [selectedCountryFlag]);
 
-  // Auto-focus input when expanded
+  // Auto-focus input and show results when expanded
   useEffect(() => {
     if (isExpanded && inputRef.current) {
       inputRef.current.focus();
+      setShowResults(true);
     }
   }, [isExpanded]);
 
-  // Reset focus when results change
+  // Reset focus and show results when results change
   useEffect(() => {
     setFocusedIndex(-1);
+    if (displayedResults.length > 0) {
+      setShowResults(true);
+    }
   }, [displayedResults.length]);
 
   // Scroll focused item into view
@@ -145,14 +150,17 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
     }
   }, [selectedResult, parsedData]);
 
-  // Click outside to collapse
+  // Click outside to collapse results dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (isExpanded && containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        // Always hide results and categories on outside click
+        setShowResults(false);
+        setShowCategories(false);
+        // Only fully collapse if there's no search term
         if (!searchTerm.trim()) {
           setIsExpanded(false);
         }
-        setShowCategories(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -312,7 +320,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             )}
             <CheckCircle className="h-4 w-4 text-green-500" />
             <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-              Parsed {parsedData?.common_name || parsedData?.official_name || selectedResult?.title || "country"}
+              Parsed {(parsedData?.common_name as string) || (parsedData?.official_name as string) || selectedResult?.title || "country"}
             </span>
           </motion.div>
         )}
@@ -401,6 +409,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     placeholder={`Search ${categoryFilter} on ${selectedSite.displayName}...`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onFocus={() => setShowResults(true)}
                     className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                     style={{ color: "var(--color-text-primary)" }}
                   />
@@ -476,8 +485,9 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                   )}
                 </AnimatePresence>
 
-                {/* Content Area */}
-                <div className="relative max-h-[28rem] overflow-y-auto">
+                {/* Content Area — inline scroll, hides on blur */}
+                {showResults && (
+                <div className="scrollbar-thin relative max-h-56 overflow-y-auto">
                   {/* Searching Status */}
                   {isSearching && searchTerm.trim() && displayedResults.length === 0 && (
                     <div className="flex items-center justify-center gap-3 py-8">
@@ -562,7 +572,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        className="absolute inset-0 z-10 overflow-y-auto bg-background/95 backdrop-blur-md"
+                        className="scrollbar-thin absolute inset-0 z-10 overflow-y-auto bg-background/95 backdrop-blur-md"
                       >
                         <div className="p-4">
                           <button
@@ -687,6 +697,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     )}
                   </AnimatePresence>
                 </div>
+                )}
               </motion.div>
             )}
           </motion.div>

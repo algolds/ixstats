@@ -1738,12 +1738,14 @@ export const activitiesRouter = createTRPCRouter({
             else if (clean) summary = ` — ${clean.slice(0, 77)}...`;
           }
           const verb = isNewPage ? "created" : "edited";
+          const wikiDate = new Date(rc.timestamp);
+          const wikiTimestamp = isNaN(wikiDate.getTime()) ? new Date().toISOString() : wikiDate.toISOString();
           headlines.push({
             id: `wiki_${rc.title}_${rc.timestamp}`,
             text: `Wiki: ${rc.user} ${verb} "${rc.title}"${summary} (${sizeLabel} bytes)`,
             category: "wiki",
             priority: isNewPage ? "medium" : "low",
-            timestamp: new Date(rc.timestamp).toISOString(),
+            timestamp: wikiTimestamp,
             url: `https://ixwiki.com/wiki/${encodeURIComponent(rc.title.replace(/ /g, "_"))}`,
           });
         }
@@ -1811,7 +1813,11 @@ export const activitiesRouter = createTRPCRouter({
       const items: TrendingItem[] = [];
 
       // Time decay: content from 0h ago = 1.0x, 48h ago = 0.1x
-      const timeDecay = (ts: Date) => Math.max(0.1, 1 - (now - ts.getTime()) / (48 * 60 * 60 * 1000));
+      const timeDecay = (ts: Date | string) => {
+        const d = typeof ts === "string" ? new Date(ts) : ts;
+        const time = isNaN(d.getTime()) ? now : d.getTime();
+        return Math.max(0.1, 1 - (now - time) / (48 * 60 * 60 * 1000));
+      };
 
       // ── 1. ThinkPages trending posts ──
       try {
@@ -1879,16 +1885,28 @@ export const activitiesRouter = createTRPCRouter({
       try {
         // Build trending pages from recent changes (aggregated by title)
         const recentEdits = await getWikiBridgeRecentChanges(100);
-        const pageMap = new Map<string, { title: string; editCount: number; uniqueEditors: Set<string>; totalBytesChanged: number; isNew: boolean; latestEdit: string }>();
+        const pageMap = new Map<string, { title: string; editCount: number; uniqueEditors: Set<string>; totalBytesChanged: number; isNew: boolean; latestEdit: Date }>();
         for (const rc of recentEdits) {
+          const editDate = new Date(rc.timestamp);
+          const validDate = isNaN(editDate.getTime()) ? new Date() : editDate;
           const existing = pageMap.get(rc.title);
           if (existing) {
             existing.editCount++;
             existing.uniqueEditors.add(rc.user);
             existing.totalBytesChanged += Math.abs(rc.newLen - rc.oldLen);
             if (rc.type === "new") existing.isNew = true;
+            if (validDate > existing.latestEdit) {
+              existing.latestEdit = validDate;
+            }
           } else {
-            pageMap.set(rc.title, { title: rc.title, editCount: 1, uniqueEditors: new Set([rc.user]), totalBytesChanged: Math.abs(rc.newLen - rc.oldLen), isNew: rc.type === "new", latestEdit: rc.timestamp });
+            pageMap.set(rc.title, {
+              title: rc.title,
+              editCount: 1,
+              uniqueEditors: new Set([rc.user]),
+              totalBytesChanged: Math.abs(rc.newLen - rc.oldLen),
+              isNew: rc.type === "new",
+              latestEdit: validDate,
+            });
           }
         }
         const pages = [...pageMap.values()].map(p => ({ ...p, uniqueEditors: p.uniqueEditors.size })).sort((a, b) => b.editCount - a.editCount).slice(0, 25);

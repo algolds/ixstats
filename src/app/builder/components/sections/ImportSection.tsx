@@ -309,6 +309,16 @@ export const ImportSection = React.memo(function ImportSection({
     return num.toLocaleString();
   };
 
+  // When a grid card is clicked, construct a minimal SearchResult and feed it into the existing parse flow
+  const handleGridCountryClick = (pageName: string) => {
+    const result: SearchResult = {
+      title: pageName,
+      snippet: "",
+      url: "",
+    };
+    handleSelectResult(result);
+  };
+
   return (
     <div>
       {/* Wiki Site Selection */}
@@ -376,9 +386,13 @@ export const ImportSection = React.memo(function ImportSection({
             </div>
           )}
 
-          {!searchTerm.trim() && !selectedResult && !parsedData && !isLoading && (selectedSite.name === "iiwiki" || selectedSite.name === "althistory") && (
+          {!selectedResult && !parsedData && !isLoading && (selectedSite.name === "iiwiki" || selectedSite.name === "althistory") && (
             <div className="mt-6">
-              <EligibleCountryGrid site={selectedSite.name as "iiwiki" | "althistory"} />
+              <EligibleCountryGrid
+                site={selectedSite.name as "iiwiki" | "althistory"}
+                searchFilter={searchTerm}
+                onCountryClick={handleGridCountryClick}
+              />
             </div>
           )}
 

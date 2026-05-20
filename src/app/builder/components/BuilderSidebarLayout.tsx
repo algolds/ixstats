@@ -48,7 +48,7 @@ export function BuilderSidebarLayout({
         {/* Main Layout — sidebar + content */}
         <div className="flex gap-3 sm:gap-4">
           {/* Desktop: Fixed sidebar column */}
-          {activeSection !== "import" && (
+          {activeSection !== "import" && activeSection !== "foundation" && (
             <div className={`relative z-20 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
               <div className="sticky top-4 space-y-3">
                 <BuilderSidebarNav
@@ -66,7 +66,7 @@ export function BuilderSidebarLayout({
           {/* Main Content */}
           <div className="min-w-0 flex-1">
             {/* Mobile: Horizontal nav strip */}
-            {activeSection !== "import" && (
+            {activeSection !== "import" && activeSection !== "foundation" && (
               <div className="mb-3 lg:hidden">
                 <BuilderSidebarNav
                   activeSection={activeSection}

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { CircleHelp, BookOpen } from "lucide-react";
+import { CircleHelp, BookOpen, Globe, Check, ExternalLink, Download, ArrowLeft } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,192 @@ interface BuilderContextualHelpProps {
 }
 
 export function BuilderContextualHelp({ activeSection }: BuilderContextualHelpProps) {
+  if (activeSection === "foundation") {
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 gap-1.5 text-xs"
+          >
+            <CircleHelp className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Help</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-blue-500" />
+              Foundation Step Guide
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 text-sm">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {/* Overview */}
+              <div className="space-y-3">
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Check className="h-4 w-4 text-green-500" />
+                  What is Foundation?
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  The Foundation step is where you select a real country as your starting point. This
+                  provides baseline economic data, demographics, and cultural context for your nation.
+                </p>
+              </div>
+
+              {/* Why Foundation Matters */}
+              <div className="space-y-3">
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <ExternalLink className="h-4 w-4 text-blue-500" />
+                  Why Foundation Matters
+                </h3>
+                <ul className="text-muted-foreground space-y-2 text-sm leading-relaxed">
+                  <li>
+                    • <strong>Real Data:</strong> Starting with actual economic indicators
+                  </li>
+                  <li>
+                    • <strong>Cultural Context:</strong> Understanding regional characteristics
+                  </li>
+                  <li>
+                    • <strong>Baseline Metrics:</strong> GDP, population, currency, etc.
+                  </li>
+                  <li>
+                    • <strong>Realistic Starting Point:</strong> Build from proven foundations
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* How to Choose */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <Download className="h-4 w-4 text-purple-500" />
+                How to Choose Your Foundation
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-xs font-bold text-blue-600 dark:text-blue-400">
+                      1
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">Consider Your Vision</h4>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        What type of nation do you want to build? Choose a foundation that aligns with
+                        your goals.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-xs font-bold text-blue-600 dark:text-blue-400">
+                      2
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">Economic Similarity</h4>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        Look for countries with similar economic structures to your desired outcome.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-xs font-bold text-blue-600 dark:text-blue-400">
+                      3
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">Geographic Context</h4>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        Consider regional factors, climate, and natural resources.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 text-xs font-bold text-blue-600 dark:text-blue-400">
+                      4
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">Development Level</h4>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        Choose a development level that matches your starting vision.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Foundation Data */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <ArrowLeft className="h-4 w-4 text-indigo-500" />
+                What You Get from Foundation
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {[
+                  {
+                    title: "Economic Data",
+                    items: ["GDP", "Currency", "Trade Balance", "Inflation"],
+                  },
+                  {
+                    title: "Demographics",
+                    items: ["Population", "Age Distribution", "Urban/Rural Split"],
+                  },
+                  {
+                    title: "Infrastructure",
+                    items: ["Transportation", "Education", "Healthcare Systems"],
+                  },
+                ].map((section, index) => (
+                  <div key={index} className="bg-muted/50 dark:bg-muted/20 rounded-lg p-4">
+                    <h4 className="mb-2 text-sm font-medium text-foreground">{section.title}</h4>
+                    <ul className="text-muted-foreground space-y-1 text-xs leading-relaxed">
+                      {section.items.map((item, itemIndex) => (
+                        <li key={itemIndex}>• {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tips */}
+            <div className="space-y-4">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <CircleHelp className="h-4 w-4 text-amber-500" />
+                Foundation Tips
+              </h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-lg border border-green-200 bg-green-50/50 p-4 dark:border-green-800/40 dark:bg-green-950/20">
+                  <h4 className="flex items-center gap-2 font-medium text-green-800 dark:text-green-400">
+                    <Check className="h-4 w-4" />
+                    Good Choices
+                  </h4>
+                  <ul className="mt-2 space-y-1 text-sm text-green-700 dark:text-green-300 leading-relaxed">
+                    <li>• Countries with stable economies</li>
+                    <li>• Nations with clear cultural identity</li>
+                    <li>• Regions with good data availability</li>
+                  </ul>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-800/40 dark:bg-amber-950/20">
+                  <h4 className="flex items-center gap-2 font-medium text-amber-800 dark:text-amber-400">
+                    <ExternalLink className="h-4 w-4" />
+                    Considerations
+                  </h4>
+                  <ul className="mt-2 space-y-1 text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+                    <li>• You can modify everything later</li>
+                    <li>• Foundation is just a starting point</li>
+                    <li>• Focus on your end vision</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   const steps = contextualHelp[activeSection] || contextualHelp.foundation;
   const totalSteps = steps.length;
 

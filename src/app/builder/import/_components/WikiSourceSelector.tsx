@@ -35,7 +35,7 @@ export const WikiSourceSelector: React.FC<WikiSourceSelectorProps> = ({
       <div className="mb-2 flex items-center gap-2">
         <span className="text-sm font-medium text-foreground">Wiki Source</span>
         <span className="text-xs text-muted-foreground">
-          Import from any community wiki
+          Import from any worldbuilding wiki
         </span>
       </div>
       <div className="flex items-center gap-1.5">

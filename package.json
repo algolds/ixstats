@@ -145,6 +145,7 @@
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-rc.0",
+    "@chenglou/pretext": "^0.0.7",
     "@clerk/clerk-react": "^5.61.3",
     "@clerk/nextjs": "^6.39.3",
     "@codemirror/lang-html": "^6.4.11",

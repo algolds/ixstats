@@ -29,7 +29,7 @@ interface InteractiveInfoboxPreviewProps {
 interface InfoboxSection {
   id: string;
   title: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   fields: { label: string; value: string | undefined }[];
 }
 
@@ -118,11 +118,11 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
         { label: "Upper House", value: data.upper_house },
         { label: "Lower House", value: data.lower_house },
         {
-          label: data.leader_title3 || undefined,
+          label: data.leader_title3 || "Leader",
           value: data.leader_name3,
         },
         {
-          label: data.leader_title4 || undefined,
+          label: data.leader_title4 || "Leader",
           value: data.leader_name4,
         },
         { label: "Established", value: data.established || data.established_date1 },
@@ -267,7 +267,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
       </CardHeader>
 
       {/* Collapsible Sections */}
-      <CardContent className="relative z-10 space-y-3">
+      <CardContent className="relative z-10 space-y-3 pb-6">
         {/* Wiki Intro Description */}
         {data.wikiIntro && (
           <div className="rounded-lg border border-border/50 p-4">

@@ -13,7 +13,7 @@ export const ImportPageHeader: React.FC<ImportPageHeaderProps> = ({ onBackClick 
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-24 flex items-center gap-6"
+      className="mb-8 flex items-center gap-6"
     >
       <motion.button
         whileHover={{ scale: 1.05 }}
@@ -48,12 +48,12 @@ export const ImportPageHeader: React.FC<ImportPageHeaderProps> = ({ onBackClick 
         <div>
           <div className="flex items-center gap-2">
             <h1 className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-3xl font-bold text-transparent">
-              Country Importer
+              MyCountry Builder
             </h1>
-            <Sparkles className="text-text-secondary h-6 w-6" />
+            <Sparkles className="h-6 w-6 text-amber-500" />
           </div>
-          <p className="mt-1" style={{ color: "var(--color-text-muted)" }}>
-            Automagically import your country data from multiple wiki sources
+          <p className="mt-1 text-sm" style={{ color: "var(--color-text-muted)" }}>
+            Import your country data from wiki sources or select an eligible country below to start building.
           </p>
         </div>
       </div>

@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Download, ExternalLink, ArrowLeft, Check, HelpCircle } from "lucide-react";
+import { Download, ExternalLink, ArrowLeft, Check, HelpCircle, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { PreText } from "~/components/ui/pretext";
 import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
 import { Button } from "~/components/ui/button";
@@ -19,187 +21,7 @@ import { Highlighter } from "@/components/magicui/highlighter";
 import { Globe } from "~/components/magicui/globe";
 import { getOptimalTextStyling } from "~/lib/flag-color-analysis";
 
-// Help modal component for Foundation step
-function FoundationHelpModal() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <HelpCircle className="text-muted-foreground hover:text-foreground h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-blue-500" />
-            Foundation Step Help
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Overview */}
-            <div className="space-y-3">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <Check className="h-4 w-4 text-green-500" />
-                What is Foundation?
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                The Foundation step is where you select a real country as your starting point. This
-                provides baseline economic data, demographics, and cultural context for your nation.
-              </p>
-            </div>
 
-            {/* Why Foundation Matters */}
-            <div className="space-y-3">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <ExternalLink className="h-4 w-4 text-blue-500" />
-                Why Foundation Matters
-              </h3>
-              <ul className="text-muted-foreground space-y-2 text-sm">
-                <li>
-                  • <strong>Real Data:</strong> Starting with actual economic indicators
-                </li>
-                <li>
-                  • <strong>Cultural Context:</strong> Understanding regional characteristics
-                </li>
-                <li>
-                  • <strong>Baseline Metrics:</strong> GDP, population, currency, etc.
-                </li>
-                <li>
-                  • <strong>Realistic Starting Point:</strong> Build from proven foundations
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* How to Choose */}
-          <div className="space-y-4">
-            <h3 className="flex items-center gap-2 text-lg font-semibold">
-              <Download className="h-4 w-4 text-purple-500" />
-              How to Choose Your Foundation
-            </h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                    1
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Consider Your Vision</h4>
-                    <p className="text-muted-foreground text-sm">
-                      What type of nation do you want to build? Choose a foundation that aligns with
-                      your goals.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                    2
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Economic Similarity</h4>
-                    <p className="text-muted-foreground text-sm">
-                      Look for countries with similar economic structures to your desired outcome.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                    3
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Geographic Context</h4>
-                    <p className="text-muted-foreground text-sm">
-                      Consider regional factors, climate, and natural resources.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-                    4
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Development Level</h4>
-                    <p className="text-muted-foreground text-sm">
-                      Choose a development level that matches your starting vision.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Foundation Data */}
-          <div className="space-y-4">
-            <h3 className="flex items-center gap-2 text-lg font-semibold">
-              <ArrowLeft className="h-4 w-4 text-indigo-500" />
-              What You Get from Foundation
-            </h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {[
-                {
-                  title: "Economic Data",
-                  items: ["GDP", "Currency", "Trade Balance", "Inflation"],
-                },
-                {
-                  title: "Demographics",
-                  items: ["Population", "Age Distribution", "Urban/Rural Split"],
-                },
-                {
-                  title: "Infrastructure",
-                  items: ["Transportation", "Education", "Healthcare Systems"],
-                },
-              ].map((section, index) => (
-                <div key={index} className="bg-muted/50 rounded-lg p-4">
-                  <h4 className="mb-2 text-sm font-medium">{section.title}</h4>
-                  <ul className="text-muted-foreground space-y-1 text-xs">
-                    {section.items.map((item, itemIndex) => (
-                      <li key={itemIndex}>• {item}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Tips */}
-          <div className="space-y-4">
-            <h3 className="flex items-center gap-2 text-lg font-semibold">
-              <HelpCircle className="h-4 w-4 text-amber-500" />
-              Foundation Tips
-            </h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                <h4 className="flex items-center gap-2 font-medium text-green-800">
-                  <Check className="h-4 w-4" />
-                  Good Choices
-                </h4>
-                <ul className="mt-2 space-y-1 text-sm text-green-700">
-                  <li>• Countries with stable economies</li>
-                  <li>• Nations with clear cultural identity</li>
-                  <li>• Regions with good data availability</li>
-                </ul>
-              </div>
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                <h4 className="flex items-center gap-2 font-medium text-amber-800">
-                  <ExternalLink className="h-4 w-4" />
-                  Considerations
-                </h4>
-                <ul className="mt-2 space-y-1 text-sm text-amber-700">
-                  <li>• You can modify everything later</li>
-                  <li>• Foundation is just a starting point</li>
-                  <li>• Focus on your end vision</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 interface CountrySelectorHeaderProps {
   softSelectedCountry: RealCountryData | null;
@@ -265,10 +87,10 @@ export function CountrySelectorHeader({
       style={
         softSelectedCountry && flag?.flagUrl
           ? {
-              backgroundImage: `url('${flag.flagUrl}')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }
+            backgroundImage: `url('${flag.flagUrl}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }
           : undefined
       }
     >
@@ -295,19 +117,16 @@ export function CountrySelectorHeader({
           <div className="space-y-3">
             {softSelectedCountry ? (
               <>
-                <div className="flex items-center gap-3">
-                  <h2
-                    className="text-4xl font-bold tracking-tight"
-                    style={{
-                      color: textStyling.color,
-                      textShadow: textStyling.textShadow,
-                      filter: "drop-shadow(0 0 8px rgba(0, 0, 0, 0.5))",
-                    }}
-                  >
-                    Foundation: {softSelectedCountry.name}
-                  </h2>
-                  <FoundationHelpModal />
-                </div>
+                <h2
+                  className="text-4xl font-bold tracking-tight"
+                  style={{
+                    color: textStyling.color,
+                    textShadow: textStyling.textShadow,
+                    filter: "drop-shadow(0 0 8px rgba(0, 0, 0, 0.5))",
+                  }}
+                >
+                  Foundation: {softSelectedCountry.name}
+                </h2>
                 <p
                   className="text-lg font-medium"
                   style={{
@@ -319,7 +138,18 @@ export function CountrySelectorHeader({
                   Selected as your economic foundation template
                 </p>
               </>
-            ) : null}
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-4 text-center w-full">
+                <PreText className="flex justify-center">
+                  <MyCountryLogo size="xl" animated />
+                </PreText>
+                <div className="space-y-2 max-w-md mx-auto">
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    Choose a starting country template below to begin building your custom nation.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
