@@ -455,29 +455,6 @@ export const StepRenderer = memo(function StepRenderer({
 
     return (
       <div className="space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4 text-center"
-        >
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg">
-            <Flag className="h-8 w-8 text-white" />
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <h2 className="text-3xl font-bold">Core Foundation</h2>
-            <HelpModal
-              title="Core Foundation Help"
-              text="Configure your nation's identity and core economic indicators. This step establishes the fundamental characteristics that will influence all other aspects of your country's development."
-            />
-          </div>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
-            Configure national identity and economic fundamentals
-            {builderState.selectedCountry
-              ? ` for ${builderState.selectedCountry.name}`
-              : " from scratch"}
-          </p>
-        </motion.div>
-
         <Alert className="border-amber-200/50 bg-amber-50/30 backdrop-blur-sm">
           <Info className="h-4 w-4" />
           <AlertDescription>
@@ -543,25 +520,6 @@ export const StepRenderer = memo(function StepRenderer({
   if (builderState.step === "government" && builderState.economicInputs) {
     return (
       <div className="space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4 text-center"
-        >
-          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg">
-            <Building2 className="h-8 w-8 text-white" />
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <h2 className="text-3xl font-bold">MyGovernment</h2>
-            <HelpModal
-              title="MyGovernment Builder Help"
-              text="Design and configure your government structure, departments, and budgets. Use atomic components to build a modern government system with real-time impact analysis. This builder allows you to create a comprehensive government system with multiple departments, budget allocations, and policy configurations."
-            />
-          </div>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
-            Design and configure your government structure, departments, and policies
-          </p>
-        </motion.div>
 
         <Tabs
           value={builderState.activeGovernmentTab}
@@ -622,15 +580,17 @@ export const StepRenderer = memo(function StepRenderer({
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
             >
-              <GovernmentBuilder
-                initialData={builderState.governmentStructure}
-                onChange={onGovernmentStructureChange}
-                onSave={onGovernmentStructureSave}
-                gdpData={{
-                  nominalGDP: builderState.economicInputs?.coreIndicators?.nominalGDP || 0,
-                  countryName: builderState.selectedCountry?.name,
-                }}
-              />
+              <div className="max-h-[75vh] overflow-y-auto rounded-xl border bg-card/50 p-1 shadow-sm">
+                <GovernmentBuilder
+                  initialData={builderState.governmentStructure}
+                  onChange={onGovernmentStructureChange}
+                  onSave={onGovernmentStructureSave}
+                  gdpData={{
+                    nominalGDP: builderState.economicInputs?.coreIndicators?.nominalGDP || 0,
+                    countryName: builderState.selectedCountry?.name,
+                  }}
+                />
+              </div>
             </motion.div>
           </TabsContent>
 

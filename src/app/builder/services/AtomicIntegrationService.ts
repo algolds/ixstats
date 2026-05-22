@@ -297,12 +297,13 @@ export class AtomicIntegrationService extends BaseBuilderService<
     );
 
     // Update government spending in economic inputs
+    const existingBreakdown = this.state.economicInputs.governmentSpending.spendingBreakdown ?? [];
     const updatedInputs: EconomicInputs = {
       ...this.state.economicInputs,
       governmentSpending: {
         ...this.state.economicInputs.governmentSpending,
         totalSpending,
-        spendingBreakdown: this.state.economicInputs.governmentSpending.spendingBreakdown.map(
+        spendingBreakdown: existingBreakdown.map(
           (item) => {
             const allocation = builder.budgetAllocations.find(
               (a) => a.departmentId === item.category || a.departmentName === item.category

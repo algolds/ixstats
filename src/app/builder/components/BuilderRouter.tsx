@@ -14,7 +14,6 @@ import { BuilderErrorBoundary } from "./BuilderErrorBoundary";
 import { BuilderStateProvider, useBuilderContext } from "./enhanced/context/BuilderStateContext";
 import { BuilderSidebarLayout } from "./BuilderSidebarLayout";
 import { BuilderSectionHero } from "./BuilderSectionHero";
-import { BuilderContextualHelp } from "./BuilderContextualHelp";
 import { ImportSection } from "./sections/ImportSection";
 import {
   type BuilderSection,
@@ -291,26 +290,21 @@ function BuilderRouterInner() {
         completedSteps={completedSteps}
         accessibleSteps={accessibleSteps}
         heroSection={
-          activeSection !== "import" && activeSection !== "foundation" ? (
-            <BuilderSectionHero
-              section={activeSection}
-              countryName={countryName}
-              completionPercent={completionPercent}
-              completedCount={BUILD_STEPS.filter((s) => completedSteps.has(s)).length}
-              lastSaved={lastSaved}
-              isAutoSaving={isAutoSaving}
-              onManualSave={handleManualSave}
-              isSaving={isManualSaving}
-              onClearDraft={clearDraft}
-              onToggleAdvanced={handleToggleAdvanced}
-              isAdvancedMode={isAdvancedMode}
-              mode="create"
-            />
-          ) : (
-            <div className="flex justify-end">
-              <BuilderContextualHelp activeSection={activeSection} />
-            </div>
-          )
+          <BuilderSectionHero
+            section={activeSection}
+            countryName={countryName}
+            lastSaved={lastSaved}
+            isAutoSaving={isAutoSaving}
+            onManualSave={handleManualSave}
+            isSaving={isManualSaving}
+            onClearDraft={clearDraft}
+            onToggleAdvanced={handleToggleAdvanced}
+            isAdvancedMode={isAdvancedMode}
+            mode="create"
+            onNavigate={handleNavigate}
+            completedSteps={completedSteps}
+            accessibleSteps={accessibleSteps}
+          />
         }
       >
         <AnimatePresence mode="wait">

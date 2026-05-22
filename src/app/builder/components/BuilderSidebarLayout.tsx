@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { BuilderSidebarNav } from "./BuilderSidebarNav";
 import type { BuilderSection } from "../lib/builder-theme";
 
 interface BuilderSidebarLayoutProps {
@@ -10,8 +9,6 @@ interface BuilderSidebarLayoutProps {
   heroSection?: ReactNode;
   /** Alerts/banners rendered above main content */
   alerts?: ReactNode;
-  /** Extra content below nav in sidebar (desktop only) */
-  sidebarExtra?: ReactNode;
   /** Active builder section */
   activeSection: BuilderSection;
   /** Callback for sidebar nav clicks */
@@ -26,11 +23,6 @@ export function BuilderSidebarLayout({
   children,
   heroSection,
   alerts,
-  sidebarExtra,
-  activeSection,
-  onNavigate,
-  completedSteps,
-  accessibleSteps,
 }: BuilderSidebarLayoutProps) {
   return (
     <div className="space-y-0" data-builder-content>
@@ -45,39 +37,10 @@ export function BuilderSidebarLayout({
         {/* Alerts */}
         {alerts && <div className="mb-3 space-y-2 sm:mb-4">{alerts}</div>}
 
-        {/* Main Layout — sidebar + content */}
+        {/* Main Layout */}
         <div className="flex gap-3 sm:gap-4">
-          {/* Desktop: Fixed sidebar column */}
-          {activeSection !== "import" && activeSection !== "foundation" && (
-            <div className={`relative z-20 hidden flex-shrink-0 lg:block ${sidebarExtra ? "w-56" : ""}`}>
-              <div className="sticky top-4 space-y-3">
-                <BuilderSidebarNav
-                  activeSection={activeSection}
-                  onNavigate={onNavigate}
-                  completedSteps={completedSteps}
-                  accessibleSteps={accessibleSteps}
-                  variant={sidebarExtra ? "expanded" : "desktop"}
-                />
-                {sidebarExtra}
-              </div>
-            </div>
-          )}
-
           {/* Main Content */}
           <div className="min-w-0 flex-1">
-            {/* Mobile: Horizontal nav strip */}
-            {activeSection !== "import" && activeSection !== "foundation" && (
-              <div className="mb-3 lg:hidden">
-                <BuilderSidebarNav
-                  activeSection={activeSection}
-                  onNavigate={onNavigate}
-                  completedSteps={completedSteps}
-                  accessibleSteps={accessibleSteps}
-                  variant="mobile"
-                />
-              </div>
-            )}
-
             <div className="space-y-3 sm:space-y-4">
               {children}
             </div>

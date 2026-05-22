@@ -77,7 +77,7 @@ const REDIS_PREFIX = {
  * Strip infobox templates, header templates, categories, and other non-content
  * wikitext from raw page content so only the readable body remains.
  */
-function cleanWikitextForDisplay(raw: string): string {
+export function cleanWikitextForDisplay(raw: string): string {
   let text = raw;
 
   // 1. Remove all {{...}} templates (handle nested braces via iterative stripping)

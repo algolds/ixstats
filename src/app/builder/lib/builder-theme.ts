@@ -43,6 +43,56 @@ export const BUILDER_SECTIONS: BuilderSection[] = [
 /** Steps that form the actual build flow */
 export const BUILD_STEPS: BuilderSection[] = BUILDER_SECTIONS;
 
+/**
+ * Header nav steps — collapsed view for the inline step navigation.
+ * Foundation + Identity are merged into a single "Foundation" entry.
+ * This is purely a display concept; internal routing uses BuilderSection.
+ */
+export interface HeaderNavStep {
+  id: string;
+  /** Which BuilderSections this step covers */
+  sections: BuilderSection[];
+  label: string;
+  shortLabel: string;
+  stepNumber: number;
+}
+
+export const HEADER_NAV_STEPS: HeaderNavStep[] = [
+  {
+    id: "foundation",
+    sections: ["foundation", "identity"],
+    label: "Foundation",
+    shortLabel: "Foundation",
+    stepNumber: 1,
+  },
+  {
+    id: "government",
+    sections: ["government"],
+    label: "Government",
+    shortLabel: "Govt.",
+    stepNumber: 2,
+  },
+  {
+    id: "economics",
+    sections: ["economics"],
+    label: "Economics",
+    shortLabel: "Econ.",
+    stepNumber: 3,
+  },
+  {
+    id: "preview",
+    sections: ["preview"],
+    label: "Preview & Create",
+    shortLabel: "Preview",
+    stepNumber: 4,
+  },
+];
+
+/** Map a BuilderSection to the header nav step that owns it */
+export function sectionToHeaderNavStep(section: BuilderSection): HeaderNavStep | undefined {
+  return HEADER_NAV_STEPS.find((step) => step.sections.includes(section));
+}
+
 // ─── Primary Builder Theme (Amber/Gold) ───
 
 /**

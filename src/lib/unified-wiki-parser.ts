@@ -80,6 +80,9 @@ export interface UnifiedInfoboxData {
   population_estimate?: number;
   population_census?: number;
   population_density?: string;
+  life_expectancy?: number;
+  literacy_rate?: number;
+  urbanization?: number;
 
   // Cultural data
   official_languages?: string;
@@ -153,7 +156,9 @@ function cleanWikiValue(raw: string): string {
   let s = raw;
   s = s.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
   s = s.replace(/'{2,3}/g, "");
-  s = s.replace(/\{\{[^}]*\}\}/g, "");
+  // Iterate to strip nested templates from innermost out
+  let prev;
+  do { prev = s; s = s.replace(/\{\{[^{}]*\}\}/g, ''); } while (s !== prev);
   s = s.replace(/<[^>]+>/g, "");
   s = s.replace(/&\w+;/g, " ");
   s = s.replace(/\s+/g, " ").trim();
@@ -189,7 +194,7 @@ function processFlag(value: string): string {
 }
 
 function processFormatnum(value: string): string {
-  return value.replace(/\{\{formatnum:([^}]+)\}\}/g, "$1");
+  return value.replace(/\{\{formatnum[:|]([^}]+)\}\}/g, "$1");
 }
 
 function processNts(value: string): string {
@@ -322,7 +327,9 @@ function processTemplates(value: string): string {
   result = processNobold(result);
   result = processList(result);
   result = processCompose(result);
-  result = result.replace(/\{\{[^}]*\}\}/g, "");
+  // Iterate to strip nested templates from innermost out
+  let prevTemplate;
+  do { prevTemplate = result; result = result.replace(/\{\{[^{}]*\}\}/g, ''); } while (result !== prevTemplate);
   result = processRefs(result);
   result = processSmall(result);
   result = processBr(result);
@@ -407,6 +414,12 @@ const FIELD_ALIASES: Record<string, keyof UnifiedInfoboxData> = {
   population_data: "population",
   population_density: "population_density",
   pop_density: "population_density",
+  life_expectancy: "life_expectancy",
+  life_expect: "life_expectancy",
+  literacy_rate: "literacy_rate",
+  literacy: "literacy_rate",
+  urbanization: "urbanization",
+  urban_pop: "urbanization",
   official_languages: "official_languages",
   official_language: "official_languages",
   languages: "languages",
@@ -451,6 +464,7 @@ const NUMERIC_FIELDS = new Set([
   "population", "population_estimate", "population_census",
   "area_km2", "GDP_nominal", "GDP_PPP",
   "GDP_nominal_per_capita", "GDP_PPP_per_capita",
+  "life_expectancy", "literacy_rate", "urbanization",
 ]);
 
 // Also track lowercase versions since FIELD_ALIASES values are case-sensitive
@@ -458,6 +472,7 @@ const NUMERIC_FIELDS_LOWER = new Set([
   "population", "population_estimate", "population_census",
   "area_km2", "gdp_nominal", "gdp_ppp",
   "gdp_nominal_per_capita", "gdp_ppp_per_capita",
+  "life_expectancy", "literacy_rate", "urbanization",
 ]);
 
 // ─── Image/File Extraction Helpers ──────────────────────────────────────────
@@ -519,6 +534,9 @@ export function parseInfoboxWithTemplates(
   wikitext: string,
   countryName?: string
 ): UnifiedInfoboxData | null {
+  // Guard against excessively large wikitext (potential regex DoS)
+  if (wikitext.length > 500_000) return null;
+
   const parsed = parseInfobox(wikitext);
   if (!parsed) return null;
 
@@ -576,14 +594,20 @@ export function parseInfoboxWithTemplates(
   if (typeof result.GDP_nominal === "string") {
     const gdpNum = parsePopulation(result.GDP_nominal);
     if (gdpNum !== null) result.gdp_nominal = gdpNum;
+  } else if (typeof result.GDP_nominal === "number") {
+    result.gdp_nominal = result.GDP_nominal;
   }
   if (typeof result.GDP_PPP === "string") {
     const gdpPppNum = parsePopulation(result.GDP_PPP);
     if (gdpPppNum !== null) result.gdp_ppp = gdpPppNum;
+  } else if (typeof result.GDP_PPP === "number") {
+    result.gdp_ppp = result.GDP_PPP;
   }
   if (typeof result.GDP_nominal_per_capita === "string") {
     const gdpPcNum = parsePopulation(result.GDP_nominal_per_capita);
     if (gdpPcNum !== null) result.gdpPerCapita = gdpPcNum;
+  } else if (typeof result.GDP_nominal_per_capita === "number") {
+    result.gdpPerCapita = result.GDP_nominal_per_capita;
   }
 
   if (!result.name && result.common_name) result.name = result.common_name;

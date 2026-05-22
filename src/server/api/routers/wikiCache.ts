@@ -12,7 +12,51 @@ import {
   protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { wikiCacheService } from "~/lib/services/wiki-cache-service";
+import { wikiCacheService, cleanWikitextForDisplay } from "~/lib/services/wiki-cache-service";
+import { extractDataFromWikiSections } from "~/app/builder/lib/wiki-data-extractor";
+import { getArticleWikitext } from "~/lib/wiki-bridge";
+import { withRetrySafe } from "~/lib/with-retry";
+import type { WikiSource } from "~/lib/mediawiki-config";
+
+function getApiBaseUrl(wikiSource: string): string {
+  if (wikiSource === "iiwiki") return "https://iiwiki.com/api.php";
+  if (wikiSource === "althistory") return "https://althistory.fandom.com/api.php";
+  return "https://ixwiki.com/api.php";
+}
+
+async function fetchCategoryMembers(apiBaseUrl: string, categoryName: string): Promise<string[]> {
+  const titles: string[] = [];
+  try {
+    const params = new URLSearchParams({
+      action: "query",
+      format: "json",
+      list: "categorymembers",
+      cmtitle: `Category:${categoryName}`,
+      cmlimit: "50",
+      cmnamespace: "0",
+    });
+
+    const url = `${apiBaseUrl}?${params.toString()}`;
+    const result = await withRetrySafe(async (signal) => {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "IxStats-Builder", "Api-User-Agent": "IxStats-Builder" },
+        signal,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json() as Promise<{ query?: { categorymembers?: Array<{ title: string }> } }>;
+    }, { maxAttempts: 2, strategy: "linear" as const, baseDelayMs: 2000, timeoutMs: 15000 });
+
+    if (result.success && result.value) {
+      const members = result.value.query?.categorymembers ?? [];
+      for (const m of members) {
+        if (m.title && !m.title.startsWith("Category:")) titles.push(m.title);
+      }
+    }
+  } catch (err) {
+    console.warn(`[builderDeepScan] No category found for ${categoryName}:`, err);
+  }
+  return titles;
+}
 
 export const wikiCacheRouter = createTRPCRouter({
   /**
@@ -120,6 +164,86 @@ export const wikiCacheRouter = createTRPCRouter({
       );
 
       return profile;
+    }),
+
+  /**
+   * Deep scan for builder pre-population
+   * Fetches multiple related pages and extracts structured builder data
+   */
+  builderDeepScan: publicProcedure
+    .input(
+      z.object({
+        countryName: z.string().min(1),
+        wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
+        pageVariants: z.array(z.string()).default([]),
+      })
+    )
+    .query(async ({ input }) => {
+      const { countryName, wikiSource, pageVariants } = input;
+
+      // Determine which pages to scan
+      let pagesToScan: string[];
+
+      if (pageVariants.length > 0) {
+        pagesToScan = pageVariants;
+      } else {
+        // First, try to find pages in the country's own category (Category:CountryName)
+        const apiBaseUrl = getApiBaseUrl(wikiSource);
+        const categoryPages = await fetchCategoryMembers(apiBaseUrl, countryName);
+
+        // Filter out the main page (we add it explicitly) and deduplicate
+        const categoryRelated = categoryPages.filter(
+          (p) => p.toLowerCase() !== countryName.toLowerCase()
+        );
+
+        pagesToScan = [
+          countryName,
+          ...categoryRelated,
+          // Only add name-guessed variants if category didn't yield enough
+          ...(categoryRelated.length < 2
+            ? [
+                `Economy of ${countryName}`,
+                `Politics of ${countryName}`,
+                `Government of ${countryName}`,
+                `Demographics of ${countryName}`,
+              ]
+            : []),
+        ];
+      }
+
+      // Deduplicate while preserving order
+      const seen = new Set<string>();
+      const uniquePages = pagesToScan.filter((p) => {
+        const key = p.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      // Use the same wiki-bridge pattern that parses infoboxes successfully
+      const pages: { title: string; content: string }[] = [];
+      for (const pageName of uniquePages) {
+        try {
+          const article = await getArticleWikitext(pageName, wikiSource as WikiSource);
+          if (article?.wikitext) {
+            pages.push({
+              title: article.title,
+              content: cleanWikitextForDisplay(article.wikitext),
+            });
+          }
+        } catch (err) {
+          console.warn(`[builderDeepScan] Failed to fetch ${pageName}:`, err);
+        }
+      }
+
+      // Run our heuristics on the cleaned wikitext
+      const extractedData = extractDataFromWikiSections(pages);
+
+      return {
+        pagesScanned: pages.length,
+        foundVariants: pages.map(p => p.title),
+        extractedData
+      };
     }),
 
   /**

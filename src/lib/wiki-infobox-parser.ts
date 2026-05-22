@@ -130,8 +130,8 @@ export function parsePopulation(text: string): number | null {
     }
   }
 
-  // Extract {{formatnum:1234567}} value
-  const fmtMatch = text.match(/\{\{formatnum:(\d[\d,]*)\}\}/i);
+  // Extract {{formatnum:1234567}} or {{formatnum|1234567}} value
+  const fmtMatch = text.match(/\{\{formatnum[:|](\d[\d,]*)\}\}/i);
   if (fmtMatch) clean = fmtMatch[1]!;
 
   // Plain numeric
@@ -211,7 +211,7 @@ function inferFieldType(key: string): InfoboxField["fieldType"] {
  */
 export function parseInfobox(wikitext: string): ParsedInfobox | null {
   // Find {{Infobox ...| ...}} — handle nested templates
-  const infoboxStart = wikitext.search(/\{\{[Ii]nfobox\s/);
+  const infoboxStart = wikitext.search(/\{\{[Ii]nfobox[\s_]/);
   if (infoboxStart === -1) return null;
 
   // Find the matching closing }}

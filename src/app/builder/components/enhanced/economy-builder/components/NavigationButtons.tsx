@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { ArrowLeft, ArrowRight, Save, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import { BUILDER_GOLD, BUILDER_GOLD_HOVER } from "../../builderConfig";
 
 interface NavigationButtonsProps {
   currentStepIndex: number;
@@ -40,7 +41,7 @@ export function NavigationButtons({
         <Button
           onClick={onSave}
           disabled={isSaving || !countryId || !validationStatus.isValid}
-          className="bg-gold-600 hover:bg-gold-700 text-white"
+          className={`bg-gradient-to-r ${BUILDER_GOLD} ${BUILDER_GOLD_HOVER} text-white`}
         >
           {isSaving ? (
             <>

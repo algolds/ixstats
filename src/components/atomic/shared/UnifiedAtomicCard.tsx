@@ -64,62 +64,62 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       whileHover={{ scale: isDisabled ? 1 : 1.02 }}
       whileTap={{ scale: isDisabled ? 1 : 0.98 }}
       transition={{ duration: 0.2 }}
-      className={cn("cursor-pointer rounded-lg p-4 transition-all", getCardClasses(), className)}
+      className={cn("cursor-pointer rounded-lg p-2 transition-all", getCardClasses(), className)}
       onClick={isDisabled ? undefined : onToggle}
     >
       {/* Header */}
-      <div className="mb-2 flex items-start justify-between">
-        <div className="flex items-center gap-2">
+      <div className="mb-1 flex items-start justify-between">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <div
             className={cn(
-              "rounded-lg p-2",
+              "rounded-md p-1 flex-shrink-0",
               isSelected
                 ? `${getEffectivenessBgColor(component.effectiveness)} ${getIconColor()}`
                 : "bg-muted"
             )}
           >
             {component.icon && typeof component.icon === "function" ? (
-              React.createElement(component.icon, { className: "h-4 w-4" })
+              React.createElement(component.icon, { className: "h-3 w-3" })
             ) : (
-              <Info className="h-4 w-4" />
+              <Info className="h-3 w-3" />
             )}
           </div>
-          <h4 className="text-foreground text-sm font-semibold">{component.name}</h4>
+          <h4 className="text-foreground text-xs font-semibold leading-tight truncate">{component.name}</h4>
         </div>
 
-        <div className="flex items-center gap-1">
-          <Badge variant="outline" className="text-xs">
+        <div className="flex items-center gap-0.5 flex-shrink-0 ml-1">
+          <Badge variant="outline" className="h-4 text-[9px] px-1 leading-none">
             {component.effectiveness}%
           </Badge>
-          {isSelected && <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />}
+          {isSelected && <CheckCircle className="h-3 w-3 text-green-500 dark:text-green-400" />}
           {hasConflict && !isSelected && (
-            <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
+            <AlertCircle className="h-3 w-3 text-red-500 dark:text-red-400" />
           )}
           {hasSynergy && !isSelected && (
-            <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />
+            <TrendingUp className="h-3 w-3 text-green-500 dark:text-green-400" />
           )}
         </div>
       </div>
 
       {/* Description */}
-      <p className="text-muted-foreground mb-3 line-clamp-2 text-xs">{component.description}</p>
+      <p className="text-muted-foreground mb-1 line-clamp-2 text-[10px] leading-snug">{component.description}</p>
 
-      {/* Metadata Grid */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Implementation:</span>
+      {/* Metadata */}
+      <div className="space-y-0.5">
+        <div className="flex items-center justify-between text-[10px]">
+          <span className="text-muted-foreground">Impl:</span>
           <span className="font-medium">${(component.implementationCost / 1000).toFixed(0)}k</span>
         </div>
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-[10px]">
           <span className="text-muted-foreground">Annual:</span>
           <span className="font-medium">${(component.maintenanceCost / 1000).toFixed(0)}k</span>
         </div>
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-[10px]">
           <span className="text-muted-foreground">Complexity:</span>
           <Badge
             variant="secondary"
             className={cn(
-              "text-xs",
+              "text-[9px] h-3.5 px-1 leading-none",
               getComplexityBgColor(component.metadata.complexity),
               getComplexityColor(component.metadata.complexity)
             )}
@@ -130,36 +130,27 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       </div>
 
       {/* Additional Metadata */}
-      <div className="border-border/50 mt-2 space-y-1 border-t pt-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Time:
-          </span>
-          <span className="font-medium">{component.metadata.timeToImplement}</span>
-        </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            Staff:
-          </span>
-          <span className="font-medium">{component.metadata.staffRequired}</span>
-        </div>
+      <div className="border-border/50 mt-1 flex items-center gap-2 border-t pt-1">
+        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+          <Clock className="h-2.5 w-2.5" />
+          {component.metadata.timeToImplement}
+        </span>
+        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+          <Users className="h-2.5 w-2.5" />
+          {component.metadata.staffRequired}
+        </span>
         {component.metadata.technologyRequired && (
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground flex items-center gap-1">
-              <Zap className="h-3 w-3" />
-              Tech:
-            </span>
-            <span className="font-medium text-blue-600 dark:text-blue-400">Required</span>
-          </div>
+          <span className="text-[10px] text-blue-500 dark:text-blue-400 flex items-center gap-0.5">
+            <Zap className="h-2.5 w-2.5" />
+            Tech
+          </span>
         )}
       </div>
 
       {/* Prerequisites */}
       {component.prerequisites.length > 0 && (
-        <div className="border-border/50 mt-2 border-t pt-2">
-          <p className="text-muted-foreground text-xs">
+        <div className="border-border/50 mt-1 border-t pt-1">
+          <p className="text-muted-foreground text-[10px] truncate">
             <span className="font-medium">Requires:</span> {component.prerequisites.join(", ")}
           </p>
         </div>

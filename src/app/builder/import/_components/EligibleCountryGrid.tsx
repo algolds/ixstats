@@ -6,6 +6,7 @@ import { Globe, Search } from "lucide-react";
 import { api } from "~/trpc/react";
 import { BlurFade } from "~/components/magicui/blur-fade";
 import { formatPopulation } from "~/lib/chart-utils";
+import { CountryStatsModal } from "./CountryStatsModal";
 
 interface EligibleCountryGridProps {
   site: "iiwiki" | "althistory";
@@ -25,11 +26,28 @@ interface EligibleCountry {
   population?: number;
   gdp?: string;
   governmentType?: string;
+  capital?: string;
+  currency?: string;
+  currencyCode?: string;
+  languages?: string;
+  areaKm2?: number;
+  demonym?: string;
+  lifeExpectancy?: number;
+  literacyRate?: number;
+  urbanization?: number;
+  internetTld?: string;
+  callingCode?: string;
+  anthem?: string;
+  motto?: string;
+  coordinates?: string;
+  largestCity?: string;
+  officialName?: string;
 }
 
 export function EligibleCountryGrid({ site, searchFilter, onCountryClick }: EligibleCountryGridProps) {
   const AUTO_SCROLL_SPEED = 0.5;
   const RESUME_AFTER_HOVER = 2000;
+  const MIN_COMPLETENESS = 80;
 
   const { data: countries, isLoading } = api.countries.getEligibleCountries.useQuery({ site });
 
@@ -39,15 +57,17 @@ export function EligibleCountryGrid({ site, searchFilter, onCountryClick }: Elig
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isPaused, setIsPaused] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<EligibleCountry | null>(null);
 
   const isFiltering = !!searchFilter?.trim();
 
-  // Filter countries when a search filter is active
+  // Filter countries: only show those with >80% completeness
   const filteredCountries: EligibleCountry[] = useMemo(() => {
     if (!countries || countries.length === 0) return [];
-    if (!isFiltering) return countries;
-    const needle = searchFilter!.trim().toLowerCase();
-    return countries.filter((c) => c.displayName.toLowerCase().includes(needle));
+    const qualified = countries.filter((c) => c.completeness > MIN_COMPLETENESS);
+    if (!isFiltering) return qualified;
+    const needle = (searchFilter ?? '').trim().toLowerCase();
+    return qualified.filter((c) => c.displayName.toLowerCase().includes(needle));
   }, [countries, searchFilter, isFiltering]);
 
   // When filtering, show the filtered list once. When idle, duplicate 3× for infinite scroll.
@@ -69,8 +89,7 @@ export function EligibleCountryGrid({ site, searchFilter, onCountryClick }: Elig
   const runAutoScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container || !shouldScroll || displayCountries.length === 0) {
-      animationRef.current = requestAnimationFrame(runAutoScroll);
-      return;
+      return; // Don't schedule next frame when paused
     }
 
     const { scrollHeight, clientHeight } = container;
@@ -155,7 +174,7 @@ export function EligibleCountryGrid({ site, searchFilter, onCountryClick }: Elig
         <Globe className="mb-4 h-12 w-12 text-[var(--color-text-muted)]/50" />
         <p className="text-[var(--color-text-primary)] font-medium">No eligible countries found</p>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-          Countries need 90%+ infobox data completeness to appear here
+          Countries need 80%+ infobox data completeness to appear here
         </p>
       </div>
     );
@@ -208,26 +227,45 @@ export function EligibleCountryGrid({ site, searchFilter, onCountryClick }: Elig
 
         <div className="grid grid-cols-1 gap-6 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {displayCountries.map((country, index) => (
-            <BlurFade
-              key={`${country.displayName}-${index}`}
-              delay={isFiltering ? index * 0.04 : index * 0.03}
-              duration={0.5}
-              direction="up"
-              blur="3px"
-            >
+            isFiltering ? (
+              <BlurFade
+                key={`${country.displayName}-${index}`}
+                delay={index * 0.04}
+                duration={0.5}
+                direction="up"
+                blur="3px"
+              >
+                <EligibleCountryCard
+                  country={country}
+                  onClick={() => setSelectedCountry(country)}
+                />
+              </BlurFade>
+            ) : (
               <EligibleCountryCard
+                key={`${country.displayName}-${index}`}
                 country={country}
-                onClick={onCountryClick ? () => onCountryClick(country.pageName ?? country.displayName) : undefined}
+                onClick={() => setSelectedCountry(country)}
               />
-            </BlurFade>
+            )
           ))}
         </div>
       </div>
+
+      {selectedCountry && (
+        <CountryStatsModal
+          country={selectedCountry}
+          onClose={() => setSelectedCountry(null)}
+          onImport={() => {
+            setSelectedCountry(null);
+            onCountryClick?.(selectedCountry.pageName ?? selectedCountry.displayName);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function EligibleCountryCard({
+const EligibleCountryCard = React.memo(function EligibleCountryCard({
   country,
   onClick,
 }: {
@@ -236,6 +274,12 @@ function EligibleCountryCard({
 }) {
   const [imgError, setImgError] = useState(false);
   const showFlag = country.flagUrl && !imgError;
+
+  const completenessColor = country.completeness >= 90
+    ? "text-emerald-400"
+    : country.completeness >= 80
+      ? "text-blue-400"
+      : "text-amber-400";
 
   return (
     <motion.div
@@ -260,6 +304,15 @@ function EligibleCountryCard({
 
       <div className="absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300 hover:opacity-100" />
 
+      {/* Completeness badge */}
+      <div className="absolute top-3 right-3">
+        <div className="rounded-full bg-black/50 px-2 py-1 backdrop-blur-sm">
+          <span className={`text-xs font-semibold ${completenessColor}`}>
+            {country.completeness}%
+          </span>
+        </div>
+      </div>
+
       <div className="absolute bottom-0 left-0 right-0 p-4">
         <p className="text-lg font-bold text-white [text-shadow:0_0_10px_rgba(0,0,0,0.5)]">
           {country.displayName}
@@ -278,4 +331,4 @@ function EligibleCountryCard({
       </div>
     </motion.div>
   );
-}
+});

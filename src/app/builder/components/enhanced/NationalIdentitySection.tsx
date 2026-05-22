@@ -13,14 +13,12 @@ import {
   Globe,
   Landmark,
   Heart,
-  ChevronDown,
-  ChevronUp,
   CheckCircle,
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import type { EconomicInputs, RealCountryData, NationalIdentityData } from "~/app/builder/lib/economy-data-service";
+import { BuilderTabCard, type TabDefinition } from "~/app/builder/primitives/BuilderTabCard";
 import {
   BasicInfoForm,
   SymbolsUpload,
@@ -108,14 +106,6 @@ export function NationalIdentitySection({
     shouldFetchCustomTypes,
     setShouldFetchCustomTypes,
     foundationCoatOfArmsUrl,
-    isSymbolsOpen,
-    setIsSymbolsOpen,
-    isBasicInfoOpen,
-    setIsBasicInfoOpen,
-    isCultureOpen,
-    setIsCultureOpen,
-    isGeographyOpen,
-    setIsGeographyOpen,
     foundationCountryName,
     flag,
     handleColorsExtracted,
@@ -216,131 +206,83 @@ export function NationalIdentitySection({
     );
   }
 
+  // Tab configuration
+  const [activeTab, setActiveTab] = React.useState("symbols");
+
+  const tabs: TabDefinition[] = [
+    { id: "symbols", label: "Symbols", icon: Flag },
+    { id: "basic", label: "Basic Info", icon: Globe },
+    { id: "culture", label: "Culture", icon: Heart },
+    { id: "technical", label: "Technical", icon: Landmark },
+  ];
+
   return (
     <>
-      <div className="space-y-8">
-        {/* National Symbols */}
-        <Collapsible open={isSymbolsOpen} onOpenChange={setIsSymbolsOpen}>
-          <div className="border-border bg-card rounded-lg border">
-            <CollapsibleTrigger className="hover:bg-accent/5 flex w-full items-center justify-between p-6 transition-colors">
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                <Flag className="h-5 w-5" />
-                National Symbols
-              </h3>
-              {isSymbolsOpen ? (
-                <ChevronUp className="h-5 w-5" />
-              ) : (
-                <ChevronDown className="h-5 w-5" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="px-6 pb-6">
-              <SymbolsUpload
-                flagUrl={inputs.flagUrl ?? ""}
-                coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
-                foundationCountry={
-                  foundationCountryName
-                    ? {
-                        name: foundationCountryName,
-                        flagUrl: flag?.flagUrl ?? "",
-                        coatOfArmsUrl: foundationCoatOfArmsUrl,
-                      }
-                    : undefined
-                }
-                onSelectFlag={() => setShowFlagImageModal(true)}
-                onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
-                onFlagUrlChange={handleFlagUrlChange}
-                onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
-                onColorsExtracted={handleColorsExtracted}
-              />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+      <div className="relative space-y-4">
+        {/* Autosave Status (Top right) */}
+        <div className="absolute -top-10 right-0 z-10 flex h-8 items-center pr-2">
+          {renderAutosaveStatus()}
+        </div>
 
-        {/* Basic Identity Information */}
-        <Collapsible open={isBasicInfoOpen} onOpenChange={setIsBasicInfoOpen}>
-          <div className="border-border bg-card rounded-lg border">
-            <CollapsibleTrigger className="hover:bg-accent/5 flex w-full items-center justify-between p-6 transition-colors">
-              <div className="flex items-center gap-2">
-                <h3 className="flex items-center gap-2 text-lg font-semibold">
-                  <Globe className="h-5 w-5" />
-                  Basic Identity Information
-                </h3>
-                {renderAutosaveStatus()}
-              </div>
-              {isBasicInfoOpen ? (
-                <ChevronUp className="h-5 w-5" />
-              ) : (
-                <ChevronDown className="h-5 w-5" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-6">
-              <BasicInfoForm
-                identity={identity as NationalIdentityData}
-                onIdentityChange={handleIdentityChange}
-                selectedGovernmentType={selectedGovernmentType}
-                customOfficialName={customOfficialName}
-                isEditingCustomName={isEditingCustomName}
-                onGovernmentTypeChange={handleGovernmentTypeChange}
-                onCustomOfficialNameChange={setCustomOfficialName}
-                onCustomOfficialNameFocus={handleCustomOfficialNameFocus}
-                onCustomOfficialNameBlur={handleCustomOfficialNameBlur}
-                setShouldFetchCustomTypes={setShouldFetchCustomTypes}
-                customGovernmentTypes={customGovernmentTypes}
-                onFieldSave={handleFieldValueSave}
-              />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+        <BuilderTabCard
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          sectionTheme="identity"
+        >
+          {activeTab === "symbols" && (
+            <SymbolsUpload
+              flagUrl={inputs.flagUrl ?? ""}
+              coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
+              foundationCountry={
+                foundationCountryName
+                  ? {
+                      name: foundationCountryName,
+                      flagUrl: flag?.flagUrl ?? "",
+                      coatOfArmsUrl: foundationCoatOfArmsUrl,
+                    }
+                  : undefined
+              }
+              onSelectFlag={() => setShowFlagImageModal(true)}
+              onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
+              onFlagUrlChange={handleFlagUrlChange}
+              onCoatOfArmsUrlChange={handleCoatOfArmsUrlChange}
+              onColorsExtracted={handleColorsExtracted}
+            />
+          )}
 
-        {/* Culture & Language */}
-        <Collapsible open={isCultureOpen} onOpenChange={setIsCultureOpen}>
-          <div className="border-border bg-card rounded-lg border">
-            <CollapsibleTrigger className="hover:bg-accent/5 flex w-full items-center justify-between p-6 transition-colors">
-              <div className="flex items-center gap-2">
-                <h3 className="flex items-center gap-2 text-lg font-semibold">
-                  <Heart className="h-5 w-5" />
-                  Culture & Language
-                </h3>
-                {renderAutosaveStatus()}
-              </div>
-              {isCultureOpen ? (
-                <ChevronUp className="h-5 w-5" />
-              ) : (
-                <ChevronDown className="h-5 w-5" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-6">
-              <CultureForm
-                identity={identity as NationalIdentityData}
-                onIdentityChange={handleIdentityChange}
-                onFieldSave={handleFieldValueSave}
-              />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+          {activeTab === "basic" && (
+            <BasicInfoForm
+              identity={identity as NationalIdentityData}
+              onIdentityChange={handleIdentityChange}
+              selectedGovernmentType={selectedGovernmentType}
+              customOfficialName={customOfficialName}
+              isEditingCustomName={isEditingCustomName}
+              onGovernmentTypeChange={handleGovernmentTypeChange}
+              onCustomOfficialNameChange={setCustomOfficialName}
+              onCustomOfficialNameFocus={handleCustomOfficialNameFocus}
+              onCustomOfficialNameBlur={handleCustomOfficialNameBlur}
+              setShouldFetchCustomTypes={setShouldFetchCustomTypes}
+              customGovernmentTypes={customGovernmentTypes}
+              onFieldSave={handleFieldValueSave}
+            />
+          )}
 
-        {/* Technical Details & Geography */}
-        <Collapsible open={isGeographyOpen} onOpenChange={setIsGeographyOpen}>
-          <div className="border-border bg-card rounded-lg border">
-            <CollapsibleTrigger className="hover:bg-accent/5 flex w-full items-center justify-between p-6 transition-colors">
-              <div className="flex items-center gap-2">
-                <h3 className="flex items-center gap-2 text-lg font-semibold">
-                  <Landmark className="h-5 w-5" />
-                  Technical Details & Geography
-                </h3>
-                {renderAutosaveStatus()}
-              </div>
-              {isGeographyOpen ? (
-                <ChevronUp className="h-5 w-5" />
-              ) : (
-                <ChevronDown className="h-5 w-5" />
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="p-6">
-              <GeographyForm identity={identity as NationalIdentityData} onIdentityChange={handleIdentityChange} />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
+          {activeTab === "culture" && (
+            <CultureForm
+              identity={identity as NationalIdentityData}
+              onIdentityChange={handleIdentityChange}
+              onFieldSave={handleFieldValueSave}
+            />
+          )}
+
+          {activeTab === "technical" && (
+            <GeographyForm 
+              identity={identity as NationalIdentityData} 
+              onIdentityChange={handleIdentityChange} 
+            />
+          )}
+        </BuilderTabCard>
       </div>
 
       {/* Image selection modals */}

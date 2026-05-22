@@ -72,17 +72,20 @@ async function fetchFromWikiSource(pageName: string, source: WikiSource) {
   if (!response.ok) throw new Error(`HTTP ${response.status} from ${WIKI_SOURCE_NAMES[source].name}`);
   const data = await response.json();
   const pages = data.query?.pages;
-  if (!pages) return null;
-  const page = Object.values(pages)[0] as any;
-  if (page.missing !== undefined || parseInt(page.pageid) < 0) return null;
-  const wikitext = page.revisions?.[0]?.["*"];
+  if (!pages || Object.keys(pages).length === 0) return null;
+  const page = Object.values(pages)[0];
+  if (!page || typeof page !== "object") return null;
+  const pageObj = page as Record<string, unknown>;
+  if (pageObj.missing !== undefined || parseInt(String(pageObj.pageid ?? "-1")) < 0) return null;
+  const revisions = pageObj.revisions as Array<Record<string, unknown>> | undefined;
+  const wikitext = revisions?.[0]?.["*"] as string | undefined;
   if (!wikitext) return null;
 
   return {
     source,
     sourceName: WIKI_SOURCE_NAMES[source].name,
     pageName,
-    pageId: page.pageid,
+    pageId: pageObj.pageid,
     wikitext,
     hasInfobox: wikitext.includes("{{Infobox country") || wikitext.includes("{{Infobox Country"),
     url: getWikiUrl(source, pageName),
@@ -102,29 +105,25 @@ async function searchAcrossWikis(pageName: string, preferredSource?: WikiSource)
         (a, b) => WIKI_SOURCE_NAMES[a].priority - WIKI_SOURCE_NAMES[b].priority
       );
 
-  const results: Array<{ source: WikiSource; success: boolean; data?: any; error?: string }> = [];
-
-  for (const source of sources) {
-    try {
+  const results = await Promise.allSettled(
+    sources.map(async (source) => {
       const data = await fetchFromWikiSource(pageName, source);
-      if (data) {
-        results.push({ source, success: true, data });
-        return data; // Return first successful result
-      } else {
-        results.push({ source, success: false, error: "Page not found" });
-      }
-    } catch (error) {
-      results.push({
-        source,
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+      return { source, data };
+    })
+  );
+
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value.data) {
+      return result.value.data;
     }
   }
 
-  // No successful results
+  const errors = results
+    .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+    .map((r) => r.reason instanceof Error ? r.reason.message : String(r.reason));
+
   throw new Error(
-    `Page "${pageName}" not found in any wiki source. Tried: ${sources.map((s) => WIKI_SOURCE_NAMES[s].name).join(", ")}`
+    `Page "${pageName}" not found in any wiki source. Tried: ${sources.map((s) => WIKI_SOURCE_NAMES[s].name).join(", ")}${errors.length > 0 ? `. Errors: ${errors.join("; ")}` : ""}`
   );
 }
 
@@ -139,17 +138,21 @@ export const wikiImporterRouter = createTRPCRouter({
       })
     )
     .query(({ input }) => {
-      const parsedData = parseInfoboxTemplate(input.wikitext);
-      const mappedData = mapInfoboxToIxStats(parsedData);
+      try {
+        const parsedData = parseInfoboxTemplate(input.wikitext);
+        const mappedData = mapInfoboxToIxStats(parsedData);
 
-      return {
-        parsed: parsedData,
-        mapped: mappedData,
-        fieldCount: Object.keys(parsedData).length,
-        mappedFieldCount: Object.keys(mappedData).filter(
-          (k) => mappedData[k as keyof typeof mappedData]
-        ).length,
-      };
+        return {
+          parsed: parsedData,
+          mapped: mappedData,
+          fieldCount: Object.keys(parsedData).length,
+          mappedFieldCount: Object.keys(mappedData).filter(
+            (k) => mappedData[k as keyof typeof mappedData]
+          ).length,
+        };
+      } catch (e) {
+        throw new Error(`Failed to parse wikitext: ${e instanceof Error ? e.message : "Unknown error"}`);
+      }
     }),
 
   /**
@@ -160,7 +163,7 @@ export const wikiImporterRouter = createTRPCRouter({
     .input(
       z.object({
         wikitext: z.string(),
-        countryId: z.string().optional(), // If updating existing country
+        countryId: z.string().optional(),
         createNew: z.boolean().default(true),
       })
     )
@@ -172,55 +175,72 @@ export const wikiImporterRouter = createTRPCRouter({
         throw new Error("Could not extract country name from infobox");
       }
 
-      // Get user ID from context
       const userId = ctx.user?.id;
       if (!userId) {
         throw new Error("User not authenticated");
       }
 
+      // Validate mapped data ranges before database write
+      const population = mappedData.currentPopulation || mappedData.baselinePopulation || 10000000;
+      if (population < 0 || population > 1e10) {
+        throw new Error("Invalid population value from wiki data");
+      }
+      const landArea = mappedData.landArea || 100000;
+      if (landArea < 0 || landArea > 1e8) {
+        throw new Error("Invalid land area value from wiki data");
+      }
+
       // Check if updating or creating
       if (input.countryId) {
-        // Update existing country
-        const country = await ctx.db.country.update({
-          where: { id: input.countryId },
-          data: {
-            name: mappedData.name,
-            slug: mappedData.slug,
-            continent: mappedData.continent,
-            region: mappedData.region,
-            landArea: mappedData.landArea,
-            areaSqMi: mappedData.areaSqMi,
-            currentPopulation: mappedData.currentPopulation,
-            baselinePopulation: mappedData.baselinePopulation,
-            populationDensity: mappedData.populationDensity,
-            religion: mappedData.religion,
-            leader: mappedData.leader,
-            flag: mappedData.flag,
-            coatOfArms: mappedData.coatOfArms,
-          },
-        });
+        // Wrap update path in transaction for atomicity
+        try {
+          const result = await ctx.db.$transaction(async (tx) => {
+            const country = await tx.country.update({
+              where: { id: input.countryId },
+              data: {
+                name: mappedData.name,
+                slug: mappedData.slug,
+                continent: mappedData.continent,
+                region: mappedData.region,
+                landArea: mappedData.landArea,
+                areaSqMi: mappedData.areaSqMi,
+                currentPopulation: mappedData.currentPopulation,
+                baselinePopulation: mappedData.baselinePopulation,
+                populationDensity: mappedData.populationDensity,
+                religion: mappedData.religion,
+                leader: mappedData.leader,
+                flag: mappedData.flag,
+                coatOfArms: mappedData.coatOfArms,
+              },
+            });
 
-        // Update or create national identity
-        if (mappedData.nationalIdentity) {
-          await ctx.db.nationalIdentity.upsert({
-            where: { countryId: input.countryId },
-            create: {
-              countryId: input.countryId,
-              ...mappedData.nationalIdentity,
-            },
-            update: {
-              ...mappedData.nationalIdentity,
-              updatedAt: new Date(),
-            },
+            if (mappedData.nationalIdentity) {
+              await tx.nationalIdentity.upsert({
+                where: { countryId: input.countryId },
+                create: {
+                  countryId: input.countryId,
+                  ...mappedData.nationalIdentity,
+                },
+                update: {
+                  ...mappedData.nationalIdentity,
+                  updatedAt: new Date(),
+                },
+              });
+            }
+
+            return country;
           });
-        }
 
-        return {
-          success: true,
-          countryId: country.id,
-          countryName: country.name,
-          action: "updated",
-        };
+          return {
+            success: true,
+            countryId: result.id,
+            countryName: result.name,
+            action: "updated",
+          };
+        } catch (err) {
+          console.error(`[wikiImporter] importCountry update failed for user ${userId}, country ${input.countryId}:`, err);
+          throw new Error(`Failed to update country: ${err instanceof Error ? err.message : "Unknown error"}`);
+        }
       } else if (input.createNew) {
         // Import helper functions
         const { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } = await import(
@@ -230,7 +250,7 @@ export const wikiImporterRouter = createTRPCRouter({
         // Calculate derived values from wiki data
         const population =
           mappedData.currentPopulation || mappedData.baselinePopulation || 10000000;
-        const gdpPerCapita = 25000; // Default if not in wiki data
+        const gdpPerCapita = 25000;
         const nominalGDP = population * gdpPerCapita;
         const totalGdp = nominalGDP;
 
@@ -245,7 +265,14 @@ export const wikiImporterRouter = createTRPCRouter({
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, "");
 
+        // Check for slug collision before attempting create
+        const existingSlug = await ctx.db.country.findUnique({ where: { slug } });
+        if (existingSlug) {
+          throw new Error(`A country with slug "${slug}" already exists. Use the update flow instead.`);
+        }
+
         // Use transaction to create country and all related records atomically
+        try {
         const result = await ctx.db.$transaction(async (tx) => {
           // Create the country with ALL fields (same as builder)
           const country = await tx.country.create({
@@ -536,15 +563,22 @@ export const wikiImporterRouter = createTRPCRouter({
         });
 
         console.log(
-          `✅ Wiki Import: Country created successfully from infobox: ${result.name} (ID: ${result.id})`
+          `[wikiImporter] Country created successfully: ${result.name} (ID: ${result.id})`
         );
         return {
           success: true,
           countryId: result.id,
           countryName: result.name,
           action: "created",
-          message: `Successfully imported ${result.name} from wiki with complete database structure (9 tables created)`,
+          message: `Successfully imported ${result.name} from wiki with complete database structure`,
         };
+        } catch (err) {
+          console.error(`[wikiImporter] importCountry create failed for user ${userId}:`, err);
+          if (err instanceof Error && err.message.includes("Unique constraint")) {
+            throw new Error(`A country with slug "${slug}" already exists. Use the update flow instead.`);
+          }
+          throw new Error(`Failed to import country: ${err instanceof Error ? err.message : "Unknown error"}`);
+        }
       }
 
       throw new Error("Must specify countryId for update or createNew=true");
@@ -583,26 +617,22 @@ export const wikiImporterRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const { searchPages } = await import("~/lib/wiki-bridge");
       const sources: WikiSource[] = ["iiwiki", "ixwiki", "althist"];
-      const results = [];
-
-      for (const source of sources) {
-        try {
+      const results = await Promise.allSettled(
+        sources.map(async (source) => {
           const bridgeSource = toBridgeSource(source);
           if (bridgeSource) {
-            // Use WikiBridge for ixwiki/iiwiki
             const searchResults = await searchPages(input.searchTerm, 5, bridgeSource);
             if (searchResults.length > 0) {
-              results.push({
+              return {
                 source,
                 sourceName: WIKI_SOURCE_NAMES[source].name,
                 results: searchResults.map((r) => ({
                   title: r.title,
                   url: getWikiUrl(source, r.title),
                 })),
-              });
+              };
             }
           } else {
-            // Fallback: althist via HTTP opensearch
             const apiUrl = "https://althistory.fandom.com/api.php";
             const response = await fetch(
               `${apiUrl}?action=opensearch&search=${encodeURIComponent(input.searchTerm)}&limit=5&format=json`,
@@ -612,23 +642,25 @@ export const wikiImporterRouter = createTRPCRouter({
               const data = await response.json();
               const [, titles, , urls] = data;
               if (titles && titles.length > 0) {
-                results.push({
+                return {
                   source,
                   sourceName: WIKI_SOURCE_NAMES[source].name,
                   results: titles.map((title: string, idx: number) => ({
                     title,
                     url: urls[idx],
                   })),
-                });
+                };
               }
             }
           }
-        } catch (error) {
-          console.error(`Failed to search ${source}:`, error);
-        }
-      }
+          return null;
+        })
+      );
 
-      return results;
+      return results
+        .filter((r) => r.status === "fulfilled")
+        .map((r) => (r as PromiseFulfilledResult<unknown>).value)
+        .filter((v): v is NonNullable<typeof v> => v !== null);
     }),
 
   /**
@@ -670,7 +702,7 @@ export const wikiImporterRouter = createTRPCRouter({
         try {
           const parsedInfobox = parseInfoboxTemplate(fallback.wikitext);
           infoboxMapped = mapInfoboxToIxStats(parsedInfobox);
-        } catch { /* infobox parsing optional */ }
+        } catch (e) { console.warn("[deepImport] infobox parsing failed:", e); }
 
         // IxWorld matching
         let ixworldMatch = null;
@@ -681,7 +713,7 @@ export const wikiImporterRouter = createTRPCRouter({
             ctx.db,
             analyzed.borders?.value
           );
-        } catch { /* IxWorld matching optional */ }
+        } catch (e) { console.warn("[deepImport] IxWorld matching failed:", e); }
 
         return {
           success: true,
@@ -713,7 +745,7 @@ export const wikiImporterRouter = createTRPCRouter({
       try {
         const parsedInfobox = parseInfoboxTemplate(article.wikitext);
         infoboxMapped = mapInfoboxToIxStats(parsedInfobox);
-      } catch { /* infobox parsing optional */ }
+      } catch (e) { console.warn("[deepImport] infobox parsing failed:", e); }
 
       // 5. IxWorld geographic matching
       let ixworldMatch = null;
@@ -724,7 +756,7 @@ export const wikiImporterRouter = createTRPCRouter({
           ctx.db,
           analyzed.borders?.value
         );
-      } catch { /* IxWorld matching optional */ }
+      } catch (e) { console.warn("[deepImport] IxWorld matching failed:", e); }
 
       return {
         success: true,

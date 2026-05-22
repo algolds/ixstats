@@ -18,7 +18,11 @@ export async function GET(
       if (filename.includes("|")) {
         filename = filename.split("|")[0]!.trim();
       }
-      
+      // Strip zero-width characters and control characters that can sneak into filenames
+      filename = filename.replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\x00-\x1F]/g, "").trim();
+
+      const isExternalUrl = /^https?:\/\//i.test(filename);
+
       let directUrl: string | null = null;
       const cacheOptions = {
         service: "mediawiki" as const,
@@ -37,28 +41,69 @@ export async function GET(
         console.error("[IIWiki Proxy] Error reading resolution cache:", cacheErr);
       }
 
+      // If the filename is an absolute external URL (e.g. imgur), use it directly
+      // instead of trying to resolve via IIWiki's API (which would 403).
+      if (!directUrl && isExternalUrl) {
+        directUrl = filename;
+        console.log(`[IIWiki Proxy] External URL detected, using directly: ${filename}`);
+        await externalApiCache.set(cacheOptions, { url: filename }).catch(() => {});
+      }
+
       if (!directUrl) {
-        const apiQueryUrl = `https://iiwiki.com/api.php?action=query&titles=File:${encodeURIComponent(filename)}&prop=imageinfo&iiprop=url&format=json`;
-        try {
-          const apiResponse = await fetch(apiQueryUrl, {
-            headers: {
-              "User-Agent": "IxStats-Builder",
-              "Api-User-Agent": "IxStats-Builder",
-            },
-            signal: AbortSignal.timeout(10000),
-          });
-          if (apiResponse.ok) {
-            const data = await apiResponse.json() as any;
-            const pages = data.query?.pages ?? {};
-            const page = Object.values(pages)[0] as any;
-            directUrl = page?.imageinfo?.[0]?.url;
-            if (directUrl) {
-              console.log(`[IIWiki Proxy] Cache MISS. Resolved Special:FilePath for ${filename} -> ${directUrl}. Caching...`);
-              await externalApiCache.set(cacheOptions, { url: directUrl });
+        // Aligned with wiki-bridge.ts iiWikiApiCall pattern: add origin=* and proper headers
+        const apiUrl = new URL("https://iiwiki.com/api.php");
+        apiUrl.searchParams.set("action", "query");
+        apiUrl.searchParams.set("titles", `File:${filename}`);
+        apiUrl.searchParams.set("prop", "imageinfo");
+        apiUrl.searchParams.set("iiprop", "url");
+        apiUrl.searchParams.set("format", "json");
+        apiUrl.searchParams.set("origin", "*");
+
+        const maxRetries = 2;
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const abortController = new AbortController();
+            const timeoutId = setTimeout(() => abortController.abort(), 10000);
+
+            const apiResponse = await fetch(apiUrl.toString(), {
+              headers: {
+                "User-Agent": "IxStats-Builder",
+                "Api-User-Agent": "IxStats-Builder",
+                "Accept": "application/json, text/html, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+              },
+              signal: abortController.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (apiResponse.ok) {
+              const data = await apiResponse.json() as any;
+              const pages = data.query?.pages ?? {};
+              const page = Object.values(pages)[0] as any;
+              directUrl = page?.imageinfo?.[0]?.url;
+              if (directUrl) {
+                console.log(`[IIWiki Proxy] Cache MISS. Resolved Special:FilePath for ${filename} -> ${directUrl}. Caching...`);
+                await externalApiCache.set(cacheOptions, { url: directUrl });
+              }
+              break; // success, exit retry loop
             }
+
+            if (apiResponse.status === 403 && attempt < maxRetries) {
+              console.warn(`[IIWiki Proxy] API returned 403 for ${filename}, retrying (${attempt + 1}/${maxRetries})...`);
+              await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
+              continue;
+            }
+
+            break; // non-403 or last attempt, exit
+          } catch (apiErr) {
+            if (attempt < maxRetries) {
+              console.warn(`[IIWiki Proxy] API error for ${filename}, retrying (${attempt + 1}/${maxRetries}):`, apiErr);
+              await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
+              continue;
+            }
+            console.error("[IIWiki Proxy] Error resolving Special:FilePath via api.php after max retries:", apiErr);
           }
-        } catch (apiErr) {
-          console.error("[IIWiki Proxy] Error resolving Special:FilePath via api.php:", apiErr);
         }
       }
 
@@ -82,12 +127,30 @@ export async function GET(
               },
             });
           } else {
-            console.warn(`[IIWiki Proxy] Image fetch via wsrv.nl failed with status ${imageResponse.status}. Falling back to direct redirect.`);
-            return NextResponse.redirect(directUrl, { status: 302 });
+            console.warn(`[IIWiki Proxy] Image fetch via wsrv.nl failed with status ${imageResponse.status}. Falling back to direct fetch.`);
+            
+            const directResp = await fetch(directUrl, {
+              headers: { "User-Agent": "IxStats-Builder" },
+              signal: AbortSignal.timeout(15000),
+            });
+            
+            if (directResp.ok) {
+              const contentType = directResp.headers.get("Content-Type") || "image/png";
+              const arrayBuffer = await directResp.arrayBuffer();
+              return new NextResponse(arrayBuffer, {
+                status: 200,
+                headers: {
+                  "Content-Type": contentType,
+                  "Cache-Control": "public, max-age=86400",
+                },
+              });
+            }
+            
+            return new NextResponse(null, { status: 502 });
           }
         } catch (imgErr) {
-          console.error("[IIWiki Proxy] Error fetching resolved image path via wsrv.nl:", imgErr);
-          return NextResponse.redirect(directUrl, { status: 302 });
+          console.error("[IIWiki Proxy] Error fetching resolved image path:", imgErr);
+          return new NextResponse(null, { status: 502 });
         }
       }
     }
@@ -115,12 +178,12 @@ export async function GET(
             },
           });
         } else {
-          console.warn(`[IIWiki Proxy] Direct image fetch via wsrv.nl failed with status ${imageResponse.status}. Falling back to direct redirect.`);
-          return NextResponse.redirect(targetUrl, { status: 302 });
+          console.warn(`[IIWiki Proxy] Direct image fetch via wsrv.nl failed with status ${imageResponse.status}.`);
+          return new NextResponse(null, { status: 502 });
         }
       } catch (err) {
         console.error("[IIWiki Proxy] Error fetching direct image path via wsrv.nl:", err);
-        return NextResponse.redirect(targetUrl, { status: 302 });
+        return new NextResponse(null, { status: 502 });
       }
     }
 
@@ -144,9 +207,9 @@ export async function GET(
         response.status === 504
       ) {
         console.warn(
-          `[IIWiki Proxy] Target returned status ${response.status}. Redirecting browser directly to target to bypass.`
+          `[IIWiki Proxy] Target returned status ${response.status}. Cannot redirect due to CORP policy.`
         );
-        return NextResponse.redirect(targetUrl, { status: 302 });
+        return new NextResponse(null, { status: 502 });
       }
 
       return new NextResponse(response.body, {
@@ -169,15 +232,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("[IIWiki Proxy] Catch-all error:", error);
-    try {
-      const resolvedParams = await params;
-      const subpath = resolvedParams.path.join("/");
-      const searchParams = request.nextUrl.searchParams.toString();
-      const queryString = searchParams ? `?${searchParams}` : "";
-      const fallbackUrl = `https://iiwiki.com/${subpath}${queryString}`;
-      return NextResponse.redirect(fallbackUrl, { status: 302 });
-    } catch {
-      return new NextResponse("Proxy Error", { status: 500 });
-    }
+    return new NextResponse("Proxy Error", { status: 500 });
   }
 }

@@ -25,6 +25,46 @@ import { CountryWithEditorFields } from "~/types/country-editor";
 import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
 import { api } from "~/trpc/react";
 
+const CURRENT_SCHEMA_VERSION = 1;
+
+/** Parse numeric values like "$1.2 trillion", "€45,000", "10 million", "1234567" */
+function parseWikiNumericValue(value: unknown): number | null {
+  if (typeof value === "number") return value > 0 ? value : null;
+  if (typeof value !== "string") return null;
+  const match = value.match(/([\d,\.]+)\s*(trillion|billion|million|thousand)?/i);
+  if (!match) return null;
+  let num = parseFloat(match[1]!.replace(/,/g, ""));
+  if (isNaN(num)) return null;
+  const mult = match[2]?.toLowerCase();
+  if (mult === "trillion") num *= 1e12;
+  else if (mult === "billion") num *= 1e9;
+  else if (mult === "million") num *= 1e6;
+  else if (mult === "thousand") num *= 1e3;
+  return num > 0 ? num : null;
+}
+
+/** Normalize wiki government type to builder enum (Title Case, known types) */
+function normalizeGovernmentType(raw: string): string {
+  const normalized = raw.trim();
+  const knownTypes = [
+    "Constitutional Monarchy",
+    "Federal Republic",
+    "Parliamentary Democracy",
+    "Presidential Republic",
+    "Federal Constitutional Republic",
+    "Unitary State",
+    "Federation",
+    "Confederation",
+    "Empire",
+    "City-State",
+  ];
+  for (const known of knownTypes) {
+    if (normalized.toLowerCase() === known.toLowerCase()) return known;
+  }
+  // Title-case fallback for unknown types
+  return normalized.replace(/\b\w/g, (c) => c.toUpperCase()) || "Other";
+}
+
 /**
  * Complete state structure for the country builder workflow.
  * Tracks progress through all builder steps and maintains data integrity.
@@ -415,56 +455,57 @@ export function useBuilderState(
   useEffect(() => {
     // Skip quick-start and wiki import in edit mode, but still load saved edits
     if (mode === "edit" && editModeInitialized.current && !isLoadingCountry) {
-      // Wait a tick to ensure database initialization has fully completed
-      const timeoutId = setTimeout(() => {
-        try {
-          const stateKey = `builder_state_${countryId}`;
-          const savedKey = `builder_last_saved_${countryId}`;
+      try {
+        const stateKey = `builder_state_${countryId}`;
+        const savedKey = `builder_last_saved_${countryId}`;
 
-          const savedState = safeGetItemSync(stateKey);
-          const savedLastSaved = safeGetItemSync(savedKey);
+        const savedState = safeGetItemSync(stateKey);
+        const savedLastSaved = safeGetItemSync(savedKey);
 
-          if (savedState) {
-            const parsedState = JSON.parse(savedState);
-            // Only restore if there's actual data and it's not just the initial empty state
-            if (parsedState.economicInputs && parsedState.economicInputs.countryName) {
-              setBuilderState((prev) => {
-                // Deep merge economicInputs to preserve database-loaded data
-                const mergedInputs = prev.economicInputs ? {
-                  ...prev.economicInputs,
-                  ...parsedState.economicInputs,
-                  // Ensure nationalIdentity is merged, not replaced
-                  nationalIdentity: {
-                    ...prev.economicInputs.nationalIdentity,
-                    ...parsedState.economicInputs.nationalIdentity,
-                  },
-                } : parsedState.economicInputs;
-
-                return {
-                  ...prev,
-                  economicInputs: mergedInputs,
-                  governmentStructure: parsedState.governmentStructure || prev.governmentStructure,
-                  taxSystemData: parsedState.taxSystemData || prev.taxSystemData,
-                  governmentComponents: parsedState.governmentComponents || prev.governmentComponents,
-                  economyBuilderState: parsedState.economyBuilderState || prev.economyBuilderState,
-                  activeCoreTab: parsedState.activeCoreTab || prev.activeCoreTab,
-                  activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
-                  activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
-                };
-              });
-              console.log("[useBuilderState] Restored saved edits from localStorage");
-            }
+        if (savedState) {
+          let parsedState;
+          try {
+            parsedState = JSON.parse(savedState);
+          } catch {
+            console.warn("[useBuilderState] Corrupted localStorage data for edit mode, discarding");
+            return;
           }
+          // Only restore if there's actual data and it's not just the initial empty state
+          if (parsedState.economicInputs && parsedState.economicInputs.countryName) {
+            setBuilderState((prev) => {
+              // Deep merge economicInputs to preserve database-loaded data
+              const mergedInputs = prev.economicInputs ? {
+                ...prev.economicInputs,
+                ...parsedState.economicInputs,
+                // Ensure nationalIdentity is merged, not replaced
+                nationalIdentity: {
+                  ...prev.economicInputs.nationalIdentity,
+                  ...parsedState.economicInputs.nationalIdentity,
+                },
+              } : parsedState.economicInputs;
 
-          if (savedLastSaved) {
-            setLastSaved(new Date(savedLastSaved));
+              return {
+                ...prev,
+                economicInputs: mergedInputs,
+                governmentStructure: parsedState.governmentStructure || prev.governmentStructure,
+                taxSystemData: parsedState.taxSystemData || prev.taxSystemData,
+                governmentComponents: parsedState.governmentComponents || prev.governmentComponents,
+                economyBuilderState: parsedState.economyBuilderState || prev.economyBuilderState,
+                activeCoreTab: parsedState.activeCoreTab || prev.activeCoreTab,
+                activeGovernmentTab: parsedState.activeGovernmentTab || prev.activeGovernmentTab,
+                activeEconomicsTab: parsedState.activeEconomicsTab || prev.activeEconomicsTab,
+              };
+            });
+            console.log("[useBuilderState] Restored saved edits from localStorage");
           }
-        } catch (error) {
-          console.warn("[useBuilderState] Failed to restore saved edits:", error);
         }
-      }, 100); // Small delay to ensure initialization completes
 
-      return () => clearTimeout(timeoutId);
+        if (savedLastSaved) {
+          setLastSaved(new Date(savedLastSaved));
+        }
+      } catch (error) {
+        console.warn("[useBuilderState] Failed to restore saved edits:", error);
+      }
     }
 
     // Create mode: handle quick-start, wiki import, and saved state
@@ -500,12 +541,33 @@ export function useBuilderState(
             // Map wiki data to economic inputs
             if (wikiData.name) inputs.countryName = wikiData.name;
 
-            // Core indicators
-            if (wikiData.population) {
-              inputs.coreIndicators.totalPopulation = Number(wikiData.population) || 10000000;
+            // Core indicators — check all field variants from unified-wiki-parser
+            const popValue = wikiData.population ?? wikiData.population_estimate ?? wikiData.population_census;
+            if (popValue) {
+              const parsed = parseWikiNumericValue(popValue);
+              if (parsed !== null) {
+                inputs.coreIndicators.totalPopulation = parsed;
+              }
             }
-            if (wikiData.gdpPerCapita) {
-              inputs.coreIndicators.gdpPerCapita = Number(wikiData.gdpPerCapita) || 25000;
+
+            const gdpPcValue = wikiData.gdpPerCapita ?? wikiData.GDP_nominal_per_capita ?? wikiData.GDP_PPP_per_capita;
+            if (gdpPcValue) {
+              const parsed = parseWikiNumericValue(gdpPcValue);
+              if (parsed !== null) {
+                inputs.coreIndicators.gdpPerCapita = parsed;
+              }
+            }
+
+            // Nominal GDP: prefer explicit numeric field, fall back to string parsing, then derive
+            const gdpNomValue = wikiData.gdp_nominal ?? wikiData.GDP_nominal ?? wikiData.gdp_ppp ?? wikiData.GDP_PPP;
+            if (gdpNomValue !== undefined && gdpNomValue !== null) {
+              const parsed = parseWikiNumericValue(gdpNomValue);
+              if (parsed !== null) {
+                inputs.coreIndicators.nominalGDP = parsed;
+              }
+            }
+            if (!inputs.coreIndicators.nominalGDP && inputs.coreIndicators.totalPopulation && inputs.coreIndicators.gdpPerCapita) {
+              inputs.coreIndicators.nominalGDP = inputs.coreIndicators.totalPopulation * inputs.coreIndicators.gdpPerCapita;
             }
 
             // National identity (ensure object exists)
@@ -523,37 +585,237 @@ export function useBuilderState(
                 officialLanguages: "",
                 nationalLanguage: "",
                 nationalAnthem: "",
+                nationalReligion: "", // Added to interface if not present
                 nationalDay: "",
                 callingCode: "",
                 internetTLD: "",
                 drivingSide: "right",
+                timeZone: "",
+                isoCode: "",
+                currencySymbol: "",
+                coordinatesLatitude: "",
+                coordinatesLongitude: "",
               };
             }
 
-            if (wikiData.capital) {
-              inputs.nationalIdentity.capitalCity = wikiData.capital;
+            if (wikiData.name) inputs.nationalIdentity.countryName = wikiData.name;
+            if (wikiData.official_name || wikiData.conventional_long_name) {
+              inputs.nationalIdentity.officialName = wikiData.official_name || wikiData.conventional_long_name;
             }
-            if (wikiData.currency) {
-              inputs.nationalIdentity.currency = wikiData.currency;
-            }
-            if (wikiData.languages) {
-              inputs.nationalIdentity.officialLanguages = wikiData.languages;
-            }
-            if (wikiData.name) {
-              inputs.nationalIdentity.countryName = wikiData.name;
+            if (wikiData.government_type) inputs.nationalIdentity.governmentType = normalizeGovernmentType(wikiData.government_type);
+            if (wikiData.motto || wikiData.national_motto) inputs.nationalIdentity.motto = wikiData.motto || wikiData.national_motto;
+            if (wikiData.demonym) inputs.nationalIdentity.demonym = wikiData.demonym;
+            if (wikiData.national_anthem) inputs.nationalIdentity.nationalAnthem = wikiData.national_anthem;
+            if (wikiData.religion) inputs.nationalIdentity.nationalReligion = wikiData.religion;
+            if (wikiData.capital) inputs.nationalIdentity.capitalCity = wikiData.capital;
+            if (wikiData.largest_city) inputs.nationalIdentity.largestCity = wikiData.largest_city;
+            if (wikiData.currency) inputs.nationalIdentity.currency = wikiData.currency;
+            if (wikiData.currency_code) inputs.nationalIdentity.currencySymbol = wikiData.currency_code;
+            if (wikiData.languages) inputs.nationalIdentity.officialLanguages = wikiData.languages;
+            if (wikiData.calling_code) inputs.nationalIdentity.callingCode = wikiData.calling_code;
+            if (wikiData.internet_tld) inputs.nationalIdentity.internetTLD = wikiData.internet_tld;
+            if (wikiData.time_zone) inputs.nationalIdentity.timeZone = wikiData.time_zone;
+            if (wikiData.iso_code) inputs.nationalIdentity.isoCode = wikiData.iso_code;
+            if (wikiData.drives_on) inputs.nationalIdentity.drivingSide = (wikiData.drives_on.toLowerCase().includes('left') ? 'left' : 'right');
+            
+            // Coordinates
+            if (wikiData.coordinates) {
+              // Very rough parsing of coordinates string for placeholder
+              const coords = wikiData.coordinates.toString();
+              if (coords.includes('N') || coords.includes('S')) {
+                inputs.nationalIdentity.coordinatesLatitude = coords.split(',')[0] || coords;
+                inputs.nationalIdentity.coordinatesLongitude = coords.split(',')[1] || '';
+              }
             }
 
-            // Flag URL
-            if (wikiData.flagUrl) {
-              inputs.flagUrl = wikiData.flagUrl;
+            // Media
+            if (wikiData.flagUrl) inputs.flagUrl = wikiData.flagUrl;
+            if (wikiData.coatOfArmsUrl || wikiData.coat_of_arms) inputs.coatOfArmsUrl = wikiData.coatOfArmsUrl || wikiData.coat_of_arms;
+
+            // Prepare builder state update
+            const stateUpdate: Partial<typeof builderState> = {
+              step: "core",
+              economicInputs: inputs,
+              completedSteps: ["foundation"],
+            };
+
+            // Government Structure Pre-population
+            if (wikiData.government_type || wikiData.head_of_state) {
+              const govType = wikiData.government_type ? normalizeGovernmentType(wikiData.government_type) : "Other";
+              stateUpdate.governmentStructure = {
+                structure: {
+                  governmentName: `Government of ${wikiData.name || "the Nation"}`,
+                  governmentType: govType,
+                  headOfState: wikiData.head_of_state || "",
+                  headOfGovernment: wikiData.head_of_government || "",
+                  legislatureName: wikiData.legislature || wikiData.upper_house || "",
+                  executiveName: "",
+                  judicialName: "",
+                  totalBudget: (inputs.coreIndicators.nominalGDP || 1000000000) * 0.35,
+                  fiscalYear: "Calendar Year",
+                  budgetCurrency: wikiData.currency || wikiData.currency_code || "USD",
+                },
+                departments: [],
+                budgetAllocations: [],
+                revenueSources: [],
+                isValid: false,
+                errors: {},
+              };
+            }
+
+            // Economy Builder State Pre-population
+            const economyPop = popValue ? parseWikiNumericValue(popValue) : null;
+            const economyGdp = gdpNomValue ? parseWikiNumericValue(gdpNomValue) : null;
+            if (economyPop || economyGdp) {
+              const totalPop = economyPop ?? 10000000;
+              const totalGdp = economyGdp ?? (inputs.coreIndicators.totalPopulation && inputs.coreIndicators.gdpPerCapita
+                ? inputs.coreIndicators.totalPopulation * inputs.coreIndicators.gdpPerCapita
+                : 1000000000);
+              const gdpPerCapCalc = totalPop > 0 ? totalGdp / totalPop : 25000;
+              const economicTier = gdpPerCapCalc > 50000 ? "Advanced" : gdpPerCapCalc > 20000 ? "Developed" : gdpPerCapCalc > 5000 ? "Emerging" : "Developing";
+              const urbanization = wikiData.urbanization ? parseWikiNumericValue(String(wikiData.urbanization)) : null;
+              const lifeExp = wikiData.life_expectancy ? parseWikiNumericValue(String(wikiData.life_expectancy)) : null;
+              const literacy = wikiData.literacy_rate ? parseWikiNumericValue(String(wikiData.literacy_rate)) : null;
+
+              stateUpdate.economyBuilderState = {
+                structure: {
+                  economicModel: "Mixed Economy",
+                  primarySectors: [],
+                  secondarySectors: [],
+                  tertiarySectors: [],
+                  totalGDP: totalGdp,
+                  gdpCurrency: wikiData.currency_code || wikiData.currency || "USD",
+                  economicTier,
+                  growthStrategy: "Balanced",
+                },
+                sectors: [],
+                laborMarket: {
+                  totalWorkforce: Math.round(totalPop * 0.65 * 0.94),
+                  laborForceParticipationRate: 65,
+                  employmentRate: 94,
+                  unemploymentRate: 6,
+                  underemploymentRate: 8,
+                  youthUnemploymentRate: 12,
+                  seniorEmploymentRate: 35,
+                  femaleParticipationRate: 50,
+                  maleParticipationRate: 70,
+                  sectorDistribution: {
+                    agriculture: 5,
+                    mining: 2,
+                    manufacturing: 15,
+                    construction: 8,
+                    utilities: 2,
+                    wholesale: 5,
+                    retail: 10,
+                    transportation: 5,
+                    hospitality: 5,
+                    information: 3,
+                    finance: 5,
+                    realEstate: 3,
+                    professional: 10,
+                    admin: 5,
+                    public: 8,
+                    education: 6,
+                    health: 8,
+                    arts: 2,
+                    other: 5,
+                  },
+                  employmentTypes: {
+                    fullTime: 70,
+                    partTime: 15,
+                    contract: 8,
+                    gig: 5,
+                    informal: 2,
+                  },
+                  averageWorkingHours: 40,
+                  minimumWage: Math.max(gdpPerCapCalc * 0.08, 5),
+                  averageWage: gdpPerCapCalc * 0.6,
+                  medianWage: gdpPerCapCalc * 0.5,
+                  wageGrowthRate: 2.5,
+                  unionizationRate: 20,
+                  collectiveBargainingCoverage: 25,
+                  workersRights: "Moderate",
+                  workplaceSafety: "Standard",
+                  antiDiscriminationLaws: true,
+                  equalPayLegislation: true,
+                  parentalLeaveWeeks: 12,
+                  paidVacationDays: 20,
+                  sickLeaveDays: 10,
+                  retirementAge: 65,
+                  pensionSystem: "Mixed",
+                  unemploymentBenefits: true,
+                  jobTrainingPrograms: true,
+                },
+                demographics: {
+                  totalPopulation: totalPop,
+                  populationGrowthRate: 1.0,
+                  ageDistribution: {
+                    under15: 20,
+                    age15to64: 65,
+                    over65: 15,
+                  },
+                  urbanRuralSplit: {
+                    urban: urbanization ?? 75,
+                    rural: 100 - (urbanization ?? 75),
+                  },
+                  regions: [],
+                  lifeExpectancy: lifeExp ?? 72,
+                  literacyRate: literacy ?? 90,
+                  educationLevels: {
+                    noEducation: 5,
+                    primary: 20,
+                    secondary: 50,
+                    tertiary: 25,
+                  },
+                  netMigrationRate: 0,
+                  immigrationRate: 3,
+                  emigrationRate: 3,
+                  infantMortalityRate: 5,
+                  maternalMortalityRate: 10,
+                  healthExpenditureGDP: 8,
+                  youthDependencyRatio: 30,
+                  elderlyDependencyRatio: 23,
+                  totalDependencyRatio: 53,
+                },
+                selectedAtomicComponents: [],
+                isValid: false,
+                errors: {},
+                lastUpdated: new Date(),
+                version: "1.0.0",
+              };
+            }
+
+            // Load selected components from wiki import
+            if (wikiData._importResult?.selectedComponents?.length > 0) {
+              stateUpdate.governmentComponents = wikiData._importResult.selectedComponents;
+            }
+
+            // Load parsed departments into government structure
+            if (wikiData._importResult?.parsedDepartments?.length > 0 && stateUpdate.governmentStructure) {
+              const deptInputs = wikiData._importResult.parsedDepartments.map((d: any) => ({
+                name: d.name,
+                category: d.category,
+                description: d.description || `Government ${d.category?.toLowerCase() || ""} department`,
+                minister: d.minister,
+                ministerTitle: "Minister",
+                headquarters: "",
+                established: "",
+                employeeCount: 0,
+                icon: "",
+                color: "#6366f1",
+                priority: 50,
+                functions: [],
+              }));
+              stateUpdate.governmentStructure = {
+                ...stateUpdate.governmentStructure,
+                departments: deptInputs,
+              };
             }
 
             // Set builder state with imported data
             setBuilderState((prev) => ({
               ...prev,
-              step: "core",
-              economicInputs: inputs,
-              completedSteps: ["foundation"],
+              ...stateUpdate,
             }));
 
             // Clean up imported data
@@ -585,7 +847,13 @@ export function useBuilderState(
           }
 
           if (savedState) {
-            const parsedState = JSON.parse(savedState);
+            let parsedState;
+            try {
+              parsedState = JSON.parse(savedState);
+            } catch {
+              console.warn("[BuilderState] Corrupted localStorage data, discarding");
+              return;
+            }
             setBuilderState((prev) => ({
               ...prev,
               ...parsedState,
@@ -606,8 +874,13 @@ export function useBuilderState(
   // Autosave state to localStorage with ref to prevent infinite loops
   const builderStateRef = useRef(builderState);
   builderStateRef.current = builderState;
+  const prevBuilderStateRef = useRef(builderState);
 
   useEffect(() => {
+    // Skip save if state hasn't actually changed (prevents unnecessary JSON.stringify)
+    if (isEqual(prevBuilderStateRef.current, builderState)) return;
+    prevBuilderStateRef.current = builderState;
+
     const saveState = async () => {
       setIsAutoSaving(true);
       try {
@@ -672,16 +945,20 @@ export function useBuilderState(
   }, [mode, countryId]);
 
   // Unified Builder Integration - Sync all data across subsystems with refs to prevent loops
-  const economicInputsRef = useRef(builderState.economicInputs);
-  const governmentComponentsRef = useRef(builderState.governmentComponents);
-  const governmentStructureRef = useRef(builderState.governmentStructure);
-  const taxSystemDataRef = useRef(builderState.taxSystemData);
+  const latestRefs = useRef({
+    economicInputs: builderState.economicInputs,
+    governmentComponents: builderState.governmentComponents,
+    governmentStructure: builderState.governmentStructure,
+    taxSystemData: builderState.taxSystemData,
+  });
 
   // Update refs when state changes
-  economicInputsRef.current = builderState.economicInputs;
-  governmentComponentsRef.current = builderState.governmentComponents;
-  governmentStructureRef.current = builderState.governmentStructure;
-  taxSystemDataRef.current = builderState.taxSystemData;
+  latestRefs.current = {
+    economicInputs: builderState.economicInputs,
+    governmentComponents: builderState.governmentComponents,
+    governmentStructure: builderState.governmentStructure,
+    taxSystemData: builderState.taxSystemData,
+  };
 
   // Track last sent values to prevent redundant updates
   // Phase 2 optimization: Store actual values instead of JSON strings for isEqual comparison
@@ -693,8 +970,8 @@ export function useBuilderState(
   // Phase 2 optimization: Replaced JSON.stringify with isEqual for performance
   useEffect(() => {
     // Update national identity if changed
-    if (economicInputsRef.current?.nationalIdentity) {
-      const currentIdentity = economicInputsRef.current.nationalIdentity;
+    if (latestRefs.current.economicInputs?.nationalIdentity) {
+      const currentIdentity = latestRefs.current.economicInputs.nationalIdentity;
       if (!isEqual(currentIdentity, lastSentNationalIdentityRef.current)) {
         lastSentNationalIdentityRef.current = currentIdentity;
         unifiedBuilderService.updateNationalIdentity({
@@ -710,28 +987,28 @@ export function useBuilderState(
     }
 
     // Update government components if changed
-    if (governmentComponentsRef.current.length > 0) {
-      if (!isEqual(governmentComponentsRef.current, lastSentGovernmentComponentsRef.current)) {
-        lastSentGovernmentComponentsRef.current = [...governmentComponentsRef.current];
-        unifiedBuilderService.updateGovernmentComponents(governmentComponentsRef.current);
+    if (latestRefs.current.governmentComponents.length > 0) {
+      if (!isEqual(latestRefs.current.governmentComponents, lastSentGovernmentComponentsRef.current)) {
+        lastSentGovernmentComponentsRef.current = [...latestRefs.current.governmentComponents];
+        unifiedBuilderService.updateGovernmentComponents(latestRefs.current.governmentComponents);
         const suggested = unifiedBuilderService.getSuggestedEconomicComponents();
         console.log(`[UnifiedBuilder] Auto-selected ${suggested.length} economic components`);
       }
     }
 
     // Update government structure if changed
-    if (governmentStructureRef.current) {
-      if (!isEqual(governmentStructureRef.current, lastSentGovernmentStructureRef.current)) {
-        lastSentGovernmentStructureRef.current = governmentStructureRef.current;
-        unifiedBuilderService.updateGovernmentBuilder(governmentStructureRef.current);
+    if (latestRefs.current.governmentStructure) {
+      if (!isEqual(latestRefs.current.governmentStructure, lastSentGovernmentStructureRef.current)) {
+        lastSentGovernmentStructureRef.current = latestRefs.current.governmentStructure;
+        unifiedBuilderService.updateGovernmentBuilder(latestRefs.current.governmentStructure);
       }
     }
 
     // Update tax system data if changed
-    if (taxSystemDataRef.current) {
-      if (!isEqual(taxSystemDataRef.current, lastSentTaxSystemDataRef.current)) {
-        lastSentTaxSystemDataRef.current = taxSystemDataRef.current;
-        unifiedBuilderService.updateTaxBuilder(taxSystemDataRef.current);
+    if (latestRefs.current.taxSystemData) {
+      if (!isEqual(latestRefs.current.taxSystemData, lastSentTaxSystemDataRef.current)) {
+        lastSentTaxSystemDataRef.current = latestRefs.current.taxSystemData;
+        unifiedBuilderService.updateTaxBuilder(latestRefs.current.taxSystemData);
       }
     }
   }, [

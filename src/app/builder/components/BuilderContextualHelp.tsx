@@ -27,9 +27,9 @@ export function BuilderContextualHelp({ activeSection }: BuilderContextualHelpPr
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 gap-1.5 text-xs"
+            className="h-[42px] px-3 gap-2 text-sm font-medium rounded-xl hover:bg-muted/60"
           >
-            <CircleHelp className="h-3.5 w-3.5" />
+            <CircleHelp className="h-5 w-5" />
             <span className="hidden sm:inline">Help</span>
           </Button>
         </DialogTrigger>
@@ -215,9 +215,9 @@ export function BuilderContextualHelp({ activeSection }: BuilderContextualHelpPr
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 gap-1.5 text-xs"
+          className="h-[42px] px-3 gap-2 text-sm font-medium rounded-xl hover:bg-muted/60"
         >
-          <CircleHelp className="h-3.5 w-3.5" />
+          <CircleHelp className="h-5 w-5" />
           <span className="hidden sm:inline">Help</span>
         </Button>
       </DialogTrigger>

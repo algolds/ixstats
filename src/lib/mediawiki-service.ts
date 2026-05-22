@@ -447,7 +447,6 @@ export class IxnayWikiService {
           prop: "revisions",
           rvprop: "content",
           titles: pageName,
-          rvsection: "0",
           format: "json",
           formatversion: "2",
         });

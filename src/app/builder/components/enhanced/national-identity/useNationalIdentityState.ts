@@ -37,12 +37,6 @@ export function useNationalIdentityState(
     undefined
   );
 
-  // Collapsible section state
-  const [isSymbolsOpen, setIsSymbolsOpen] = useState(true);
-  const [isBasicInfoOpen, setIsBasicInfoOpen] = useState(true);
-  const [isCultureOpen, setIsCultureOpen] = useState(true);
-  const [isGeographyOpen, setIsGeographyOpen] = useState(true);
-
   // Foundation country data
   const foundationCountryName = getFoundationCountryName(referenceCountry);
   const { flag } = useCountryFlagRouteAware(foundationCountryName || "");
@@ -188,14 +182,6 @@ export function useNationalIdentityState(
     shouldFetchCustomTypes,
     setShouldFetchCustomTypes,
     foundationCoatOfArmsUrl,
-    isSymbolsOpen,
-    setIsSymbolsOpen,
-    isBasicInfoOpen,
-    setIsBasicInfoOpen,
-    isCultureOpen,
-    setIsCultureOpen,
-    isGeographyOpen,
-    setIsGeographyOpen,
     // Data
     foundationCountryName,
     flag,

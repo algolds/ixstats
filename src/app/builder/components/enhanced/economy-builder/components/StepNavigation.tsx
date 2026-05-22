@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ArrowRight, CheckCircle, type LucideIcon } from "lucide-react";
+import { BUILDER_GOLD } from "../../builderConfig";
 
 interface Step {
   id: string;
@@ -31,7 +32,7 @@ export function StepNavigation({ steps, currentStep, onStepChange }: StepNavigat
               onClick={() => onStepChange(step.id)}
               className={`relative flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? `bg-gradient-to-r ${BUILDER_GOLD} text-white`
                   : isCompleted
                     ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
                     : "hover:bg-muted text-muted-foreground"

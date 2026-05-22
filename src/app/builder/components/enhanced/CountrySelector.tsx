@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useCallback } from "react";
+import { motion, useScroll, useTransform } from "motion/react";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { Download, FilePlus } from "lucide-react";
 import { useBulkFlags } from "~/hooks/useUnifiedFlags";
@@ -43,6 +44,12 @@ export function CountrySelector({
   const [softSelectedCountry, setSoftSelectedCountry] = useState<RealCountryData | null>(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [showScratchDialog, setShowScratchDialog] = useState(false);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll({ container: scrollRef });
+  const headerOpacity = useTransform(scrollY, [0, 100], [1, 0]);
+  const headerPointerEvents = useTransform(scrollY, (y) => y > 50 ? "none" : "auto");
+  const headerMarginTop = useTransform(scrollY, [0, 150], ["0px", "-180px"]);
 
   const searchCardRef = useRef<HTMLDivElement>(null);
   const countriesListRef = useRef<HTMLDivElement>(null);
@@ -89,7 +96,7 @@ export function CountrySelector({
   const isLivePreviewVisible = hoveredCountry !== null || softSelectedCountry !== null;
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-primary)]">
+    <div className="relative h-screen overflow-hidden bg-gradient-to-br from-[var(--color-bg-primary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-primary)] flex flex-col">
       {/* Interactive Background */}
       <InteractiveGridPattern
         width={60}
@@ -100,29 +107,38 @@ export function CountrySelector({
       />
 
       {/* Main Content - No Sidebar */}
-      <div className="p-4">
+      <div className="p-4 flex-1 flex flex-col min-h-0">
         {/* Header */}
-        <div className="mb-4">
+        <motion.div 
+          className="relative z-0 flex-shrink-0"
+          style={{ opacity: headerOpacity, pointerEvents: headerPointerEvents as any, marginTop: headerMarginTop }}
+        >
           <CountrySelectorHeader
             softSelectedCountry={softSelectedCountry}
             onBackToIntro={onBackToIntro}
+            scrollY={scrollY}
           />
-        </div>
+        </motion.div>
 
         {/* Content: Center Panel (Search/Countries) + Right Sidebar (Quick Filters + Preview) */}
-        <div className="flex gap-6" ref={gridContainerRef}>
+        <motion.div 
+          className="flex gap-6 relative z-10 flex-1 min-h-0" 
+          ref={gridContainerRef}
+        >
           {/* Center Panel */}
-          <div className="min-w-0 flex-1 space-y-4">
+          <div className="min-w-0 flex-1 flex flex-col min-h-0 space-y-4">
             {/* Search and Filters */}
-            <SearchFilter
-              ref={searchCardRef}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onClearAll={handleClearAll}
-            />
+            <div className="flex-shrink-0">
+              <SearchFilter
+                ref={searchCardRef}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                onClearAll={handleClearAll}
+              />
+            </div>
 
             {/* Countries Grid */}
-            <div ref={countriesListRef}>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar pb-24">
               <CountryGrid
                 countries={countries || []}
                 filteredCountries={filteredCountries}
@@ -145,7 +161,7 @@ export function CountrySelector({
           </div>
 
           {/* Right Sidebar - Quick Filters + Actions + Live Preview */}
-          <div className="w-80 flex-shrink-0 space-y-4">
+          <div className="w-80 flex-shrink-0 overflow-y-auto no-scrollbar space-y-4 pb-24">
             {/* Quick Filters */}
             <FoundationFiltersPanel
               countries={countries || []}
@@ -198,7 +214,7 @@ export function CountrySelector({
               onCancel={handleCancel}
             />
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Start from Scratch confirmation dialog */}

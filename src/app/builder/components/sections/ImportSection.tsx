@@ -11,6 +11,10 @@ import { InteractiveInfoboxPreview } from "../../import/_components/InteractiveI
 import { EligibleCountryGrid } from "../../import/_components/EligibleCountryGrid";
 import type { BuilderSection } from "../../lib/builder-theme";
 import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
+import { WikiDeepScanPanel } from "../../import/_components/WikiDeepScanPanel";
+import type { ExtractedBuilderData } from "../../lib/wiki-data-extractor";
+import { ScanCompleteToast } from "../../import/_components/ScanCompleteToast";
+import type { WikiImportResult } from "~/app/builder/lib/wiki-builder-assembler";
 
 // ─── Types ───
 
@@ -99,6 +103,9 @@ export const ImportSection = React.memo(function ImportSection({
   const [displayedResults, setDisplayedResults] = useState<SearchResult[]>([]);
   const [resultsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showDeepScan, setShowDeepScan] = useState(false);
+  const [showScanToast, setShowScanToast] = useState(false);
+  const [scanResult, setScanResult] = useState<WikiImportResult | null>(null);
 
   const searchWikiMutation = api.countries.searchWiki.useMutation();
   const parseInfoboxMutation = api.countries.parseInfobox.useMutation();
@@ -268,37 +275,113 @@ export const ImportSection = React.memo(function ImportSection({
     setParsedData(null);
     setSelectedCountryFlag(null);
     setError(null);
+    setShowDeepScan(false);
   };
 
   const handleContinueWithData = async () => {
     if (!parsedData) return;
+    // Instead of immediately saving, move to the deep scan step
+    setShowDeepScan(true);
+  };
+
+  const handleDeepScanComplete = async (enhancedData?: ExtractedBuilderData) => {
+    if (!parsedData || !selectedResult) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
-      const enhancedData = {
-        ...parsedData,
+      // Merge the deep scan data with the infobox data
+      const finalData: ParsedCountryData = { ...parsedData };
+      
+      if (enhancedData) {
+        if (enhancedData.government) {
+          if (enhancedData.government.governmentType) finalData.government_type = enhancedData.government.governmentType;
+          if (enhancedData.government.legislature) finalData.legislature = enhancedData.government.legislature;
+          if (enhancedData.government.headOfState) finalData.head_of_state = enhancedData.government.headOfState;
+          if (enhancedData.government.headOfGovernment) finalData.head_of_government = enhancedData.government.headOfGovernment;
+        }
+        if (enhancedData.economy) {
+          if (enhancedData.economy.gdpNominal) (finalData as any).gdp_nominal = enhancedData.economy.gdpNominal.toString();
+          if (enhancedData.economy.gdpPerCapita) finalData.gdpPerCapita = enhancedData.economy.gdpPerCapita.toString();
+        }
+        if (enhancedData.demographics) {
+          if (enhancedData.demographics.population) finalData.population = enhancedData.demographics.population.toString();
+        }
+      }
+
+      // Fetch wiki pages for deep parsing
+      const pagesToScan = [
+        selectedResult.title,
+        `Government of ${selectedResult.title}`,
+        `Politics of ${selectedResult.title}`,
+        `Economy of ${selectedResult.title}`,
+      ];
+
+      const pages: { title: string; content: string }[] = [];
+      for (const pageName of pagesToScan) {
+        try {
+          const article = await parseInfoboxMutation.mutateAsync({
+            pageName,
+            site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
+          });
+          if (article?.rawInfobox) {
+            pages.push({
+              title: pageName,
+              content: JSON.stringify(article.rawInfobox),
+            });
+          }
+        } catch {
+          // Page not found, continue
+        }
+      }
+
+      // Run comprehensive wiki-to-builder assembly
+      const { assembleWikiImport } = await import("~/app/builder/lib/wiki-builder-assembler");
+      const importResult = await assembleWikiImport({
+        infoboxData: finalData,
+        pages,
+      });
+
+      setScanResult(importResult);
+
+      const storageData = {
+        ...finalData,
         _wikiSource: selectedSite.name.toLowerCase(),
         _wikiSourceName: selectedSite.name,
+        _importResult: {
+          selectedComponents: importResult.selectedComponents.map(c => c.component),
+          suggestedComponents: importResult.suggestedComponents.map(c => c.component),
+          parsedDepartments: importResult.parsedDepartments,
+          revenueSources: importResult.revenueSources,
+          conflicts: importResult.conflicts,
+          sectionCompleteness: importResult.sectionCompleteness,
+          overallCompleteness: importResult.overallCompleteness,
+          warnings: importResult.warnings,
+        },
       };
 
       // Store in localStorage for backward compat and call callback
       if (typeof window !== "undefined") {
-        localStorage.setItem("builder_imported_data", JSON.stringify(enhancedData));
+        localStorage.setItem("builder_imported_data", JSON.stringify(storageData));
       }
 
       if (onImportComplete) {
-        onImportComplete(enhancedData);
+        onImportComplete(storageData as any);
       }
 
-      // Navigate to foundation step to continue building
-      onNavigate("foundation");
+      // Show non-blocking toast instead of immediate navigation
+      setShowScanToast(true);
     } catch (err) {
       setError(`Failed to process wiki import: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleProceedToBuilder = () => {
+    setShowScanToast(false);
+    onNavigate("foundation");
   };
 
   const formatNumber = (num: number | undefined, _decimals?: number): string => {
@@ -396,15 +479,33 @@ export const ImportSection = React.memo(function ImportSection({
             </div>
           )}
 
-          {parsedData && (
+          {parsedData && !showDeepScan && (
             <InteractiveInfoboxPreview
               data={parsedData}
               onContinue={handleContinueWithData}
               isLoading={isLoading}
             />
           )}
+
+          {parsedData && showDeepScan && selectedResult && (
+            <WikiDeepScanPanel
+              countryName={selectedResult.title}
+              wikiSource={selectedSite.name as "ixwiki" | "iiwiki" | "althistory"}
+              onDataExtracted={(enhancedData) => handleDeepScanComplete(enhancedData)}
+              onSkip={() => handleDeepScanComplete(undefined)}
+            />
+          )}
         </div>
       </div>
+
+      {showScanToast && scanResult && (
+        <ScanCompleteToast
+          result={scanResult}
+          countryName={selectedResult?.title || ""}
+          onProceed={handleProceedToBuilder}
+          onClose={() => setShowScanToast(false)}
+        />
+      )}
     </div>
   );
 });

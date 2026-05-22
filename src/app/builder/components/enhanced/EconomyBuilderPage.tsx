@@ -1,19 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Progress } from "~/components/ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import {
   Factory,
@@ -32,9 +25,6 @@ import {
   DollarSign,
   Gauge,
   Eye,
-  HelpCircle,
-  Atom,
-  Sparkles,
   Loader2,
 } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
@@ -69,6 +59,10 @@ import { PreviewStep } from "./steps/PreviewStep";
 
 // Cross-Builder Integration Components
 import { EconomicArchetypeModal } from "./EconomicArchetypeModal";
+import { EconomyBuilderHeader } from "./economy-builder/components/EconomyBuilderHeader";
+import { StepNavigation } from "./economy-builder/components/StepNavigation";
+import { NavigationButtons } from "./economy-builder/components/NavigationButtons";
+import { BUILDER_GOLD } from "./builderConfig";
 
 // tRPC API
 import { api } from "~/trpc/react";
@@ -458,86 +452,6 @@ export function EconomyBuilderPage({
   // Track last processed revenue sources to prevent re-trigger loop
   const lastProcessedRevenueSourcesRef = useRef<string | null>(null);
 
-  // Government Revenue Integration Effect (fixed to prevent re-trigger loop)
-  useEffect(() => {
-    if (
-      !governmentBuilderData?.revenueSources ||
-      governmentBuilderData.revenueSources.length === 0
-    ) {
-      return;
-    }
-
-    // Check if we've already processed these exact revenue sources
-    const revenueSourcesKey = JSON.stringify(governmentBuilderData.revenueSources);
-    if (revenueSourcesKey === lastProcessedRevenueSourcesRef.current) {
-      return; // Skip if already processed
-    }
-    lastProcessedRevenueSourcesRef.current = revenueSourcesKey;
-
-    const revenueSources = governmentBuilderData.revenueSources as RevenueSource[];
-
-    // Calculate total government revenue from revenue sources
-    const totalRevenue = revenueSources.reduce(
-      (sum, source) => sum + (source.revenueAmount || 0),
-      0
-    );
-
-    // Separate tax revenue from non-tax revenue
-    const taxRevenue = revenueSources
-      .filter((source) => source.category === "Direct Tax" || source.category === "Indirect Tax")
-      .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
-
-    const nonTaxRevenue = revenueSources
-      .filter((source) => source.category !== "Direct Tax" && source.category !== "Indirect Tax")
-      .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
-
-    // Get GDP from economic inputs (use ref for current values)
-    const currentEconomicInputs = economicInputsRef.current;
-    const currentEconomyBuilder = economyBuilderRef.current;
-    const gdp = currentEconomicInputs.coreIndicators?.nominalGDP || currentEconomyBuilder.structure.totalGDP || 1;
-
-    // Calculate metrics
-    const taxBurdenRatio = gdp > 0 ? (taxRevenue / gdp) * 100 : 0;
-    const revenueToGDPRatio = gdp > 0 ? (totalRevenue / gdp) * 100 : 0;
-
-    // Determine government size based on revenue-to-GDP ratio
-    let governmentSizeIndicator: "Small" | "Medium" | "Large" = "Medium";
-    if (revenueToGDPRatio < 25) {
-      governmentSizeIndicator = "Small";
-    } else if (revenueToGDPRatio > 40) {
-      governmentSizeIndicator = "Large";
-    }
-
-    // Update revenue integration state
-    setRevenueIntegration({
-      totalRevenue,
-      taxRevenue,
-      nonTaxRevenue,
-      taxBurdenRatio,
-      revenueToGDPRatio,
-      governmentSizeIndicator,
-    });
-
-    const adjustedBuilder = applyGovernmentRevenueAdjustments(currentEconomyBuilder, {
-      taxBurdenRatio,
-      revenueToGDPRatio,
-      gdp,
-    });
-
-    if (adjustedBuilder !== currentEconomyBuilder) {
-      handleEconomyBuilderChange(adjustedBuilder);
-    }
-
-    console.log("[EconomyBuilder] Government revenue integration applied:", {
-      totalRevenue,
-      taxRevenue,
-      nonTaxRevenue,
-      taxBurdenRatio: `${taxBurdenRatio.toFixed(1)}%`,
-      revenueToGDPRatio: `${revenueToGDPRatio.toFixed(1)}%`,
-      governmentSizeIndicator,
-    });
-  }, [governmentBuilderData?.revenueSources, handleEconomyBuilderChange]); // Removed economyBuilder from deps to prevent loop
-
   // Auto-select economic components based on government components with comprehensive synergy scoring
   useEffect(() => {
     if (governmentComponents && governmentComponents.length > 0 && !hasAutoSelectedRef.current) {
@@ -667,6 +581,86 @@ export function EconomyBuilderPage({
     },
     [economicInputs, onEconomicInputsChange, onPersistEconomyBuilder]
   );
+
+  // Government Revenue Integration Effect (fixed to prevent re-trigger loop)
+  useEffect(() => {
+    if (
+      !governmentBuilderData?.revenueSources ||
+      governmentBuilderData.revenueSources.length === 0
+    ) {
+      return;
+    }
+
+    // Check if we've already processed these exact revenue sources
+    const revenueSourcesKey = JSON.stringify(governmentBuilderData.revenueSources);
+    if (revenueSourcesKey === lastProcessedRevenueSourcesRef.current) {
+      return; // Skip if already processed
+    }
+    lastProcessedRevenueSourcesRef.current = revenueSourcesKey;
+
+    const revenueSources = governmentBuilderData.revenueSources as RevenueSource[];
+
+    // Calculate total government revenue from revenue sources
+    const totalRevenue = revenueSources.reduce(
+      (sum, source) => sum + (source.revenueAmount || 0),
+      0
+    );
+
+    // Separate tax revenue from non-tax revenue
+    const taxRevenue = revenueSources
+      .filter((source) => source.category === "Direct Tax" || source.category === "Indirect Tax")
+      .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
+
+    const nonTaxRevenue = revenueSources
+      .filter((source) => source.category !== "Direct Tax" && source.category !== "Indirect Tax")
+      .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
+
+    // Get GDP from economic inputs (use ref for current values)
+    const currentEconomicInputs = economicInputsRef.current;
+    const currentEconomyBuilder = economyBuilderRef.current;
+    const gdp = currentEconomicInputs.coreIndicators?.nominalGDP || currentEconomyBuilder.structure.totalGDP || 1;
+
+    // Calculate metrics
+    const taxBurdenRatio = gdp > 0 ? (taxRevenue / gdp) * 100 : 0;
+    const revenueToGDPRatio = gdp > 0 ? (totalRevenue / gdp) * 100 : 0;
+
+    // Determine government size based on revenue-to-GDP ratio
+    let governmentSizeIndicator: "Small" | "Medium" | "Large" = "Medium";
+    if (revenueToGDPRatio < 25) {
+      governmentSizeIndicator = "Small";
+    } else if (revenueToGDPRatio > 40) {
+      governmentSizeIndicator = "Large";
+    }
+
+    // Update revenue integration state
+    setRevenueIntegration({
+      totalRevenue,
+      taxRevenue,
+      nonTaxRevenue,
+      taxBurdenRatio,
+      revenueToGDPRatio,
+      governmentSizeIndicator,
+    });
+
+    const adjustedBuilder = applyGovernmentRevenueAdjustments(currentEconomyBuilder, {
+      taxBurdenRatio,
+      revenueToGDPRatio,
+      gdp,
+    });
+
+    if (adjustedBuilder !== currentEconomyBuilder) {
+      handleEconomyBuilderChange(adjustedBuilder);
+    }
+
+    console.log("[EconomyBuilder] Government revenue integration applied:", {
+      totalRevenue,
+      taxRevenue,
+      nonTaxRevenue,
+      taxBurdenRatio: `${taxBurdenRatio.toFixed(1)}%`,
+      revenueToGDPRatio: `${revenueToGDPRatio.toFixed(1)}%`,
+      governmentSizeIndicator,
+    });
+  }, [governmentBuilderData?.revenueSources, handleEconomyBuilderChange]);
 
   // tRPC mutations for comprehensive economy builder management
   const saveEconomyMutation = api.economics.saveEconomyBuilderState.useMutation({
@@ -925,330 +919,23 @@ export function EconomyBuilderPage({
     <div className={`space-y-6 ${className}`}>
       {/* Main Content Area */}
       <div className="space-y-6">
-        {/* Header - Matching GovernmentBuilder style */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-foreground text-3xl font-bold">MyEconomy</h1>
-            <p className="text-muted-foreground mt-1">
-              Configure your nation's economic systems and tax policies
-            </p>
-            {/* Sync Status Indicators */}
-            <div className="mt-2 flex items-center gap-4">
-              {/* Loading Indicator */}
-              {isLoadingConfig && (
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Loading configuration...</span>
-                </div>
-              )}
+        {/* Header */}
+        <EconomyBuilderHeader
+          isLoadingConfig={isLoadingConfig}
+          isAutoSaveEnabled={!!countryId}
+          hasUnsavedChanges={autoSyncState.pendingChanges}
+          lastSaved={lastSaved}
+          showSuccessAnimation={showSuccessAnimation}
+          validationStatus={validationStatus}
+          onPresetsClick={() => setIsPresetsOpen(true)}
+        />
 
-              {/* Autosave Status */}
-              {countryId && autoSyncState.isSyncing && (
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Saving economy data...</span>
-                </div>
-              )}
-
-              {countryId && showSuccessAnimation && (
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Autosaved!</span>
-                </div>
-              )}
-
-              {/* Last Saved */}
-              {lastSaved && (
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span>Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
-                </div>
-              )}
-
-              {/* Validation Status */}
-              {validationStatus && (
-                <div className="flex items-center gap-2">
-                  {validationStatus.isValid ? (
-                    <Badge variant="outline" className="border-green-600 text-green-600">
-                      <CheckCircle className="mr-1 h-3 w-3" />
-                      Valid
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="border-red-600 text-red-600">
-                      <AlertTriangle className="mr-1 h-3 w-3" />
-                      {validationStatus.errorCount} errors
-                    </Badge>
-                  )}
-                  {validationStatus.hasWarnings && (
-                    <Badge variant="outline" className="border-amber-600 text-amber-600">
-                      <Info className="mr-1 h-3 w-3" />
-                      {validationStatus.warningCount} warnings
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Help Dialog Button */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <HelpCircle className="h-4 w-4" />
-                  Help
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <HelpCircle className="h-6 w-6 text-blue-600" />
-                    Economy Builder Guide
-                  </DialogTitle>
-                  <DialogDescription>
-                    Complete guide to building and managing your nation's economy
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6 text-sm">
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <Target className="h-5 w-5 text-blue-600" />
-                      Getting Started
-                    </h3>
-                    <p className="text-muted-foreground mb-2">
-                      The Economy Builder follows a 6-step process to create a complete economic
-                      profile for your nation:
-                    </p>
-                    <ol className="text-muted-foreground ml-2 list-inside list-decimal space-y-2">
-                      <li>
-                        <strong>Economic Components:</strong> Select atomic components that define
-                        your economic philosophy (Free Market, Planned, etc.)
-                      </li>
-                      <li>
-                        <strong>Economic Sectors:</strong> Set up your primary industries
-                        (Agriculture, Manufacturing, Services, etc.)
-                      </li>
-                      <li>
-                        <strong>Labor & Employment:</strong> Configure workforce distribution,
-                        unemployment, and labor rights
-                      </li>
-                      <li>
-                        <strong>Demographics:</strong> Define population characteristics, age
-                        distribution, and growth rates
-                      </li>
-                      <li>
-                        <strong>Tax System:</strong> Build your taxation structure with brackets,
-                        categories, and policies
-                      </li>
-                      <li>
-                        <strong>Preview:</strong> Review all settings and save your complete
-                        economic configuration
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <Atom className="h-5 w-5 text-green-600" />
-                      Atomic Economic Components
-                    </h3>
-                    <p className="text-muted-foreground mb-2">
-                      Components are modular building blocks that define your economic system. Each
-                      represents a specific philosophy or policy.
-                    </p>
-                    <ul className="text-muted-foreground ml-2 list-inside list-disc space-y-2">
-                      <li>
-                        <strong>Select up to 12 components</strong> that best represent your
-                        economic vision
-                      </li>
-                      <li>
-                        <strong>Green badges (synergies):</strong> Components that work well
-                        together and boost effectiveness
-                      </li>
-                      <li>
-                        <strong>Red badges (conflicts):</strong> Components that contradict and
-                        reduce efficiency
-                      </li>
-                      <li>
-                        <strong>★ Star:</strong> Active synergy (both components selected)
-                      </li>
-                      <li>
-                        <strong>⚠ Warning:</strong> Active conflict (creates inefficiency)
-                      </li>
-                      <li>
-                        <strong>Use Presets button</strong> to quick-start with common economic
-                        archetypes
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <BarChart3 className="h-5 w-5 text-purple-600" />
-                      Economic Sectors
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Define your primary, secondary, and tertiary industries. Your sector
-                      distribution affects GDP composition, employment patterns, and economic
-                      development tier (Developing → Emerging → Developed → Advanced). Balanced
-                      sectors create economic stability, while specialized economies excel in
-                      specific areas.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <Users className="h-5 w-5 text-emerald-600" />
-                      Labor & Employment
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Set employment rates, workforce distribution across sectors, minimum wage, and
-                      working conditions. These settings interact with your economic components -
-                      for example, "Strong Labor Unions" increases worker protections but may reduce
-                      business flexibility. Balance employment metrics with your economic
-                      philosophy.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <TrendingUp className="h-5 w-5 text-amber-600" />
-                      Demographics & Population
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Configure total population, age distribution, growth rates, and urbanization
-                      levels. Demographics directly influence labor supply, consumer markets, and
-                      social program costs. Aging populations require different policies than young,
-                      growing populations.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <DollarSign className="h-5 w-5 text-red-600" />
-                      Tax System Integration
-                    </h3>
-                    <p className="text-muted-foreground">
-                      The tax builder auto-populates based on your economic data (GDP, sectors,
-                      employment). It recommends progressive/flat taxation based on your components,
-                      suggests brackets by income distribution, and links to government departments.
-                      Tax policy affects economic growth, inequality, and business investment.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <Gauge className="h-5 w-5 text-blue-600" />
-                      Effectiveness & Synergies
-                    </h3>
-                    <p className="text-muted-foreground mb-2">
-                      Your overall economic effectiveness is calculated from:
-                    </p>
-                    <ul className="text-muted-foreground ml-4 list-inside list-disc space-y-1">
-                      <li>Average effectiveness of selected components</li>
-                      <li>Internal synergies (+10 pts each)</li>
-                      <li>Government cross-builder synergies (+15 pts each)</li>
-                      <li>Internal conflicts (-10 pts each)</li>
-                      <li>Government conflicts (-15 pts each)</li>
-                    </ul>
-                    <p className="text-muted-foreground mt-2">
-                      Higher effectiveness means more efficient economic policies with fewer
-                      contradictions.
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <Sparkles className="h-5 w-5 text-blue-600" />
-                      Pro Tips
-                    </h3>
-                    <ul className="text-muted-foreground space-y-2 text-xs">
-                      <li>
-                        <strong>Start with Presets:</strong> Use economic archetypes (Capitalist,
-                        Socialist, Mixed Economy) as templates, then customize
-                      </li>
-                      <li>
-                        <strong>Balance vs. Specialization:</strong> Diverse sectors = stability,
-                        focused sectors = competitive advantages
-                      </li>
-                      <li>
-                        <strong>Watch Conflicts:</strong> Small conflicts are okay if components
-                        align with your vision, but avoid major contradictions
-                      </li>
-                      <li>
-                        <strong>Economic Tiers Matter:</strong> Your GDP per capita determines
-                        development tier, which affects recommended tax rates
-                      </li>
-                      <li>
-                        <strong>Government Integration:</strong> Economic components sync with
-                        government structures for compound effectiveness
-                      </li>
-                      <li>
-                        <strong>Preview Before Saving:</strong> Always review the complete
-                        configuration in Preview tab before finalizing
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
-                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
-                      <Info className="h-5 w-5 text-emerald-600" />
-                      Navigation Tips
-                    </h3>
-                    <ul className="text-muted-foreground space-y-1 text-xs">
-                      <li>Use the step indicators at the top to jump between sections</li>
-                      <li>Green checkmarks show completed steps</li>
-                      <li>
-                        The Preview tab shows collapsible sections - click headers to
-                        expand/collapse
-                      </li>
-                      <li>Changes auto-save when enabled, or use the Save button manually</li>
-                      <li>
-                        Click "Expand All" in Preview to see full economic configuration at once
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Presets Modal Button */}
-            <Button variant="outline" size="sm" onClick={() => setIsPresetsOpen(true)}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Presets
-            </Button>
-          </div>
-        </div>
-
-        {/* Progress Steps - Matching GovernmentBuilder pattern */}
-        <div className="bg-muted/50 border-border flex items-center justify-between overflow-x-auto rounded-lg border p-4">
-          {steps.map((step, index) => {
-            const StepIcon = step.icon;
-            const isActive = step.id === currentStep;
-            const isCompleted = index < currentStepIndex;
-
-            return (
-              <div key={step.id} className="flex flex-shrink-0 items-center">
-                <button
-                  onClick={() => setCurrentStep(step.id as any)}
-                  className={`relative flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : isCompleted
-                        ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
-                        : "hover:bg-muted text-muted-foreground"
-                  }`}
-                >
-                  <StepIcon className="h-4 w-4" />
-                  <span className="text-sm font-medium whitespace-nowrap">{step.label}</span>
-                  {isCompleted && <CheckCircle className="h-4 w-4" />}
-                </button>
-                {index < steps.length - 1 && (
-                  <ArrowRight className="text-muted-foreground mx-2 h-4 w-4 flex-shrink-0" />
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {/* Progress Steps */}
+        <StepNavigation
+          steps={steps}
+          currentStep={currentStep}
+          onStepChange={(stepId) => setCurrentStep(stepId as any)}
+        />
 
         {/* Validation Errors - Matching GovernmentBuilder pattern */}
         {!validationStatus.isValid && economyBuilder.validation?.errors && (
@@ -1268,9 +955,16 @@ export function EconomyBuilderPage({
         )}
 
         {/* Step Content - Matching GovernmentBuilder pattern */}
-        <div className="space-y-6">
+        <AnimatePresence mode="wait">
           {currentStep === "components" && (
-            <div className="space-y-6">
+            <motion.div
+              key="components"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
               <div className="flex items-center justify-between">
                 <h2 className="text-foreground text-2xl font-semibold">
                   Economic Atomic Components
@@ -1280,10 +974,10 @@ export function EconomyBuilderPage({
 
               {/* Government Revenue Integration Card */}
               {revenueIntegration.totalRevenue > 0 && (
-                <Card className="border-gold-200 dark:border-gold-800 from-gold-50/50 dark:from-gold-950/20 bg-gradient-to-br to-transparent">
+                <Card className="border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="text-gold-600 h-5 w-5" />
+                      <DollarSign className="text-amber-500 h-5 w-5" />
                       Government Revenue Integration
                     </CardTitle>
                     <CardDescription>
@@ -1309,11 +1003,11 @@ export function EconomyBuilderPage({
                             className={cn(
                               "text-xs",
                               revenueIntegration.governmentSizeIndicator === "Large" &&
-                                "border-blue-600 text-blue-600",
+                                "border-blue-500/50 text-blue-500",
                               revenueIntegration.governmentSizeIndicator === "Medium" &&
-                                "border-amber-600 text-amber-600",
+                                "border-amber-500/50 text-amber-500",
                               revenueIntegration.governmentSizeIndicator === "Small" &&
-                                "border-green-600 text-green-600"
+                                "border-emerald-500/50 text-emerald-500"
                             )}
                           >
                             {revenueIntegration.governmentSizeIndicator} Government
@@ -1402,12 +1096,12 @@ export function EconomyBuilderPage({
                                 className={cn(
                                   "text-sm font-semibold",
                                   revenueIntegration.taxBurdenRatio > 35 &&
-                                    "border-red-600 text-red-600",
+                                    "border-red-500/50 text-red-500",
                                   revenueIntegration.taxBurdenRatio >= 20 &&
                                     revenueIntegration.taxBurdenRatio <= 35 &&
-                                    "border-amber-600 text-amber-600",
+                                    "border-amber-500/50 text-amber-500",
                                   revenueIntegration.taxBurdenRatio < 20 &&
-                                    "border-green-600 text-green-600"
+                                    "border-emerald-500/50 text-emerald-500"
                                 )}
                               >
                                 {formatPercent(revenueIntegration.taxBurdenRatio, 1)}
@@ -1431,9 +1125,9 @@ export function EconomyBuilderPage({
 
                     {/* Info Alert */}
                     {revenueIntegration.taxBurdenRatio > 35 && (
-                      <Alert className="mt-4 border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20">
-                        <Info className="h-4 w-4 text-amber-600" />
-                        <AlertDescription className="text-sm text-amber-900 dark:text-amber-100">
+                      <Alert className="mt-4 border-amber-500/30 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10">
+                        <Info className="h-4 w-4 text-amber-500" />
+                        <AlertDescription className="text-sm text-amber-700 dark:text-amber-200">
                           High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)})
                           may reduce private sector GDP growth. Consider balancing with economic
                           components that promote business development.
@@ -1450,11 +1144,18 @@ export function EconomyBuilderPage({
                 maxComponents={12}
                 governmentComponents={governmentComponents?.map((c) => c.type || c.id) || []}
               />
-            </div>
+            </motion.div>
           )}
 
           {currentStep === "sectors" && (
-            <div className="space-y-6">
+            <motion.div
+              key="sectors"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
               <div className="flex items-center justify-between">
                 <h2 className="text-foreground text-2xl font-semibold">Economic Sectors</h2>
               </div>
@@ -1466,11 +1167,18 @@ export function EconomyBuilderPage({
                   showAdvanced={showAdvanced}
                 />
               </Suspense>
-            </div>
+            </motion.div>
           )}
 
           {currentStep === "labor" && (
-            <div className="space-y-6">
+            <motion.div
+              key="labor"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
               <div className="flex items-center justify-between">
                 <h2 className="text-foreground text-2xl font-semibold">Labor & Employment</h2>
               </div>
@@ -1481,15 +1189,20 @@ export function EconomyBuilderPage({
                   selectedComponents={selectedComponents}
                 />
               </Suspense>
-            </div>
+            </motion.div>
           )}
 
           {currentStep === "demographics" && (
-            <div className="space-y-6">
+            <motion.div
+              key="demographics"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-6"
+            >
               <div className="flex items-center justify-between">
-                <h2 className="text-foreground text-2xl font-semibold">
-                  Demographics & Population
-                </h2>
+                <h2 className="text-foreground text-2xl font-semibold">Demographics & Population</h2>
               </div>
               <Suspense fallback={<TabLoadingFallback />}>
                 <DemographicsPopulationTab
@@ -1499,10 +1212,17 @@ export function EconomyBuilderPage({
                   showAdvanced={showAdvanced}
                 />
               </Suspense>
-            </div>
+            </motion.div>
           )}
 
           {currentStep === "taxes" && (
+            <motion.div
+              key="taxes"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+            >
             <TaxSystemStep
               countryId={countryId ?? null}
               activeTaxSystemData={activeTaxSystemData}
@@ -1531,80 +1251,47 @@ export function EconomyBuilderPage({
                 await refetchTaxSystem();
               }}
             />
+            </motion.div>
           )}
 
           {currentStep === "preview" && (
-            <PreviewStep
-              economyBuilder={economyBuilder}
-              economicInputs={economicInputs}
-              selectedComponents={selectedComponents}
-              economicHealthMetrics={healthMetrics}
-            />
-          )}
-        </div>
-
-        {/* Navigation - Matching GovernmentBuilder pattern */}
-        <div className="border-border flex items-center justify-between border-t pt-6">
-          <Button
-            variant="outline"
-            onClick={() => {
-              const prevIndex = Math.max(0, currentStepIndex - 1);
-              setCurrentStep(steps[prevIndex].id as any);
-            }}
-            disabled={currentStepIndex === 0}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Previous
-          </Button>
-
-          <div className="flex items-center gap-2">
-            {/* Save Button */}
-            <Button
-              onClick={handleSave}
-              disabled={saveEconomyMutation.isPending || !countryId || !validationStatus.isValid}
-              className="bg-gold-600 hover:bg-gold-700 text-white"
+            <motion.div
+              key="preview"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
             >
-              {saveEconomyMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Configuration
-                </>
-              )}
-            </Button>
+              <PreviewStep
+                economyBuilder={economyBuilder}
+                economicInputs={economicInputs}
+                selectedComponents={selectedComponents}
+                economicHealthMetrics={healthMetrics}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            {/* Validation Status */}
-            {validationStatus.isValid ? (
-              <Badge
-                variant="default"
-                className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-              >
-                <CheckCircle className="mr-1 h-3 w-3" />
-                Valid Configuration
-              </Badge>
-            ) : (
-              <Badge variant="destructive">
-                <AlertTriangle className="mr-1 h-3 w-3" />
-                {validationStatus.errorCount} Issues
-              </Badge>
-            )}
-          </div>
-
-          <Button
-            onClick={() => {
-              const nextIndex = Math.min(steps.length - 1, currentStepIndex + 1);
-              setCurrentStep(steps[nextIndex].id as any);
-            }}
-            disabled={currentStepIndex === steps.length - 1}
-          >
-            Next
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+        {/* Navigation */}
+        <NavigationButtons
+          currentStepIndex={currentStepIndex}
+          totalSteps={steps.length}
+          validationStatus={{
+            isValid: validationStatus?.isValid ?? true,
+            errorCount: validationStatus?.errorCount ?? 0,
+          }}
+          isSaving={saveEconomyMutation.isPending}
+          countryId={countryId}
+          onPrevious={() => {
+            const prevIndex = Math.max(0, currentStepIndex - 1);
+            setCurrentStep(steps[prevIndex].id as any);
+          }}
+          onNext={() => {
+            const nextIndex = Math.min(steps.length - 1, currentStepIndex + 1);
+            setCurrentStep(steps[nextIndex].id as any);
+          }}
+          onSave={handleSave}
+        />
       </div>
 
       {/* Presets Modal (Economic Archetypes) */}

@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { motion, useTransform, useMotionValue, type MotionValue } from "motion/react";
 import { Download, ExternalLink, ArrowLeft, Check, HelpCircle, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { MyCountryLogo } from "~/components/ui/mycountry-logo";
 import { PreText } from "~/components/ui/pretext";
+import { TextAnimate } from "~/components/ui/text-animate";
 import { EnhancedCountryFlag } from "~/components/ui/enhanced-country-flag";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
 import { Button } from "~/components/ui/button";
@@ -26,11 +27,13 @@ import { getOptimalTextStyling } from "~/lib/flag-color-analysis";
 interface CountrySelectorHeaderProps {
   softSelectedCountry: RealCountryData | null;
   onBackToIntro?: () => void;
+  scrollY?: MotionValue<number>;
 }
 
 export function CountrySelectorHeader({
   softSelectedCountry,
   onBackToIntro,
+  scrollY,
 }: CountrySelectorHeaderProps) {
   const router = useRouter();
   const { flag } = useCountryFlagRouteAware(
@@ -78,6 +81,13 @@ export function CountrySelectorHeader({
 
     analyzeFlag();
   }, [softSelectedCountry, flag?.flagUrl]);
+
+  // If scrollY is provided, we can animate the logo
+  const fallbackY = useMotionValue(0);
+  const activeScrollY = scrollY || fallbackY;
+  const logoBlur = useTransform(activeScrollY, [0, 100], ["blur(0px)", "blur(16px)"]);
+  const logoOpacity = useTransform(activeScrollY, [0, 100], [1, 0]);
+  const logoScale = useTransform(activeScrollY, [0, 100], [1, 0.8]);
 
   return (
     <motion.div
@@ -140,13 +150,26 @@ export function CountrySelectorHeader({
               </>
             ) : (
               <div className="flex flex-col items-center justify-center gap-4 text-center w-full">
-                <PreText className="flex justify-center">
-                  <MyCountryLogo size="xl" animated />
-                </PreText>
+                <motion.div
+                  className="flex justify-center"
+                  style={{
+                    filter: logoBlur,
+                    opacity: logoOpacity,
+                    scale: logoScale
+                  }}
+                >
+                  <PreText className="flex justify-center">
+                    <MyCountryLogo size="xl" animated />
+                  </PreText>
+                </motion.div>
                 <div className="space-y-2 max-w-md mx-auto">
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    Choose a starting country template below to begin building your custom nation.
-                  </p>
+                  <TextAnimate
+                    animation="blurIn"
+                    by="word"
+                    className="text-muted-foreground text-sm leading-relaxed"
+                  >
+                    Choose a starting country template below to begin building
+                  </TextAnimate>
                 </div>
               </div>
             )}

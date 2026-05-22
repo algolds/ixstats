@@ -35,6 +35,21 @@ export interface EligibleCountryResult {
   governmentType?: string;
   leaderTitle?: string;
   leaderName?: string;
+  currency?: string;
+  currencyCode?: string;
+  languages?: string;
+  areaKm2?: number;
+  demonym?: string;
+  lifeExpectancy?: number;
+  literacyRate?: number;
+  urbanization?: number;
+  internetTld?: string;
+  callingCode?: string;
+  anthem?: string;
+  motto?: string;
+  coordinates?: string;
+  largestCity?: string;
+  officialName?: string;
 }
 
 interface FileCacheEntry {
@@ -114,7 +129,7 @@ async function writeCacheFile(site: "iiwiki" | "althistory", countries: Eligible
       cachedAt: new Date().toISOString(),
       countries,
     };
-    await fsPromises.writeFile(filePath, JSON.stringify(entry, null, 2), "utf-8");
+    await fsPromises.writeFile(filePath, JSON.stringify(entry), "utf-8");
   } catch (err) {
     console.error(`[EligibleCountries] Failed to write cache file for ${site}:`, err);
   }
@@ -309,6 +324,21 @@ function calculateCompleteness(data: UnifiedInfoboxData): {
     governmentType: data.government_type,
     leaderTitle,
     leaderName,
+    currency: data.currency,
+    currencyCode: data.currency_code,
+    languages: data.official_languages || data.languages,
+    areaKm2: typeof data.area_km2 === "number" ? data.area_km2 : undefined,
+    demonym: data.demonym,
+    lifeExpectancy: typeof data.life_expectancy === "number" ? data.life_expectancy : undefined,
+    literacyRate: typeof data.literacy_rate === "number" ? data.literacy_rate : undefined,
+    urbanization: typeof data.urbanization === "number" ? data.urbanization : undefined,
+    internetTld: data.internet_tld,
+    callingCode: data.calling_code,
+    anthem: data.national_anthem,
+    motto: data.motto,
+    coordinates: data.coordinates,
+    largestCity: data.largest_city,
+    officialName: data.official_name || data.conventional_long_name,
   };
 }
 
@@ -396,7 +426,7 @@ async function processPage(
     if (!parsed) return null;
 
     const completeness = calculateCompleteness(parsed);
-    if (completeness.score < 90) return null;
+    if (completeness.score < 80) return null;
 
     const flagFilename = (parsed.image_flag || parsed.flag || "").replace(/^(File|Image):/i, "").trim();
 
@@ -412,6 +442,21 @@ async function processPage(
         governmentType: completeness.governmentType,
         leaderTitle: completeness.leaderTitle,
         leaderName: completeness.leaderName,
+        currency: completeness.currency,
+        currencyCode: completeness.currencyCode,
+        languages: completeness.languages,
+        areaKm2: completeness.areaKm2,
+        demonym: completeness.demonym,
+        lifeExpectancy: completeness.lifeExpectancy,
+        literacyRate: completeness.literacyRate,
+        urbanization: completeness.urbanization,
+        internetTld: completeness.internetTld,
+        callingCode: completeness.callingCode,
+        anthem: completeness.anthem,
+        motto: completeness.motto,
+        coordinates: completeness.coordinates,
+        largestCity: completeness.largestCity,
+        officialName: completeness.officialName,
       },
       flagFilename,
     };
