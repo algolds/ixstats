@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { DashboardSidebarNav, type DashboardSection } from "./DashboardSidebarNav";
 import { DashboardPlayerWidget } from "./DashboardPlayerWidget";
 import { useUserCountry } from "~/hooks/useUserCountry";
 
@@ -9,16 +8,12 @@ interface DashboardSidebarLayoutProps {
   children: ReactNode;
   heroSection?: ReactNode;
   alerts?: ReactNode;
-  activeSection?: DashboardSection;
-  onNavigate?: (section: DashboardSection) => void;
 }
 
 export function DashboardSidebarLayout({
   children,
   heroSection,
   alerts,
-  activeSection,
-  onNavigate,
 }: DashboardSidebarLayoutProps) {
   const { userProfile } = useUserCountry();
   return (
@@ -39,25 +34,12 @@ export function DashboardSidebarLayout({
           {/* Desktop: Fixed icon rail */}
           <div className="relative z-30 hidden flex-shrink-0 lg:block">
             <div className="sticky top-6 space-y-3">
-              <DashboardSidebarNav
-                activeSection={activeSection}
-                onNavigate={onNavigate}
-              />
               <DashboardPlayerWidget />
             </div>
           </div>
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
-            {/* Mobile: Horizontal nav strip */}
-            <div className="mb-4 lg:hidden">
-              <DashboardSidebarNav
-                activeSection={activeSection}
-                onNavigate={onNavigate}
-                variant="mobile"
-              />
-            </div>
-
             <div className="space-y-4 sm:space-y-6">
               {children}
             </div>

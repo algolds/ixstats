@@ -22,7 +22,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
@@ -412,10 +412,8 @@ export function UnifiedNotificationCenter({
             <div className="flex items-center gap-2">
               {config.enableFiltering && (
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button variant="outline" size="sm">
-                      <Filter className="h-4 w-4" />
-                    </Button>
+                  <DropdownMenuTrigger className={buttonVariants({ variant: "outline", size: "sm" })}>
+                    <Filter className="h-4 w-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={markAllAsRead}>

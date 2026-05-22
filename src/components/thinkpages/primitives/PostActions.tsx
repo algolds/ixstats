@@ -8,6 +8,178 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { ReactionPopup } from "../ReactionPopup";
 import { RepostModal } from "../RepostModal";
+import { useQueryClient } from "@tanstack/react-query";
+import { getQueryKey } from "@trpc/react-query";
+
+// Helper to update reactions in any query cache data (supports Infinite, Standard, or Single Post data)
+const updateReactionsInCacheData = (
+  oldData: any,
+  postId: string,
+  accountId: string,
+  reactionType: string,
+  isRemove: boolean
+) => {
+  if (!oldData) return oldData;
+
+  const updatePost = (post: any) => {
+    if (!post || post.id !== postId) return post;
+
+    const reactions = [...(post.reactions ?? [])];
+    let reactionCounts: Record<string, number> = {};
+    try {
+      reactionCounts =
+        typeof post.reactionCounts === "string"
+          ? JSON.parse(post.reactionCounts)
+          : { ...(post.reactionCounts ?? {}) };
+    } catch (e) {
+      reactionCounts = {};
+    }
+
+    const existingIndex = reactions.findIndex((r: any) => r.accountId === accountId);
+
+    if (isRemove) {
+      if (existingIndex !== -1) {
+        const removedType = reactions[existingIndex].reactionType;
+        reactions.splice(existingIndex, 1);
+        reactionCounts[removedType] = Math.max(0, (reactionCounts[removedType] ?? 1) - 1);
+        if (reactionCounts[removedType] === 0) {
+          delete reactionCounts[removedType];
+        }
+      }
+    } else {
+      if (existingIndex !== -1) {
+        const oldReactionType = reactions[existingIndex].reactionType;
+        if (oldReactionType !== reactionType) {
+          // Change reaction type
+          reactions[existingIndex] = { ...reactions[existingIndex], reactionType };
+          reactionCounts[oldReactionType] = Math.max(0, (reactionCounts[oldReactionType] ?? 1) - 1);
+          if (reactionCounts[oldReactionType] === 0) {
+            delete reactionCounts[oldReactionType];
+          }
+          reactionCounts[reactionType] = (reactionCounts[reactionType] ?? 0) + 1;
+        } else {
+          // Same type -> toggle off (act as remove)
+          reactions.splice(existingIndex, 1);
+          reactionCounts[reactionType] = Math.max(0, (reactionCounts[reactionType] ?? 1) - 1);
+          if (reactionCounts[reactionType] === 0) {
+            delete reactionCounts[reactionType];
+          }
+        }
+      } else {
+        // Add new reaction
+        reactions.push({
+          id: `optimistic-reaction-${Date.now()}`,
+          accountId,
+          reactionType,
+          postId,
+        });
+        reactionCounts[reactionType] = (reactionCounts[reactionType] ?? 0) + 1;
+      }
+    }
+
+    // Retain original type of reactionCounts (string vs object)
+    const serializedReactionCounts =
+      typeof post.reactionCounts === "string"
+        ? JSON.stringify(reactionCounts)
+        : reactionCounts;
+
+    const likeCount = reactionCounts.like ?? 0;
+
+    return {
+      ...post,
+      reactions,
+      reactionCounts: serializedReactionCounts,
+      likeCount,
+    };
+  };
+
+  // Case 1: Infinite Query Data { pages: Array<{ posts: Array<any> }> }
+  if (oldData.pages && Array.isArray(oldData.pages)) {
+    return {
+      ...oldData,
+      pages: oldData.pages.map((page: any) => {
+        if (!page || !Array.isArray(page.posts)) return page;
+        return {
+          ...page,
+          posts: page.posts.map(updatePost),
+        };
+      }),
+    };
+  }
+
+  // Case 2: Standard Query Data with posts array { posts: Array<any> }
+  if (oldData.posts && Array.isArray(oldData.posts)) {
+    return {
+      ...oldData,
+      posts: oldData.posts.map(updatePost),
+    };
+  }
+
+  // Case 3: Single post object
+  if (oldData.id === postId) {
+    return updatePost(oldData);
+  }
+
+  return oldData;
+};
+
+// Helper to update the reactions list array in getPostReactions query cache
+const updatePostReactionsList = (
+  oldData: any[] | undefined,
+  postId: string,
+  accountId: string,
+  reactionType: string,
+  isRemove: boolean,
+  activeAccount: any
+) => {
+  if (!oldData) return [];
+
+  const existingIndex = oldData.findIndex((r) => r.accountId === accountId);
+
+  if (isRemove) {
+    if (existingIndex !== -1) {
+      return oldData.filter((r) => r.accountId !== accountId);
+    }
+    return oldData;
+  } else {
+    // Toggling off same reaction type
+    if (existingIndex !== -1 && oldData[existingIndex].reactionType === reactionType) {
+      return oldData.filter((r) => r.accountId !== accountId);
+    }
+
+    const updatedReaction = {
+      id: `optimistic-reaction-${Date.now()}`,
+      postId,
+      accountId,
+      reactionType,
+      account: activeAccount
+        ? {
+            id: activeAccount.id,
+            displayName: activeAccount.displayName || "Unknown",
+            username: activeAccount.username || "unknown",
+            profileImageUrl: activeAccount.profileImageUrl || "",
+            accountType: activeAccount.accountType || "citizen",
+            verified: !!activeAccount.verified,
+          }
+        : {
+            id: accountId,
+            displayName: "You",
+            username: "you",
+            profileImageUrl: "",
+            accountType: "citizen",
+            verified: false,
+          },
+    };
+
+    if (existingIndex !== -1) {
+      const next = [...oldData];
+      next[existingIndex] = updatedReaction;
+      return next;
+    } else {
+      return [...oldData, updatedReaction];
+    }
+  }
+};
 
 interface PostActionsProps {
   postId: string;
@@ -109,148 +281,68 @@ export function PostActions({
   }, [showReactionPopup]);
 
   const utils = api.useUtils();
+  const queryClient = useQueryClient();
 
   // Define context type for mutation error handlers
   type MutationContext = {
-    previousFeed?: any;
-    previousRecentFeed?: any;
-    previousTrendingFeed?: any;
-    previousHotFeed?: any;
+    queriesToBackup: [any[], any][];
   };
 
   const addReactionMutation = api.thinkpages.addReaction.useMutation({
     onMutate: async (variables): Promise<MutationContext> => {
       console.log("🚀 Optimistic update starting:", variables);
 
-      // Cancel outgoing refetches for all possible query variations
-      await utils.thinkpages.getFeed.cancel();
+      const activeAccount = accounts.find((a) => a.id === variables.accountId);
 
-      // Snapshot previous values for all possible query variations
-      const previousFeed = utils.thinkpages.getFeed.getData({});
-      const previousRecentFeed = utils.thinkpages.getFeed.getData({ filter: "recent" });
-      const previousTrendingFeed = utils.thinkpages.getFeed.getData({ filter: "trending" });
-      const previousHotFeed = utils.thinkpages.getFeed.getData({ filter: "hot" });
+      // 1. Cancel outgoing refetches for all relevant feeds
+      const feedKey = getQueryKey(api.thinkpages.getFeed);
+      const userFeedKey = getQueryKey(api.thinkpages.getPostsByClerkUserId);
+      const postKey = getQueryKey(api.thinkpages.getPost);
+      const globalFeedKey = getQueryKey(api.activities.getGlobalFeed);
+      const followingFeedKey = getQueryKey(api.activities.getFollowingFeed);
+      const reactionsKey = getQueryKey(api.thinkpages.getPostReactions);
 
-      // Optimistically update the cache for all possible query variations
-      const updateFeedCache = (queryParams: any = {}) => {
-        utils.thinkpages.getFeed.setData(queryParams, (old: any) => {
-          if (!old?.posts) return old;
+      await queryClient.cancelQueries({ queryKey: feedKey });
+      await queryClient.cancelQueries({ queryKey: userFeedKey });
+      await queryClient.cancelQueries({ queryKey: postKey });
+      await queryClient.cancelQueries({ queryKey: globalFeedKey });
+      await queryClient.cancelQueries({ queryKey: followingFeedKey });
+      await queryClient.cancelQueries({ queryKey: reactionsKey });
 
-          return {
-            ...old,
-            posts: old.posts.map((post: any) => {
-              if (post.id === variables.postId) {
-                const existingReaction = post.reactions?.find(
-                  (r: any) => r.accountId === variables.accountId
-                );
-                let newReactions = [...(post.reactions || [])];
-                const newReactionCounts = {
-                  ...(() => {
-                    try {
-                      return typeof post.reactionCounts === "string"
-                        ? JSON.parse(post.reactionCounts)
-                        : post.reactionCounts || {};
-                    } catch (error) {
-                      return {};
-                    }
-                  })(),
-                };
+      // 2. Snapshot the current state for rollback
+      const queriesToBackup = [
+        ...queryClient.getQueriesData({ queryKey: feedKey }),
+        ...queryClient.getQueriesData({ queryKey: userFeedKey }),
+        ...queryClient.getQueriesData({ queryKey: postKey }),
+        ...queryClient.getQueriesData({ queryKey: globalFeedKey }),
+        ...queryClient.getQueriesData({ queryKey: followingFeedKey }),
+        ...queryClient.getQueriesData({ queryKey: reactionsKey }),
+      ] as [any[], any][];
 
-                if (existingReaction) {
-                  // Update existing reaction
-                  newReactions = newReactions.map((r: any) =>
-                    r.accountId === variables.accountId
-                      ? { ...r, reactionType: variables.reactionType }
-                      : r
-                  );
-                  // Update counts
-                  if (newReactionCounts[existingReaction.reactionType]) {
-                    newReactionCounts[existingReaction.reactionType] = Math.max(
-                      0,
-                      newReactionCounts[existingReaction.reactionType] - 1
-                    );
-                  }
-                } else {
-                  // Add new reaction
-                  newReactions.push({
-                    id: `temp-${Date.now()}`,
-                    accountId: variables.accountId,
-                    reactionType: variables.reactionType,
-                    timestamp: new Date().toISOString(),
-                  });
-                }
-
-                // Increment new reaction count
-                newReactionCounts[variables.reactionType] =
-                  (newReactionCounts[variables.reactionType] || 0) + 1;
-
-                const updatedPost = {
-                  ...post,
-                  reactions: newReactions,
-                  reactionCounts: JSON.stringify(newReactionCounts), // Store as JSON string to match server format
-                  likeCount: newReactionCounts.like || 0,
-                  // Force a new object reference to trigger re-renders
-                  _optimisticUpdate: Date.now(),
-                };
-
-                console.log("🔄 Optimistically updated post:", {
-                  postId: variables.postId,
-                  newReactions,
-                  newReactionCounts,
-                  likeCount: updatedPost.likeCount,
-                  hasOptimisticUpdate: true,
-                });
-
-                return updatedPost;
-              }
-              return post;
-            }),
-          };
-        });
+      // 3. Apply optimistic updates in cache
+      const updateCache = (key: any[]) => {
+        queryClient.setQueriesData({ queryKey: key }, (old: any) =>
+          updateReactionsInCacheData(old, variables.postId, variables.accountId, variables.reactionType, false)
+        );
       };
 
-      // Apply optimistic updates to all query variations
-      updateFeedCache({});
-      updateFeedCache({ filter: "recent" });
-      updateFeedCache({ filter: "trending" });
-      updateFeedCache({ filter: "hot" });
+      updateCache(feedKey);
+      updateCache(userFeedKey);
+      updateCache(postKey);
+      updateCache(globalFeedKey);
+      updateCache(followingFeedKey);
 
-      // Force an immediate re-render by triggering a cache update
-      setTimeout(() => {
-        const cleanupOptimisticFlags = (queryParams: any = {}) => {
-          utils.thinkpages.getFeed.setData(queryParams, (currentData: any) => {
-            if (!currentData?.posts) return currentData;
+      // Also update the reactions list query for this specific post
+      queryClient.setQueriesData(
+        { queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) },
+        (old: any) =>
+          updatePostReactionsList(old, variables.postId, variables.accountId, variables.reactionType, false, activeAccount)
+      );
 
-            return {
-              ...currentData,
-              posts: currentData.posts.map((post: any) => {
-                if (post.id === variables.postId && post._optimisticUpdate) {
-                  // Remove the optimistic update flag after a short delay
-                  const { _optimisticUpdate, ...cleanPost } = post;
-                  return cleanPost;
-                }
-                return post;
-              }),
-            };
-          });
-        };
-
-        cleanupOptimisticFlags({});
-        cleanupOptimisticFlags({ filter: "recent" });
-        cleanupOptimisticFlags({ filter: "trending" });
-        cleanupOptimisticFlags({ filter: "hot" });
-      }, 100);
-
-      return { previousFeed, previousRecentFeed, previousTrendingFeed, previousHotFeed };
+      return { queriesToBackup };
     },
     onSuccess: (data) => {
-      console.log("🎉 addReactionMutation SUCCESS:", {
-        data,
-        postId,
-        accountId: currentUserAccountId,
-      });
-
-      // Show instant feedback
+      // Show feedback
       const dataAny = data as any;
       if ("removed" in dataAny && dataAny.removed) {
         notify.success("Reaction removed!");
@@ -259,43 +351,32 @@ export function PostActions({
       } else {
         notify.success("Reaction added!");
       }
-
-      // Force immediate cache invalidation and refetch for all query variations
-      utils.thinkpages.getFeed.invalidate();
-      utils.thinkpages.getFeed.invalidate({ filter: "recent" });
-      utils.thinkpages.getFeed.invalidate({ filter: "trending" });
-      utils.thinkpages.getFeed.invalidate({ filter: "hot" });
-      utils.thinkpages.getPost.invalidate({ postId });
-
-      // Force a refetch to ensure fresh data from server
-      setTimeout(() => {
-        utils.thinkpages.getFeed.refetch();
-      }, 100);
     },
     onError: (error, variables, context) => {
-      console.error("❌ addReactionMutation ERROR:", {
-        error,
-        message: error.message,
-        postId,
-        accountId: currentUserAccountId,
-      });
-
-      // Rollback optimistic update for all query variations
-      const ctx = context as MutationContext | undefined;
-      if (ctx?.previousFeed) {
-        utils.thinkpages.getFeed.setData({}, () => ctx.previousFeed);
+      console.error("❌ addReactionMutation ERROR:", error);
+      // Rollback cache
+      if (context?.queriesToBackup) {
+        for (const [queryKey, queryData] of context.queriesToBackup) {
+          queryClient.setQueryData(queryKey, queryData);
+        }
       }
-      if (ctx?.previousRecentFeed) {
-        utils.thinkpages.getFeed.setData({ filter: "recent" }, () => ctx.previousRecentFeed);
-      }
-      if (ctx?.previousTrendingFeed) {
-        utils.thinkpages.getFeed.setData({ filter: "trending" }, () => ctx.previousTrendingFeed);
-      }
-      if (ctx?.previousHotFeed) {
-        utils.thinkpages.getFeed.setData({ filter: "hot" }, () => ctx.previousHotFeed);
-      }
-
       notify.error(error.message || "Failed to add reaction");
+    },
+    onSettled: (data, error, variables) => {
+      // Silent invalidation of feeds (avoid refetch storms)
+      const feedKey = getQueryKey(api.thinkpages.getFeed);
+      const userFeedKey = getQueryKey(api.thinkpages.getPostsByClerkUserId);
+      const globalFeedKey = getQueryKey(api.activities.getGlobalFeed);
+      const followingFeedKey = getQueryKey(api.activities.getFollowingFeed);
+
+      void queryClient.invalidateQueries({ queryKey: feedKey, refetchType: "none" });
+      void queryClient.invalidateQueries({ queryKey: userFeedKey, refetchType: "none" });
+      void queryClient.invalidateQueries({ queryKey: globalFeedKey, refetchType: "none" });
+      void queryClient.invalidateQueries({ queryKey: followingFeedKey, refetchType: "none" });
+
+      // Active refetch of specific post and its reactions since they are cheap
+      void queryClient.invalidateQueries({ queryKey: getQueryKey(api.thinkpages.getPost, { postId: variables.postId }) });
+      void queryClient.invalidateQueries({ queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) });
     },
   });
 
@@ -303,127 +384,83 @@ export function PostActions({
     onMutate: async (variables): Promise<MutationContext> => {
       console.log("🚀 Optimistic remove starting:", variables);
 
-      // Cancel outgoing refetches for all possible query variations
-      await utils.thinkpages.getFeed.cancel();
+      const activeAccount = accounts.find((a) => a.id === variables.accountId);
 
-      // Snapshot previous values for all possible query variations
-      const previousFeed = utils.thinkpages.getFeed.getData({});
-      const previousRecentFeed = utils.thinkpages.getFeed.getData({ filter: "recent" });
-      const previousTrendingFeed = utils.thinkpages.getFeed.getData({ filter: "trending" });
-      const previousHotFeed = utils.thinkpages.getFeed.getData({ filter: "hot" });
+      // 1. Cancel outgoing refetches for all relevant feeds
+      const feedKey = getQueryKey(api.thinkpages.getFeed);
+      const userFeedKey = getQueryKey(api.thinkpages.getPostsByClerkUserId);
+      const postKey = getQueryKey(api.thinkpages.getPost);
+      const globalFeedKey = getQueryKey(api.activities.getGlobalFeed);
+      const followingFeedKey = getQueryKey(api.activities.getFollowingFeed);
+      const reactionsKey = getQueryKey(api.thinkpages.getPostReactions);
 
-      // Optimistically update the cache for all possible query variations
-      const updateFeedCache = (queryParams: any = {}) => {
-        utils.thinkpages.getFeed.setData(queryParams, (old: any) => {
-          if (!old?.posts) return old;
+      await queryClient.cancelQueries({ queryKey: feedKey });
+      await queryClient.cancelQueries({ queryKey: userFeedKey });
+      await queryClient.cancelQueries({ queryKey: postKey });
+      await queryClient.cancelQueries({ queryKey: globalFeedKey });
+      await queryClient.cancelQueries({ queryKey: followingFeedKey });
+      await queryClient.cancelQueries({ queryKey: reactionsKey });
 
-          return {
-            ...old,
-            posts: old.posts.map((post: any) => {
-              if (post.id === variables.postId) {
-                const existingReaction = post.reactions?.find(
-                  (r: any) => r.accountId === variables.accountId
-                );
-                if (existingReaction) {
-                  const newReactions =
-                    post.reactions?.filter((r: any) => r.accountId !== variables.accountId) || [];
-                  const newReactionCounts = {
-                    ...(() => {
-                      try {
-                        return typeof post.reactionCounts === "string"
-                          ? JSON.parse(post.reactionCounts)
-                          : post.reactionCounts || {};
-                      } catch (error) {
-                        return {};
-                      }
-                    })(),
-                  };
+      // 2. Snapshot the current state for rollback
+      const queriesToBackup = [
+        ...queryClient.getQueriesData({ queryKey: feedKey }),
+        ...queryClient.getQueriesData({ queryKey: userFeedKey }),
+        ...queryClient.getQueriesData({ queryKey: postKey }),
+        ...queryClient.getQueriesData({ queryKey: globalFeedKey }),
+        ...queryClient.getQueriesData({ queryKey: followingFeedKey }),
+        ...queryClient.getQueriesData({ queryKey: reactionsKey }),
+      ] as [any[], any][];
 
-                  // Decrement reaction count
-                  if (newReactionCounts[existingReaction.reactionType]) {
-                    newReactionCounts[existingReaction.reactionType] = Math.max(
-                      0,
-                      newReactionCounts[existingReaction.reactionType] - 1
-                    );
-                  }
-
-                  const updatedPost = {
-                    ...post,
-                    reactions: newReactions,
-                    reactionCounts: JSON.stringify(newReactionCounts), // Store as JSON string to match server format
-                    likeCount: newReactionCounts.like || 0,
-                    // Force a new object reference to trigger re-renders
-                    _optimisticUpdate: Date.now(),
-                  };
-
-                  console.log("🔄 Optimistically removed reaction from post:", {
-                    postId: variables.postId,
-                    newReactions,
-                    newReactionCounts,
-                    likeCount: updatedPost.likeCount,
-                    hasOptimisticUpdate: true,
-                  });
-
-                  return updatedPost;
-                }
-              }
-              return post;
-            }),
-          };
-        });
+      // 3. Apply optimistic updates in cache
+      const updateCache = (key: any[]) => {
+        queryClient.setQueriesData({ queryKey: key }, (old: any) =>
+          updateReactionsInCacheData(old, variables.postId, variables.accountId, "", true)
+        );
       };
 
-      // Apply optimistic updates to all query variations
-      updateFeedCache({});
-      updateFeedCache({ filter: "recent" });
-      updateFeedCache({ filter: "trending" });
-      updateFeedCache({ filter: "hot" });
+      updateCache(feedKey);
+      updateCache(userFeedKey);
+      updateCache(postKey);
+      updateCache(globalFeedKey);
+      updateCache(followingFeedKey);
 
-      return { previousFeed, previousRecentFeed, previousTrendingFeed, previousHotFeed };
+      // Also update the reactions list query for this specific post
+      queryClient.setQueriesData(
+        { queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) },
+        (old: any) =>
+          updatePostReactionsList(old, variables.postId, variables.accountId, "", true, activeAccount)
+      );
+
+      return { queriesToBackup };
     },
     onSuccess: () => {
-      console.log("🎉 removeReactionMutation SUCCESS:", {
-        postId,
-        accountId: currentUserAccountId,
-      });
       notify.success("Reaction removed!");
-
-      // Force immediate cache invalidation and refetch for all query variations
-      utils.thinkpages.getFeed.invalidate();
-      utils.thinkpages.getFeed.invalidate({ filter: "recent" });
-      utils.thinkpages.getFeed.invalidate({ filter: "trending" });
-      utils.thinkpages.getFeed.invalidate({ filter: "hot" });
-      utils.thinkpages.getPost.invalidate({ postId });
-
-      // Force a refetch to ensure fresh data from server
-      setTimeout(() => {
-        utils.thinkpages.getFeed.refetch();
-      }, 100);
     },
     onError: (error, variables, context) => {
-      console.error("❌ removeReactionMutation ERROR:", {
-        error,
-        message: error.message,
-        postId,
-        accountId: currentUserAccountId,
-      });
-
-      // Rollback optimistic update for all query variations
-      const ctx = context as MutationContext | undefined;
-      if (ctx?.previousFeed) {
-        utils.thinkpages.getFeed.setData({}, () => ctx.previousFeed);
+      console.error("❌ removeReactionMutation ERROR:", error);
+      // Rollback cache
+      if (context?.queriesToBackup) {
+        for (const [queryKey, queryData] of context.queriesToBackup) {
+          queryClient.setQueryData(queryKey, queryData);
+        }
       }
-      if (ctx?.previousRecentFeed) {
-        utils.thinkpages.getFeed.setData({ filter: "recent" }, () => ctx.previousRecentFeed);
-      }
-      if (ctx?.previousTrendingFeed) {
-        utils.thinkpages.getFeed.setData({ filter: "trending" }, () => ctx.previousTrendingFeed);
-      }
-      if (ctx?.previousHotFeed) {
-        utils.thinkpages.getFeed.setData({ filter: "hot" }, () => ctx.previousHotFeed);
-      }
-
       notify.error(error.message || "Failed to remove reaction");
+    },
+    onSettled: (data, error, variables) => {
+      // Silent invalidation of feeds (avoid refetch storms)
+      const feedKey = getQueryKey(api.thinkpages.getFeed);
+      const userFeedKey = getQueryKey(api.thinkpages.getPostsByClerkUserId);
+      const globalFeedKey = getQueryKey(api.activities.getGlobalFeed);
+      const followingFeedKey = getQueryKey(api.activities.getFollowingFeed);
+
+      void queryClient.invalidateQueries({ queryKey: feedKey, refetchType: "none" });
+      void queryClient.invalidateQueries({ queryKey: userFeedKey, refetchType: "none" });
+      void queryClient.invalidateQueries({ queryKey: globalFeedKey, refetchType: "none" });
+      void queryClient.invalidateQueries({ queryKey: followingFeedKey, refetchType: "none" });
+
+      // Active refetch of specific post and its reactions since they are cheap
+      void queryClient.invalidateQueries({ queryKey: getQueryKey(api.thinkpages.getPost, { postId: variables.postId }) });
+      void queryClient.invalidateQueries({ queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) });
     },
   });
 

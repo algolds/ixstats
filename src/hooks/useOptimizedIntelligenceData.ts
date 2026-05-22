@@ -2,6 +2,7 @@
 // Smart query batching and optimization for maximum performance
 
 import { useQueries, useQuery } from "@tanstack/react-query";
+import { getQueryKey } from "@trpc/react-query";
 import { useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import type { Country, IntelligenceItem, VitalityIntelligence } from "~/types/intelligence-unified";
@@ -47,7 +48,7 @@ export function useOptimizedIntelligenceData({
     queries: [
       // Core country data - longest cache since it changes less frequently
       {
-        queryKey: ["country", countryId],
+        queryKey: getQueryKey(api.countries.getByIdAtTime, { id: countryId }, "query"),
         queryFn: async () => {
           const result = await utils.client.countries.getByIdAtTime.query({ id: countryId });
           return result;
@@ -59,7 +60,7 @@ export function useOptimizedIntelligenceData({
 
       // Intelligence feed - medium cache since it updates regularly
       {
-        queryKey: ["intelligence", countryId],
+        queryKey: getQueryKey(api.intelligence.getFeed, undefined, "query"),
         queryFn: async () => {
           const result = await utils.client.intelligence.getFeed.query();
           return result;

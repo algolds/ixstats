@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, memo } from "react";
-import { api } from "~/trpc/react";
+import React, { memo } from "react";
+import { useAllCountriesData } from "~/hooks/useAllCountriesData";
 import { ActivityMarquee } from "./ActivityMarquee";
 
 interface Country {
@@ -20,19 +20,10 @@ interface Country {
 }
 
 export const GlobalActivityMarquee = memo(function GlobalActivityMarquee() {
-  const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, {
-    staleTime: 10 * 60 * 1000, // 10 minutes - greatly reduce API calls
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-  });
-
-  const countries = allData?.countries ?? [];
-
-  // Memoize processed countries to prevent unnecessary recalculations
-  const processedCountries: Country[] = useMemo(
-    () =>
-      countries.map((country) => ({
+  const { data: processedCountries = [], isLoading: countriesLoading } = useAllCountriesData({
+    select: (data) => {
+      const list = data?.countries ?? [];
+      return list.slice(0, 10).map((country) => ({
         id: country.id,
         name: country.name,
         currentPopulation: country.currentPopulation ?? 0,
@@ -45,9 +36,9 @@ export const GlobalActivityMarquee = memo(function GlobalActivityMarquee() {
         gdpDensity: country.gdpDensity ?? null,
         adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
         populationGrowthRate: country.populationGrowthRate ?? 0,
-      })),
-    [countries]
-  );
+      }));
+    },
+  });
 
   // Only render marquee if we have data and it's not loading
   if (countriesLoading || processedCountries.length === 0) {

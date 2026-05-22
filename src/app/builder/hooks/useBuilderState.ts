@@ -234,6 +234,9 @@ export function useBuilderState(
     {
       enabled: mode === "edit" && !!countryId && countryId.trim() !== "",
       retry: false,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
     }
   );
 

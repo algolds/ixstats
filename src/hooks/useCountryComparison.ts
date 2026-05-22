@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
 import type { ComparisonCountry } from "~/app/countries/_components/CountryComparisonModal";
+import { useAllCountriesData } from "~/hooks/useAllCountriesData";
 
 const CHART_COLORS = [
   "#8b5cf6",
@@ -32,10 +33,7 @@ export function useCountryComparison() {
   );
 
   // Fetch all countries for selection
-  const { data: allCountries, isLoading: isLoadingAllCountries } = api.countries.getAll.useQuery(
-    { limit: 1000 },
-    { refetchOnWindowFocus: false, staleTime: 30 * 1000 }
-  );
+  const { data: allCountries, isLoading: isLoadingAllCountries } = useAllCountriesData();
 
   // Add country to comparison
   const addCountryToComparison = useCallback(

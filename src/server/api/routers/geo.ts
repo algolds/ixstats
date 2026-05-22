@@ -1888,7 +1888,7 @@ export const geoRouter = createTRPCRouter({
         }
       } else if (edit.editType === "poi") {
         if (edit.operation === "create") {
-          await ctx.db.pointOfInterest.create({
+          const poi = await ctx.db.pointOfInterest.create({
             data: {
               name: proposed.name as string,
               countryId: edit.countryId,
@@ -1898,6 +1898,30 @@ export const geoRouter = createTRPCRouter({
               status: "approved",
             },
           });
+
+          try {
+            const country = await ctx.db.country.findUnique({
+              where: { id: edit.countryId },
+              select: { name: true },
+            });
+            await ActivityGenerator.createActivity({
+              type: "meta",
+              category: "game",
+              countryId: edit.countryId,
+              title: `New Point of Interest: ${poi.name}`,
+              description: `${country?.name ?? "A country"} added a new point of interest: ${poi.name} (${poi.category}).`,
+              priority: "low",
+              visibility: "public",
+              metadata: {
+                poiId: poi.id,
+                poiName: poi.name,
+                category: poi.category,
+                description: poi.description,
+              },
+            });
+          } catch (e) {
+            console.error("[geo.approveEdit] Failed to create activity for POI:", e);
+          }
         } else if (edit.operation === "update" && edit.targetId) {
           await ctx.db.pointOfInterest.update({
             where: { id: edit.targetId },
@@ -2917,6 +2941,31 @@ export const geoRouter = createTRPCRouter({
           submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
         },
       });
+
+      try {
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: { name: true },
+        });
+        await ActivityGenerator.createActivity({
+          type: "meta",
+          category: "game",
+          countryId: input.countryId,
+          title: `New Point of Interest: ${poi.name}`,
+          description: `${country?.name ?? "A country"} added a new point of interest: ${poi.name} (${poi.category}).`,
+          priority: "low",
+          visibility: "public",
+          metadata: {
+            poiId: poi.id,
+            poiName: poi.name,
+            category: poi.category,
+            wikiPageTitle: poi.wikiPageTitle,
+            description: poi.description,
+          },
+        });
+      } catch (e) {
+        console.error("[geo.createPOI] Failed to create activity for POI:", e);
+      }
 
       await invalidateCache(["geo.getAllMapFeatures"]);
       broadcastMapUpdate("poi", input.countryId);

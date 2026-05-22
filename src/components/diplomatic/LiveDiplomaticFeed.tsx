@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
+import { Virtuoso } from "react-virtuoso";
 import { cn } from "~/lib/utils";
 import { useCountryDiplomaticUpdates } from "~/hooks/useDiplomaticUpdates";
 import type { LiveIntelligenceUpdate, DiplomaticEvent } from "~/lib/diplomatic-websocket";
@@ -353,24 +354,27 @@ const LiveDiplomaticFeedComponent: React.FC<LiveDiplomaticFeedProps> = ({
       </AnimatePresence>
 
       {/* Event Feed */}
-      <div className="scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-[--intel-gold]/30 max-h-96 space-y-3 overflow-y-auto">
-        <AnimatePresence mode="popLayout">
-          {filteredEvents.length > 0 ? (
-            filteredEvents.map(renderEvent)
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="py-8 text-center text-[--intel-silver]"
-            >
+      <div className="scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-[--intel-gold]/30">
+        {filteredEvents.length > 0 ? (
+          <Virtuoso
+            style={{ height: "24rem" }}
+            data={filteredEvents}
+            overscan={100}
+            itemContent={(index, update) => (
+              <div className="pb-3">
+                {renderEvent(update, index)}
+              </div>
+            )}
+          />
+        ) : (
+            <div className="py-8 text-center text-[--intel-silver]">
               <RiNotification3Line className="mx-auto mb-4 w-12 opacity-50" />
               <p>No diplomatic events to display</p>
               {!state.isConnected && (
                 <p className="mt-2 text-xs">Connect to receive live updates</p>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+        )}
       </div>
 
       {/* Connection Status Messages */}

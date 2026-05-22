@@ -61,10 +61,7 @@ export function useLiveNotifications(
 
   const { user } = useUser();
   const userId = user?.id;
-
-  const [notifications, setNotifications] = useState<LiveNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const utils = api.useUtils();
 
   // Query for initial notifications
   const {
@@ -92,60 +89,192 @@ export function useLiveNotifications(
       refetchInterval: pollingInterval,
     });
 
-  // Mutations
+  // Derived state directly from Query Cache
+  const notifications = (notificationsData?.notifications ?? []) as LiveNotification[];
+  const unreadCount = unreadData?.count !== undefined
+    ? unreadData.count
+    : (notificationsData?.unreadCount ?? 0);
+
+  // Mutations with Optimistic Updates and Rollback
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
-    onSuccess: () => {
-      void refetch();
-      void refetchUnreadCount();
+    onMutate: async ({ notificationId }) => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      await utils.notifications.getUserNotifications.cancel(queryKey);
+      await utils.notifications.getUnreadCount.cancel();
+
+      const prevNotifications = utils.notifications.getUserNotifications.getData(queryKey);
+      const prevUnreadCount = utils.notifications.getUnreadCount.getData();
+
+      utils.notifications.getUserNotifications.setData(queryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          notifications: old.notifications.map((n) =>
+            n.id === notificationId ? { ...n, read: true } : n
+          ),
+        };
+      });
+
+      utils.notifications.getUnreadCount.setData(undefined, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          count: Math.max(0, old.count - 1),
+        };
+      });
+
+      return { prevNotifications, prevUnreadCount };
+    },
+    onError: (err, variables, context) => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      if (context?.prevNotifications) {
+        utils.notifications.getUserNotifications.setData(queryKey, context.prevNotifications);
+      }
+      if (context?.prevUnreadCount) {
+        utils.notifications.getUnreadCount.setData(undefined, context.prevUnreadCount);
+      }
+    },
+    onSettled: () => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      void utils.notifications.getUserNotifications.invalidate(queryKey);
+      void utils.notifications.getUnreadCount.invalidate();
     },
   });
 
   const markAllAsReadMutation = api.notifications.markAllAsRead.useMutation({
-    onSuccess: () => {
-      void refetch();
-      void refetchUnreadCount();
+    onMutate: async () => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      await utils.notifications.getUserNotifications.cancel(queryKey);
+      await utils.notifications.getUnreadCount.cancel();
+
+      const prevNotifications = utils.notifications.getUserNotifications.getData(queryKey);
+      const prevUnreadCount = utils.notifications.getUnreadCount.getData();
+
+      utils.notifications.getUserNotifications.setData(queryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          notifications: old.notifications.map((n) => ({ ...n, read: true })),
+        };
+      });
+
+      utils.notifications.getUnreadCount.setData(undefined, { count: 0 });
+
+      return { prevNotifications, prevUnreadCount };
+    },
+    onError: (err, variables, context) => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      if (context?.prevNotifications) {
+        utils.notifications.getUserNotifications.setData(queryKey, context.prevNotifications);
+      }
+      if (context?.prevUnreadCount) {
+        utils.notifications.getUnreadCount.setData(undefined, context.prevUnreadCount);
+      }
+    },
+    onSettled: () => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      void utils.notifications.getUserNotifications.invalidate(queryKey);
+      void utils.notifications.getUnreadCount.invalidate();
     },
   });
 
   const dismissMutation = api.notifications.dismissNotification.useMutation({
-    onSuccess: () => {
-      void refetch();
-      void refetchUnreadCount();
+    onMutate: async ({ notificationId }) => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      await utils.notifications.getUserNotifications.cancel(queryKey);
+      await utils.notifications.getUnreadCount.cancel();
+
+      const prevNotifications = utils.notifications.getUserNotifications.getData(queryKey);
+      const prevUnreadCount = utils.notifications.getUnreadCount.getData();
+
+      let wasUnread = false;
+
+      utils.notifications.getUserNotifications.setData(queryKey, (old) => {
+        if (!old) return old;
+        const notification = old.notifications.find((n) => n.id === notificationId);
+        if (notification && !notification.read && !notification.dismissed) {
+          wasUnread = true;
+        }
+        return {
+          ...old,
+          notifications: old.notifications.map((n) =>
+            n.id === notificationId ? { ...n, dismissed: true } : n
+          ),
+        };
+      });
+
+      if (wasUnread) {
+        utils.notifications.getUnreadCount.setData(undefined, (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            count: Math.max(0, old.count - 1),
+          };
+        });
+      }
+
+      return { prevNotifications, prevUnreadCount };
+    },
+    onError: (err, variables, context) => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      if (context?.prevNotifications) {
+        utils.notifications.getUserNotifications.setData(queryKey, context.prevNotifications);
+      }
+      if (context?.prevUnreadCount) {
+        utils.notifications.getUnreadCount.setData(undefined, context.prevUnreadCount);
+      }
+    },
+    onSettled: () => {
+      const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+      void utils.notifications.getUserNotifications.invalidate(queryKey);
+      void utils.notifications.getUnreadCount.invalidate();
     },
   });
 
-  // Update notifications when data changes
-  useEffect(() => {
-    if (notificationsData?.notifications) {
-      setNotifications(notificationsData.notifications as LiveNotification[]);
-    }
-  }, [notificationsData]);
-
+  // Real-time Subscription updates the tRPC query cache directly
   api.notifications.onNotificationAdded.useSubscription(
     { userId },
     {
       enabled: enableRealtime && !!userId,
       onData: (notification) => {
-        setNotifications((prev) => {
+        const queryKey = { limit: 50, offset: 0, unreadOnly: false };
+        
+        utils.notifications.getUserNotifications.setData(queryKey, (oldData) => {
           const normalized: LiveNotification = {
             ...(notification as LiveNotification),
             createdAt: new Date(notification.createdAt),
             updatedAt: new Date(notification.updatedAt),
           };
 
-          const existingIndex = prev.findIndex((item) => item.id === normalized.id);
-          if (existingIndex !== -1) {
-            const next = [...prev];
-            next[existingIndex] = normalized;
-            return next;
+          if (!oldData) {
+            return {
+              notifications: [normalized],
+              unreadCount: normalized.read || normalized.dismissed ? 0 : 1,
+            };
           }
 
-          const next = [normalized, ...prev];
-          return next.slice(0, 50);
+          const existingIndex = oldData.notifications.findIndex((item) => item.id === normalized.id);
+          let nextNotifications = [...oldData.notifications];
+          if (existingIndex !== -1) {
+            nextNotifications[existingIndex] = normalized;
+          } else {
+            nextNotifications = [normalized, ...oldData.notifications].slice(0, 50);
+          }
+
+          return {
+            ...oldData,
+            notifications: nextNotifications,
+          };
         });
 
         if (!notification.read && !notification.dismissed) {
-          setUnreadCount((count) => count + 1);
+          utils.notifications.getUnreadCount.setData(undefined, (oldData) => {
+            if (!oldData) return { count: 1 };
+            return {
+              ...oldData,
+              count: oldData.count + 1,
+            };
+          });
         }
       },
       onError: (error) => {
@@ -153,15 +282,6 @@ export function useLiveNotifications(
       },
     }
   );
-
-  // Update unread count when data changes
-  useEffect(() => {
-    if (unreadData?.count !== undefined) {
-      setUnreadCount(unreadData.count);
-    } else if (notificationsData?.unreadCount !== undefined) {
-      setUnreadCount(notificationsData.unreadCount);
-    }
-  }, [unreadData, notificationsData]);
 
   // Update page title with unread count
   useEffect(() => {
@@ -218,22 +338,15 @@ export function useLiveNotifications(
       if (!userId) return;
 
       try {
-        // Update local state optimistically
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, dismissed: true } : n))
-        );
-
         await dismissMutation.mutateAsync({
           notificationId,
           userId,
         });
       } catch (error) {
         console.error("[useLiveNotifications] Failed to dismiss:", error);
-        // Revert optimistic update on error
-        void refetch();
       }
     },
-    [userId, dismissMutation, refetch]
+    [userId, dismissMutation]
   );
 
   const refresh = useCallback(async () => {

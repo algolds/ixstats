@@ -18,7 +18,10 @@ import * as React from "react";
 import { createContext, useContext } from "react";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 
+import { Toaster } from "sonner";
+
 export type ToastType = "success" | "error" | "warning" | "info";
+
 
 export interface Toast {
   id: string;
@@ -67,7 +70,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ state: { toasts: [] }, dispatch: noopDispatch, toast: toastFn }}>
       {children}
-      {/* ToastContainer removed — DynamicIslandToastManager handles rendering */}
+      <Toaster
+        position="top-center"
+        className="dynamic-island-toaster"
+        offset={76}
+        mobileOffset={16}
+      />
     </ToastContext.Provider>
   );
 }

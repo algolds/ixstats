@@ -1,20 +1,16 @@
 /**
- * ToastBanner - iOS-style notification banner that animates from the Dynamic Island
+ * ToastBanner - iOS-style notification banner designed for Sonner.
  *
  * Features:
- * - Spring physics animation (matches DI stiffness/damping)
- * - Swipe-to-dismiss via horizontal drag
- * - Auto-dismiss progress bar
  * - Glass morphism matching DI aesthetic
  * - Category-colored left accent bar
  * - Action buttons
- * - Stack spacing for multiple banners
+ * - Auto-dismiss progress bar countdown
  */
 
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
 import {
   CheckCircle,
   AlertCircle,
@@ -35,10 +31,7 @@ import type { NotificationCategory } from "~/types/unified-notifications";
 
 interface ToastBannerProps {
   toast: ToastQueueItem;
-  index: number;
   onDismiss: (id: string) => void;
-  onPause: (id: string) => void;
-  onResume: (id: string) => void;
 }
 
 // ─── Icon mapping ─────────────────────────────────────────────────────
@@ -47,7 +40,6 @@ function getIconForToast(
   type: ToastType,
   category?: NotificationCategory
 ): React.ComponentType<{ className?: string }> {
-  // Category-specific icons take precedence
   if (category) {
     switch (category) {
       case "economic":
@@ -75,7 +67,6 @@ function getIconForToast(
     }
   }
 
-  // Fall back to type-based icons
   switch (type) {
     case "success":
       return CheckCircle;
@@ -111,89 +102,34 @@ const ICON_BG_COLORS: Record<ToastType, string> = {
   info: "bg-blue-500/15",
 };
 
-// ─── Spring config matching DI ────────────────────────────────────────
-
-const SPRING_CONFIG = {
-  type: "spring" as const,
-  stiffness: 400,
-  damping: 30,
-};
-
-const DISMISS_THRESHOLD = 100; // px drag distance to dismiss
-const DISMISS_VELOCITY = 500; // px/s velocity to dismiss
-
 // ─── Component ────────────────────────────────────────────────────────
 
 export const ToastBanner = React.memo(function ToastBanner({
   toast,
-  index,
   onDismiss,
-  onPause,
-  onResume,
 }: ToastBannerProps) {
   const [progress, setProgress] = useState(100);
-  const dragX = useMotionValue(0);
-  const opacity = useTransform(dragX, [-DISMISS_THRESHOLD, 0, DISMISS_THRESHOLD], [0.3, 1, 0.3]);
-
   const Icon = getIconForToast(toast.type, toast.category);
 
   // Progress bar countdown
   useEffect(() => {
-    if (toast.persistent || toast.paused) return;
+    if (toast.persistent) return;
 
-    const startTime = toast.timestamp;
-    const endTime = startTime + toast.duration;
+    const startTime = Date.now();
+    const duration = toast.duration || 5000;
 
     const interval = setInterval(() => {
-      const now = Date.now();
-      const remaining = Math.max(0, endTime - now);
-      const pct = (remaining / toast.duration) * 100;
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, duration - elapsed);
+      const pct = (remaining / duration) * 100;
       setProgress(pct);
     }, 50);
 
     return () => clearInterval(interval);
-  }, [toast.timestamp, toast.duration, toast.persistent, toast.paused]);
-
-  // Handle drag end for swipe-to-dismiss
-  const handleDragEnd = (_: unknown, info: PanInfo) => {
-    if (
-      Math.abs(info.offset.x) > DISMISS_THRESHOLD ||
-      Math.abs(info.velocity.x) > DISMISS_VELOCITY
-    ) {
-      onDismiss(toast.id);
-    }
-  };
-
-  // Stack offset: each subsequent banner shifts down and scales down slightly
-  const stackY = index * 8;
-  const stackScale = 1 - index * 0.03;
-  const stackOpacity = 1 - index * 0.1;
+  }, [toast.duration, toast.persistent]);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: -20, scale: 0.85 }}
-      animate={{
-        opacity: stackOpacity,
-        y: stackY,
-        scale: stackScale,
-      }}
-      exit={{
-        opacity: 0,
-        y: -10,
-        scale: 0.95,
-        transition: { duration: 0.2, ease: "easeOut" },
-      }}
-      transition={SPRING_CONFIG}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.4}
-      onDragEnd={handleDragEnd}
-      onHoverStart={() => onPause(toast.id)}
-      onHoverEnd={() => onResume(toast.id)}
-      style={{ x: dragX, opacity }}
-      className="pointer-events-auto relative w-[95vw] cursor-grab select-none active:cursor-grabbing sm:w-[90vw] md:w-[400px]"
-    >
+    <div className="pointer-events-auto relative w-[95vw] select-none sm:w-[90vw] md:w-[400px]">
       <div
         className="relative overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-2xl shadow-black/15 dark:border-white/15 dark:bg-background/90"
         style={{
@@ -202,9 +138,7 @@ export const ToastBanner = React.memo(function ToastBanner({
         }}
       >
         {/* Left accent bar */}
-        <div
-          className={`absolute top-0 left-0 h-full w-[3px] ${ACCENT_COLORS[toast.type]}`}
-        />
+        <div className={`absolute top-0 left-0 h-full w-[3px] ${ACCENT_COLORS[toast.type]}`} />
 
         {/* Content */}
         <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
@@ -263,15 +197,18 @@ export const ToastBanner = React.memo(function ToastBanner({
         {/* Progress bar */}
         {!toast.persistent && (
           <div className="h-[2px] w-full bg-foreground/5">
-            <motion.div
+            <div
               className={`h-full ${ACCENT_COLORS[toast.type]}`}
-              style={{ width: `${progress}%`, opacity: 0.6 }}
-              transition={{ duration: 0.05, ease: "linear" }}
+              style={{
+                width: `${progress}%`,
+                opacity: 0.6,
+                transition: "width 0.05s linear",
+              }}
             />
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 });
 

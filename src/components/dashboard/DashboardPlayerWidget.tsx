@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { PrefetchNavLink } from "~/components/navigation/PrefetchNavLink";
 import {
   Crown,
   ChevronRight,
@@ -112,6 +113,7 @@ function GlassVitalityBar({ value, hex, delay }: { value: number; hex: string; d
 export function DashboardPlayerWidget() {
   const [activeModal, setActiveModal] = useState<"gdp" | "population" | null>(null);
   const { user, isSignedIn } = useUser();
+  const utils = api.useUtils();
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
@@ -120,6 +122,30 @@ export function DashboardPlayerWidget() {
 
   const countryId = userProfile?.countryId || "";
   const hasCountry = !!countryId && countryId.trim() !== "";
+
+  const getPrefetchFn = (href: string) => {
+    if (!countryId) return undefined;
+    switch (href) {
+      case "/mycountry":
+      case "/mycountry/executive":
+        return () => {
+          utils.mycountry.getCountryDashboard.prefetch({ countryId });
+          utils.mycountry.getRankings.prefetch({ countryId });
+          utils.mycountry.getExecutiveActions.prefetch({ countryId });
+        };
+      case "/mycountry/diplomacy":
+        return () => {
+          utils.diplomatic.getInfluenceLeaderboard.prefetch();
+        };
+      case "/mycountry/intelligence":
+      case "/mycountry/defense":
+        return () => {
+          utils.countries.getByIdAtTime.prefetch({ id: countryId });
+        };
+      default:
+        return undefined;
+    }
+  };
 
   const { data: country, isLoading: countryLoading } = api.countries.getByIdAtTime.useQuery(
     { id: countryId },
@@ -209,8 +235,9 @@ export function DashboardPlayerWidget() {
   return (
     <div className="w-56 space-y-3 rounded-xl border border-border/50 bg-background/80 p-3.5 shadow-sm backdrop-blur-lg">
       {/* Country identity */}
-      <Link
+      <PrefetchNavLink
         href={createUrl("/mycountry")}
+        prefetchFn={getPrefetchFn("/mycountry")}
         className="group flex items-center gap-2.5 rounded-lg px-1 py-1 transition-colors hover:bg-muted/50"
       >
         <SimpleFlag countryName={country.name} size="md" className="flex-shrink-0" />
@@ -219,7 +246,7 @@ export function DashboardPlayerWidget() {
           <p className="truncate text-[10px] text-muted-foreground">{country.leader}</p>
         </div>
         <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-      </Link>
+      </PrefetchNavLink>
 
       <div className="border-t border-border/40" />
 
@@ -290,14 +317,15 @@ export function DashboardPlayerWidget() {
         {QUICK_LINKS.map((link) => {
           const Icon = link.icon;
           return (
-            <Link
+            <PrefetchNavLink
               key={link.href}
               href={createUrl(link.href)}
+              prefetchFn={getPrefetchFn(link.href)}
               className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <Icon className="h-3.5 w-3.5 flex-shrink-0" />
               <span>{link.label}</span>
-            </Link>
+            </PrefetchNavLink>
           );
         })}
       </div>

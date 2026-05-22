@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { motion } from "motion/react";
 import {
   Users,
@@ -16,6 +16,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { AccountManagerModal } from "./AccountManagerModal";
 import { RepostModal } from "./RepostModal";
+import { Virtuoso } from "react-virtuoso";
 
 interface ThinkpagesSocialPlatformProps {
   countryId: string;
@@ -29,6 +30,8 @@ interface ThinkpagesSocialPlatformProps {
   profileMode?: boolean;
   countryOwnerClerkUserId?: string;
 }
+
+
 
 export function ThinkpagesSocialPlatform({
   countryId,
@@ -48,140 +51,53 @@ export function ThinkpagesSocialPlatform({
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);
 
-  // Infinite scroll state
-  const [allPosts, setAllPosts] = useState<any[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Feed queries
-  const {
-    data: feed,
-    isLoading: isLoadingFeed,
-    refetch: refetchFeed,
-  } = api.thinkpages.getFeed.useQuery({ filter: feedFilter, limit: 20 }, { enabled: !profileMode });
-
-  const {
-    data: userFeed,
-    isLoading: isLoadingUserFeed,
-    refetch: refetchUserFeed,
-  } = api.thinkpages.getPostsByClerkUserId.useQuery(
-    { clerkUserId: countryOwnerClerkUserId!, limit: 20 },
-    { enabled: profileMode && !!countryOwnerClerkUserId },
+  // Feed queries using Infinite Query
+  const feedQuery = api.thinkpages.getFeed.useInfiniteQuery(
+    { filter: feedFilter, limit: 20 },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+      enabled: !profileMode,
+    }
   );
 
-  const displayFeed = profileMode ? userFeed : feed;
-  const isLoadingDisplayFeed = profileMode ? isLoadingUserFeed : isLoadingFeed;
-
-  // Update posts when feed loads
-  useEffect(() => {
-    if (displayFeed?.posts) {
-      setAllPosts(displayFeed.posts);
-      setNextCursor(displayFeed.nextCursor || null);
+  const userFeedQuery = api.thinkpages.getPostsByClerkUserId.useInfiniteQuery(
+    { clerkUserId: countryOwnerClerkUserId!, limit: 20 },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+      enabled: profileMode && !!countryOwnerClerkUserId,
     }
-  }, [displayFeed]);
+  );
+
+  const displayFeed = profileMode ? userFeedQuery.data : feedQuery.data;
+  const isLoadingDisplayFeed = profileMode ? userFeedQuery.isLoading : feedQuery.isLoading;
+  const isFetchingNextPage = profileMode ? userFeedQuery.isFetchingNextPage : feedQuery.isFetchingNextPage;
+  const hasNextPage = profileMode ? userFeedQuery.hasNextPage : feedQuery.hasNextPage;
+  const fetchNextPage = profileMode ? userFeedQuery.fetchNextPage : feedQuery.fetchNextPage;
 
   const utils = api.useUtils();
 
-  const addReactionMutation = api.thinkpages.addReaction.useMutation({
-    onSuccess: async () => {
-      await Promise.all([
-        utils.thinkpages.getFeed.invalidate(),
-        utils.thinkpages.getPostsByClerkUserId.invalidate(),
-        utils.thinkpages.getPost.invalidate(),
-      ]);
-    },
-    onError: (error) => {
-      notify.error(error.message || "Failed to add reaction");
-    },
-  });
 
-  // Infinite scroll — load more
-  const loadMorePosts = useCallback(async () => {
-    if (!nextCursor || isLoadingMore) return;
-
-    setIsLoadingMore(true);
-    try {
-      let newData;
-      if (profileMode && countryOwnerClerkUserId) {
-        newData = await utils.thinkpages.getPostsByClerkUserId.fetch({
-          clerkUserId: countryOwnerClerkUserId,
-          limit: 20,
-          cursor: nextCursor,
-        });
-      } else {
-        newData = await utils.thinkpages.getFeed.fetch({
-          filter: feedFilter,
-          limit: 20,
-          cursor: nextCursor,
-        });
-      }
-
-      if (newData?.posts && newData.posts.length > 0) {
-        setAllPosts((prev) => [...prev, ...newData.posts]);
-        setNextCursor(newData.nextCursor || null);
-      } else {
-        setNextCursor(null);
-      }
-    } catch {
-      notify.error("Failed to load more posts");
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [nextCursor, isLoadingMore, profileMode, countryOwnerClerkUserId, feedFilter, utils]);
-
-  // IntersectionObserver for infinite scroll sentinel
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && nextCursor && !isLoadingMore) {
-          loadMorePosts();
-        }
-      },
-      { rootMargin: "400px" },
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [nextCursor, isLoadingMore, loadMorePosts]);
 
   const refetchDisplayFeed = useCallback(() => {
     if (profileMode) {
-      refetchUserFeed();
+      void userFeedQuery.refetch();
     } else {
-      refetchFeed();
+      void feedQuery.refetch();
     }
-    setAllPosts([]);
-    setNextCursor(null);
-  }, [profileMode, refetchFeed, refetchUserFeed]);
+  }, [profileMode, userFeedQuery, feedQuery]);
 
-  // Reset posts when filter changes
-  useEffect(() => {
-    setAllPosts([]);
-    setNextCursor(null);
-  }, [feedFilter]);
+  const filteredPosts = useMemo(() => {
+    return displayFeed?.pages.flatMap((page) => page.posts) ?? [];
+  }, [displayFeed]);
 
-  const filteredPosts = allPosts;
-
-  const totalPosts = allPosts.length;
+  const totalPosts = filteredPosts.length;
 
   // Shared post action handlers
   const handleLike = useCallback(
-    (postId: string) => {
-      if (selectedAccount) {
-        addReactionMutation.mutate({
-          postId,
-          accountId: selectedAccount.id,
-          reactionType: "like",
-        });
-      } else {
-        notify.error("Please select an account first");
-      }
+    (_postId: string) => {
+      // Handled globally by PostActions
     },
-    [selectedAccount, addReactionMutation],
+    [],
   );
 
   const handleRepost = useCallback(
@@ -222,25 +138,10 @@ export function ThinkpagesSocialPlatform({
   }, []);
 
   const handleReaction = useCallback(
-    (postId: string, reactionType: string) => {
-      if (selectedAccount) {
-        const validReactions = [
-          "like", "laugh", "angry", "sad", "fire", "thumbsup", "thumbsdown",
-        ] as const;
-        type ValidReaction = (typeof validReactions)[number];
-
-        if (validReactions.includes(reactionType as ValidReaction)) {
-          addReactionMutation.mutate({
-            postId,
-            accountId: selectedAccount.id,
-            reactionType: reactionType as ValidReaction,
-          });
-        }
-      } else {
-        notify.error("Please select an account first");
-      }
+    (_postId: string, _reactionType: string) => {
+      // Handled globally by PostActions
     },
-    [selectedAccount, addReactionMutation],
+    [],
   );
 
   // Render post item with stagger animation
@@ -413,27 +314,41 @@ export function ThinkpagesSocialPlatform({
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : filteredPosts && filteredPosts.length > 0 ? (
-          <div className="space-y-3">
-            {filteredPosts.map((post, index) => renderPost(post, index))}
-
-            {/* Infinite scroll sentinel */}
-            <div ref={sentinelRef} className="h-px" />
-
-            {/* Loading more indicator */}
-            {isLoadingMore && (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                <span className="text-muted-foreground text-sm">Loading more posts...</span>
+          <Virtuoso
+            useWindowScroll
+            data={filteredPosts}
+            increaseViewportBy={400}
+            endReached={() => {
+              if (hasNextPage && !isFetchingNextPage) {
+                void fetchNextPage();
+              }
+            }}
+            itemContent={(index, post) => (
+              <div className="pb-3">
+                {renderPost(post, index)}
               </div>
             )}
+            components={{
+              Footer: () => (
+                <>
+                  {/* Loading more indicator */}
+                  {isFetchingNextPage && (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <span className="text-muted-foreground text-sm">Loading more posts...</span>
+                    </div>
+                  )}
 
-            {/* End of feed */}
-            {!nextCursor && !isLoadingMore && filteredPosts.length > 0 && (
-              <div className="text-muted-foreground py-4 text-center text-xs">
-                You&apos;ve reached the end of the feed
-              </div>
-            )}
-          </div>
+                  {/* End of feed */}
+                  {!hasNextPage && !isFetchingNextPage && filteredPosts.length > 0 && (
+                    <div className="text-muted-foreground py-4 text-center text-xs">
+                      You&apos;ve reached the end of the feed
+                    </div>
+                  )}
+                </>
+              ),
+            }}
+          />
         ) : (
           <Card className="glass-hierarchy-child">
             <CardContent className="p-8 text-center">
@@ -478,7 +393,7 @@ export function ThinkpagesSocialPlatform({
           isOwner={isOwner}
           onPost={() => {
             notify.success("Reposted successfully!");
-            refetchFeed();
+            refetchDisplayFeed();
             setIsRepostModalOpen(false);
             setRepostingPost(null);
           }}

@@ -2087,7 +2087,7 @@ export const diplomaticRouter = createTRPCRouter({
       try {
         const followerCountry = await ctx.db.country.findUnique({
           where: { id: input.followerCountryId },
-          select: { name: true },
+          select: { name: true, slug: true },
         });
 
         await notificationAPI.create({
@@ -2097,7 +2097,7 @@ export const diplomaticRouter = createTRPCRouter({
           category: "social",
           priority: "low",
           type: "info",
-          href: "/diplomatic",
+          href: followerCountry?.slug ? `/countries/${followerCountry.slug}` : `/countries/${input.followerCountryId}`,
           source: "diplomatic-system",
           actionable: false,
           metadata: { followerCountryId: input.followerCountryId },

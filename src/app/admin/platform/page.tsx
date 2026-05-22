@@ -19,7 +19,7 @@ import { api } from "~/trpc/react";
 import { useAdminState } from "../_hooks/useAdminState";
 import { useAdminHandlers } from "../_hooks/useAdminHandlers";
 import { useBotSync } from "../_hooks/useBotSync";
-import { Settings, Clock, TrendingUp, HeartPulse, Wrench } from "lucide-react";
+import { Settings, Clock, TrendingUp, HeartPulse, Wrench, Bell } from "lucide-react";
 
 import { TimeControlCard } from "../_components/platform/TimeControlCard";
 import { BotControlCard } from "../_components/platform/BotControlCard";
@@ -28,6 +28,7 @@ import { SaveConfigCard } from "../_components/platform/SaveConfigCard";
 import { CalculationLogsCard } from "../_components/platform/CalculationLogsCard";
 import { DataImportCard } from "../_components/platform/DataImportCard";
 import { SystemMetricsCard } from "../_components/platform/SystemMetricsCard";
+import { NotificationTestCard } from "../_components/platform/NotificationTestCard";
 
 export default function PlatformPage() {
   usePageTitle({ title: "Admin - Platform" });
@@ -178,6 +179,10 @@ export default function PlatformPage() {
             <Wrench className="h-4 w-4" />
             Formulas & Settings
           </TabsTrigger>
+          <TabsTrigger value="notification-tests" className="gap-1.5">
+            <Bell className="h-4 w-4" />
+            Notification Tests
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Time & Bot */}
@@ -299,6 +304,11 @@ export default function PlatformPage() {
             <NavigationSettings />
             <DatabaseExplorer />
           </div>
+        </TabsContent>
+
+        {/* Tab 5: Notification Tests */}
+        <TabsContent value="notification-tests" className="space-y-6">
+          <NotificationTestCard />
         </TabsContent>
       </Tabs>
 

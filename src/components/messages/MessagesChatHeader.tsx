@@ -13,7 +13,8 @@ import {
   X
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import type { ThinkShareParticipant, ThinkShareIdentity } from "~/types/thinkshare";
+import type { ThinkShareConversation } from "~/types/thinkshare";
+import type { MessageFolder } from "~/types/messages";
 import { resolveIdentity, MessagesIdentityBadge } from "./MessagesIdentityBadge";
 import { Input } from "~/components/ui/input";
 import {
@@ -24,35 +25,48 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 
 interface MessagesChatHeaderProps {
-  participant?: ThinkShareParticipant;
-  isGroup?: boolean;
-  groupName?: string;
-  memberCount?: number;
+  conversation: ThinkShareConversation;
+  currentUserId: string;
+  activeFolder: MessageFolder;
+  participantStatus?: string;
   onSearch?: (query: string) => void;
   onBack?: () => void;
-  status?: string; // Add status prop
 }
 
 export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
-  participant,
-  isGroup,
-  groupName,
-  memberCount,
+  conversation,
+  currentUserId,
+  activeFolder,
+  participantStatus,
   onSearch,
   onBack,
-  status,
 }) => {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const identity = participant ? resolveIdentity(participant) : null;
-  const displayTitle = isGroup ? groupName : (identity?.name || "Select a conversation");
-  
-  // Use the passed status or fallback to participant status
-  const currentStatus = status || participant?.status || "offline";
+  const isGroup = conversation.type === "group";
+  const participant = conversation.otherParticipants[0];
+
+  const participantName =
+    participant?.account?.displayName ?? conversation.name ?? "Unknown";
+  const participantAvatar = participant?.account?.profileImageUrl ?? null;
+
+  const identity = participant
+    ? resolveIdentity(participantName, participantAvatar, activeFolder)
+    : null;
+
+  const isSelf = participant?.accountId === currentUserId;
+  const displayTitle = isGroup
+    ? conversation.name ?? "Group Chat"
+    : isSelf
+      ? `${identity?.displayName} (You)`
+      : identity?.displayName ?? "Select a conversation";
+
+  const memberCount = (conversation.otherParticipants?.length ?? 0) + 1;
+  const currentStatus = participantStatus || "offline";
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -135,7 +149,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
                 <h3 className="truncate text-sm font-semibold text-foreground">
                   {displayTitle}
                 </h3>
-                <MessagesIdentityBadge identity={identity as ThinkShareIdentity} />
+                <MessagesIdentityBadge identity={identity} />
               </div>
               <p className="text-[10px] capitalize text-muted-foreground">
                 {isGroup
@@ -160,10 +174,8 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
           </Button>
           
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
+            <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "text-muted-foreground")}>
+              <MoreVertical className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>

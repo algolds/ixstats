@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
+import { Virtuoso } from "react-virtuoso";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
@@ -494,7 +495,18 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
       {/* Rankings list */}
       <div className="space-y-3">
-        <AnimatePresence mode="popLayout">{sortedRankings.map(renderRankingItem)}</AnimatePresence>
+        {sortedRankings.length > 0 ? (
+          <Virtuoso
+            useWindowScroll
+            data={sortedRankings}
+            increaseViewportBy={300}
+            itemContent={(index, country) => (
+              <div className="pb-3">
+                {renderRankingItem(country, index)}
+              </div>
+            )}
+          />
+        ) : null}
       </div>
 
       {/* No results */}

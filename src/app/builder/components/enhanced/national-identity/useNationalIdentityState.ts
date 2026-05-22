@@ -45,7 +45,10 @@ export function useNationalIdentityState(
   // API queries
   const { data: customGovernmentTypes } = api.customTypes.getUserCustomGovernmentTypes.useQuery(
     undefined,
-    { enabled: shouldFetchCustomTypes }
+    {
+      enabled: shouldFetchCustomTypes,
+      staleTime: 5 * 60 * 1000,
+    }
   );
   const upsertCustomGovernmentType = api.customTypes.upsertCustomGovernmentType.useMutation();
   const upsertFieldValue = api.customTypes.upsertFieldValue.useMutation();

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
 import {
   AlertTriangle, Newspaper, Users, TrendingUp, Clock, Shield, Zap,
   Mail, Trophy, Handshake, Rss, Landmark, BookOpen, MessageCircle,
-  ExternalLink, Flame, MessageSquare,
+  ExternalLink, Flame, MessageSquare, Globe,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -26,28 +26,25 @@ import { CrisisStatusModal } from "~/components/dashboard/modals/CrisisStatusMod
 import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
 import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
+import { AccountManagerModal } from "~/components/thinkpages/AccountManagerModal";
+import { RepostModal } from "~/components/thinkpages/RepostModal";
 import { renderDiscordEmojis } from "~/lib/text-formatter";
 import { sanitizeUserContent } from "~/lib/sanitize-html";
 
-// Lazy-load the heavy social platform component
-const ThinkpagesSocialPlatform = dynamic(
-  () =>
-    import("~/components/thinkpages/ThinkpagesSocialPlatform").then((mod) => ({
-      default: mod.ThinkpagesSocialPlatform,
-    })),
-  { ssr: false }
-);
+import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
+import { GlassCanvasComposer } from "~/components/thinkpages/GlassCanvasComposer";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { useNotify } from "~/hooks/useNotify";
 
 // ─── Config ──────────────────────────────────────────────────────
 
-type FeedTab = "all" | "following" | "thinkpages" | "wiki" | "forum";
+type FeedTab = "all" | "following" | "community";
 
 const BASE_TABS: { id: FeedTab; label: string; icon: typeof Rss }[] = [
-  { id: "all", label: "All", icon: Rss },
+  { id: "all", label: "All Activity", icon: Rss },
   { id: "following", label: "Following", icon: Users },
-  { id: "thinkpages", label: "Social", icon: Newspaper },
-  { id: "wiki", label: "Wiki", icon: BookOpen },
-  { id: "forum", label: "Forum", icon: MessageCircle },
+  { id: "community", label: "Community", icon: BookOpen },
 ];
 
 const SOURCE_CONFIG: Record<string, { icon: typeof Rss; color: string; bg: string; label: string }> = {
@@ -74,6 +71,14 @@ const TRENDING_SOURCE: Record<string, { icon: typeof Rss; color: string; bg: str
   forum:      { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
   wiki:       { icon: BookOpen,      color: "text-teal-400",   bg: "bg-teal-500/10",   label: "Wiki" },
   ixstats:    { icon: Rss,           color: "text-blue-400",   bg: "bg-blue-500/10",   label: "IxStats" },
+  crisis:     { icon: AlertTriangle, color: "text-red-400",    bg: "bg-red-500/10",    label: "Crisis" },
+};
+
+const SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  critical: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30" },
+  high: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", border: "border-orange-500/30" },
+  medium: { bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400", border: "border-yellow-500/30" },
+  low: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30" },
 };
 
 // ─── Props ───────────────────────────────────────────────────────
@@ -91,20 +96,23 @@ interface UnifiedDashboardSectionProps {
 
 // ─── Main Component ──────────────────────────────────────────────
 
+
+
 export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDashboardSectionProps) {
   const { user, isSignedIn } = useUser();
   const userId = user?.id ?? "";
+  const notify = useNotify();
+  const utils = api.useUtils();
 
   // ── Feed state ──
-  const [activeTab, setActiveTab] = useState<FeedTab>(() => {
-    // Logged-out users default to Social tab
-    if (!user?.id) return "thinkpages";
-    return "all";
-  });
+  const [activeTab, setActiveTab] = useState<FeedTab>("all");
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
   const [showAccountCreation, setShowAccountCreation] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [settingsAccount, setSettingsAccount] = useState<any>(null);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [repostingPost, setRepostingPost] = useState<any>(null);
 
   // ── Trending Settings States ──
   const [trendingLimit, setTrendingLimit] = useState<5 | 6 | 7>(6);
@@ -112,7 +120,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
   const [trendingRecency, setTrendingRecency] = useState<"hot" | "balanced" | "classic">("balanced");
   const [showTrendingSettings, setShowTrendingSettings] = useState(false);
 
-  // ── Snapshot data ──
+  // ── Snapshot / World data ──
   const { data: headlineData } = api.activities.getGlobalHeadlines.useQuery(
     { limit: 25 },
     { refetchInterval: 5 * 60_000 }
@@ -129,6 +137,9 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
     { enabled: !!userId }
   );
   const { data: activeCrisisList } = api.crisisEvents.getActive.useQuery({ limit: 10 });
+
+  // ── World Economics ──
+  const { data: globalStats } = api.countries.getGlobalStats.useQuery({});
 
   // ── Feed data ──
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, {
@@ -168,14 +179,12 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
   // ── Derived data ──
   const headlines = headlineData?.headlines ?? [];
-  // ── Advanced Client-Side Trending Algorithm ──
   const trendingItems = useMemo(() => {
     const rawItems = trendingData?.items ?? [];
     if (rawItems.length === 0) return [];
 
     const nowMs = Date.now();
 
-    // Map and score all candidates based on interactive parameters
     const scored = rawItems.map((item: any) => {
       const { source, engagement, timestamp } = item;
       const likes = engagement?.likes ?? 0;
@@ -183,12 +192,10 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
       const reposts = engagement?.reposts ?? 0;
       const views = engagement?.views ?? 0;
 
-      // 1. Calculate source-specific raw base score
       let baseInteraction = 0;
       if (source === "thinkpages") {
         baseInteraction = likes + replies * 3 + reposts * 5 + views * 0.05;
       } else if (source === "wiki") {
-        // Wiki uses excerpt info to parse out edit stats (since views are 0 on Wiki recent changes)
         const editsMatch = item.excerpt?.match(/(\d+)\s+edit/);
         const editorsMatch = item.excerpt?.match(/(\d+)\s+editor/);
         const bytesMatch = item.excerpt?.match(/([+-]?\d+)\s+bytes/);
@@ -201,25 +208,18 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
       } else if (source === "forum") {
         baseInteraction = replies * 4 + views * 0.1;
       } else {
-        // ixstats / other activities
         baseInteraction = likes * 2 + replies * 4 + reposts * 6 + views * 0.05;
       }
 
-      // Ensure base interactions is always at least 1 to avoid zero issues
       const scoreBase = Math.max(1, baseInteraction);
-
-      // 2. Compute recency time decay
       const ageHours = Math.max(0.1, (nowMs - new Date(timestamp).getTime()) / 3600000);
       
-      // Decay power P based on user recency selection
-      // hot = fast decay (power 2.0), balanced = medium decay (power 1.4), classic = no decay (power 0.0)
       let decayPower = 1.4;
       if (trendingRecency === "hot") decayPower = 2.0;
       else if (trendingRecency === "classic") decayPower = 0.0;
 
       const decayFactor = 1 / Math.pow(ageHours + 2, decayPower);
 
-      // 3. Apply selected Source Bias Weighting
       let biasMultiplier = 1.0;
       if (trendingBias === "social" && source === "thinkpages") biasMultiplier = 1.8;
       else if (trendingBias === "wiki" && source === "wiki") biasMultiplier = 1.8;
@@ -233,11 +233,11 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
       };
     });
 
-    // Sort by computedScore descending and slice to the user-specified limit (5, 6, 7)
     return scored
       .sort((a, b) => b.computedScore - a.computedScore)
       .slice(0, trendingLimit);
   }, [trendingData, trendingLimit, trendingBias, trendingRecency]);
+
   const activeCrisesCount = crisisStats?.activeEvents ?? 0;
   const totalEmbassies = (leaderboard ?? []).reduce((sum: number, e: any) => sum + (e.activeEmbassies ?? 0), 0);
   const totalEvents24h = activityStats?.totalActivities ?? 0;
@@ -290,28 +290,95 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
   const filteredFeed = useMemo(() => {
     if (activeTab === "following") return followingData?.activities ?? [];
-    if (activeTab === "wiki") {
-      const fromFeed = (feedData?.activities ?? []).filter((a: any) => a.source === "wiki");
-      return fromFeed.length > 0 ? fromFeed : wikiAsFeed;
-    }
-    if (!feedData?.activities) return [];
-    if (activeTab === "all") {
-      const hasWiki = feedData.activities.some((a: any) => a.source === "wiki");
-      if (!hasWiki && wikiAsFeed.length > 0) {
-        const merged = [...feedData.activities, ...wikiAsFeed];
-        merged.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        return merged.slice(0, 50);
+    
+    if (activeTab === "community") {
+      const fromFeed = (feedData?.activities ?? []).filter((a: any) => a.source === "wiki" || a.source === "forum");
+      if (fromFeed.length === 0 && wikiAsFeed.length > 0) {
+        return wikiAsFeed;
       }
-      return feedData.activities;
+      const merged = [...fromFeed];
+      for (const wikiItem of wikiAsFeed) {
+        if (!merged.some(m => m.id === wikiItem.id)) {
+          merged.push(wikiItem);
+        }
+      }
+      merged.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      return merged.slice(0, 50);
     }
-    return feedData.activities.filter((a: any) => a.source === activeTab);
+    
+    if (!feedData?.activities) return [];
+    
+    const hasWiki = feedData.activities.some((a: any) => a.source === "wiki");
+    if (!hasWiki && wikiAsFeed.length > 0) {
+      const merged = [...feedData.activities, ...wikiAsFeed];
+      merged.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      return merged.slice(0, 50);
+    }
+    return feedData.activities;
   }, [feedData, followingData, wikiAsFeed, activeTab]);
 
-  // ─── Render ────────────────────────────────────────────────────
+  // ── ThinkPages Action Handlers ──
+
+
+  const handleLike = useCallback(
+    (_postId: string) => {
+      // Handled globally by PostActions
+    },
+    [],
+  );
+
+  const handleRepost = useCallback(
+    (postId: string) => {
+      if (selectedAccount) {
+        const postToRepost = filteredFeed?.find((a: any) => a.source === "thinkpages" && a.rawPost?.id === postId)?.rawPost;
+        if (postToRepost) {
+          setRepostingPost(postToRepost);
+          setIsRepostModalOpen(true);
+        } else {
+          notify.error("Unable to find the original post to repost.");
+        }
+      } else {
+        notify.error("Please select an account first");
+      }
+    },
+    [selectedAccount, filteredFeed, notify],
+  );
+
+  const handleReply = useCallback(
+    (_postId: string) => {
+      if (!selectedAccount) {
+        notify.error("Please select an account first");
+      }
+    },
+    [selectedAccount, notify],
+  );
+
+  const handleShare = useCallback((_postId: string) => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({
+        title: "ThinkPages Post",
+        text: "Check out this post on ThinkPages",
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      notify.success("Link copied to clipboard!");
+    }
+  }, [notify]);
+
+  const handleReaction = useCallback(
+    (_postId: string, _reactionType: string) => {
+      // Handled globally by PostActions
+    },
+    [],
+  );
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4 sm:space-y-6">
-      {/* Quick Snapshot — action cards only (economy stats moved to World tab) */}
+      
+
+
+      {/* Quick Snapshot — action cards */}
       <motion.div variants={staggerItem}>
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           {[
@@ -374,7 +441,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
+                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all cursor-pointer",
                   isActive
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -388,38 +455,125 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
         </div>
       </motion.div>
 
-      {/* Feed + optional Sidebar */}
+      {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>
-        {activeTab === "thinkpages" ? (
-          /* Social tab: full-width, no sidebar */
-          <ThinkPagesTabContent
-            isSignedIn={isSignedIn}
-            isCountryDataReady={!!isCountryDataReady}
-            countryId={userProfile?.countryId ?? ""}
-            countryData={countryData}
-            selectedAccount={selectedAccount}
-            accounts={accounts}
-            onAccountSelect={setSelectedAccount}
-            onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
-            onCreateAccount={() => setShowAccountCreation(true)}
-          />
-        ) : (
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
           {/* Feed stream (left 3/5) */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-4">
+            
+            {/* ThinkPages Composer integrated on top of the stream */}
+            {activeTab !== "community" && isSignedIn && (
+              <div className="mb-4">
+                {!hasCountry ? (
+                  <Card className="glass-hierarchy-child border-amber-500/20 bg-amber-500/5">
+                    <CardContent className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex gap-2.5 items-start">
+                        <Landmark className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-xs font-semibold text-foreground">Country Setup Required to Post</h4>
+                          <p className="text-[11px] text-muted-foreground">Claim or create a country in the setup wizard to participate in ThinkPages discussion.</p>
+                        </div>
+                      </div>
+                      <Link href={createUrl("/setup")}>
+                        <Button size="sm" className="h-8 text-xs shrink-0">Setup Country</Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                ) : accounts.length === 0 ? (
+                  <Card className="glass-hierarchy-child border-purple-500/20 bg-purple-500/5">
+                    <CardContent className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex gap-2.5 items-start">
+                        <Newspaper className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-xs font-semibold text-foreground">Create a ThinkPages Account</h4>
+                          <p className="text-[11px] text-muted-foreground">Create an official government, media, or citizen account to publish posts to the public feed.</p>
+                        </div>
+                      </div>
+                      <Button size="sm" onClick={() => setShowAccountCreation(true)} className="h-8 text-xs shrink-0">
+                        Create Account
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : selectedAccount ? (
+                  <div className="space-y-2">
+                    <GlassCanvasComposer
+                      account={selectedAccount}
+                      onPost={() => {
+                        notify.success("Posted successfully!");
+                        utils.activities.getGlobalFeed.refetch();
+                        if (hasCountry) {
+                          utils.activities.getFollowingFeed.refetch();
+                        }
+                      }}
+                      placeholder="What's happening across the nations?"
+                      countryId={userProfile?.countryId ?? ""}
+                      accounts={accounts}
+                      isOwner={true}
+                    />
+                    {accounts.length > 1 && (
+                      <div className="flex items-center gap-2 px-1 text-[11px]">
+                        <span className="text-muted-foreground font-normal">Posting as:</span>
+                        <div className="flex items-center gap-1.5 font-medium text-foreground">
+                          <span>@{selectedAccount.username}</span>
+                          <span className="text-[10px] text-muted-foreground font-normal">({selectedAccount.accountType})</span>
+                        </div>
+                        <button
+                          onClick={() => setIsAccountModalOpen(true)}
+                          className="text-purple-400 hover:text-purple-300 font-semibold ml-2 underline cursor-pointer text-[11px]"
+                        >
+                          Switch Account
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="animate-pulse h-28 rounded-xl bg-muted/20 border border-border/50" />
+                )}
+              </div>
+            )}
+
             {activeTab === "following" ? (
               <FollowingFeedContent
                 activities={filteredFeed}
                 isLoading={followingLoading}
                 followingCount={followingData?.followingCount ?? 0}
+                currentUserAccountId={selectedAccount?.id || ""}
+                accounts={accounts}
+                countryId={userProfile?.countryId || ""}
+                isOwner={hasCountry}
+                onAccountSelect={setSelectedAccount}
+                onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
+                onCreateAccount={() => setShowAccountCreation(true)}
+                onLike={handleLike}
+                onRepost={handleRepost}
+                onReaction={handleReaction}
+                onReply={handleReply}
+                onShare={handleShare}
               />
             ) : (
-              <UnifiedFeedContent activities={filteredFeed} isLoading={feedLoading} activeTab={activeTab} />
+              <UnifiedFeedContent
+                activities={filteredFeed}
+                isLoading={feedLoading}
+                activeTab={activeTab}
+                currentUserAccountId={selectedAccount?.id || ""}
+                accounts={accounts}
+                countryId={userProfile?.countryId || ""}
+                isOwner={hasCountry}
+                onAccountSelect={setSelectedAccount}
+                onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
+                onCreateAccount={() => setShowAccountCreation(true)}
+                onLike={handleLike}
+                onRepost={handleRepost}
+                onReaction={handleReaction}
+                onReply={handleReply}
+                onShare={handleShare}
+              />
             )}
           </div>
 
-          {/* Sidebar (right 2/5): Trending + Headlines */}
+          {/* Sidebar (right 2/5): Trending + World page widgets */}
           <div className="space-y-4 lg:col-span-2">
+            
             {/* Trending Now */}
             <Card className="relative overflow-visible">
               <CardHeader className="pb-3 relative">
@@ -432,7 +586,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                     <button
                       onClick={() => setShowTrendingSettings(!showTrendingSettings)}
                       className={cn(
-                        "rounded-md p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+                        "rounded-md p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground cursor-pointer",
                         showTrendingSettings && "bg-muted text-foreground"
                       )}
                       title="Trending Algorithm Controls"
@@ -467,7 +621,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                                 key={l}
                                 onClick={() => setTrendingLimit(l)}
                                 className={cn(
-                                  "rounded px-1.5 py-1 text-center font-medium transition-all text-[11px]",
+                                  "rounded px-1.5 py-1 text-center font-medium transition-all text-[11px] cursor-pointer",
                                   trendingLimit === l
                                     ? "bg-background text-foreground shadow-xs"
                                     : "text-muted-foreground hover:text-foreground"
@@ -488,7 +642,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                                 key={b}
                                 onClick={() => setTrendingBias(b)}
                                 className={cn(
-                                  "rounded px-1 py-1 text-center font-medium capitalize transition-all text-[10px]",
+                                  "rounded px-1 py-1 text-center font-medium capitalize transition-all text-[10px] cursor-pointer",
                                   trendingBias === b
                                     ? "bg-background text-foreground shadow-xs"
                                     : "text-muted-foreground hover:text-foreground"
@@ -509,7 +663,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                                 key={r}
                                 onClick={() => setTrendingRecency(r)}
                                 className={cn(
-                                  "rounded px-1.5 py-1 text-center font-medium capitalize transition-all text-[10px]",
+                                  "rounded px-1.5 py-1 text-center font-medium capitalize transition-all text-[10px] cursor-pointer",
                                   trendingRecency === r
                                     ? "bg-background text-foreground shadow-xs"
                                     : "text-muted-foreground hover:text-foreground"
@@ -536,7 +690,6 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                     const W = item.url ? "a" : "div";
                     const wp = item.url ? { href: item.url, target: "_blank", rel: "noopener noreferrer" } : {};
 
-                    // Extract titles for wiki and forum previews
                     const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
                     const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
                     const wikiTitle = wikiMatch ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ") : null;
@@ -544,7 +697,6 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
                     const el = (
                       <W key={item.id} {...wp} className={cn("flex items-start gap-2.5 rounded-lg border border-border/40 p-2.5 transition-all duration-200 hover:glass-hierarchy-interactive hover:bg-muted/40 cursor-pointer shadow-xs hover:scale-[1.01]")}>
-                        <span className="mt-0.5 w-3 text-[10px] font-bold text-muted-foreground">{i + 1}</span>
                         <div className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded", src.bg)}>
                           <SrcIcon className={cn("h-3 w-3", src.color)} />
                         </div>
@@ -572,58 +724,34 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
               </CardContent>
             </Card>
 
-            {/* World Activity (headlines) — compact */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm">World Activity</CardTitle>
-                  <Badge variant="outline" className="px-1.5 py-0 text-[10px]">{headlines.length} headlines</Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="max-h-[400px] space-y-2 overflow-y-auto pr-1">
-                  {headlines.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">No recent activity</p>}
-                  {headlines.slice(0, 15).map((item: any) => {
-                    const config = CATEGORY_CONFIG[item.category] ?? CATEGORY_CONFIG.economic!;
-                    const HIcon = config.icon;
-                    const isCritical = item.priority === "critical";
-                    const isHigh = item.priority === "high";
-                    const HW = item.url ? "a" : "div";
-                    const hwp = item.url ? { href: item.url, target: "_blank", rel: "noopener noreferrer" } : {};
-                    const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-                    const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-                    const wikiTitle = wikiMatch ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ") : null;
-                    const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
 
-                    const el = (
-                      <HW key={item.id} {...hwp} className={cn("flex items-start gap-2 rounded-lg border p-2 transition-colors hover:bg-muted/30", isCritical ? "border-red-500/30 bg-red-500/5" : "border-border/40", item.url && "cursor-pointer")}>
-                        <div className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full", config.bg, config.text)}>
-                          <HIcon className="h-2.5 w-2.5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1">
-                            {isCritical && <Badge variant="destructive" className="shrink-0 px-1 py-0 text-[8px]">BREAKING</Badge>}
-                            {isHigh && !isCritical && <Badge variant="outline" className="shrink-0 border-amber-500/30 px-1 py-0 text-[8px] text-amber-600">ALERT</Badge>}
-                            <span className={cn("text-[11px] font-medium leading-snug", isCritical && "text-red-400")}>{item.text}</span>
-                          </div>
-                          <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-                            <Badge variant="outline" className={cn("px-1 py-0 text-[8px]", config.border)}>{config.label}</Badge>
-                            <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{formatTimeAgo(new Date(item.timestamp))}</span>
-                          </div>
-                        </div>
-                      </HW>
-                    );
 
-                    if (wikiTitle) return <WikiLinkPreview key={item.id} title={wikiTitle} wiki="ixwiki">{el}</WikiLinkPreview>;
-                    if (forumThreadId) return <ForumLinkPreview key={item.id} threadId={forumThreadId}>{el}</ForumLinkPreview>;
-                    return el;
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+
+            {/* Economic Tier Distribution */}
+            {globalStats?.economicTierDistribution && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-emerald-500" />
+                    Economic Tiers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {Object.entries(globalStats.economicTierDistribution).map(([tier, count]) => (
+                      <div key={tier} className="flex items-center gap-1 rounded bg-muted/50 px-2 py-0.5">
+                        <span className="text-[10px] font-medium">{tier}</span>
+                        <Badge variant="secondary" className="text-[9px] px-1 py-0 font-bold bg-background text-foreground border border-border">
+                          {count as number}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
-        )}
       </motion.div>
 
       {/* Snapshot Modals */}
@@ -639,50 +767,83 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
       {showAccountSettings && settingsAccount && (
         <AccountSettingsModal account={settingsAccount} isOpen={showAccountSettings} onClose={() => { setShowAccountSettings(false); setSettingsAccount(null); }} onAccountUpdate={() => { setShowAccountSettings(false); setSettingsAccount(null); }} />
       )}
-    </motion.div>
-  );
-}
 
-// ─── ThinkPages Tab Content ──────────────────────────────────────
-
-function ThinkPagesTabContent({
-  isSignedIn, isCountryDataReady, countryId, countryData, selectedAccount, accounts,
-  onAccountSelect, onAccountSettings, onCreateAccount,
-}: {
-  isSignedIn: boolean | undefined; isCountryDataReady: boolean; countryId: string; countryData: any;
-  selectedAccount: any; accounts: any[]; onAccountSelect: (a: any) => void;
-  onAccountSettings: (a: any) => void; onCreateAccount: () => void;
-}) {
-  if (isSignedIn && isCountryDataReady) {
-    return (
-      <ThinkpagesSocialPlatform
-        countryId={countryId} countryName={countryData.newStats.name} isOwner
-        selectedAccount={selectedAccount} accounts={accounts}
-        onAccountSelect={onAccountSelect} onAccountSettings={onAccountSettings}
-        onCreateAccount={onCreateAccount}
+      {/* Account Manager Modal */}
+      <AccountManagerModal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        countryId={userProfile?.countryId ?? ""}
+        accounts={accounts}
+        selectedAccount={selectedAccount}
+        onAccountSelect={setSelectedAccount}
+        onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
+        onCreateAccount={() => setShowAccountCreation(true)}
+        isOwner={hasCountry}
       />
-    );
-  }
-  if (isSignedIn && !isCountryDataReady) {
-    return (
-      <Card className="glass-hierarchy-parent">
-        <CardContent className="p-8 text-center">
-          <MessageSquare className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="mb-2 text-lg font-semibold">Country Setup Required</h3>
-          <p className="mb-4 text-sm text-muted-foreground">Complete your country setup to post and interact.</p>
-          <Link href={createUrl("/setup")}><Button size="sm">Complete Setup</Button></Link>
-        </CardContent>
-      </Card>
-    );
-  }
-  return (
-    <ThinkpagesSocialPlatform countryId="global" countryName="Global Community" isOwner={false} />
+
+      {/* Repost Modal */}
+      {repostingPost && (
+        <RepostModal
+          open={isRepostModalOpen}
+          onOpenChange={setIsRepostModalOpen}
+          originalPost={repostingPost}
+          countryId={userProfile?.countryId ?? ""}
+          selectedAccount={selectedAccount}
+          accounts={accounts}
+          onAccountSelect={setSelectedAccount}
+          onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
+          onCreateAccount={() => setShowAccountCreation(true)}
+          isOwner={hasCountry}
+          onPost={() => {
+            notify.success("Reposted successfully!");
+            utils.activities.getGlobalFeed.refetch();
+            if (hasCountry) {
+              utils.activities.getFollowingFeed.refetch();
+            }
+            setIsRepostModalOpen(false);
+            setRepostingPost(null);
+          }}
+        />
+      )}
+    </motion.div>
   );
 }
 
 // ─── Unified Feed Content ────────────────────────────────────────
 
-function UnifiedFeedContent({ activities, isLoading, activeTab }: { activities: any[]; isLoading: boolean; activeTab: FeedTab }) {
+function UnifiedFeedContent({
+  activities,
+  isLoading,
+  activeTab,
+  currentUserAccountId,
+  accounts,
+  countryId,
+  isOwner,
+  onAccountSelect,
+  onAccountSettings,
+  onCreateAccount,
+  onLike,
+  onRepost,
+  onReaction,
+  onReply,
+  onShare,
+}: {
+  activities: any[];
+  isLoading: boolean;
+  activeTab: FeedTab;
+  currentUserAccountId: string;
+  accounts: any[];
+  countryId: string;
+  isOwner: boolean;
+  onAccountSelect: (a: any) => void;
+  onAccountSettings: (a: any) => void;
+  onCreateAccount: () => void;
+  onLike: (id: string) => void;
+  onRepost: (id: string) => void;
+  onReaction: (id: string, type: string) => void;
+  onReply: (id: string) => void;
+  onShare: (id: string) => void;
+}) {
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -696,7 +857,7 @@ function UnifiedFeedContent({ activities, isLoading, activeTab }: { activities: 
     );
   }
   if (activities.length === 0) {
-    const label = activeTab === "wiki" ? "wiki edits" : activeTab === "forum" ? "forum posts" : "activity";
+    const label = activeTab === "community" ? "community updates" : "activity";
     return (
       <Card className="glass-hierarchy-parent">
         <CardContent className="p-8 text-center">
@@ -709,14 +870,76 @@ function UnifiedFeedContent({ activities, isLoading, activeTab }: { activities: 
   }
   return (
     <div className="space-y-2">
-      {activities.map((a: any) => <UnifiedFeedItem key={a.id} activity={a} />)}
+      {activities.map((a: any) => {
+        if (a.source === "thinkpages" && a.rawPost) {
+          return (
+            <motion.div
+              key={a.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <ThinkpagesPost
+                post={a.rawPost}
+                currentUserAccountId={currentUserAccountId}
+                accounts={accounts}
+                countryId={countryId}
+                isOwner={isOwner}
+                onAccountSelect={onAccountSelect}
+                onAccountSettings={onAccountSettings}
+                onCreateAccount={onCreateAccount}
+                onLike={onLike}
+                onRepost={onRepost}
+                onReaction={onReaction}
+                onReply={onReply}
+                onShare={onShare}
+                onAccountClick={() => {}}
+                showThread={true}
+              />
+            </motion.div>
+          );
+        }
+        return <UnifiedFeedItem key={a.id} activity={a} />;
+      })}
     </div>
   );
 }
 
 // ─── Following Feed Content ──────────────────────────────────────
 
-function FollowingFeedContent({ activities, isLoading, followingCount }: { activities: any[]; isLoading: boolean; followingCount: number }) {
+function FollowingFeedContent({
+  activities,
+  isLoading,
+  followingCount,
+  currentUserAccountId,
+  accounts,
+  countryId,
+  isOwner,
+  onAccountSelect,
+  onAccountSettings,
+  onCreateAccount,
+  onLike,
+  onRepost,
+  onReaction,
+  onReply,
+  onShare,
+}: {
+  activities: any[];
+  isLoading: boolean;
+  followingCount: number;
+  currentUserAccountId: string;
+  accounts: any[];
+  countryId: string;
+  isOwner: boolean;
+  onAccountSelect: (a: any) => void;
+  onAccountSettings: (a: any) => void;
+  onCreateAccount: () => void;
+  onLike: (id: string) => void;
+  onRepost: (id: string) => void;
+  onReaction: (id: string, type: string) => void;
+  onReply: (id: string) => void;
+  onShare: (id: string) => void;
+}) {
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -754,7 +977,37 @@ function FollowingFeedContent({ activities, isLoading, followingCount }: { activ
   }
   return (
     <div className="space-y-2">
-      {activities.map((a: any) => <UnifiedFeedItem key={a.id} activity={a} />)}
+      {activities.map((a: any) => {
+        if (a.source === "thinkpages" && a.rawPost) {
+          return (
+            <motion.div
+              key={a.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <ThinkpagesPost
+                post={a.rawPost}
+                currentUserAccountId={currentUserAccountId}
+                accounts={accounts}
+                countryId={countryId}
+                isOwner={isOwner}
+                onAccountSelect={onAccountSelect}
+                onAccountSettings={onAccountSettings}
+                onCreateAccount={onCreateAccount}
+                onLike={onLike}
+                onRepost={onRepost}
+                onReaction={onReaction}
+                onReply={onReply}
+                onShare={onShare}
+                onAccountClick={() => {}}
+                showThread={true}
+              />
+            </motion.div>
+          );
+        }
+        return <UnifiedFeedItem key={a.id} activity={a} />;
+      })}
     </div>
   );
 }

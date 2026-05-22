@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Virtuoso } from "react-virtuoso";
 import {
   X,
   Heart,
@@ -201,7 +202,7 @@ export function ReactionsDialog({ postId, isOpen, onClose, onAccountClick, disco
                   >
                     All ({allReactions?.length || 0})
                   </button>
-                  {Object.entries(reactionsByType).map(([type, reactions]) => {
+                  {(Object.entries(reactionsByType) as [string, PostReaction[]][]).map(([type, reactions]) => {
                     const discordUrl = getDiscordEmojiUrl(type, apiDiscordEmojis);
                     const Icon = REACTION_ICONS[type];
                     const colorClass = REACTION_COLORS[type];
@@ -233,7 +234,7 @@ export function ReactionsDialog({ postId, isOpen, onClose, onAccountClick, disco
                 </div>
 
                 {/* Reactions List */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin scrollbar-thumb-white/10">
+                <div className="flex-1 p-4 scrollbar-thin scrollbar-thumb-white/10">
                   {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-16 space-y-3">
                       <div className="border-t-2 border-violet-500 h-8 w-8 animate-spin rounded-full"></div>
@@ -245,8 +246,11 @@ export function ReactionsDialog({ postId, isOpen, onClose, onAccountClick, disco
                       <p className="text-sm">No local reactions yet</p>
                     </div>
                   ) : (
-                    <div className="space-y-2.5">
-                      {filteredReactions.map((reaction: PostReaction) => {
+                    <Virtuoso
+                      style={{ height: 350 }}
+                      data={filteredReactions}
+                      overscan={50}
+                      itemContent={(_index, reaction: PostReaction) => {
                         const discordUrl = getDiscordEmojiUrl(reaction.reactionType, apiDiscordEmojis);
                         const ReactionIcon = REACTION_ICONS[reaction.reactionType];
                         const reactionColor = REACTION_COLORS[reaction.reactionType];
@@ -260,11 +264,8 @@ export function ReactionsDialog({ postId, isOpen, onClose, onAccountClick, disco
                           ] || "text-gray-400 bg-white/5 border border-white/10";
 
                         return (
-                          <motion.div
-                            key={reaction.id}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="hover:bg-muted/40 dark:hover:bg-white/5 border border-transparent hover:border-border/30 dark:hover:border-white/5 flex items-center gap-3 rounded-xl p-2 transition-all"
+                          <div
+                            className="hover:bg-muted/40 dark:hover:bg-white/5 border border-transparent hover:border-border/30 dark:hover:border-white/5 flex items-center gap-3 rounded-xl p-2 mb-2.5 transition-all"
                           >
                             <button
                               onClick={() => onAccountClick?.(reaction.account.id)}
@@ -320,10 +321,10 @@ export function ReactionsDialog({ postId, isOpen, onClose, onAccountClick, disco
                                 {reaction.reactionType}
                               </div>
                             )}
-                          </motion.div>
+                          </div>
                         );
-                      })}
-                    </div>
+                      }}
+                    />
                   )}
                 </div>
 

@@ -31,11 +31,12 @@ import { CountryProfileInfoBox } from "~/components/countries/CountryProfileInfo
 import { PublicExecutiveOverview } from "~/components/countries/PublicExecutiveOverview";
 
 interface CountryProfilePageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug?: string; id?: string }>;
 }
 
 export default function CountryProfilePage({ params }: CountryProfilePageProps) {
   const resolvedParams = use(params);
+  const countryId = resolvedParams.slug || resolvedParams.id;
   const { user } = useUser();
 
   // Debug logging
@@ -46,8 +47,8 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
     isLoading,
     error,
   } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: resolvedParams.id },
-    { enabled: !!resolvedParams.id }
+    { id: countryId ?? "" },
+    { enabled: !!countryId }
   );
   const { data: ixTimeData, isLoading: ixTimeLoading } =
     api.system.getCurrentIxTime.useQuery();

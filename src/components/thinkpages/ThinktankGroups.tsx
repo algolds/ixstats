@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion } from "motion/react";
-import { FixedSizeList as List, type FixedSizeListHandle } from "~/lib/react-window-compat";
+import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import {
   Globe,
   Users,
@@ -285,6 +285,7 @@ export function ThinktankGroups({
   viewOnly = false,
 }: ThinktankGroupsProps) {
   const notify = useNotify();
+  const utils = api.useUtils();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [activeTab, setActiveTab] = useState<"discover" | "joined" | "created">(
@@ -296,7 +297,7 @@ export function ThinktankGroups({
   const [view, setView] = useState<"list" | "chat" | "collaboration">("list");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const richTextEditorRef = useRef<RichTextEditorRef>(null);
-  const listRef = useRef<FixedSizeListHandle>(null);
+  const listRef = useRef<VirtuosoHandle>(null);
 
   // Use the global user ID instead of account-based system
   const currentUserId = userId;
@@ -312,7 +313,57 @@ export function ThinktankGroups({
       autoReconnect: hasValidProps, // Only auto-reconnect if we have valid props
       onMessageUpdate: (update) => {
         if (selectedGroup && update.groupId === selectedGroup.id) {
-          refetchMessages();
+          const queryKey = {
+            groupId: selectedGroup.id,
+            userId: currentUserId || "ANONYMOUS",
+          };
+
+          if (update.type === "message:new") {
+            utils.thinkpages.getThinktankMessages.setData(queryKey, (old: any) => {
+              if (!old) return old;
+              // Avoid duplicate messages
+              if (old.messages.some((m: any) => m.id === update.messageId)) return old;
+
+              const newMessage: GroupChatMessage = {
+                id: update.messageId,
+                userId: update.accountId,
+                content: update.content ?? "",
+                messageType: "text",
+                ixTimeTimestamp: new Date(update.timestamp),
+                reactions: {},
+                mentions: [],
+                attachments: [],
+                replyTo: undefined,
+                readReceipts: [],
+              };
+
+              return {
+                ...old,
+                messages: [newMessage, ...old.messages],
+              };
+            });
+            scrollToBottom();
+          } else if (update.type === "message:updated") {
+            utils.thinkpages.getThinktankMessages.setData(queryKey, (old: any) => {
+              if (!old) return old;
+              return {
+                ...old,
+                messages: old.messages.map((m: any) =>
+                  m.id === update.messageId
+                    ? { ...m, content: update.content ?? m.content }
+                    : m
+                ),
+              };
+            });
+          } else if (update.type === "message:deleted") {
+            utils.thinkpages.getThinktankMessages.setData(queryKey, (old: any) => {
+              if (!old) return old;
+              return {
+                ...old,
+                messages: old.messages.filter((m: any) => m.id !== update.messageId),
+              };
+            });
+          }
         }
       },
       onGroupUpdate: (update) => {
@@ -418,25 +469,66 @@ export function ThinktankGroups({
   });
 
   const sendMessageMutation = api.thinkpages.sendThinktankMessage.useMutation({
-    onSuccess: () => {
+    onMutate: async (newMsg) => {
+      const queryKey = {
+        groupId: selectedGroup?.id || "INVALID",
+        userId: currentUserId || "ANONYMOUS",
+      };
+
+      // Cancel outgoing refetches
+      await utils.thinkpages.getThinktankMessages.cancel(queryKey);
+
+      // Snapshot the previous messages
+      const previousMessages = utils.thinkpages.getThinktankMessages.getData(queryKey);
+
+      // Optimistically add the message to the query cache
+      const tempId = `temp-${Date.now()}`;
+
+      const optimisticMsg: GroupChatMessage = {
+        id: tempId,
+        userId: currentUserId || "ANONYMOUS",
+        content: newMsg.content,
+        messageType: newMsg.messageType ?? "text",
+        ixTimeTimestamp: new Date(),
+        reactions: {},
+        mentions: [],
+        attachments: [],
+        replyTo: undefined,
+        readReceipts: [],
+      };
+
+      utils.thinkpages.getThinktankMessages.setData(queryKey, (old: any) => {
+        if (!old) return { messages: [optimisticMsg], nextCursor: null };
+        return {
+          ...old,
+          messages: [optimisticMsg, ...old.messages],
+        };
+      });
+
+      // Clear the simple input
       setMessageText("");
-      refetchMessages();
-      scrollToBottom();
+
+      return { previousMessages, queryKey };
     },
-    onError: (error) => {
+    onError: (error, newMsg, context) => {
+      if (context?.previousMessages && context.queryKey) {
+        utils.thinkpages.getThinktankMessages.setData(context.queryKey, context.previousMessages);
+      }
       notify.error(error.message || "Failed to send message");
+    },
+    onSettled: (data, error, variables, context) => {
+      if (context?.queryKey) {
+        void utils.thinkpages.getThinktankMessages.invalidate(context.queryKey);
+      }
+      scrollToBottom();
     },
   });
 
   const scrollToBottom = useCallback(() => {
     if (listRef.current && groupMessages?.messages && groupMessages.messages.length > 0) {
-      listRef.current.scrollToItem(groupMessages.messages.length - 1, "end");
+      listRef.current.scrollToIndex({ index: "LAST", align: "end", behavior: "smooth" });
     }
   }, [groupMessages?.messages]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [scrollToBottom, groupMessages?.messages.length]);
 
   const handleSendMessage = useCallback(
     (content?: string, plainText?: string) => {
@@ -607,16 +699,14 @@ export function ThinktankGroups({
                 <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
               </div>
             ) : groupMessages?.messages && groupMessages.messages.length > 0 ? (
-              <List
+              <Virtuoso
                 ref={listRef}
-                height={520} // 600px card - 80px for input area
-                itemCount={groupMessages.messages.length}
-                itemSize={120} // Estimated height per message (accommodates variable content)
-                width="100%"
-                overscanCount={5} // Render 5 extra items for smoother scrolling
-              >
-                {({ index, style }) => {
-                  const message = groupMessages.messages[index];
+                style={{ height: 520 }} // 600px card - 80px for input area
+                data={groupMessages.messages}
+                followOutput="smooth"
+                initialTopMostItemIndex={groupMessages.messages.length - 1}
+                overscan={200}
+                itemContent={(_index, message) => {
                   if (!message) return null;
 
                   const displayName =
@@ -624,7 +714,7 @@ export function ThinktankGroups({
                     `User ${message.userId.substring(0, 8)}`;
 
                   return (
-                    <div style={style} className="py-2">
+                    <div className="py-2">
                       <MessageBubble
                         message={message}
                         currentUserId={currentUserId}
@@ -633,7 +723,7 @@ export function ThinktankGroups({
                     </div>
                   );
                 }}
-              </List>
+              />
             ) : (
               <div className="text-muted-foreground flex h-full items-center justify-center">
                 <div className="text-center">

@@ -121,8 +121,88 @@ function MessagesRouterInner() {
   const wsOptions = useMemo(() => ({
     accountId: currentUserId,
     autoReconnect: true,
-    onMessageUpdate: () => {
-      // Chat panel handles its own refetch
+    onMessageUpdate: (data: any) => {
+      if (!selectedConversationId || data.conversationId !== selectedConversationId) return;
+
+      const queryKey = { conversationId: selectedConversationId, userId: currentUserId };
+
+      if (data.type === "message:new") {
+        utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+          if (!old) return old;
+          // Avoid duplicate messages
+          if (old.messages.some((m: any) => m.id === data.messageId)) return old;
+
+          let senderAccount;
+          if (data.accountId === currentUserId) {
+            senderAccount = {
+              id: currentUserId,
+              username: user?.username ?? "me",
+              displayName: user?.fullName ?? user?.username ?? "Me",
+              profileImageUrl: user?.imageUrl ?? null,
+              accountType: "country" as const,
+            };
+          } else {
+            const participant = selectedConversation?.otherParticipants.find(
+              (p: any) => p.accountId === data.accountId
+            );
+            senderAccount = participant?.account ?? {
+              id: data.accountId,
+              username: "user",
+              displayName: "User",
+              profileImageUrl: null,
+              accountType: "country" as const,
+            };
+          }
+
+          const newMessage = {
+            id: data.messageId,
+            conversationId: data.conversationId!,
+            accountId: data.accountId,
+            account: senderAccount,
+            content: data.content ?? "",
+            messageType: "text" as const,
+            ixTimeTimestamp: new Date(data.timestamp),
+            createdAt: new Date(data.timestamp),
+            reactions: {},
+            mentions: [],
+            attachments: [],
+            replyTo: undefined,
+            readReceipts: [],
+            isSystem: false,
+            editedAt: null,
+            deletedAt: null,
+            source: null,
+          };
+
+          return {
+            ...old,
+            messages: [newMessage, ...old.messages],
+          };
+        });
+
+        // Refetch conversations list to update preview/unread state
+        void refetchConversations();
+      } else if (data.type === "message:updated") {
+        utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            messages: old.messages.map((m: any) =>
+              m.id === data.messageId
+                ? { ...m, content: data.content ?? m.content, editedAt: new Date(data.timestamp) }
+                : m
+            ),
+          };
+        });
+      } else if (data.type === "message:deleted") {
+        utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            messages: old.messages.filter((m: any) => m.id !== data.messageId),
+          };
+        });
+      }
     },
     onConversationUpdate: () => {
       void refetchConversations();
@@ -135,7 +215,14 @@ function MessagesRouterInner() {
         }));
       }
     },
-  }), [currentUserId, refetchConversations]);
+  }), [
+    currentUserId,
+    refetchConversations,
+    selectedConversationId,
+    selectedConversation,
+    user,
+    utils
+  ]);
 
   const {
     clientState: rawClientState,

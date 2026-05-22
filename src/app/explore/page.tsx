@@ -15,6 +15,7 @@ import CountriesFilterSidebar from "../countries/_components/CountriesFilterSide
 import CountriesSortBar from "../countries/_components/CountriesSortBar";
 import { CountryComparisonModal } from "../countries/_components/CountryComparisonModal";
 import { useCountryComparison } from "~/hooks/useCountryComparison";
+import { useAllCountriesData } from "~/hooks/useAllCountriesData";
 import { createUrl } from "~/lib/url-utils";
 
 import type { PageCountryData } from "../countries/_components/CountriesGrid";
@@ -49,15 +50,7 @@ export default function ExplorePage() {
     data: countriesResult,
     isLoading,
     error,
-  } = api.countries.getAll.useQuery(
-    {
-      limit: 1000, // Get all countries for client-side filtering
-    },
-    {
-      refetchOnWindowFocus: false,
-      staleTime: 30 * 1000,
-    }
-  );
+  } = useAllCountriesData();
 
   const raw = countriesResult?.countries || [];
   const processed: PageCountryData[] = raw.map((c: any) => ({

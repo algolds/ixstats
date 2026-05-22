@@ -13,16 +13,20 @@ import type { EconomicYearData, StorytellerEffect } from "~/server/db/schema";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 
 interface ModelingPageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug?: string; id?: string }>;
 }
 
 export default function ModelingPage({ params }: ModelingPageProps) {
-  const { id } = use(params);
+  const resolvedParams = use(params);
+  const countryId = resolvedParams.slug || resolvedParams.id;
   const {
     data: country,
     isLoading,
     error,
-  } = api.countries.getByIdWithEconomicData.useQuery({ id });
+  } = api.countries.getByIdWithEconomicData.useQuery(
+    { id: countryId ?? "" },
+    { enabled: !!countryId }
+  );
 
   if (isLoading) {
     return (

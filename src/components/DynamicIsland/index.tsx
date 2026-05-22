@@ -9,7 +9,6 @@ import {
 } from "../ui/dynamic-island";
 import { CompactView } from "./CompactView";
 import { ExpandedView } from "./ExpandedView";
-import { DynamicIslandToastManager } from "./DynamicIslandToastManager";
 import { useDynamicIslandState } from "./hooks";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
@@ -162,12 +161,6 @@ function CommandPaletteContent({
     return () => clearTimeout(timer);
   }, [toastQueue, isSticky, isCollapsed, setIsUserInteracting]);
 
-  // Callback for DI pill pulse on critical notification (from ToastManager)
-  const handleCriticalNotification = useCallback(() => {
-    setDiPulseClass("animate-di-critical");
-    setTimeout(() => setDiPulseClass(""), 1200);
-  }, []);
-
   if (!mounted) return null;
 
   return (
@@ -224,11 +217,6 @@ function CommandPaletteContent({
         />
       )}
 
-      {/* Toast banners anchored below DI pill */}
-      <DynamicIslandToastManager
-        isExpanded={isExpanded}
-        onCriticalNotification={handleCriticalNotification}
-      />
     </>
   );
 }

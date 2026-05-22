@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -150,54 +151,18 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="text-foreground flex w-full items-center justify-center gap-3 text-xl font-bold">
-          <BellRing className="h-6 w-6 text-blue-400" />
-          <span>{isExecutiveMode ? "Intelligence Center" : "Notification Center"}</span>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="text-foreground flex min-w-0 items-center gap-3 text-xl font-bold">
+          <BellRing className="h-6 w-6 flex-shrink-0 text-blue-400" />
+          <span className="truncate">{isExecutiveMode ? "Intelligence Center" : "Notification Center"}</span>
           {totalUnreadCount > 0 && (
-            <Badge className="bg-destructive text-foreground rounded-full px-2 py-1 text-sm">
+            <Badge className="bg-destructive text-foreground flex-shrink-0 rounded-full px-2 py-1 text-sm">
               {totalUnreadCount}
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {process.env.NODE_ENV === "development" && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                const testNotifications = [
-                  {
-                    title: "Economic Alert",
-                    description: "GDP growth increased by 2.5%",
-                    type: "economic" as const,
-                  },
-                  {
-                    title: "System Update",
-                    description: "New features available",
-                    type: "info" as const,
-                  },
-                  {
-                    title: "Crisis Alert",
-                    description: "Minor diplomatic tension detected",
-                    type: "warning" as const,
-                  },
-                ];
-                const randomNotification =
-                  testNotifications[Math.floor(Math.random() * testNotifications.length)];
-                if (randomNotification) {
-                  createTestNotificationMutation.mutate({
-                    ...randomNotification,
-                    adminUserId: user?.id || "debug",
-                  });
-                }
-              }}
-              disabled={createTestNotificationMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-2 py-2 text-xs"
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          )}
+
+        <div className="flex flex-shrink-0 items-center gap-2">
           {totalUnreadCount > 0 && (
             <Button
               size="sm"
@@ -214,7 +179,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                 }
               }}
               disabled={markAllAsReadMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-3 py-2"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-3 py-2 text-xs flex-shrink-0"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               Mark all read
@@ -222,7 +187,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
           )}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white hover:scale-110 active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white hover:scale-110 active:scale-95"
             aria-label="Close notifications"
           >
             <X className="h-4 w-4" />
@@ -439,7 +404,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                               }
                             }
                             if ("href" in notification && notification.href) {
-                              window.location.href = notification.href;
+                              window.location.href = createAbsoluteUrl(notification.href);
                             }
                             if (isEnhancedNotification) {
                               recordEngagement(notification.id, "click");

@@ -71,7 +71,7 @@ export function resolveIdentity(
 }
 
 interface MessagesIdentityBadgeProps {
-  identity: ResolvedIdentity;
+  identity?: ResolvedIdentity | null;
   size?: "sm" | "md";
 }
 
@@ -79,6 +79,7 @@ export function MessagesIdentityBadge({
   identity,
   size = "sm",
 }: MessagesIdentityBadgeProps) {
+  if (!identity) return null;
   if (!identity.badgeIcon && !identity.sourceLabel) return null;
 
   const Icon = identity.badgeIcon;

@@ -3,6 +3,7 @@
 import React, { useEffect, useCallback, useState, useRef, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { useUser } from "~/context/auth-context";
 import { MessagesChatHeader } from "./MessagesChatHeader";
 import { MessagesBubble, type MessageActions } from "./MessagesBubble";
 import { MessagesInputBar } from "./MessagesInputBar";
@@ -29,6 +30,7 @@ export function MessagesChatPanel({
   sendTypingIndicator,
 }: MessagesChatPanelProps) {
   const notify = useNotify();
+  const { user } = useUser();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,11 +74,62 @@ export function MessagesChatPanel({
 
   // Send message
   const sendMessage = api.messages.sendMessage.useMutation({
-    onSuccess: () => {
-      void refetchMessages();
-      refetchConversations();
+    onMutate: async (newMsg) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      
+      // Cancel outgoing fetches so they don't overwrite our optimistic update
+      await utils.messages.getConversationMessages.cancel(queryKey);
+      
+      // Snapshot the previous value
+      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
+      
+      // Optimistically add the message to the query cache
+      const tempId = `temp-${Date.now()}`;
+      
+      const senderAccount = {
+        id: currentUserId,
+        username: user?.username ?? "me",
+        displayName: user?.fullName ?? user?.username ?? "Me",
+        profileImageUrl: user?.imageUrl ?? null,
+        accountType: "country" as const,
+      };
+
+      const optimisticMsg = {
+        id: tempId,
+        conversationId: conversation.id,
+        accountId: currentUserId,
+        account: senderAccount,
+        content: newMsg.content,
+        messageType: newMsg.messageType ?? "text",
+        ixTimeTimestamp: new Date(),
+        createdAt: new Date(),
+        reactions: {},
+        mentions: [],
+        attachments: [],
+        replyTo: undefined,
+        readReceipts: [],
+        isSystem: false,
+        editedAt: null,
+        deletedAt: null,
+        source: null,
+      };
+
+      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+        if (!old) return { messages: [optimisticMsg], nextCursor: undefined };
+        return {
+          ...old,
+          messages: [optimisticMsg, ...old.messages],
+        };
+      });
+
+      return { previousMessages };
     },
-    onError: (error: any) => {
+    onError: (error: any, newMsg, context) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      if (context?.previousMessages) {
+        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
+      }
+      
       let msg = "Failed to send message";
       if (error.message?.includes("conversation")) {
         msg = "Conversation not found or you're not a participant";
@@ -85,25 +138,142 @@ export function MessagesChatPanel({
       }
       notify.error(msg);
     },
+    onSettled: () => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      void utils.messages.getConversationMessages.invalidate(queryKey);
+      refetchConversations();
+    },
   });
 
   // ── Lifted mutations (shared across all bubbles) ──
   const addReaction = api.messages.addReaction.useMutation({
-    onSuccess: () => void refetchMessages(),
-  });
-  const removeReaction = api.messages.removeReaction.useMutation({
-    onSuccess: () => void refetchMessages(),
-  });
-  const editMutation = api.messages.editMessage.useMutation({
-    onSuccess: () => {
-      void refetchMessages();
-      notify.success("Message edited");
+    onMutate: async ({ messageId, reaction }) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      await utils.messages.getConversationMessages.cancel(queryKey);
+      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
+
+      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          messages: old.messages.map((m: any) => {
+            if (m.id !== messageId) return m;
+            const reactions = { ...m.reactions };
+            reactions[reaction] = (reactions[reaction] ?? 0) + 1;
+            return { ...m, reactions };
+          }),
+        };
+      });
+
+      return { previousMessages };
+    },
+    onError: (err, newReaction, context) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      if (context?.previousMessages) {
+        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
+      }
+    },
+    onSettled: () => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      void utils.messages.getConversationMessages.invalidate(queryKey);
     },
   });
+
+  const removeReaction = api.messages.removeReaction.useMutation({
+    onMutate: async ({ messageId, reaction }) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      await utils.messages.getConversationMessages.cancel(queryKey);
+      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
+
+      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          messages: old.messages.map((m: any) => {
+            if (m.id !== messageId) return m;
+            const reactions = { ...m.reactions };
+            if (reactions[reaction] !== undefined) {
+              reactions[reaction] = Math.max(0, reactions[reaction] - 1);
+              if (reactions[reaction] === 0) {
+                delete reactions[reaction];
+              }
+            }
+            return { ...m, reactions };
+          }),
+        };
+      });
+
+      return { previousMessages };
+    },
+    onError: (err, variables, context) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      if (context?.previousMessages) {
+        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
+      }
+    },
+    onSettled: () => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      void utils.messages.getConversationMessages.invalidate(queryKey);
+    },
+  });
+
+  const editMutation = api.messages.editMessage.useMutation({
+    onMutate: async ({ messageId, content }) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      await utils.messages.getConversationMessages.cancel(queryKey);
+      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
+
+      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          messages: old.messages.map((m: any) =>
+            m.id === messageId ? { ...m, content, editedAt: new Date() } : m
+          ),
+        };
+      });
+
+      return { previousMessages };
+    },
+    onError: (err, variables, context) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      if (context?.previousMessages) {
+        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
+      }
+      notify.error("Failed to edit message");
+    },
+    onSettled: () => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      void utils.messages.getConversationMessages.invalidate(queryKey);
+    },
+  });
+
   const deleteMutation = api.messages.deleteMessage.useMutation({
-    onSuccess: () => {
-      void refetchMessages();
-      notify.success("Message deleted");
+    onMutate: async ({ messageId }) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      await utils.messages.getConversationMessages.cancel(queryKey);
+      const previousMessages = utils.messages.getConversationMessages.getData(queryKey);
+
+      utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          messages: old.messages.filter((m: any) => m.id !== messageId),
+        };
+      });
+
+      return { previousMessages };
+    },
+    onError: (err, variables, context) => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      if (context?.previousMessages) {
+        utils.messages.getConversationMessages.setData(queryKey, context.previousMessages);
+      }
+      notify.error("Failed to delete message");
+    },
+    onSettled: () => {
+      const queryKey = { conversationId: conversation.id, userId: currentUserId };
+      void utils.messages.getConversationMessages.invalidate(queryKey);
     },
   });
 

@@ -1,12 +1,8 @@
-/**
- * Toast Queue Store
- * Lightweight Zustand store for transient toast display in the Dynamic Island.
- * Manages the queue of toast banners that animate from the DI pill.
- */
-
 "use client";
 
 import { create } from "zustand";
+import { toast as sonnerToast } from "sonner";
+import { ToastBanner } from "~/components/DynamicIsland/ToastBanner";
 import type { NotificationCategory } from "~/types/unified-notifications";
 
 // ─── Types ────────────────────────────────────────────────────────────
@@ -80,15 +76,24 @@ export const useToastQueueStore = create<ToastQueueStore>()((set, get) => ({
       queue: [toast, ...state.queue].slice(0, 20), // Keep max 20 in queue
     }));
 
-    // Auto-dismiss (unless persistent or critical with no auto-dismiss)
-    if (!item.persistent) {
-      setTimeout(() => {
-        const current = get().queue.find((t) => t.id === id);
-        if (current && !current.paused) {
-          get().dismiss(id);
-        }
-      }, duration);
-    }
+    // Trigger Sonner with custom glassmorphic rendering matching the Dynamic Island
+    sonnerToast.custom(
+      (t) => (
+        <ToastBanner
+          toast={toast}
+          onDismiss={() => {
+            sonnerToast.dismiss(t);
+            get().dismiss(id);
+          }}
+        />
+      ),
+      {
+        id,
+        duration: item.persistent ? Infinity : duration,
+        onDismiss: () => get().dismiss(id),
+        onAutoClose: () => get().dismiss(id),
+      }
+    );
 
     return id;
   },
@@ -113,20 +118,22 @@ export const useToastQueueStore = create<ToastQueueStore>()((set, get) => ({
     set((state) => ({
       queue: state.queue.map((t) => (t.id === id ? { ...t, paused: false } : t)),
     }));
-
-    // Restart auto-dismiss with remaining time
-    const toast = get().queue.find((t) => t.id === id);
-    if (toast && !toast.persistent) {
-      const elapsed = Date.now() - toast.timestamp;
-      const remaining = Math.max(toast.duration - elapsed, 1000);
-      setTimeout(() => {
-        const current = get().queue.find((t) => t.id === id);
-        if (current && !current.paused) {
-          get().dismiss(id);
-        }
-      }, remaining);
-    }
   },
 }));
 
+// Subscribe to store updates to sync dismisses from store to Sonner (e.g. dismissAll)
+if (typeof window !== "undefined") {
+  useToastQueueStore.subscribe((state, prevState) => {
+    if (state.queue.length < prevState.queue.length) {
+      const currentIds = new Set(state.queue.map((t) => t.id));
+      prevState.queue.forEach((t) => {
+        if (!currentIds.has(t.id)) {
+          sonnerToast.dismiss(t.id);
+        }
+      });
+    }
+  });
+}
+
 export default useToastQueueStore;
+

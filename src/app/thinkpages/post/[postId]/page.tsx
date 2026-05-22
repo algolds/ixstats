@@ -43,12 +43,6 @@ export default function PostPage({ params }: PostPageProps) {
   // Get post replies
   const { data: feed } = api.thinkpages.getFeed.useQuery({ limit: 50 });
 
-  const addReactionMutation = api.thinkpages.addReaction.useMutation({
-    onSuccess: () => {
-      notify.success("Reaction added!");
-    },
-  });
-
   // Filter replies to this post
   const replies = React.useMemo(() => {
     if (!feed?.posts || !postId) return [];
@@ -103,17 +97,8 @@ export default function PostPage({ params }: PostPageProps) {
         <ThinkpagesPost
           post={post}
           currentUserAccountId={currentAccount?.id || ""}
-          onLike={(postId) => {
-            if (currentAccount?.id) {
-              addReactionMutation.mutate({
-                postId,
-                accountId: currentAccount.id,
-                reactionType: "like",
-              });
-            } else {
-              notify.error("Please select an account to interact with posts");
-            }
-          }}
+          accounts={accounts || []}
+          countryId={userProfile?.countryId || ""}
           onRepost={(postId) => {
             notify.info("Repost functionality coming soon!");
           }}
@@ -133,17 +118,6 @@ export default function PostPage({ params }: PostPageProps) {
               notify.success("Link copied to clipboard!");
             }
           }}
-          onReaction={(postId, reactionType) => {
-            if (currentAccount?.id) {
-              addReactionMutation.mutate({
-                postId,
-                accountId: currentAccount.id,
-                reactionType: reactionType as any,
-              });
-            } else {
-              notify.error("Please select an account to react to posts");
-            }
-          }}
           showThread={false}
         />
 
@@ -157,17 +131,8 @@ export default function PostPage({ params }: PostPageProps) {
                   key={reply.id}
                   post={reply}
                   currentUserAccountId={currentAccount?.id || ""}
-                  onLike={(postId) => {
-                    if (currentAccount?.id) {
-                      addReactionMutation.mutate({
-                        postId,
-                        accountId: currentAccount.id,
-                        reactionType: "like",
-                      });
-                    } else {
-                      notify.error("Please select an account to interact with posts");
-                    }
-                  }}
+                  accounts={accounts || []}
+                  countryId={userProfile?.countryId || ""}
                   onRepost={(postId) => {
                     notify.info("Repost functionality coming soon!");
                   }}
@@ -185,17 +150,6 @@ export default function PostPage({ params }: PostPageProps) {
                     } else {
                       navigator.clipboard.writeText(postUrl);
                       notify.success("Link copied to clipboard!");
-                    }
-                  }}
-                  onReaction={(postId, reactionType) => {
-                    if (currentAccount?.id) {
-                      addReactionMutation.mutate({
-                        postId,
-                        accountId: currentAccount.id,
-                        reactionType: reactionType as any,
-                      });
-                    } else {
-                      notify.error("Please select an account to react to posts");
                     }
                   }}
                   showThread={false}
