@@ -5,6 +5,8 @@ import { motion } from "motion/react";
 import { Globe, TrendingUp, TrendingDown, Activity } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { Badge } from "~/components/ui/badge";
+import { HealthRing } from "~/components/ui/health-ring";
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 
 interface DiplomaticHealthRingProps {
@@ -16,27 +18,9 @@ interface DiplomaticHealthRingProps {
 }
 
 const RING_CONFIGS = {
-  sm: {
-    diameter: 80,
-    strokeWidth: 6,
-    gap: 3,
-    centerSize: 32,
-    iconSize: 16,
-  },
-  md: {
-    diameter: 120,
-    strokeWidth: 8,
-    gap: 4,
-    centerSize: 48,
-    iconSize: 20,
-  },
-  lg: {
-    diameter: 160,
-    strokeWidth: 12,
-    gap: 6,
-    centerSize: 64,
-    iconSize: 24,
-  },
+  sm: { diameter: 80, iconSize: 14 },
+  md: { diameter: 120, iconSize: 18 },
+  lg: { diameter: 160, iconSize: 22 },
 };
 
 /**
@@ -160,169 +144,27 @@ export function DiplomaticHealthRing({
   const color =
     score >= 80 ? "#7C3AED" : score >= 60 ? "#8B5CF6" : score >= 40 ? "#A78BFA" : "#C4B5FD";
 
-  const radius = (config.diameter - config.strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDasharray = circumference;
-  const strokeDashoffset = circumference * (1 - score / 100);
-
-  // Add padding for animated glow effects
-  const glowPadding = 30;
-  const totalSize = config.diameter + glowPadding * 2;
-
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <motion.div
-          className={`relative cursor-pointer ${interactive ? "hover:scale-105" : ""} ${className}`}
-          style={{
-            width: totalSize,
-            height: totalSize,
-          }}
+          className={cn("relative cursor-pointer", interactive && "hover:scale-105", className)}
+          style={{ width: config.diameter, height: config.diameter }}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{
-            type: "spring",
-            stiffness: 200,
-            damping: 20,
-          }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
           onClick={onClick}
           whileHover={interactive ? { scale: 1.05 } : {}}
           whileTap={interactive ? { scale: 0.95 } : {}}
         >
-          {/* Animated Glow Background */}
-          <motion.div
-            className="pointer-events-none absolute rounded-full"
-            style={{
-              left: glowPadding / 2,
-              top: glowPadding / 2,
-              width: config.diameter + glowPadding,
-              height: config.diameter + glowPadding,
-              background: `radial-gradient(circle, ${color}20 0%, ${color}10 40%, transparent 70%)`,
-            }}
-            animate={{
-              scale: [0.9, 1.1, 0.9],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-
-          {/* Pulse Effect for Low Scores */}
-          {score < 40 && (
-            <motion.div
-              className="pointer-events-none absolute rounded-full"
-              style={{
-                left: glowPadding / 2,
-                top: glowPadding / 2,
-                width: config.diameter + glowPadding,
-                height: config.diameter + glowPadding,
-                background: `radial-gradient(circle, ${color}25 0%, ${color}15 40%, transparent 70%)`,
-              }}
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.4, 0.8, 0.4],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          )}
-
-          {/* Background Ring */}
-          <svg
-            className="absolute -rotate-90 transform overflow-visible"
-            style={{
-              left: glowPadding,
-              top: glowPadding,
-            }}
-            width={config.diameter}
-            height={config.diameter}
-          >
-            <circle
-              cx={config.diameter / 2}
-              cy={config.diameter / 2}
-              r={radius}
-              fill="none"
-              stroke="rgba(0, 0, 0, 0.1)"
-              strokeWidth={config.strokeWidth}
-              className="dark:stroke-white/10"
-            />
-          </svg>
-
-          {/* Progress Ring with Glow */}
-          <svg
-            className="absolute -rotate-90 transform overflow-visible"
-            style={{
-              left: glowPadding,
-              top: glowPadding,
-            }}
-            width={config.diameter}
-            height={config.diameter}
-          >
-            <defs>
-              <filter id="glow-diplomatic" filterUnits="userSpaceOnUse">
-                <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-                <feGaussianBlur stdDeviation="8" result="coloredBlur2" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur2" />
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <linearGradient id="gradient-diplomatic" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={color} stopOpacity="1" />
-                <stop offset="40%" stopColor={color} stopOpacity="0.9" />
-                <stop offset="70%" stopColor={color} stopOpacity="0.7" />
-                <stop offset="100%" stopColor={color} stopOpacity="0.4" />
-              </linearGradient>
-            </defs>
-            <motion.circle
-              cx={config.diameter / 2}
-              cy={config.diameter / 2}
-              r={radius}
-              fill="none"
-              stroke="url(#gradient-diplomatic)"
-              strokeWidth={config.strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={strokeDasharray}
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset }}
-              transition={{
-                duration: 2,
-                ease: "easeInOut",
-              }}
-              style={{
-                filter: `url(#glow-diplomatic) drop-shadow(0 0 20px ${color}40)`,
-              }}
-              className="glass-hierarchy-interactive"
-            />
-          </svg>
-
-          {/* Center Content */}
+          <HealthRing value={score} size={config.diameter} color={color} label="Diplomatic Health" />
           <div
-            className="absolute flex flex-col items-center justify-center text-center"
-            style={{
-              width: config.centerSize,
-              height: config.centerSize,
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
+            className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none"
           >
-            <Globe size={config.iconSize} className="mb-1" style={{ color }} />
-            <motion.div
-              className="text-lg font-bold"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.5 }}
-            >
+            <Globe size={config.iconSize} className="mb-0.5" style={{ color }} />
+            <div className="text-[10px] font-bold leading-tight" style={{ color }}>
               {score}
-            </motion.div>
+            </div>
           </div>
         </motion.div>
       </TooltipTrigger>

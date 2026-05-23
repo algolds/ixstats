@@ -337,4 +337,50 @@ export const listProcedures = {
         flagUrl: normalizeFlagUrl(c.flag),
       }));
     }),
+
+  /**
+   * Get random countries (for "Countries to Explore" widget).
+   * No caching — each call returns a fresh random selection.
+   */
+  getRandomCountries: publicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(10).default(3),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const count = await ctx.db.country.count({ where: { isDemo: false } });
+      const skip = Math.max(0, Math.floor(Math.random() * count) - input.limit);
+
+      const countries = await ctx.db.country.findMany({
+        where: { isDemo: false },
+        take: input.limit,
+        skip,
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          flag: true,
+          economicTier: true,
+          currentPopulation: true,
+          continent: true,
+          region: true,
+        },
+      });
+
+      // Shuffle for true randomness (the skip-based approach is pseudo-random)
+      const shuffled = countries.sort(() => Math.random() - 0.5);
+
+      return shuffled.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        flagUrl: normalizeFlagUrl(c.flag),
+        economicTier: c.economicTier,
+        currentPopulation: c.currentPopulation,
+        continent: c.continent,
+        region: c.region,
+      }));
+    }),
 };

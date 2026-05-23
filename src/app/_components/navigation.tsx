@@ -739,13 +739,6 @@ export function Navigation() {
       },
     ];
 
-    if (isStandalone) {
-      // Simplified navbar for standalone maps build
-      return items.filter(item =>
-        ["Explore", "Maps", "Forum", "ThinkPages"].includes(item.name)
-      );
-    }
-
     return items;
   }, [isStandalone]);
 
@@ -786,12 +779,7 @@ export function Navigation() {
       if (item.adminOnly && !isAdmin) return false;
       if (item.premiumOnly && !isPremium) return false;
 
-      // In standalone mode (IxWorld), heavily simplify the navbar
-      if (isStandalone) {
-        const allowedStandalone = ["Explore", "Maps", "Forum", "ThinkPages"];
-        if (!allowedStandalone.includes(item.name)) return false;
-      }
-
+      // Remove standalone nav restrictions so users can seamlessly jump to main app
       // Check admin navigation settings
       if (navigationSettings) {
         if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;

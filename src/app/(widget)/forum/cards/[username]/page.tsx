@@ -10,6 +10,7 @@ import { rarityRank, computeRarityCounts, formatValue } from "~/modules/forum";
 import { ForumMiniCard } from "./ForumMiniCard";
 import { ForumRarityBar } from "./ForumRarityBar";
 import { styles } from "./widget-styles";
+import { withBasePath } from "~/lib/base-path";
 
 export default async function ForumCardsPage({
   params,
@@ -72,7 +73,7 @@ export default async function ForumCardsPage({
         <p style={{ fontSize: 16, marginBottom: 8 }}>No cards yet</p>
         <p>{user.forumUsername} hasn&apos;t collected any IxCards yet.</p>
         <a
-          href="https://ixwiki.com/projects/ixstates/vault"
+          href={withBasePath("/vault")}
           target="_blank"
           rel="noopener noreferrer"
           style={{ ...styles.link, marginTop: 12, display: "inline-block" }}
@@ -133,16 +134,16 @@ export default async function ForumCardsPage({
         <span>
           Powered by{" "}
           <a
-            href="https://ixwiki.com/projects/ixstates"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={styles.link}
-          >
-            IxStats
+          href={withBasePath("/")}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={styles.link}
+        >
+          IxStats
           </a>
         </span>
         <a
-          href="https://ixwiki.com/projects/ixstates/vault"
+          href={withBasePath("/vault")}
           target="_blank"
           rel="noopener noreferrer"
           style={styles.link}

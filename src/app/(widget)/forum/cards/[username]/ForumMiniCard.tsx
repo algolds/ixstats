@@ -5,6 +5,7 @@
 
 import { getRarityColors, formatValue, resolveArtworkUrl } from "~/modules/forum";
 import { styles } from "./widget-styles";
+import { withBasePath } from "~/lib/base-path";
 
 interface ForumMiniCardProps {
   card: {
@@ -28,7 +29,7 @@ export function ForumMiniCard({
 }: ForumMiniCardProps) {
   const colors = getRarityColors(card.rarity);
   const artworkUrl = resolveArtworkUrl(card.artwork, basePath);
-  const cardUrl = `https://ixwiki.com/projects/ixstates/vault`;
+  const cardUrl = withBasePath("/vault");
 
   return (
     <a

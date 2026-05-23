@@ -1570,13 +1570,8 @@ export async function getPageLog(title: string, limit?: number) {
   return ixwikiGetPageLog(title, limit);
 }
 
-/**
- * Get file/image URL for an IxWiki file.
- */
-export function getImageUrl(filename: string): string {
-  const clean = filename.replace(/^File:/, "").replace(/ /g, "_");
-  return `https://ixwiki.com/wiki/Special:FilePath/${encodeURIComponent(clean)}`;
-}
+// Re-exported from wiki-image-url (shared with client-safe code)
+export { getImageUrl } from "./wiki-image-url";
 
 /**
  * Extract coordinates from article wikitext.

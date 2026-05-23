@@ -29,9 +29,10 @@ type DetectedLink =
 
 /** Parse a link href and return detection info, or null if not a recognized link */
 function detectLink(href: string, rect: DOMRect): DetectedLink | null {
-  // Wiki links: ixwiki.com/wiki/Title or /wiki/Title (relative)
+  // Wiki links: ixwiki.com/wiki/Title, /wiki/Title (relative), or /w/Title (WikiOS)
   const ixMatch = href.match(/(?:https?:\/\/)?ixwiki\.com\/wiki\/([^#?]+)/)
-    ?? href.match(/^\/wiki\/([^#?]+)/);
+    ?? href.match(/^\/wiki\/([^#?]+)/)
+    ?? href.match(/^\/w\/([^#?]+)/);
   if (ixMatch) {
     const title = decodeURIComponent(ixMatch[1]!).replace(/_/g, " ");
     // Skip special pages that won't have useful previews

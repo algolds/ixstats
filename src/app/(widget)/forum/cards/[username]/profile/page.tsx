@@ -10,6 +10,7 @@ import { rarityRank, computeRarityCounts, formatValue } from "~/modules/forum";
 import { ForumMiniCard } from "../ForumMiniCard";
 import { ForumRarityBar } from "../ForumRarityBar";
 import { styles } from "../widget-styles";
+import { withBasePath } from "~/lib/base-path";
 
 const PROFILE_CARD_LIMIT = 6;
 
@@ -68,7 +69,7 @@ export default async function ForumProfileWidget({
     );
   }
 
-  const showcaseUrl = `https://ixwiki.com/projects/ixstates/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`;
+  const showcaseUrl = withBasePath(`/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`);
 
   return (
     <div style={{ padding: 12 }}>

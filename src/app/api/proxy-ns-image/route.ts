@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch image from NationStates with proper User-Agent
     // NS requires proper User-Agent for API compliance
-    const userAgent = "IxStats/1.0 (https://ixstats.com; contact: admin@ixstats.com)";
+    const userAgent = "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)";
     
     const nsResponse = await fetch(imageUrl, {
       headers: {

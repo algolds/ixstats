@@ -1,7 +1,4 @@
-/**
- * Navigation utilities for environment-aware routing.
- * Production uses /projects/ixstates basePath.
- */
+import { BASE_PATH } from "./base-path";
 
 /**
  * Get the correct URL for navigation based on environment.
@@ -24,7 +21,7 @@ export function navigateToPath(path: string): void {
  * Includes the basePath for production environments.
  */
 export function getBaseUrl(): string {
-  const basePath = process.env.NODE_ENV === "production" ? "/projects/ixstates" : "";
+  const basePath = BASE_PATH;
 
   if (typeof window !== "undefined") {
     return window.location.origin + basePath;

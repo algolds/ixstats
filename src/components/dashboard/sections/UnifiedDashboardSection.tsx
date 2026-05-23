@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import Link from "next/link";
 import {
-  AlertTriangle, Newspaper, Users, TrendingUp, Clock, Shield, Zap,
-  Mail, Trophy, Handshake, Rss, Landmark, BookOpen, MessageCircle,
-  ExternalLink, Flame, MessageSquare, Globe,
+  AlertTriangle, Newspaper, Users, TrendingUp, Clock, Shield,
+  Trophy, Handshake, Rss, Landmark, BookOpen, MessageCircle,
+  ExternalLink, Flame, MessageSquare, Globe, Eye,
 } from "lucide-react";
+import { Tooltip } from "~/components/ui/tooltip-card";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -18,11 +19,7 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { formatTimeAgo } from "~/lib/time-utils";
 import { createUrl } from "~/lib/url-utils";
-import { useDashboardSnapshotModals } from "~/hooks/useDashboardSnapshotModals";
-import { InboxPreviewModal } from "~/components/dashboard/modals/InboxPreviewModal";
-import { WorldEventsModal } from "~/components/dashboard/modals/WorldEventsModal";
-import { DiplomaticNetworkModal } from "~/components/dashboard/modals/DiplomaticNetworkModal";
-import { CrisisStatusModal } from "~/components/dashboard/modals/CrisisStatusModal";
+import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
 import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
 import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
@@ -34,6 +31,7 @@ import { sanitizeUserContent } from "~/lib/sanitize-html";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { GlassCanvasComposer } from "~/components/thinkpages/GlassCanvasComposer";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { SimpleFlag } from "~/components/SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { useNotify } from "~/hooks/useNotify";
 
@@ -114,29 +112,13 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);
 
-  // ── Trending Settings States ──
-  const [trendingLimit, setTrendingLimit] = useState<5 | 6 | 7>(6);
-  const [trendingBias, setTrendingBias] = useState<"balanced" | "social" | "wiki" | "forum">("balanced");
-  const [trendingRecency, setTrendingRecency] = useState<"hot" | "balanced" | "classic">("balanced");
-  const [showTrendingSettings, setShowTrendingSettings] = useState(false);
+  const TRENDING_LIMIT = 5;
 
   // ── Snapshot / World data ──
-  const { data: headlineData } = api.activities.getGlobalHeadlines.useQuery(
-    { limit: 25 },
-    { refetchInterval: 5 * 60_000 }
-  );
-  const { data: activityStats } = api.activities.getActivityStats.useQuery({ timeRange: "24h" });
   const { data: trendingData } = api.activities.getUnifiedTrending.useQuery(
     { limit: 50 },
     { refetchInterval: 5 * 60_000 }
   );
-  const { data: crisisStats } = api.crisisEvents.getStatistics.useQuery({ timeframe: "month" });
-  const { data: leaderboard } = api.diplomatic.getInfluenceLeaderboard.useQuery();
-  const { data: inboxData } = api.thinkpages.getConversations.useQuery(
-    { userId, limit: 20 },
-    { enabled: !!userId }
-  );
-  const { data: activeCrisisList } = api.crisisEvents.getActive.useQuery({ limit: 10 });
 
   // ── World Economics ──
   const { data: globalStats } = api.countries.getGlobalStats.useQuery({});
@@ -174,11 +156,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
     if (!selectedAccount && accounts.length > 0) setSelectedAccount(accounts[0]);
   }, [accounts, selectedAccount]);
 
-  // ── Snapshot modals ──
-  const { activeModal, openModal, closeModal } = useDashboardSnapshotModals();
-
   // ── Derived data ──
-  const headlines = headlineData?.headlines ?? [];
   const trendingItems = useMemo(() => {
     const rawItems = trendingData?.items ?? [];
     if (rawItems.length === 0) return [];
@@ -199,11 +177,9 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
         const editsMatch = item.excerpt?.match(/(\d+)\s+edit/);
         const editorsMatch = item.excerpt?.match(/(\d+)\s+editor/);
         const bytesMatch = item.excerpt?.match(/([+-]?\d+)\s+bytes/);
-        
         const edits = editsMatch ? parseInt(editsMatch[1], 10) : 1;
         const editors = editorsMatch ? parseInt(editorsMatch[1], 10) : 1;
         const bytes = bytesMatch ? Math.abs(parseInt(bytesMatch[1], 10)) : 100;
-        
         baseInteraction = edits * 8 + editors * 15 + Math.min(bytes / 50, 30) + (item.isNew ? 25 : 0);
       } else if (source === "forum") {
         baseInteraction = replies * 4 + views * 0.1;
@@ -213,37 +189,16 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
       const scoreBase = Math.max(1, baseInteraction);
       const ageHours = Math.max(0.1, (nowMs - new Date(timestamp).getTime()) / 3600000);
-      
-      let decayPower = 1.4;
-      if (trendingRecency === "hot") decayPower = 2.0;
-      else if (trendingRecency === "classic") decayPower = 0.0;
+      const decayFactor = 1 / Math.pow(ageHours + 2, 1.4);
+      const finalScore = scoreBase * decayFactor;
 
-      const decayFactor = 1 / Math.pow(ageHours + 2, decayPower);
-
-      let biasMultiplier = 1.0;
-      if (trendingBias === "social" && source === "thinkpages") biasMultiplier = 1.8;
-      else if (trendingBias === "wiki" && source === "wiki") biasMultiplier = 1.8;
-      else if (trendingBias === "forum" && source === "forum") biasMultiplier = 1.8;
-
-      const finalScore = scoreBase * decayFactor * biasMultiplier;
-
-      return {
-        ...item,
-        computedScore: finalScore,
-      };
+      return { ...item, computedScore: finalScore };
     });
 
     return scored
       .sort((a, b) => b.computedScore - a.computedScore)
-      .slice(0, trendingLimit);
-  }, [trendingData, trendingLimit, trendingBias, trendingRecency]);
-
-  const activeCrisesCount = crisisStats?.activeEvents ?? 0;
-  const totalEmbassies = (leaderboard ?? []).reduce((sum: number, e: any) => sum + (e.activeEmbassies ?? 0), 0);
-  const totalEvents24h = activityStats?.totalActivities ?? 0;
-  const conversations = inboxData?.conversations ?? [];
-  const totalUnread = conversations.reduce((sum: number, c: any) => sum + (c.unreadCount ?? 0), 0);
-  const totalConversations = conversations.length;
+      .slice(0, TRENDING_LIMIT);
+  }, [trendingData]);
 
   const isCountryDataReady =
     userProfile && countryData &&
@@ -378,58 +333,6 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
       
 
 
-      {/* Quick Snapshot — action cards */}
-      <motion.div variants={staggerItem}>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {[
-            {
-              id: "inbox", title: "Inbox", icon: Mail,
-              value: totalUnread > 0 ? `${totalUnread} unread` : "All caught up",
-              sub: `${totalConversations} conversations`,
-              color: totalUnread > 0 ? "text-amber-500" : "text-emerald-500",
-              bg: totalUnread > 0 ? "bg-amber-500/10" : "bg-emerald-500/10",
-            },
-            {
-              id: "world-events", title: "Events", icon: Zap,
-              value: totalEvents24h.toLocaleString(),
-              sub: "Last 24h",
-              color: "text-blue-500", bg: "bg-blue-500/10",
-            },
-            {
-              id: "diplomatic-network", title: "Diplomacy", icon: Handshake,
-              value: `${totalEmbassies} embassies`,
-              sub: `${(leaderboard ?? []).length} nations`,
-              color: "text-cyan-500", bg: "bg-cyan-500/10",
-            },
-            {
-              id: "crisis-status", title: "Stability", icon: Shield,
-              value: activeCrisesCount === 0 ? "Stable" : `${activeCrisesCount} crises`,
-              sub: activeCrisesCount === 0 ? "No active crises" : `${crisisStats?.criticalEvents ?? 0} critical`,
-              color: activeCrisesCount === 0 ? "text-emerald-500" : "text-red-500",
-              bg: activeCrisesCount === 0 ? "bg-emerald-500/10" : "bg-red-500/10",
-            },
-          ].map((card) => {
-            const CIcon = card.icon;
-            return (
-              <button
-                key={card.id}
-                onClick={() => openModal(card.id as any)}
-                className="flex items-center gap-2.5 rounded-lg border border-border/40 bg-card/50 p-2.5 text-left transition-colors hover:bg-muted/40"
-              >
-                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", card.bg)}>
-                  <CIcon className={cn("h-4 w-4", card.color)} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] text-muted-foreground">{card.title}</div>
-                  <div className={cn("text-xs font-semibold", card.color)}>{card.value}</div>
-                  <div className="text-[10px] text-muted-foreground/70">{card.sub}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </motion.div>
-
       {/* Feed Tab Bar */}
       <motion.div variants={staggerItem}>
         <div className="flex gap-1 rounded-xl border border-border/50 bg-muted/30 p-1">
@@ -457,9 +360,9 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
       {/* Feed + Sidebar Grid Layout */}
       <motion.div variants={staggerItem}>
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-5">
-          {/* Feed stream (left 3/5) */}
-          <div className="lg:col-span-3 space-y-4">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          {/* Feed stream (left 2/3) */}
+          <div className="lg:col-span-2 space-y-4">
             
             {/* ThinkPages Composer integrated on top of the stream */}
             {activeTab !== "community" && isSignedIn && (
@@ -571,120 +474,23 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
             )}
           </div>
 
-          {/* Sidebar (right 2/5): Trending + World page widgets */}
-          <div className="space-y-4 lg:col-span-2">
+          {/* Sidebar (right 1/3): Community widgets */}
+          <div className="space-y-4 lg:col-span-1 md:sticky md:top-6 md:self-start">
             
-            {/* Trending Now */}
-            <Card className="relative overflow-visible">
-              <CardHeader className="pb-3 relative">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-1.5 text-sm">
-                    <Flame className="h-3.5 w-3.5 text-orange-400 animate-pulse" />
-                    Trending Now
-                  </CardTitle>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setShowTrendingSettings(!showTrendingSettings)}
-                      className={cn(
-                        "rounded-md p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground cursor-pointer",
-                        showTrendingSettings && "bg-muted text-foreground"
-                      )}
-                      title="Trending Algorithm Controls"
-                    >
-                      <Shield className={cn("h-3.5 w-3.5 transition-transform duration-500", showTrendingSettings && "rotate-45 text-orange-400")} />
-                    </button>
-                    <Badge variant="outline" className="px-1.5 py-0 text-[10px]">Algorithm</Badge>
-                  </div>
-                </div>
-
-                {/* Sliding Glass Settings Panel */}
-                <AnimatePresence>
-                  {showTrendingSettings && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute inset-x-0 top-full z-[1000] mx-3 rounded-xl border border-border/50 bg-popover/95 p-3.5 shadow-xl backdrop-blur-xl"
-                    >
-                      <div className="space-y-3 text-xs">
-                        <div className="flex items-center justify-between border-b border-border/40 pb-1.5 font-medium text-foreground">
-                          <span>Trending Settings</span>
-                          <span className="text-[10px] text-muted-foreground">Adjust Curation Weights</span>
-                        </div>
-
-                        {/* Limit Selector */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-muted-foreground">Display Count</label>
-                          <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/50 bg-muted/20 p-0.5">
-                            {([5, 6, 7] as const).map((l) => (
-                              <button
-                                key={l}
-                                onClick={() => setTrendingLimit(l)}
-                                className={cn(
-                                  "rounded px-1.5 py-1 text-center font-medium transition-all text-[11px] cursor-pointer",
-                                  trendingLimit === l
-                                    ? "bg-background text-foreground shadow-xs"
-                                    : "text-muted-foreground hover:text-foreground"
-                                )}
-                              >
-                                {l} items
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Bias Selector */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-muted-foreground">Source Bias Weight</label>
-                          <div className="grid grid-cols-4 gap-1 rounded-lg border border-border/50 bg-muted/20 p-0.5">
-                            {(["balanced", "social", "wiki", "forum"] as const).map((b) => (
-                              <button
-                                key={b}
-                                onClick={() => setTrendingBias(b)}
-                                className={cn(
-                                  "rounded px-1 py-1 text-center font-medium capitalize transition-all text-[10px] cursor-pointer",
-                                  trendingBias === b
-                                    ? "bg-background text-foreground shadow-xs"
-                                    : "text-muted-foreground hover:text-foreground"
-                                )}
-                              >
-                                {b}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Recency Selector */}
-                        <div className="space-y-1">
-                          <label className="text-[10px] text-muted-foreground">Recency Decay Bias</label>
-                          <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/50 bg-muted/20 p-0.5">
-                            {(["hot", "balanced", "classic"] as const).map((r) => (
-                              <button
-                                key={r}
-                                onClick={() => setTrendingRecency(r)}
-                                className={cn(
-                                  "rounded px-1.5 py-1 text-center font-medium capitalize transition-all text-[10px] cursor-pointer",
-                                  trendingRecency === r
-                                    ? "bg-background text-foreground shadow-xs"
-                                    : "text-muted-foreground hover:text-foreground"
-                                )}
-                              >
-                                {r}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+            {/* Trending Now — Compact */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-1.5 text-xs">
+                  <Flame className="h-3 w-3 text-orange-400" />
+                  Trending
+                </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {trendingItems.length === 0 && (
-                    <p className="py-8 text-center text-xs text-muted-foreground">No trending content</p>
+                    <p className="py-6 text-center text-[11px] text-muted-foreground">No trending content</p>
                   )}
-                  {trendingItems.map((item: any, i: number) => {
+                  {trendingItems.map((item: any) => {
                     const src = TRENDING_SOURCE[item.source as string] ?? TRENDING_SOURCE.ixstats!;
                     const SrcIcon = src.icon;
                     const W = item.url ? "a" : "div";
@@ -695,37 +501,58 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                     const wikiTitle = wikiMatch ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ") : null;
                     const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
 
+                    const isWiki = !!wikiTitle;
+                    const isForum = !!forumThreadId;
+                    const wikiHref = isWiki && wikiTitle ? titleToWikiOSPath(wikiTitle) : null;
+
                     const el = (
-                      <W key={item.id} {...wp} className={cn("flex items-start gap-2.5 rounded-lg border border-border/40 p-2.5 transition-all duration-200 hover:glass-hierarchy-interactive hover:bg-muted/40 cursor-pointer shadow-xs hover:scale-[1.01]")}>
-                        <div className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded", src.bg)}>
-                          <SrcIcon className={cn("h-3 w-3", src.color)} />
+                      <W key={item.id} {...(isWiki ? { href: wikiHref } : wp)} className="flex items-start gap-2 rounded-lg border border-border/30 p-2 transition-colors hover:bg-muted/40 cursor-pointer">
+                        <div className={cn("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded", isWiki ? "bg-teal-500/15" : src.bg)}>
+                          {isWiki ? (
+                            <img
+                              src="https://cdn.simpleicons.org/wikipedia/teal"
+                              alt=""
+                              className="h-2.5 w-2.5"
+                            />
+                          ) : (
+                            <SrcIcon className={cn("h-2.5 w-2.5", src.color)} />
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="truncate text-xs font-medium text-foreground">{item.title}</span>
-                            {item.url && <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />}
+                            <span className="truncate text-[11px] font-medium text-foreground">{item.title}</span>
+                            {isForum && item.url && <ExternalLink className="h-2 w-2 shrink-0 text-muted-foreground" />}
                           </div>
-                          {item.excerpt && <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{item.excerpt}</p>}
-                          <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-                            <Badge variant="outline" className={cn("px-1 py-0 text-[8px]", src.color, "border-current/30")}>{src.label}</Badge>
-                            {item.engagement?.views > 0 && <span>{item.engagement.views.toLocaleString()} views</span>}
-                            {item.engagement?.replies > 0 && <span>{item.engagement.replies} replies</span>}
-                            {item.computedScore && <span className="text-[9px] text-muted-foreground/60">Hotness: {Math.round(item.computedScore * 10) / 10}</span>}
-                          </div>
+                          {!isWiki && (
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <Badge variant="outline" className={cn("px-1 py-0 text-[8px]", src.color, "border-current/30")}>{src.label}</Badge>
+                            </div>
+                          )}
                         </div>
                       </W>
                     );
 
-                    if (wikiTitle) return <WikiLinkPreview key={item.id} title={wikiTitle} wiki="ixwiki">{el}</WikiLinkPreview>;
-                    if (forumThreadId) return <ForumLinkPreview key={item.id} threadId={forumThreadId}>{el}</ForumLinkPreview>;
+                    if (isWiki) return (
+                      <Tooltip key={item.id} content={<WikiPreviewContent title={wikiTitle!} wiki="ixwiki" />} containerClassName="block">
+                        {el}
+                      </Tooltip>
+                    );
+                    if (isForum) return (
+                      <Tooltip key={item.id} content={<ForumPreviewContent threadId={forumThreadId!} />} containerClassName="block">
+                        {el}
+                      </Tooltip>
+                    );
                     return el;
                   })}
                 </div>
               </CardContent>
             </Card>
 
+            {/* Countries to Explore */}
+            <CountriesToExploreCard currentUserCountryId={userProfile?.countryId ?? ""} />
 
-
+            {/* Blurb of the Day */}
+            <BlurbOfTheDayCard />
 
             {/* Economic Tier Distribution */}
             {globalStats?.economicTierDistribution && (
@@ -753,12 +580,6 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
           </div>
         </div>
       </motion.div>
-
-      {/* Snapshot Modals */}
-      {activeModal === "inbox" && <InboxPreviewModal isOpen onClose={closeModal} conversations={conversations as any[]} totalUnread={totalUnread} />}
-      {activeModal === "world-events" && <WorldEventsModal isOpen onClose={closeModal} headlines={headlines} />}
-      {activeModal === "diplomatic-network" && <DiplomaticNetworkModal isOpen onClose={closeModal} leaderboard={(leaderboard ?? []) as any[]} />}
-      {activeModal === "crisis-status" && <CrisisStatusModal isOpen onClose={closeModal} crisisStats={crisisStats as any} activeCrises={(activeCrisisList ?? []) as any[]} />}
 
       {/* Account Modals */}
       {showAccountCreation && isCountryDataReady && (
@@ -1013,6 +834,219 @@ function FollowingFeedContent({
 }
 
 // ─── Feed Item ───────────────────────────────────────────────────
+
+// ─── Countries to Explore ──────────────────────────────────────
+
+// ── Wiki/Forum Preview Components (for trending tooltips) ──
+
+function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
+  const { data: intro } = api.wiki.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+        <span className="truncate text-sm font-semibold text-foreground">{title}</span>
+        <span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+          {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
+        </span>
+      </div>
+      {intro?.text ? (
+        <p className="line-clamp-4 text-xs leading-relaxed text-foreground/80">
+          {intro.text.substring(0, 300)}{intro.text.length > 300 ? "…" : ""}
+        </p>
+      ) : (
+        <div className="h-10 animate-pulse rounded bg-muted" />
+      )}
+    </div>
+  );
+}
+
+function ForumPreviewContent({ threadId }: { threadId: number }) {
+  const { data: thread } = api.wiki.getForumThreadPreview.useQuery({ threadId }, { staleTime: 10 * 60_000 });
+  if (!thread) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+          <span className="text-sm font-medium text-foreground">Loading thread...</span>
+        </div>
+        <div className="h-10 animate-pulse rounded bg-muted" />
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+        <span className="truncate text-sm font-semibold text-foreground">{thread.title}</span>
+      </div>
+      {thread.forumName && (
+        <span className="inline-block rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
+          {thread.forumName}
+        </span>
+      )}
+      {thread.excerpt && (
+        <p className="line-clamp-3 text-xs leading-relaxed text-foreground/80">
+          {thread.excerpt.substring(0, 250)}{thread.excerpt.length > 250 ? "…" : ""}
+        </p>
+      )}
+      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-0.5">
+          <Users className="h-2.5 w-2.5" />
+          {thread.author}
+        </span>
+        <span className="flex items-center gap-0.5">
+          <MessageSquare className="h-2.5 w-2.5" />
+          {thread.replyCount} replies
+        </span>
+        <span className="flex items-center gap-0.5">
+          <Eye className="h-2.5 w-2.5" />
+          {thread.viewCount}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
+  const [seed, setSeed] = useState(0);
+  useEffect(() => { setSeed(Date.now()); }, []);
+  const { data: randomCountries } = api.countries.getRandomCountries.useQuery(
+    { limit: 3, _seed: seed },
+    { enabled: seed > 0, staleTime: 0 }
+  );
+  const followerCountryId = currentUserCountryId;
+  const utils = api.useUtils();
+  const notify = useNotify();
+
+  const followMutation = api.activities.followCountry.useMutation({
+    onSuccess: () => {
+      notify.success("Followed country!");
+      utils.countries.getRandomCountries.invalidate({ limit: 3 });
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to follow");
+    },
+  });
+
+  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+
+  if (!randomCountries || randomCountries.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-1.5 text-xs">
+          <Users className="h-3 w-3 text-blue-400" />
+          Countries to Explore
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-1.5">
+          {randomCountries.map((c) => {
+            const isFollowed = followedIds.has(c.id);
+            return (
+              <div
+                key={c.id}
+                className="relative flex items-center gap-2 overflow-hidden rounded-lg border border-border/30 p-2"
+                style={
+                  c.flagUrl
+                    ? {
+                        backgroundImage: `linear-gradient(to right, hsl(var(--card)) 40%, transparent 70%), url(${c.flagUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "right center",
+                      }
+                    : undefined
+                }
+              >
+                <div className="relative z-10 flex items-center gap-2">
+                  <SimpleFlag countryName={c.name} size="sm" className="flex-shrink-0" />
+                  <div className="min-w-0">
+                    <Link
+                      href={createUrl(`/countries/${c.slug}`)}
+                      className="truncate text-[11px] font-medium hover:underline"
+                    >
+                      {c.name}
+                    </Link>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="px-1 py-0 text-[8px] text-muted-foreground border-border/40">
+                        Tier {c.economicTier}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative z-10 ml-auto">
+                  <Button
+                    size="sm"
+                    variant={isFollowed ? "secondary" : "outline"}
+                    className="h-6 shrink-0 text-[9px] px-2"
+                    disabled={!followerCountryId || followMutation.isPending}
+                    onClick={() => {
+                      if (isFollowed) return;
+                      followMutation.mutate({
+                        followerCountryId,
+                        followedCountryId: c.id,
+                      });
+                      setFollowedIds((prev) => new Set(prev).add(c.id));
+                    }}
+                  >
+                    {isFollowed ? "Following" : "Follow"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <Link
+          href={createUrl("/countries")}
+          className="mt-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Globe className="h-3 w-3" />
+          Explore all countries →
+        </Link>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Blurb of the Day ──────────────────────────────────────────
+
+function BlurbOfTheDayCard() {
+  const { data: prompt } = api.blurbs.getRandomActivePrompt.useQuery();
+
+  if (!prompt) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-1.5 text-xs">
+          <MessageCircle className="h-3 w-3 text-purple-400" />
+          Blurb of the Day
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="rounded-lg border border-border/30 bg-muted/20 p-2.5">
+          <p className="text-[11px] text-foreground leading-relaxed italic">
+            &ldquo;{prompt.prompt}?&rdquo;
+          </p>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between">
+          <span className="text-[10px] text-muted-foreground">
+            📝 {prompt._count?.responses ?? 0} responses
+          </span>
+          <Link
+            href={createUrl(`/thinkpages?prompt=${prompt.slug ?? prompt.id}`)}
+            className="text-[10px] font-medium text-purple-500 hover:text-purple-400 transition-colors"
+          >
+            Write Response →
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Feed Item ─────────────────────────────────────────────────
 
 function UnifiedFeedItem({ activity }: { activity: any }) {
   const source = activity.source ?? "activity";

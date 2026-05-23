@@ -50,7 +50,7 @@ cd "$IXSTATS_DIR"
 
 # Step 1: Install & Build
 log "[1/3] Preparing build environment..."
-# bun install --frozen-lockfile # Optional: Ensure dependencies are fresh
+bun install --frozen-lockfile
 
 log "[1/3] Building Next.js application..."
 # Export variables for the build process
@@ -62,7 +62,10 @@ export NEXT_PUBLIC_CLERK_SIGN_IN_URL="https://accounts.ixwiki.com/sign-in"
 export NEXT_PUBLIC_CLERK_SIGN_UP_URL="https://accounts.ixwiki.com/sign-up"
 export NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL="https://maps.ixwiki.com/maps"
 export NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL="https://maps.ixwiki.com/maps"
-# Deprecated: removed NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL / AFTER_SIGN_UP_URL in favor of fallback redirect URLs above
+# Deprecated: suppress Clerk afterSignInUrl/afterSignUpUrl from .env.production.local
+# (process.env takes priority over dotenv files, so empty string prevents the deprecated prop)
+export NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=""
+export NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=""
 export NODE_ENV=production
 
 # Clean old build
@@ -83,6 +86,7 @@ mkdir -p "$IXWORLD_DIR"
 rsync -avh --delete .next/standalone/ "$IXWORLD_DIR/"
 rsync -avh --delete .next/static/ "$IXWORLD_DIR/.next/static/"
 rsync -avh --delete public/ "$IXWORLD_DIR/public/"
+rsync -avh --delete data/ "$IXWORLD_DIR/data/"
 
 # Sync PM2 config
 if [ -f "$ECOSYSTEM_FILE" ]; then

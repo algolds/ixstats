@@ -8,6 +8,7 @@
 import { db } from "~/server/db";
 import { rarityRank, formatValue, getRarityColors } from "~/modules/forum";
 import { styles } from "../widget-styles";
+import { withBasePath } from "~/lib/base-path";
 
 const EMBED_CARD_LIMIT = 3;
 
@@ -53,7 +54,7 @@ export default async function ForumPostEmbed({
   const top = sorted.slice(0, EMBED_CARD_LIMIT);
   const totalValue = sorted.reduce((sum, o) => sum + o.cards.marketValue, 0);
 
-  const showcaseUrl = `https://ixwiki.com/projects/ixstates/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`;
+  const showcaseUrl = withBasePath(`/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`);
 
   return (
     <div style={{ padding: "6px 4px", maxWidth: 160, margin: "0 auto" }}>

@@ -81,7 +81,31 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
 
   const isLoading = profileLoading || countryLoading || ixTimeLoading;
 
-  // Show loading state while data is being fetched
+  const value = useMemo<CountryDataContextValue>(
+    () => ({
+      userProfile,
+      country,
+      economyData,
+      systemStatus,
+      activityRingsData,
+      currentIxTime,
+      isLoading: false,
+      error: profileError?.message || countryError?.message || null,
+      isViewingOtherCountry,
+    }),
+    [
+      userProfile,
+      country,
+      economyData,
+      systemStatus,
+      activityRingsData,
+      currentIxTime,
+      profileError?.message,
+      countryError?.message,
+      isViewingOtherCountry,
+    ]
+  );
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -106,7 +130,6 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     );
   }
 
-  // No user profile found
   if (!profileLoading && !userProfile) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -120,7 +143,6 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     );
   }
 
-  // No country assigned to user (skip this check if viewing another country in dev mode)
   if (!isLoading && userProfile && !userProfile.countryId && !viewCountryId) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -151,7 +173,6 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     );
   }
 
-  // Country not found - this could be a permissions issue or invalid dev view ID
   if (!isLoading && effectiveCountryId && !country) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -166,31 +187,6 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
       </div>
     );
   }
-
-  const value = useMemo<CountryDataContextValue>(
-    () => ({
-      userProfile,
-      country,
-      economyData,
-      systemStatus,
-      activityRingsData,
-      currentIxTime,
-      isLoading: false,
-      error: profileError?.message || countryError?.message || null,
-      isViewingOtherCountry,
-    }),
-    [
-      userProfile,
-      country,
-      economyData,
-      systemStatus,
-      activityRingsData,
-      currentIxTime,
-      profileError?.message,
-      countryError?.message,
-      isViewingOtherCountry,
-    ]
-  );
 
   return <CountryDataContext.Provider value={value}>{children}</CountryDataContext.Provider>;
 }

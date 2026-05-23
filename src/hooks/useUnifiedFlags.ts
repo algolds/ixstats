@@ -158,7 +158,8 @@ export function useBulkFlags(
         if (serverFlags && !forceRefetch) {
           for (const countryName of memoizedCountryNames) {
             const key = countryName.toLowerCase().trim();
-            resultFlags[countryName] = serverFlags[key] ?? "/placeholder-flag.svg";
+            const localFlag = unifiedFlagService.getCachedFlagUrl(countryName);
+            resultFlags[countryName] = localFlag || serverFlags[key] || "/placeholder-flag.svg";
           }
         } else {
           for (const countryName of memoizedCountryNames) {

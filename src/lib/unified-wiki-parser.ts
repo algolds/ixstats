@@ -12,9 +12,10 @@
  */
 
 import { parseInfobox, parsePopulation, extractCoordsFromFields } from "./wiki-infobox-parser";
-import { getArticleWikitext, getImageUrl } from "./wiki-bridge";
+import { resolveImageUrl } from "./wiki-image-url";
 import type { WikiSource } from "./mediawiki-config";
-import { withBasePath } from "./base-path";
+
+export { resolveImageUrl };
 
 // ─── Unified Infobox Data Interface ───────────────────────────────────────────
 
@@ -624,34 +625,11 @@ export async function fetchAndParseInfobox(
   wikiSource: WikiSource = "ixwiki"
 ): Promise<UnifiedInfoboxData | null> {
   try {
+    const { getArticleWikitext } = await import("./wiki-bridge");
     const wikitext = await getArticleWikitext(pageName, wikiSource);
     if (!wikitext) return null;
     return parseInfoboxWithTemplates(wikitext.wikitext, pageName);
   } catch {
     return null;
   }
-}
-
-export function resolveImageUrl(filename: string | undefined, wikiSource: WikiSource = "ixwiki"): string | undefined {
-  if (!filename) return undefined;
-  
-  // Safely extract filename before any pipe options if present
-  let cleanName = filename.split("|")[0]!.replace(/^(File|Image|file|image):/i, "").trim();
-  if (!cleanName) return undefined;
-  
-  // If it's already an absolute URL, return as is
-  if (/^https?:\/\//i.test(cleanName) || cleanName.startsWith("//")) {
-    return cleanName;
-  }
-
-  if (wikiSource === "ixwiki") {
-    return withBasePath(`/api/ixwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`);
-  }
-  if (wikiSource === "iiwiki") {
-    return withBasePath(`/api/iiwiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`);
-  }
-  if (wikiSource === "althistory") {
-    return withBasePath(`/api/althistory-wiki-proxy/wiki/Special:FilePath/${encodeURIComponent(cleanName.replace(/ /g, "_"))}`);
-  }
-  return getImageUrl(cleanName);
 }

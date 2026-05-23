@@ -1,4 +1,5 @@
 import { SignIn } from "@clerk/nextjs";
+import { withBasePath } from "~/lib/base-path";
 
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
 
@@ -20,7 +21,7 @@ export default function Page() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md">
-        <SignIn />
+        <SignIn fallbackRedirectUrl={withBasePath("/dashboard")} />
       </div>
     </div>
   );

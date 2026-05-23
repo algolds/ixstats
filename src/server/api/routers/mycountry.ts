@@ -64,22 +64,20 @@ function setMyCountryCache(key: string, data: any, ttl = 60000): void {
  * Calculate national vitality scores based on comprehensive country data
  */
 function calculateVitalityScores(country: CountryWithEconomicData): VitalityScores {
-  // Economic Vitality (0-100 scale)
-  const economicVitality = Math.min(
-    100,
-    Math.max(0, country.adjustedGdpGrowth * 100 * 10 + country.currentGdpPerCapita / 2000 + 30)
-  );
+  // Economic Vitality — matches getActivityRingsData formula
+  const gdpScore = Math.min(100, (country.currentGdpPerCapita / 50000) * 100);
+  const growthBonus = Math.min(20, Math.max(-20, country.adjustedGdpGrowth * 400));
+  const economicVitality = Math.min(100, Math.max(0, gdpScore * 0.7 + growthBonus + 30));
 
-  // Population Wellbeing (0-100 scale)
-  const populationWellbeing = Math.min(
-    100,
-    Math.max(
-      0,
-      country.populationGrowthRate * 100 * 20 + getTierScore(country.populationTier) * 10 + 25
-    )
-  );
+  // Population Wellbeing — matches getActivityRingsData formula
+  const popGrowthRate = country.populationGrowthRate || 0;
+  const growthHealth = popGrowthRate > 0 ? 70 : 40;
+  const densityFactor = country.populationDensity
+    ? Math.max(50, 100 - country.populationDensity / 500)
+    : 60;
+  const populationWellbeing = (growthHealth + densityFactor) / 2;
 
-  // Diplomatic Standing (calculated from relations and treaties)
+  // Diplomatic Standing (same formula in both endpoints)
   const diplomaticStanding = Math.min(
     100,
     Math.max(
@@ -91,11 +89,17 @@ function calculateVitalityScores(country: CountryWithEconomicData): VitalityScor
     )
   );
 
-  // Governmental Efficiency (based on economic performance and stability)
-  const governmentalEfficiency = Math.min(
-    100,
-    Math.max(50, 60 + economicVitality * 0.3 + diplomaticStanding * 0.2)
-  );
+  // Governmental Efficiency — matches getActivityRingsData formula
+  const tierScore: Record<string, number> = {
+    Extravagant: 95,
+    "Very Strong": 85,
+    Strong: 75,
+    Healthy: 65,
+    Developed: 50,
+    Developing: 35,
+    Impoverished: 25,
+  };
+  const governmentalEfficiency = (tierScore[country.economicTier] || 25) * 0.8;
 
   return {
     economicVitality: Math.round(economicVitality),
@@ -106,21 +110,6 @@ function calculateVitalityScores(country: CountryWithEconomicData): VitalityScor
       (economicVitality + populationWellbeing + diplomaticStanding + governmentalEfficiency) / 4
     ),
   };
-}
-
-/**
- * Convert tier name to numerical score for calculations
- */
-function getTierScore(tier: string): number {
-  const tierScores: Record<string, number> = {
-    Impoverished: 1,
-    Developing: 2,
-    Emerging: 3,
-    Developed: 4,
-    Advanced: 5,
-    Elite: 6,
-  };
-  return tierScores[tier] || 1;
 }
 
 /**

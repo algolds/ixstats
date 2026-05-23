@@ -4,6 +4,8 @@ import React from "react";
 import { motion } from "motion/react";
 import { TrendingUp, Users, Globe, Building2, type LucideIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
+import { HealthRing } from "~/components/ui/health-ring";
+import { cn } from "~/lib/utils";
 
 interface ActivityRing {
   id: string;
@@ -31,27 +33,9 @@ interface ActivityRingsProps {
 }
 
 const RING_CONFIGS = {
-  sm: {
-    diameter: 80,
-    strokeWidth: 6,
-    gap: 3,
-    centerSize: 32,
-    iconSize: 16,
-  },
-  md: {
-    diameter: 120,
-    strokeWidth: 8,
-    gap: 4,
-    centerSize: 48,
-    iconSize: 20,
-  },
-  lg: {
-    diameter: 160,
-    strokeWidth: 12,
-    gap: 6,
-    centerSize: 64,
-    iconSize: 24,
-  },
+  sm: { diameter: 80, iconSize: 14 },
+  md: { diameter: 120, iconSize: 18 },
+  lg: { diameter: 160, iconSize: 22 },
 };
 
 const RING_COLORS = {
@@ -76,163 +60,29 @@ function ActivityRingComponent({
   onClick?: (ringId: string) => void;
   onHover?: (ringId: string) => void;
 }) {
-  const radius = (config.diameter - config.strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDasharray = circumference;
-  const strokeDashoffset = circumference * (1 - ring.value / 100);
-
   const Icon = ring.icon;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <motion.div
-          className={`relative cursor-pointer ${interactive ? "hover:scale-105" : ""}`}
-          style={{
-            width: config.diameter,
-            height: config.diameter,
-          }}
+          className={cn("relative cursor-pointer", interactive && "hover:scale-105")}
+          style={{ width: config.diameter, height: config.diameter }}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{
-            type: "spring",
-            stiffness: 200,
-            damping: 20,
-            delay: index * 0.1,
-          }}
+          transition={{ type: "spring", stiffness: 200, damping: 20, delay: index * 0.1 }}
           onClick={() => onClick?.(ring.id)}
           onMouseEnter={() => onHover?.(ring.id)}
           whileHover={interactive ? { scale: 1.05 } : {}}
           whileTap={interactive ? { scale: 0.95 } : {}}
         >
-          {/* Background Ring */}
-          <svg
-            className="absolute inset-0 -rotate-90 transform"
-            width={config.diameter}
-            height={config.diameter}
-          >
-            <circle
-              cx={config.diameter / 2}
-              cy={config.diameter / 2}
-              r={radius}
-              fill="none"
-              stroke="rgba(0, 0, 0, 0.1)"
-              strokeWidth={config.strokeWidth}
-              className="dark:stroke-white/10"
-            />
-          </svg>
-
-          {/* Progress Ring */}
-          <svg
-            className="absolute inset-0 -rotate-90 transform"
-            width={config.diameter}
-            height={config.diameter}
-          >
-            <defs>
-              <filter id={`glow-${ring.id}`} x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur stdDeviation="6" result="coloredBlur" />
-                <feGaussianBlur stdDeviation="12" result="coloredBlur2" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur2" />
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <linearGradient id={`gradient-${ring.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={ring.color} stopOpacity="1" />
-                <stop offset="40%" stopColor={ring.color} stopOpacity="0.9" />
-                <stop offset="70%" stopColor={ring.color} stopOpacity="0.7" />
-                <stop offset="100%" stopColor={ring.color} stopOpacity="0.4" />
-              </linearGradient>
-              <radialGradient id={`radial-glow-${ring.id}`} cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor={ring.color} stopOpacity="0.8" />
-                <stop offset="70%" stopColor={ring.color} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={ring.color} stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <motion.circle
-              cx={config.diameter / 2}
-              cy={config.diameter / 2}
-              r={radius}
-              fill="none"
-              stroke={`url(#gradient-${ring.id})`}
-              strokeWidth={config.strokeWidth}
-              strokeLinecap="round"
-              strokeDasharray={strokeDasharray}
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset }}
-              transition={{
-                duration: 2,
-                ease: "easeInOut",
-                delay: index * 0.2,
-              }}
-              style={{
-                filter: `url(#glow-${ring.id})`,
-              }}
-              className="glass-hierarchy-interactive"
-            />
-          </svg>
-
-          {/* Center Content */}
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center text-center"
-            style={{
-              width: config.centerSize,
-              height: config.centerSize,
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
-          >
-            <Icon size={config.iconSize} className="mb-1" style={{ color: ring.color }} />
-            <motion.div
-              className="text-lg font-bold"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: index * 0.1 + 0.5 }}
-            >
+          <HealthRing value={ring.value} size={config.diameter} color={ring.color} label={ring.title} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+            <Icon size={config.iconSize} className="mb-0.5" style={{ color: ring.color }} />
+            <div className="text-[10px] font-bold leading-tight" style={{ color: ring.color }}>
               {ring.value}%
-            </motion.div>
+            </div>
           </div>
-
-          {/* Animated Glow Background */}
-          <motion.div
-            className="pointer-events-none absolute inset-0 rounded-full"
-            style={{
-              background: `url(#radial-glow-${ring.id})`,
-              filter: "blur(8px)",
-            }}
-            animate={{
-              scale: [0.8, 1.2, 0.8],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: index * 0.3,
-            }}
-          />
-
-          {/* Pulse Effect for Critical Values */}
-          {ring.value < 40 && (
-            <motion.div
-              className="pointer-events-none absolute inset-0 rounded-full"
-              style={{
-                background: `radial-gradient(circle, ${ring.color}15 0%, transparent 60%)`,
-                filter: "blur(4px)",
-              }}
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.4, 0.8, 0.4],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          )}
         </motion.div>
       </TooltipTrigger>
 
@@ -302,7 +152,7 @@ export function ActivityRings({
   const config = RING_CONFIGS[size];
 
   return (
-    <div className={`flex flex-wrap justify-center gap-6 ${className}`}>
+    <div className={cn("flex flex-wrap justify-center gap-6", className)}>
       {rings.map((ring, index) => (
         <ActivityRingComponent
           key={`ring-${ring.id || `index-${index}`}`}

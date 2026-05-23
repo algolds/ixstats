@@ -40,7 +40,7 @@ interface NSDeckResponse {
  */
 export class NSApiClient {
   private readonly baseUrl = "https://www.nationstates.net/cgi-bin/api.cgi";
-  private readonly userAgent = "IxStats/1.0 (https://ixstats.com; contact: admin@ixstats.com)";
+  private readonly userAgent = "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)";
 
   /**
    * Verify that a nation exists
