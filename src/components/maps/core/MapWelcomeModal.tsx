@@ -19,7 +19,7 @@ import { Tooltip } from "~/components/ui/tooltip-card";
 import { IxTime } from "~/lib/ixtime";
 
 /** IxWorld version — bump this to re-show welcome on major updates */
-const IXWORLD_VERSION = "2.1.0";
+const IXWORLD_VERSION = "2.1.5";
 const STORAGE_KEY = "ixworld-welcome-seen";
 
 interface MapWelcomeModalProps {
@@ -94,7 +94,7 @@ export function MapWelcomeModal({ isMapReady }: MapWelcomeModalProps) {
 
   const handleClose = useCallback(() => {
     setShow(false);
-    try { localStorage.setItem(STORAGE_KEY, IXWORLD_VERSION); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, IXWORLD_VERSION); } catch { }
   }, []);
 
   const totalPages = 2; // Tips page + Shortcuts page
@@ -285,9 +285,8 @@ export function MapWelcomeModal({ isMapReady }: MapWelcomeModalProps) {
                     <button
                       key={i}
                       onClick={() => setCurrentPage(i)}
-                      className={`h-1.5 rounded-full transition-all ${
-                        i === currentPage ? "w-5 bg-blue-400" : "w-1.5 bg-muted-foreground/20 hover:bg-muted-foreground/40"
-                      }`}
+                      className={`h-1.5 rounded-full transition-all ${i === currentPage ? "w-5 bg-blue-400" : "w-1.5 bg-muted-foreground/20 hover:bg-muted-foreground/40"
+                        }`}
                     />
                   ))}
                 </div>

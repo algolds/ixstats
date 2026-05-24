@@ -23,6 +23,8 @@ import { SimpleFlag } from "~/components/SimpleFlag";
 import { createUrl } from "~/lib/url-utils";
 import { cn } from "~/lib/utils";
 import { HealthRing } from "~/components/ui/health-ring";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
+import { SECTION_THEME_CLASSES } from "~/lib/mycountry-theme";
 
 const CountryMapEmbed = dynamic(
   () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
@@ -30,11 +32,11 @@ const CountryMapEmbed = dynamic(
 );
 
 const HERO_NAV = [
-  { href: "/mycountry", icon: Crown, label: "Overview" },
-  { href: "/mycountry/executive", icon: Briefcase, label: "Executive" },
-  { href: "/mycountry/diplomacy", icon: Globe, label: "Diplomacy" },
-  { href: "/mycountry/intelligence", icon: BarChart3, label: "Intelligence" },
-  { href: "/mycountry/defense", icon: Swords, label: "Defense" },
+  { href: "/mycountry", icon: Crown, label: "Overview", theme: SECTION_THEME_CLASSES.overview },
+  { href: "/mycountry/executive", icon: Briefcase, label: "Executive", theme: SECTION_THEME_CLASSES.executive },
+  { href: "/mycountry/diplomacy", icon: Globe, label: "Diplomacy", theme: SECTION_THEME_CLASSES.diplomacy },
+  { href: "/mycountry/intelligence", icon: BarChart3, label: "Intelligence", theme: SECTION_THEME_CLASSES.intelligence },
+  { href: "/mycountry/defense", icon: Swords, label: "Defense", theme: SECTION_THEME_CLASSES.defense },
 ] as const;
 
 function DashboardHero() {
@@ -127,30 +129,65 @@ function DashboardHero() {
                   </div>
                   {activityRingsData && (
                     <div className="grid grid-cols-4 gap-2 py-1">
-                      <div className="flex flex-col items-center gap-1 text-center">
-                        <HealthRing value={activityRingsData.economicVitality || 0} size={56} color="#22c55e" label="Economic" />
-                        <span className="text-[10px] font-medium text-green-700 dark:text-green-300">
-                          {activityRingsData.economicVitality}%
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 text-center">
-                        <HealthRing value={activityRingsData.populationWellbeing || 0} size={56} color="#3b82f6" label="Population" />
-                        <span className="text-[10px] font-medium text-blue-700 dark:text-blue-300">
-                          {activityRingsData.populationWellbeing}%
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 text-center">
-                        <HealthRing value={activityRingsData.diplomaticStanding || 0} size={56} color="#a855f7" label="Diplomatic" />
-                        <span className="text-[10px] font-medium text-purple-700 dark:text-purple-300">
-                          {activityRingsData.diplomaticStanding}%
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 text-center">
-                        <HealthRing value={activityRingsData.governmentalEfficiency || 0} size={56} color="#f97316" label="Government" />
-                        <span className="text-[10px] font-medium text-orange-700 dark:text-orange-300">
-                          {activityRingsData.governmentalEfficiency}%
-                        </span>
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 text-center cursor-help">
+                            <HealthRing value={activityRingsData.economicVitality || 0} size={56} color="#22c55e" label="Economic" />
+                            <span className="text-[10px] font-medium text-green-700 dark:text-green-300">
+                              {activityRingsData.economicVitality}%
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="glass-none bg-popover text-popover-foreground border-border shadow-md text-xs">
+                          <div className="font-bold text-green-500 mb-0.5">Economic Vitality</div>
+                          <div className="text-[11px] text-muted-foreground">Overall health, including GDP growth trajectory, tier, employment, and trade balance.</div>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 text-center cursor-help">
+                            <HealthRing value={activityRingsData.populationWellbeing || 0} size={56} color="#3b82f6" label="Population" />
+                            <span className="text-[10px] font-medium text-blue-700 dark:text-blue-300">
+                              {activityRingsData.populationWellbeing}%
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="glass-none bg-popover text-popover-foreground border-border shadow-md text-xs">
+                          <div className="font-bold text-blue-500 mb-0.5">Population Wellbeing</div>
+                          <div className="text-[11px] text-muted-foreground">Quality of life metrics, life expectancy, education rating, social safety net, and literacy.</div>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 text-center cursor-help">
+                            <HealthRing value={activityRingsData.diplomaticStanding || 0} size={56} color="#a855f7" label="Diplomatic" />
+                            <span className="text-[10px] font-medium text-purple-700 dark:text-purple-300">
+                              {activityRingsData.diplomaticStanding}%
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="glass-none bg-popover text-popover-foreground border-border shadow-md text-xs">
+                          <div className="font-bold text-purple-500 mb-0.5">Diplomatic Standing</div>
+                          <div className="text-[11px] text-muted-foreground">International influence, alliance memberships, treaty compliance, and global reputation.</div>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-col items-center gap-1 text-center cursor-help">
+                            <HealthRing value={activityRingsData.governmentalEfficiency || 0} size={56} color="#f97316" label="Government" />
+                            <span className="text-[10px] font-medium text-orange-700 dark:text-orange-300">
+                              {activityRingsData.governmentalEfficiency}%
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="glass-none bg-popover text-popover-foreground border-border shadow-md text-xs">
+                          <div className="font-bold text-orange-500 mb-0.5">Governmental Efficiency</div>
+                          <div className="text-[11px] text-muted-foreground">Public service delivery, budget stability, tax structure efficiency, and political stability.</div>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   )}
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -190,8 +227,18 @@ function DashboardHero() {
                     return (
                       <Link
                         key={link.href}
-                        href={createUrl(link.href)}
-                        className="flex items-center gap-1 rounded-lg bg-muted/40 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
+                        href={link.href}
+                        className={cn(
+                          "flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-medium transition-all duration-200",
+                          "text-muted-foreground hover:text-foreground",
+                          link.theme.gradient,
+                          "bg-gradient-to-r from-transparent via-transparent to-transparent hover:shadow-md",
+                          link.label === "Overview" && "hover:from-amber-500/10 hover:to-yellow-500/10 hover:shadow-amber-500/30",
+                          link.label === "Executive" && "hover:from-amber-500/10 hover:to-yellow-500/10 hover:shadow-amber-500/30",
+                          link.label === "Diplomacy" && "hover:from-cyan-500/10 hover:to-blue-500/10 hover:shadow-cyan-500/30",
+                          link.label === "Intelligence" && "hover:from-blue-500/10 hover:to-cyan-500/10 hover:shadow-blue-500/30",
+                          link.label === "Defense" && "hover:from-red-500/10 hover:to-orange-500/10 hover:shadow-red-500/30",
+                        )}
                       >
                         <Icon className="h-3 w-3" />
                         {link.label}

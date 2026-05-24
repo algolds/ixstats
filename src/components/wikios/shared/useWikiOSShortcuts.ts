@@ -7,7 +7,7 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { withBasePath } from "~/lib/base-path";
+import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 
 export function useWikiOSShortcuts() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export function useWikiOSShortcuts() {
       if (match) {
         const slug = match[1];
         if (!pathname.includes("/edit")) {
-          router.push(withBasePath(`/w/${slug}/edit`));
+          navigateWithBasePath(`/w/${slug}/edit`, router);
         }
       }
     };

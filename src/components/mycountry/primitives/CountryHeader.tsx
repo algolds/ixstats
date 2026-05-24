@@ -41,7 +41,7 @@ export function CountryHeader({
             Public View
           </Button>
         </Link>
-        <Link href={createUrl("/mycountry/editor")}>
+        <Link href={"/mycountry/editor"}>
           <Button variant="outline" size="sm" className="flex items-center gap-2">
             <Edit className="h-4 w-4" />
             Edit Data

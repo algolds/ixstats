@@ -98,7 +98,7 @@ function DashboardControlEmbed({ favorite }: AdminControlEmbedProps) {
             <Icon className="h-5 w-5 text-purple-500" />
             <CardTitle className="text-sm">{favorite.displayName}</CardTitle>
           </div>
-          <Link href={createUrl(favorite.url)}>
+          <Link href={favorite.url}>
             <Button variant="ghost" size="sm">
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -154,7 +154,7 @@ function UserManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
             <Icon className="h-5 w-5 text-purple-500" />
             <CardTitle className="text-sm">{favorite.displayName}</CardTitle>
           </div>
-          <Link href={createUrl(favorite.url)}>
+          <Link href={favorite.url}>
             <Button variant="ghost" size="sm">
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -210,7 +210,7 @@ function DatabaseAdminControlEmbed({ favorite }: AdminControlEmbedProps) {
             <Icon className="h-5 w-5 text-purple-500" />
             <CardTitle className="text-sm">{favorite.displayName}</CardTitle>
           </div>
-          <Link href={createUrl(favorite.url)}>
+          <Link href={favorite.url}>
             <Button variant="ghost" size="sm">
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -271,7 +271,7 @@ function SystemAnalyticsControlEmbed({ favorite }: AdminControlEmbedProps) {
             <Icon className="h-5 w-5 text-purple-500" />
             <CardTitle className="text-sm">{favorite.displayName}</CardTitle>
           </div>
-          <Link href={createUrl(favorite.url)}>
+          <Link href={favorite.url}>
             <Button variant="ghost" size="sm">
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -346,7 +346,7 @@ function ContentManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
             <Icon className="h-5 w-5 text-purple-500" />
             <CardTitle className="text-sm">{favorite.displayName}</CardTitle>
           </div>
-          <Link href={createUrl(favorite.url)}>
+          <Link href={favorite.url}>
             <Button variant="ghost" size="sm">
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -401,7 +401,7 @@ function GenericControlEmbed({ favorite }: AdminControlEmbedProps) {
             <Icon className="h-5 w-5 text-purple-500" />
             <CardTitle className="text-sm">{favorite.displayName}</CardTitle>
           </div>
-          <Link href={createUrl(favorite.url)}>
+          <Link href={favorite.url}>
             <Button variant="ghost" size="sm">
               <ExternalLink className="h-3 w-3" />
             </Button>

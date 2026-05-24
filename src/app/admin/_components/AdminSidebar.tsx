@@ -18,7 +18,7 @@ import {
   Sparkles,
   MessageCircle,
   Menu,
-  GitFork,
+  Wallet,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -76,6 +76,12 @@ const NAV_ITEMS: NavItem[] = [
     description: "Management & Permissions",
   },
   {
+    label: "Vault & Credits",
+    href: "/admin/vault",
+    icon: Wallet,
+    description: "Manage Credits & Personal Vaults",
+  },
+  {
     label: "Reference Data",
     href: "/admin/reference-data",
     icon: Database,
@@ -92,12 +98,6 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/blurbs",
     icon: MessageCircle,
     description: "Topic Prompts & Responses",
-  },
-  {
-    label: "Rings Audit",
-    href: "/admin/rings-audit",
-    icon: GitFork,
-    description: "Ring Components & Formula Comparison",
   },
 ];
 

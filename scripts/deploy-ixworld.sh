@@ -94,13 +94,17 @@ if [ -f "$ECOSYSTEM_FILE" ]; then
 fi
 
 # Step 3: PM2 Management
-log "[3/3] Updating PM2 process..."
-if pm2 show "$PM2_APP_NAME" &>/dev/null; then
-    log "Restarting PM2 process (ensuring mode changes)..."
-    pm2 delete "$PM2_APP_NAME" --silent
-fi
+log "[3/3] Updating PM2 processes..."
 
-log "Starting PM2 process..."
+# Clean up existing processes before restart
+for app in "$PM2_APP_NAME" ixstats-ixtwitter; do
+    if pm2 show "$app" &>/dev/null; then
+        log "Removing existing process: $app"
+        pm2 delete "$app" --silent
+    fi
+done
+
+log "Starting PM2 processes from ecosystem config..."
 pm2 start "$IXWORLD_DIR/$ECOSYSTEM_FILE" --silent
 
 pm2 save --silent &>/dev/null

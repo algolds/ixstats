@@ -115,6 +115,27 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
       time: true,
+    },
+    {
+      name: 'ixstats-ixtwitter',
+      script: 'scripts/run-ixtwitter-sync.ts',
+      interpreter: 'bun',
+      cwd: projectDir,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '256M',
+      kill_timeout: 5000,
+      env: {
+        NODE_ENV: 'production',
+        ...localSecrets,
+      },
+      error_file: '/ixwiki/private/logs/ixstates-ixtwitter-error.log',
+      out_file: '/ixwiki/private/logs/ixstates-ixtwitter-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      time: true,
     }
   ]
 };

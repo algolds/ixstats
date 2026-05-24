@@ -131,7 +131,7 @@ export const ExecutiveActivityRings: React.FC<ExecutiveActivityRingsProps> = ({
                 isClickable={true}
                 className="transition-all duration-200 group-hover:drop-shadow-lg"
               />
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div
                   style={{ color: ring.color }}
                   className="opacity-80 transition-opacity group-hover:opacity-100"
@@ -174,7 +174,7 @@ export const ExecutiveActivityRings: React.FC<ExecutiveActivityRingsProps> = ({
               isClickable={true}
               className="transition-all duration-200 group-hover:drop-shadow-lg"
             />
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <motion.div
                 style={{ color: ring.color }}
                 className="opacity-80 transition-opacity group-hover:opacity-100"

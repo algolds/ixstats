@@ -139,7 +139,7 @@ export function DiplomaticOperationsCard({
             </div>
 
             <div className="flex gap-2">
-              <Link href={createUrl("/mycountry/new")}>
+              <Link href={"/mycountry/new"}>
                 <Button variant="outline" size="sm" className="group">
                   Full Command Center
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -322,14 +322,14 @@ export function DiplomaticOperationsCard({
           {/* Quick Actions */}
           <div className="border-t border-white/10 pt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <Link href={createUrl("/mycountry/new?tab=diplomatic")}>
+              <Link href={"/mycountry/new?tab=diplomatic"}>
                 <Button variant="outline" size="sm" className="w-full">
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Diplomatic Briefing
                 </Button>
               </Link>
 
-              <Link href={createUrl("/dashboard")}>
+              <Link href={"/dashboard"}>
                 <Button variant="outline" size="sm" className="w-full">
                   <Globe className="mr-2 h-4 w-4" />
                   Embassy Wire

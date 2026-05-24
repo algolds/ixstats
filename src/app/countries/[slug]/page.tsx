@@ -161,7 +161,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href={createUrl("/countries")}>Countries</BreadcrumbLink>
+              <BreadcrumbLink href={"/countries"}>Countries</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>

@@ -341,7 +341,7 @@ export function LiveIntelligenceSection({ countryId, country }: LiveIntelligence
                 </p>
               </div>
             </div>
-            <Link href={createUrl("/mycountry/intelligence")}>
+            <Link href={"/mycountry/intelligence"}>
               <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700">
                 <Brain className="mr-2 h-4 w-4" />
                 Open Intelligence Center

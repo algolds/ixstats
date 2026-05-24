@@ -26,6 +26,8 @@ import { StepContent, BuilderFooter } from "./sections";
 import { StepRenderer } from "./sections/StepRenderer";
 import { BuilderStepLoading } from "../GlobalBuilderLoading";
 import type { BuilderStep } from "./builderConfig";
+import { BuilderStepNav } from "../BuilderStepNav";
+import type { BuilderSection } from "../lib/builder-theme";
 
 /**
  * Props for the AtomicBuilderPage component
@@ -435,8 +437,46 @@ function AtomicBuilderPageInner({
     );
   }
 
+  // Map BuilderStep to BuilderSection for step nav
+  const stepToSection: Record<BuilderStep, BuilderSection> = {
+    foundation: "foundation",
+    core: "identity",
+    government: "government",
+    economics: "economics",
+    preview: "preview",
+  };
+
+  const currentSection = stepToSection[builderState.step];
+
+  const handleNavigateSection = useCallback((section: BuilderSection) => {
+    const sectionToStep: Record<BuilderSection, BuilderStep | undefined> = {
+      foundation: "foundation",
+      identity: "core",
+      government: "government",
+      economics: "economics",
+      preview: "preview",
+      import: undefined,
+    };
+    const targetStep = sectionToStep[section];
+    if (targetStep) {
+      setBuilderState(prev => ({ ...prev, step: targetStep }));
+    }
+  }, [setBuilderState]);
+
+  const allSections = new Set<BuilderSection>(["foundation", "identity", "government", "economics", "preview"]);
+
   return (
     <div className="space-y-6">
+      {/* Step Navigation Header */}
+      <div className="border-border bg-card/50 rounded-xl border p-3 backdrop-blur-sm">
+        <BuilderStepNav
+          activeSection={currentSection}
+          onNavigate={handleNavigateSection}
+          completedSteps={new Set(isEditMode ? ["identity"] : [])}
+          accessibleSteps={allSections}
+        />
+      </div>
+
       {/* Main Content Area with Animations */}
       {builderState.step === "foundation" && !isEditMode ? (
         // Foundation step is rendered without StepContent wrapper (only in create mode)

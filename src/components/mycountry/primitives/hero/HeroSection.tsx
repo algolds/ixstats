@@ -100,7 +100,7 @@ export function HeroSection({
                 My Country
               </Badge>
               {showEditButton && (
-                <Link href={createUrl("/countries/edit/" + country.id)}>
+                <Link href="/mycountry/editor">
                   <Button
                     variant="ghost"
                     size="sm"

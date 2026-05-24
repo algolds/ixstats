@@ -174,7 +174,7 @@ function ProfileContent() {
                       creating a new one.
                     </p>
                     <Link
-                      href={createUrl("/setup")}
+                      href={"/setup"}
                       className="inline-flex items-center rounded-md bg-amber-600 px-4 py-2 font-medium text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600"
                     >
                       <Globe className="mr-2 h-4 w-4" />
@@ -312,14 +312,14 @@ export default function ProfilePage() {
           </p>
           <div className="flex justify-center gap-4">
             <Link
-              href={createUrl("/dashboard")}
+              href={"/dashboard"}
               className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
             >
               <BarChart3 className="mr-2 h-4 w-4" />
               View Dashboard
             </Link>
             <Link
-              href={createUrl("/countries")}
+              href={"/countries"}
               className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
             >
               <Globe className="mr-2 h-4 w-4" />

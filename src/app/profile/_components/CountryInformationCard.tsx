@@ -71,7 +71,7 @@ export function CountryInformationCard({
             </div>
           </div>
           <Link
-            href={createUrl(countryPath)}
+            href={countryPath}
             className="glass-interactive flex items-center gap-2 rounded-xl bg-white/50 px-4 py-2 text-sm font-semibold text-indigo-600 transition-all hover:bg-white dark:bg-slate-800/50 dark:text-indigo-400 dark:hover:bg-slate-800"
           >
              View MyCountry

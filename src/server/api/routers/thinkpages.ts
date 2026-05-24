@@ -610,6 +610,22 @@ export const thinkpagesRouter = createTRPCRouter({
       return accounts;
     }),
 
+  // Get current user's ThinkPages accounts
+  getMyAccounts: protectedProcedure
+    .query(async ({ ctx }) => {
+      const { db, auth } = ctx;
+
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: {
+          clerkUserId: auth.userId,
+          isActive: true,
+        },
+        orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
+      });
+
+      return accounts;
+    }),
+
   // Get Account Counts by Type - For Feed only
   getAccountCountsByType: publicProcedure
     .input(z.object({ countryId: z.string() }))

@@ -57,7 +57,16 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   });
 
   function handleSave() {
-    configureLegislature.mutate({ countryId, ...formData });
+    const clampedSeats = Math.max(10, Math.min(1000, Number(formData.totalSeats) || 10));
+    const clampedTerm = Math.max(1, Math.min(10, Number(formData.termLength) || 4));
+    
+    setFormData({ ...formData, totalSeats: clampedSeats, termLength: clampedTerm });
+    configureLegislature.mutate({ 
+      countryId, 
+      ...formData,
+      totalSeats: clampedSeats,
+      termLength: clampedTerm
+    });
   }
 
   return (
@@ -107,7 +116,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 min={10}
                 max={1000}
                 value={formData.totalSeats}
-                onChange={(e) => setFormData({ ...formData, totalSeats: Math.max(10, Math.min(1000, Number(e.target.value))) })}
+                onChange={(e) => setFormData({ ...formData, totalSeats: e.target.value })}
               />
               <p className="mt-1 text-[10px] text-muted-foreground">10-1000 seats</p>
             </div>
@@ -132,7 +141,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 min={1}
                 max={10}
                 value={formData.termLength}
-                onChange={(e) => setFormData({ ...formData, termLength: Math.max(1, Math.min(10, Number(e.target.value))) })}
+                onChange={(e) => setFormData({ ...formData, termLength: e.target.value })}
               />
             </div>
             <div>

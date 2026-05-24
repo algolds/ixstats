@@ -20,11 +20,6 @@ export function withBasePath(path: string): string {
     return BASE_PATH || "/";
   }
 
-  // Don't double-prefix if already has base path
-  if (BASE_PATH && path.startsWith(BASE_PATH)) {
-    return path;
-  }
-
   // Handle external URLs
   if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("//")) {
     return path;
@@ -33,7 +28,32 @@ export function withBasePath(path: string): string {
   // Ensure path starts with /
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
+  // Don't double-prefix if already has base path
+  if (BASE_PATH && normalizedPath.startsWith(BASE_PATH)) {
+    return normalizedPath;
+  }
+
+  // If we're in the browser, check if the app is actually mounted at BASE_PATH
+  // In dev, sometimes NEXT_PUBLIC_BASE_PATH is in .env but the dev server runs at root
+  if (typeof window !== "undefined" && BASE_PATH) {
+    if (!window.location.pathname.startsWith(BASE_PATH)) {
+      return normalizedPath; // App is running at root, don't prepend
+    }
+  }
+
   return `${BASE_PATH}${normalizedPath}`;
+}
+
+/**
+ * Navigates to a path using the Next.js router or window.location for external URLs.
+ */
+export function navigateWithBasePath(path: string, router: any) {
+  const url = withBasePath(path);
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("//")) {
+    window.location.href = url;
+  } else {
+    router.push(url);
+  }
 }
 
 /** Protomaps basemaps-assets (GitHub Pages) — `access-control-allow-origin: *` */

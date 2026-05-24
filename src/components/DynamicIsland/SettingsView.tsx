@@ -2,6 +2,7 @@ import React, { useCallback, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -46,7 +47,8 @@ export function SettingsView({ onClose }: SettingsViewProps) {
   const { user, isLoaded, isSignedIn } = useUser();
   const { theme, effectiveTheme, setTheme, compactMode, toggleCompactMode } = useTheme();
   const pathname = usePathname();
-  const isOnWikiPage = pathname?.startsWith("/w/") || pathname?.startsWith("/w/special/") || pathname?.startsWith("/blurbs") || false;
+  const normalizedPathname = stripBasePath(pathname || "");
+  const isOnWikiPage = normalizedPathname.startsWith("/w/") || normalizedPathname.startsWith("/w/special/") || normalizedPathname.startsWith("/blurbs") || false;
 
   // Wiki-specific toggles
   const [showCiteTooltips, toggleCiteTooltips] = useLocalToggle("wikios:showCitationTooltips", true);
@@ -83,7 +85,9 @@ export function SettingsView({ onClose }: SettingsViewProps) {
     }
   }, [refetchCountries, refetchNotifications, isSignedIn, user?.id]);
 
-  const wikiUsername = user?.username ?? user?.firstName ?? "";
+  const wikiUsername = user?.username
+    ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
+    : user?.firstName ?? "";
 
   return (
     <div className="p-4">

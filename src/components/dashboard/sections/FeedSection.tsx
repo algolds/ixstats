@@ -304,7 +304,7 @@ function ThinkPagesContent({
           <p className="text-muted-foreground mb-4 text-sm">
             Complete your country setup to post, reply, and interact on the feed.
           </p>
-          <Link href={createUrl("/setup")}>
+          <Link href={"/setup"}>
             <Button size="sm">Complete Setup</Button>
           </Link>
         </CardContent>
@@ -322,7 +322,7 @@ function ThinkPagesContent({
             <p className="text-muted-foreground text-xs">
               You're browsing in read-only mode. Sign in to post, reply, and interact.
             </p>
-            <Link href={createUrl("/setup")} className="mt-2 inline-block">
+            <Link href={"/setup"} className="mt-2 inline-block">
               <Button size="sm" variant="outline" className="text-xs">
                 Sign In
               </Button>
@@ -418,7 +418,7 @@ function FollowingFeedContent({
           <p className="text-muted-foreground text-xs">
             Follow countries from the explore page to see their activity here.
           </p>
-          <Link href={createUrl("/countries")}>
+          <Link href={"/countries"}>
             <Button size="sm" variant="outline" className="mt-3 text-xs">
               Explore Countries
             </Button>

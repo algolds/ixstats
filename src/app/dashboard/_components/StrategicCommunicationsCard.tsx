@@ -172,7 +172,7 @@ export function StrategicCommunicationsCard({
             </div>
 
             <div className="flex gap-2">
-              <Link href={createUrl("/dashboard")}>
+              <Link href={"/dashboard"}>
                 <Button variant="outline" size="sm" className="group">
                   Analytics Center
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -421,14 +421,14 @@ export function StrategicCommunicationsCard({
           {/* Quick Actions */}
           <div className="border-t border-white/10 pt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <Link href={createUrl("/dashboard")}>
+              <Link href={"/dashboard"}>
                 <Button variant="outline" size="sm" className="w-full">
                   <Target className="mr-2 h-4 w-4" />
                   Manage Campaigns
                 </Button>
               </Link>
 
-              <Link href={createUrl("/dashboard")}>
+              <Link href={"/dashboard"}>
                 <Button variant="outline" size="sm" className="w-full">
                   <BarChart3 className="mr-2 h-4 w-4" />
                   View Analytics

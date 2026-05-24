@@ -87,7 +87,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center gap-4">
-          <Link href={createUrl("/countries")}>
+          <Link href={"/countries"}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Countries
@@ -98,7 +98,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
           <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-red-500" />
           <h2 className="mb-2 text-2xl font-semibold">Error Loading Country Data</h2>
           <p className="text-muted-foreground mb-4">{error.message}</p>
-          <Link href={createUrl("/countries")}>
+          <Link href={"/countries"}>
             <Button>Browse All Countries</Button>
           </Link>
         </Card>
@@ -110,7 +110,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center gap-4">
-          <Link href={createUrl("/countries")}>
+          <Link href={"/countries"}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Countries
@@ -122,7 +122,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
           <p className="text-muted-foreground mb-4">
             The requested country could not be found or may have been removed.
           </p>
-          <Link href={createUrl("/countries")}>
+          <Link href={"/countries"}>
             <Button>Browse All Countries</Button>
           </Link>
         </Card>
@@ -155,7 +155,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href={createUrl("/countries")}>Countries</BreadcrumbLink>
+              <BreadcrumbLink href={"/countries"}>Countries</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -225,7 +225,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
                       Access your full country management dashboard with detailed analytics and
                       strategic tools.
                     </p>
-                    <Link href={createUrl("/mycountry")}>
+                    <Link href={"/mycountry"}>
                       <Button className="w-full" style={{ backgroundColor: flagColors.primary }}>
                         Access Full Dashboard
                       </Button>
@@ -250,7 +250,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
                       This country is managed by another player. You can still view public
                       information and explore other available countries.
                     </p>
-                    <Link href={createUrl("/countries")}>
+                    <Link href={"/countries"}>
                       <Button variant="outline" className="w-full">
                         Browse Countries
                       </Button>
@@ -294,7 +294,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
                   </span>
                   {isOwnCountry && (
                     <Link
-                      href={createUrl("/mycountry")}
+                      href={"/mycountry"}
                       className="ml-2 text-blue-500 hover:underline"
                     >
                       Go to Dashboard →

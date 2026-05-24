@@ -47,7 +47,7 @@ export function ThinkPagesStatusWidget({
           Sign in to participate
         </p>
         <Link
-          href={createUrl("/setup")}
+          href={"/setup"}
           className="flex items-center justify-center rounded-lg bg-blue-500/10 px-3 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-500/20 dark:text-blue-400"
         >
           Sign In / Sign Up

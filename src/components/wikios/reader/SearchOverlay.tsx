@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
+import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 
 interface SearchOverlayProps {
   query: string;
@@ -50,7 +50,7 @@ export function SearchOverlay({ query, onClose, inputRef }: SearchOverlayProps) 
   const navigate = useCallback(
     (title: string) => {
       onClose();
-      router.push(withBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`));
+      navigateWithBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`, router);
     },
     [router, onClose]
   );
@@ -104,7 +104,7 @@ export function SearchOverlay({ query, onClose, inputRef }: SearchOverlayProps) 
           className="wikios-search-footer-link"
           onClick={() => {
             onClose();
-            router.push(withBasePath(`/w/special/search?q=${encodeURIComponent(query)}`));
+            navigateWithBasePath(`/w/special/search?q=${encodeURIComponent(query)}`, router);
           }}
         >
           Full search for &ldquo;{query}&rdquo;

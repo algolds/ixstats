@@ -136,7 +136,7 @@ export default function LeaderboardsPage() {
             Compare nations across economic, diplomatic, and cultural metrics
           </p>
         </div>
-        <Link href={createUrl("/achievements")}>
+        <Link href={"/achievements"}>
           <Button variant="outline">
             <Trophy className="mr-2 h-4 w-4" />
             View Achievements

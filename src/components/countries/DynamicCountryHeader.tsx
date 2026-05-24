@@ -179,7 +179,7 @@ export const DynamicCountryHeader: React.FC<DynamicCountryHeaderProps> = ({
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
               {isOwnCountry && (
-                <Link href={createUrl("/mycountry")}>
+                <Link href={"/mycountry"}>
                   <Button className="border border-white/30 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30">
                     <Activity className="mr-2 h-4 w-4" />
                     My Dashboard

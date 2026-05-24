@@ -12,7 +12,6 @@ import { Badge } from "~/components/ui/badge";
 import { CheckCircle, User } from "lucide-react";
 import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
 import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
-import { createUrl } from "~/lib/url-utils";
 
 function SubmitPromptForm() {
   const [title, setTitle] = useState("");
@@ -142,7 +141,7 @@ export default function SubmitBlurbPage() {
               <p className="text-sm text-muted-foreground">
                 Sign in to submit a prompt suggestion.
               </p>
-              <Link href={createUrl("/setup")}>
+              <Link href={withBasePath("/setup")}>
                 <Button size="sm">Sign In</Button>
               </Link>
             </CardContent>

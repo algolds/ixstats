@@ -14,7 +14,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
+import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
 
 const CountryMapEmbed = dynamic(
@@ -75,7 +75,7 @@ export function WikiView({ onClose }: WikiViewProps) {
   const handleNavigateToArticle = useCallback(
     (title: string) => {
       onClose();
-      router.push(withBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`));
+      navigateWithBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`, router);
     },
     [router, onClose]
   );
@@ -254,15 +254,15 @@ export function WikiView({ onClose }: WikiViewProps) {
               <div className="space-y-0.5">
                 <QuickAction icon={<FileEdit />} label="Edit" shortcut="Tab Tab" onClick={() => {
                   onClose();
-                  router.push(withBasePath(`/w/${slug}/edit`));
+                  navigateWithBasePath(`/w/${slug}/edit`, router);
                 }} />
                 <QuickAction icon={<History />} label="History" onClick={() => {
                   onClose();
-                  router.push(withBasePath(`/w/special/history/${slug}`));
+                  navigateWithBasePath(`/w/special/history/${slug}`, router);
                 }} />
                 <QuickAction icon={<Link2 />} label="What links here" onClick={() => {
                   onClose();
-                  router.push(withBasePath(`/w/special/whatlinkshere/${slug}`));
+                  navigateWithBasePath(`/w/special/whatlinkshere/${slug}`, router);
                 }} />
                 <QuickAction icon={<ExternalLink />} label="View on MediaWiki" onClick={() => {
                   window.open(`https://ixwiki.com/wiki/${slug}`, "_blank");
@@ -278,19 +278,19 @@ export function WikiView({ onClose }: WikiViewProps) {
               <QuickAction icon={<Home />} label="Main Page" onClick={() => handleNavigateToArticle("Main Page")} />
               <QuickAction icon={<Shuffle />} label="Random Article" onClick={() => {
                 onClose();
-                router.push(withBasePath("/w/special/random"));
+                navigateWithBasePath("/w/special/random", router);
               }} />
               <QuickAction icon={<Globe />} label="All Countries" onClick={() => {
                 onClose();
-                router.push(withBasePath("/countries"));
+                navigateWithBasePath("/countries", router);
               }} />
               <QuickAction icon={<Users />} label="ThinkPages" onClick={() => {
                 onClose();
-                router.push(withBasePath("/dashboard"));
+                navigateWithBasePath("/dashboard", router);
               }} />
               <QuickAction icon={<Map />} label="World Map" onClick={() => {
                 onClose();
-                router.push(withBasePath("/maps"));
+                navigateWithBasePath("/maps", router);
               }} />
             </div>
           </div>

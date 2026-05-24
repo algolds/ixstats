@@ -392,7 +392,7 @@ export function CountryEconomicPanel({
                   </CardDescription>
                 </div>
                 {isOwnCountry && (
-                  <Link href={createUrl("/mycountry")}>
+                  <Link href={"/mycountry"}>
                     <Button variant="outline" size="sm" className="gap-2 text-xs">
                       <Activity className="h-3 w-3" />
                       Manage

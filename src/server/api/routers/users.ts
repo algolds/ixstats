@@ -119,6 +119,8 @@ export const usersRouter = createTRPCRouter({
         countryId: countryRecord?.id ?? null,
         country: countryRecord,
         role: userRecord?.role ?? null,
+        wikiUsername: userRecord?.wikiUsername ?? null,
+        forumUsername: userRecord?.forumUsername ?? null,
         hasCompletedSetup: Boolean(countryRecord),
       };
     } catch (error) {

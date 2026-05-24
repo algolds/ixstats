@@ -102,8 +102,9 @@ export function GlobalLinkTooltipProvider({ children }: { children: React.ReactN
       const link = target.closest("a[href]") as HTMLAnchorElement | null;
       if (!link) return;
 
-      // Don't show tooltip for links inside another tooltip
+      // Don't show tooltip for links inside another tooltip or the wiki sidebar
       if (link.closest(".global-link-tooltip")) return;
+      if (link.closest(".no-wiki-tooltip")) return;
 
       const href = link.getAttribute("href") ?? "";
       if (!href) return;

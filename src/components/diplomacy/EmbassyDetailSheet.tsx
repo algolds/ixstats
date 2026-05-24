@@ -226,13 +226,10 @@ export function EmbassyDetailSheet({
                     size="sm"
                     variant="outline"
                     className="gap-1.5"
-                    onClick={() => {
-                      // TODO: Wire up upgrade Sheet
-                      notify.info("Upgrade feature coming soon");
-                    }}
+                    disabled
                   >
                     <ArrowUpCircle className="h-3 w-3" />
-                    Upgrade
+                    Upgrade (Coming Soon)
                   </Button>
                   <Button
                     size="sm"

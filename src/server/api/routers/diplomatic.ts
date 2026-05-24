@@ -1242,6 +1242,8 @@ export const diplomaticRouter = createTRPCRouter({
             where: { status: { in: ["available", "in_progress", "completed"] } },
             orderBy: { createdAt: "desc" },
           },
+          hostCountry: { select: { name: true } },
+          guestCountry: { select: { name: true } },
         },
       });
 
@@ -1249,6 +1251,8 @@ export const diplomaticRouter = createTRPCRouter({
 
       return {
         ...embassy,
+        hostCountryName: embassy.hostCountry?.name,
+        guestCountryName: embassy.guestCountry?.name,
         missions: embassy.missions,
         upgrades: embassy.upgrades,
         nextLevelRequirement: embassy.level * 1000 + 500, // Experience needed for next level

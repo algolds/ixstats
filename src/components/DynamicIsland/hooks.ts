@@ -19,6 +19,7 @@ import {
   Search,
 } from "lucide-react";
 import { createAbsoluteUrl } from "~/lib/url-utils";
+import { stripBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { usePathname } from "next/navigation";
@@ -130,7 +131,8 @@ export function useCommandItems(userProfile?: UserProfile) {
 export function useDynamicIslandState() {
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
-  const isOnWikiPage = pathname?.startsWith("/w/") || pathname?.startsWith("/w/special/") || pathname?.startsWith("/blurbs") || false;
+  const normalizedPathname = stripBasePath(pathname || "");
+  const isOnWikiPage = normalizedPathname.startsWith("/w/") || normalizedPathname.startsWith("/w/special/") || normalizedPathname.startsWith("/blurbs") || false;
   const isOnForumPage = pathname?.startsWith("/forum") || false;
   const [mode, setMode] = useState<ViewMode>("compact");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -511,10 +513,9 @@ export function useDynamicIslandState() {
         lastTabTimestampRef.current = now;
 
         if (timeSinceLastTab < 400 && mode === "wiki") {
-          // Double-tap on wiki: enter editor mode for current wiki article
+          // Double-tap on wiki: close wiki mode
           setIsProcessingShortcut(true);
           switchMode("compact");
-          window.dispatchEvent(new CustomEvent("wikios:edit"));
           if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
           shortcutTimeoutRef.current = setTimeout(() => {
             setIsProcessingShortcut(false);

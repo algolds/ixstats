@@ -143,7 +143,7 @@ export default function AchievementsPage() {
 
       {/* Navigation */}
       <div>
-        <Link href={createUrl("/leaderboards")}>
+        <Link href={"/leaderboards"}>
           <Button variant="outline">
             <Medal className="mr-2 h-4 w-4" />
             View Leaderboards

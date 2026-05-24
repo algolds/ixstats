@@ -8,7 +8,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
+import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 
 // Show delay (ms) before tooltip appears — short enough to feel responsive
 const SHOW_DELAY = 150;
@@ -100,7 +100,7 @@ export function useLinkPreviews(containerRef: React.RefObject<HTMLElement | null
       e.preventDefault();
       clearTimers();
       setPreview(null);
-      router.push(withBasePath(`/w/${path}`));
+      navigateWithBasePath(`/w/${path}`, router);
     };
 
     container.addEventListener("mouseenter", handleMouseEnter, true);

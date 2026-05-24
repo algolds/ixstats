@@ -35,7 +35,7 @@ export function DashboardMapWidget({
           </span>
         </div>
         <a
-          href={createUrl("/maps")}
+          href={"/maps"}
           className="text-[10px] text-blue-500 hover:text-blue-600"
         >
           Full map →

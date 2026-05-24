@@ -39,7 +39,7 @@ export function MiniWorldMap({
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
         <h3 className="text-sm font-medium text-foreground">World Map</h3>
         <a
-          href={createUrl("/maps")}
+          href={"/maps"}
           className="text-xs text-blue-500 hover:text-blue-600"
         >
           Open full map

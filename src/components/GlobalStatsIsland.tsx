@@ -618,7 +618,7 @@ function GlobalStatsIslandContent() {
                     <div className="pt-3">
                       {setupStatus === "complete" && userProfile?.country && (
                         <a
-                          href={createUrl(getNationUrl(userProfile.country.name))}
+                          href={getNationUrl(userProfile.country.name)}
                           className="flex items-center gap-3 rounded py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                         >
                           <Crown className="h-4 w-4" />
@@ -627,7 +627,7 @@ function GlobalStatsIslandContent() {
                       )}
                       {setupStatus === "needs-setup" && (
                         <a
-                          href={createUrl("/setup")}
+                          href={"/setup"}
                           className="flex items-center gap-3 rounded py-2 text-sm text-amber-300 transition-colors hover:bg-amber-500/10 hover:text-amber-200"
                         >
                           <AlertCircle className="h-4 w-4" />
@@ -635,14 +635,14 @@ function GlobalStatsIslandContent() {
                         </a>
                       )}
                       <a
-                        href={createUrl("/dashboard")}
+                        href={"/dashboard"}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
                         <Home className="h-4 w-4" />
                         Dashboard
                       </a>
                       <a
-                        href={createUrl("/profile")}
+                        href={"/profile"}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
                         <User className="h-4 w-4" />

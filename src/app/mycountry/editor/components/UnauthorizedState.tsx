@@ -16,7 +16,7 @@ export function UnauthorizedState() {
           <p className="text-muted-foreground mb-6">
             You need to be signed in to access the country data editor.
           </p>
-          <Link href={createUrl("/mycountry")}>
+          <Link href={"/mycountry"}>
             <Button>Go to MyCountry</Button>
           </Link>
         </CardContent>

@@ -18,10 +18,10 @@ export function NoCountryState() {
             data editor.
           </p>
           <div className="flex justify-center gap-4">
-            <Link href={createUrl("/countries")}>
+            <Link href={"/countries"}>
               <Button variant="outline">Browse Countries</Button>
             </Link>
-            <Link href={createUrl("/mycountry")}>
+            <Link href={"/mycountry"}>
               <Button>Go to MyCountry</Button>
             </Link>
           </div>

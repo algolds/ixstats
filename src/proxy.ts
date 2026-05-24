@@ -29,6 +29,7 @@ const isPublicRoute = createRouteMatcher([
   "/builder/(.*)",
   "/maps",
   "/maps/(.*)",
+  "/IxEconomy.xlsx",
 ]);
 
 // IxWorld standalone mode: when running as maps.ixwiki.com, restrict routes
@@ -48,6 +49,7 @@ const IXWORLD_ALLOWED_PREFIXES = [
   "/mycountry",
   "/ws",
   "/socket.io",
+  "/w",
 ];
 
 // Check if Clerk is configured with valid keys
@@ -178,9 +180,10 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
     return NextResponse.redirect(new URL("/maps", req.nextUrl.origin));
   }
 
-  // Allow favicon and allowed route prefixes
+  // Allow favicon, IxEconomy.xlsx and allowed route prefixes
   if (
     pathname === "/favicon.ico" ||
+    pathname.endsWith("/IxEconomy.xlsx") ||
     IXWORLD_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))
   ) {
     return null;
@@ -194,9 +197,10 @@ function handleStandaloneRouting(req: NextRequest): NextResponse | null {
     return null;
   }
 
-  // Everything else → redirect to main IxStats
+  // Everything else → redirect to main site using configured base path
+  const fallbackHost = process.env.STANDALONE_FALLBACK_HOST || "https://ixwiki.com";
   return NextResponse.redirect(
-    `https://ixwiki.com/projects/ixstats${pathname}`
+    `${fallbackHost}${BASE_PATH || "/projects/ixstats"}${pathname}`
   );
 }
 

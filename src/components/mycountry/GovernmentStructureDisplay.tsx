@@ -121,13 +121,13 @@ export function GovernmentStructureDisplay({
               </div>
               {isOwner && (
                 <div className="flex items-center gap-2">
-                  <Link href={createUrl("/mycountry/editor?tab=atomic")}>
+                  <Link href={"/mycountry/editor?tab=atomic"}>
                     <Button variant="outline" size="sm" className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
                       Edit Components
                     </Button>
                   </Link>
-                  <Link href={createUrl("/mycountry/editor?tab=structure")}>
+                  <Link href={"/mycountry/editor?tab=structure"}>
                     <Button variant="outline" size="sm" className="flex items-center gap-2">
                       <Edit2 className="h-4 w-4" />
                       Legacy Editor
@@ -281,13 +281,13 @@ export function GovernmentStructureDisplay({
           </p>
           {isOwner && (
             <div className="flex items-center justify-center gap-3">
-              <Link href={createUrl("/mycountry/editor?tab=atomic")}>
+              <Link href={"/mycountry/editor?tab=atomic"}>
                 <Button className="bg-primary flex items-center gap-2">
                   <Zap className="h-4 w-4" />
                   Launch Atomic Editor
                 </Button>
               </Link>
-              <Link href={createUrl("/mycountry/editor?tab=structure")}>
+              <Link href={"/mycountry/editor?tab=structure"}>
                 <Button variant="outline" className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   Traditional Builder
@@ -341,7 +341,7 @@ export function GovernmentStructureDisplay({
               </div>
             </div>
             {isOwner && (
-              <Link href={createUrl("/mycountry/editor?tab=structure")}>
+              <Link href={"/mycountry/editor?tab=structure"}>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <Edit2 className="h-4 w-4" />
                   Edit Structure

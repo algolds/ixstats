@@ -32,7 +32,7 @@ import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
 import { useGlobalNotificationBridge } from "~/services/GlobalNotificationBridge";
 import { usePermissions } from "~/hooks/usePermissions";
-import { withBasePath } from "~/lib/base-path";
+import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import type { CompactViewProps } from "./types";
 import { useRouter, usePathname } from "next/navigation";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
@@ -672,7 +672,7 @@ function CompactViewComponent({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => onSwitchMode("search")}
+                    onClick={() => onSwitchMode(isOnWikiPage ? "wiki" : "search")}
                     className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
                       isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}
@@ -907,7 +907,10 @@ function WikiProfileButton({ onSwitchMode }: { onSwitchMode: (mode: any) => void
     { enabled: popoverOpen && !!countryName, staleTime: 60_000 }
   );
 
-  const wikiUsername = user?.username ?? user?.firstName ?? "";
+  const wikiUsername = userProfile?.wikiUsername
+    ?? (user?.username
+      ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
+      : user?.firstName ?? "");
 
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -948,7 +951,7 @@ function WikiProfileButton({ onSwitchMode }: { onSwitchMode: (mode: any) => void
           <div className="space-y-0.5">
             {wikiUsername && (
               <button
-                onClick={() => { setPopoverOpen(false); router.push(withBasePath(`/w/special/user/${encodeURIComponent(wikiUsername)}`)); }}
+                onClick={() => { setPopoverOpen(false); navigateWithBasePath(`/w/special/user/${encodeURIComponent(wikiUsername)}`, router); }}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground/70 hover:bg-accent/10 hover:text-foreground transition-colors"
               >
                 <User className="h-3 w-3" />
@@ -957,7 +960,7 @@ function WikiProfileButton({ onSwitchMode }: { onSwitchMode: (mode: any) => void
             )}
             {userProfile?.countryId && (
               <button
-                onClick={() => { setPopoverOpen(false); router.push(withBasePath("/mycountry")); }}
+                onClick={() => { setPopoverOpen(false); navigateWithBasePath("/mycountry", router); }}
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground/70 hover:bg-accent/10 hover:text-foreground transition-colors"
               >
                 <Crown className="h-3 w-3" />

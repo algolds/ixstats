@@ -19,7 +19,7 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { formatTimeAgo } from "~/lib/time-utils";
 import { createUrl } from "~/lib/url-utils";
-import { titleToWikiOSPath } from "~/lib/wikios/url-compat";
+import { titleToWikiOSRoute } from "~/lib/wikios/url-compat";
 import { WikiLinkPreview, ForumLinkPreview } from "~/components/wiki/WikiLinkPreview";
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
 import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
@@ -131,9 +131,10 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
     { id: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "", retry: false }
   );
-  const { data: accountsData } = api.thinkpages.getAccountsByCountry.useQuery(
-    { countryId: userProfile?.countryId || "" },
-    { enabled: !!userProfile?.countryId }
+  // Fetch accounts user owns for posting
+  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(
+    undefined,
+    { enabled: !!user?.id }
   );
   const accounts = useMemo(() => accountsData || [], [accountsData]);
 
@@ -377,7 +378,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                           <p className="text-[11px] text-muted-foreground">Claim or create a country in the setup wizard to participate in ThinkPages discussion.</p>
                         </div>
                       </div>
-                      <Link href={createUrl("/setup")}>
+                      <Link href={"/setup"}>
                         <Button size="sm" className="h-8 text-xs shrink-0">Setup Country</Button>
                       </Link>
                     </CardContent>
@@ -503,7 +504,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
                     const isWiki = !!wikiTitle;
                     const isForum = !!forumThreadId;
-                    const wikiHref = isWiki && wikiTitle ? titleToWikiOSPath(wikiTitle) : null;
+                    const wikiHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : null;
 
                     const el = (
                       <W key={item.id} {...(isWiki ? { href: wikiHref } : wp)} className="flex items-start gap-2 rounded-lg border border-border/30 p-2 transition-colors hover:bg-muted/40 cursor-pointer">
@@ -780,7 +781,7 @@ function FollowingFeedContent({
           <Users className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
           <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
           <p className="text-xs text-muted-foreground">Follow countries to see their activity here.</p>
-          <Link href={createUrl("/countries")}><Button size="sm" variant="outline" className="mt-3 text-xs">Explore Countries</Button></Link>
+          <Link href={"/countries"}><Button size="sm" variant="outline" className="mt-3 text-xs">Explore Countries</Button></Link>
         </CardContent>
       </Card>
     );
@@ -998,7 +999,7 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
           })}
         </div>
         <Link
-          href={createUrl("/countries")}
+          href={"/countries"}
           className="mt-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
         >
           <Globe className="h-3 w-3" />

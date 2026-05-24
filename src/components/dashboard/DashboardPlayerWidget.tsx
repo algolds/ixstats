@@ -138,7 +138,7 @@ export function DashboardPlayerWidget() {
       {/* Messages */}
       <div className="space-y-1.5">
         <Link
-          href={createUrl("/messages")}
+          href={"/messages"}
           className="flex items-center justify-between group"
         >
           <span className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
@@ -183,7 +183,7 @@ export function DashboardPlayerWidget() {
       {/* Pending Issues */}
       {pendingIssues && pendingIssues.total > 0 && (
         <Link
-          href={createUrl("/mycountry/executive")}
+          href={"/mycountry/executive"}
           className="flex items-center justify-between group"
         >
           <span className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">

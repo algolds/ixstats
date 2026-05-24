@@ -656,13 +656,6 @@ export function Navigation() {
         description: "Interactive world map and geographic exploration",
       },
       {
-        name: "ThinkPages",
-        href: "/thinkpages",
-        icon: Rss,
-        requiresAuth: false,
-        description: "Diplomatic communications and intelligence sharing platform",
-      },
-      {
         name: "Forum",
         href: "/forum",
         icon: MessageSquare,
@@ -679,7 +672,7 @@ export function Navigation() {
       },
       {
         name: "Wiki",
-        href: "/wiki",
+        href: "/w",
         icon: FaWikipediaW,
         requiresAuth: false,
       },
@@ -688,8 +681,7 @@ export function Navigation() {
         href: "/vault",
         icon: GiCardRandom,
         requiresAuth: true,
-        adminOnly: true,
-        description: "IxCards trading card system (Admin Only)",
+        description: "IxCards trading card system",
       },
       {
         name: "Labs",

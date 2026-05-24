@@ -17,6 +17,7 @@ import { type PrismaClient } from "@prisma/client";
 import { type VaultTransactionType } from "@prisma/client";
 import { budgetVaultCalculator } from "./budget-vault-calculator";
 import { syncUserToForum } from "~/modules/forum";
+import { Cache } from "~/lib/cache";
 
 /**
  * Vault Service
@@ -135,8 +136,9 @@ export class VaultService {
 
       const todayEarnings = todayTransactions.reduce((sum, tx) => sum + tx.credits, 0);
 
-      // Define caps
-      const cap = earnType === "EARN_ACTIVE" ? 100 : 50;
+      // Define caps from config
+      const vaultCfg = await getVaultConfig(db);
+      const cap = earnType === "EARN_ACTIVE" ? vaultCfg.activeDailyCap : vaultCfg.socialDailyCap;
       const remaining = Math.max(0, cap - todayEarnings);
 
       return {
@@ -323,8 +325,9 @@ export class VaultService {
       const vault = await this.getOrCreateVault(userId, db);
       await this.checkAndResetDailyEarnings(vault, db);
 
-      // Calculate vault level (1000 XP per level)
-      const calculatedLevel = Math.floor(vault.vaultXp / 1000) + 1;
+      // Calculate vault level
+      const vaultCfg = await getVaultConfig(db);
+      const calculatedLevel = Math.floor(vault.vaultXp / vaultCfg.xpPerLevel) + 1;
 
       // Update level if it changed
       if (calculatedLevel !== vault.vaultLevel) {
@@ -352,8 +355,8 @@ export class VaultService {
         vaultXp: vault.vaultXp,
         loginStreak: vault.loginStreak,
         canClaimDailyBonus,
-        premiumMultiplier: 1.0, // TODO: Implement premium system
-        isPremium: false, // TODO: Implement premium system
+        premiumMultiplier: vaultCfg.premiumMultiplier,
+        isPremium: false,
       };
     } catch (error) {
       console.error(`[Vault Service] Failed to get balance for ${userId}:`, error);
@@ -453,8 +456,9 @@ export class VaultService {
       // Update login streak
       const newStreak = await this.updateLoginStreak(userId, db);
 
-      // Calculate bonus (1 IxC for day 1, scaling to 10 IxC for day 7+)
-      const bonus = Math.min(newStreak, 7);
+      // Calculate bonus (1 IxC for day 1, scaling up to maxStreakBonus)
+      const vaultCfg = await getVaultConfig(db);
+      const bonus = Math.min(newStreak, vaultCfg.maxStreakBonus);
 
       // Award bonus
       const earnResult = await this.earnCredits(
@@ -649,6 +653,84 @@ export class VaultService {
         transactionCount: 0,
       };
     }
+  }
+}
+
+// ============================================================================
+// Vault Configuration (DB-backed via SystemConfig)
+// ============================================================================
+
+export interface VaultConfig {
+  activeDailyCap: number;
+  socialDailyCap: number;
+  xpPerLevel: number;
+  maxStreakBonus: number;
+  premiumMultiplier: number;
+}
+
+const VAULT_CONFIG_DEFAULTS: VaultConfig = {
+  activeDailyCap: 100,
+  socialDailyCap: 50,
+  xpPerLevel: 1000,
+  maxStreakBonus: 7,
+  premiumMultiplier: 1.0,
+};
+
+const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
+  activeDailyCap: "vault_activeDailyCap",
+  socialDailyCap: "vault_socialDailyCap",
+  xpPerLevel: "vault_xpPerLevel",
+  maxStreakBonus: "vault_maxStreakBonus",
+  premiumMultiplier: "vault_premiumMultiplier",
+};
+
+const vaultConfigCache = new Cache({
+  defaultTtlMs: 60_000,
+  maxSize: 10,
+});
+
+const VAULT_CONFIG_CACHE_KEY = "vault_config";
+
+export function invalidateVaultConfigCache(): void {
+  vaultConfigCache.delete(VAULT_CONFIG_CACHE_KEY);
+}
+
+export async function getVaultConfig(db: {
+  systemConfig: {
+    findMany: (args: {
+      where: { key: { in: string[] } };
+    }) => Promise<Array<{ key: string; value: string }>>;
+  };
+}): Promise<VaultConfig> {
+  const cached = vaultConfigCache.get<VaultConfig>(VAULT_CONFIG_CACHE_KEY);
+  if (cached !== undefined) return cached;
+
+  try {
+    const configs = await db.systemConfig.findMany({
+      where: { key: { in: Object.values(VAULT_CONFIG_KEYS) } },
+    });
+
+    const m = configs.reduce(
+      (acc, c) => {
+        acc[c.key] = c.value;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+
+    const config: VaultConfig = {
+      activeDailyCap: parseFloat(m.vault_activeDailyCap ?? String(VAULT_CONFIG_DEFAULTS.activeDailyCap)),
+      socialDailyCap: parseFloat(m.vault_socialDailyCap ?? String(VAULT_CONFIG_DEFAULTS.socialDailyCap)),
+      xpPerLevel: parseFloat(m.vault_xpPerLevel ?? String(VAULT_CONFIG_DEFAULTS.xpPerLevel)),
+      maxStreakBonus: parseFloat(m.vault_maxStreakBonus ?? String(VAULT_CONFIG_DEFAULTS.maxStreakBonus)),
+      premiumMultiplier: parseFloat(m.vault_premiumMultiplier ?? String(VAULT_CONFIG_DEFAULTS.premiumMultiplier)),
+    };
+
+    vaultConfigCache.set(VAULT_CONFIG_CACHE_KEY, config);
+    return config;
+  } catch (error) {
+    console.warn("[Vault Config] Failed to read from DB, using defaults:", error);
+    return { ...VAULT_CONFIG_DEFAULTS };
   }
 }
 

@@ -11,7 +11,6 @@ import { Badge } from "~/components/ui/badge";
 import { User, BookOpen } from "lucide-react";
 import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
 import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
-import { createUrl } from "~/lib/url-utils";
 
 function MyBlurbsList() {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -130,7 +129,7 @@ export default function MyBlurbsPage() {
               <p className="text-sm text-muted-foreground">
                 Sign in to see your blurb responses.
               </p>
-              <Link href={createUrl("/setup")}>
+              <Link href={withBasePath("/setup")}>
                 <Button size="sm">Sign In</Button>
               </Link>
             </CardContent>

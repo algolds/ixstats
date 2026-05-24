@@ -260,7 +260,10 @@ export const economyProcedures = {
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
-        include: { storytellerEffects: { where: { isActive: true } } },
+        include: { 
+          storytellerEffects: { where: { isActive: true } },
+          nationalIdentity: true,
+        },
       });
 
       if (!country) throw new Error("Country not found");
@@ -277,7 +280,21 @@ export const economyProcedures = {
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
 
-      return calc.calculateTimeProgression(baselineStats, targetTime, effects);
+      const calculatedStats = calc.calculateTimeProgression(baselineStats, targetTime, effects);
+
+      return {
+        ...country,
+        calculatedStats: {
+          currentPopulation: calculatedStats.newStats.currentPopulation,
+          currentGdpPerCapita: calculatedStats.newStats.currentGdpPerCapita,
+          currentTotalGdp: calculatedStats.newStats.currentTotalGdp,
+        },
+        newStats: calculatedStats.newStats,
+        oldStats: calculatedStats.oldStats,
+        country: country.name,
+        timeElapsed: calculatedStats.timeElapsed,
+        calculationDate: calculatedStats.calculationDate,
+      };
     }),
 
   getGlobalStats: cachedStaticProcedure.query(async ({ ctx }) => {

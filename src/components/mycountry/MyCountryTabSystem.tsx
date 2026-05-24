@@ -242,7 +242,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
               <span className="text-sm font-semibold">Unlock Premium Features</span>
               <span className="text-muted-foreground text-xs hidden sm:inline">— Command Center, Intelligence, Analytics</span>
             </div>
-            <Link href={createUrl("/mycountry/premium")}>
+            <Link href={"/mycountry/premium"}>
               <Button size="sm" className="gap-1.5 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600">
                 <ArrowUp className="h-3 w-3" />
                 Upgrade
@@ -269,7 +269,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
                   <div>• Strategic decision recommendations</div>
                   <div>• Premium briefings & alerts</div>
                 </div>
-                <Link href={createUrl("/mycountry/premium")} className="mt-3 block">
+                <Link href={"/mycountry/premium"} className="mt-3 block">
                   <Button variant="outline" size="sm" className="w-full">
                     <ArrowUp className="mr-1.5 h-3 w-3" />
                     Upgrade
@@ -298,7 +298,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
                   <div>• Forward-looking intelligence</div>
                   <div>• Risk assessment & mitigation</div>
                 </div>
-                <Link href={createUrl("/mycountry/premium")} className="mt-3 block">
+                <Link href={"/mycountry/premium"} className="mt-3 block">
                   <Button variant="outline" size="sm" className="w-full">
                     <ArrowUp className="mr-1.5 h-3 w-3" />
                     Upgrade
@@ -322,7 +322,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
                   <div>• Policy impact simulation</div>
                   <div>• Comparative benchmarking</div>
                 </div>
-                <Link href={createUrl("/mycountry/premium")} className="mt-3 block">
+                <Link href={"/mycountry/premium"} className="mt-3 block">
                   <Button variant="outline" size="sm" className="w-full">
                     <ArrowUp className="mr-1.5 h-3 w-3" />
                     Upgrade
@@ -1536,7 +1536,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
                     Edit your tax system, government structure, and budgets in the <strong>MyCountry Editor</strong>
                   </p>
                 </div>
-                <Link href={createUrl("/mycountry/editor")}>
+                <Link href={"/mycountry/editor"}>
                   <Button size="sm" className="gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:from-amber-600 hover:to-yellow-600">
                     <DollarSign className="h-3 w-3" />
                     Open Editor

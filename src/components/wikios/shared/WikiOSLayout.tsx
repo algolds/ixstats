@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { LorewardsIcon } from "~/components/wikios/shared/LorewardsIcon";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
+import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 import { useWikiOSShortcuts } from "~/components/wikios/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
@@ -114,7 +114,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
   const navigate = useCallback(
     (title: string) => {
       onClose();
-      router.push(withBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`));
+      navigateWithBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`, router);
     },
     [router, onClose]
   );
@@ -132,7 +132,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
         navigate(items[selectedIndex].title);
       } else if (query.trim()) {
         onClose();
-        router.push(withBasePath(`/w/special/search?q=${encodeURIComponent(query)}`));
+        navigateWithBasePath(`/w/special/search?q=${encodeURIComponent(query)}`, router);
       }
     } else if (e.key === "Escape") {
       onClose();
@@ -213,7 +213,7 @@ function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) 
               className="text-xs text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text-muted)] transition-colors"
               onClick={() => {
                 onClose();
-                router.push(withBasePath(`/w/special/search?q=${encodeURIComponent(query)}`));
+                navigateWithBasePath(`/w/special/search?q=${encodeURIComponent(query)}`, router);
               }}
             >
               Full search for &ldquo;{query}&rdquo; →
@@ -314,7 +314,7 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
   return (
     <div className="wikios-shell">
       {/* Mobile: horizontal pill bar */}
-      <nav className="wikios-mobile-nav lg:hidden">
+      <nav className="wikios-mobile-nav no-wiki-tooltip lg:hidden">
         <div className="flex gap-1 overflow-x-auto px-3 py-2">
           {NAV_GROUP_1.map((item) => (
             <MobilePill key={item.id} item={item} isActive={activeId === item.id} />
@@ -334,7 +334,7 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
 
       <div className="flex">
         {/* Desktop: icon rail */}
-        <aside className="wikios-icon-rail hidden lg:flex">
+        <aside className="wikios-icon-rail no-wiki-tooltip hidden lg:flex">
           <nav className="flex flex-col gap-1">
             {/* Browse */}
             {NAV_GROUP_1.map((item) => (
@@ -378,7 +378,7 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
       </div>
 
       <footer className="wikios-main-footer">
-        Powered by <strong>WikiOS</strong> v0.5-alpha
+        Powered by <strong>WikiOS</strong> v0.98-alpha
       </footer>
 
       {/* Search Modal */}
@@ -417,6 +417,7 @@ function RailIcon({ item, isActive }: { item: WikiNavItem; isActive: boolean }) 
 // Mobile pill
 // ---------------------------------------------------------------------------
 
+// Mobile pill
 function MobilePill({ item, isActive }: { item: WikiNavItem; isActive: boolean }) {
   const Icon = item.icon;
   return (

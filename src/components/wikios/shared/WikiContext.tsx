@@ -6,7 +6,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { withBasePath } from "~/lib/base-path";
+import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import type { TocEntry } from "~/lib/wikios/html-transformer";
 
 interface WikiContextState {
@@ -85,7 +85,7 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   const restoreSession = useCallback((title?: string) => {
     const target = title ?? recentArticles[0];
     if (target) {
-      router.push(withBasePath(`/w/${encodeURIComponent(target.replace(/ /g, "_"))}`));
+      navigateWithBasePath(`/w/${encodeURIComponent(target.replace(/ /g, "_"))}`, router);
     }
   }, [recentArticles, router]);
 

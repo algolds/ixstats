@@ -22,6 +22,7 @@ import {
   Users,
   Database,
   Activity,
+  Wallet,
 } from "lucide-react";
 
 const QUICK_ACTIONS = [
@@ -51,6 +52,13 @@ const QUICK_ACTIONS = [
     label: "Users & Roles",
     description: "User management & permissions",
     href: "/admin/users",
+    color: "amber",
+  },
+  {
+    icon: Wallet,
+    label: "Vault & Credits",
+    description: "Manage Credits & Personal Vaults",
+    href: "/admin/vault",
     color: "amber",
   },
   {

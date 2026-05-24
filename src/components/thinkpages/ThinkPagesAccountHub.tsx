@@ -31,9 +31,9 @@ function ThinkPagesAccountHubInner() {
     { enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "", staleTime: 5 * 60_000, retry: false }
   );
 
-  const { data: accountsData } = api.thinkpages.getAccountsByCountry.useQuery(
-    { countryId: userProfile?.countryId || "" },
-    { enabled: !!userProfile?.countryId }
+  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(
+    undefined,
+    { enabled: !!user?.id }
   );
 
   const accounts = useMemo(() => accountsData || [], [accountsData]);
@@ -58,7 +58,7 @@ function ThinkPagesAccountHubInner() {
             <p className="mb-4 text-sm text-muted-foreground">
               You need a country to create ThinkPages accounts.
             </p>
-            <Link href={createUrl("/setup")}>
+            <Link href={"/setup"}>
               <Button>Complete Setup</Button>
             </Link>
           </CardContent>
@@ -80,7 +80,7 @@ function ThinkPagesAccountHubInner() {
               Post, browse, and interact from the unified feed.
             </p>
           </div>
-          <Link href={createUrl("/dashboard")}>
+          <Link href={"/dashboard"}>
             <Button size="sm" variant="outline" className="gap-1.5">
               Go to Dashboard
               <ArrowRight className="h-3.5 w-3.5" />

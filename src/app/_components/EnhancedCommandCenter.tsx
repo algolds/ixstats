@@ -90,7 +90,7 @@ function CountryCard({ country, index }: CountryCardProps) {
   });
 
   return (
-    <Link href={createUrl(countryPath)} className="block">
+    <Link href={countryPath} className="block">
       <Card
         key={country.id}
         className="glass-hierarchy-interactive relative cursor-pointer overflow-hidden transition-all duration-200 hover:scale-[1.02]"

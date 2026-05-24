@@ -423,24 +423,26 @@ export function GlassCanvasComposer({
                 {/* Account Info with Manager */}
                 <Collapsible open={showAccountManager} onOpenChange={setShowAccountManager}>
                   <div className="flex items-center gap-2.5">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
-                        {account.displayName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-medium leading-tight">{account.displayName}</div>
-                      <div className="text-muted-foreground text-[0.65rem]">@{account.username}</div>
-                    </div>
                     <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                        {showAccountManager ? (
-                          <ChevronUp className="h-3.5 w-3.5" />
-                        ) : (
-                          <ChevronDown className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
+                      <div className="flex flex-1 items-center gap-2.5 cursor-pointer rounded-md p-1 hover:bg-white/5 transition-colors">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={accountAvatarUrl} alt={account.displayName} />
+                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-semibold text-white">
+                            {account.displayName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-medium leading-tight">{account.displayName}</div>
+                          <div className="text-muted-foreground text-[0.65rem]">@{account.username}</div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 pointer-events-none">
+                          {showAccountManager ? (
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          ) : (
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </div>
                     </CollapsibleTrigger>
                     <Button
                       variant="ghost"

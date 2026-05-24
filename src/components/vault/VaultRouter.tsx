@@ -2,9 +2,12 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { Coins } from "lucide-react";
+import { Coins, Shield } from "lucide-react";
 import { useUser } from "~/context/auth-context";
+import { useIsAdmin } from "~/hooks/usePermissions";
+import { Button } from "~/components/ui/button";
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { api } from "~/trpc/react";
@@ -92,14 +95,17 @@ function VaultRouterInner() {
       </div>
 
       {/* IxCredits balance */}
-      <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 backdrop-blur-sm">
-        <Coins className="h-4 w-4 text-amber-500" />
-        <NumberFlow
-          value={balanceData?.credits ?? 0}
-          format="default"
-          className="text-base font-bold tabular-nums text-amber-500 sm:text-lg"
-        />
-        <span className="hidden text-xs text-muted-foreground sm:inline">IxC</span>
+      <div className="flex items-center gap-2">
+        <VaultAdminLink />
+        <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 backdrop-blur-sm">
+          <Coins className="h-4 w-4 text-amber-500" />
+          <NumberFlow
+            value={balanceData?.credits ?? 0}
+            format="default"
+            className="text-base font-bold tabular-nums text-amber-500 sm:text-lg"
+          />
+          <span className="hidden text-xs text-muted-foreground sm:inline">IxC</span>
+        </div>
       </div>
     </div>
   );
@@ -139,6 +145,24 @@ function VaultRouterInner() {
         </motion.div>
       </AnimatePresence>
     </VaultSidebarLayout>
+  );
+}
+
+function VaultAdminLink() {
+  const isAdmin = useIsAdmin();
+  if (!isAdmin) return null;
+
+  return (
+    <Link href={withBasePath("/admin/vault")}>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-8 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+      >
+        <Shield className="mr-1 h-3.5 w-3.5" />
+        Admin
+      </Button>
+    </Link>
   );
 }
 

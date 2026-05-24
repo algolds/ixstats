@@ -213,7 +213,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
             <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
             <div class="featured-links">
               <a href="https://ixwiki.com/wiki/Main_Page" target="_blank" rel="noopener noreferrer">Visit IxWiki</a>
-              <a href={createUrl("/countries")} target="_blank" rel="noopener noreferrer">Browse Countries</a>
+              <a href={"/countries"} target="_blank" rel="noopener noreferrer">Browse Countries</a>
             </div>
           </div>
         `);
@@ -462,7 +462,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
             <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
             <div class="featured-links">
               <a href="https://ixwiki.com/wiki/Main_Page" target="_blank" rel="noopener noreferrer">Visit IxWiki</a>
-              <a href={createUrl("/countries")} target="_blank" rel="noopener noreferrer">Browse Countries</a>
+              <a href={"/countries"} target="_blank" rel="noopener noreferrer">Browse Countries</a>
             </div>
           </div>
         `);

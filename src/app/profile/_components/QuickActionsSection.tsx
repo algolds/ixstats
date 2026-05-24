@@ -25,7 +25,7 @@ export function QuickActionsSection({
         
         <div className="space-y-2">
           <Link
-            href={createUrl("/dashboard")}
+            href={"/dashboard"}
             className="glass-interactive group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
           >
             <BarChart3 className="mr-3 h-4 w-4 text-indigo-500 transition-transform group-hover:scale-110" />
@@ -43,7 +43,7 @@ export function QuickActionsSection({
           )}
 
           <Link
-            href={createUrl("/explore")}
+            href={"/explore"}
             className="glass-interactive group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
           >
             <Globe className="mr-3 h-4 w-4 text-emerald-500 transition-transform group-hover:scale-110" />
@@ -51,7 +51,7 @@ export function QuickActionsSection({
           </Link>
 
           <Link
-            href={createUrl("/builder")}
+            href={"/builder"}
             className="glass-interactive group flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
           >
             <Building className="mr-3 h-4 w-4 text-blue-500 transition-transform group-hover:scale-110" />
