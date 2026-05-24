@@ -1,13 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -62,7 +56,10 @@ function EffectBadge({ label, value }: { label: string; value: number | null | u
     <div className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs ${colorClass}`}>
       <Icon className="h-3 w-3" />
       <span className="font-medium">{label}</span>
-      <span>{isPositive ? "+" : ""}{value}%</span>
+      <span>
+        {isPositive ? "+" : ""}
+        {value}%
+      </span>
     </div>
   );
 }
@@ -87,7 +84,7 @@ export function PolicyDetailSheet({
 
   const { data: policy, isLoading } = api.policies.getPolicy.useQuery(
     { id: policyId! },
-    { enabled: !!policyId },
+    { enabled: !!policyId }
   );
 
   const activatePolicy = api.policies.activatePolicy.useMutation({
@@ -114,21 +111,46 @@ export function PolicyDetailSheet({
 
   const getStatusBadge = (status: string | undefined) => {
     const s = status?.toLowerCase() ?? "draft";
-    if (s === "active") return <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30"><CheckCircle className="mr-1 h-3 w-3" />Active</Badge>;
-    if (s === "draft") return <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30"><Clock className="mr-1 h-3 w-3" />Draft</Badge>;
-    if (s === "suspended") return <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/30"><Pause className="mr-1 h-3 w-3" />Suspended</Badge>;
-    if (s === "review") return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/30"><AlertCircle className="mr-1 h-3 w-3" />Under Review</Badge>;
+    if (s === "active")
+      return (
+        <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30">
+          <CheckCircle className="mr-1 h-3 w-3" />
+          Active
+        </Badge>
+      );
+    if (s === "draft")
+      return (
+        <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30">
+          <Clock className="mr-1 h-3 w-3" />
+          Draft
+        </Badge>
+      );
+    if (s === "suspended")
+      return (
+        <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/30">
+          <Pause className="mr-1 h-3 w-3" />
+          Suspended
+        </Badge>
+      );
+    if (s === "review")
+      return (
+        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/30">
+          <AlertCircle className="mr-1 h-3 w-3" />
+          Under Review
+        </Badge>
+      );
     return <Badge variant="outline">{s.toUpperCase()}</Badge>;
   };
 
   const getPriorityBadge = (priority: string | undefined | null) => {
     if (!priority) return null;
     const p = priority.toLowerCase();
-    const colorClass = p === "critical" || p === "high"
-      ? "bg-red-50 text-red-700 dark:bg-red-950/20"
-      : p === "medium"
-        ? "bg-orange-50 text-orange-700 dark:bg-orange-950/20"
-        : "bg-blue-50 text-blue-700 dark:bg-blue-950/20";
+    const colorClass =
+      p === "critical" || p === "high"
+        ? "bg-red-50 text-red-700 dark:bg-red-950/20"
+        : p === "medium"
+          ? "bg-orange-50 text-orange-700 dark:bg-orange-950/20"
+          : "bg-blue-50 text-blue-700 dark:bg-blue-950/20";
     return (
       <Badge variant="secondary" className={`text-xs ${colorClass}`}>
         <AlertCircle className="mr-1 h-3 w-3" />
@@ -143,7 +165,7 @@ export function PolicyDetailSheet({
     try {
       objectives = JSON.parse(policy.objectives as string) as string[];
     } catch {
-      objectives = [(policy.objectives as string)];
+      objectives = [policy.objectives as string];
     }
   }
 
@@ -156,13 +178,18 @@ export function PolicyDetailSheet({
   const effectLog = (policy as any)?.policyEffectLog ?? [];
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <SheetContent className="flex flex-col p-0 sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-start gap-2">
             <FileText className="mt-0.5 h-5 w-5 flex-shrink-0 text-indigo-500" />
             <span className="line-clamp-2">
-              {isLoading ? "Loading..." : policy?.name ?? "Policy Not Found"}
+              {isLoading ? "Loading..." : (policy?.name ?? "Policy Not Found")}
             </span>
           </SheetTitle>
           {policy && (
@@ -190,7 +217,9 @@ export function PolicyDetailSheet({
               {/* Description */}
               {policy.description && (
                 <div>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{policy.description}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {policy.description}
+                  </p>
                 </div>
               )}
 
@@ -198,8 +227,22 @@ export function PolicyDetailSheet({
 
               {/* Info Grid */}
               <div className="space-y-2">
-                <InfoRow label="Policy Type" value={policy.policyType ? policy.policyType.charAt(0).toUpperCase() + policy.policyType.slice(1) : "N/A"} />
-                <InfoRow label="Category" value={policy.category ? policy.category.charAt(0).toUpperCase() + policy.category.slice(1) : "N/A"} />
+                <InfoRow
+                  label="Policy Type"
+                  value={
+                    policy.policyType
+                      ? policy.policyType.charAt(0).toUpperCase() + policy.policyType.slice(1)
+                      : "N/A"
+                  }
+                />
+                <InfoRow
+                  label="Category"
+                  value={
+                    policy.category
+                      ? policy.category.charAt(0).toUpperCase() + policy.category.slice(1)
+                      : "N/A"
+                  }
+                />
                 <InfoRow
                   label="Proposed"
                   value={
@@ -264,7 +307,10 @@ export function PolicyDetailSheet({
                     </h4>
                     <ul className="space-y-1.5">
                       {objectives.map((obj, i) => (
-                        <li key={i} className="text-muted-foreground flex items-start gap-2 text-xs">
+                        <li
+                          key={i}
+                          className="text-muted-foreground flex items-start gap-2 text-xs"
+                        >
                           <CheckCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-500" />
                           {obj}
                         </li>
@@ -304,14 +350,22 @@ export function PolicyDetailSheet({
                     </h4>
                     <div className="space-y-2">
                       {effectLog.slice(0, 10).map((log: any) => (
-                        <div key={log.id} className="border-border/40 bg-muted/30 rounded-md border p-2 text-xs">
+                        <div
+                          key={log.id}
+                          className="border-border/40 bg-muted/30 rounded-md border p-2 text-xs"
+                        >
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{log.metricAffected || "General"}</span>
-                            <span className="text-muted-foreground">{formatDate(log.appliedAt)}</span>
+                            <span className="text-muted-foreground">
+                              {formatDate(log.appliedAt)}
+                            </span>
                           </div>
                           {log.effectValue != null && (
-                            <span className={log.effectValue > 0 ? "text-green-600" : "text-red-600"}>
-                              {log.effectValue > 0 ? "+" : ""}{log.effectValue}
+                            <span
+                              className={log.effectValue > 0 ? "text-green-600" : "text-red-600"}
+                            >
+                              {log.effectValue > 0 ? "+" : ""}
+                              {log.effectValue}
                             </span>
                           )}
                         </div>

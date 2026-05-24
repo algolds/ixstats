@@ -70,7 +70,11 @@ export default function HistoryPage() {
           <div style={{ marginBottom: 12 }}>
             <button
               className="wikios-action-btn"
-              style={{ background: "rgba(239,68,68,0.15)", borderColor: "rgba(239,68,68,0.3)", color: "#f87171" }}
+              style={{
+                background: "rgba(239,68,68,0.15)",
+                borderColor: "rgba(239,68,68,0.3)",
+                color: "#f87171",
+              }}
               disabled={rollbackPending || rollbackMutation.isPending}
               onClick={() => {
                 if (confirm(`Rollback all recent edits by "${revisions[0]!.user}"?`)) {
@@ -79,18 +83,42 @@ export default function HistoryPage() {
                 }
               }}
             >
-              {rollbackMutation.isPending ? "Rolling back..." : `Rollback edits by ${revisions[0]!.user}`}
+              {rollbackMutation.isPending
+                ? "Rolling back..."
+                : `Rollback edits by ${revisions[0]!.user}`}
             </button>
           </div>
         )}
 
         {rollbackMutation.isSuccess && (
-          <div className="wikios-notice" style={{ borderColor: "rgba(34,197,94,0.3)", background: "rgba(34,197,94,0.08)", color: "#4ade80", marginBottom: 12, padding: "8px 12px", borderRadius: 8, fontSize: "0.875rem" }}>
+          <div
+            className="wikios-notice"
+            style={{
+              borderColor: "rgba(34,197,94,0.3)",
+              background: "rgba(34,197,94,0.08)",
+              color: "#4ade80",
+              marginBottom: 12,
+              padding: "8px 12px",
+              borderRadius: 8,
+              fontSize: "0.875rem",
+            }}
+          >
             Rollback successful.
           </div>
         )}
         {rollbackMutation.isError && (
-          <div className="wikios-notice" style={{ borderColor: "rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)", color: "#f87171", marginBottom: 12, padding: "8px 12px", borderRadius: 8, fontSize: "0.875rem" }}>
+          <div
+            className="wikios-notice"
+            style={{
+              borderColor: "rgba(239,68,68,0.3)",
+              background: "rgba(239,68,68,0.08)",
+              color: "#f87171",
+              marginBottom: 12,
+              padding: "8px 12px",
+              borderRadius: 8,
+              fontSize: "0.875rem",
+            }}
+          >
             Rollback failed: {rollbackMutation.error.message}
           </div>
         )}
@@ -99,8 +127,11 @@ export default function HistoryPage() {
         {undoTarget && (
           <div
             style={{
-              marginBottom: 16, padding: "12px 16px", borderRadius: 8,
-              background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)",
+              marginBottom: 16,
+              padding: "12px 16px",
+              borderRadius: 8,
+              background: "rgba(251,191,36,0.08)",
+              border: "1px solid rgba(251,191,36,0.3)",
               fontSize: "0.875rem",
             }}
           >
@@ -110,16 +141,17 @@ export default function HistoryPage() {
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 className="wikios-action-btn"
-                style={{ background: "rgba(251,191,36,0.15)", borderColor: "rgba(251,191,36,0.3)", color: "#fbbf24" }}
+                style={{
+                  background: "rgba(251,191,36,0.15)",
+                  borderColor: "rgba(251,191,36,0.3)",
+                  color: "#fbbf24",
+                }}
                 disabled={revertMutation.isPending}
                 onClick={() => revertMutation.mutate({ title, revid: undoTarget.revid })}
               >
                 {revertMutation.isPending ? "Reverting..." : "Confirm Revert"}
               </button>
-              <button
-                className="wikios-action-btn"
-                onClick={() => setUndoTarget(null)}
-              >
+              <button className="wikios-action-btn" onClick={() => setUndoTarget(null)}>
                 Cancel
               </button>
             </div>
@@ -142,7 +174,8 @@ export default function HistoryPage() {
             {revisions.map((rev, idx) => {
               const prevRev = revisions[idx + 1];
               const sizeChange = prevRev ? rev.size - prevRev.size : rev.size;
-              const sizeClass = sizeChange > 0 ? "wikios-size-pos" : sizeChange < 0 ? "wikios-size-neg" : "";
+              const sizeClass =
+                sizeChange > 0 ? "wikios-size-pos" : sizeChange < 0 ? "wikios-size-neg" : "";
 
               return (
                 <li key={rev.revid} className="wikios-history-item">
@@ -184,8 +217,11 @@ export default function HistoryPage() {
 
                   <span className="wikios-history-date">
                     {new Date(rev.timestamp).toLocaleString("en-US", {
-                      month: "short", day: "numeric", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </span>
 
@@ -197,14 +233,17 @@ export default function HistoryPage() {
                   </Link>
 
                   <span className={`wikios-history-size ${sizeClass}`}>
-                    {sizeChange > 0 ? "+" : ""}{sizeChange.toLocaleString()}
+                    {sizeChange > 0 ? "+" : ""}
+                    {sizeChange.toLocaleString()}
                   </span>
 
-                  {rev.minor && <span className="wikios-history-minor" title="Minor edit">m</span>}
-
-                  {rev.comment && (
-                    <span className="wikios-history-comment">({rev.comment})</span>
+                  {rev.minor && (
+                    <span className="wikios-history-minor" title="Minor edit">
+                      m
+                    </span>
                   )}
+
+                  {rev.comment && <span className="wikios-history-comment">({rev.comment})</span>}
                 </li>
               );
             })}

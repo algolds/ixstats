@@ -28,10 +28,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import type {
-  GovernmentSpendingData,
-  CoreEconomicIndicatorsData,
-} from "~/types/economics";
+import type { GovernmentSpendingData, CoreEconomicIndicatorsData } from "~/types/economics";
 
 interface GovernmentSpendingProps {
   spendingData: GovernmentSpendingData;
@@ -286,7 +283,11 @@ export function GovernmentSpending({
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                  <Tooltip
+                    formatter={(value) =>
+                      value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                    }
+                  />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>

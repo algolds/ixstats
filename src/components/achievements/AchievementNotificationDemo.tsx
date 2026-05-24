@@ -3,13 +3,7 @@
 import React, { useState } from "react";
 import { cn } from "~/lib/utils";
 import { RealTimeAchievementNotifications } from "./RealTimeAchievementNotifications";
-import {
-  RiPlayLine,
-  RiStopLine,
-  RiSettings3Line,
-  RiStarLine,
-  RiTrophyLine,
-} from "react-icons/ri";
+import { RiPlayLine, RiStopLine, RiSettings3Line, RiStarLine, RiTrophyLine } from "react-icons/ri";
 
 interface AchievementNotificationDemoProps {
   className?: string;

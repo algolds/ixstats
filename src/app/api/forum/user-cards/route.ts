@@ -18,16 +18,10 @@ export async function GET(request: NextRequest) {
   const username = searchParams.get("username")?.trim();
 
   if (!username || username.length > 100) {
-    return NextResponse.json(
-      { error: "Missing or invalid username parameter" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Missing or invalid username parameter" }, { status: 400 });
   }
 
-  const limit = Math.min(
-    Math.max(parseInt(searchParams.get("limit") || "50", 10) || 50, 1),
-    100
-  );
+  const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50", 10) || 50, 1), 100);
   const sort = searchParams.get("sort") || "rarity";
 
   try {
@@ -123,9 +117,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("[Forum API] Error fetching user cards:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -75,7 +75,12 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
         { label: "Head of Government", value: data.head_of_government },
         { label: "Currency", value: data.currency },
         { label: "Official Languages", value: data.official_languages || data.languages },
-        { label: "Area", value: data.area_total || (data.area_km2 ? `${data.area_km2.toLocaleString()} km²` : undefined) },
+        {
+          label: "Area",
+          value:
+            data.area_total ||
+            (data.area_km2 ? `${data.area_km2.toLocaleString()} km²` : undefined),
+        },
         { label: "HDI", value: data.hdi },
         { label: "Established", value: data.established || data.established_date1 },
       ].filter((f) => f.value),
@@ -90,8 +95,14 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
         { label: "Native Name", value: data.native_name },
         { label: "Demonym", value: data.demonym },
         { label: "Motto", value: data.motto },
-        { label: "Population Estimate", value: data.population_estimate ? formatNumber(data.population_estimate) : undefined },
-        { label: "Population Census", value: data.population_census ? formatNumber(data.population_census) : undefined },
+        {
+          label: "Population Estimate",
+          value: data.population_estimate ? formatNumber(data.population_estimate) : undefined,
+        },
+        {
+          label: "Population Census",
+          value: data.population_census ? formatNumber(data.population_census) : undefined,
+        },
       ].filter((f) => f.value),
     },
     {
@@ -102,7 +113,12 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
         { label: "Capital", value: data.capital },
         { label: "Largest City", value: data.largest_city },
         { label: "Continent", value: data.continent },
-        { label: "Area", value: data.area_total || (data.area_km2 ? `${data.area_km2.toLocaleString()} km²` : undefined) },
+        {
+          label: "Area",
+          value:
+            data.area_total ||
+            (data.area_km2 ? `${data.area_km2.toLocaleString()} km²` : undefined),
+        },
         { label: "Climate", value: data.climate },
       ].filter((f) => f.value),
     },
@@ -174,17 +190,17 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
   const fieldCount = sections.reduce((sum, s) => sum + s.fields.length, 0);
 
   return (
-    <Card className="border-blue-500/20 bg-card/60 backdrop-blur-md relative overflow-hidden">
+    <Card className="bg-card/60 relative overflow-hidden border-blue-500/20 backdrop-blur-md">
       {/* Flag Background */}
       {data.flagUrl && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <img
             src={data.flagUrl}
             alt={`Flag of ${data.name}`}
             className="absolute inset-0 h-full w-full scale-110 object-cover opacity-10 blur-3xl"
             style={{ filter: "blur(24px) saturate(0.7) brightness(0.5)", transform: "scale(1.2)" }}
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-card/90 via-card/95 to-card/90 backdrop-blur-sm" />
+          <div className="from-card/90 via-card/95 to-card/90 absolute inset-0 bg-gradient-to-br backdrop-blur-sm" />
         </div>
       )}
 
@@ -194,7 +210,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           {/* Flag + Coat of Arms */}
           <div className="flex-shrink-0 space-y-2">
             {data.flagUrl ? (
-              <div className="rounded-lg border border-border overflow-hidden shadow-md">
+              <div className="border-border overflow-hidden rounded-lg border shadow-md">
                 <img
                   src={data.flagUrl}
                   alt={`Flag of ${data.name}`}
@@ -206,12 +222,12 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                 />
               </div>
             ) : (
-              <div className="h-20 w-32 rounded-lg border border-border bg-muted/50 flex items-center justify-center">
-                <Flag className="h-8 w-8 text-muted-foreground" />
+              <div className="border-border bg-muted/50 flex h-20 w-32 items-center justify-center rounded-lg border">
+                <Flag className="text-muted-foreground h-8 w-8" />
               </div>
             )}
             {data.coatOfArmsUrl && (
-              <div className="rounded-lg border border-border overflow-hidden shadow-sm">
+              <div className="border-border overflow-hidden rounded-lg border shadow-sm">
                 <img
                   src={data.coatOfArmsUrl}
                   alt={`Coat of Arms of ${data.name}`}
@@ -226,17 +242,20 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           </div>
 
           {/* Name + Info */}
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-xl mb-1">{data.name}</CardTitle>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="mb-1 text-xl">{data.name}</CardTitle>
             {data.conventional_long_name && data.conventional_long_name !== data.name && (
-              <p className="text-sm text-muted-foreground mb-2">{data.conventional_long_name}</p>
+              <p className="text-muted-foreground mb-2 text-sm">{data.conventional_long_name}</p>
             )}
             {data.government_type && (
-              <Badge variant="outline" className="mb-2 border-blue-500/30 text-blue-600 dark:text-blue-400">
+              <Badge
+                variant="outline"
+                className="mb-2 border-blue-500/30 text-blue-600 dark:text-blue-400"
+              >
                 {data.government_type}
               </Badge>
             )}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <Sparkles className="h-3.5 w-3.5 text-green-500" />
               <span>{fieldCount} fields extracted</span>
               {data.templateName && (
@@ -270,14 +289,12 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
       <CardContent className="relative z-10 space-y-3 pb-6">
         {/* Wiki Intro Description */}
         {data.wikiIntro && (
-          <div className="rounded-lg border border-border/50 p-4">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="border-border/50 rounded-lg border p-4">
+            <div className="mb-2 flex items-center gap-2">
               <Globe className="h-4 w-4 text-blue-500" />
               <span className="text-sm font-medium">Description</span>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {data.wikiIntro}
-            </p>
+            <p className="text-muted-foreground text-sm leading-relaxed">{data.wikiIntro}</p>
           </div>
         )}
 
@@ -286,22 +303,22 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
           const isExpanded = expandedSections.has(section.id);
 
           return (
-            <div key={section.id} className="rounded-lg border border-border/50 overflow-hidden">
+            <div key={section.id} className="border-border/50 overflow-hidden rounded-lg border">
               <button
                 onClick={() => toggleSection(section.id)}
-                className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/30 transition-colors"
+                className="hover:bg-muted/30 flex w-full items-center justify-between p-3 text-left transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <Icon className="h-4 w-4 text-blue-500" />
                   <span className="text-sm font-medium">{section.title}</span>
-                  <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">
+                  <Badge variant="secondary" className="h-5 px-1.5 py-0 text-xs">
                     {section.fields.length}
                   </Badge>
                 </div>
                 {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  <ChevronUp className="text-muted-foreground h-4 w-4" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <ChevronDown className="text-muted-foreground h-4 w-4" />
                 )}
               </button>
 
@@ -314,14 +331,14 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="px-3 pb-3 space-y-1.5">
+                    <div className="space-y-1.5 px-3 pb-3">
                       {section.fields.map((field, i) => (
                         <div key={i} className="flex items-start justify-between gap-3 py-1">
-                          <span className="text-sm text-muted-foreground flex-shrink-0">
+                          <span className="text-muted-foreground flex-shrink-0 text-sm">
                             {field.label}:
                           </span>
                           <span
-                            className="text-sm font-medium text-right"
+                            className="text-right text-sm font-medium"
                             dangerouslySetInnerHTML={{
                               __html: sanitizeWikiContent(field.value || ""),
                             }}
@@ -350,22 +367,22 @@ function RawInfoboxToggle({ rawInfobox }: { rawInfobox: Record<string, string> }
   const entries = Object.entries(rawInfobox).slice(0, 20);
 
   return (
-    <div className="rounded-lg border border-border/50 overflow-hidden">
+    <div className="border-border/50 overflow-hidden rounded-lg border">
       <button
         onClick={() => setShowRaw(!showRaw)}
-        className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/30 transition-colors"
+        className="hover:bg-muted/30 flex w-full items-center justify-between p-3 text-left transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Languages className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-muted-foreground">Raw Infobox Data</span>
-          <Badge variant="outline" className="text-xs px-1.5 py-0 h-5">
+          <Languages className="text-muted-foreground h-4 w-4" />
+          <span className="text-muted-foreground text-sm font-medium">Raw Infobox Data</span>
+          <Badge variant="outline" className="h-5 px-1.5 py-0 text-xs">
             {Object.keys(rawInfobox).length} fields
           </Badge>
         </div>
         {showRaw ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          <ChevronUp className="text-muted-foreground h-4 w-4" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="text-muted-foreground h-4 w-4" />
         )}
       </button>
 
@@ -379,15 +396,15 @@ function RawInfoboxToggle({ rawInfobox }: { rawInfobox: Record<string, string> }
             className="overflow-hidden"
           >
             <div className="px-3 pb-3">
-              <div className="rounded-md bg-muted/30 p-3 font-mono text-xs space-y-1 max-h-64 overflow-y-auto">
+              <div className="bg-muted/30 max-h-64 space-y-1 overflow-y-auto rounded-md p-3 font-mono text-xs">
                 {entries.map(([key, value]) => (
                   <div key={key} className="flex gap-2">
-                    <span className="text-blue-500 flex-shrink-0">{key}:</span>
+                    <span className="flex-shrink-0 text-blue-500">{key}:</span>
                     <span className="text-muted-foreground truncate">{value}</span>
                   </div>
                 ))}
                 {Object.keys(rawInfobox).length > 20 && (
-                  <div className="text-muted-foreground pt-1 border-t border-border/50">
+                  <div className="text-muted-foreground border-border/50 border-t pt-1">
                     ... and {Object.keys(rawInfobox).length - 20} more fields
                   </div>
                 )}

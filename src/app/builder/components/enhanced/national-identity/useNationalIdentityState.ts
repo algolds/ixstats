@@ -6,7 +6,11 @@ import { useBuilderTheming } from "~/hooks/useBuilderTheming";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
 import { useNationalIdentityAutoSync } from "~/hooks/useNationalIdentityAutoSync";
 import { wikiCommonsFlagService } from "~/lib/wiki-commons-flag-service";
-import type { EconomicInputs, RealCountryData, NationalIdentityData } from "~/app/builder/lib/economy-data-service";
+import type {
+  EconomicInputs,
+  RealCountryData,
+  NationalIdentityData,
+} from "~/app/builder/lib/economy-data-service";
 
 export function useNationalIdentityState(
   inputs: EconomicInputs,
@@ -54,34 +58,39 @@ export function useNationalIdentityState(
   const upsertFieldValue = api.customTypes.upsertFieldValue.useMutation();
 
   // Initialize identity data - memoize to prevent unnecessary re-renders
-  const identity = useMemo(() => inputs.nationalIdentity || {
-    countryName: String(inputs.countryName || ""),
-    officialName: "",
-    governmentType: "republic",
-    motto: "",
-    mottoNative: "",
-    capitalCity: "",
-    largestCity: "",
-    demonym: "",
-    currency: "",
-    currencySymbol: "$",
-    officialLanguages: "",
-    nationalLanguage: "",
-    nationalAnthem: "",
-    nationalReligion: "",
-    nationalDay: "",
-    callingCode: "",
-    internetTLD: "",
-    drivingSide: "right" as "left" | "right",
-    timeZone: "",
-    isoCode: "",
-    coordinatesLatitude: "",
-    coordinatesLongitude: "",
-    emergencyNumber: "",
-    postalCodeFormat: "",
-    nationalSport: "",
-    weekStartDay: "monday",
-  } satisfies NationalIdentityData, [inputs.nationalIdentity, inputs.countryName]);
+  const identity = useMemo(
+    () =>
+      inputs.nationalIdentity ||
+      ({
+        countryName: String(inputs.countryName || ""),
+        officialName: "",
+        governmentType: "republic",
+        motto: "",
+        mottoNative: "",
+        capitalCity: "",
+        largestCity: "",
+        demonym: "",
+        currency: "",
+        currencySymbol: "$",
+        officialLanguages: "",
+        nationalLanguage: "",
+        nationalAnthem: "",
+        nationalReligion: "",
+        nationalDay: "",
+        callingCode: "",
+        internetTLD: "",
+        drivingSide: "right" as "left" | "right",
+        timeZone: "",
+        isoCode: "",
+        coordinatesLatitude: "",
+        coordinatesLongitude: "",
+        emergencyNumber: "",
+        postalCodeFormat: "",
+        nationalSport: "",
+        weekStartDay: "monday",
+      } satisfies NationalIdentityData),
+    [inputs.nationalIdentity, inputs.countryName]
+  );
 
   // Auto-sync for national identity (edit mode only)
   const autoSync = useNationalIdentityAutoSync(countryId, identity, {
@@ -109,10 +118,13 @@ export function useNationalIdentityState(
   const handleIdentityChange = useCallback((field: string | number | symbol, value: any) => {
     const currentInputs = inputsRef.current;
     const currentIdentity = currentInputs.nationalIdentity || identity;
-    const newIdentity: NationalIdentityData = { 
-      ...currentIdentity, 
+    const newIdentity: NationalIdentityData = {
+      ...currentIdentity,
       [field]: value,
-      drivingSide: field === "drivingSide" ? (value as "left" | "right") : (currentIdentity.drivingSide ?? "right" as "left" | "right")
+      drivingSide:
+        field === "drivingSide"
+          ? (value as "left" | "right")
+          : (currentIdentity.drivingSide ?? ("right" as "left" | "right")),
     };
 
     if (field === "countryName" && value && !newIdentity.demonym) {
@@ -132,17 +144,28 @@ export function useNationalIdentityState(
 
   const handleFlagUrlChange = useCallback((url: string) => {
     const currentInputs = inputsRef.current;
-    onInputsChangeRef.current({ ...currentInputs, flagUrl: url, coatOfArmsUrl: currentInputs.coatOfArmsUrl ?? "" });
+    onInputsChangeRef.current({
+      ...currentInputs,
+      flagUrl: url,
+      coatOfArmsUrl: currentInputs.coatOfArmsUrl ?? "",
+    });
   }, []); // No dependencies - uses refs
 
   const handleCoatOfArmsUrlChange = useCallback((url: string) => {
     const currentInputs = inputsRef.current;
-    onInputsChangeRef.current({ ...currentInputs, flagUrl: currentInputs.flagUrl ?? "", coatOfArmsUrl: url });
+    onInputsChangeRef.current({
+      ...currentInputs,
+      flagUrl: currentInputs.flagUrl ?? "",
+      coatOfArmsUrl: url,
+    });
   }, []); // No dependencies - uses refs
 
-  const handleFieldValueSave = useCallback((fieldName: string, value: string) => {
-    upsertFieldValue.mutate({ fieldName, value });
-  }, [upsertFieldValue]);
+  const handleFieldValueSave = useCallback(
+    (fieldName: string, value: string) => {
+      upsertFieldValue.mutate({ fieldName, value });
+    },
+    [upsertFieldValue]
+  );
 
   // Fetch coat of arms from foundation country
   useEffect(() => {
@@ -168,7 +191,14 @@ export function useNationalIdentityState(
     if (foundationCoatOfArmsUrl && !inputs.coatOfArmsUrl) {
       handleCoatOfArmsUrlChange(foundationCoatOfArmsUrl);
     }
-  }, [flag?.flagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl, handleFlagUrlChange, handleCoatOfArmsUrlChange]);
+  }, [
+    flag?.flagUrl,
+    foundationCoatOfArmsUrl,
+    inputs.flagUrl,
+    inputs.coatOfArmsUrl,
+    handleFlagUrlChange,
+    handleCoatOfArmsUrlChange,
+  ]);
 
   return {
     // State

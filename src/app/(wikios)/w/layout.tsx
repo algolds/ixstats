@@ -10,7 +10,8 @@ export const metadata: Metadata = {
     template: "%s — IxWiki",
     default: "IxWiki — WikiOS",
   },
-  description: "IxWiki powered by WikiOS — the modern wiki experience for collaborative worldbuilding",
+  description:
+    "IxWiki powered by WikiOS — the modern wiki experience for collaborative worldbuilding",
   openGraph: {
     siteName: "IxWiki",
     type: "website",
@@ -26,14 +27,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function WikiOSLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="wikios-root min-h-screen">
-      {children}
-    </div>
-  );
+export default function WikiOSLayout({ children }: { children: React.ReactNode }) {
+  return <div className="wikios-root min-h-screen">{children}</div>;
 }

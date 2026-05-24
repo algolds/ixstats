@@ -1,15 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Users,
-  Briefcase,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  Shield,
-  Activity,
-} from "lucide-react";
+import { Users, Briefcase, TrendingUp, TrendingDown, Clock, Shield, Activity } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";

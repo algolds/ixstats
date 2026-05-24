@@ -236,12 +236,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
 
     return (
       <div
-        className={cn(
-          sizeWidth,
-          sizeHeight,
-          "relative transition-all duration-300",
-          className
-        )}
+        className={cn(sizeWidth, sizeHeight, "relative transition-all duration-300", className)}
         style={{
           perspective: "1200px",
           transformStyle: "preserve-3d",
@@ -260,9 +255,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
             transformStyle: "preserve-3d",
             willChange: "transform",
             transition: "transform 0.1s ease-out",
-            borderImage: borderConfig.animated
-              ? `${borderConfig.gradient} 1`
-              : undefined,
+            borderImage: borderConfig.animated ? `${borderConfig.gradient} 1` : undefined,
             borderImageSlice: borderConfig.animated ? 1 : undefined,
           }}
           onMouseMove={handleMouseMove}
@@ -297,8 +290,8 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
                   size === "small" || size === "sm"
                     ? "128px"
                     : size === "medium" || size === "md"
-                    ? "192px"
-                    : "256px"
+                      ? "192px"
+                      : "256px"
                 }
                 onError={() => setImageError(true)}
                 unoptimized
@@ -319,7 +312,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
           {/* Layer 2: Holographic pattern layer (rare+ only) */}
           {shouldShowHolographic && (
             <motion.div
-              className="absolute inset-0 pointer-events-none"
+              className="pointer-events-none absolute inset-0"
               style={{
                 background: getHolographicPattern(),
                 backgroundSize: "400% 400%",
@@ -361,7 +354,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
           {/* Layer 3: Shine layer (radial gradient following mouse) */}
           {shouldShowHolographic && isHovered && (
             <motion.div
-              className="absolute inset-0 pointer-events-none"
+              className="pointer-events-none absolute inset-0"
               style={{
                 background: `radial-gradient(circle at ${(mousePosition.x / (cardRef.current?.offsetWidth || 1)) * 100}% ${(mousePosition.y / (cardRef.current?.offsetHeight || 1)) * 100}%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 20%, transparent 60%)`,
                 mixBlendMode: "screen",
@@ -378,7 +371,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
           {/* Layer 4: Glare layer (diagonal highlight opposite to mouse) */}
           {shouldShowHolographic && isHovered && (
             <motion.div
-              className="absolute pointer-events-none"
+              className="pointer-events-none absolute"
               style={{
                 width: "150%",
                 height: "150%",
@@ -415,11 +408,10 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
                   className={cn(
                     "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
                     fonts.type,
-                    "text-white border border-white/20"
+                    "border border-white/20 text-white"
                   )}
                   style={{
-                    textShadow:
-                      "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
                   }}
                 >
                   {getCardTypeLabel(card.cardType)}
@@ -431,17 +423,14 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
             <div className="space-y-1">
               {/* Card title with embossed effect */}
               <motion.h3
-                className={cn(
-                  "font-black text-white line-clamp-2 tracking-wide",
-                  fonts.title
-                )}
+                className={cn("line-clamp-2 font-black tracking-wide text-white", fonts.title)}
                 style={{
                   textShadow: getEmbossedTextShadow(
                     card.rarity === "LEGENDARY"
                       ? "gold"
                       : card.rarity === "EPIC"
-                      ? "purple"
-                      : "silver"
+                        ? "purple"
+                        : "silver"
                   ),
                   WebkitTextStroke: "0.5px rgba(0,0,0,0.8)",
                   textRendering: "geometricPrecision",
@@ -461,7 +450,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
               {/* Country name (if available) */}
               {card.country && (
                 <p
-                  className={cn("text-white/90 font-semibold", fonts.type)}
+                  className={cn("font-semibold text-white/90", fonts.type)}
                   style={{
                     textShadow: "0 1px 2px rgba(0,0,0,0.8)",
                   }}
@@ -474,13 +463,11 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
               <div
                 className={cn(
                   "flex items-center justify-between rounded-lg px-2 py-1",
-                  "bg-black/70 backdrop-blur-md border border-white/10",
+                  "border border-white/10 bg-black/70 backdrop-blur-md",
                   fonts.type
                 )}
               >
-                <span className="text-white/80 font-medium">
-                  Season {card.season}
-                </span>
+                <span className="font-medium text-white/80">Season {card.season}</span>
                 <motion.span
                   className={cn("font-black", rarityConfig.color)}
                   style={{
@@ -507,23 +494,17 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                   className={cn(
-                    "grid grid-cols-1 xs:grid-cols-2 gap-1 rounded-lg p-2",
-                    "bg-black/80 backdrop-blur-xl border border-white/20",
+                    "xs:grid-cols-2 grid grid-cols-1 gap-1 rounded-lg p-2",
+                    "border border-white/20 bg-black/80 backdrop-blur-xl",
                     fonts.stats
                   )}
                   style={{
-                    boxShadow:
-                      "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
                   }}
                 >
                   {Object.entries(stats).map(([key, stat]) => (
-                    <div
-                      key={key}
-                      className="flex items-center justify-between px-1"
-                    >
-                      <span className="text-white/70 font-medium">
-                        {stat.label}
-                      </span>
+                    <div key={key} className="flex items-center justify-between px-1">
+                      <span className="font-medium text-white/70">{stat.label}</span>
                       <span
                         className={cn("font-black", stat.color)}
                         style={{
@@ -576,7 +557,7 @@ export const PokemonStyleCard = React.memo<PokemonStyleCardProps>(
           {/* Premium rarity glow (outer) */}
           <motion.div
             className={cn(
-              "absolute inset-0 rounded-2xl pointer-events-none",
+              "pointer-events-none absolute inset-0 rounded-2xl",
               getRarityGlow(card.rarity)
             )}
             initial={{ opacity: 0 }}

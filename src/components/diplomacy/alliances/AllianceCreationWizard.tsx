@@ -28,10 +28,25 @@ interface AllianceCreationWizardProps {
 }
 
 const ALLIANCE_TYPES = [
-  { value: "military", label: "Military Alliance", icon: Shield, description: "Mutual defense pact" },
+  {
+    value: "military",
+    label: "Military Alliance",
+    icon: Shield,
+    description: "Mutual defense pact",
+  },
   { value: "economic", label: "Economic Bloc", icon: DollarSign, description: "Trade cooperation" },
-  { value: "political", label: "Political Union", icon: Landmark, description: "Governance alignment" },
-  { value: "regional", label: "Regional Bloc", icon: MapPin, description: "Geographic cooperation" },
+  {
+    value: "political",
+    label: "Political Union",
+    icon: Landmark,
+    description: "Governance alignment",
+  },
+  {
+    value: "regional",
+    label: "Regional Bloc",
+    icon: MapPin,
+    description: "Geographic cooperation",
+  },
 ] as const;
 
 export function AllianceCreationWizard({ onSuccess }: AllianceCreationWizardProps) {
@@ -131,7 +146,10 @@ export function AllianceCreationWizard({ onSuccess }: AllianceCreationWizardProp
             </div>
             <div>
               <Label>Visibility</Label>
-              <Select value={visibility} onValueChange={(v) => setVisibility(v as typeof visibility)}>
+              <Select
+                value={visibility}
+                onValueChange={(v) => setVisibility(v as typeof visibility)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -144,7 +162,10 @@ export function AllianceCreationWizard({ onSuccess }: AllianceCreationWizardProp
             </div>
             <div>
               <Label>Join Policy</Label>
-              <Select value={joinPolicy} onValueChange={(v) => setJoinPolicy(v as typeof joinPolicy)}>
+              <Select
+                value={joinPolicy}
+                onValueChange={(v) => setJoinPolicy(v as typeof joinPolicy)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

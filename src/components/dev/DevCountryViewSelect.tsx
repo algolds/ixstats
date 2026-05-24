@@ -32,8 +32,10 @@ export function DevCountryViewSelect() {
   } = useDevCountryView();
 
   // Fetch country list for dropdown
-  const { data: countriesData, isLoading: countriesLoading } =
-    api.countries.getSelectList.useQuery({ limit: 500 }, { enabled: canUseDevView });
+  const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
+    { limit: 500 },
+    { enabled: canUseDevView }
+  );
 
   const countries = useMemo(() => {
     if (!countriesData?.items) return [];
@@ -75,9 +77,7 @@ export function DevCountryViewSelect() {
           : "border-blue-500/30 bg-blue-500/5"
       )}
     >
-      <Eye
-        className={cn("h-4 w-4", isViewingOtherCountry ? "text-amber-500" : "text-blue-500")}
-      />
+      <Eye className={cn("h-4 w-4", isViewingOtherCountry ? "text-amber-500" : "text-blue-500")} />
       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">DEV:</span>
 
       <Select
@@ -87,13 +87,11 @@ export function DevCountryViewSelect() {
       >
         <SelectTrigger
           className={cn(
-            "h-7 w-40 text-xs border-0 bg-transparent",
+            "h-7 w-40 border-0 bg-transparent text-xs",
             isViewingOtherCountry ? "text-amber-700 dark:text-amber-300" : ""
           )}
         >
-          <SelectValue
-            placeholder={countriesLoading ? "Loading..." : "Select country"}
-          />
+          <SelectValue placeholder={countriesLoading ? "Loading..." : "Select country"} />
         </SelectTrigger>
         <SelectContent className="max-h-60">
           <SelectItem value="__own__" className="text-xs">
@@ -122,7 +120,7 @@ export function DevCountryViewSelect() {
           onClick={clearViewCountry}
           variant="ghost"
           size="sm"
-          className="h-6 px-2 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-500/20"
+          className="h-6 px-2 text-xs text-amber-700 hover:bg-amber-500/20 hover:text-amber-900"
         >
           <RotateCcw className="h-3 w-3" />
         </Button>

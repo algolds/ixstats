@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { Send, MessagesSquare, Users, Shield, Inbox, Globe, MessageCircle } from "lucide-react";
-import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
+import {
+  ArticleLayout,
+  Section,
+  InfoBox,
+  WarningBox,
+  ContentCard,
+} from "../../_components/ArticleLayout";
 
 export default function ThinkShareArticle() {
   return (
@@ -26,12 +32,12 @@ export default function ThinkShareArticle() {
             </li>
             <li>
               <Globe className="inline h-4 w-4" /> <strong>Contextual Identity</strong> — your
-              display name and avatar change based on context. Diplomatic channels show your
-              country name, wiki discussions show your wiki username.
+              display name and avatar change based on context. Diplomatic channels show your country
+              name, wiki discussions show your wiki username.
             </li>
             <li>
-              <MessageCircle className="inline h-4 w-4" /> <strong>Cross-System</strong> — wiki
-              edit notifications, forum private messages, and diplomatic cables all appear in your
+              <MessageCircle className="inline h-4 w-4" /> <strong>Cross-System</strong> — wiki edit
+              notifications, forum private messages, and diplomatic cables all appear in your
               unified inbox.
             </li>
           </ul>
@@ -41,20 +47,21 @@ export default function ThinkShareArticle() {
           <InfoBox title="How to Message">
             <ol className="list-decimal space-y-1 pl-6">
               <li>
-                Open <Link href="/messages" className="text-blue-600 hover:underline dark:text-blue-400">Messages</Link> from
-                the main navigation menu.
+                Open{" "}
+                <Link href="/messages" className="text-blue-600 hover:underline dark:text-blue-400">
+                  Messages
+                </Link>{" "}
+                from the main navigation menu.
               </li>
               <li>
-                Use the folder rail on the left to switch between Personal, Diplomatic,
-                Discussions, Groups, and System messages.
+                Use the folder rail on the left to switch between Personal, Diplomatic, Discussions,
+                Groups, and System messages.
               </li>
               <li>
                 Select a conversation to view it, or click <strong>New Conversation</strong> to
                 start a new one.
               </li>
-              <li>
-                Use reactions, replies, and rich text to keep discussions organized.
-              </li>
+              <li>Use reactions, replies, and rich text to keep discussions organized.</li>
             </ol>
           </InfoBox>
         </Section>
@@ -78,14 +85,20 @@ export default function ThinkShareArticle() {
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <MessagesSquare className="inline h-4 w-4" />{" "}
-              <Link href="/help/social/thinkpages" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/social/thinkpages"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 ThinkPages
               </Link>{" "}
               — publish posts publicly and engage with the broader community.
             </li>
             <li>
               <Users className="inline h-4 w-4" />{" "}
-              <Link href="/help/social/thinktanks" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/social/thinktanks"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 ThinkTanks
               </Link>{" "}
               — collaborate in group workspaces with shared posts and files.

@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { Hammer, Layers, Upload, Rocket } from "lucide-react";
-import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
+import {
+  ArticleLayout,
+  Section,
+  InfoBox,
+  WarningBox,
+  ContentCard,
+} from "../../_components/ArticleLayout";
 
 export default function CountryBuildingArticle() {
   return (
@@ -14,16 +20,30 @@ export default function CountryBuildingArticle() {
       <ContentCard>
         <Section title="Builder Overview">
           <p>
-            The Country Builder guides you through creating a nation in
-            structured steps. Each step configures a different aspect of your country:
+            The Country Builder guides you through creating a nation in structured steps. Each step
+            configures a different aspect of your country:
           </p>
           <ol className="mt-2 list-decimal space-y-2 pl-6">
-            <li><strong>Identity:</strong> Country name, flag, motto, symbols, and basic metadata</li>
-            <li><strong>Government:</strong> Government type selection and atomic component configuration</li>
-            <li><strong>Economy:</strong> Economic tier, sector distribution, and economic components</li>
-            <li><strong>Labor:</strong> Labor force participation, employment rates, and sector workforce</li>
-            <li><strong>Demographics:</strong> Population, growth rate, age distribution, urbanization</li>
-            <li><strong>Fiscal:</strong> Tax system configuration and government budget allocation</li>
+            <li>
+              <strong>Identity:</strong> Country name, flag, motto, symbols, and basic metadata
+            </li>
+            <li>
+              <strong>Government:</strong> Government type selection and atomic component
+              configuration
+            </li>
+            <li>
+              <strong>Economy:</strong> Economic tier, sector distribution, and economic components
+            </li>
+            <li>
+              <strong>Labor:</strong> Labor force participation, employment rates, and sector
+              workforce
+            </li>
+            <li>
+              <strong>Demographics:</strong> Population, growth rate, age distribution, urbanization
+            </li>
+            <li>
+              <strong>Fiscal:</strong> Tax system configuration and government budget allocation
+            </li>
           </ol>
         </Section>
 
@@ -34,9 +54,18 @@ export default function CountryBuildingArticle() {
               building blocks for your nation:
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
-              <li><strong>24 Government Components:</strong> Power distribution, decision processes, legitimacy, institutions, control mechanisms</li>
-              <li><strong>40+ Economic Components:</strong> Trade policy, labor regulation, investment, innovation, infrastructure, environment</li>
-              <li><strong>42 Tax Components:</strong> Income tax, corporate tax, VAT, property, capital gains, and specialized tax types</li>
+              <li>
+                <strong>24 Government Components:</strong> Power distribution, decision processes,
+                legitimacy, institutions, control mechanisms
+              </li>
+              <li>
+                <strong>40+ Economic Components:</strong> Trade policy, labor regulation,
+                investment, innovation, infrastructure, environment
+              </li>
+              <li>
+                <strong>42 Tax Components:</strong> Income tax, corporate tax, VAT, property,
+                capital gains, and specialized tax types
+              </li>
             </ul>
             <p className="mt-2">
               Each component has an effectiveness score and may have synergies or conflicts with
@@ -51,12 +80,12 @@ export default function CountryBuildingArticle() {
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <strong>Synergy Stacking:</strong> Select components that have positive synergies with
-              each other. The synergy system awards bonus effectiveness when complementary components
-              are combined.
+              each other. The synergy system awards bonus effectiveness when complementary
+              components are combined.
             </li>
             <li>
-              <strong>Avoid Conflicts:</strong> Some components penalize each other. Check the synergy
-              panel before finalizing your configuration.
+              <strong>Avoid Conflicts:</strong> Some components penalize each other. Check the
+              synergy panel before finalizing your configuration.
             </li>
             <li>
               <strong>Policy Presets:</strong> Use pre-built policy configurations from the preset
@@ -71,8 +100,8 @@ export default function CountryBuildingArticle() {
 
         <Section title="Import Options">
           <p>
-            <Upload className="inline h-4 w-4 text-emerald-500" /> Instead of building from
-            scratch, you can import country data:
+            <Upload className="inline h-4 w-4 text-emerald-500" /> Instead of building from scratch,
+            you can import country data:
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
@@ -105,17 +134,49 @@ export default function CountryBuildingArticle() {
         </Section>
 
         <WarningBox title="Builder Tip">
-          The builder supports an onboarding wizard with four paths: Complete Tutorial (~5-8 minutes),
-          Quick Start, Import from Wiki/NS, or Jump In directly. New players should choose Complete
-          Tutorial for the best introduction.
+          The builder supports an onboarding wizard with four paths: Complete Tutorial (~5-8
+          minutes), Quick Start, Import from Wiki/NS, or Jump In directly. New players should choose
+          Complete Tutorial for the best introduction.
         </WarningBox>
 
         <InfoBox title="Related Documentation">
           <ul className="list-disc space-y-1 pl-6">
-            <li><Link href="/help/getting-started/first-country" className="text-blue-600 hover:underline dark:text-blue-400">Creating Your First Country</Link> — Quick start guide</li>
-            <li><Link href="/help/government/atomic" className="text-blue-600 hover:underline dark:text-blue-400">Atomic Government System</Link> — Atomic government system details</li>
-            <li><Link href="/help/economy/tiers" className="text-blue-600 hover:underline dark:text-blue-400">Economic Tiers</Link> — Economic tier system</li>
-            <li><Link href="/help/government/synergy" className="text-blue-600 hover:underline dark:text-blue-400">Component Synergies</Link> — Component synergy mechanics</li>
+            <li>
+              <Link
+                href="/help/getting-started/first-country"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Creating Your First Country
+              </Link>{" "}
+              — Quick start guide
+            </li>
+            <li>
+              <Link
+                href="/help/government/atomic"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Atomic Government System
+              </Link>{" "}
+              — Atomic government system details
+            </li>
+            <li>
+              <Link
+                href="/help/economy/tiers"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Economic Tiers
+              </Link>{" "}
+              — Economic tier system
+            </li>
+            <li>
+              <Link
+                href="/help/government/synergy"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Component Synergies
+              </Link>{" "}
+              — Component synergy mechanics
+            </li>
           </ul>
         </InfoBox>
       </ContentCard>

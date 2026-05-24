@@ -310,9 +310,7 @@ describe("BaseBuilderService", () => {
 
       service.reset();
 
-      expect(listener).toHaveBeenCalledWith(
-        expect.objectContaining({ count: 0, name: "initial" })
-      );
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({ count: 0, name: "initial" }));
     });
   });
 

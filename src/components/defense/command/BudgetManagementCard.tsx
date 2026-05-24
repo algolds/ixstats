@@ -14,13 +14,7 @@ import {
   HelpCircle,
   Info,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -93,62 +87,55 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                     <div>
                       <h4 className="mb-2 font-semibold">Budget Allocation</h4>
                       <p className="text-muted-foreground">
-                        Your defense budget should total 100% allocated across
-                        all categories. The system will warn you if you're over
-                        or under budget.
+                        Your defense budget should total 100% allocated across all categories. The
+                        system will warn you if you're over or under budget.
                       </p>
                     </div>
                     <div>
-                      <h4 className="mb-2 font-semibold">
-                        Budget Categories Explained
-                      </h4>
+                      <h4 className="mb-2 font-semibold">Budget Categories Explained</h4>
                       <ul className="text-muted-foreground list-inside list-disc space-y-1">
                         <li>
-                          <strong>Personnel (typically 35-45%):</strong>{" "}
-                          Salaries, benefits, pensions for military and civilian
-                          staff
+                          <strong>Personnel (typically 35-45%):</strong> Salaries, benefits,
+                          pensions for military and civilian staff
                         </li>
                         <li>
-                          <strong>Operations & Maintenance (25-35%):</strong>{" "}
-                          Day-to-day operations, training exercises, facility
-                          upkeep
+                          <strong>Operations & Maintenance (25-35%):</strong> Day-to-day operations,
+                          training exercises, facility upkeep
                         </li>
                         <li>
-                          <strong>Procurement (10-20%):</strong> Purchase of new
-                          equipment, vehicles, ships, aircraft, and weapons
+                          <strong>Procurement (10-20%):</strong> Purchase of new equipment,
+                          vehicles, ships, aircraft, and weapons
                         </li>
                         <li>
-                          <strong>R&D (5-15%):</strong> Research and development
-                          of next-generation military technology
+                          <strong>R&D (5-15%):</strong> Research and development of next-generation
+                          military technology
                         </li>
                         <li>
-                          <strong>Military Construction (3-8%):</strong> Building
-                          and upgrading bases, installations, and infrastructure
+                          <strong>Military Construction (3-8%):</strong> Building and upgrading
+                          bases, installations, and infrastructure
                         </li>
                       </ul>
                     </div>
                     <div>
                       <h4 className="mb-2 font-semibold">GDP Percentage</h4>
                       <p className="text-muted-foreground">
-                        Typical defense spending ranges from 1-4% of GDP. Higher
-                        percentages indicate a strong military focus, while lower
-                        percentages suggest prioritizing other sectors.
+                        Typical defense spending ranges from 1-4% of GDP. Higher percentages
+                        indicate a strong military focus, while lower percentages suggest
+                        prioritizing other sectors.
                       </p>
                     </div>
                     <div>
                       <h4 className="mb-2 font-semibold">Tips</h4>
                       <ul className="text-muted-foreground list-inside list-disc space-y-1">
                         <li>
-                          Balance current needs (personnel, operations) with
-                          future capabilities (procurement, R&D)
+                          Balance current needs (personnel, operations) with future capabilities
+                          (procurement, R&D)
                         </li>
                         <li>
-                          Changing total budget maintains proportional
-                          allocations automatically
+                          Changing total budget maintains proportional allocations automatically
                         </li>
                         <li>
-                          Monitor branch budgets to ensure they sum to your total
-                          defense budget
+                          Monitor branch budgets to ensure they sum to your total defense budget
                         </li>
                       </ul>
                     </div>
@@ -156,17 +143,11 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                 </DialogContent>
               </Dialog>
             </CardTitle>
-            <CardDescription>
-              Allocate resources across defense categories
-            </CardDescription>
+            <CardDescription>Allocate resources across defense categories</CardDescription>
           </div>
           {editingBudget ? (
             <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setEditingBudget(false)}
-              >
+              <Button size="sm" variant="outline" onClick={() => setEditingBudget(false)}>
                 Cancel
               </Button>
               <Button size="sm" onClick={handleSaveBudget}>
@@ -187,25 +168,18 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
         <div className="bg-muted/50 rounded-lg border p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-muted-foreground text-sm">
-                Total Defense Budget
-              </Label>
+              <Label className="text-muted-foreground text-sm">Total Defense Budget</Label>
               {editingBudget ? (
                 <Input
                   type="number"
                   value={budgetData.totalBudget}
-                  onChange={(e) =>
-                    handleTotalBudgetChange(parseFloat(e.target.value) || 0)
-                  }
+                  onChange={(e) => handleTotalBudgetChange(parseFloat(e.target.value) || 0)}
                   className="mt-1"
                 />
               ) : (
                 <div className="mt-1 text-2xl font-bold">
                   $
-                  <NumberFlowDisplay
-                    value={budgetData.totalBudget}
-                    format="compact"
-                  />
+                  <NumberFlowDisplay value={budgetData.totalBudget} format="compact" />
                 </div>
               )}
             </div>
@@ -233,22 +207,16 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                   ? "text-red-600"
                   : allocationPercent < 95
                     ? "text-orange-600"
-                    : "text-green-600",
+                    : "text-green-600"
               )}
             >
-              <NumberFlowDisplay
-                value={allocationPercent}
-                format="percentage"
-                decimalPlaces={1}
-              />{" "}
+              <NumberFlowDisplay value={allocationPercent} format="percentage" decimalPlaces={1} />{" "}
               Allocated
             </span>
           </div>
           <Progress value={Math.min(allocationPercent, 100)} className="h-2" />
           {allocationPercent > 100 && (
-            <p className="mt-1 text-xs text-red-600">
-              Over budget! Reduce allocations.
-            </p>
+            <p className="mt-1 text-xs text-red-600">Over budget! Reduce allocations.</p>
           )}
         </div>
 
@@ -258,13 +226,8 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
         <div className="space-y-4">
           {BUDGET_CATEGORIES.map((category) => {
             const Icon = ICON_MAP[category.iconName];
-            const value = budgetData[
-              category.key as keyof BudgetData
-            ] as number;
-            const percent =
-              budgetData.totalBudget > 0
-                ? (value / budgetData.totalBudget) * 100
-                : 0;
+            const value = budgetData[category.key as keyof BudgetData] as number;
+            const percent = budgetData.totalBudget > 0 ? (value / budgetData.totalBudget) * 100 : 0;
 
             return (
               <div key={category.key} className="space-y-2">
@@ -275,21 +238,14 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-muted-foreground w-12 text-right text-xs">
-                      <NumberFlowDisplay
-                        value={percent}
-                        format="percentage"
-                        decimalPlaces={1}
-                      />
+                      <NumberFlowDisplay value={percent} format="percentage" decimalPlaces={1} />
                     </span>
                     {editingBudget ? (
                       <Input
                         type="number"
                         value={value}
                         onChange={(e) =>
-                          handleCategoryChange(
-                            category.key,
-                            parseFloat(e.target.value) || 0,
-                          )
+                          handleCategoryChange(category.key, parseFloat(e.target.value) || 0)
                         }
                         className="h-8 w-32 text-sm"
                       />

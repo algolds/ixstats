@@ -26,7 +26,7 @@ const LegislatureConfig = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -41,7 +41,7 @@ const GovernmentMetricsEditor = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -56,7 +56,7 @@ const LegislativePolicies = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -71,7 +71,7 @@ const LegislativeIssues = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -105,7 +105,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       <section className="space-y-3">
         <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
           <button
-            className="flex flex-1 items-center gap-2 transition-colors hover:bg-muted/50 rounded-md py-0.5"
+            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
             onClick={() => setSetupExpanded(!setupExpanded)}
           >
             <Landmark className="h-4 w-4 text-indigo-600" />
@@ -117,13 +117,13 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
               content="Configure your parliament's name, chamber structure, seat count, electoral system, term length, and election cycle type."
             />
             <button
-              className="p-0.5 transition-colors hover:bg-muted/50 rounded"
+              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
               onClick={() => setSetupExpanded(!setupExpanded)}
             >
               {setupExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="text-muted-foreground h-4 w-4" />
               )}
             </button>
           </div>
@@ -138,7 +138,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       <section className="space-y-3">
         <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
           <button
-            className="flex flex-1 items-center gap-2 transition-colors hover:bg-muted/50 rounded-md py-0.5"
+            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
             onClick={() => setMetricsExpanded(!metricsExpanded)}
           >
             <BarChart2 className="h-4 w-4 text-violet-600" />
@@ -150,13 +150,13 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
               content="Baseline political indices drawn from your government structure — stability, democracy score, polarization, effectiveness, rule of law, and corruption. These are modified by in-game events."
             />
             <button
-              className="p-0.5 transition-colors hover:bg-muted/50 rounded"
+              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
               onClick={() => setMetricsExpanded(!metricsExpanded)}
             >
               {metricsExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="text-muted-foreground h-4 w-4" />
               )}
             </button>
           </div>
@@ -171,7 +171,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       <section className="space-y-3">
         <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
           <button
-            className="flex flex-1 items-center gap-2 transition-colors hover:bg-muted/50 rounded-md py-0.5"
+            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
             onClick={() => setPoliciesExpanded(!policiesExpanded)}
           >
             <ScrollText className="h-4 w-4 text-emerald-600" />
@@ -183,13 +183,13 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
               content="View enacted legislation and active policy bills. Create new policies to shape your nation's direction."
             />
             <button
-              className="p-0.5 transition-colors hover:bg-muted/50 rounded"
+              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
               onClick={() => setPoliciesExpanded(!policiesExpanded)}
             >
               {policiesExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="text-muted-foreground h-4 w-4" />
               )}
             </button>
           </div>
@@ -204,7 +204,7 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
       <section className="space-y-3">
         <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
           <button
-            className="flex flex-1 items-center gap-2 transition-colors hover:bg-muted/50 rounded-md py-0.5"
+            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
             onClick={() => setIssuesExpanded(!issuesExpanded)}
           >
             <AlertTriangle className="h-4 w-4 text-amber-600" />
@@ -216,13 +216,13 @@ export function LegislaturePanel({ countryId }: LegislaturePanelProps) {
               content="Pending political and governance decisions requiring legislative attention. Filtered from your national issues inbox."
             />
             <button
-              className="p-0.5 transition-colors hover:bg-muted/50 rounded"
+              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
               onClick={() => setIssuesExpanded(!issuesExpanded)}
             >
               {issuesExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="text-muted-foreground h-4 w-4" />
               )}
             </button>
           </div>

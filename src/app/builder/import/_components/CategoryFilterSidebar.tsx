@@ -83,7 +83,7 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
           </div>
           <button
             onClick={onToggle}
-            className="rounded-md p-1.5 transition-colors hover:bg-accent/50"
+            className="hover:bg-accent/50 rounded-md p-1.5 transition-colors"
             style={{ color: "var(--color-text-muted)" }}
           >
             <ChevronUp className="h-4 w-4" />
@@ -121,7 +121,10 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  <span className="text-sm font-medium" style={{ color: "var(--color-text-muted)" }}>
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: "var(--color-text-muted)" }}
+                  >
                     Popular:
                   </span>
                   <div className="flex flex-col gap-2">
@@ -155,7 +158,10 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
                   </div>
                 </div>
 
-                <div className="border-t pt-4" style={{ borderColor: "var(--color-border-primary)" }}>
+                <div
+                  className="border-t pt-4"
+                  style={{ borderColor: "var(--color-border-primary)" }}
+                >
                   <div
                     className="flex items-center gap-2 text-xs"
                     style={{ color: "var(--color-text-muted)" }}

@@ -223,7 +223,7 @@ export function EconomySection({
       {economyBuilderState && (
         <div className="mb-6 md:col-span-2">
           <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-6 dark:border-emerald-800 dark:from-emerald-900/20 dark:to-teal-900/20">
-            <div className="flex items-center space-x-4 mb-4">
+            <div className="mb-4 flex items-center space-x-4">
               <div className="rounded-lg bg-emerald-100 p-3 dark:bg-emerald-900/20">
                 <Settings className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               </div>
@@ -263,27 +263,30 @@ export function EconomySection({
             </div>
 
             {/* Selected Components */}
-            {economyBuilderState.selectedAtomicComponents && economyBuilderState.selectedAtomicComponents.length > 0 && (
-              <div className="mt-3 border-t border-emerald-200 pt-3 dark:border-emerald-800">
-                <div className="mb-2 text-sm font-medium">Selected Components:</div>
-                <div className="flex flex-wrap gap-1">
-                  {economyBuilderState.selectedAtomicComponents.slice(0, 5).map((componentType) => {
-                    const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
-                    if (!component) return null;
-                    return (
-                      <Badge key={componentType} variant="outline" className="text-xs">
-                        {component.name}
+            {economyBuilderState.selectedAtomicComponents &&
+              economyBuilderState.selectedAtomicComponents.length > 0 && (
+                <div className="mt-3 border-t border-emerald-200 pt-3 dark:border-emerald-800">
+                  <div className="mb-2 text-sm font-medium">Selected Components:</div>
+                  <div className="flex flex-wrap gap-1">
+                    {economyBuilderState.selectedAtomicComponents
+                      .slice(0, 5)
+                      .map((componentType) => {
+                        const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
+                        if (!component) return null;
+                        return (
+                          <Badge key={componentType} variant="outline" className="text-xs">
+                            {component.name}
+                          </Badge>
+                        );
+                      })}
+                    {economyBuilderState.selectedAtomicComponents.length > 5 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{economyBuilderState.selectedAtomicComponents.length - 5} more
                       </Badge>
-                    );
-                  })}
-                  {economyBuilderState.selectedAtomicComponents.length > 5 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{economyBuilderState.selectedAtomicComponents.length - 5} more
-                    </Badge>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </Card>
         </div>
       )}

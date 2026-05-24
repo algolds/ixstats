@@ -47,7 +47,7 @@ export function ForumView({ onClose }: ForumViewProps) {
         </div>
         <button
           onClick={() => navigate("/forum/search")}
-          className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-zinc-400 hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
         >
           <Search className="h-3 w-3" />
           Search
@@ -56,27 +56,21 @@ export function ForumView({ onClose }: ForumViewProps) {
 
       {/* Current context */}
       {currentThread && (
-        <div className="mb-3 rounded-lg bg-orange-500/10 border border-orange-500/20 p-2.5">
-          <div className="text-[10px] uppercase tracking-wider text-orange-400/70 mb-1">
+        <div className="mb-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-2.5">
+          <div className="mb-1 text-[10px] tracking-wider text-orange-400/70 uppercase">
             Currently viewing
           </div>
-          <div className="text-xs font-medium text-white truncate">
-            {currentThread.title}
-          </div>
-          <div className="text-[10px] text-zinc-400 mt-0.5">
-            in {currentThread.forumName}
-          </div>
+          <div className="truncate text-xs font-medium text-white">{currentThread.title}</div>
+          <div className="mt-0.5 text-[10px] text-zinc-400">in {currentThread.forumName}</div>
         </div>
       )}
 
       {currentForum && !currentThread && (
-        <div className="mb-3 rounded-lg bg-orange-500/10 border border-orange-500/20 p-2.5">
-          <div className="text-[10px] uppercase tracking-wider text-orange-400/70 mb-1">
+        <div className="mb-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-2.5">
+          <div className="mb-1 text-[10px] tracking-wider text-orange-400/70 uppercase">
             Browsing
           </div>
-          <div className="text-xs font-medium text-white">
-            {currentForum.title}
-          </div>
+          <div className="text-xs font-medium text-white">{currentForum.title}</div>
         </div>
       )}
 
@@ -84,19 +78,19 @@ export function ForumView({ onClose }: ForumViewProps) {
       <div className="mb-3 flex gap-1.5">
         <button
           onClick={() => navigate("/forum")}
-          className="flex-1 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] font-medium text-zinc-300 hover:bg-white/10 transition-colors"
+          className="flex-1 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] font-medium text-zinc-300 transition-colors hover:bg-white/10"
         >
           All Forums
         </button>
         <button
           onClick={() => navigate("/forum/new-thread")}
-          className="flex-1 rounded-lg bg-orange-500/15 px-2 py-1.5 text-[10px] font-medium text-orange-400 hover:bg-orange-500/25 transition-colors"
+          className="flex-1 rounded-lg bg-orange-500/15 px-2 py-1.5 text-[10px] font-medium text-orange-400 transition-colors hover:bg-orange-500/25"
         >
           New Thread
         </button>
         <button
           onClick={() => navigate("/forum/conversations")}
-          className="flex-1 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] font-medium text-zinc-300 hover:bg-white/10 transition-colors"
+          className="flex-1 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] font-medium text-zinc-300 transition-colors hover:bg-white/10"
         >
           Messages
         </button>

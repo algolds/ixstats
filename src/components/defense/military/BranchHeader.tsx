@@ -46,9 +46,9 @@ export const BranchHeader = React.memo(function BranchHeader({
                     <div>
                       <h4 className="mb-2 font-semibold">Creating Military Branches</h4>
                       <p className="text-muted-foreground">
-                        Build your armed forces by creating branches (Army, Navy, Air Force,
-                        etc.). Each branch can have custom names, mottos, and organizational
-                        structures inspired by real-world militaries.
+                        Build your armed forces by creating branches (Army, Navy, Air Force, etc.).
+                        Each branch can have custom names, mottos, and organizational structures
+                        inspired by real-world militaries.
                       </p>
                     </div>
                     <div>
@@ -63,8 +63,8 @@ export const BranchHeader = React.memo(function BranchHeader({
                           defense spending
                         </li>
                         <li>
-                          <strong>Readiness:</strong> Configure combat readiness, technology
-                          level, training, and morale
+                          <strong>Readiness:</strong> Configure combat readiness, technology level,
+                          training, and morale
                         </li>
                         <li>
                           <strong>Image/Emblem:</strong> Add custom branch insignia or emblems via
@@ -75,9 +75,9 @@ export const BranchHeader = React.memo(function BranchHeader({
                     <div>
                       <h4 className="mb-2 font-semibold">Units &amp; Assets</h4>
                       <p className="text-muted-foreground">
-                        Each branch can contain multiple units (divisions, regiments, squadrons)
-                        and assets (vehicles, aircraft, ships, weapon systems). Browse the
-                        equipment database to add assets from real-world systems.
+                        Each branch can contain multiple units (divisions, regiments, squadrons) and
+                        assets (vehicles, aircraft, ships, weapon systems). Browse the equipment
+                        database to add assets from real-world systems.
                       </p>
                     </div>
                     <div>
@@ -92,7 +92,8 @@ export const BranchHeader = React.memo(function BranchHeader({
                         </li>
                         <li>Use established dates to track branch history and traditions</li>
                         <li>
-                          Organize units hierarchically (e.g., Division &rarr; Brigade &rarr; Battalion)
+                          Organize units hierarchically (e.g., Division &rarr; Brigade &rarr;
+                          Battalion)
                         </li>
                       </ul>
                     </div>

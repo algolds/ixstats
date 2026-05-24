@@ -66,10 +66,7 @@ function log(message: string, color: keyof typeof colors = "reset") {
 // ============================================================================
 
 class TestCache {
-  private cache = new Map<
-    string,
-    { value: any; expires: number; hits: number }
-  >();
+  private cache = new Map<string, { value: any; expires: number; hits: number }>();
   private stats = { hits: 0, misses: 0, sets: 0 };
 
   set(key: string, value: any, ttlMs: number = 60000): void {
@@ -377,14 +374,8 @@ async function runCacheTests() {
             ? "yellow"
             : "red";
 
-      log(
-        `  SET latency: ${redisBenchmark.setLatency.toFixed(2)}ms`,
-        setStatus
-      );
-      log(
-        `  GET latency: ${redisBenchmark.getLatency.toFixed(2)}ms`,
-        getStatus
-      );
+      log(`  SET latency: ${redisBenchmark.setLatency.toFixed(2)}ms`, setStatus);
+      log(`  GET latency: ${redisBenchmark.getLatency.toFixed(2)}ms`, getStatus);
       log(`  Samples: ${redisBenchmark.samples}`, "dim");
     }
   }
@@ -403,10 +394,7 @@ async function runCacheTests() {
         : "red";
 
   log(`  Hit Rate: ${memCacheResult.hitRate.toFixed(2)}%`, hitRateStatus);
-  log(
-    `  Latency: ${(memCacheResult.avgLatency * 1000).toFixed(3)}µs`,
-    "reset"
-  );
+  log(`  Latency: ${(memCacheResult.avgLatency * 1000).toFixed(3)}µs`, "reset");
   log(`  Total Requests: ${memCacheResult.totalRequests}`, "dim");
   log(`  Hits: ${memCacheResult.hits} | Misses: ${memCacheResult.misses}`, "dim");
 
@@ -428,10 +416,7 @@ async function runCacheTests() {
 
   if (apiCacheResult.firstRequest > 0) {
     log(`  First request: ${apiCacheResult.firstRequest.toFixed(2)}ms`, "reset");
-    log(
-      `  Cached request: ${apiCacheResult.cachedRequest.toFixed(2)}ms`,
-      "reset"
-    );
+    log(`  Cached request: ${apiCacheResult.cachedRequest.toFixed(2)}ms`, "reset");
 
     const speedupStatus =
       apiCacheResult.speedup > 2 ? "green" : apiCacheResult.speedup > 1.5 ? "yellow" : "red";
@@ -459,9 +444,7 @@ async function runCacheTests() {
 
   if (memCacheResult.hitRate < TARGETS.hitRate.warning) {
     issues.push(`Low cache hit rate: ${memCacheResult.hitRate.toFixed(2)}%`);
-    recommendations.push(
-      "Consider increasing cache TTL or pre-warming critical data"
-    );
+    recommendations.push("Consider increasing cache TTL or pre-warming critical data");
   }
 
   if (apiCacheResult.speedup > 0 && apiCacheResult.speedup < 1.5) {
@@ -487,8 +470,14 @@ async function runCacheTests() {
 
   // Performance targets
   log("\n  Performance Targets:", "cyan");
-  log(`    Cache Hit Rate: ≥${TARGETS.hitRate.target}% (warning: <${TARGETS.hitRate.warning}%)`, "dim");
-  log(`    Redis Latency: <${TARGETS.latency.target}ms (warning: >${TARGETS.latency.warning}ms)`, "dim");
+  log(
+    `    Cache Hit Rate: ≥${TARGETS.hitRate.target}% (warning: <${TARGETS.hitRate.warning}%)`,
+    "dim"
+  );
+  log(
+    `    Redis Latency: <${TARGETS.latency.target}ms (warning: >${TARGETS.latency.warning}ms)`,
+    "dim"
+  );
   log("");
 }
 

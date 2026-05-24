@@ -83,7 +83,10 @@ export default function SetupPage() {
   const [error, setError] = useState<string | null>(null);
 
   // TRPC Queries
-  const { data: countries, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
+  const { data: countries, isLoading: countriesLoading } = api.countries.getAll.useQuery(
+    undefined,
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   // TRPC Mutations
   const linkCountryMutation = api.users.linkCountry.useMutation();
@@ -176,7 +179,7 @@ export default function SetupPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
+          <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
           <p className="text-muted-foreground">Loading setup...</p>
         </div>
       </div>

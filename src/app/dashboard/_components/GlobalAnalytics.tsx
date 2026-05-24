@@ -86,7 +86,7 @@ function TierDetailsPopover({ open, anchorEl, onClose, tier, countries }: TierDe
             Countries in the {tier} economic tier.
           </div>
         </div>
-        <div className="scrollbar-thin flex-grow overflow-y-auto pr-2">
+        <div className="flex-grow scrollbar-thin overflow-y-auto pr-2">
           <div className="grid gap-3">
             {tierCountries.map((c, i) => (
               <div
@@ -403,7 +403,11 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
                 margin={{ top: 8, right: 8, bottom: 48, left: 64 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={theme.gridColor} opacity={0.3} />
-                <XAxis type="number" tick={{ fill: theme.textColor, fontSize: 10 }} stroke={theme.axisColor} />
+                <XAxis
+                  type="number"
+                  tick={{ fill: theme.textColor, fontSize: 10 }}
+                  stroke={theme.axisColor}
+                />
                 <YAxis
                   dataKey="name"
                   type="category"

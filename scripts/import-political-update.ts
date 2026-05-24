@@ -13,11 +13,7 @@
 import { PrismaClient } from "@prisma/client";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import {
-  parseSvgToGeoJson,
-  normalizeForMatching,
-  type ParsedFeature,
-} from "../src/lib/svg-parser";
+import { parseSvgToGeoJson, normalizeForMatching, type ParsedFeature } from "../src/lib/svg-parser";
 import type { FeatureCollection } from "geojson";
 
 const prisma = new PrismaClient();
@@ -127,16 +123,18 @@ async function main() {
     featureData.push({
       feature,
       countryId,
-      isNew: !existingLinkages.has(feature.featureId) && !existingLayers.some(l => l.featureId === feature.featureId),
+      isNew:
+        !existingLinkages.has(feature.featureId) &&
+        !existingLayers.some((l) => l.featureId === feature.featureId),
     });
   }
 
   // Features that exist in DB but not in new SVG
-  const removedFeatures = existingLayers.filter(l => !newFeatureIds.has(l.featureId));
+  const removedFeatures = existingLayers.filter((l) => !newFeatureIds.has(l.featureId));
 
   console.log(`\n── Summary ──`);
-  console.log(`  New features: ${featureData.filter(f => f.isNew).length}`);
-  console.log(`  Updated features: ${featureData.filter(f => !f.isNew).length}`);
+  console.log(`  New features: ${featureData.filter((f) => f.isNew).length}`);
+  console.log(`  Updated features: ${featureData.filter((f) => !f.isNew).length}`);
   console.log(`  Removed features: ${removedFeatures.length}`);
   console.log(`  Linked to countries: ${linked}`);
   console.log(`  New country matches: ${newLinks}`);
@@ -211,7 +209,7 @@ async function main() {
     await prisma.mapLayer.updateMany({
       where: {
         layerType: LAYER_TYPE,
-        featureId: { in: removedFeatures.map(f => f.featureId) },
+        featureId: { in: removedFeatures.map((f) => f.featureId) },
       },
       data: { isActive: false },
     });

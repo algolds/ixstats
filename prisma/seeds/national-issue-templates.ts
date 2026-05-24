@@ -41,20 +41,101 @@ const economicTemplates: IssueTemplateSeed[] = [
   {
     slug: "workers_strike",
     title: "Workers Strike in {{sectorName}} Sector",
-    description: "Labor unions in {{countryName}}'s {{sectorName}} sector are threatening a general strike over wages and working conditions.",
-    longDescription: "With unemployment at {{unemploymentRate}}% and inflation eroding real wages, workers in the {{sectorName}} sector have voted overwhelmingly to authorize strike action. Union leaders demand a {{percentageMedium}}% wage increase and improved safety standards.\n\nThe strike could affect {{workerCount}} workers and cost the economy an estimated {{amountMedium}} per day in lost productivity. Business leaders warn this could trigger similar actions across other sectors.",
+    description:
+      "Labor unions in {{countryName}}'s {{sectorName}} sector are threatening a general strike over wages and working conditions.",
+    longDescription:
+      "With unemployment at {{unemploymentRate}}% and inflation eroding real wages, workers in the {{sectorName}} sector have voted overwhelmingly to authorize strike action. Union leaders demand a {{percentageMedium}}% wage increase and improved safety standards.\n\nThe strike could affect {{workerCount}} workers and cost the economy an estimated {{amountMedium}} per day in lost productivity. Business leaders warn this could trigger similar actions across other sectors.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "unemploymentRate", op: ">", value: 8 }, { field: "inflationRate", op: ">", value: 5 }, { random: 0.3 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "unemploymentRate", op: ">", value: 8 },
+        { field: "inflationRate", op: ">", value: 5 },
+        { random: 0.3 },
+      ],
+    }),
     cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "negotiate", label: "Negotiate with Unions", description: "Offer a compromise wage increase and promise workplace reforms.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "currentTotalGdp", operation: "multiply", value: 0.998 }], previewEffects: { publicApproval: 3, economicImpact: "Minor GDP cost", stabilityImpact: "Positive" }, outcomeText: "After tense negotiations, a compromise is reached. Workers return with a modest pay increase." },
-      { id: "concede", label: "Meet All Demands", description: "Accept the union's full demands to end the crisis quickly.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 }, { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 1.5 }, { targetModel: "Country", targetField: "currentTotalGdp", operation: "multiply", value: 0.995 }], previewEffects: { publicApproval: 8, economicImpact: "Higher inflation", stabilityImpact: "Very positive" }, outcomeText: "The government meets all demands. Workers celebrate but businesses warn of rising costs." },
-      { id: "suppress", label: "Declare Strike Illegal", description: "Invoke emergency labor laws to force workers back.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 10 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "add", value: 8 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -10, economicImpact: "Minimal", stabilityImpact: "Very negative" }, outcomeText: "Police disperse picket lines. International labor organizations condemn the crackdown.", isAutoResolveDefault: true }
+      {
+        id: "negotiate",
+        label: "Negotiate with Unions",
+        description: "Offer a compromise wage increase and promise workplace reforms.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "currentTotalGdp",
+            operation: "multiply",
+            value: 0.998,
+          },
+        ],
+        previewEffects: {
+          publicApproval: 3,
+          economicImpact: "Minor GDP cost",
+          stabilityImpact: "Positive",
+        },
+        outcomeText:
+          "After tense negotiations, a compromise is reached. Workers return with a modest pay increase.",
+      },
+      {
+        id: "concede",
+        label: "Meet All Demands",
+        description: "Accept the union's full demands to end the crisis quickly.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 },
+          { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 1.5 },
+          {
+            targetModel: "Country",
+            targetField: "currentTotalGdp",
+            operation: "multiply",
+            value: 0.995,
+          },
+        ],
+        previewEffects: {
+          publicApproval: 8,
+          economicImpact: "Higher inflation",
+          stabilityImpact: "Very positive",
+        },
+        outcomeText:
+          "The government meets all demands. Workers celebrate but businesses warn of rising costs.",
+      },
+      {
+        id: "suppress",
+        label: "Declare Strike Illegal",
+        description: "Invoke emergency labor laws to force workers back.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 10,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "add",
+            value: 8,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: {
+          publicApproval: -10,
+          economicImpact: "Minimal",
+          stabilityImpact: "Very negative",
+        },
+        outcomeText:
+          "Police disperse picket lines. International labor organizations condemn the crackdown.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["labor", "unions", "wages"]),
     personalityModifiers: JSON.stringify({ populist: 1.3, authoritarian: 0.7 }),
@@ -62,437 +143,1697 @@ const economicTemplates: IssueTemplateSeed[] = [
   {
     slug: "trade_deficit_crisis",
     title: "Trade Deficit Reaches Record Levels",
-    description: "{{countryName}}'s trade deficit has ballooned to alarming levels, prompting calls for protectionist measures.",
+    description:
+      "{{countryName}}'s trade deficit has ballooned to alarming levels, prompting calls for protectionist measures.",
     domain: "economic",
     category: "economic",
     baseSeverity: "medium",
     baseUrgency: 55,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "tradeBalance", op: "<", value: -5000000000 }, { random: 0.25 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "tradeBalance", op: "<", value: -5000000000 }, { random: 0.25 }],
+    }),
     cooldownDays: 60,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "tariffs", label: "Impose Protective Tariffs", description: "Raise import tariffs to protect domestic industry.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 2000000000 }, { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 1.2 }], previewEffects: { economicImpact: "Improved trade balance, higher prices", diplomaticImpact: "May anger trading partners" }, outcomeText: "Tariffs are imposed. Imports decline but consumer prices rise." },
-      { id: "subsidize", label: "Subsidize Export Industries", description: "Invest in export-focused industries to boost competitiveness.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 1000000000 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }], previewEffects: { economicImpact: "Modest improvement, higher debt", stabilityImpact: "Neutral" }, outcomeText: "Export subsidies boost shipments abroad, though at significant fiscal cost." },
-      { id: "accept", label: "Let Markets Adjust", description: "Trust market forces to naturally correct the imbalance.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, economicImpact: "No change" }, outcomeText: "The government takes a hands-off approach. Economists are divided on the wisdom of inaction." }
+      {
+        id: "tariffs",
+        label: "Impose Protective Tariffs",
+        description: "Raise import tariffs to protect domestic industry.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 2000000000,
+          },
+          { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 1.2 },
+        ],
+        previewEffects: {
+          economicImpact: "Improved trade balance, higher prices",
+          diplomaticImpact: "May anger trading partners",
+        },
+        outcomeText: "Tariffs are imposed. Imports decline but consumer prices rise.",
+      },
+      {
+        id: "subsidize",
+        label: "Subsidize Export Industries",
+        description: "Invest in export-focused industries to boost competitiveness.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 1000000000,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+        ],
+        previewEffects: {
+          economicImpact: "Modest improvement, higher debt",
+          stabilityImpact: "Neutral",
+        },
+        outcomeText: "Export subsidies boost shipments abroad, though at significant fiscal cost.",
+      },
+      {
+        id: "accept",
+        label: "Let Markets Adjust",
+        description: "Trust market forces to naturally correct the imbalance.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, economicImpact: "No change" },
+        outcomeText:
+          "The government takes a hands-off approach. Economists are divided on the wisdom of inaction.",
+      },
     ]),
     tags: JSON.stringify(["trade", "imports", "exports"]),
   },
   {
     slug: "budget_shortfall",
     title: "Government Faces Budget Shortfall",
-    description: "Tax revenues have fallen short of projections by {{percentageMedium}}%, creating a significant budget gap in {{countryName}}.",
+    description:
+      "Tax revenues have fallen short of projections by {{percentageMedium}}%, creating a significant budget gap in {{countryName}}.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 21,
-    triggerConditions: trigger({ and: [{ field: "totalDebtGDPRatio", op: ">", value: 80 }, { field: "budgetDeficitSurplus", op: "<", value: -3 }, { random: 0.3 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "totalDebtGDPRatio", op: ">", value: 80 },
+        { field: "budgetDeficitSurplus", op: "<", value: -3 },
+        { random: 0.3 },
+      ],
+    }),
     cooldownDays: 60,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "austerity", label: "Implement Austerity", description: "Cut government spending across all departments.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "infrastructureRating", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -8, economicImpact: "Reduced debt", stabilityImpact: "Negative" }, outcomeText: "Painful cuts reduce the deficit but public services deteriorate." },
-      { id: "tax_hike", label: "Raise Taxes", description: "Increase tax rates to close the revenue gap.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.3 }], previewEffects: { publicApproval: -5, economicImpact: "Slower growth" }, outcomeText: "Higher taxes stabilize finances but business investment cools." },
-      { id: "borrow", label: "Increase Borrowing", description: "Issue more government bonds to cover the shortfall.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 5 }], previewEffects: { economicImpact: "Higher debt", stabilityImpact: "No immediate impact" }, outcomeText: "The government kicks the can down the road with more debt.", isAutoResolveDefault: true }
+      {
+        id: "austerity",
+        label: "Implement Austerity",
+        description: "Cut government spending across all departments.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: {
+          publicApproval: -8,
+          economicImpact: "Reduced debt",
+          stabilityImpact: "Negative",
+        },
+        outcomeText: "Painful cuts reduce the deficit but public services deteriorate.",
+      },
+      {
+        id: "tax_hike",
+        label: "Raise Taxes",
+        description: "Increase tax rates to close the revenue gap.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 2,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { publicApproval: -5, economicImpact: "Slower growth" },
+        outcomeText: "Higher taxes stabilize finances but business investment cools.",
+      },
+      {
+        id: "borrow",
+        label: "Increase Borrowing",
+        description: "Issue more government bonds to cover the shortfall.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 5 },
+        ],
+        previewEffects: { economicImpact: "Higher debt", stabilityImpact: "No immediate impact" },
+        outcomeText: "The government kicks the can down the road with more debt.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["budget", "deficit", "fiscal"]),
   },
   {
     slug: "foreign_investment_boom",
     title: "Foreign Investors Eye {{countryName}}",
-    description: "A consortium of international investors is interested in {{countryName}}'s {{sectorName}} sector, potentially bringing billions in capital.",
+    description:
+      "A consortium of international investors is interested in {{countryName}}'s {{sectorName}} sector, potentially bringing billions in capital.",
     domain: "economic",
     category: "economic",
     baseSeverity: "low",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "actualGdpGrowth", op: ">", value: 3 }, { field: "politicalStability", op: ">", value: 50 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "actualGdpGrowth", op: ">", value: 3 },
+        { field: "politicalStability", op: ">", value: 50 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "welcome", label: "Welcome Investment", description: "Open markets and offer tax incentives to attract capital.", consequences: [{ targetModel: "Country", targetField: "currentTotalGdp", operation: "multiply", value: 1.008 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.5 }], previewEffects: { economicImpact: "GDP boost", stabilityImpact: "Positive" }, outcomeText: "Foreign capital flows in, creating jobs and boosting growth." },
-      { id: "regulate", label: "Allow with Conditions", description: "Permit investment but with strict regulations and local content requirements.", consequences: [{ targetModel: "Country", targetField: "currentTotalGdp", operation: "multiply", value: 1.004 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { economicImpact: "Moderate boost", publicApproval: 3 }, outcomeText: "Regulated investment brings moderate growth while protecting local interests." },
-      { id: "reject", label: "Protect Domestic Economy", description: "Block foreign investment to maintain economic sovereignty.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.2 }], previewEffects: { publicApproval: 2, economicImpact: "Missed opportunity" }, outcomeText: "Investors look elsewhere. Nationalists applaud the decision." }
+      {
+        id: "welcome",
+        label: "Welcome Investment",
+        description: "Open markets and offer tax incentives to attract capital.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "currentTotalGdp",
+            operation: "multiply",
+            value: 1.008,
+          },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { economicImpact: "GDP boost", stabilityImpact: "Positive" },
+        outcomeText: "Foreign capital flows in, creating jobs and boosting growth.",
+      },
+      {
+        id: "regulate",
+        label: "Allow with Conditions",
+        description:
+          "Permit investment but with strict regulations and local content requirements.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "currentTotalGdp",
+            operation: "multiply",
+            value: 1.004,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { economicImpact: "Moderate boost", publicApproval: 3 },
+        outcomeText:
+          "Regulated investment brings moderate growth while protecting local interests.",
+      },
+      {
+        id: "reject",
+        label: "Protect Domestic Economy",
+        description: "Block foreign investment to maintain economic sovereignty.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.2,
+          },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Missed opportunity" },
+        outcomeText: "Investors look elsewhere. Nationalists applaud the decision.",
+      },
     ]),
     tags: JSON.stringify(["investment", "FDI", "growth"]),
   },
   {
     slug: "housing_bubble",
     title: "Housing Market Overheating",
-    description: "Property prices in {{countryName}}'s major cities have surged {{percentageLarge}}% in the past year, fueling fears of a housing bubble.",
+    description:
+      "Property prices in {{countryName}}'s major cities have surged {{percentageLarge}}% in the past year, fueling fears of a housing bubble.",
     domain: "economic",
     category: "economic",
     baseSeverity: "medium",
     baseUrgency: 60,
     deadlineDaysBase: 30,
-    triggerConditions: trigger({ and: [{ field: "actualGdpGrowth", op: ">", value: 2.5 }, { field: "inflationRate", op: ">", value: 4 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "actualGdpGrowth", op: ">", value: 2.5 },
+        { field: "inflationRate", op: ">", value: 4 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "regulate", label: "Tighten Lending Standards", description: "Impose stricter mortgage requirements and foreign buyer restrictions.", consequences: [{ targetModel: "Country", targetField: "inflationRate", operation: "subtract", value: 0.8 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.3 }], previewEffects: { economicImpact: "Cooled market, slower growth" }, outcomeText: "The housing market cools gradually. Young buyers breathe easier." },
-      { id: "build", label: "Invest in Public Housing", description: "Launch a massive public housing construction program.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 3 }], previewEffects: { publicApproval: 5, economicImpact: "Higher spending" }, outcomeText: "New public housing projects break ground across the nation." },
-      { id: "ignore", label: "Let the Market Decide", description: "Trust the free market to self-correct.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }], previewEffects: { publicApproval: -4 }, outcomeText: "Property prices continue to climb. Renters and first-time buyers grow increasingly frustrated.", isAutoResolveDefault: true }
+      {
+        id: "regulate",
+        label: "Tighten Lending Standards",
+        description: "Impose stricter mortgage requirements and foreign buyer restrictions.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "inflationRate",
+            operation: "subtract",
+            value: 0.8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { economicImpact: "Cooled market, slower growth" },
+        outcomeText: "The housing market cools gradually. Young buyers breathe easier.",
+      },
+      {
+        id: "build",
+        label: "Invest in Public Housing",
+        description: "Launch a massive public housing construction program.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Higher spending" },
+        outcomeText: "New public housing projects break ground across the nation.",
+      },
+      {
+        id: "ignore",
+        label: "Let the Market Decide",
+        description: "Trust the free market to self-correct.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+        ],
+        previewEffects: { publicApproval: -4 },
+        outcomeText:
+          "Property prices continue to climb. Renters and first-time buyers grow increasingly frustrated.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["housing", "property", "bubble"]),
   },
   {
     slug: "currency_crisis",
     title: "{{countryName}}'s Currency Under Pressure",
-    description: "The national currency has lost {{percentageMedium}}% of its value in recent weeks as investors flee emerging markets.",
+    description:
+      "The national currency has lost {{percentageMedium}}% of its value in recent weeks as investors flee emerging markets.",
     domain: "economic",
     category: "economic",
     baseSeverity: "critical",
     baseUrgency: 90,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "inflationRate", op: ">", value: 10 }, { field: "totalDebtGDPRatio", op: ">", value: 100 }, { random: 0.25 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "inflationRate", op: ">", value: 10 },
+        { field: "totalDebtGDPRatio", op: ">", value: 100 },
+        { random: 0.25 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "rates", label: "Raise Interest Rates", description: "Dramatically increase interest rates to defend the currency.", consequences: [{ targetModel: "Country", targetField: "inflationRate", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 1.5 }, { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 2 }], previewEffects: { economicImpact: "Recession risk", stabilityImpact: "Mixed" }, outcomeText: "Interest rates surge. The currency stabilizes but the economy contracts sharply." },
-      { id: "controls", label: "Impose Capital Controls", description: "Restrict capital outflows to stop the bleeding.", consequences: [{ targetModel: "Country", targetField: "inflationRate", operation: "subtract", value: 1 }, { targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 1000000000 }], previewEffects: { economicImpact: "Stabilized but restricted", diplomaticImpact: "Negative" }, outcomeText: "Capital controls halt the immediate crisis but foreign investors are spooked." },
-      { id: "imf", label: "Seek International Assistance", description: "Request emergency stabilization support from international institutions.", consequences: [{ targetModel: "Country", targetField: "inflationRate", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 6 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 8 }], previewEffects: { publicApproval: -6, economicImpact: "Stabilized with strings attached" }, outcomeText: "International bailout funds arrive with strict reform conditions attached.", isAutoResolveDefault: true }
+      {
+        id: "rates",
+        label: "Raise Interest Rates",
+        description: "Dramatically increase interest rates to defend the currency.",
+        consequences: [
+          { targetModel: "Country", targetField: "inflationRate", operation: "subtract", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 1.5,
+          },
+          { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 2 },
+        ],
+        previewEffects: { economicImpact: "Recession risk", stabilityImpact: "Mixed" },
+        outcomeText:
+          "Interest rates surge. The currency stabilizes but the economy contracts sharply.",
+      },
+      {
+        id: "controls",
+        label: "Impose Capital Controls",
+        description: "Restrict capital outflows to stop the bleeding.",
+        consequences: [
+          { targetModel: "Country", targetField: "inflationRate", operation: "subtract", value: 1 },
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 1000000000,
+          },
+        ],
+        previewEffects: {
+          economicImpact: "Stabilized but restricted",
+          diplomaticImpact: "Negative",
+        },
+        outcomeText:
+          "Capital controls halt the immediate crisis but foreign investors are spooked.",
+      },
+      {
+        id: "imf",
+        label: "Seek International Assistance",
+        description: "Request emergency stabilization support from international institutions.",
+        consequences: [
+          { targetModel: "Country", targetField: "inflationRate", operation: "subtract", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 6,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 8 },
+        ],
+        previewEffects: { publicApproval: -6, economicImpact: "Stabilized with strings attached" },
+        outcomeText: "International bailout funds arrive with strict reform conditions attached.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["currency", "crisis", "financial"]),
   },
   {
     slug: "tech_industry_growth",
     title: "Tech Sector Boom in {{countryName}}",
-    description: "{{countryName}}'s technology sector is experiencing rapid growth, with several startups attracting global attention.",
+    description:
+      "{{countryName}}'s technology sector is experiencing rapid growth, with several startups attracting global attention.",
     domain: "economic",
     category: "economic",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "literacyRate", op: ">", value: 90 }, { field: "infrastructureRating", op: ">", value: 60 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "literacyRate", op: ">", value: 90 },
+        { field: "infrastructureRating", op: ">", value: 60 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "invest", label: "Create Tech Investment Fund", description: "Establish a government-backed venture capital fund.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { economicImpact: "Growth boost" }, outcomeText: "The tech fund attracts talent and investment from around the world." },
-      { id: "regulate", label: "Establish Tech Regulations", description: "Create a regulatory framework to guide responsible growth.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { economicImpact: "Moderate growth", publicApproval: 2 }, outcomeText: "Balanced regulations give investors confidence while protecting consumers." },
-      { id: "ignore", label: "Maintain Status Quo", description: "Let the tech sector develop organically without intervention.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }], previewEffects: { economicImpact: "Minimal impact" }, outcomeText: "The tech sector grows at its own pace, neither helped nor hindered." }
+      {
+        id: "invest",
+        label: "Create Tech Investment Fund",
+        description: "Establish a government-backed venture capital fund.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.4 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { economicImpact: "Growth boost" },
+        outcomeText: "The tech fund attracts talent and investment from around the world.",
+      },
+      {
+        id: "regulate",
+        label: "Establish Tech Regulations",
+        description: "Create a regulatory framework to guide responsible growth.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { economicImpact: "Moderate growth", publicApproval: 2 },
+        outcomeText: "Balanced regulations give investors confidence while protecting consumers.",
+      },
+      {
+        id: "ignore",
+        label: "Maintain Status Quo",
+        description: "Let the tech sector develop organically without intervention.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+        ],
+        previewEffects: { economicImpact: "Minimal impact" },
+        outcomeText: "The tech sector grows at its own pace, neither helped nor hindered.",
+      },
     ]),
     tags: JSON.stringify(["technology", "innovation", "startups"]),
   },
   {
     slug: "unemployment_spike",
     title: "Unemployment Surges to {{unemploymentRate}}%",
-    description: "Job losses across multiple sectors have pushed unemployment to crisis levels in {{countryName}}.",
+    description:
+      "Job losses across multiple sectors have pushed unemployment to crisis levels in {{countryName}}.",
     domain: "economic",
     category: "economic",
     baseSeverity: "critical",
     baseUrgency: 85,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "unemploymentRate", op: ">", value: 15 }, { random: 0.35 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "unemploymentRate", op: ">", value: 15 }, { random: 0.35 }],
+    }),
     cooldownDays: 60,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "stimulus", label: "Emergency Stimulus Package", description: "Launch massive public works and job creation programs.", consequences: [{ targetModel: "Country", targetField: "unemploymentRate", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 4 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }], previewEffects: { publicApproval: 5, economicImpact: "Jobs created, debt rises" }, outcomeText: "Government stimulus creates thousands of jobs. The deficit balloons." },
-      { id: "retrain", label: "Fund Retraining Programs", description: "Invest in education and skills development for displaced workers.", consequences: [{ targetModel: "Country", targetField: "unemploymentRate", operation: "subtract", value: 1.5 }, { targetModel: "Country", targetField: "literacyRate", operation: "add", value: 0.5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { economicImpact: "Long-term improvement" }, outcomeText: "Retraining programs begin. Results won't be seen immediately but the investment is sound." },
-      { id: "deregulate", label: "Cut Business Regulations", description: "Remove red tape to make hiring easier for businesses.", consequences: [{ targetModel: "Country", targetField: "unemploymentRate", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, economicImpact: "Mixed" }, outcomeText: "Fewer regulations lead to more hiring, but worker protections weaken.", isAutoResolveDefault: true }
+      {
+        id: "stimulus",
+        label: "Emergency Stimulus Package",
+        description: "Launch massive public works and job creation programs.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "unemploymentRate",
+            operation: "subtract",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 4 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Jobs created, debt rises" },
+        outcomeText: "Government stimulus creates thousands of jobs. The deficit balloons.",
+      },
+      {
+        id: "retrain",
+        label: "Fund Retraining Programs",
+        description: "Invest in education and skills development for displaced workers.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "unemploymentRate",
+            operation: "subtract",
+            value: 1.5,
+          },
+          { targetModel: "Country", targetField: "literacyRate", operation: "add", value: 0.5 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { economicImpact: "Long-term improvement" },
+        outcomeText:
+          "Retraining programs begin. Results won't be seen immediately but the investment is sound.",
+      },
+      {
+        id: "deregulate",
+        label: "Cut Business Regulations",
+        description: "Remove red tape to make hiring easier for businesses.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "unemploymentRate",
+            operation: "subtract",
+            value: 2,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, economicImpact: "Mixed" },
+        outcomeText: "Fewer regulations lead to more hiring, but worker protections weaken.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["unemployment", "jobs", "labor"]),
   },
   {
     slug: "inflation_spiral",
     title: "Inflation Hits {{inflationRate}}%",
-    description: "Prices are rising rapidly across {{countryName}}, with food and energy costs hitting the poorest hardest.",
+    description:
+      "Prices are rising rapidly across {{countryName}}, with food and energy costs hitting the poorest hardest.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 80,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "inflationRate", op: ">", value: 8 }, { random: 0.3 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "inflationRate", op: ">", value: 8 }, { random: 0.3 }],
+    }),
     cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "monetary", label: "Tighten Monetary Policy", description: "Raise interest rates aggressively to combat inflation.", consequences: [{ targetModel: "Country", targetField: "inflationRate", operation: "subtract", value: 2.5 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.8 }], previewEffects: { economicImpact: "Lower inflation, slower growth" }, outcomeText: "Higher interest rates begin to cool prices, but economic activity slows." },
-      { id: "subsidies", label: "Price Subsidies on Essentials", description: "Subsidize food, fuel, and housing to protect consumers.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }], previewEffects: { publicApproval: 6, economicImpact: "Costly but popular" }, outcomeText: "Subsidies provide relief but economists warn they're unsustainable." },
-      { id: "controls", label: "Impose Price Controls", description: "Set maximum prices on essential goods.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.5 }], previewEffects: { publicApproval: 3, economicImpact: "Shortages likely" }, outcomeText: "Price controls create immediate relief but shortages emerge in weeks.", isAutoResolveDefault: true }
+      {
+        id: "monetary",
+        label: "Tighten Monetary Policy",
+        description: "Raise interest rates aggressively to combat inflation.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "inflationRate",
+            operation: "subtract",
+            value: 2.5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.8,
+          },
+        ],
+        previewEffects: { economicImpact: "Lower inflation, slower growth" },
+        outcomeText: "Higher interest rates begin to cool prices, but economic activity slows.",
+      },
+      {
+        id: "subsidies",
+        label: "Price Subsidies on Essentials",
+        description: "Subsidize food, fuel, and housing to protect consumers.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 6, economicImpact: "Costly but popular" },
+        outcomeText: "Subsidies provide relief but economists warn they're unsustainable.",
+      },
+      {
+        id: "controls",
+        label: "Impose Price Controls",
+        description: "Set maximum prices on essential goods.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Shortages likely" },
+        outcomeText: "Price controls create immediate relief but shortages emerge in weeks.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["inflation", "prices", "cost-of-living"]),
   },
   {
     slug: "banking_crisis",
     title: "Major Bank Faces Collapse",
-    description: "One of {{countryName}}'s largest banks is on the verge of insolvency, threatening the entire financial system.",
+    description:
+      "One of {{countryName}}'s largest banks is on the verge of insolvency, threatening the entire financial system.",
     domain: "economic",
     category: "economic",
     baseSeverity: "critical",
     baseUrgency: 95,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "totalDebtGDPRatio", op: ">", value: 120 }, { field: "actualGdpGrowth", op: "<", value: -1 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "totalDebtGDPRatio", op: ">", value: 120 },
+        { field: "actualGdpGrowth", op: "<", value: -1 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "bailout", label: "Government Bailout", description: "Use taxpayer money to rescue the bank.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 8 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 10 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }], previewEffects: { publicApproval: -10, economicImpact: "Massive debt", stabilityImpact: "Prevents panic" }, outcomeText: "The bank is saved. Taxpayers are furious at bailing out wealthy bankers." },
-      { id: "controlled", label: "Managed Liquidation", description: "Orderly wind-down of the bank with depositor protection.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 1 }, { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 1.5 }], previewEffects: { economicImpact: "Recession deepens", stabilityImpact: "Controlled" }, outcomeText: "The bank is wound down. Depositors are protected but thousands lose jobs." },
-      { id: "collapse", label: "Let It Fail", description: "Allow the bank to collapse as a lesson to the market.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 4 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 15 }], previewEffects: { economicImpact: "Severe recession", stabilityImpact: "Very negative" }, outcomeText: "The bank collapses, triggering a financial panic. The economy enters free fall.", isAutoResolveDefault: true }
+      {
+        id: "bailout",
+        label: "Government Bailout",
+        description: "Use taxpayer money to rescue the bank.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 8 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 10,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: {
+          publicApproval: -10,
+          economicImpact: "Massive debt",
+          stabilityImpact: "Prevents panic",
+        },
+        outcomeText: "The bank is saved. Taxpayers are furious at bailing out wealthy bankers.",
+      },
+      {
+        id: "controlled",
+        label: "Managed Liquidation",
+        description: "Orderly wind-down of the bank with depositor protection.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 1,
+          },
+          { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 1.5 },
+        ],
+        previewEffects: { economicImpact: "Recession deepens", stabilityImpact: "Controlled" },
+        outcomeText: "The bank is wound down. Depositors are protected but thousands lose jobs.",
+      },
+      {
+        id: "collapse",
+        label: "Let It Fail",
+        description: "Allow the bank to collapse as a lesson to the market.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 4 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 15,
+          },
+        ],
+        previewEffects: { economicImpact: "Severe recession", stabilityImpact: "Very negative" },
+        outcomeText:
+          "The bank collapses, triggering a financial panic. The economy enters free fall.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["banking", "financial", "crisis"]),
   },
   {
     slug: "tax_evasion_scandal",
     title: "Corporate Tax Evasion Exposed",
-    description: "An investigation reveals that major corporations in {{countryName}} have been evading billions in taxes through offshore schemes.",
+    description:
+      "An investigation reveals that major corporations in {{countryName}} have been evading billions in taxes through offshore schemes.",
     domain: "economic",
     category: "economic",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "corruptionIndex", op: ">", value: 40 }, { field: "totalDebtGDPRatio", op: ">", value: 60 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "corruptionIndex", op: ">", value: 40 },
+        { field: "totalDebtGDPRatio", op: ">", value: 60 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "crackdown", label: "Launch Tax Crackdown", description: "Aggressively prosecute tax evaders and close loopholes.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 3 }], previewEffects: { publicApproval: 5, economicImpact: "More revenue" }, outcomeText: "Tax evaders are brought to justice. Public trust in the system improves." },
-      { id: "amnesty", label: "Offer Tax Amnesty", description: "Allow companies to pay reduced penalties in exchange for compliance.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, economicImpact: "Some revenue recovered" }, outcomeText: "Companies pay reduced fines. Critics call it a sweetheart deal." },
-      { id: "reform", label: "Comprehensive Tax Reform", description: "Overhaul the tax code to prevent future evasion.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, economicImpact: "Long-term improvement" }, outcomeText: "A reformed tax code promises fairer collection, though implementation will take years." }
+      {
+        id: "crackdown",
+        label: "Launch Tax Crackdown",
+        description: "Aggressively prosecute tax evaders and close loopholes.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 2,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "More revenue" },
+        outcomeText: "Tax evaders are brought to justice. Public trust in the system improves.",
+      },
+      {
+        id: "amnesty",
+        label: "Offer Tax Amnesty",
+        description: "Allow companies to pay reduced penalties in exchange for compliance.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 1,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, economicImpact: "Some revenue recovered" },
+        outcomeText: "Companies pay reduced fines. Critics call it a sweetheart deal.",
+      },
+      {
+        id: "reform",
+        label: "Comprehensive Tax Reform",
+        description: "Overhaul the tax code to prevent future evasion.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Long-term improvement" },
+        outcomeText:
+          "A reformed tax code promises fairer collection, though implementation will take years.",
+      },
     ]),
     tags: JSON.stringify(["tax", "corruption", "corporate"]),
   },
   {
     slug: "recession_warning",
     title: "Economists Warn of Recession",
-    description: "Leading economists predict {{countryName}} will enter recession within months as growth slows to {{gdpGrowth}}%.",
+    description:
+      "Leading economists predict {{countryName}} will enter recession within months as growth slows to {{gdpGrowth}}%.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 65,
     deadlineDaysBase: 21,
-    triggerConditions: trigger({ and: [{ field: "actualGdpGrowth", op: "<", value: 0.5 }, { field: "unemploymentRate", op: ">", value: 7 }, { random: 0.3 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "actualGdpGrowth", op: "<", value: 0.5 },
+        { field: "unemploymentRate", op: ">", value: 7 },
+        { random: 0.3 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "stimulus", label: "Preemptive Stimulus", description: "Inject capital into the economy before the downturn deepens.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.8 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }], previewEffects: { economicImpact: "Cushioned downturn, more debt" }, outcomeText: "Government spending softens the blow, though critics question the fiscal cost." },
-      { id: "reform", label: "Structural Reforms", description: "Implement long-term economic reforms to boost competitiveness.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }], previewEffects: { publicApproval: -4, economicImpact: "Long-term gains" }, outcomeText: "Painful reforms begin. Benefits may take years to materialize." },
-      { id: "nothing", label: "Ride It Out", description: "Trust the business cycle to self-correct.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.5 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, economicImpact: "Deeper downturn" }, outcomeText: "The recession hits harder than expected. Critics blame government inaction.", isAutoResolveDefault: true }
+      {
+        id: "stimulus",
+        label: "Preemptive Stimulus",
+        description: "Inject capital into the economy before the downturn deepens.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.8 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+        ],
+        previewEffects: { economicImpact: "Cushioned downturn, more debt" },
+        outcomeText:
+          "Government spending softens the blow, though critics question the fiscal cost.",
+      },
+      {
+        id: "reform",
+        label: "Structural Reforms",
+        description: "Implement long-term economic reforms to boost competitiveness.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+        ],
+        previewEffects: { publicApproval: -4, economicImpact: "Long-term gains" },
+        outcomeText: "Painful reforms begin. Benefits may take years to materialize.",
+      },
+      {
+        id: "nothing",
+        label: "Ride It Out",
+        description: "Trust the business cycle to self-correct.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, economicImpact: "Deeper downturn" },
+        outcomeText: "The recession hits harder than expected. Critics blame government inaction.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["recession", "growth", "downturn"]),
   },
   {
     slug: "sovereign_debt_downgrade",
     title: "Credit Rating Downgrade Looms",
-    description: "Rating agencies are considering downgrading {{countryName}}'s sovereign debt from its current level.",
+    description:
+      "Rating agencies are considering downgrading {{countryName}}'s sovereign debt from its current level.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "totalDebtGDPRatio", op: ">", value: 100 }, { field: "budgetDeficitSurplus", op: "<", value: -5 }, { random: 0.25 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "totalDebtGDPRatio", op: ">", value: 100 },
+        { field: "budgetDeficitSurplus", op: "<", value: -5 },
+        { random: 0.25 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "austerity", label: "Emergency Fiscal Consolidation", description: "Announce dramatic spending cuts to reassure markets.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 12 }, { targetModel: "Country", targetField: "infrastructureRating", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -12, economicImpact: "Debt reduced, services cut" }, outcomeText: "Savage cuts preserve the credit rating but public services are gutted." },
-      { id: "growth", label: "Growth-Focused Strategy", description: "Argue that growth, not cuts, will fix the debt problem.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }], previewEffects: { economicImpact: "Gamble on growth" }, outcomeText: "Markets are skeptical but the government doubles down on growth." },
-      { id: "restructure", label: "Negotiate Debt Restructuring", description: "Approach creditors to restructure repayment terms.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -5, economicImpact: "Reduced burden, damaged reputation" }, outcomeText: "Creditors agree to easier terms. International markets mark {{countryName}} as higher risk.", isAutoResolveDefault: true }
+      {
+        id: "austerity",
+        label: "Emergency Fiscal Consolidation",
+        description: "Announce dramatic spending cuts to reassure markets.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 12,
+          },
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -12, economicImpact: "Debt reduced, services cut" },
+        outcomeText: "Savage cuts preserve the credit rating but public services are gutted.",
+      },
+      {
+        id: "growth",
+        label: "Growth-Focused Strategy",
+        description: "Argue that growth, not cuts, will fix the debt problem.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+        ],
+        previewEffects: { economicImpact: "Gamble on growth" },
+        outcomeText: "Markets are skeptical but the government doubles down on growth.",
+      },
+      {
+        id: "restructure",
+        label: "Negotiate Debt Restructuring",
+        description: "Approach creditors to restructure repayment terms.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: {
+          publicApproval: -5,
+          economicImpact: "Reduced burden, damaged reputation",
+        },
+        outcomeText:
+          "Creditors agree to easier terms. International markets mark {{countryName}} as higher risk.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["debt", "credit", "sovereign"]),
   },
   {
     slug: "commodity_price_shock",
     title: "{{sectorName}} Commodity Prices Crash",
-    description: "Global commodity prices have plunged, devastating {{countryName}}'s {{sectorName}} sector.",
+    description:
+      "Global commodity prices have plunged, devastating {{countryName}}'s {{sectorName}} sector.",
     domain: "economic",
     category: "economic",
     baseSeverity: "medium",
     baseUrgency: 60,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "tradeBalance", op: "<", value: 0 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "tradeBalance", op: "<", value: 0 }, { random: 0.15 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "diversify", label: "Diversify the Economy", description: "Invest in new industries to reduce commodity dependence.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }], previewEffects: { economicImpact: "Long-term benefit" }, outcomeText: "Diversification efforts begin, though results will take years to materialize." },
-      { id: "stockpile", label: "Strategic Reserves Purchase", description: "Buy cheap commodities to build strategic reserves.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { economicImpact: "Smart investment" }, outcomeText: "The government builds strategic reserves at bargain prices." },
-      { id: "subsidize", label: "Support Affected Workers", description: "Provide emergency assistance to workers in the affected sector.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 4, economicImpact: "Welfare spending" }, outcomeText: "Emergency relief helps displaced workers while the sector adjusts." }
+      {
+        id: "diversify",
+        label: "Diversify the Economy",
+        description: "Invest in new industries to reduce commodity dependence.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+        ],
+        previewEffects: { economicImpact: "Long-term benefit" },
+        outcomeText:
+          "Diversification efforts begin, though results will take years to materialize.",
+      },
+      {
+        id: "stockpile",
+        label: "Strategic Reserves Purchase",
+        description: "Buy cheap commodities to build strategic reserves.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { economicImpact: "Smart investment" },
+        outcomeText: "The government builds strategic reserves at bargain prices.",
+      },
+      {
+        id: "subsidize",
+        label: "Support Affected Workers",
+        description: "Provide emergency assistance to workers in the affected sector.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Welfare spending" },
+        outcomeText: "Emergency relief helps displaced workers while the sector adjusts.",
+      },
     ]),
     tags: JSON.stringify(["commodities", "trade", "prices"]),
   },
   {
     slug: "income_inequality_protests",
     title: "Wealth Gap Sparks Outrage",
-    description: "With a Gini coefficient of {{incomeInequalityGini}}, growing income inequality in {{countryName}} has reached a tipping point.",
+    description:
+      "With a Gini coefficient of {{incomeInequalityGini}}, growing income inequality in {{countryName}} has reached a tipping point.",
     domain: "economic",
     category: "economic",
     baseSeverity: "medium",
     baseUrgency: 55,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "incomeInequalityGini", op: ">", value: 45 }, { field: "povertyRate", op: ">", value: 15 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "incomeInequalityGini", op: ">", value: 45 },
+        { field: "povertyRate", op: ">", value: 15 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "redistribute", label: "Wealth Redistribution Programs", description: "Implement progressive taxation and social transfers.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }, { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.2 }], previewEffects: { publicApproval: 6, economicImpact: "Reduced poverty" }, outcomeText: "New social programs begin to narrow the wealth gap." },
-      { id: "trickle", label: "Pro-Growth Policies", description: "Cut taxes and regulations to grow the overall pie.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.4 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -5, economicImpact: "Growth up, inequality persists" }, outcomeText: "The economy grows but critics argue benefits flow to the top." },
-      { id: "education", label: "Invest in Education and Skills", description: "Long-term investment in human capital to address root causes.", consequences: [{ targetModel: "Country", targetField: "literacyRate", operation: "add", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, economicImpact: "Long-term returns" }, outcomeText: "Education investments promise future returns but don't address immediate suffering." }
+      {
+        id: "redistribute",
+        label: "Wealth Redistribution Programs",
+        description: "Implement progressive taxation and social transfers.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+          { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.2,
+          },
+        ],
+        previewEffects: { publicApproval: 6, economicImpact: "Reduced poverty" },
+        outcomeText: "New social programs begin to narrow the wealth gap.",
+      },
+      {
+        id: "trickle",
+        label: "Pro-Growth Policies",
+        description: "Cut taxes and regulations to grow the overall pie.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.4 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -5, economicImpact: "Growth up, inequality persists" },
+        outcomeText: "The economy grows but critics argue benefits flow to the top.",
+      },
+      {
+        id: "education",
+        label: "Invest in Education and Skills",
+        description: "Long-term investment in human capital to address root causes.",
+        consequences: [
+          { targetModel: "Country", targetField: "literacyRate", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Long-term returns" },
+        outcomeText:
+          "Education investments promise future returns but don't address immediate suffering.",
+      },
     ]),
     tags: JSON.stringify(["inequality", "poverty", "wealth"]),
   },
   {
     slug: "energy_price_surge",
     title: "Energy Prices Soar in {{countryName}}",
-    description: "Energy costs have spiked {{percentageLarge}}%, threatening businesses and households alike.",
+    description:
+      "Energy costs have spiked {{percentageLarge}}%, threatening businesses and households alike.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "inflationRate", op: ">", value: 6 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "inflationRate", op: ">", value: 6 }, { random: 0.2 }],
+    }),
     cooldownDays: 60,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "cap", label: "Energy Price Cap", description: "Set maximum energy prices and subsidize the difference.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 7 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }], previewEffects: { publicApproval: 7, economicImpact: "Costly subsidy" }, outcomeText: "Energy bills are capped. Citizens are relieved but the subsidy is expensive." },
-      { id: "invest", label: "Accelerate Renewables", description: "Fast-track renewable energy projects to reduce dependence.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }], previewEffects: { economicImpact: "Long-term savings", stabilityImpact: "Positive" }, outcomeText: "Renewable energy projects break ground. Long-term energy security improves." },
-      { id: "ration", label: "Implement Energy Rationing", description: "Mandatory reduction in energy consumption across all sectors.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.5 }], previewEffects: { publicApproval: -8, economicImpact: "Reduced output" }, outcomeText: "Energy rationing darkens streets and closes factories early. Public anger grows.", isAutoResolveDefault: true }
+      {
+        id: "cap",
+        label: "Energy Price Cap",
+        description: "Set maximum energy prices and subsidize the difference.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 7 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 7, economicImpact: "Costly subsidy" },
+        outcomeText: "Energy bills are capped. Citizens are relieved but the subsidy is expensive.",
+      },
+      {
+        id: "invest",
+        label: "Accelerate Renewables",
+        description: "Fast-track renewable energy projects to reduce dependence.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 3,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+        ],
+        previewEffects: { economicImpact: "Long-term savings", stabilityImpact: "Positive" },
+        outcomeText: "Renewable energy projects break ground. Long-term energy security improves.",
+      },
+      {
+        id: "ration",
+        label: "Implement Energy Rationing",
+        description: "Mandatory reduction in energy consumption across all sectors.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: -8, economicImpact: "Reduced output" },
+        outcomeText:
+          "Energy rationing darkens streets and closes factories early. Public anger grows.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["energy", "prices", "utilities"]),
   },
   {
     slug: "pension_fund_shortfall",
     title: "Pension System Running Dry",
-    description: "{{countryName}}'s state pension fund will be insolvent within years unless reforms are implemented.",
+    description:
+      "{{countryName}}'s state pension fund will be insolvent within years unless reforms are implemented.",
     domain: "economic",
     category: "economic",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "totalDebtGDPRatio", op: ">", value: 70 }, { field: "lifeExpectancy", op: ">", value: 75 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "totalDebtGDPRatio", op: ">", value: 70 },
+        { field: "lifeExpectancy", op: ">", value: 75 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "raise_age", label: "Raise Retirement Age", description: "Increase the retirement age by 3 years.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -8, economicImpact: "Fiscal savings" }, outcomeText: "The retirement age rises. Older workers are forced to work longer." },
-      { id: "increase_contrib", label: "Raise Contributions", description: "Increase pension contribution rates for workers and employers.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 1 }], previewEffects: { publicApproval: -4, economicImpact: "Higher labor costs" }, outcomeText: "Higher contributions stabilize the fund but reduce take-home pay." },
-      { id: "topup", label: "Taxpayer Top-Up", description: "Use general tax revenue to shore up the pension fund.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, economicImpact: "More debt" }, outcomeText: "Taxpayer money plugs the gap for now. Structural problems remain." }
+      {
+        id: "raise_age",
+        label: "Raise Retirement Age",
+        description: "Increase the retirement age by 3 years.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -8, economicImpact: "Fiscal savings" },
+        outcomeText: "The retirement age rises. Older workers are forced to work longer.",
+      },
+      {
+        id: "increase_contrib",
+        label: "Raise Contributions",
+        description: "Increase pension contribution rates for workers and employers.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 1,
+          },
+        ],
+        previewEffects: { publicApproval: -4, economicImpact: "Higher labor costs" },
+        outcomeText: "Higher contributions stabilize the fund but reduce take-home pay.",
+      },
+      {
+        id: "topup",
+        label: "Taxpayer Top-Up",
+        description: "Use general tax revenue to shore up the pension fund.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "More debt" },
+        outcomeText: "Taxpayer money plugs the gap for now. Structural problems remain.",
+      },
     ]),
     tags: JSON.stringify(["pension", "retirement", "social-security"]),
   },
   {
     slug: "brain_drain",
     title: "Skilled Workers Leaving {{countryName}}",
-    description: "Thousands of educated professionals are emigrating, drawn by better opportunities abroad.",
+    description:
+      "Thousands of educated professionals are emigrating, drawn by better opportunities abroad.",
     domain: "economic",
     category: "economic",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "unemploymentRate", op: ">", value: 10 }, { field: "publicApproval", op: "<", value: 40 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "unemploymentRate", op: ">", value: 10 },
+        { field: "publicApproval", op: "<", value: 40 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "incentives", label: "Professional Retention Program", description: "Offer tax breaks and grants to retain skilled workers.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }], previewEffects: { economicImpact: "Talent retained" }, outcomeText: "Incentives slow the exodus. Top talent reconsiders leaving." },
-      { id: "improve", label: "Address Root Causes", description: "Improve working conditions, governance, and quality of life.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 }], previewEffects: { publicApproval: 3, stabilityImpact: "Positive" }, outcomeText: "Governance reforms signal commitment to improvement. Some professionals reconsider." },
-      { id: "recruit", label: "Recruit Foreign Talent", description: "Attract skilled immigrants to replace departing workers.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "add", value: 3 }], previewEffects: { economicImpact: "Talent replaced", stabilityImpact: "Minor tension" }, outcomeText: "Skilled immigrants fill gaps but cultural tensions simmer." }
+      {
+        id: "incentives",
+        label: "Professional Retention Program",
+        description: "Offer tax breaks and grants to retain skilled workers.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { economicImpact: "Talent retained" },
+        outcomeText: "Incentives slow the exodus. Top talent reconsiders leaving.",
+      },
+      {
+        id: "improve",
+        label: "Address Root Causes",
+        description: "Improve working conditions, governance, and quality of life.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Positive" },
+        outcomeText:
+          "Governance reforms signal commitment to improvement. Some professionals reconsider.",
+      },
+      {
+        id: "recruit",
+        label: "Recruit Foreign Talent",
+        description: "Attract skilled immigrants to replace departing workers.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { economicImpact: "Talent replaced", stabilityImpact: "Minor tension" },
+        outcomeText: "Skilled immigrants fill gaps but cultural tensions simmer.",
+      },
     ]),
     tags: JSON.stringify(["emigration", "talent", "brain-drain"]),
   },
   {
     slug: "agricultural_crisis",
     title: "Crop Failures Threaten Food Supply",
-    description: "Widespread crop failures across {{countryName}} threaten food security and farmer livelihoods.",
+    description:
+      "Widespread crop failures across {{countryName}} threaten food security and farmer livelihoods.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.2 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "import", label: "Emergency Food Imports", description: "Import food at high cost to prevent shortages.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 2000000000 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, economicImpact: "Trade deficit worsens" }, outcomeText: "Emergency imports prevent famine but drain foreign reserves." },
-      { id: "subsidize", label: "Farm Bailout Package", description: "Provide direct financial assistance to affected farmers.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }], previewEffects: { publicApproval: 5, economicImpact: "Fiscal cost" }, outcomeText: "Farmers receive emergency support. Rural communities stabilize." },
-      { id: "ration", label: "Implement Food Rationing", description: "Ensure fair distribution of limited food supplies.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 6 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "add", value: 5 }], previewEffects: { publicApproval: -6, stabilityImpact: "Negative" }, outcomeText: "Rationing prevents starvation but ration lines become a symbol of government failure.", isAutoResolveDefault: true }
+      {
+        id: "import",
+        label: "Emergency Food Imports",
+        description: "Import food at high cost to prevent shortages.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 2000000000,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Trade deficit worsens" },
+        outcomeText: "Emergency imports prevent famine but drain foreign reserves.",
+      },
+      {
+        id: "subsidize",
+        label: "Farm Bailout Package",
+        description: "Provide direct financial assistance to affected farmers.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Fiscal cost" },
+        outcomeText: "Farmers receive emergency support. Rural communities stabilize.",
+      },
+      {
+        id: "ration",
+        label: "Implement Food Rationing",
+        description: "Ensure fair distribution of limited food supplies.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 6,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -6, stabilityImpact: "Negative" },
+        outcomeText:
+          "Rationing prevents starvation but ration lines become a symbol of government failure.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["agriculture", "food", "farming"]),
   },
   {
     slug: "privatization_debate",
     title: "State Enterprise Privatization Proposed",
-    description: "Business leaders are pushing to privatize {{countryName}}'s state-owned {{sectorName}} enterprises.",
+    description:
+      "Business leaders are pushing to privatize {{countryName}}'s state-owned {{sectorName}} enterprises.",
     domain: "economic",
     category: "economic",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "governmentEffectiveness", op: "<", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "governmentEffectiveness", op: "<", value: 50 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "privatize", label: "Proceed with Privatization", description: "Sell state enterprises to private buyers.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -5, economicImpact: "Revenue boost, efficiency gains" }, outcomeText: "State enterprises are sold off. Efficiency improves but public access concerns rise." },
-      { id: "reform", label: "Reform Without Selling", description: "Implement private-sector management practices while keeping public ownership.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 3 }], previewEffects: { stabilityImpact: "Positive" }, outcomeText: "State enterprises are reformed from within. A middle path that satisfies few completely." },
-      { id: "reject", label: "Keep State Ownership", description: "Maintain public control of strategic enterprises.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3 }, outcomeText: "State enterprises remain under public control. Nationalists celebrate." }
+      {
+        id: "privatize",
+        label: "Proceed with Privatization",
+        description: "Sell state enterprises to private buyers.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -5, economicImpact: "Revenue boost, efficiency gains" },
+        outcomeText:
+          "State enterprises are sold off. Efficiency improves but public access concerns rise.",
+      },
+      {
+        id: "reform",
+        label: "Reform Without Selling",
+        description:
+          "Implement private-sector management practices while keeping public ownership.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Positive" },
+        outcomeText:
+          "State enterprises are reformed from within. A middle path that satisfies few completely.",
+      },
+      {
+        id: "reject",
+        label: "Keep State Ownership",
+        description: "Maintain public control of strategic enterprises.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3 },
+        outcomeText: "State enterprises remain under public control. Nationalists celebrate.",
+      },
     ]),
     tags: JSON.stringify(["privatization", "state-enterprise", "reform"]),
   },
   {
     slug: "minimum_wage_debate",
     title: "Minimum Wage Increase Demanded",
-    description: "Workers' groups in {{countryName}} demand a {{percentageMedium}}% increase in the minimum wage.",
+    description:
+      "Workers' groups in {{countryName}} demand a {{percentageMedium}}% increase in the minimum wage.",
     domain: "economic",
     category: "economic",
     baseSeverity: "low",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "povertyRate", op: ">", value: 12 }, { field: "inflationRate", op: ">", value: 3 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "povertyRate", op: ">", value: 12 },
+        { field: "inflationRate", op: ">", value: 3 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "full", label: "Grant Full Increase", description: "Raise the minimum wage by the full requested amount.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }, { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 1.5 }, { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 0.5 }], previewEffects: { publicApproval: 6, economicImpact: "Higher costs" }, outcomeText: "Minimum wage workers celebrate. Businesses pass on costs to consumers." },
-      { id: "partial", label: "Modest Increase", description: "Offer a smaller increase tied to productivity.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 0.5 }], previewEffects: { publicApproval: 2 }, outcomeText: "A compromise increase satisfies neither side completely." },
-      { id: "freeze", label: "Freeze Wages", description: "Keep the minimum wage unchanged to protect competitiveness.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }], previewEffects: { publicApproval: -5 }, outcomeText: "Wages stay flat. Low-income workers feel abandoned by their government." }
+      {
+        id: "full",
+        label: "Grant Full Increase",
+        description: "Raise the minimum wage by the full requested amount.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+          { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 1.5 },
+          { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { publicApproval: 6, economicImpact: "Higher costs" },
+        outcomeText: "Minimum wage workers celebrate. Businesses pass on costs to consumers.",
+      },
+      {
+        id: "partial",
+        label: "Modest Increase",
+        description: "Offer a smaller increase tied to productivity.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 0.5 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "A compromise increase satisfies neither side completely.",
+      },
+      {
+        id: "freeze",
+        label: "Freeze Wages",
+        description: "Keep the minimum wage unchanged to protect competitiveness.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+        ],
+        previewEffects: { publicApproval: -5 },
+        outcomeText: "Wages stay flat. Low-income workers feel abandoned by their government.",
+      },
     ]),
     tags: JSON.stringify(["wages", "labor", "minimum-wage"]),
   },
   {
     slug: "stock_market_crash",
     title: "Stock Market in Free Fall",
-    description: "{{countryName}}'s stock exchange has lost {{percentageLarge}}% of its value in a single week.",
+    description:
+      "{{countryName}}'s stock exchange has lost {{percentageLarge}}% of its value in a single week.",
     domain: "economic",
     category: "economic",
     baseSeverity: "critical",
     baseUrgency: 85,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "actualGdpGrowth", op: "<", value: -0.5 }, { field: "inflationRate", op: ">", value: 7 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "actualGdpGrowth", op: "<", value: -0.5 },
+        { field: "inflationRate", op: ">", value: 7 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "intervene", label: "Market Intervention", description: "Government buys assets to stabilize markets.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { economicImpact: "Markets stabilized, debt up" }, outcomeText: "Government intervention halts the decline. Fiscal hawks are alarmed." },
-      { id: "halt", label: "Suspend Trading", description: "Temporarily halt stock exchange operations.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, economicImpact: "Uncertainty" }, outcomeText: "Trading is suspended. Panic subsides but uncertainty lingers." },
-      { id: "nothing", label: "Let Markets Correct", description: "Markets will find their own equilibrium.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -5, economicImpact: "Deeper losses" }, outcomeText: "The crash deepens before finding a bottom. Retirement savings are devastated.", isAutoResolveDefault: true }
+      {
+        id: "intervene",
+        label: "Market Intervention",
+        description: "Government buys assets to stabilize markets.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 5 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { economicImpact: "Markets stabilized, debt up" },
+        outcomeText: "Government intervention halts the decline. Fiscal hawks are alarmed.",
+      },
+      {
+        id: "halt",
+        label: "Suspend Trading",
+        description: "Temporarily halt stock exchange operations.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, economicImpact: "Uncertainty" },
+        outcomeText: "Trading is suspended. Panic subsides but uncertainty lingers.",
+      },
+      {
+        id: "nothing",
+        label: "Let Markets Correct",
+        description: "Markets will find their own equilibrium.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 1,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -5, economicImpact: "Deeper losses" },
+        outcomeText:
+          "The crash deepens before finding a bottom. Retirement savings are devastated.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["stock-market", "financial", "crash"]),
   },
   {
     slug: "trade_agreement_opportunity",
     title: "New Trade Agreement Available",
-    description: "Neighboring nations propose a comprehensive trade agreement with {{countryName}}.",
+    description:
+      "Neighboring nations propose a comprehensive trade agreement with {{countryName}}.",
     domain: "economic",
     category: "economic",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "accept", label: "Sign the Agreement", description: "Join the multilateral trade agreement.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 1500000000 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }], previewEffects: { economicImpact: "Trade boost", diplomaticImpact: "Stronger ties" }, outcomeText: "The trade agreement opens new markets and strengthens regional ties." },
-      { id: "negotiate", label: "Negotiate Better Terms", description: "Push for more favorable conditions before signing.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 800000000 }], previewEffects: { economicImpact: "Modest boost", diplomaticImpact: "Minor friction" }, outcomeText: "Tough negotiation secures better terms but delays implementation." },
-      { id: "reject", label: "Decline the Agreement", description: "Maintain full trade sovereignty.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Missed opportunity" }, outcomeText: "{{countryName}} stands alone. Sovereignty is preserved at the cost of market access." }
+      {
+        id: "accept",
+        label: "Sign the Agreement",
+        description: "Join the multilateral trade agreement.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 1500000000,
+          },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { economicImpact: "Trade boost", diplomaticImpact: "Stronger ties" },
+        outcomeText: "The trade agreement opens new markets and strengthens regional ties.",
+      },
+      {
+        id: "negotiate",
+        label: "Negotiate Better Terms",
+        description: "Push for more favorable conditions before signing.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 800000000,
+          },
+        ],
+        previewEffects: { economicImpact: "Modest boost", diplomaticImpact: "Minor friction" },
+        outcomeText: "Tough negotiation secures better terms but delays implementation.",
+      },
+      {
+        id: "reject",
+        label: "Decline the Agreement",
+        description: "Maintain full trade sovereignty.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Missed opportunity" },
+        outcomeText:
+          "{{countryName}} stands alone. Sovereignty is preserved at the cost of market access.",
+      },
     ]),
     tags: JSON.stringify(["trade", "agreement", "free-trade"]),
   },
   {
     slug: "corruption_in_procurement",
     title: "Procurement Scandal Uncovered",
-    description: "Government officials in {{countryName}} are implicated in a {{amountLarge}} procurement fraud scheme.",
+    description:
+      "Government officials in {{countryName}} are implicated in a {{amountLarge}} procurement fraud scheme.",
     domain: "economic",
     category: "governance",
     baseSeverity: "high",
     baseUrgency: 65,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "corruptionIndex", op: ">", value: 50 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "corruptionIndex", op: ">", value: 50 }, { random: 0.2 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "prosecute", label: "Full Criminal Investigation", description: "Launch a thorough investigation and prosecute all involved.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 }, { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 5 }], previewEffects: { publicApproval: 8, stabilityImpact: "Positive long-term" }, outcomeText: "Heads roll as the investigation uncovers widespread graft. Public trust slowly rebuilds." },
-      { id: "reshuffle", label: "Quiet Reshuffle", description: "Dismiss involved officials quietly and move on.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }, { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 1 }], previewEffects: { publicApproval: -3 }, outcomeText: "Officials are quietly replaced. The public suspects a cover-up." },
-      { id: "deny", label: "Deny and Deflect", description: "Dismiss the allegations as politically motivated.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "add", value: 3 }], previewEffects: { publicApproval: -8, stabilityImpact: "Negative" }, outcomeText: "Denials ring hollow. Media investigations continue to uncover more corruption.", isAutoResolveDefault: true }
+      {
+        id: "prosecute",
+        label: "Full Criminal Investigation",
+        description: "Launch a thorough investigation and prosecute all involved.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: 8, stabilityImpact: "Positive long-term" },
+        outcomeText:
+          "Heads roll as the investigation uncovers widespread graft. Public trust slowly rebuilds.",
+      },
+      {
+        id: "reshuffle",
+        label: "Quiet Reshuffle",
+        description: "Dismiss involved officials quietly and move on.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 1,
+          },
+        ],
+        previewEffects: { publicApproval: -3 },
+        outcomeText: "Officials are quietly replaced. The public suspects a cover-up.",
+      },
+      {
+        id: "deny",
+        label: "Deny and Deflect",
+        description: "Dismiss the allegations as politically motivated.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -8, stabilityImpact: "Negative" },
+        outcomeText:
+          "Denials ring hollow. Media investigations continue to uncover more corruption.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["corruption", "procurement", "scandal"]),
   },
@@ -504,361 +1845,1490 @@ const politicalTemplates: IssueTemplateSeed[] = [
   {
     slug: "coalition_instability",
     title: "Coalition Government Fracturing",
-    description: "Key coalition partners in {{countryName}} are threatening to withdraw support over policy disagreements.",
+    description:
+      "Key coalition partners in {{countryName}} are threatening to withdraw support over policy disagreements.",
     domain: "political",
     category: "governance",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "politicalPolarization", op: ">", value: 60 }, { field: "publicApproval", op: "<", value: 45 }, { random: 0.25 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "politicalPolarization", op: ">", value: 60 },
+        { field: "publicApproval", op: "<", value: 45 },
+        { random: 0.25 },
+      ],
+    }),
     cooldownDays: 60,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "concede", label: "Make Concessions", description: "Give coalition partners what they want to maintain unity.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }], previewEffects: { publicApproval: -3, stabilityImpact: "Coalition preserved" }, outcomeText: "Painful concessions keep the coalition alive, but critics call {{leaderName}} weak." },
-      { id: "reshuffle", label: "Cabinet Reshuffle", description: "Replace problematic ministers to restore stability.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, stabilityImpact: "Fresh start" }, outcomeText: "New faces bring new energy to the government. Coalition tensions ease." },
-      { id: "election", label: "Call Early Elections", description: "Dissolve the coalition and let the people decide.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 8 }], previewEffects: { publicApproval: 5, stabilityImpact: "Major uncertainty" }, outcomeText: "Early elections are called. The campaign season brings chaos and uncertainty.", isAutoResolveDefault: true }
+      {
+        id: "concede",
+        label: "Make Concessions",
+        description: "Give coalition partners what they want to maintain unity.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -3, stabilityImpact: "Coalition preserved" },
+        outcomeText:
+          "Painful concessions keep the coalition alive, but critics call {{leaderName}} weak.",
+      },
+      {
+        id: "reshuffle",
+        label: "Cabinet Reshuffle",
+        description: "Replace problematic ministers to restore stability.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 2,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "Fresh start" },
+        outcomeText: "New faces bring new energy to the government. Coalition tensions ease.",
+      },
+      {
+        id: "election",
+        label: "Call Early Elections",
+        description: "Dissolve the coalition and let the people decide.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 8,
+          },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Major uncertainty" },
+        outcomeText:
+          "Early elections are called. The campaign season brings chaos and uncertainty.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["coalition", "government", "politics"]),
   },
   {
     slug: "corruption_scandal",
     title: "Senior Official Corruption Scandal",
-    description: "A senior member of {{countryName}}'s government has been caught in a corruption scandal involving {{amountLarge}}.",
+    description:
+      "A senior member of {{countryName}}'s government has been caught in a corruption scandal involving {{amountLarge}}.",
     domain: "political",
     category: "governance",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "corruptionIndex", op: ">", value: 45 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "corruptionIndex", op: ">", value: 45 }, { random: 0.2 }],
+    }),
     cooldownDays: 60,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "fire", label: "Immediate Dismissal", description: "Fire the official and launch an investigation.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }, { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 3 }], previewEffects: { publicApproval: 6, stabilityImpact: "Positive" }, outcomeText: "Swift action restores some public trust. The investigation proceeds." },
-      { id: "investigate", label: "Formal Investigation First", description: "Follow due process before taking action.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2 }, outcomeText: "The investigation drags on. Patience wears thin but due process is respected." },
-      { id: "protect", label: "Shield the Official", description: "Dismiss the allegations as political attacks.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 10 }, { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "subtract", value: 8 }], previewEffects: { publicApproval: -10, stabilityImpact: "Very negative" }, outcomeText: "The cover-up is worse than the crime. Public outrage intensifies.", isAutoResolveDefault: true }
+      {
+        id: "fire",
+        label: "Immediate Dismissal",
+        description: "Fire the official and launch an investigation.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 6, stabilityImpact: "Positive" },
+        outcomeText: "Swift action restores some public trust. The investigation proceeds.",
+      },
+      {
+        id: "investigate",
+        label: "Formal Investigation First",
+        description: "Follow due process before taking action.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2 },
+        outcomeText:
+          "The investigation drags on. Patience wears thin but due process is respected.",
+      },
+      {
+        id: "protect",
+        label: "Shield the Official",
+        description: "Dismiss the allegations as political attacks.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 10,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "subtract",
+            value: 8,
+          },
+        ],
+        previewEffects: { publicApproval: -10, stabilityImpact: "Very negative" },
+        outcomeText: "The cover-up is worse than the crime. Public outrage intensifies.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["corruption", "scandal", "officials"]),
   },
   {
     slug: "electoral_reform",
     title: "Electoral Reform Movement Grows",
-    description: "Citizen groups demand sweeping electoral reforms in {{countryName}} including proportional representation.",
+    description:
+      "Citizen groups demand sweeping electoral reforms in {{countryName}} including proportional representation.",
     domain: "political",
     category: "governance",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "democracyIndex", op: "<", value: 55 }, { field: "publicApproval", op: "<", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "democracyIndex", op: "<", value: 55 },
+        { field: "publicApproval", op: "<", value: 50 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "reform", label: "Implement Reforms", description: "Modernize the electoral system.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 8 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }], previewEffects: { publicApproval: 5, stabilityImpact: "Positive" }, outcomeText: "Electoral reforms bring a more representative system." },
-      { id: "commission", label: "Establish Reform Commission", description: "Create a non-partisan commission to study reforms.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2 }, outcomeText: "The commission begins work. Reformers are cautiously optimistic." },
-      { id: "reject", label: "Defend Current System", description: "Argue the current system works well enough.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "add", value: 3 }], previewEffects: { publicApproval: -4, stabilityImpact: "Protests" }, outcomeText: "The government's refusal energizes the reform movement." }
+      {
+        id: "reform",
+        label: "Implement Reforms",
+        description: "Modernize the electoral system.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 8,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Positive" },
+        outcomeText: "Electoral reforms bring a more representative system.",
+      },
+      {
+        id: "commission",
+        label: "Establish Reform Commission",
+        description: "Create a non-partisan commission to study reforms.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "The commission begins work. Reformers are cautiously optimistic.",
+      },
+      {
+        id: "reject",
+        label: "Defend Current System",
+        description: "Argue the current system works well enough.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -4, stabilityImpact: "Protests" },
+        outcomeText: "The government's refusal energizes the reform movement.",
+      },
     ]),
     tags: JSON.stringify(["elections", "reform", "democracy"]),
   },
   {
     slug: "autonomy_movement",
     title: "Regional Autonomy Movement Intensifies",
-    description: "A region in {{countryName}} is demanding greater self-governance, threatening national unity.",
+    description:
+      "A region in {{countryName}} is demanding greater self-governance, threatening national unity.",
     domain: "political",
     category: "governance",
     baseSeverity: "high",
     baseUrgency: 65,
     deadlineDaysBase: 21,
-    triggerConditions: trigger({ and: [{ field: "ethnicTension", op: ">", value: 40 }, { field: "socialCohesion", op: "<", value: 50 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "ethnicTension", op: ">", value: 40 },
+        { field: "socialCohesion", op: "<", value: 50 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "devolve", label: "Grant Autonomy", description: "Transfer significant powers to the region.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "subtract", value: 10 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { stabilityImpact: "Reduced tension", publicApproval: -3 }, outcomeText: "Autonomy reduces regional grievances but nationalists feel betrayed." },
-      { id: "dialogue", label: "Open National Dialogue", description: "Invite regional leaders to negotiate a new arrangement.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, stabilityImpact: "Moderate" }, outcomeText: "Dialogue begins. Progress is slow but violence is averted." },
-      { id: "suppress", label: "Enforce National Unity", description: "Crack down on separatist movements.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "add", value: 10 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "add", value: 8 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "Very negative long-term" }, outcomeText: "The crackdown unifies nationalists but deepens regional resentment.", isAutoResolveDefault: true }
+      {
+        id: "devolve",
+        label: "Grant Autonomy",
+        description: "Transfer significant powers to the region.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "subtract",
+            value: 10,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Reduced tension", publicApproval: -3 },
+        outcomeText: "Autonomy reduces regional grievances but nationalists feel betrayed.",
+      },
+      {
+        id: "dialogue",
+        label: "Open National Dialogue",
+        description: "Invite regional leaders to negotiate a new arrangement.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "subtract",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "Moderate" },
+        outcomeText: "Dialogue begins. Progress is slow but violence is averted.",
+      },
+      {
+        id: "suppress",
+        label: "Enforce National Unity",
+        description: "Crack down on separatist movements.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "add",
+            value: 10,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "add",
+            value: 8,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Very negative long-term" },
+        outcomeText: "The crackdown unifies nationalists but deepens regional resentment.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["autonomy", "separatism", "regions"]),
   },
   {
     slug: "press_freedom_debate",
     title: "Media Freedom Under Threat",
-    description: "Journalists in {{countryName}} face increasing restrictions, drawing international criticism.",
+    description:
+      "Journalists in {{countryName}} face increasing restrictions, drawing international criticism.",
     domain: "political",
     category: "governance",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "democracyIndex", op: "<", value: 50 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "democracyIndex", op: "<", value: 50 }, { random: 0.2 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "protect", label: "Strengthen Press Protections", description: "Pass laws guaranteeing media independence.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "Positive" }, outcomeText: "New press freedom laws earn international praise." },
-      { id: "regulate", label: "Balanced Regulation", description: "Some oversight to prevent misinformation while preserving freedoms.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 1 }], previewEffects: { stabilityImpact: "Neutral" }, outcomeText: "New regulations thread a difficult needle between freedom and responsibility." },
-      { id: "restrict", label: "Tighten Media Controls", description: "Impose stricter controls on media to maintain stability.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -4, stabilityImpact: "Negative" }, outcomeText: "Media crackdown draws condemnation. Information flows underground." }
+      {
+        id: "protect",
+        label: "Strengthen Press Protections",
+        description: "Pass laws guaranteeing media independence.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Positive" },
+        outcomeText: "New press freedom laws earn international praise.",
+      },
+      {
+        id: "regulate",
+        label: "Balanced Regulation",
+        description: "Some oversight to prevent misinformation while preserving freedoms.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 1,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Neutral" },
+        outcomeText:
+          "New regulations thread a difficult needle between freedom and responsibility.",
+      },
+      {
+        id: "restrict",
+        label: "Tighten Media Controls",
+        description: "Impose stricter controls on media to maintain stability.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -4, stabilityImpact: "Negative" },
+        outcomeText: "Media crackdown draws condemnation. Information flows underground.",
+      },
     ]),
     tags: JSON.stringify(["media", "press-freedom", "censorship"]),
   },
   {
     slug: "judicial_independence",
     title: "Judiciary Independence Questioned",
-    description: "Critics accuse {{leaderName}}'s government of undermining judicial independence in {{countryName}}.",
+    description:
+      "Critics accuse {{leaderName}}'s government of undermining judicial independence in {{countryName}}.",
     domain: "political",
     category: "governance",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "ruleOfLaw", op: "<", value: 50 }, { field: "corruptionIndex", op: ">", value: 40 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "ruleOfLaw", op: "<", value: 50 },
+        { field: "corruptionIndex", op: ">", value: 40 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "strengthen", label: "Strengthen Judicial Independence", description: "Pass constitutional amendments protecting the judiciary.", consequences: [{ targetModel: "GovernmentStructure", targetField: "ruleOfLaw", operation: "add", value: 8 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }], previewEffects: { publicApproval: 4, stabilityImpact: "Positive" }, outcomeText: "New protections ensure the courts remain independent. Rule of law is reinforced." },
-      { id: "review", label: "Judicial Review Panel", description: "Create an independent panel to assess the situation.", consequences: [{ targetModel: "GovernmentStructure", targetField: "ruleOfLaw", operation: "add", value: 2 }], previewEffects: { stabilityImpact: "Moderate" }, outcomeText: "The panel recommends modest reforms. Implementation is gradual." },
-      { id: "control", label: "Assert Government Authority", description: "The executive branch should guide judicial priorities.", consequences: [{ targetModel: "GovernmentStructure", targetField: "ruleOfLaw", operation: "subtract", value: 8 }, { targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "subtract", value: 5 }], previewEffects: { stabilityImpact: "Negative" }, outcomeText: "Judicial independence erodes. International watchdogs express alarm." }
+      {
+        id: "strengthen",
+        label: "Strengthen Judicial Independence",
+        description: "Pass constitutional amendments protecting the judiciary.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "ruleOfLaw",
+            operation: "add",
+            value: 8,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+        ],
+        previewEffects: { publicApproval: 4, stabilityImpact: "Positive" },
+        outcomeText:
+          "New protections ensure the courts remain independent. Rule of law is reinforced.",
+      },
+      {
+        id: "review",
+        label: "Judicial Review Panel",
+        description: "Create an independent panel to assess the situation.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "ruleOfLaw",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Moderate" },
+        outcomeText: "The panel recommends modest reforms. Implementation is gradual.",
+      },
+      {
+        id: "control",
+        label: "Assert Government Authority",
+        description: "The executive branch should guide judicial priorities.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "ruleOfLaw",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Negative" },
+        outcomeText: "Judicial independence erodes. International watchdogs express alarm.",
+      },
     ]),
     tags: JSON.stringify(["judiciary", "rule-of-law", "democracy"]),
   },
   {
     slug: "mass_protests",
     title: "Mass Protests Erupt in {{countryName}}",
-    description: "Tens of thousands have taken to the streets demanding change from {{leaderName}}'s government.",
+    description:
+      "Tens of thousands have taken to the streets demanding change from {{leaderName}}'s government.",
     domain: "political",
     category: "governance",
     baseSeverity: "critical",
     baseUrgency: 85,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "publicApproval", op: "<", value: 30 }, { field: "protestFrequency", op: ">", value: 15 }, { random: 0.3 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "publicApproval", op: "<", value: 30 },
+        { field: "protestFrequency", op: ">", value: 15 },
+        { random: 0.3 },
+      ],
+    }),
     cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "listen", label: "Address Grievances", description: "Meet protest leaders and commit to reforms.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 10 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "subtract", value: 8 }], previewEffects: { publicApproval: 10, stabilityImpact: "De-escalation" }, outcomeText: "{{leaderName}} meets with protest leaders. Tensions ease as reform promises are made." },
-      { id: "concessions", label: "Minor Concessions", description: "Offer symbolic changes while maintaining current policies.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "subtract", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "Temporary calm" }, outcomeText: "Small concessions buy time but fundamental issues remain." },
-      { id: "crackdown", label: "Disperse Protests", description: "Use police to clear streets and restore order.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 15 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 12 }, { targetModel: "InternalStabilityMetrics", targetField: "riotRisk", operation: "add", value: 15 }], previewEffects: { publicApproval: -15, stabilityImpact: "Dangerous escalation" }, outcomeText: "Tear gas fills the streets. Violence erupts as anger becomes uncontrollable.", isAutoResolveDefault: true }
+      {
+        id: "listen",
+        label: "Address Grievances",
+        description: "Meet protest leaders and commit to reforms.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 10 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "subtract",
+            value: 8,
+          },
+        ],
+        previewEffects: { publicApproval: 10, stabilityImpact: "De-escalation" },
+        outcomeText:
+          "{{leaderName}} meets with protest leaders. Tensions ease as reform promises are made.",
+      },
+      {
+        id: "concessions",
+        label: "Minor Concessions",
+        description: "Offer symbolic changes while maintaining current policies.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Temporary calm" },
+        outcomeText: "Small concessions buy time but fundamental issues remain.",
+      },
+      {
+        id: "crackdown",
+        label: "Disperse Protests",
+        description: "Use police to clear streets and restore order.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 15,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 12,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "riotRisk",
+            operation: "add",
+            value: 15,
+          },
+        ],
+        previewEffects: { publicApproval: -15, stabilityImpact: "Dangerous escalation" },
+        outcomeText: "Tear gas fills the streets. Violence erupts as anger becomes uncontrollable.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["protests", "demonstrations", "unrest"]),
   },
   {
     slug: "opposition_surge",
     title: "Opposition Party Gains Momentum",
-    description: "Polls show the opposition rapidly closing the gap with {{leaderName}}'s government in {{countryName}}.",
+    description:
+      "Polls show the opposition rapidly closing the gap with {{leaderName}}'s government in {{countryName}}.",
     domain: "political",
     category: "governance",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "publicApproval", op: "<", value: 40 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "publicApproval", op: "<", value: 40 }, { random: 0.2 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "populist", label: "Popular Policy Blitz", description: "Announce popular policies to regain support.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }], previewEffects: { publicApproval: 8, economicImpact: "Fiscal cost" }, outcomeText: "A wave of popular policies boosts approval but strains the budget." },
-      { id: "reform", label: "Substantive Governance Reforms", description: "Address the root causes of dissatisfaction.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }], previewEffects: { publicApproval: 4, stabilityImpact: "Positive" }, outcomeText: "Genuine reforms show the government is listening." },
-      { id: "attack", label: "Discredit the Opposition", description: "Launch aggressive campaign against opposition leaders.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }, { targetModel: "InternalStabilityMetrics", targetField: "politicalPolarization", operation: "add", value: 5 }], previewEffects: { stabilityImpact: "Increased polarization" }, outcomeText: "Negative campaigning deepens political divisions." }
+      {
+        id: "populist",
+        label: "Popular Policy Blitz",
+        description: "Announce popular policies to regain support.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 8, economicImpact: "Fiscal cost" },
+        outcomeText: "A wave of popular policies boosts approval but strains the budget.",
+      },
+      {
+        id: "reform",
+        label: "Substantive Governance Reforms",
+        description: "Address the root causes of dissatisfaction.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+        ],
+        previewEffects: { publicApproval: 4, stabilityImpact: "Positive" },
+        outcomeText: "Genuine reforms show the government is listening.",
+      },
+      {
+        id: "attack",
+        label: "Discredit the Opposition",
+        description: "Launch aggressive campaign against opposition leaders.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "politicalPolarization",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Increased polarization" },
+        outcomeText: "Negative campaigning deepens political divisions.",
+      },
     ]),
     tags: JSON.stringify(["opposition", "polls", "elections"]),
   },
   {
     slug: "constitutional_crisis",
     title: "Constitutional Crisis Brewing",
-    description: "A dispute between branches of government threatens a constitutional crisis in {{countryName}}.",
+    description:
+      "A dispute between branches of government threatens a constitutional crisis in {{countryName}}.",
     domain: "political",
     category: "governance",
     baseSeverity: "critical",
     baseUrgency: 80,
     deadlineDaysBase: 10,
-    triggerConditions: trigger({ and: [{ field: "ruleOfLaw", op: "<", value: 40 }, { field: "politicalPolarization", op: ">", value: 65 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "ruleOfLaw", op: "<", value: 40 },
+        { field: "politicalPolarization", op: ">", value: 65 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "compromise", label: "Seek Compromise", description: "Broker a deal between the competing branches.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "De-escalation" }, outcomeText: "A fragile compromise is reached. Constitutional order is preserved." },
-      { id: "court", label: "Defer to Constitutional Court", description: "Let the judiciary resolve the dispute.", consequences: [{ targetModel: "GovernmentStructure", targetField: "ruleOfLaw", operation: "add", value: 5 }], previewEffects: { stabilityImpact: "Institutional" }, outcomeText: "The court rules. Both sides accept the decision, reinforcing the rule of law." },
-      { id: "executive", label: "Assert Executive Power", description: "The president/PM acts unilaterally to resolve the crisis.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "subtract", value: 8 }, { targetModel: "GovernmentStructure", targetField: "ruleOfLaw", operation: "subtract", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 8 }], previewEffects: { stabilityImpact: "Power grab" }, outcomeText: "Executive overreach resolves the immediate crisis but sets a dangerous precedent.", isAutoResolveDefault: true }
+      {
+        id: "compromise",
+        label: "Seek Compromise",
+        description: "Broker a deal between the competing branches.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "De-escalation" },
+        outcomeText: "A fragile compromise is reached. Constitutional order is preserved.",
+      },
+      {
+        id: "court",
+        label: "Defer to Constitutional Court",
+        description: "Let the judiciary resolve the dispute.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "ruleOfLaw",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Institutional" },
+        outcomeText:
+          "The court rules. Both sides accept the decision, reinforcing the rule of law.",
+      },
+      {
+        id: "executive",
+        label: "Assert Executive Power",
+        description: "The president/PM acts unilaterally to resolve the crisis.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "ruleOfLaw",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 8,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Power grab" },
+        outcomeText:
+          "Executive overreach resolves the immediate crisis but sets a dangerous precedent.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["constitution", "crisis", "rule-of-law"]),
   },
   {
     slug: "censorship_controversy",
     title: "Internet Censorship Debate",
-    description: "{{countryName}}'s government proposes new internet regulation laws that critics call censorship.",
+    description:
+      "{{countryName}}'s government proposes new internet regulation laws that critics call censorship.",
     domain: "political",
     category: "governance",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "democracyIndex", op: "<", value: 60 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "democracyIndex", op: "<", value: 60 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "withdraw", label: "Withdraw the Bill", description: "Abandon the proposal in favor of free expression.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }], previewEffects: { publicApproval: 4 }, outcomeText: "The bill is withdrawn. Digital rights advocates celebrate." },
-      { id: "amend", label: "Amend with Safeguards", description: "Pass a revised version with civil liberties protections.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "A balanced approach attempts to address both security and freedom concerns." },
-      { id: "pass", label: "Pass the Full Bill", description: "Implement the regulations as originally proposed.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 6 }], previewEffects: { publicApproval: -6, stabilityImpact: "Negative" }, outcomeText: "The censorship law passes. VPN usage surges as citizens circumvent restrictions." }
+      {
+        id: "withdraw",
+        label: "Withdraw the Bill",
+        description: "Abandon the proposal in favor of free expression.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+        ],
+        previewEffects: { publicApproval: 4 },
+        outcomeText: "The bill is withdrawn. Digital rights advocates celebrate.",
+      },
+      {
+        id: "amend",
+        label: "Amend with Safeguards",
+        description: "Pass a revised version with civil liberties protections.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "A balanced approach attempts to address both security and freedom concerns.",
+      },
+      {
+        id: "pass",
+        label: "Pass the Full Bill",
+        description: "Implement the regulations as originally proposed.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 6,
+          },
+        ],
+        previewEffects: { publicApproval: -6, stabilityImpact: "Negative" },
+        outcomeText:
+          "The censorship law passes. VPN usage surges as citizens circumvent restrictions.",
+      },
     ]),
     tags: JSON.stringify(["censorship", "internet", "digital-rights"]),
   },
   {
     slug: "civil_service_reform",
     title: "Civil Service Bloat Problem",
-    description: "{{countryName}}'s civil service has grown to unsustainable levels, consuming {{percentageLarge}}% of the budget.",
+    description:
+      "{{countryName}}'s civil service has grown to unsustainable levels, consuming {{percentageLarge}}% of the budget.",
     domain: "political",
     category: "governance",
     baseSeverity: "medium",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "governmentEffectiveness", op: "<", value: 45 }, { field: "totalDebtGDPRatio", op: ">", value: 60 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "governmentEffectiveness", op: "<", value: 45 },
+        { field: "totalDebtGDPRatio", op: ">", value: 60 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "downsize", label: "Reduce Civil Service", description: "Cut redundant positions and merge departments.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 1 }], previewEffects: { publicApproval: -5, economicImpact: "Savings" }, outcomeText: "Layoffs improve efficiency but create unemployment. Unions are furious." },
-      { id: "digital", label: "Digitize Government Services", description: "Invest in technology to improve efficiency without mass layoffs.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { stabilityImpact: "Positive" }, outcomeText: "Digital transformation modernizes government services over several years." },
-      { id: "expand", label: "Expand Public Services", description: "Hire more civil servants to improve public services.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, economicImpact: "Higher spending" }, outcomeText: "Public services improve but the wage bill continues to balloon." }
+      {
+        id: "downsize",
+        label: "Reduce Civil Service",
+        description: "Cut redundant positions and merge departments.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "subtract",
+            value: 2,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: -5, economicImpact: "Savings" },
+        outcomeText: "Layoffs improve efficiency but create unemployment. Unions are furious.",
+      },
+      {
+        id: "digital",
+        label: "Digitize Government Services",
+        description: "Invest in technology to improve efficiency without mass layoffs.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { stabilityImpact: "Positive" },
+        outcomeText: "Digital transformation modernizes government services over several years.",
+      },
+      {
+        id: "expand",
+        label: "Expand Public Services",
+        description: "Hire more civil servants to improve public services.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Higher spending" },
+        outcomeText: "Public services improve but the wage bill continues to balloon.",
+      },
     ]),
     tags: JSON.stringify(["civil-service", "bureaucracy", "reform"]),
   },
   {
     slug: "whistleblower_leaks",
     title: "Government Whistleblower Exposes Secrets",
-    description: "A government insider has leaked classified documents revealing controversial surveillance programs in {{countryName}}.",
+    description:
+      "A government insider has leaked classified documents revealing controversial surveillance programs in {{countryName}}.",
     domain: "political",
     category: "security",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "trustInGovernment", op: "<", value: 40 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "trustInGovernment", op: "<", value: 40 }, { random: 0.15 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "transparency", label: "Embrace Transparency", description: "Acknowledge the programs and promise reform.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "add", value: 8 }, { targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 3 }], previewEffects: { publicApproval: 5, stabilityImpact: "Trust rebuilt" }, outcomeText: "Honest disclosure wins praise. The surveillance programs are reformed." },
-      { id: "prosecute", label: "Prosecute the Leaker", description: "Pursue criminal charges against the whistleblower.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -5, stabilityImpact: "Chilling effect" }, outcomeText: "The prosecution proceeds but public sympathy lies with the whistleblower." },
-      { id: "deny", label: "Deny and Suppress", description: "Claim the documents are fabricated.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "subtract", value: 10 }], previewEffects: { publicApproval: -8, stabilityImpact: "Very negative" }, outcomeText: "Nobody believes the denials. Government credibility reaches a new low.", isAutoResolveDefault: true }
+      {
+        id: "transparency",
+        label: "Embrace Transparency",
+        description: "Acknowledge the programs and promise reform.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "add",
+            value: 8,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Trust rebuilt" },
+        outcomeText: "Honest disclosure wins praise. The surveillance programs are reformed.",
+      },
+      {
+        id: "prosecute",
+        label: "Prosecute the Leaker",
+        description: "Pursue criminal charges against the whistleblower.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -5, stabilityImpact: "Chilling effect" },
+        outcomeText: "The prosecution proceeds but public sympathy lies with the whistleblower.",
+      },
+      {
+        id: "deny",
+        label: "Deny and Suppress",
+        description: "Claim the documents are fabricated.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "subtract",
+            value: 10,
+          },
+        ],
+        previewEffects: { publicApproval: -8, stabilityImpact: "Very negative" },
+        outcomeText: "Nobody believes the denials. Government credibility reaches a new low.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["whistleblower", "surveillance", "secrecy"]),
   },
   {
     slug: "political_assassination_attempt",
     title: "Assassination Attempt on Political Figure",
-    description: "A prominent political figure in {{countryName}} has survived an assassination attempt, shocking the nation.",
+    description:
+      "A prominent political figure in {{countryName}} has survived an assassination attempt, shocking the nation.",
     domain: "political",
     category: "security",
     baseSeverity: "critical",
     baseUrgency: 90,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "stabilityScore", op: "<", value: 40 }, { field: "politicalPolarization", op: ">", value: 70 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "stabilityScore", op: "<", value: 40 },
+        { field: "politicalPolarization", op: ">", value: 70 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "unity", label: "Call for National Unity", description: "Use the moment to bridge political divides.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "politicalPolarization", operation: "subtract", value: 10 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 5 }], previewEffects: { publicApproval: 8, stabilityImpact: "Unifying moment" }, outcomeText: "The nation rallies together. Political rhetoric softens significantly." },
-      { id: "security", label: "Security Crackdown", description: "Increase security measures and investigate extremist networks.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }, { targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "subtract", value: 3 }], previewEffects: { stabilityImpact: "More security, less freedom" }, outcomeText: "Enhanced security prevents further violence but civil liberties are curtailed." },
-      { id: "blame", label: "Blame Political Opponents", description: "Use the attack to score political points.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "politicalPolarization", operation: "add", value: 15 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 10 }], previewEffects: { stabilityImpact: "Extreme polarization" }, outcomeText: "Political blame-casting tears the nation further apart.", isAutoResolveDefault: true }
+      {
+        id: "unity",
+        label: "Call for National Unity",
+        description: "Use the moment to bridge political divides.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "politicalPolarization",
+            operation: "subtract",
+            value: 10,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: 8, stabilityImpact: "Unifying moment" },
+        outcomeText: "The nation rallies together. Political rhetoric softens significantly.",
+      },
+      {
+        id: "security",
+        label: "Security Crackdown",
+        description: "Increase security measures and investigate extremist networks.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { stabilityImpact: "More security, less freedom" },
+        outcomeText:
+          "Enhanced security prevents further violence but civil liberties are curtailed.",
+      },
+      {
+        id: "blame",
+        label: "Blame Political Opponents",
+        description: "Use the attack to score political points.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "politicalPolarization",
+            operation: "add",
+            value: 15,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 10,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Extreme polarization" },
+        outcomeText: "Political blame-casting tears the nation further apart.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["assassination", "violence", "extremism"]),
   },
   {
     slug: "anti_corruption_campaign",
     title: "Anti-Corruption Drive Proposed",
-    description: "Civil society groups demand a comprehensive anti-corruption campaign in {{countryName}}.",
+    description:
+      "Civil society groups demand a comprehensive anti-corruption campaign in {{countryName}}.",
     domain: "political",
     category: "governance",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "corruptionIndex", op: ">", value: 50 }, { field: "trustInGovernment", op: "<", value: 45 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "corruptionIndex", op: ">", value: 50 },
+        { field: "trustInGovernment", op: "<", value: 45 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "comprehensive", label: "Launch Full Campaign", description: "Implement sweeping anti-corruption measures.", consequences: [{ targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 8 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "add", value: 10 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }], previewEffects: { publicApproval: 6, stabilityImpact: "Very positive" }, outcomeText: "The anti-corruption drive roots out graft across government. Public trust surges." },
-      { id: "selective", label: "Targeted Investigations", description: "Focus on the most egregious cases.", consequences: [{ targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2 }, outcomeText: "High-profile prosecutions send a message but systemic issues remain." },
-      { id: "symbolic", label: "Symbolic Measures Only", description: "Create an anti-corruption office with little real power.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3 }, outcomeText: "The toothless anti-corruption body is widely mocked." }
+      {
+        id: "comprehensive",
+        label: "Launch Full Campaign",
+        description: "Implement sweeping anti-corruption measures.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "add",
+            value: 10,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+        ],
+        previewEffects: { publicApproval: 6, stabilityImpact: "Very positive" },
+        outcomeText:
+          "The anti-corruption drive roots out graft across government. Public trust surges.",
+      },
+      {
+        id: "selective",
+        label: "Targeted Investigations",
+        description: "Focus on the most egregious cases.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "High-profile prosecutions send a message but systemic issues remain.",
+      },
+      {
+        id: "symbolic",
+        label: "Symbolic Measures Only",
+        description: "Create an anti-corruption office with little real power.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3 },
+        outcomeText: "The toothless anti-corruption body is widely mocked.",
+      },
     ]),
     tags: JSON.stringify(["corruption", "transparency", "governance"]),
   },
   {
     slug: "nationalism_rise",
     title: "Nationalist Movement Growing",
-    description: "Nationalist sentiment is surging in {{countryName}}, with calls for stricter borders and cultural protection.",
+    description:
+      "Nationalist sentiment is surging in {{countryName}}, with calls for stricter borders and cultural protection.",
     domain: "political",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "ethnicTension", op: ">", value: 35 }, { field: "publicApproval", op: "<", value: 45 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "ethnicTension", op: ">", value: 35 },
+        { field: "publicApproval", op: "<", value: 45 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "embrace", label: "Embrace National Pride", description: "Channel nationalism into positive patriotic programs.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 3 }], previewEffects: { publicApproval: 5, stabilityImpact: "Cohesion" }, outcomeText: "National pride events and cultural programs unite citizens." },
-      { id: "moderate", label: "Promote Inclusive Identity", description: "Celebrate diversity while fostering national unity.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, stabilityImpact: "Balanced" }, outcomeText: "An inclusive vision of national identity reduces ethnic tensions." },
-      { id: "restrict", label: "Implement Nationalist Policies", description: "Restrict immigration and prioritize cultural homogeneity.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "add", value: 8 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "Polarizing" }, outcomeText: "Restrictive policies please nationalists but alienate minorities." }
+      {
+        id: "embrace",
+        label: "Embrace National Pride",
+        description: "Channel nationalism into positive patriotic programs.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Cohesion" },
+        outcomeText: "National pride events and cultural programs unite citizens.",
+      },
+      {
+        id: "moderate",
+        label: "Promote Inclusive Identity",
+        description: "Celebrate diversity while fostering national unity.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "subtract",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "Balanced" },
+        outcomeText: "An inclusive vision of national identity reduces ethnic tensions.",
+      },
+      {
+        id: "restrict",
+        label: "Implement Nationalist Policies",
+        description: "Restrict immigration and prioritize cultural homogeneity.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "add",
+            value: 8,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Polarizing" },
+        outcomeText: "Restrictive policies please nationalists but alienate minorities.",
+      },
     ]),
     tags: JSON.stringify(["nationalism", "identity", "immigration"]),
   },
   {
     slug: "government_shutdown_threat",
     title: "Government Shutdown Looming",
-    description: "Legislative deadlock threatens to shut down {{countryName}}'s government as budget negotiations stall.",
+    description:
+      "Legislative deadlock threatens to shut down {{countryName}}'s government as budget negotiations stall.",
     domain: "political",
     category: "governance",
     baseSeverity: "high",
     baseUrgency: 80,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "politicalPolarization", op: ">", value: 55 }, { field: "totalDebtGDPRatio", op: ">", value: 70 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "politicalPolarization", op: ">", value: 55 },
+        { field: "totalDebtGDPRatio", op: ">", value: 70 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "compromise", label: "Bipartisan Compromise", description: "Work across party lines to pass a budget.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "politicalPolarization", operation: "subtract", value: 3 }], previewEffects: { publicApproval: 5, stabilityImpact: "Positive" }, outcomeText: "A compromise budget passes. Moderates on both sides claim credit." },
-      { id: "cr", label: "Continuing Resolution", description: "Pass a temporary funding measure to buy time.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2 }, outcomeText: "The can is kicked down the road. Nothing is resolved but the crisis is averted." },
-      { id: "shutdown", label: "Allow the Shutdown", description: "Let the government shut down to force the opposition's hand.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 10 }, { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -10, stabilityImpact: "Damaging" }, outcomeText: "Government services cease. Citizens are furious at political dysfunction.", isAutoResolveDefault: true }
+      {
+        id: "compromise",
+        label: "Bipartisan Compromise",
+        description: "Work across party lines to pass a budget.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "politicalPolarization",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Positive" },
+        outcomeText: "A compromise budget passes. Moderates on both sides claim credit.",
+      },
+      {
+        id: "cr",
+        label: "Continuing Resolution",
+        description: "Pass a temporary funding measure to buy time.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2 },
+        outcomeText:
+          "The can is kicked down the road. Nothing is resolved but the crisis is averted.",
+      },
+      {
+        id: "shutdown",
+        label: "Allow the Shutdown",
+        description: "Let the government shut down to force the opposition's hand.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 10,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -10, stabilityImpact: "Damaging" },
+        outcomeText: "Government services cease. Citizens are furious at political dysfunction.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["budget", "shutdown", "deadlock"]),
   },
   {
     slug: "term_limit_debate",
     title: "Term Limit Extension Proposed",
-    description: "{{leaderName}} has proposed extending or removing presidential/prime ministerial term limits in {{countryName}}.",
+    description:
+      "{{leaderName}} has proposed extending or removing presidential/prime ministerial term limits in {{countryName}}.",
     domain: "political",
     category: "governance",
     baseSeverity: "high",
     baseUrgency: 60,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "democracyIndex", op: "<", value: 55 }, { field: "publicApproval", op: ">", value: 55 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "democracyIndex", op: "<", value: 55 },
+        { field: "publicApproval", op: ">", value: 55 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "withdraw", label: "Withdraw the Proposal", description: "Abandon the term limit change to preserve democratic norms.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "Democracy preserved" }, outcomeText: "{{leaderName}} backs down. Democracy advocates breathe a sigh of relief." },
-      { id: "referendum", label: "Hold a Referendum", description: "Let the people vote on whether to change term limits.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "InternalStabilityMetrics", targetField: "politicalPolarization", operation: "add", value: 5 }], previewEffects: { publicApproval: 2, stabilityImpact: "Polarizing" }, outcomeText: "A heated referendum campaign divides the nation." },
-      { id: "force", label: "Push Through Parliament", description: "Use parliamentary majority to change the constitution.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "subtract", value: 12 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "add", value: 10 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }], previewEffects: { publicApproval: -8, stabilityImpact: "Very negative" }, outcomeText: "The constitutional change passes but at enormous cost to democratic legitimacy." }
+      {
+        id: "withdraw",
+        label: "Withdraw the Proposal",
+        description: "Abandon the term limit change to preserve democratic norms.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Democracy preserved" },
+        outcomeText: "{{leaderName}} backs down. Democracy advocates breathe a sigh of relief.",
+      },
+      {
+        id: "referendum",
+        label: "Hold a Referendum",
+        description: "Let the people vote on whether to change term limits.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "politicalPolarization",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "Polarizing" },
+        outcomeText: "A heated referendum campaign divides the nation.",
+      },
+      {
+        id: "force",
+        label: "Push Through Parliament",
+        description: "Use parliamentary majority to change the constitution.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "subtract",
+            value: 12,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "add",
+            value: 10,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+        ],
+        previewEffects: { publicApproval: -8, stabilityImpact: "Very negative" },
+        outcomeText:
+          "The constitutional change passes but at enormous cost to democratic legitimacy.",
+      },
     ]),
     tags: JSON.stringify(["term-limits", "democracy", "constitution"]),
   },
   {
     slug: "minority_rights_bill",
     title: "Minority Rights Legislation Debated",
-    description: "A bill to expand protections for ethnic and religious minorities in {{countryName}} faces fierce opposition.",
+    description:
+      "A bill to expand protections for ethnic and religious minorities in {{countryName}} faces fierce opposition.",
     domain: "political",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "ethnicTension", op: ">", value: 30 }, { field: "democracyIndex", op: ">", value: 40 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "ethnicTension", op: ">", value: 30 },
+        { field: "democracyIndex", op: ">", value: 40 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "pass", label: "Pass the Bill", description: "Enact comprehensive minority protections.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "subtract", value: 8 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, stabilityImpact: "Reduces tension" }, outcomeText: "New protections improve life for minorities. Social cohesion strengthens over time." },
-      { id: "water_down", label: "Compromise Version", description: "Pass a weakened version that satisfies neither side.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "subtract", value: 2 }], previewEffects: { stabilityImpact: "Minimal" }, outcomeText: "The watered-down bill passes. Nobody is particularly satisfied." },
-      { id: "block", label: "Kill the Bill", description: "Prevent the legislation from passing.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, stabilityImpact: "Increased tension" }, outcomeText: "The bill fails. Minority communities feel abandoned by their government." }
+      {
+        id: "pass",
+        label: "Pass the Bill",
+        description: "Enact comprehensive minority protections.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "Reduces tension" },
+        outcomeText:
+          "New protections improve life for minorities. Social cohesion strengthens over time.",
+      },
+      {
+        id: "water_down",
+        label: "Compromise Version",
+        description: "Pass a weakened version that satisfies neither side.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Minimal" },
+        outcomeText: "The watered-down bill passes. Nobody is particularly satisfied.",
+      },
+      {
+        id: "block",
+        label: "Kill the Bill",
+        description: "Prevent the legislation from passing.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, stabilityImpact: "Increased tension" },
+        outcomeText: "The bill fails. Minority communities feel abandoned by their government.",
+      },
     ]),
     tags: JSON.stringify(["minorities", "rights", "legislation"]),
   },
   {
     slug: "decentralization_push",
     title: "Calls for Government Decentralization",
-    description: "Regional leaders in {{countryName}} demand more local control over budgets and policy-making.",
+    description:
+      "Regional leaders in {{countryName}} demand more local control over budgets and policy-making.",
     domain: "political",
     category: "governance",
     baseSeverity: "low",
     baseUrgency: 30,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "governmentEffectiveness", op: "<", value: 50 }, { field: "urbanPopulationPercent", op: ">", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "governmentEffectiveness", op: "<", value: 50 },
+        { field: "urbanPopulationPercent", op: ">", value: 50 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "decentralize", label: "Embrace Decentralization", description: "Transfer significant powers to regional and local governments.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 4 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "Positive" }, outcomeText: "Local governments gain new authority. Public services become more responsive." },
-      { id: "pilot", label: "Pilot Program", description: "Test decentralization in select regions first.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 1 }], previewEffects: { stabilityImpact: "Cautious progress" }, outcomeText: "Pilot regions show promising results. Gradual expansion is planned." },
-      { id: "centralize", label: "Strengthen Central Control", description: "Argue that national unity requires centralized governance.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "add", value: 2 }], previewEffects: { publicApproval: -3 }, outcomeText: "Regional frustration grows as centralization continues." }
+      {
+        id: "decentralize",
+        label: "Embrace Decentralization",
+        description: "Transfer significant powers to regional and local governments.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 4,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Positive" },
+        outcomeText:
+          "Local governments gain new authority. Public services become more responsive.",
+      },
+      {
+        id: "pilot",
+        label: "Pilot Program",
+        description: "Test decentralization in select regions first.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 1,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Cautious progress" },
+        outcomeText: "Pilot regions show promising results. Gradual expansion is planned.",
+      },
+      {
+        id: "centralize",
+        label: "Strengthen Central Control",
+        description: "Argue that national unity requires centralized governance.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -3 },
+        outcomeText: "Regional frustration grows as centralization continues.",
+      },
     ]),
     tags: JSON.stringify(["decentralization", "local-government", "federalism"]),
   },
@@ -870,342 +3340,1281 @@ const socialTemplates: IssueTemplateSeed[] = [
   {
     slug: "public_health_emergency",
     title: "Public Health Emergency Declared",
-    description: "A disease outbreak threatens {{countryName}}'s population, with cases doubling every few days.",
+    description:
+      "A disease outbreak threatens {{countryName}}'s population, with cases doubling every few days.",
     domain: "social",
     category: "social",
     baseSeverity: "critical",
     baseUrgency: 90,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 45 }, { field: "povertyRate", op: ">", value: 15 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: "<", value: 45 },
+        { field: "povertyRate", op: ">", value: 15 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "lockdown", label: "Strict Public Health Measures", description: "Quarantine affected areas and mobilize healthcare workers.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.8 }], previewEffects: { publicApproval: 5, economicImpact: "GDP loss" }, outcomeText: "Strict measures contain the outbreak. The economy takes a hit but lives are saved." },
-      { id: "targeted", label: "Targeted Response", description: "Focus resources on hotspots without broad restrictions.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.3 }], previewEffects: { publicApproval: 2, economicImpact: "Moderate" }, outcomeText: "A targeted approach balances health and economic concerns." },
-      { id: "minimize", label: "Minimize Disruption", description: "Keep the economy open and trust the healthcare system.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "povertyRate", operation: "add", value: 1 }], previewEffects: { publicApproval: -8, stabilityImpact: "Negative" }, outcomeText: "The outbreak spreads unchecked. Hospitals are overwhelmed.", isAutoResolveDefault: true }
+      {
+        id: "lockdown",
+        label: "Strict Public Health Measures",
+        description: "Quarantine affected areas and mobilize healthcare workers.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.8,
+          },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "GDP loss" },
+        outcomeText:
+          "Strict measures contain the outbreak. The economy takes a hit but lives are saved.",
+      },
+      {
+        id: "targeted",
+        label: "Targeted Response",
+        description: "Focus resources on hotspots without broad restrictions.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Moderate" },
+        outcomeText: "A targeted approach balances health and economic concerns.",
+      },
+      {
+        id: "minimize",
+        label: "Minimize Disruption",
+        description: "Keep the economy open and trust the healthcare system.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          { targetModel: "Country", targetField: "povertyRate", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: -8, stabilityImpact: "Negative" },
+        outcomeText: "The outbreak spreads unchecked. Hospitals are overwhelmed.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["health", "epidemic", "crisis"]),
   },
   {
     slug: "immigration_surge",
     title: "Immigration Wave Hits {{countryName}}",
-    description: "A surge of immigrants is arriving at {{countryName}}'s borders, straining resources and sparking debate.",
+    description:
+      "A surge of immigrants is arriving at {{countryName}}'s borders, straining resources and sparking debate.",
     domain: "social",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 65,
     deadlineDaysBase: 21,
-    triggerConditions: trigger({ and: [{ field: "actualGdpGrowth", op: ">", value: 2 }, { field: "ethnicTension", op: "<", value: 50 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "actualGdpGrowth", op: ">", value: 2 },
+        { field: "ethnicTension", op: "<", value: 50 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "welcome", label: "Open Doors Policy", description: "Welcome immigrants and provide integration support.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }, { targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "add", value: 5 }, { targetModel: "Country", targetField: "currentPopulation", operation: "multiply", value: 1.002 }], previewEffects: { economicImpact: "Growth boost", stabilityImpact: "Social tension" }, outcomeText: "Immigrants are welcomed. The economy benefits but integration challenges emerge." },
-      { id: "managed", label: "Managed Immigration", description: "Accept immigrants based on skills and capacity.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.15 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, economicImpact: "Balanced" }, outcomeText: "A points-based system selects immigrants most likely to contribute." },
-      { id: "restrict", label: "Close the Borders", description: "Dramatically restrict immigration.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "subtract", value: 3 }], previewEffects: { publicApproval: 3, diplomaticImpact: "International criticism" }, outcomeText: "Borders tighten. Nationalists approve but international organizations condemn the decision." }
+      {
+        id: "welcome",
+        label: "Open Doors Policy",
+        description: "Welcome immigrants and provide integration support.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "currentPopulation",
+            operation: "multiply",
+            value: 1.002,
+          },
+        ],
+        previewEffects: { economicImpact: "Growth boost", stabilityImpact: "Social tension" },
+        outcomeText:
+          "Immigrants are welcomed. The economy benefits but integration challenges emerge.",
+      },
+      {
+        id: "managed",
+        label: "Managed Immigration",
+        description: "Accept immigrants based on skills and capacity.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.15 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Balanced" },
+        outcomeText: "A points-based system selects immigrants most likely to contribute.",
+      },
+      {
+        id: "restrict",
+        label: "Close the Borders",
+        description: "Dramatically restrict immigration.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 3, diplomaticImpact: "International criticism" },
+        outcomeText:
+          "Borders tighten. Nationalists approve but international organizations condemn the decision.",
+      },
     ]),
     tags: JSON.stringify(["immigration", "borders", "refugees"]),
   },
   {
     slug: "education_crisis",
     title: "Education System Failing Students",
-    description: "International tests reveal {{countryName}}'s students are falling behind their peers in other nations.",
+    description:
+      "International tests reveal {{countryName}}'s students are falling behind their peers in other nations.",
     domain: "social",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "literacyRate", op: "<", value: 92 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "literacyRate", op: "<", value: 92 }, { random: 0.2 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "invest", label: "Major Education Investment", description: "Significantly increase education spending.", consequences: [{ targetModel: "Country", targetField: "literacyRate", operation: "add", value: 2 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }], previewEffects: { publicApproval: 4, economicImpact: "Long-term returns" }, outcomeText: "Billions flow into schools. Teachers celebrate, fiscal hawks worry." },
-      { id: "reform", label: "Curriculum Reform", description: "Modernize curriculum without major spending increases.", consequences: [{ targetModel: "Country", targetField: "literacyRate", operation: "add", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2 }, outcomeText: "A modernized curriculum focuses on STEM and critical thinking." },
-      { id: "privatize", label: "Expand Private Education", description: "Encourage private schools through vouchers and deregulation.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "povertyRate", operation: "add", value: 0.5 }], previewEffects: { publicApproval: -3, stabilityImpact: "Inequality risk" }, outcomeText: "Private schools thrive but the public system deteriorates further." }
+      {
+        id: "invest",
+        label: "Major Education Investment",
+        description: "Significantly increase education spending.",
+        consequences: [
+          { targetModel: "Country", targetField: "literacyRate", operation: "add", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Long-term returns" },
+        outcomeText: "Billions flow into schools. Teachers celebrate, fiscal hawks worry.",
+      },
+      {
+        id: "reform",
+        label: "Curriculum Reform",
+        description: "Modernize curriculum without major spending increases.",
+        consequences: [
+          { targetModel: "Country", targetField: "literacyRate", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "A modernized curriculum focuses on STEM and critical thinking.",
+      },
+      {
+        id: "privatize",
+        label: "Expand Private Education",
+        description: "Encourage private schools through vouchers and deregulation.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "povertyRate", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { publicApproval: -3, stabilityImpact: "Inequality risk" },
+        outcomeText: "Private schools thrive but the public system deteriorates further.",
+      },
     ]),
     tags: JSON.stringify(["education", "schools", "literacy"]),
   },
   {
     slug: "housing_crisis",
     title: "Housing Crisis Deepens",
-    description: "Homelessness is rising in {{countryName}} as housing becomes increasingly unaffordable for ordinary citizens.",
+    description:
+      "Homelessness is rising in {{countryName}} as housing becomes increasingly unaffordable for ordinary citizens.",
     domain: "social",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 60,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "povertyRate", op: ">", value: 12 }, { field: "urbanPopulationPercent", op: ">", value: 60 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "povertyRate", op: ">", value: 12 },
+        { field: "urbanPopulationPercent", op: ">", value: 60 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "build", label: "Massive Housing Program", description: "Government-funded construction of affordable housing.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 7 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }], previewEffects: { publicApproval: 7, economicImpact: "Spending increase" }, outcomeText: "Construction begins on thousands of affordable homes across the nation." },
-      { id: "regulate", label: "Rent Control Measures", description: "Cap rent increases and protect tenants.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.1 }], previewEffects: { publicApproval: 4, economicImpact: "Minimal" }, outcomeText: "Rent controls provide immediate relief. Developers warn of reduced supply." },
-      { id: "market", label: "Market-Based Solutions", description: "Reduce building regulations and let the market provide.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }], previewEffects: { publicApproval: -4 }, outcomeText: "Deregulation leads to some construction but affordable units remain scarce." }
+      {
+        id: "build",
+        label: "Massive Housing Program",
+        description: "Government-funded construction of affordable housing.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 7 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: 7, economicImpact: "Spending increase" },
+        outcomeText: "Construction begins on thousands of affordable homes across the nation.",
+      },
+      {
+        id: "regulate",
+        label: "Rent Control Measures",
+        description: "Cap rent increases and protect tenants.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.1,
+          },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Minimal" },
+        outcomeText: "Rent controls provide immediate relief. Developers warn of reduced supply.",
+      },
+      {
+        id: "market",
+        label: "Market-Based Solutions",
+        description: "Reduce building regulations and let the market provide.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+        ],
+        previewEffects: { publicApproval: -4 },
+        outcomeText: "Deregulation leads to some construction but affordable units remain scarce.",
+      },
     ]),
     tags: JSON.stringify(["housing", "homelessness", "affordability"]),
   },
   {
     slug: "drug_epidemic",
     title: "Drug Crisis Grips {{countryName}}",
-    description: "Drug abuse and overdose deaths have reached record levels, straining healthcare and law enforcement.",
+    description:
+      "Drug abuse and overdose deaths have reached record levels, straining healthcare and law enforcement.",
     domain: "social",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 65,
     deadlineDaysBase: 21,
-    triggerConditions: trigger({ and: [{ field: "crimeRate", op: ">", value: 10 }, { field: "povertyRate", op: ">", value: 12 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "crimeRate", op: ">", value: 10 },
+        { field: "povertyRate", op: ">", value: 12 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "treatment", label: "Treatment-First Approach", description: "Fund rehabilitation centers and harm reduction programs.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "crimeRate", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { publicApproval: 4, stabilityImpact: "Positive" }, outcomeText: "Treatment centers open across the nation. Overdose deaths begin to decline." },
-      { id: "enforce", label: "Law Enforcement Crackdown", description: "Increase police resources to combat drug trafficking.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "crimeRate", operation: "subtract", value: 1 }, { targetModel: "InternalStabilityMetrics", targetField: "policingEffectiveness", operation: "add", value: 3 }], previewEffects: { stabilityImpact: "Mixed" }, outcomeText: "Drug busts increase but the underlying demand persists." },
-      { id: "decriminalize", label: "Decriminalize Personal Use", description: "Focus resources on traffickers, not users.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "crimeRate", operation: "subtract", value: 1.5 }], previewEffects: { publicApproval: -3, stabilityImpact: "Controversial" }, outcomeText: "Decriminalization reduces incarceration but critics call it surrender.", isAutoResolveDefault: true }
+      {
+        id: "treatment",
+        label: "Treatment-First Approach",
+        description: "Fund rehabilitation centers and harm reduction programs.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "crimeRate",
+            operation: "subtract",
+            value: 2,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: 4, stabilityImpact: "Positive" },
+        outcomeText: "Treatment centers open across the nation. Overdose deaths begin to decline.",
+      },
+      {
+        id: "enforce",
+        label: "Law Enforcement Crackdown",
+        description: "Increase police resources to combat drug trafficking.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "crimeRate",
+            operation: "subtract",
+            value: 1,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "policingEffectiveness",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Mixed" },
+        outcomeText: "Drug busts increase but the underlying demand persists.",
+      },
+      {
+        id: "decriminalize",
+        label: "Decriminalize Personal Use",
+        description: "Focus resources on traffickers, not users.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "crimeRate",
+            operation: "subtract",
+            value: 1.5,
+          },
+        ],
+        previewEffects: { publicApproval: -3, stabilityImpact: "Controversial" },
+        outcomeText: "Decriminalization reduces incarceration but critics call it surrender.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["drugs", "public-health", "crime"]),
   },
   {
     slug: "youth_unemployment",
     title: "Youth Unemployment Crisis",
-    description: "Over {{percentageLarge}}% of young people in {{countryName}} can't find work, fueling despair and unrest.",
+    description:
+      "Over {{percentageLarge}}% of young people in {{countryName}} can't find work, fueling despair and unrest.",
     domain: "social",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 55,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "unemploymentRate", op: ">", value: 10 }, { field: "publicApproval", op: "<", value: 50 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "unemploymentRate", op: ">", value: 10 },
+        { field: "publicApproval", op: "<", value: 50 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "program", label: "Youth Employment Program", description: "Government-funded jobs and apprenticeships for young people.", consequences: [{ targetModel: "Country", targetField: "unemploymentRate", operation: "subtract", value: 1.5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 5, economicImpact: "Jobs created" }, outcomeText: "Young people find hope in new job programs. The streets quiet down." },
-      { id: "startup", label: "Youth Entrepreneurship Fund", description: "Provide grants and mentorship for young entrepreneurs.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, economicImpact: "Innovation boost" }, outcomeText: "A new generation of entrepreneurs emerges. Not all succeed, but hope returns." },
-      { id: "military", label: "Expand Military Service", description: "Offer military careers as an alternative path.", consequences: [{ targetModel: "Country", targetField: "unemploymentRate", operation: "subtract", value: 0.8 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2 }, outcomeText: "Military recruitment rises. Critics question the solution." }
+      {
+        id: "program",
+        label: "Youth Employment Program",
+        description: "Government-funded jobs and apprenticeships for young people.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "unemploymentRate",
+            operation: "subtract",
+            value: 1.5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Jobs created" },
+        outcomeText: "Young people find hope in new job programs. The streets quiet down.",
+      },
+      {
+        id: "startup",
+        label: "Youth Entrepreneurship Fund",
+        description: "Provide grants and mentorship for young entrepreneurs.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Innovation boost" },
+        outcomeText:
+          "A new generation of entrepreneurs emerges. Not all succeed, but hope returns.",
+      },
+      {
+        id: "military",
+        label: "Expand Military Service",
+        description: "Offer military careers as an alternative path.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "unemploymentRate",
+            operation: "subtract",
+            value: 0.8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2 },
+        outcomeText: "Military recruitment rises. Critics question the solution.",
+      },
     ]),
     tags: JSON.stringify(["youth", "unemployment", "generational"]),
   },
   {
     slug: "healthcare_collapse",
     title: "Healthcare System Overwhelmed",
-    description: "{{countryName}}'s hospitals are at breaking point with waiting lists reaching record lengths.",
+    description:
+      "{{countryName}}'s hospitals are at breaking point with waiting lists reaching record lengths.",
     domain: "social",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 40 }, { field: "povertyRate", op: ">", value: 10 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: "<", value: 40 },
+        { field: "povertyRate", op: ">", value: 10 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "invest", label: "Emergency Healthcare Funding", description: "Massive investment in hospitals, doctors, and equipment.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "Country", targetField: "lifeExpectancy", operation: "add", value: 0.5 }], previewEffects: { publicApproval: 8, economicImpact: "Expensive" }, outcomeText: "New hospitals open and staffing increases. Waiting lists begin to shrink." },
-      { id: "private", label: "Public-Private Partnership", description: "Contract private hospitals to reduce the backlog.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 3 }, outcomeText: "Private hospitals absorb some demand. Purists object to privatization." },
-      { id: "ration", label: "Prioritization Triage", description: "Implement strict triage prioritizing the most urgent cases.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 6 }], previewEffects: { publicApproval: -6 }, outcomeText: "Strict triage means some patients wait longer. Outcry follows.", isAutoResolveDefault: true }
+      {
+        id: "invest",
+        label: "Emergency Healthcare Funding",
+        description: "Massive investment in hospitals, doctors, and equipment.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "lifeExpectancy", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { publicApproval: 8, economicImpact: "Expensive" },
+        outcomeText: "New hospitals open and staffing increases. Waiting lists begin to shrink.",
+      },
+      {
+        id: "private",
+        label: "Public-Private Partnership",
+        description: "Contract private hospitals to reduce the backlog.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 3 },
+        outcomeText: "Private hospitals absorb some demand. Purists object to privatization.",
+      },
+      {
+        id: "ration",
+        label: "Prioritization Triage",
+        description: "Implement strict triage prioritizing the most urgent cases.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 6,
+          },
+        ],
+        previewEffects: { publicApproval: -6 },
+        outcomeText: "Strict triage means some patients wait longer. Outcry follows.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["healthcare", "hospitals", "waiting-lists"]),
   },
   {
     slug: "cultural_heritage_threat",
     title: "Cultural Heritage Under Threat",
-    description: "Ancient cultural sites in {{countryName}} face destruction from development, neglect, or conflict.",
+    description:
+      "Ancient cultural sites in {{countryName}} face destruction from development, neglect, or conflict.",
     domain: "social",
     category: "social",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 50 }, { random: 0.15 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "preserve", label: "Heritage Preservation Fund", description: "Allocate funds to protect and restore cultural sites.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 }], previewEffects: { publicApproval: 4 }, outcomeText: "Cultural sites are restored. Tourism potential increases." },
-      { id: "develop", label: "Development Takes Priority", description: "Economic development needs outweigh heritage concerns.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3 }, outcomeText: "Bulldozers move in. History is lost to make way for progress." },
-      { id: "partner", label: "International Partnership", description: "Partner with international organizations for preservation.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Positive" }, outcomeText: "International experts help preserve irreplaceable heritage sites." }
+      {
+        id: "preserve",
+        label: "Heritage Preservation Fund",
+        description: "Allocate funds to protect and restore cultural sites.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { publicApproval: 4 },
+        outcomeText: "Cultural sites are restored. Tourism potential increases.",
+      },
+      {
+        id: "develop",
+        label: "Development Takes Priority",
+        description: "Economic development needs outweigh heritage concerns.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3 },
+        outcomeText: "Bulldozers move in. History is lost to make way for progress.",
+      },
+      {
+        id: "partner",
+        label: "International Partnership",
+        description: "Partner with international organizations for preservation.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Positive" },
+        outcomeText: "International experts help preserve irreplaceable heritage sites.",
+      },
     ]),
     tags: JSON.stringify(["culture", "heritage", "preservation"]),
   },
   {
     slug: "religious_tensions",
     title: "Religious Tensions Escalate",
-    description: "Interfaith tensions in {{countryName}} are rising after a series of provocative incidents.",
+    description:
+      "Interfaith tensions in {{countryName}} are rising after a series of provocative incidents.",
     domain: "social",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 65,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "ethnicTension", op: ">", value: 40 }, { field: "socialCohesion", op: "<", value: 55 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "ethnicTension", op: ">", value: 40 },
+        { field: "socialCohesion", op: "<", value: 55 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "dialogue", label: "Interfaith Dialogue Initiative", description: "Bring religious leaders together to promote understanding.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "subtract", value: 6 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 4 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "De-escalation" }, outcomeText: "Religious leaders meet publicly and call for peace. Tensions ease." },
-      { id: "secular", label: "Enforce Secular Laws", description: "Apply secular law equally regardless of religious affiliation.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2 }, outcomeText: "Equal application of law reduces institutional bias but some feel targeted." },
-      { id: "ignore", label: "Stay Out of It", description: "Let communities resolve their own tensions.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "riotRisk", operation: "add", value: 5 }], previewEffects: { stabilityImpact: "Dangerous" }, outcomeText: "Without intervention, tensions escalate. Violence becomes likely.", isAutoResolveDefault: true }
+      {
+        id: "dialogue",
+        label: "Interfaith Dialogue Initiative",
+        description: "Bring religious leaders together to promote understanding.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "subtract",
+            value: 6,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 4,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "De-escalation" },
+        outcomeText: "Religious leaders meet publicly and call for peace. Tensions ease.",
+      },
+      {
+        id: "secular",
+        label: "Enforce Secular Laws",
+        description: "Apply secular law equally regardless of religious affiliation.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2 },
+        outcomeText: "Equal application of law reduces institutional bias but some feel targeted.",
+      },
+      {
+        id: "ignore",
+        label: "Stay Out of It",
+        description: "Let communities resolve their own tensions.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "riotRisk",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Dangerous" },
+        outcomeText: "Without intervention, tensions escalate. Violence becomes likely.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["religion", "interfaith", "tensions"]),
   },
   {
     slug: "mental_health_crisis",
     title: "Mental Health Crisis Growing",
-    description: "Depression, anxiety, and suicide rates in {{countryName}} have reached alarming levels.",
+    description:
+      "Depression, anxiety, and suicide rates in {{countryName}} have reached alarming levels.",
     domain: "social",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "unemploymentRate", op: ">", value: 8 }, { field: "socialCohesion", op: "<", value: 60 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "unemploymentRate", op: ">", value: 8 },
+        { field: "socialCohesion", op: "<", value: 60 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "fund", label: "Mental Health Investment", description: "Fund community mental health services and awareness campaigns.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { publicApproval: 5, stabilityImpact: "Positive" }, outcomeText: "Mental health services expand. Stigma around seeking help begins to diminish." },
-      { id: "workplace", label: "Workplace Wellness Mandates", description: "Require employers to provide mental health support.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3 }, outcomeText: "Workplace programs help employees cope. Productivity actually improves." },
-      { id: "deny", label: "No Government Role", description: "Mental health is a personal responsibility, not a government one.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }], previewEffects: { publicApproval: -4 }, outcomeText: "The crisis deepens. Advocates are outraged by government inaction." }
+      {
+        id: "fund",
+        label: "Mental Health Investment",
+        description: "Fund community mental health services and awareness campaigns.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 3,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Positive" },
+        outcomeText:
+          "Mental health services expand. Stigma around seeking help begins to diminish.",
+      },
+      {
+        id: "workplace",
+        label: "Workplace Wellness Mandates",
+        description: "Require employers to provide mental health support.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3 },
+        outcomeText: "Workplace programs help employees cope. Productivity actually improves.",
+      },
+      {
+        id: "deny",
+        label: "No Government Role",
+        description: "Mental health is a personal responsibility, not a government one.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+        ],
+        previewEffects: { publicApproval: -4 },
+        outcomeText: "The crisis deepens. Advocates are outraged by government inaction.",
+      },
     ]),
     tags: JSON.stringify(["mental-health", "wellbeing", "public-health"]),
   },
   {
     slug: "food_safety_scandal",
     title: "Major Food Safety Scandal",
-    description: "Contaminated food products have been found across {{countryName}}, causing illness and panic.",
+    description:
+      "Contaminated food products have been found across {{countryName}}, causing illness and panic.",
     domain: "social",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "governmentEffectiveness", op: "<", value: 45 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "governmentEffectiveness", op: "<", value: 45 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "recall", label: "Massive Recall and Investigation", description: "Pull all affected products and prosecute responsible parties.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 }], previewEffects: { publicApproval: 5, stabilityImpact: "Reassuring" }, outcomeText: "Swift action prevents further harm. The public regains confidence in food safety." },
-      { id: "regulate", label: "New Food Safety Regulations", description: "Implement stricter food safety standards industry-wide.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 0.3 }], previewEffects: { publicApproval: 3, economicImpact: "Higher food costs" }, outcomeText: "Tougher regulations make food safer but slightly more expensive." },
-      { id: "downplay", label: "Minimize the Issue", description: "Assure the public the problem is contained.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -8, stabilityImpact: "Trust erosion" }, outcomeText: "More cases emerge. The government's credibility is shattered.", isAutoResolveDefault: true }
+      {
+        id: "recall",
+        label: "Massive Recall and Investigation",
+        description: "Pull all affected products and prosecute responsible parties.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Reassuring" },
+        outcomeText:
+          "Swift action prevents further harm. The public regains confidence in food safety.",
+      },
+      {
+        id: "regulate",
+        label: "New Food Safety Regulations",
+        description: "Implement stricter food safety standards industry-wide.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Higher food costs" },
+        outcomeText: "Tougher regulations make food safer but slightly more expensive.",
+      },
+      {
+        id: "downplay",
+        label: "Minimize the Issue",
+        description: "Assure the public the problem is contained.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -8, stabilityImpact: "Trust erosion" },
+        outcomeText: "More cases emerge. The government's credibility is shattered.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["food-safety", "public-health", "scandal"]),
   },
   {
     slug: "gender_equality_push",
     title: "Gender Equality Reform Movement",
-    description: "Activists demand legislative action on gender equality in {{countryName}}'s workplaces and institutions.",
+    description:
+      "Activists demand legislative action on gender equality in {{countryName}}'s workplaces and institutions.",
     domain: "social",
     category: "social",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "democracyIndex", op: ">", value: 40 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "democracyIndex", op: ">", value: 40 }, { random: 0.15 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "legislate", label: "Pass Equality Legislation", description: "Enact comprehensive gender equality laws.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 3 }], previewEffects: { publicApproval: 4, stabilityImpact: "Progressive" }, outcomeText: "New equality laws set a precedent. Progress is slow but tangible." },
-      { id: "encourage", label: "Voluntary Corporate Pledges", description: "Encourage businesses to adopt equality practices voluntarily.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "Some companies make pledges. Skeptics question the lack of enforcement." },
-      { id: "traditional", label: "Defend Traditional Values", description: "Maintain current social structures.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -3 }, outcomeText: "The government's stance alienates progressive voters and international observers." }
+      {
+        id: "legislate",
+        label: "Pass Equality Legislation",
+        description: "Enact comprehensive gender equality laws.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 4, stabilityImpact: "Progressive" },
+        outcomeText: "New equality laws set a precedent. Progress is slow but tangible.",
+      },
+      {
+        id: "encourage",
+        label: "Voluntary Corporate Pledges",
+        description: "Encourage businesses to adopt equality practices voluntarily.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Some companies make pledges. Skeptics question the lack of enforcement.",
+      },
+      {
+        id: "traditional",
+        label: "Defend Traditional Values",
+        description: "Maintain current social structures.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -3 },
+        outcomeText:
+          "The government's stance alienates progressive voters and international observers.",
+      },
     ]),
     tags: JSON.stringify(["gender", "equality", "social-reform"]),
   },
   {
     slug: "aging_population",
     title: "Demographic Time Bomb",
-    description: "{{countryName}}'s rapidly aging population threatens economic productivity and social services.",
+    description:
+      "{{countryName}}'s rapidly aging population threatens economic productivity and social services.",
     domain: "social",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "lifeExpectancy", op: ">", value: 78 }, { field: "actualGdpGrowth", op: "<", value: 2 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "lifeExpectancy", op: ">", value: 78 },
+        { field: "actualGdpGrowth", op: "<", value: 2 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "immigration", label: "Pro-Immigration Policy", description: "Attract young immigrants to offset the demographic shift.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }, { targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "add", value: 3 }], previewEffects: { economicImpact: "Growth boost", stabilityImpact: "Social adjustment" }, outcomeText: "Young immigrants inject vitality into the workforce." },
-      { id: "incentives", label: "Pro-Natalist Policies", description: "Offer generous parental benefits and childcare support.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 4, economicImpact: "Fiscal cost" }, outcomeText: "Birth rate nudges up slightly. It will take a generation to see full effects." },
-      { id: "automation", label: "Invest in Automation", description: "Use technology to compensate for a shrinking workforce.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 1 }], previewEffects: { economicImpact: "Efficiency gains" }, outcomeText: "Robots and AI fill some gaps but displaced workers struggle." }
+      {
+        id: "immigration",
+        label: "Pro-Immigration Policy",
+        description: "Attract young immigrants to offset the demographic shift.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { economicImpact: "Growth boost", stabilityImpact: "Social adjustment" },
+        outcomeText: "Young immigrants inject vitality into the workforce.",
+      },
+      {
+        id: "incentives",
+        label: "Pro-Natalist Policies",
+        description: "Offer generous parental benefits and childcare support.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Fiscal cost" },
+        outcomeText:
+          "Birth rate nudges up slightly. It will take a generation to see full effects.",
+      },
+      {
+        id: "automation",
+        label: "Invest in Automation",
+        description: "Use technology to compensate for a shrinking workforce.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          { targetModel: "Country", targetField: "unemploymentRate", operation: "add", value: 1 },
+        ],
+        previewEffects: { economicImpact: "Efficiency gains" },
+        outcomeText: "Robots and AI fill some gaps but displaced workers struggle.",
+      },
     ]),
     tags: JSON.stringify(["demographics", "aging", "population"]),
   },
   {
     slug: "water_crisis",
     title: "Water Shortage Emergency",
-    description: "{{countryName}}'s major cities face severe water shortages as reservoirs run dangerously low.",
+    description:
+      "{{countryName}}'s major cities face severe water shortages as reservoirs run dangerously low.",
     domain: "social",
     category: "infrastructure",
     baseSeverity: "critical",
     baseUrgency: 85,
     deadlineDaysBase: 10,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 40 }, { field: "urbanPopulationPercent", op: ">", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: "<", value: 40 },
+        { field: "urbanPopulationPercent", op: ">", value: 50 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "invest", label: "Emergency Water Infrastructure", description: "Fast-track desalination plants and pipeline repairs.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }], previewEffects: { economicImpact: "Major investment", stabilityImpact: "Positive" }, outcomeText: "Emergency infrastructure projects begin. Water security improves." },
-      { id: "ration", label: "Strict Water Rationing", description: "Implement mandatory water restrictions.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "protestFrequency", operation: "add", value: 3 }], previewEffects: { publicApproval: -5, stabilityImpact: "Unrest" }, outcomeText: "Rationing prevents the worst but daily life becomes difficult." },
-      { id: "import", label: "Emergency Water Imports", description: "Ship water from neighboring countries.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 500000000 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, economicImpact: "Expensive" }, outcomeText: "Water trucks arrive. A temporary fix at great expense.", isAutoResolveDefault: true }
+      {
+        id: "invest",
+        label: "Emergency Water Infrastructure",
+        description: "Fast-track desalination plants and pipeline repairs.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+        ],
+        previewEffects: { economicImpact: "Major investment", stabilityImpact: "Positive" },
+        outcomeText: "Emergency infrastructure projects begin. Water security improves.",
+      },
+      {
+        id: "ration",
+        label: "Strict Water Rationing",
+        description: "Implement mandatory water restrictions.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "protestFrequency",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -5, stabilityImpact: "Unrest" },
+        outcomeText: "Rationing prevents the worst but daily life becomes difficult.",
+      },
+      {
+        id: "import",
+        label: "Emergency Water Imports",
+        description: "Ship water from neighboring countries.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 500000000,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Expensive" },
+        outcomeText: "Water trucks arrive. A temporary fix at great expense.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["water", "drought", "infrastructure"]),
   },
   {
     slug: "crime_wave",
     title: "Crime Wave Sweeps {{countryName}}",
-    description: "A surge in violent crime has citizens demanding action from {{leaderName}}'s government.",
+    description:
+      "A surge in violent crime has citizens demanding action from {{leaderName}}'s government.",
     domain: "social",
     category: "security",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "crimeRate", op: ">", value: 12 }, { field: "policingEffectiveness", op: "<", value: 50 }, { random: 0.25 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "crimeRate", op: ">", value: 12 },
+        { field: "policingEffectiveness", op: "<", value: 50 },
+        { random: 0.25 },
+      ],
+    }),
     cooldownDays: 60,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "police", label: "Increase Police Presence", description: "Hire more officers and increase patrols.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "crimeRate", operation: "subtract", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "policingEffectiveness", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { stabilityImpact: "Safer streets" }, outcomeText: "More police on the streets leads to a visible drop in crime." },
-      { id: "social", label: "Address Root Causes", description: "Invest in poverty reduction, education, and rehabilitation.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "crimeRate", operation: "subtract", value: 1 }, { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, stabilityImpact: "Long-term" }, outcomeText: "Social investment begins to address the conditions that breed crime." },
-      { id: "tough", label: "Harsh Sentencing Laws", description: "Implement mandatory minimum sentences and expand prisons.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "crimeRate", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 2, economicImpact: "Prison costs" }, outcomeText: "Tougher sentencing fills prisons. Deterrence effect is debated.", isAutoResolveDefault: true }
+      {
+        id: "police",
+        label: "Increase Police Presence",
+        description: "Hire more officers and increase patrols.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "crimeRate",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "policingEffectiveness",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Safer streets" },
+        outcomeText: "More police on the streets leads to a visible drop in crime.",
+      },
+      {
+        id: "social",
+        label: "Address Root Causes",
+        description: "Invest in poverty reduction, education, and rehabilitation.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "crimeRate",
+            operation: "subtract",
+            value: 1,
+          },
+          { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Long-term" },
+        outcomeText: "Social investment begins to address the conditions that breed crime.",
+      },
+      {
+        id: "tough",
+        label: "Harsh Sentencing Laws",
+        description: "Implement mandatory minimum sentences and expand prisons.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "crimeRate",
+            operation: "subtract",
+            value: 2,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Prison costs" },
+        outcomeText: "Tougher sentencing fills prisons. Deterrence effect is debated.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["crime", "safety", "policing"]),
   },
   {
     slug: "social_media_regulation",
     title: "Social Media Regulation Debate",
-    description: "Calls grow in {{countryName}} to regulate social media platforms after misinformation crises.",
+    description:
+      "Calls grow in {{countryName}} to regulate social media platforms after misinformation crises.",
     domain: "social",
     category: "social",
     baseSeverity: "low",
     baseUrgency: 30,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "politicalPolarization", op: ">", value: 50 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "politicalPolarization", op: ">", value: 50 }, { random: 0.12 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "regulate", label: "Comprehensive Regulation", description: "Require platforms to remove harmful content and be transparent about algorithms.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "politicalPolarization", operation: "subtract", value: 3 }], previewEffects: { publicApproval: 3 }, outcomeText: "New regulations force platforms to clean up. Debate quality improves." },
-      { id: "self", label: "Industry Self-Regulation", description: "Let tech companies police themselves with government oversight.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "Tech companies make promises. Skeptics note the fox is guarding the henhouse." },
-      { id: "free", label: "Protect Free Speech", description: "Resist regulation to preserve freedom of expression.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "politicalPolarization", operation: "add", value: 2 }, { targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 1 }], previewEffects: { stabilityImpact: "More polarization" }, outcomeText: "Online discourse remains unregulated. Free speech is preserved at a cost." }
+      {
+        id: "regulate",
+        label: "Comprehensive Regulation",
+        description:
+          "Require platforms to remove harmful content and be transparent about algorithms.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "politicalPolarization",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 3 },
+        outcomeText: "New regulations force platforms to clean up. Debate quality improves.",
+      },
+      {
+        id: "self",
+        label: "Industry Self-Regulation",
+        description: "Let tech companies police themselves with government oversight.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText:
+          "Tech companies make promises. Skeptics note the fox is guarding the henhouse.",
+      },
+      {
+        id: "free",
+        label: "Protect Free Speech",
+        description: "Resist regulation to preserve freedom of expression.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "politicalPolarization",
+            operation: "add",
+            value: 2,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 1,
+          },
+        ],
+        previewEffects: { stabilityImpact: "More polarization" },
+        outcomeText: "Online discourse remains unregulated. Free speech is preserved at a cost.",
+      },
     ]),
     tags: JSON.stringify(["social-media", "regulation", "misinformation"]),
   },
   {
     slug: "child_poverty_crisis",
     title: "Child Poverty Rate Alarms Experts",
-    description: "One in {{percentageSmall}} children in {{countryName}} lives below the poverty line.",
+    description:
+      "One in {{percentageSmall}} children in {{countryName}} lives below the poverty line.",
     domain: "social",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "povertyRate", op: ">", value: 18 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "povertyRate", op: ">", value: 18 }, { random: 0.2 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "universal", label: "Universal Child Benefit", description: "Provide direct cash payments to all families with children.", consequences: [{ targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }], previewEffects: { publicApproval: 6, economicImpact: "Fiscal cost" }, outcomeText: "Direct payments lift thousands of children out of poverty." },
-      { id: "services", label: "Expand Social Services", description: "Invest in free school meals, childcare, and healthcare.", consequences: [{ targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 4 }, outcomeText: "Expanded services improve children's lives. The fiscal impact is manageable." },
-      { id: "market", label: "Economic Growth Solution", description: "Focus on economic growth as the best way to reduce poverty.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3 }, outcomeText: "Growth helps some families but the most vulnerable are left behind." }
+      {
+        id: "universal",
+        label: "Universal Child Benefit",
+        description: "Provide direct cash payments to all families with children.",
+        consequences: [
+          { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 2 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+        ],
+        previewEffects: { publicApproval: 6, economicImpact: "Fiscal cost" },
+        outcomeText: "Direct payments lift thousands of children out of poverty.",
+      },
+      {
+        id: "services",
+        label: "Expand Social Services",
+        description: "Invest in free school meals, childcare, and healthcare.",
+        consequences: [
+          { targetModel: "Country", targetField: "povertyRate", operation: "subtract", value: 1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 4 },
+        outcomeText: "Expanded services improve children's lives. The fiscal impact is manageable.",
+      },
+      {
+        id: "market",
+        label: "Economic Growth Solution",
+        description: "Focus on economic growth as the best way to reduce poverty.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3 },
+        outcomeText: "Growth helps some families but the most vulnerable are left behind.",
+      },
     ]),
     tags: JSON.stringify(["poverty", "children", "welfare"]),
   },
   {
     slug: "labor_rights_debate",
     title: "Workers' Rights Bill Debated",
-    description: "A comprehensive workers' rights bill sparks fierce debate between business and labor in {{countryName}}.",
+    description:
+      "A comprehensive workers' rights bill sparks fierce debate between business and labor in {{countryName}}.",
     domain: "social",
     category: "social",
     baseSeverity: "low",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "unemploymentRate", op: ">", value: 6 }, { field: "povertyRate", op: ">", value: 10 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "unemploymentRate", op: ">", value: 6 },
+        { field: "povertyRate", op: ">", value: 10 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "pass", label: "Pass the Full Bill", description: "Enact comprehensive labor protections.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.2 }], previewEffects: { publicApproval: 5, economicImpact: "Higher business costs" }, outcomeText: "Workers gain new protections. Businesses adjust to higher compliance costs." },
-      { id: "moderate", label: "Moderate Version", description: "Pass a watered-down version balancing both sides.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2 }, outcomeText: "A compromise bill passes. Neither side is entirely satisfied." },
-      { id: "block", label: "Prioritize Business Freedom", description: "Block the bill to maintain a competitive business environment.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }], previewEffects: { publicApproval: -4, economicImpact: "Business-friendly" }, outcomeText: "Business interests prevail. Workers' groups vow to keep fighting." }
+      {
+        id: "pass",
+        label: "Pass the Full Bill",
+        description: "Enact comprehensive labor protections.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.2,
+          },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Higher business costs" },
+        outcomeText: "Workers gain new protections. Businesses adjust to higher compliance costs.",
+      },
+      {
+        id: "moderate",
+        label: "Moderate Version",
+        description: "Pass a watered-down version balancing both sides.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "A compromise bill passes. Neither side is entirely satisfied.",
+      },
+      {
+        id: "block",
+        label: "Prioritize Business Freedom",
+        description: "Block the bill to maintain a competitive business environment.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+        ],
+        previewEffects: { publicApproval: -4, economicImpact: "Business-friendly" },
+        outcomeText: "Business interests prevail. Workers' groups vow to keep fighting.",
+      },
     ]),
     tags: JSON.stringify(["labor", "rights", "workers"]),
   },
@@ -1217,228 +4626,838 @@ const militaryTemplates: IssueTemplateSeed[] = [
   {
     slug: "border_incursion",
     title: "Border Incursion Detected",
-    description: "Unidentified armed forces have crossed into {{countryName}}'s territory near {{cityName}}.",
+    description:
+      "Unidentified armed forces have crossed into {{countryName}}'s territory near {{cityName}}.",
     domain: "military",
     category: "security",
     baseSeverity: "critical",
     baseUrgency: 95,
     deadlineDaysBase: 5,
-    triggerConditions: trigger({ and: [{ field: "stabilityScore", op: "<", value: 50 }, { field: "activeAllianceCount", op: "<", value: 2 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "stabilityScore", op: "<", value: 50 },
+        { field: "activeAllianceCount", op: "<", value: 2 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "defend", label: "Military Response", description: "Deploy forces to repel the incursion.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 8, stabilityImpact: "Decisive" }, outcomeText: "Military forces respond swiftly. The incursion is repelled and borders secured." },
-      { id: "diplomatic", label: "Diplomatic Protest", description: "File formal protests and seek international condemnation.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, diplomaticImpact: "International support" }, outcomeText: "Diplomatic channels work slowly. The incursion is condemned but not stopped immediately." },
-      { id: "escalate", label: "Counter-Attack", description: "Launch a retaliatory strike across the border.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 10 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }], previewEffects: { publicApproval: 5, stabilityImpact: "War risk" }, outcomeText: "The counter-attack succeeds but risks a wider conflict.", isAutoResolveDefault: true }
+      {
+        id: "defend",
+        label: "Military Response",
+        description: "Deploy forces to repel the incursion.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 8 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 8, stabilityImpact: "Decisive" },
+        outcomeText:
+          "Military forces respond swiftly. The incursion is repelled and borders secured.",
+      },
+      {
+        id: "diplomatic",
+        label: "Diplomatic Protest",
+        description: "File formal protests and seek international condemnation.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, diplomaticImpact: "International support" },
+        outcomeText:
+          "Diplomatic channels work slowly. The incursion is condemned but not stopped immediately.",
+      },
+      {
+        id: "escalate",
+        label: "Counter-Attack",
+        description: "Launch a retaliatory strike across the border.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 10,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "War risk" },
+        outcomeText: "The counter-attack succeeds but risks a wider conflict.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["border", "incursion", "defense"]),
   },
   {
     slug: "cyber_attack",
     title: "Major Cyber Attack on {{countryName}}",
-    description: "A sophisticated cyber attack has targeted {{countryName}}'s critical infrastructure systems.",
+    description:
+      "A sophisticated cyber attack has targeted {{countryName}}'s critical infrastructure systems.",
     domain: "military",
     category: "security",
     baseSeverity: "high",
     baseUrgency: 80,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 55 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 55 }, { random: 0.15 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "cyber_defense", label: "Strengthen Cyber Defenses", description: "Invest massively in cybersecurity infrastructure.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { stabilityImpact: "Long-term security" }, outcomeText: "Major cybersecurity investments harden {{countryName}}'s digital infrastructure." },
-      { id: "retaliate", label: "Cyber Counter-Attack", description: "Launch retaliatory cyber operations against the attacker.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, diplomaticImpact: "Escalation risk" }, outcomeText: "Counter-operations disrupt the attacker. An escalation spiral is possible." },
-      { id: "cooperate", label: "International Cooperation", description: "Work with allies to trace and respond to the attack.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Stronger alliances" }, outcomeText: "Allied intelligence identifies the attackers. A coordinated response follows." }
+      {
+        id: "cyber_defense",
+        label: "Strengthen Cyber Defenses",
+        description: "Invest massively in cybersecurity infrastructure.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 4,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { stabilityImpact: "Long-term security" },
+        outcomeText:
+          "Major cybersecurity investments harden {{countryName}}'s digital infrastructure.",
+      },
+      {
+        id: "retaliate",
+        label: "Cyber Counter-Attack",
+        description: "Launch retaliatory cyber operations against the attacker.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, diplomaticImpact: "Escalation risk" },
+        outcomeText: "Counter-operations disrupt the attacker. An escalation spiral is possible.",
+      },
+      {
+        id: "cooperate",
+        label: "International Cooperation",
+        description: "Work with allies to trace and respond to the attack.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Stronger alliances" },
+        outcomeText:
+          "Allied intelligence identifies the attackers. A coordinated response follows.",
+      },
     ]),
     tags: JSON.stringify(["cyber", "security", "infrastructure"]),
   },
   {
     slug: "military_modernization",
     title: "Military Modernization Debate",
-    description: "Generals are requesting a massive budget increase to modernize {{countryName}}'s aging military equipment.",
+    description:
+      "Generals are requesting a massive budget increase to modernize {{countryName}}'s aging military equipment.",
     domain: "military",
     category: "security",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "totalDebtGDPRatio", op: "<", value: 80 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "totalDebtGDPRatio", op: "<", value: 80 }, { random: 0.15 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "modernize", label: "Full Modernization", description: "Fund the complete military upgrade program.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 3 }], previewEffects: { publicApproval: -3, economicImpact: "Major spending" }, outcomeText: "New weapons systems and equipment arrive. The military gains a significant edge." },
-      { id: "selective", label: "Selective Upgrades", description: "Upgrade only the most critical systems.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { economicImpact: "Moderate spending" }, outcomeText: "Critical systems are upgraded. The rest will have to wait." },
-      { id: "deny", label: "Maintain Current Levels", description: "No additional military spending at this time.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2 }, outcomeText: "Military spending stays flat. Social programs benefit instead." }
+      {
+        id: "modernize",
+        label: "Full Modernization",
+        description: "Fund the complete military upgrade program.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, economicImpact: "Major spending" },
+        outcomeText:
+          "New weapons systems and equipment arrive. The military gains a significant edge.",
+      },
+      {
+        id: "selective",
+        label: "Selective Upgrades",
+        description: "Upgrade only the most critical systems.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { economicImpact: "Moderate spending" },
+        outcomeText: "Critical systems are upgraded. The rest will have to wait.",
+      },
+      {
+        id: "deny",
+        label: "Maintain Current Levels",
+        description: "No additional military spending at this time.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "Military spending stays flat. Social programs benefit instead.",
+      },
     ]),
     tags: JSON.stringify(["military", "modernization", "defense-spending"]),
   },
   {
     slug: "conscription_debate",
     title: "Conscription Proposal Divides Nation",
-    description: "Military leaders propose reinstating mandatory military service in {{countryName}}.",
+    description:
+      "Military leaders propose reinstating mandatory military service in {{countryName}}.",
     domain: "military",
     category: "security",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "stabilityScore", op: "<", value: 55 }, { field: "unemploymentRate", op: ">", value: 8 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "stabilityScore", op: "<", value: 55 },
+        { field: "unemploymentRate", op: ">", value: 8 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "mandatory", label: "Implement Conscription", description: "All citizens serve 12 months of mandatory military service.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "unemploymentRate", operation: "subtract", value: 2 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 5 }], previewEffects: { publicApproval: -8, stabilityImpact: "Cohesion boost" }, outcomeText: "Conscription begins. Young people are furious but social cohesion unexpectedly improves." },
-      { id: "service", label: "National Service Alternative", description: "Offer military or civilian national service options.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 3 }], previewEffects: { publicApproval: 2, stabilityImpact: "Positive" }, outcomeText: "National service with civilian options proves popular across party lines." },
-      { id: "reject", label: "Reject Conscription", description: "Maintain the all-volunteer military.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }], previewEffects: { publicApproval: 4 }, outcomeText: "The conscription proposal is shelved. Young people breathe a sigh of relief." }
+      {
+        id: "mandatory",
+        label: "Implement Conscription",
+        description: "All citizens serve 12 months of mandatory military service.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "unemploymentRate",
+            operation: "subtract",
+            value: 2,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -8, stabilityImpact: "Cohesion boost" },
+        outcomeText:
+          "Conscription begins. Young people are furious but social cohesion unexpectedly improves.",
+      },
+      {
+        id: "service",
+        label: "National Service Alternative",
+        description: "Offer military or civilian national service options.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "Positive" },
+        outcomeText: "National service with civilian options proves popular across party lines.",
+      },
+      {
+        id: "reject",
+        label: "Reject Conscription",
+        description: "Maintain the all-volunteer military.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+        ],
+        previewEffects: { publicApproval: 4 },
+        outcomeText: "The conscription proposal is shelved. Young people breathe a sigh of relief.",
+      },
     ]),
     tags: JSON.stringify(["conscription", "military-service", "draft"]),
   },
   {
     slug: "arms_deal_opportunity",
     title: "Major Arms Deal Proposed",
-    description: "A foreign nation offers {{countryName}} a lucrative weapons contract worth {{amountLarge}}.",
+    description:
+      "A foreign nation offers {{countryName}} a lucrative weapons contract worth {{amountLarge}}.",
     domain: "military",
     category: "security",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "accept", label: "Accept the Deal", description: "Acquire advanced weapons systems.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 3 }], previewEffects: { economicImpact: "Military spending", stabilityImpact: "Stronger defense" }, outcomeText: "New weapons arrive. {{countryName}}'s military capability increases significantly." },
-      { id: "negotiate", label: "Negotiate Better Terms", description: "Push for technology transfer and local production.", consequences: [{ targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }], previewEffects: { economicImpact: "Tech transfer" }, outcomeText: "Technology transfer agreements create domestic defense industry jobs." },
-      { id: "decline", label: "Decline the Offer", description: "Focus spending on domestic priorities instead.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3 }, outcomeText: "Military spending is redirected to social programs. Peace advocates celebrate." }
+      {
+        id: "accept",
+        label: "Accept the Deal",
+        description: "Acquire advanced weapons systems.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: {
+          economicImpact: "Military spending",
+          stabilityImpact: "Stronger defense",
+        },
+        outcomeText:
+          "New weapons arrive. {{countryName}}'s military capability increases significantly.",
+      },
+      {
+        id: "negotiate",
+        label: "Negotiate Better Terms",
+        description: "Push for technology transfer and local production.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+        ],
+        previewEffects: { economicImpact: "Tech transfer" },
+        outcomeText: "Technology transfer agreements create domestic defense industry jobs.",
+      },
+      {
+        id: "decline",
+        label: "Decline the Offer",
+        description: "Focus spending on domestic priorities instead.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3 },
+        outcomeText:
+          "Military spending is redirected to social programs. Peace advocates celebrate.",
+      },
     ]),
     tags: JSON.stringify(["arms", "weapons", "defense"]),
   },
   {
     slug: "military_coup_rumors",
     title: "Military Coup Rumors Swirl",
-    description: "Disturbing reports suggest senior military officers may be plotting against {{leaderName}}'s government.",
+    description:
+      "Disturbing reports suggest senior military officers may be plotting against {{leaderName}}'s government.",
     domain: "military",
     category: "security",
     baseSeverity: "critical",
     baseUrgency: 90,
     deadlineDaysBase: 5,
-    triggerConditions: trigger({ and: [{ field: "publicApproval", op: "<", value: 25 }, { field: "stabilityScore", op: "<", value: 35 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "publicApproval", op: "<", value: 25 },
+        { field: "stabilityScore", op: "<", value: 35 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "purge", label: "Purge Disloyal Officers", description: "Remove suspected plotters from command positions.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }, { targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "subtract", value: 3 }], previewEffects: { stabilityImpact: "Immediate stability" }, outcomeText: "Officers are dismissed. The military is loyal but weakened." },
-      { id: "reform", label: "Address Military Grievances", description: "Meet with military leadership and address their concerns.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 8 }], previewEffects: { publicApproval: 3, stabilityImpact: "De-escalation" }, outcomeText: "Dialogue defuses the situation. Military reforms are promised." },
-      { id: "ignore", label: "Dismiss as Rumors", description: "Publicly dismiss the reports as unfounded.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 10 }, { targetModel: "InternalStabilityMetrics", targetField: "riotRisk", operation: "add", value: 10 }], previewEffects: { stabilityImpact: "Extremely dangerous" }, outcomeText: "Ignoring the threat proves catastrophic. Military tensions escalate.", isAutoResolveDefault: true }
+      {
+        id: "purge",
+        label: "Purge Disloyal Officers",
+        description: "Remove suspected plotters from command positions.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Immediate stability" },
+        outcomeText: "Officers are dismissed. The military is loyal but weakened.",
+      },
+      {
+        id: "reform",
+        label: "Address Military Grievances",
+        description: "Meet with military leadership and address their concerns.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 8,
+          },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "De-escalation" },
+        outcomeText: "Dialogue defuses the situation. Military reforms are promised.",
+      },
+      {
+        id: "ignore",
+        label: "Dismiss as Rumors",
+        description: "Publicly dismiss the reports as unfounded.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 10,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "riotRisk",
+            operation: "add",
+            value: 10,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Extremely dangerous" },
+        outcomeText: "Ignoring the threat proves catastrophic. Military tensions escalate.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["coup", "military", "instability"]),
   },
   {
     slug: "peacekeeping_request",
     title: "Peacekeeping Mission Request",
-    description: "International organizations request {{countryName}} contribute troops to a peacekeeping mission abroad.",
+    description:
+      "International organizations request {{countryName}} contribute troops to a peacekeeping mission abroad.",
     domain: "military",
     category: "diplomatic",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeAllianceCount", op: ">", value: 1 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeAllianceCount", op: ">", value: 1 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "deploy", label: "Deploy Peacekeepers", description: "Send troops to support the international mission.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { publicApproval: 3, diplomaticImpact: "International prestige" }, outcomeText: "{{countryName}}'s peacekeepers earn respect on the world stage." },
-      { id: "limited", label: "Limited Support", description: "Provide logistics and training but not combat troops.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "Non-combat support is provided. A cautious but helpful contribution." },
-      { id: "decline", label: "Decline the Request", description: "Focus military resources on domestic security.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2, diplomaticImpact: "Strained relations" }, outcomeText: "The refusal disappoints allies. {{countryName}}'s international standing dips." }
+      {
+        id: "deploy",
+        label: "Deploy Peacekeepers",
+        description: "Send troops to support the international mission.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: 3, diplomaticImpact: "International prestige" },
+        outcomeText: "{{countryName}}'s peacekeepers earn respect on the world stage.",
+      },
+      {
+        id: "limited",
+        label: "Limited Support",
+        description: "Provide logistics and training but not combat troops.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Non-combat support is provided. A cautious but helpful contribution.",
+      },
+      {
+        id: "decline",
+        label: "Decline the Request",
+        description: "Focus military resources on domestic security.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2, diplomaticImpact: "Strained relations" },
+        outcomeText:
+          "The refusal disappoints allies. {{countryName}}'s international standing dips.",
+      },
     ]),
     tags: JSON.stringify(["peacekeeping", "international", "deployment"]),
   },
   {
     slug: "weapons_proliferation",
     title: "Weapons Proliferation Concern",
-    description: "Intelligence reports suggest {{countryName}}'s weapons technology may be leaking to hostile actors.",
+    description:
+      "Intelligence reports suggest {{countryName}}'s weapons technology may be leaking to hostile actors.",
     domain: "military",
     category: "security",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "corruptionIndex", op: ">", value: 45 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "corruptionIndex", op: ">", value: 45 }, { random: 0.12 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "lockdown", label: "Security Overhaul", description: "Complete review and tightening of weapons technology access.", consequences: [{ targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, stabilityImpact: "Secure" }, outcomeText: "New security protocols close the leaks. International partners are reassured." },
-      { id: "investigate", label: "Internal Investigation", description: "Quietly investigate and plug the leaks.", consequences: [{ targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 1 }], previewEffects: { stabilityImpact: "Moderate" }, outcomeText: "The investigation identifies several compromised officials." },
-      { id: "deny", label: "Deny the Reports", description: "Publicly reject the intelligence reports as inaccurate.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, diplomaticImpact: "Trust eroded" }, outcomeText: "Denials don't hold up. International confidence in {{countryName}}'s security drops.", isAutoResolveDefault: true }
+      {
+        id: "lockdown",
+        label: "Security Overhaul",
+        description: "Complete review and tightening of weapons technology access.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "Secure" },
+        outcomeText:
+          "New security protocols close the leaks. International partners are reassured.",
+      },
+      {
+        id: "investigate",
+        label: "Internal Investigation",
+        description: "Quietly investigate and plug the leaks.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 1,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Moderate" },
+        outcomeText: "The investigation identifies several compromised officials.",
+      },
+      {
+        id: "deny",
+        label: "Deny the Reports",
+        description: "Publicly reject the intelligence reports as inaccurate.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, diplomaticImpact: "Trust eroded" },
+        outcomeText:
+          "Denials don't hold up. International confidence in {{countryName}}'s security drops.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["proliferation", "weapons", "security"]),
   },
   {
     slug: "veteran_welfare",
     title: "Veterans Demand Better Care",
-    description: "Military veterans in {{countryName}} protest inadequate healthcare and support services.",
+    description:
+      "Military veterans in {{countryName}} protest inadequate healthcare and support services.",
     domain: "military",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "publicApproval", op: "<", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "publicApproval", op: "<", value: 50 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "invest", label: "Veteran Support Package", description: "Significantly increase veteran healthcare and benefits.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { publicApproval: 6, economicImpact: "Modest cost" }, outcomeText: "Veterans receive the care they deserve. Public support soars." },
-      { id: "reform", label: "VA System Overhaul", description: "Reform the veterans' affairs system for efficiency.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 1 }], previewEffects: { publicApproval: 3 }, outcomeText: "System reforms improve service delivery without major new spending." },
-      { id: "ignore", label: "Maintain Current Levels", description: "Current support is adequate given budget constraints.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -5 }, outcomeText: "Veterans feel abandoned. The optics are terrible for the government." }
+      {
+        id: "invest",
+        label: "Veteran Support Package",
+        description: "Significantly increase veteran healthcare and benefits.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: 6, economicImpact: "Modest cost" },
+        outcomeText: "Veterans receive the care they deserve. Public support soars.",
+      },
+      {
+        id: "reform",
+        label: "VA System Overhaul",
+        description: "Reform the veterans' affairs system for efficiency.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 1,
+          },
+        ],
+        previewEffects: { publicApproval: 3 },
+        outcomeText: "System reforms improve service delivery without major new spending.",
+      },
+      {
+        id: "ignore",
+        label: "Maintain Current Levels",
+        description: "Current support is adequate given budget constraints.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -5 },
+        outcomeText: "Veterans feel abandoned. The optics are terrible for the government.",
+      },
     ]),
     tags: JSON.stringify(["veterans", "healthcare", "military"]),
   },
   {
     slug: "territorial_dispute",
     title: "Territorial Dispute Escalates",
-    description: "A long-simmering territorial dispute involving {{countryName}} has escalated with both sides mobilizing forces.",
+    description:
+      "A long-simmering territorial dispute involving {{countryName}} has escalated with both sides mobilizing forces.",
     domain: "military",
     category: "diplomatic",
     baseSeverity: "critical",
     baseUrgency: 85,
     deadlineDaysBase: 10,
-    triggerConditions: trigger({ and: [{ field: "stabilityScore", op: "<", value: 45 }, { field: "activeAllianceCount", op: "<", value: 3 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "stabilityScore", op: "<", value: 45 },
+        { field: "activeAllianceCount", op: "<", value: 3 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "negotiate", label: "Negotiate Settlement", description: "Pursue diplomatic resolution through bilateral talks.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }], previewEffects: { publicApproval: 2, diplomaticImpact: "De-escalation" }, outcomeText: "Negotiations begin. Tensions ease as both sides show willingness to talk." },
-      { id: "tribunal", label: "International Tribunal", description: "Submit the dispute to international arbitration.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2, diplomaticImpact: "Peaceful resolution" }, outcomeText: "The case is submitted to international courts. A slow but legitimate process." },
-      { id: "force", label: "Show of Force", description: "Deploy military forces to assert territorial claims.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }], previewEffects: { publicApproval: 5, stabilityImpact: "Escalation" }, outcomeText: "Military deployments project strength but risk a shooting war.", isAutoResolveDefault: true }
+      {
+        id: "negotiate",
+        label: "Negotiate Settlement",
+        description: "Pursue diplomatic resolution through bilateral talks.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "De-escalation" },
+        outcomeText: "Negotiations begin. Tensions ease as both sides show willingness to talk.",
+      },
+      {
+        id: "tribunal",
+        label: "International Tribunal",
+        description: "Submit the dispute to international arbitration.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2, diplomaticImpact: "Peaceful resolution" },
+        outcomeText:
+          "The case is submitted to international courts. A slow but legitimate process.",
+      },
+      {
+        id: "force",
+        label: "Show of Force",
+        description: "Deploy military forces to assert territorial claims.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Escalation" },
+        outcomeText: "Military deployments project strength but risk a shooting war.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["territory", "dispute", "military"]),
   },
   {
     slug: "defense_industry_scandal",
     title: "Defense Procurement Scandal",
-    description: "Investigators uncover massive cost overruns and fraud in {{countryName}}'s defense procurement.",
+    description:
+      "Investigators uncover massive cost overruns and fraud in {{countryName}}'s defense procurement.",
     domain: "military",
     category: "governance",
     baseSeverity: "medium",
     baseUrgency: 55,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "corruptionIndex", op: ">", value: 45 }, { field: "totalDebtGDPRatio", op: ">", value: 60 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "corruptionIndex", op: ">", value: 45 },
+        { field: "totalDebtGDPRatio", op: ">", value: 60 },
+        { random: 0.12 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "prosecute", label: "Criminal Prosecution", description: "Prosecute everyone involved and overhaul procurement.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "subtract", value: 4 }], previewEffects: { publicApproval: 5, stabilityImpact: "Accountability" }, outcomeText: "Heads roll in the defense establishment. Procurement reform follows." },
-      { id: "reform", label: "Procurement Reform", description: "Overhaul the system without criminal proceedings.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 }], previewEffects: { stabilityImpact: "Moderate" }, outcomeText: "New procurement rules are implemented. Accountability remains a question." },
-      { id: "minimize", label: "Minimize and Move On", description: "Treat it as a routine audit finding.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "add", value: 2 }], previewEffects: { publicApproval: -5 }, outcomeText: "The scandal is buried. Public cynicism about government waste deepens." }
+      {
+        id: "prosecute",
+        label: "Criminal Prosecution",
+        description: "Prosecute everyone involved and overhaul procurement.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "subtract",
+            value: 4,
+          },
+        ],
+        previewEffects: { publicApproval: 5, stabilityImpact: "Accountability" },
+        outcomeText: "Heads roll in the defense establishment. Procurement reform follows.",
+      },
+      {
+        id: "reform",
+        label: "Procurement Reform",
+        description: "Overhaul the system without criminal proceedings.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Moderate" },
+        outcomeText: "New procurement rules are implemented. Accountability remains a question.",
+      },
+      {
+        id: "minimize",
+        label: "Minimize and Move On",
+        description: "Treat it as a routine audit finding.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "corruptionIndex",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -5 },
+        outcomeText: "The scandal is buried. Public cynicism about government waste deepens.",
+      },
     ]),
     tags: JSON.stringify(["procurement", "scandal", "defense"]),
   },
   {
     slug: "military_base_controversy",
     title: "Foreign Military Base Proposal",
-    description: "A foreign power requests permission to establish a military base in {{countryName}}.",
+    description:
+      "A foreign power requests permission to establish a military base in {{countryName}}.",
     domain: "military",
     category: "diplomatic",
     baseSeverity: "high",
     baseUrgency: 60,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.1 }],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "allow", label: "Allow the Base", description: "Permit the base in exchange for security guarantees and economic benefits.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -5, stabilityImpact: "Security boost", economicImpact: "Local growth" }, outcomeText: "The base is established. Security improves but sovereignty concerns linger." },
-      { id: "limited", label: "Limited Access Agreement", description: "Allow temporary rotational forces but no permanent base.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 2 }], previewEffects: { stabilityImpact: "Moderate" }, outcomeText: "A compromise allows military cooperation without a permanent presence." },
-      { id: "refuse", label: "Refuse the Request", description: "Maintain full territorial sovereignty.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }], previewEffects: { publicApproval: 5, diplomaticImpact: "Strained alliance" }, outcomeText: "Sovereignty is preserved. The requesting nation is disappointed." }
+      {
+        id: "allow",
+        label: "Allow the Base",
+        description: "Permit the base in exchange for security guarantees and economic benefits.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: {
+          publicApproval: -5,
+          stabilityImpact: "Security boost",
+          economicImpact: "Local growth",
+        },
+        outcomeText: "The base is established. Security improves but sovereignty concerns linger.",
+      },
+      {
+        id: "limited",
+        label: "Limited Access Agreement",
+        description: "Allow temporary rotational forces but no permanent base.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Moderate" },
+        outcomeText: "A compromise allows military cooperation without a permanent presence.",
+      },
+      {
+        id: "refuse",
+        label: "Refuse the Request",
+        description: "Maintain full territorial sovereignty.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+        ],
+        previewEffects: { publicApproval: 5, diplomaticImpact: "Strained alliance" },
+        outcomeText: "Sovereignty is preserved. The requesting nation is disappointed.",
+      },
     ]),
     tags: JSON.stringify(["base", "sovereignty", "alliance"]),
   },
@@ -1451,32 +5470,139 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseSeverity: "critical",
     baseUrgency: 90,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "stabilityScore", op: "<", value: 40 }, { field: "crimeRate", op: ">", value: 10 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "stabilityScore", op: "<", value: 40 },
+        { field: "crimeRate", op: ">", value: 10 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "security", label: "Heightened Security", description: "Raise threat level and deploy security forces to protect targets.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "subtract", value: 2 }], previewEffects: { publicApproval: 3, stabilityImpact: "Safer" }, outcomeText: "Enhanced security deters the threat. Citizens accept temporary restrictions." },
-      { id: "intelligence", label: "Intelligence-Led Response", description: "Focus on intelligence gathering and targeted operations.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 3 }], previewEffects: { stabilityImpact: "Surgical" }, outcomeText: "Intelligence operations quietly neutralize the threat network." },
-      { id: "ignore", label: "Assess Threat as Low", description: "Downgrade the threat assessment to avoid panic.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 10 }], previewEffects: { publicApproval: -10, stabilityImpact: "Catastrophic risk" }, outcomeText: "A devastating attack occurs. The government is blamed for ignoring warnings.", isAutoResolveDefault: true }
+      {
+        id: "security",
+        label: "Heightened Security",
+        description: "Raise threat level and deploy security forces to protect targets.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Safer" },
+        outcomeText: "Enhanced security deters the threat. Citizens accept temporary restrictions.",
+      },
+      {
+        id: "intelligence",
+        label: "Intelligence-Led Response",
+        description: "Focus on intelligence gathering and targeted operations.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Surgical" },
+        outcomeText: "Intelligence operations quietly neutralize the threat network.",
+      },
+      {
+        id: "ignore",
+        label: "Assess Threat as Low",
+        description: "Downgrade the threat assessment to avoid panic.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 10,
+          },
+        ],
+        previewEffects: { publicApproval: -10, stabilityImpact: "Catastrophic risk" },
+        outcomeText: "A devastating attack occurs. The government is blamed for ignoring warnings.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["terrorism", "security", "threat"]),
   },
   {
     slug: "nuclear_program_debate",
     title: "Nuclear Program Debate",
-    description: "Scientists propose {{countryName}} develop a nuclear energy program, raising proliferation concerns.",
+    description:
+      "Scientists propose {{countryName}} develop a nuclear energy program, raising proliferation concerns.",
     domain: "military",
     category: "infrastructure",
     baseSeverity: "medium",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "currentTotalGdp", op: ">", value: 500000000000 }, { random: 0.08 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "currentTotalGdp", op: ">", value: 500000000000 }, { random: 0.08 }],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "civilian", label: "Civilian Nuclear Program", description: "Develop nuclear energy under strict international oversight.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }], previewEffects: { economicImpact: "Energy independence", diplomaticImpact: "Requires transparency" }, outcomeText: "Nuclear plants begin construction. Energy security improves dramatically." },
-      { id: "research", label: "Research Only", description: "Fund nuclear research without building reactors.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }], previewEffects: { economicImpact: "Knowledge gains" }, outcomeText: "Nuclear research advances. Potential applications remain theoretical." },
-      { id: "abandon", label: "Abandon Nuclear Plans", description: "Focus on renewable energy instead.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }], previewEffects: { publicApproval: 3, diplomaticImpact: "International approval" }, outcomeText: "Renewable energy investments replace nuclear ambitions. The world approves." }
+      {
+        id: "civilian",
+        label: "Civilian Nuclear Program",
+        description: "Develop nuclear energy under strict international oversight.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+        ],
+        previewEffects: {
+          economicImpact: "Energy independence",
+          diplomaticImpact: "Requires transparency",
+        },
+        outcomeText: "Nuclear plants begin construction. Energy security improves dramatically.",
+      },
+      {
+        id: "research",
+        label: "Research Only",
+        description: "Fund nuclear research without building reactors.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+        ],
+        previewEffects: { economicImpact: "Knowledge gains" },
+        outcomeText: "Nuclear research advances. Potential applications remain theoretical.",
+      },
+      {
+        id: "abandon",
+        label: "Abandon Nuclear Plans",
+        description: "Focus on renewable energy instead.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: 3, diplomaticImpact: "International approval" },
+        outcomeText: "Renewable energy investments replace nuclear ambitions. The world approves.",
+      },
     ]),
     tags: JSON.stringify(["nuclear", "energy", "proliferation"]),
   },
@@ -1489,19 +5615,77 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
   {
     slug: "trade_dispute_diplomatic",
     title: "Trade Dispute with {{neighborName}}",
-    description: "{{neighborName}} accuses {{countryName}} of unfair trade practices and threatens retaliatory tariffs.",
+    description:
+      "{{neighborName}} accuses {{countryName}} of unfair trade practices and threatens retaliatory tariffs.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "tradeBalance", op: ">", value: 2000000000 }, { field: "activeEmbassyCount", op: ">", value: 0 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "tradeBalance", op: ">", value: 2000000000 },
+        { field: "activeEmbassyCount", op: ">", value: 0 },
+        { random: 0.2 },
+      ],
+    }),
     cooldownDays: 60,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "negotiate", label: "Open Negotiations", description: "Address concerns through bilateral trade talks.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 500000000 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Improved relations" }, outcomeText: "Trade negotiations yield compromises. Both sides claim victory." },
-      { id: "counter", label: "Impose Counter-Tariffs", description: "Retaliate with matching tariffs on their exports.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 1500000000 }, { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 0.5 }], previewEffects: { economicImpact: "Trade war risk", diplomaticImpact: "Escalation" }, outcomeText: "Tit-for-tat tariffs escalate. Both economies suffer." },
-      { id: "concede", label: "Make Trade Concessions", description: "Offer favorable terms to preserve the relationship.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 1000000000 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, diplomaticImpact: "Preserved relationship" }, outcomeText: "Concessions ease tensions. Domestic critics call it capitulation.", isAutoResolveDefault: true }
+      {
+        id: "negotiate",
+        label: "Open Negotiations",
+        description: "Address concerns through bilateral trade talks.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 500000000,
+          },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Improved relations" },
+        outcomeText: "Trade negotiations yield compromises. Both sides claim victory.",
+      },
+      {
+        id: "counter",
+        label: "Impose Counter-Tariffs",
+        description: "Retaliate with matching tariffs on their exports.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 1500000000,
+          },
+          { targetModel: "Country", targetField: "inflationRate", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { economicImpact: "Trade war risk", diplomaticImpact: "Escalation" },
+        outcomeText: "Tit-for-tat tariffs escalate. Both economies suffer.",
+      },
+      {
+        id: "concede",
+        label: "Make Trade Concessions",
+        description: "Offer favorable terms to preserve the relationship.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 1000000000,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, diplomaticImpact: "Preserved relationship" },
+        outcomeText: "Concessions ease tensions. Domestic critics call it capitulation.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["trade", "dispute", "tariffs"]),
     personalityModifiers: JSON.stringify({ mercantile: 1.4, aggressive: 0.7 }),
@@ -1509,19 +5693,59 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
   {
     slug: "alliance_offer",
     title: "Alliance Proposal from {{neighborName}}",
-    description: "{{neighborName}} proposes a strategic alliance with {{countryName}} citing shared security interests.",
+    description:
+      "{{neighborName}} proposes a strategic alliance with {{countryName}} citing shared security interests.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeAllianceCount", op: "<", value: 5 }, { field: "activeEmbassyCount", op: ">", value: 1 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "activeAllianceCount", op: "<", value: 5 },
+        { field: "activeEmbassyCount", op: ">", value: 1 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "accept", label: "Accept Alliance", description: "Formalize the alliance with mutual defense commitments.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, diplomaticImpact: "Strong partnership" }, outcomeText: "The alliance is signed. Both nations gain security and diplomatic weight." },
-      { id: "limited", label: "Limited Partnership", description: "Agree to cooperation but not mutual defense.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1, diplomaticImpact: "Flexible arrangement" }, outcomeText: "A limited partnership provides benefits without full commitment." },
-      { id: "decline", label: "Politely Decline", description: "Maintain independence from military alliances.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1, diplomaticImpact: "Disappointment" }, outcomeText: "The offer is declined gracefully. Relations remain cordial." }
+      {
+        id: "accept",
+        label: "Accept Alliance",
+        description: "Formalize the alliance with mutual defense commitments.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, diplomaticImpact: "Strong partnership" },
+        outcomeText: "The alliance is signed. Both nations gain security and diplomatic weight.",
+      },
+      {
+        id: "limited",
+        label: "Limited Partnership",
+        description: "Agree to cooperation but not mutual defense.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1, diplomaticImpact: "Flexible arrangement" },
+        outcomeText: "A limited partnership provides benefits without full commitment.",
+      },
+      {
+        id: "decline",
+        label: "Politely Decline",
+        description: "Maintain independence from military alliances.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1, diplomaticImpact: "Disappointment" },
+        outcomeText: "The offer is declined gracefully. Relations remain cordial.",
+      },
     ]),
     tags: JSON.stringify(["alliance", "security", "cooperation"]),
     personalityModifiers: JSON.stringify({ diplomatic: 1.3, isolationist: 0.5 }),
@@ -1529,38 +5753,136 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
   {
     slug: "cultural_exchange_offer",
     title: "Cultural Exchange Program Proposed",
-    description: "{{neighborName}} proposes a cultural exchange program to strengthen people-to-people ties with {{countryName}}.",
+    description:
+      "{{neighborName}} proposes a cultural exchange program to strengthen people-to-people ties with {{countryName}}.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "low",
     baseUrgency: 25,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeEmbassyCount", op: ">", value: 0 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeEmbassyCount", op: ">", value: 0 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "accept", label: "Enthusiastic Participation", description: "Commit significant resources to cultural exchange.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 2 }], previewEffects: { publicApproval: 3, diplomaticImpact: "Soft power boost" }, outcomeText: "Cultural exchanges enrich both societies. Mutual understanding grows." },
-      { id: "modest", label: "Modest Program", description: "Participate on a smaller scale.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "A modest exchange program produces some goodwill." },
-      { id: "decline", label: "Decline the Offer", description: "Focus resources elsewhere.", consequences: [], previewEffects: { diplomaticImpact: "Missed opportunity" }, outcomeText: "The opportunity passes. No harm done but no benefit gained either." }
+      {
+        id: "accept",
+        label: "Enthusiastic Participation",
+        description: "Commit significant resources to cultural exchange.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "socialCohesion",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: 3, diplomaticImpact: "Soft power boost" },
+        outcomeText: "Cultural exchanges enrich both societies. Mutual understanding grows.",
+      },
+      {
+        id: "modest",
+        label: "Modest Program",
+        description: "Participate on a smaller scale.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "A modest exchange program produces some goodwill.",
+      },
+      {
+        id: "decline",
+        label: "Decline the Offer",
+        description: "Focus resources elsewhere.",
+        consequences: [],
+        previewEffects: { diplomaticImpact: "Missed opportunity" },
+        outcomeText: "The opportunity passes. No harm done but no benefit gained either.",
+      },
     ]),
     tags: JSON.stringify(["culture", "exchange", "soft-power"]),
   },
   {
     slug: "sanction_threat",
     title: "Sanctions Threatened Against {{countryName}}",
-    description: "A coalition of nations threatens economic sanctions over {{countryName}}'s recent policies.",
+    description:
+      "A coalition of nations threatens economic sanctions over {{countryName}}'s recent policies.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "critical",
     baseUrgency: 85,
     deadlineDaysBase: 10,
-    triggerConditions: trigger({ and: [{ field: "democracyIndex", op: "<", value: 40 }, { field: "corruptionIndex", op: ">", value: 55 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "democracyIndex", op: "<", value: 40 },
+        { field: "corruptionIndex", op: ">", value: 55 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "comply", label: "Address Concerns", description: "Make policy changes to avoid sanctions.", consequences: [{ targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 5 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, diplomaticImpact: "Sanctions avoided" }, outcomeText: "Policy reforms satisfy international demands. Sovereignty purists are unhappy." },
-      { id: "defy", label: "Defy the Threat", description: "Refuse to bow to foreign pressure.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 3000000000 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 1 }], previewEffects: { publicApproval: 5, economicImpact: "Severe" }, outcomeText: "Sanctions hit hard but national pride surges. The economy suffers." },
-      { id: "negotiate", label: "Back-Channel Negotiations", description: "Quietly work to find a compromise.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 500000000 }], previewEffects: { economicImpact: "Minor concessions", diplomaticImpact: "Face saved" }, outcomeText: "Secret negotiations produce a face-saving deal for both sides.", isAutoResolveDefault: true }
+      {
+        id: "comply",
+        label: "Address Concerns",
+        description: "Make policy changes to avoid sanctions.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, diplomaticImpact: "Sanctions avoided" },
+        outcomeText:
+          "Policy reforms satisfy international demands. Sovereignty purists are unhappy.",
+      },
+      {
+        id: "defy",
+        label: "Defy the Threat",
+        description: "Refuse to bow to foreign pressure.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 3000000000,
+          },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 1,
+          },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Severe" },
+        outcomeText: "Sanctions hit hard but national pride surges. The economy suffers.",
+      },
+      {
+        id: "negotiate",
+        label: "Back-Channel Negotiations",
+        description: "Quietly work to find a compromise.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 500000000,
+          },
+        ],
+        previewEffects: { economicImpact: "Minor concessions", diplomaticImpact: "Face saved" },
+        outcomeText: "Secret negotiations produce a face-saving deal for both sides.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["sanctions", "diplomacy", "pressure"]),
   },
@@ -1573,279 +5895,912 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseSeverity: "medium",
     baseUrgency: 55,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeEmbassyCount", op: ">", value: 3 }, { field: "politicalStability", op: ">", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "activeEmbassyCount", op: ">", value: 3 },
+        { field: "politicalStability", op: ">", value: 50 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "mediate", label: "Accept Mediation Role", description: "Lead peace negotiations between the parties.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }], previewEffects: { publicApproval: 5, diplomaticImpact: "International prestige" }, outcomeText: "{{countryName}} earns respect as a peacemaker. International standing rises." },
-      { id: "limited", label: "Observer Status Only", description: "Participate as an observer without taking sides.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "Observer status allows involvement without risk." },
-      { id: "decline", label: "Stay Uninvolved", description: "Decline to get involved in other nations' conflicts.", consequences: [], previewEffects: { diplomaticImpact: "Neutral stance" }, outcomeText: "{{countryName}} stays out of it. No reputational gain or loss." }
+      {
+        id: "mediate",
+        label: "Accept Mediation Role",
+        description: "Lead peace negotiations between the parties.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+        ],
+        previewEffects: { publicApproval: 5, diplomaticImpact: "International prestige" },
+        outcomeText: "{{countryName}} earns respect as a peacemaker. International standing rises.",
+      },
+      {
+        id: "limited",
+        label: "Observer Status Only",
+        description: "Participate as an observer without taking sides.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Observer status allows involvement without risk.",
+      },
+      {
+        id: "decline",
+        label: "Stay Uninvolved",
+        description: "Decline to get involved in other nations' conflicts.",
+        consequences: [],
+        previewEffects: { diplomaticImpact: "Neutral stance" },
+        outcomeText: "{{countryName}} stays out of it. No reputational gain or loss.",
+      },
     ]),
     tags: JSON.stringify(["mediation", "peace", "regional"]),
   },
   {
     slug: "treaty_proposal",
     title: "Treaty Proposal Received",
-    description: "{{neighborName}} proposes a comprehensive treaty covering trade, security, and cultural cooperation with {{countryName}}.",
+    description:
+      "{{neighborName}} proposes a comprehensive treaty covering trade, security, and cultural cooperation with {{countryName}}.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeTreatyCount", op: "<", value: 5 }, { field: "activeEmbassyCount", op: ">", value: 1 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "activeTreatyCount", op: "<", value: 5 },
+        { field: "activeEmbassyCount", op: ">", value: 1 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "sign", label: "Sign the Treaty", description: "Accept the comprehensive treaty as proposed.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 800000000 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Strong ties" }, outcomeText: "The treaty strengthens bilateral relations and opens new opportunities." },
-      { id: "amend", label: "Propose Amendments", description: "Negotiate changes to better serve {{countryName}}'s interests.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 400000000 }], previewEffects: { diplomaticImpact: "Better terms" }, outcomeText: "Amendments improve the deal for {{countryName}}. Negotiations take longer." },
-      { id: "reject", label: "Reject the Treaty", description: "The terms are not in {{countryName}}'s interest.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 1 }], previewEffects: { diplomaticImpact: "Missed opportunity" }, outcomeText: "The treaty is rejected. {{neighborName}} is disappointed but accepts the decision." }
+      {
+        id: "sign",
+        label: "Sign the Treaty",
+        description: "Accept the comprehensive treaty as proposed.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 800000000,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Strong ties" },
+        outcomeText: "The treaty strengthens bilateral relations and opens new opportunities.",
+      },
+      {
+        id: "amend",
+        label: "Propose Amendments",
+        description: "Negotiate changes to better serve {{countryName}}'s interests.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 400000000,
+          },
+        ],
+        previewEffects: { diplomaticImpact: "Better terms" },
+        outcomeText: "Amendments improve the deal for {{countryName}}. Negotiations take longer.",
+      },
+      {
+        id: "reject",
+        label: "Reject the Treaty",
+        description: "The terms are not in {{countryName}}'s interest.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 1,
+          },
+        ],
+        previewEffects: { diplomaticImpact: "Missed opportunity" },
+        outcomeText:
+          "The treaty is rejected. {{neighborName}} is disappointed but accepts the decision.",
+      },
     ]),
     tags: JSON.stringify(["treaty", "bilateral", "cooperation"]),
   },
   {
     slug: "economic_cooperation_request",
     title: "Economic Cooperation Initiative",
-    description: "Regional nations propose a joint economic development initiative with {{countryName}}.",
+    description:
+      "Regional nations propose a joint economic development initiative with {{countryName}}.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "actualGdpGrowth", op: ">", value: 1 }, { field: "activeEmbassyCount", op: ">", value: 2 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "actualGdpGrowth", op: ">", value: 1 },
+        { field: "activeEmbassyCount", op: ">", value: 2 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "lead", label: "Lead the Initiative", description: "Take a leadership role and invest significantly.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { economicImpact: "Growth", diplomaticImpact: "Regional leadership" }, outcomeText: "{{countryName}} leads regional economic integration. Trade flourishes." },
-      { id: "join", label: "Join as Equal Partner", description: "Participate without taking the lead.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.15 }], previewEffects: { economicImpact: "Modest boost" }, outcomeText: "Equal participation yields steady economic benefits." },
-      { id: "observe", label: "Observer Status", description: "Monitor the initiative before committing.", consequences: [], previewEffects: { diplomaticImpact: "Cautious" }, outcomeText: "{{countryName}} watches from the sidelines. Opportunities may pass." }
+      {
+        id: "lead",
+        label: "Lead the Initiative",
+        description: "Take a leadership role and invest significantly.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { economicImpact: "Growth", diplomaticImpact: "Regional leadership" },
+        outcomeText: "{{countryName}} leads regional economic integration. Trade flourishes.",
+      },
+      {
+        id: "join",
+        label: "Join as Equal Partner",
+        description: "Participate without taking the lead.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.15 },
+        ],
+        previewEffects: { economicImpact: "Modest boost" },
+        outcomeText: "Equal participation yields steady economic benefits.",
+      },
+      {
+        id: "observe",
+        label: "Observer Status",
+        description: "Monitor the initiative before committing.",
+        consequences: [],
+        previewEffects: { diplomaticImpact: "Cautious" },
+        outcomeText: "{{countryName}} watches from the sidelines. Opportunities may pass.",
+      },
     ]),
     tags: JSON.stringify(["economic", "cooperation", "regional"]),
   },
   {
     slug: "security_pact_offer",
     title: "Security Pact Proposal",
-    description: "Neighboring nations propose a mutual security agreement with {{countryName}} against common threats.",
+    description:
+      "Neighboring nations propose a mutual security agreement with {{countryName}} against common threats.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "stabilityScore", op: "<", value: 60 }, { field: "activeAllianceCount", op: "<", value: 3 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "stabilityScore", op: "<", value: 60 },
+        { field: "activeAllianceCount", op: "<", value: 3 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "join", label: "Join the Pact", description: "Sign the mutual defense agreement.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { stabilityImpact: "Collective security", economicImpact: "Defense costs shared" }, outcomeText: "The security pact strengthens all members. Deterrence improves significantly." },
-      { id: "limited", label: "Limited Security Cooperation", description: "Agree to intelligence sharing and joint exercises only.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 2 }], previewEffects: { stabilityImpact: "Moderate" }, outcomeText: "Limited cooperation improves security without full commitment." },
-      { id: "neutral", label: "Maintain Neutrality", description: "Stay neutral and avoid entangling alliances.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Independent" }, outcomeText: "Neutrality is preserved. Some allies are disappointed." }
+      {
+        id: "join",
+        label: "Join the Pact",
+        description: "Sign the mutual defense agreement.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: {
+          stabilityImpact: "Collective security",
+          economicImpact: "Defense costs shared",
+        },
+        outcomeText:
+          "The security pact strengthens all members. Deterrence improves significantly.",
+      },
+      {
+        id: "limited",
+        label: "Limited Security Cooperation",
+        description: "Agree to intelligence sharing and joint exercises only.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Moderate" },
+        outcomeText: "Limited cooperation improves security without full commitment.",
+      },
+      {
+        id: "neutral",
+        label: "Maintain Neutrality",
+        description: "Stay neutral and avoid entangling alliances.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Independent" },
+        outcomeText: "Neutrality is preserved. Some allies are disappointed.",
+      },
     ]),
     tags: JSON.stringify(["security", "pact", "defense"]),
   },
   {
     slug: "border_tension_diplomatic",
     title: "Border Tensions with {{neighborName}}",
-    description: "Incidents along the border between {{countryName}} and {{neighborName}} are increasing in frequency.",
+    description:
+      "Incidents along the border between {{countryName}} and {{neighborName}} are increasing in frequency.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "stabilityScore", op: "<", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "stabilityScore", op: "<", value: 50 }, { random: 0.15 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "hotline", label: "Establish Crisis Hotline", description: "Create direct communication channels to prevent escalation.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, stabilityImpact: "De-escalation" }, outcomeText: "A crisis hotline prevents misunderstandings. Border tensions ease." },
-      { id: "patrol", label: "Increase Border Patrols", description: "Show strength along the border.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 }], previewEffects: { publicApproval: 3, stabilityImpact: "Mixed" }, outcomeText: "More patrols deter incidents but raise tensions with {{neighborName}}." },
-      { id: "ignore", label: "Downplay the Incidents", description: "Treat border incidents as routine.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "subtract", value: 3 }], previewEffects: { stabilityImpact: "Worsening" }, outcomeText: "Ignoring the problem allows it to fester. A serious incident eventually occurs.", isAutoResolveDefault: true }
+      {
+        id: "hotline",
+        label: "Establish Crisis Hotline",
+        description: "Create direct communication channels to prevent escalation.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "De-escalation" },
+        outcomeText: "A crisis hotline prevents misunderstandings. Border tensions ease.",
+      },
+      {
+        id: "patrol",
+        label: "Increase Border Patrols",
+        description: "Show strength along the border.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Mixed" },
+        outcomeText: "More patrols deter incidents but raise tensions with {{neighborName}}.",
+      },
+      {
+        id: "ignore",
+        label: "Downplay the Incidents",
+        description: "Treat border incidents as routine.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Worsening" },
+        outcomeText:
+          "Ignoring the problem allows it to fester. A serious incident eventually occurs.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["border", "tensions", "neighbors"]),
   },
   {
     slug: "intelligence_sharing_proposal",
     title: "Intelligence Sharing Agreement",
-    description: "Allied nations propose a comprehensive intelligence sharing agreement with {{countryName}}.",
+    description:
+      "Allied nations propose a comprehensive intelligence sharing agreement with {{countryName}}.",
     domain: "diplomatic",
     category: "security",
     baseSeverity: "medium",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.12 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "full", label: "Full Participation", description: "Share intelligence comprehensively with allies.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 3 }], previewEffects: { stabilityImpact: "Better intelligence", diplomaticImpact: "Stronger alliance" }, outcomeText: "Shared intelligence improves everyone's security. Trust deepens." },
-      { id: "selective", label: "Selective Sharing", description: "Share some intelligence but protect sensitive sources.", consequences: [{ targetModel: "InternalStabilityMetrics", targetField: "stabilityScore", operation: "add", value: 1 }], previewEffects: { stabilityImpact: "Moderate" }, outcomeText: "Selective sharing balances security benefits with source protection." },
-      { id: "decline", label: "Protect National Intelligence", description: "Keep intelligence capabilities fully sovereign.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1, diplomaticImpact: "Alliance strain" }, outcomeText: "Intelligence sovereignty is maintained at the cost of allied cooperation." }
+      {
+        id: "full",
+        label: "Full Participation",
+        description: "Share intelligence comprehensively with allies.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: {
+          stabilityImpact: "Better intelligence",
+          diplomaticImpact: "Stronger alliance",
+        },
+        outcomeText: "Shared intelligence improves everyone's security. Trust deepens.",
+      },
+      {
+        id: "selective",
+        label: "Selective Sharing",
+        description: "Share some intelligence but protect sensitive sources.",
+        consequences: [
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "stabilityScore",
+            operation: "add",
+            value: 1,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Moderate" },
+        outcomeText: "Selective sharing balances security benefits with source protection.",
+      },
+      {
+        id: "decline",
+        label: "Protect National Intelligence",
+        description: "Keep intelligence capabilities fully sovereign.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1, diplomaticImpact: "Alliance strain" },
+        outcomeText: "Intelligence sovereignty is maintained at the cost of allied cooperation.",
+      },
     ]),
     tags: JSON.stringify(["intelligence", "sharing", "alliance"]),
   },
   {
     slug: "joint_venture_diplomatic",
     title: "Joint Development Venture Proposed",
-    description: "{{neighborName}} proposes a joint economic development project worth {{amountLarge}}.",
+    description:
+      "{{neighborName}} proposes a joint economic development project worth {{amountLarge}}.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "low",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeEmbassyCount", op: ">", value: 1 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeEmbassyCount", op: ">", value: 1 }, { random: 0.15 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "invest", label: "Invest Equally", description: "Commit equal resources to the joint venture.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { economicImpact: "Growth", diplomaticImpact: "Partnership" }, outcomeText: "The joint venture creates jobs and prosperity in both nations." },
-      { id: "minor", label: "Minor Participation", description: "Invest a small amount to show goodwill.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.05 }], previewEffects: { economicImpact: "Minimal", diplomaticImpact: "Goodwill" }, outcomeText: "A token investment maintains the relationship without major commitment." },
-      { id: "pass", label: "Pass on This One", description: "The project doesn't align with national priorities.", consequences: [], previewEffects: { diplomaticImpact: "Neutral" }, outcomeText: "The opportunity is declined. {{neighborName}} finds other partners." }
+      {
+        id: "invest",
+        label: "Invest Equally",
+        description: "Commit equal resources to the joint venture.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { economicImpact: "Growth", diplomaticImpact: "Partnership" },
+        outcomeText: "The joint venture creates jobs and prosperity in both nations.",
+      },
+      {
+        id: "minor",
+        label: "Minor Participation",
+        description: "Invest a small amount to show goodwill.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.05 },
+        ],
+        previewEffects: { economicImpact: "Minimal", diplomaticImpact: "Goodwill" },
+        outcomeText: "A token investment maintains the relationship without major commitment.",
+      },
+      {
+        id: "pass",
+        label: "Pass on This One",
+        description: "The project doesn't align with national priorities.",
+        consequences: [],
+        previewEffects: { diplomaticImpact: "Neutral" },
+        outcomeText: "The opportunity is declined. {{neighborName}} finds other partners.",
+      },
     ]),
     tags: JSON.stringify(["development", "joint-venture", "cooperation"]),
   },
   {
     slug: "resource_conflict_diplomatic",
     title: "Resource Dispute Emerges",
-    description: "Both {{countryName}} and {{neighborName}} claim sovereignty over newly discovered natural resources.",
+    description:
+      "Both {{countryName}} and {{neighborName}} claim sovereignty over newly discovered natural resources.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "high",
     baseUrgency: 65,
     deadlineDaysBase: 21,
-    triggerConditions: trigger({ and: [{ field: "tradeBalance", op: "<", value: 0 }, { field: "activeEmbassyCount", op: ">", value: 0 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "tradeBalance", op: "<", value: 0 },
+        { field: "activeEmbassyCount", op: ">", value: 0 },
+        { random: 0.12 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "share", label: "Joint Development Agreement", description: "Agree to share the resources through a bilateral framework.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 1000000000 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2, economicImpact: "Shared wealth", diplomaticImpact: "Compromise" }, outcomeText: "Shared development brings revenue to both nations. Nationalists grumble." },
-      { id: "claim", label: "Assert Full Sovereignty", description: "Press {{countryName}}'s exclusive claim to the resources.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }], previewEffects: { publicApproval: 5, diplomaticImpact: "Confrontation" }, outcomeText: "{{countryName}} asserts its claim. Tensions with {{neighborName}} spike." },
-      { id: "arbitrate", label: "International Arbitration", description: "Submit the dispute to international arbitration.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 1 }], previewEffects: { diplomaticImpact: "Peaceful resolution" }, outcomeText: "The dispute enters international arbitration. Both sides wait for a ruling.", isAutoResolveDefault: true }
+      {
+        id: "share",
+        label: "Joint Development Agreement",
+        description: "Agree to share the resources through a bilateral framework.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 1000000000,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: {
+          publicApproval: -2,
+          economicImpact: "Shared wealth",
+          diplomaticImpact: "Compromise",
+        },
+        outcomeText: "Shared development brings revenue to both nations. Nationalists grumble.",
+      },
+      {
+        id: "claim",
+        label: "Assert Full Sovereignty",
+        description: "Press {{countryName}}'s exclusive claim to the resources.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+        ],
+        previewEffects: { publicApproval: 5, diplomaticImpact: "Confrontation" },
+        outcomeText: "{{countryName}} asserts its claim. Tensions with {{neighborName}} spike.",
+      },
+      {
+        id: "arbitrate",
+        label: "International Arbitration",
+        description: "Submit the dispute to international arbitration.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 1,
+          },
+        ],
+        previewEffects: { diplomaticImpact: "Peaceful resolution" },
+        outcomeText: "The dispute enters international arbitration. Both sides wait for a ruling.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["resources", "sovereignty", "dispute"]),
   },
   {
     slug: "refugee_crisis",
     title: "Refugee Crisis at {{countryName}}'s Borders",
-    description: "Thousands of refugees fleeing conflict are arriving at {{countryName}}'s borders seeking asylum.",
+    description:
+      "Thousands of refugees fleeing conflict are arriving at {{countryName}}'s borders seeking asylum.",
     domain: "diplomatic",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "activeEmbassyCount", op: ">", value: 2 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeEmbassyCount", op: ">", value: 2 }, { random: 0.15 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "welcome", label: "Open Humanitarian Corridor", description: "Accept refugees and provide humanitarian assistance.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }, { targetModel: "InternalStabilityMetrics", targetField: "ethnicTension", operation: "add", value: 4 }], previewEffects: { publicApproval: 3, economicImpact: "Humanitarian costs", diplomaticImpact: "International praise" }, outcomeText: "{{countryName}} opens its borders. The international community applauds." },
-      { id: "quota", label: "Accept Limited Numbers", description: "Take in refugees up to a defined quota.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 }], previewEffects: { publicApproval: 1, economicImpact: "Manageable" }, outcomeText: "A quota system processes refugees orderly. Neither side is fully satisfied." },
-      { id: "close", label: "Close the Borders", description: "Refuse entry to protect domestic stability.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }], previewEffects: { diplomaticImpact: "International condemnation" }, outcomeText: "Borders slam shut. Humanitarian organizations condemn the decision.", isAutoResolveDefault: true }
+      {
+        id: "welcome",
+        label: "Open Humanitarian Corridor",
+        description: "Accept refugees and provide humanitarian assistance.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "ethnicTension",
+            operation: "add",
+            value: 4,
+          },
+        ],
+        previewEffects: {
+          publicApproval: 3,
+          economicImpact: "Humanitarian costs",
+          diplomaticImpact: "International praise",
+        },
+        outcomeText: "{{countryName}} opens its borders. The international community applauds.",
+      },
+      {
+        id: "quota",
+        label: "Accept Limited Numbers",
+        description: "Take in refugees up to a defined quota.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { publicApproval: 1, economicImpact: "Manageable" },
+        outcomeText: "A quota system processes refugees orderly. Neither side is fully satisfied.",
+      },
+      {
+        id: "close",
+        label: "Close the Borders",
+        description: "Refuse entry to protect domestic stability.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { diplomaticImpact: "International condemnation" },
+        outcomeText: "Borders slam shut. Humanitarian organizations condemn the decision.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["refugees", "asylum", "humanitarian"]),
   },
   {
     slug: "diplomatic_incident",
     title: "Diplomatic Incident with {{neighborName}}",
-    description: "A diplomatic incident threatens to derail relations between {{countryName}} and {{neighborName}}.",
+    description:
+      "A diplomatic incident threatens to derail relations between {{countryName}} and {{neighborName}}.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "medium",
     baseUrgency: 55,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "activeEmbassyCount", op: ">", value: 0 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeEmbassyCount", op: ">", value: 0 }, { random: 0.12 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "apologize", label: "Issue Formal Apology", description: "Take responsibility and apologize to resolve the incident.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, diplomaticImpact: "Relations restored" }, outcomeText: "The apology is accepted. Relations return to normal quickly." },
-      { id: "investigate", label: "Joint Investigation", description: "Propose a joint investigation into the incident.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1, diplomaticImpact: "Professional response" }, outcomeText: "A joint investigation finds facts and prevents future incidents." },
-      { id: "deny", label: "Deny Responsibility", description: "Reject any blame for the incident.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Strained relations" }, outcomeText: "Denials escalate the incident. Relations deteriorate." }
+      {
+        id: "apologize",
+        label: "Issue Formal Apology",
+        description: "Take responsibility and apologize to resolve the incident.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, diplomaticImpact: "Relations restored" },
+        outcomeText: "The apology is accepted. Relations return to normal quickly.",
+      },
+      {
+        id: "investigate",
+        label: "Joint Investigation",
+        description: "Propose a joint investigation into the incident.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1, diplomaticImpact: "Professional response" },
+        outcomeText: "A joint investigation finds facts and prevents future incidents.",
+      },
+      {
+        id: "deny",
+        label: "Deny Responsibility",
+        description: "Reject any blame for the incident.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Strained relations" },
+        outcomeText: "Denials escalate the incident. Relations deteriorate.",
+      },
     ]),
     tags: JSON.stringify(["incident", "diplomacy", "relations"]),
   },
   {
     slug: "embassy_crisis",
     title: "Embassy Under Siege",
-    description: "{{countryName}}'s embassy in a foreign nation is under threat from protesters demanding its closure.",
+    description:
+      "{{countryName}}'s embassy in a foreign nation is under threat from protesters demanding its closure.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "critical",
     baseUrgency: 85,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "activeEmbassyCount", op: ">", value: 3 }, { random: 0.08 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeEmbassyCount", op: ">", value: 3 }, { random: 0.08 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "evacuate", label: "Evacuate Personnel", description: "Safely withdraw embassy staff.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, diplomaticImpact: "Humiliation" }, outcomeText: "Staff are evacuated safely. The embassy closure is a diplomatic blow." },
-      { id: "demand", label: "Demand Protection", description: "Insist the host nation protect the embassy.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, diplomaticImpact: "Strong stance" }, outcomeText: "Pressure works. The host nation disperses protesters and security improves." },
-      { id: "sanctions", label: "Threaten Consequences", description: "Warn of diplomatic and economic consequences.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 500000000 }], previewEffects: { publicApproval: 5, economicImpact: "Trade disruption" }, outcomeText: "Threats force action but bilateral trade suffers.", isAutoResolveDefault: true }
+      {
+        id: "evacuate",
+        label: "Evacuate Personnel",
+        description: "Safely withdraw embassy staff.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, diplomaticImpact: "Humiliation" },
+        outcomeText: "Staff are evacuated safely. The embassy closure is a diplomatic blow.",
+      },
+      {
+        id: "demand",
+        label: "Demand Protection",
+        description: "Insist the host nation protect the embassy.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, diplomaticImpact: "Strong stance" },
+        outcomeText: "Pressure works. The host nation disperses protesters and security improves.",
+      },
+      {
+        id: "sanctions",
+        label: "Threaten Consequences",
+        description: "Warn of diplomatic and economic consequences.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 500000000,
+          },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Trade disruption" },
+        outcomeText: "Threats force action but bilateral trade suffers.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["embassy", "crisis", "diplomacy"]),
   },
   {
     slug: "international_organization_membership",
     title: "International Organization Invitation",
-    description: "{{countryName}} is invited to join a prestigious international economic organization.",
+    description:
+      "{{countryName}} is invited to join a prestigious international economic organization.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "low",
     baseUrgency: 30,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "currentGdpPerCapita", op: ">", value: 15000 }, { field: "democracyIndex", op: ">", value: 50 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "currentGdpPerCapita", op: ">", value: 15000 },
+        { field: "democracyIndex", op: ">", value: 50 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "join", label: "Accept Membership", description: "Join the organization and accept its rules and standards.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "Country", targetField: "tradeBalance", operation: "add", value: 500000000 }], previewEffects: { economicImpact: "Trade boost", diplomaticImpact: "Prestige" }, outcomeText: "Membership opens new markets and enhances {{countryName}}'s international standing." },
-      { id: "negotiate", label: "Negotiate Terms", description: "Seek exceptions or transition periods for some requirements.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }], previewEffects: { economicImpact: "Modest benefit" }, outcomeText: "Favorable transition terms are secured. Membership proceeds smoothly." },
-      { id: "decline", label: "Decline Membership", description: "Maintain full policy independence.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Independent" }, outcomeText: "Independence is valued above international integration." }
+      {
+        id: "join",
+        label: "Accept Membership",
+        description: "Join the organization and accept its rules and standards.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "add",
+            value: 500000000,
+          },
+        ],
+        previewEffects: { economicImpact: "Trade boost", diplomaticImpact: "Prestige" },
+        outcomeText:
+          "Membership opens new markets and enhances {{countryName}}'s international standing.",
+      },
+      {
+        id: "negotiate",
+        label: "Negotiate Terms",
+        description: "Seek exceptions or transition periods for some requirements.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+        ],
+        previewEffects: { economicImpact: "Modest benefit" },
+        outcomeText: "Favorable transition terms are secured. Membership proceeds smoothly.",
+      },
+      {
+        id: "decline",
+        label: "Decline Membership",
+        description: "Maintain full policy independence.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Independent" },
+        outcomeText: "Independence is valued above international integration.",
+      },
     ]),
     tags: JSON.stringify(["international", "organization", "membership"]),
   },
   {
     slug: "humanitarian_aid_request",
     title: "Humanitarian Aid Request from Abroad",
-    description: "A developing nation requests humanitarian assistance from {{countryName}} after a natural disaster.",
+    description:
+      "A developing nation requests humanitarian assistance from {{countryName}} after a natural disaster.",
     domain: "diplomatic",
     category: "diplomatic",
     baseSeverity: "medium",
     baseUrgency: 55,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "currentTotalGdp", op: ">", value: 200000000000 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "currentTotalGdp", op: ">", value: 200000000000 }, { random: 0.15 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "generous", label: "Generous Aid Package", description: "Send significant financial and material assistance.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 }], previewEffects: { publicApproval: 5, diplomaticImpact: "Global respect" }, outcomeText: "{{countryName}}'s generosity earns widespread praise and gratitude." },
-      { id: "modest", label: "Standard Aid Response", description: "Provide standard humanitarian assistance.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2 }, outcomeText: "Aid is provided within normal channels. A responsible contribution." },
-      { id: "decline", label: "Domestic Needs First", description: "Redirect funds to domestic priorities.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2, diplomaticImpact: "Selfish image" }, outcomeText: "The refusal to help draws criticism from the international community." }
+      {
+        id: "generous",
+        label: "Generous Aid Package",
+        description: "Send significant financial and material assistance.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { publicApproval: 5, diplomaticImpact: "Global respect" },
+        outcomeText: "{{countryName}}'s generosity earns widespread praise and gratitude.",
+      },
+      {
+        id: "modest",
+        label: "Standard Aid Response",
+        description: "Provide standard humanitarian assistance.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "Aid is provided within normal channels. A responsible contribution.",
+      },
+      {
+        id: "decline",
+        label: "Domestic Needs First",
+        description: "Redirect funds to domestic priorities.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2, diplomaticImpact: "Selfish image" },
+        outcomeText: "The refusal to help draws criticism from the international community.",
+      },
     ]),
     tags: JSON.stringify(["humanitarian", "aid", "disaster"]),
   },
   {
     slug: "espionage_scandal",
     title: "Espionage Scandal Rocks Relations",
-    description: "{{countryName}}'s intelligence agents are caught spying in {{neighborName}}, or vice versa.",
+    description:
+      "{{countryName}}'s intelligence agents are caught spying in {{neighborName}}, or vice versa.",
     domain: "diplomatic",
     category: "security",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "activeEmbassyCount", op: ">", value: 2 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "activeEmbassyCount", op: ">", value: 2 }, { random: 0.1 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "apologize", label: "Apologize and Compensate", description: "Accept responsibility and offer diplomatic remedies.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -5, diplomaticImpact: "Relations repaired" }, outcomeText: "An embarrassing apology repairs relations but damages domestic credibility." },
-      { id: "deny", label: "Deny Everything", description: "Refuse to acknowledge the espionage operation.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, diplomaticImpact: "Strained" }, outcomeText: "Denials are unconvincing but domestically popular." },
-      { id: "expel", label: "Mutual Diplomat Expulsions", description: "Expel each other's diplomats in tit-for-tat.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, diplomaticImpact: "Escalation" }, outcomeText: "Diplomats are expelled. Relations freeze for months.", isAutoResolveDefault: true }
+      {
+        id: "apologize",
+        label: "Apologize and Compensate",
+        description: "Accept responsibility and offer diplomatic remedies.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -5, diplomaticImpact: "Relations repaired" },
+        outcomeText: "An embarrassing apology repairs relations but damages domestic credibility.",
+      },
+      {
+        id: "deny",
+        label: "Deny Everything",
+        description: "Refuse to acknowledge the espionage operation.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, diplomaticImpact: "Strained" },
+        outcomeText: "Denials are unconvincing but domestically popular.",
+      },
+      {
+        id: "expel",
+        label: "Mutual Diplomat Expulsions",
+        description: "Expel each other's diplomats in tit-for-tat.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, diplomaticImpact: "Escalation" },
+        outcomeText: "Diplomats are expelled. Relations freeze for months.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["espionage", "intelligence", "scandal"]),
   },
   {
     slug: "diaspora_engagement",
     title: "Diaspora Community Seeks Engagement",
-    description: "{{countryName}}'s overseas diaspora community requests greater political representation and investment channels.",
+    description:
+      "{{countryName}}'s overseas diaspora community requests greater political representation and investment channels.",
     domain: "diplomatic",
     category: "social",
     baseSeverity: "low",
     baseUrgency: 25,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "currentPopulation", op: ">", value: 5000000 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "currentPopulation", op: ">", value: 5000000 }, { random: 0.1 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "engage", label: "Diaspora Engagement Program", description: "Create formal channels for diaspora participation.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }], previewEffects: { publicApproval: 2, economicImpact: "Remittance boost" }, outcomeText: "Diaspora engagement brings investment and cultural connections home." },
-      { id: "limited", label: "Cultural Programs Only", description: "Maintain cultural ties without political representation.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "Cultural programs maintain connections without political complications." },
-      { id: "ignore", label: "No Special Treatment", description: "The diaspora can engage through normal channels.", consequences: [], previewEffects: {}, outcomeText: "No action is taken. The diaspora feels neglected." }
+      {
+        id: "engage",
+        label: "Diaspora Engagement Program",
+        description: "Create formal channels for diaspora participation.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Remittance boost" },
+        outcomeText: "Diaspora engagement brings investment and cultural connections home.",
+      },
+      {
+        id: "limited",
+        label: "Cultural Programs Only",
+        description: "Maintain cultural ties without political representation.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Cultural programs maintain connections without political complications.",
+      },
+      {
+        id: "ignore",
+        label: "No Special Treatment",
+        description: "The diaspora can engage through normal channels.",
+        consequences: [],
+        previewEffects: {},
+        outcomeText: "No action is taken. The diaspora feels neglected.",
+      },
     ]),
     tags: JSON.stringify(["diaspora", "community", "engagement"]),
   },
@@ -1857,190 +6812,734 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
   {
     slug: "power_grid_failure",
     title: "Power Grid Failure Plunges Region into Darkness",
-    description: "A catastrophic failure in {{countryName}}'s power grid has left millions without electricity.",
+    description:
+      "A catastrophic failure in {{countryName}}'s power grid has left millions without electricity.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "critical",
     baseUrgency: 90,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 35 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 35 }, { random: 0.2 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "invest", label: "Emergency Grid Modernization", description: "Massively invest in grid infrastructure.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 8 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }], previewEffects: { publicApproval: 5, economicImpact: "Major investment" }, outcomeText: "Grid modernization begins immediately. Power is restored and systems upgraded." },
-      { id: "patch", label: "Quick Repairs", description: "Patch the existing system to restore power quickly.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2 }, outcomeText: "Power is restored but the underlying problems remain." },
-      { id: "ration", label: "Rolling Blackouts", description: "Implement scheduled power rationing while repairs continue.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.5 }], previewEffects: { publicApproval: -8, economicImpact: "Production loss" }, outcomeText: "Rolling blackouts become the new normal. Citizens adapt grudgingly.", isAutoResolveDefault: true }
+      {
+        id: "invest",
+        label: "Emergency Grid Modernization",
+        description: "Massively invest in grid infrastructure.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 8,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Major investment" },
+        outcomeText:
+          "Grid modernization begins immediately. Power is restored and systems upgraded.",
+      },
+      {
+        id: "patch",
+        label: "Quick Repairs",
+        description: "Patch the existing system to restore power quickly.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "Power is restored but the underlying problems remain.",
+      },
+      {
+        id: "ration",
+        label: "Rolling Blackouts",
+        description: "Implement scheduled power rationing while repairs continue.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: -8, economicImpact: "Production loss" },
+        outcomeText: "Rolling blackouts become the new normal. Citizens adapt grudgingly.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["power", "grid", "blackout"]),
   },
   {
     slug: "dam_project",
     title: "Major Dam Construction Proposed",
-    description: "Engineers propose a massive dam project to provide hydroelectric power and flood control for {{countryName}}.",
+    description:
+      "Engineers propose a massive dam project to provide hydroelectric power and flood control for {{countryName}}.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "low",
     baseUrgency: 30,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 50 }, { field: "totalDebtGDPRatio", op: "<", value: 80 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: "<", value: 50 },
+        { field: "totalDebtGDPRatio", op: "<", value: 80 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "build", label: "Approve the Dam", description: "Green-light the massive infrastructure project.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 6 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 4 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, economicImpact: "Major investment" }, outcomeText: "Construction begins on the dam. Jobs are created and energy security improves." },
-      { id: "study", label: "Environmental Impact Study", description: "Commission a thorough environmental review first.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "The study reveals both benefits and risks. A more informed decision can follow." },
-      { id: "reject", label: "Reject the Project", description: "Pursue alternative energy sources instead.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2 }, outcomeText: "Environmental groups celebrate. Renewable alternatives are explored." }
+      {
+        id: "build",
+        label: "Approve the Dam",
+        description: "Green-light the massive infrastructure project.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 6,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 4 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Major investment" },
+        outcomeText:
+          "Construction begins on the dam. Jobs are created and energy security improves.",
+      },
+      {
+        id: "study",
+        label: "Environmental Impact Study",
+        description: "Commission a thorough environmental review first.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText:
+          "The study reveals both benefits and risks. A more informed decision can follow.",
+      },
+      {
+        id: "reject",
+        label: "Reject the Project",
+        description: "Pursue alternative energy sources instead.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "Environmental groups celebrate. Renewable alternatives are explored.",
+      },
     ]),
     tags: JSON.stringify(["dam", "hydroelectric", "construction"]),
   },
   {
     slug: "transit_expansion",
     title: "Public Transit Expansion Debate",
-    description: "{{countryName}}'s growing cities need expanded public transportation to reduce congestion.",
+    description:
+      "{{countryName}}'s growing cities need expanded public transportation to reduce congestion.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "medium",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "urbanPopulationPercent", op: ">", value: 55 }, { field: "infrastructureRating", op: "<", value: 55 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "urbanPopulationPercent", op: ">", value: 55 },
+        { field: "infrastructureRating", op: "<", value: 55 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "metro", label: "Build Metro System", description: "Invest in underground rail networks for major cities.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }], previewEffects: { publicApproval: 5, economicImpact: "Major investment" }, outcomeText: "Metro construction transforms urban mobility. Property values surge near stations." },
-      { id: "bus", label: "Bus Rapid Transit", description: "Implement cheaper bus-based rapid transit.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, economicImpact: "Affordable" }, outcomeText: "BRT lanes improve commuting. A practical solution at moderate cost." },
-      { id: "private", label: "Encourage Private Solutions", description: "Let rideshare companies and private operators fill the gap.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2 }, outcomeText: "Private transit solutions help some but leave the poorest behind." }
+      {
+        id: "metro",
+        label: "Build Metro System",
+        description: "Invest in underground rail networks for major cities.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Major investment" },
+        outcomeText:
+          "Metro construction transforms urban mobility. Property values surge near stations.",
+      },
+      {
+        id: "bus",
+        label: "Bus Rapid Transit",
+        description: "Implement cheaper bus-based rapid transit.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Affordable" },
+        outcomeText: "BRT lanes improve commuting. A practical solution at moderate cost.",
+      },
+      {
+        id: "private",
+        label: "Encourage Private Solutions",
+        description: "Let rideshare companies and private operators fill the gap.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2 },
+        outcomeText: "Private transit solutions help some but leave the poorest behind.",
+      },
     ]),
     tags: JSON.stringify(["transit", "transportation", "urban"]),
   },
   {
     slug: "telecom_upgrade",
     title: "Telecommunications Upgrade Needed",
-    description: "{{countryName}}'s internet infrastructure is falling behind, threatening economic competitiveness.",
+    description:
+      "{{countryName}}'s internet infrastructure is falling behind, threatening economic competitiveness.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "medium",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 50 }, { field: "actualGdpGrowth", op: ">", value: 0 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: "<", value: 50 },
+        { field: "actualGdpGrowth", op: ">", value: 0 },
+        { random: 0.12 },
+      ],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "national", label: "National Broadband Plan", description: "Government-led universal broadband deployment.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 6 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }], previewEffects: { economicImpact: "Digital economy boost" }, outcomeText: "High-speed internet reaches every corner of {{countryName}}." },
-      { id: "pppp", label: "Public-Private Partnership", description: "Partner with telecom companies for shared investment.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { economicImpact: "Cost-effective" }, outcomeText: "Shared investment accelerates broadband deployment at lower public cost." },
-      { id: "deregulate", label: "Deregulate Telecom Market", description: "Remove barriers and let competition drive investment.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }], previewEffects: { economicImpact: "Market-driven" }, outcomeText: "Competition improves urban connectivity but rural areas are left behind." }
+      {
+        id: "national",
+        label: "National Broadband Plan",
+        description: "Government-led universal broadband deployment.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 6,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { economicImpact: "Digital economy boost" },
+        outcomeText: "High-speed internet reaches every corner of {{countryName}}.",
+      },
+      {
+        id: "pppp",
+        label: "Public-Private Partnership",
+        description: "Partner with telecom companies for shared investment.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 4,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { economicImpact: "Cost-effective" },
+        outcomeText: "Shared investment accelerates broadband deployment at lower public cost.",
+      },
+      {
+        id: "deregulate",
+        label: "Deregulate Telecom Market",
+        description: "Remove barriers and let competition drive investment.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { economicImpact: "Market-driven" },
+        outcomeText: "Competition improves urban connectivity but rural areas are left behind.",
+      },
     ]),
     tags: JSON.stringify(["telecom", "broadband", "digital"]),
   },
   {
     slug: "road_infrastructure_decay",
     title: "Road Infrastructure Crumbling",
-    description: "{{countryName}}'s roads and bridges are deteriorating, causing accidents and economic losses.",
+    description:
+      "{{countryName}}'s roads and bridges are deteriorating, causing accidents and economic losses.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "high",
     baseUrgency: 60,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.2 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.2 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "rebuild", label: "National Road Rebuilding", description: "Launch a comprehensive road and bridge reconstruction program.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 7 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }], previewEffects: { publicApproval: 6, economicImpact: "Job creation" }, outcomeText: "Road reconstruction creates jobs and improves connectivity nationwide." },
-      { id: "patch", label: "Emergency Repairs Only", description: "Fix the most dangerous roads and bridges.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { economicImpact: "Moderate" }, outcomeText: "Critical repairs prevent the worst but the overall system continues to decay." },
-      { id: "tolls", label: "Toll-Funded Upgrades", description: "Implement tolls to fund infrastructure improvements.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 4 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 4 }], previewEffects: { publicApproval: -4, economicImpact: "Self-funding" }, outcomeText: "Tolls fund repairs but commuters pay the price. Protests at toll plazas." }
+      {
+        id: "rebuild",
+        label: "National Road Rebuilding",
+        description: "Launch a comprehensive road and bridge reconstruction program.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 7,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+        ],
+        previewEffects: { publicApproval: 6, economicImpact: "Job creation" },
+        outcomeText: "Road reconstruction creates jobs and improves connectivity nationwide.",
+      },
+      {
+        id: "patch",
+        label: "Emergency Repairs Only",
+        description: "Fix the most dangerous roads and bridges.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { economicImpact: "Moderate" },
+        outcomeText:
+          "Critical repairs prevent the worst but the overall system continues to decay.",
+      },
+      {
+        id: "tolls",
+        label: "Toll-Funded Upgrades",
+        description: "Implement tolls to fund infrastructure improvements.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 4,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 4,
+          },
+        ],
+        previewEffects: { publicApproval: -4, economicImpact: "Self-funding" },
+        outcomeText: "Tolls fund repairs but commuters pay the price. Protests at toll plazas.",
+      },
     ]),
     tags: JSON.stringify(["roads", "bridges", "transportation"]),
   },
   {
     slug: "airport_expansion",
     title: "Airport Capacity Crisis",
-    description: "{{countryName}}'s main airport is at capacity, delaying flights and deterring airlines and tourists.",
+    description:
+      "{{countryName}}'s main airport is at capacity, delaying flights and deterring airlines and tourists.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "medium",
     baseUrgency: 35,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "currentTotalGdp", op: ">", value: 300000000000 }, { field: "infrastructureRating", op: "<", value: 55 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "currentTotalGdp", op: ">", value: 300000000000 },
+        { field: "infrastructureRating", op: "<", value: 55 },
+        { random: 0.1 },
+      ],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "new", label: "Build New Airport", description: "Construct a brand new international airport.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 6 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 4 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 }], previewEffects: { economicImpact: "Tourism and trade boost" }, outcomeText: "A world-class airport positions {{countryName}} as a regional hub." },
-      { id: "expand", label: "Expand Existing Airport", description: "Add terminals and runways to the current facility.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }], previewEffects: { economicImpact: "Moderate investment" }, outcomeText: "Expansion alleviates congestion. Disruption during construction is manageable." },
-      { id: "optimize", label: "Optimize Operations", description: "Use technology and scheduling to maximize existing capacity.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 1 }], previewEffects: { economicImpact: "Low cost" }, outcomeText: "Operational improvements squeeze more capacity from existing infrastructure." }
+      {
+        id: "new",
+        label: "Build New Airport",
+        description: "Construct a brand new international airport.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 6,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 4 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { economicImpact: "Tourism and trade boost" },
+        outcomeText: "A world-class airport positions {{countryName}} as a regional hub.",
+      },
+      {
+        id: "expand",
+        label: "Expand Existing Airport",
+        description: "Add terminals and runways to the current facility.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+        ],
+        previewEffects: { economicImpact: "Moderate investment" },
+        outcomeText:
+          "Expansion alleviates congestion. Disruption during construction is manageable.",
+      },
+      {
+        id: "optimize",
+        label: "Optimize Operations",
+        description: "Use technology and scheduling to maximize existing capacity.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 1,
+          },
+        ],
+        previewEffects: { economicImpact: "Low cost" },
+        outcomeText: "Operational improvements squeeze more capacity from existing infrastructure.",
+      },
     ]),
     tags: JSON.stringify(["airport", "aviation", "expansion"]),
   },
   {
     slug: "sewage_crisis",
     title: "Sewage System Failure",
-    description: "Aging sewage infrastructure in {{countryName}} fails, contaminating waterways and threatening public health.",
+    description:
+      "Aging sewage infrastructure in {{countryName}} fails, contaminating waterways and threatening public health.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 10,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 35 }, { field: "urbanPopulationPercent", op: ">", value: 50 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: "<", value: 35 },
+        { field: "urbanPopulationPercent", op: ">", value: 50 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "rebuild", label: "Complete System Overhaul", description: "Rebuild the sewage system with modern technology.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 6 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }], previewEffects: { publicApproval: 4, economicImpact: "Major investment" }, outcomeText: "Modern sewage treatment replaces decrepit systems. Public health improves." },
-      { id: "emergency", label: "Emergency Repairs", description: "Fix the immediate crisis without long-term improvements.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1 }, outcomeText: "Emergency repairs stop the contamination. The system remains fragile." },
-      { id: "blame", label: "Blame Previous Government", description: "Deflect responsibility for the infrastructure failure.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -5 }, outcomeText: "Blame games don't fix sewage pipes. Citizens suffer while politicians argue.", isAutoResolveDefault: true }
+      {
+        id: "rebuild",
+        label: "Complete System Overhaul",
+        description: "Rebuild the sewage system with modern technology.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 6,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Major investment" },
+        outcomeText: "Modern sewage treatment replaces decrepit systems. Public health improves.",
+      },
+      {
+        id: "emergency",
+        label: "Emergency Repairs",
+        description: "Fix the immediate crisis without long-term improvements.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Emergency repairs stop the contamination. The system remains fragile.",
+      },
+      {
+        id: "blame",
+        label: "Blame Previous Government",
+        description: "Deflect responsibility for the infrastructure failure.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -5 },
+        outcomeText: "Blame games don't fix sewage pipes. Citizens suffer while politicians argue.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["sewage", "water", "sanitation"]),
   },
   {
     slug: "digital_infrastructure",
     title: "Digital Government Services Failing",
-    description: "{{countryName}}'s government digital services are outdated, causing long waits and citizen frustration.",
+    description:
+      "{{countryName}}'s government digital services are outdated, causing long waits and citizen frustration.",
     domain: "infrastructure",
     category: "governance",
     baseSeverity: "low",
     baseUrgency: 30,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "governmentEffectiveness", op: "<", value: 50 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "governmentEffectiveness", op: "<", value: 50 }, { random: 0.12 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "transform", label: "Digital Transformation", description: "Comprehensive modernization of all government systems.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 6 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 4, economicImpact: "Efficiency gains" }, outcomeText: "Digital government services launch. Wait times plummet and satisfaction soars." },
-      { id: "incremental", label: "Gradual Upgrades", description: "Upgrade systems one at a time on a budget.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 }], previewEffects: { stabilityImpact: "Gradual" }, outcomeText: "Slow but steady improvements. The most critical services are upgraded first." },
-      { id: "outsource", label: "Outsource to Tech Companies", description: "Let private tech firms run government digital services.", consequences: [{ targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 4 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2, economicImpact: "Cost savings" }, outcomeText: "Tech companies improve services but data privacy concerns emerge." }
+      {
+        id: "transform",
+        label: "Digital Transformation",
+        description: "Comprehensive modernization of all government systems.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 6,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Efficiency gains" },
+        outcomeText:
+          "Digital government services launch. Wait times plummet and satisfaction soars.",
+      },
+      {
+        id: "incremental",
+        label: "Gradual Upgrades",
+        description: "Upgrade systems one at a time on a budget.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { stabilityImpact: "Gradual" },
+        outcomeText: "Slow but steady improvements. The most critical services are upgraded first.",
+      },
+      {
+        id: "outsource",
+        label: "Outsource to Tech Companies",
+        description: "Let private tech firms run government digital services.",
+        consequences: [
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "governmentEffectiveness",
+            operation: "add",
+            value: 4,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2, economicImpact: "Cost savings" },
+        outcomeText: "Tech companies improve services but data privacy concerns emerge.",
+      },
     ]),
     tags: JSON.stringify(["digital", "e-government", "technology"]),
   },
   {
     slug: "bridge_collapse",
     title: "Bridge Collapse Kills Workers",
-    description: "A major bridge in {{countryName}} collapses, killing construction workers and stranding commuters.",
+    description:
+      "A major bridge in {{countryName}} collapses, killing construction workers and stranding commuters.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "critical",
     baseUrgency: 85,
     deadlineDaysBase: 7,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 30 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 30 }, { random: 0.15 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "audit", label: "National Infrastructure Audit", description: "Inspect all bridges and critical infrastructure nationwide.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 4 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }], previewEffects: { publicApproval: 5, economicImpact: "Prevention investment" }, outcomeText: "A national audit identifies hundreds of unsafe structures. Repairs are prioritized." },
-      { id: "rebuild", label: "Rebuild the Bridge", description: "Replace the collapsed bridge with a modern structure.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { economicImpact: "Targeted" }, outcomeText: "A new bridge rises from the rubble. But is this the only unsafe one?" },
-      { id: "blame", label: "Blame Contractors", description: "Pursue legal action against the construction company.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, stabilityImpact: "Deflection" }, outcomeText: "Lawsuits proceed while other unsafe bridges remain in use.", isAutoResolveDefault: true }
+      {
+        id: "audit",
+        label: "National Infrastructure Audit",
+        description: "Inspect all bridges and critical infrastructure nationwide.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 4,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Prevention investment" },
+        outcomeText:
+          "A national audit identifies hundreds of unsafe structures. Repairs are prioritized.",
+      },
+      {
+        id: "rebuild",
+        label: "Rebuild the Bridge",
+        description: "Replace the collapsed bridge with a modern structure.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { economicImpact: "Targeted" },
+        outcomeText: "A new bridge rises from the rubble. But is this the only unsafe one?",
+      },
+      {
+        id: "blame",
+        label: "Blame Contractors",
+        description: "Pursue legal action against the construction company.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, stabilityImpact: "Deflection" },
+        outcomeText: "Lawsuits proceed while other unsafe bridges remain in use.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["bridge", "collapse", "safety"]),
   },
   {
     slug: "smart_city_initiative",
     title: "Smart City Initiative Proposed",
-    description: "Technology firms propose transforming {{cityName}} into a smart city with IoT sensors and AI management.",
+    description:
+      "Technology firms propose transforming {{cityName}} into a smart city with IoT sensors and AI management.",
     domain: "infrastructure",
     category: "infrastructure",
     baseSeverity: "low",
     baseUrgency: 25,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: ">", value: 45 }, { field: "currentGdpPerCapita", op: ">", value: 20000 }, { random: 0.08 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: ">", value: 45 },
+        { field: "currentGdpPerCapita", op: ">", value: 20000 },
+        { random: 0.08 },
+      ],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "adopt", label: "Full Smart City Program", description: "Invest in comprehensive smart city technology.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }], previewEffects: { economicImpact: "Innovation hub" }, outcomeText: "{{cityName}} becomes a showcase of urban technology innovation." },
-      { id: "pilot", label: "Pilot Program", description: "Test smart city technology in a limited area.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }], previewEffects: { economicImpact: "Low risk" }, outcomeText: "A pilot neighborhood demonstrates the potential of smart city tech." },
-      { id: "reject", label: "Privacy Concerns", description: "Reject the proposal over surveillance and privacy issues.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }, { targetModel: "GovernmentStructure", targetField: "democracyIndex", operation: "add", value: 1 }], previewEffects: { publicApproval: 2 }, outcomeText: "Privacy advocates celebrate. {{countryName}} avoids the surveillance city model." }
+      {
+        id: "adopt",
+        label: "Full Smart City Program",
+        description: "Invest in comprehensive smart city technology.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 5,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+        ],
+        previewEffects: { economicImpact: "Innovation hub" },
+        outcomeText: "{{cityName}} becomes a showcase of urban technology innovation.",
+      },
+      {
+        id: "pilot",
+        label: "Pilot Program",
+        description: "Test smart city technology in a limited area.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { economicImpact: "Low risk" },
+        outcomeText: "A pilot neighborhood demonstrates the potential of smart city tech.",
+      },
+      {
+        id: "reject",
+        label: "Privacy Concerns",
+        description: "Reject the proposal over surveillance and privacy issues.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "democracyIndex",
+            operation: "add",
+            value: 1,
+          },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText:
+          "Privacy advocates celebrate. {{countryName}} avoids the surveillance city model.",
+      },
     ]),
     tags: JSON.stringify(["smart-city", "technology", "innovation"]),
   },
@@ -2052,190 +7551,709 @@ const environmentalTemplates: IssueTemplateSeed[] = [
   {
     slug: "natural_disaster_response",
     title: "Natural Disaster Strikes {{countryName}}",
-    description: "A devastating natural disaster has hit {{countryName}}, causing widespread destruction and displacement.",
+    description:
+      "A devastating natural disaster has hit {{countryName}}, causing widespread destruction and displacement.",
     domain: "environmental",
     category: "crisis",
     baseSeverity: "critical",
     baseUrgency: 95,
     deadlineDaysBase: 5,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 45 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 45 }, { random: 0.12 }],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "mobilize", label: "Full National Mobilization", description: "Deploy all available resources for disaster response.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 10 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.5 }], previewEffects: { publicApproval: 10, economicImpact: "Emergency spending" }, outcomeText: "The nation rallies together. Government response saves thousands of lives." },
-      { id: "targeted", label: "Targeted Response", description: "Focus resources on the most affected areas.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1.5 }], previewEffects: { publicApproval: 4, economicImpact: "Moderate" }, outcomeText: "Resources reach the worst-hit areas. Other affected regions feel neglected." },
-      { id: "international", label: "Request International Aid", description: "Appeal to the international community for assistance.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 }], previewEffects: { publicApproval: -2, diplomaticImpact: "Sympathy" }, outcomeText: "International aid arrives. The government is criticized for needing outside help.", isAutoResolveDefault: true }
+      {
+        id: "mobilize",
+        label: "Full National Mobilization",
+        description: "Deploy all available resources for disaster response.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 10 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: 10, economicImpact: "Emergency spending" },
+        outcomeText: "The nation rallies together. Government response saves thousands of lives.",
+      },
+      {
+        id: "targeted",
+        label: "Targeted Response",
+        description: "Focus resources on the most affected areas.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 1.5,
+          },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Moderate" },
+        outcomeText: "Resources reach the worst-hit areas. Other affected regions feel neglected.",
+      },
+      {
+        id: "international",
+        label: "Request International Aid",
+        description: "Appeal to the international community for assistance.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.5,
+          },
+        ],
+        previewEffects: { publicApproval: -2, diplomaticImpact: "Sympathy" },
+        outcomeText:
+          "International aid arrives. The government is criticized for needing outside help.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["disaster", "emergency", "response"]),
   },
   {
     slug: "pollution_scandal",
     title: "Industrial Pollution Scandal",
-    description: "A major corporation in {{countryName}} is caught dumping toxic waste, contaminating local water supplies.",
+    description:
+      "A major corporation in {{countryName}} is caught dumping toxic waste, contaminating local water supplies.",
     domain: "environmental",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "corruptionIndex", op: ">", value: 40 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "corruptionIndex", op: ">", value: 40 }, { random: 0.15 }],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "prosecute", label: "Criminal Prosecution", description: "Prosecute the company and executives responsible.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 }, { targetModel: "GovernmentStructure", targetField: "ruleOfLaw", operation: "add", value: 3 }], previewEffects: { publicApproval: 6, stabilityImpact: "Justice" }, outcomeText: "Executives face criminal charges. Environmental standards are enforced." },
-      { id: "fine", label: "Heavy Fines", description: "Impose maximum fines and require cleanup.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3 }, outcomeText: "Record fines are imposed. The cleanup begins but takes years." },
-      { id: "cover", label: "Downplay the Damage", description: "Minimize public alarm about the contamination.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 8 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -8, stabilityImpact: "Trust collapse" }, outcomeText: "The cover-up unravels. Government credibility is destroyed.", isAutoResolveDefault: true }
+      {
+        id: "prosecute",
+        label: "Criminal Prosecution",
+        description: "Prosecute the company and executives responsible.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 6 },
+          {
+            targetModel: "GovernmentStructure",
+            targetField: "ruleOfLaw",
+            operation: "add",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: 6, stabilityImpact: "Justice" },
+        outcomeText: "Executives face criminal charges. Environmental standards are enforced.",
+      },
+      {
+        id: "fine",
+        label: "Heavy Fines",
+        description: "Impose maximum fines and require cleanup.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3 },
+        outcomeText: "Record fines are imposed. The cleanup begins but takes years.",
+      },
+      {
+        id: "cover",
+        label: "Downplay the Damage",
+        description: "Minimize public alarm about the contamination.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 8,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -8, stabilityImpact: "Trust collapse" },
+        outcomeText: "The cover-up unravels. Government credibility is destroyed.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["pollution", "environment", "corporate"]),
   },
   {
     slug: "climate_agreement",
     title: "International Climate Agreement",
-    description: "{{countryName}} is asked to commit to ambitious emissions reduction targets under a new climate pact.",
+    description:
+      "{{countryName}} is asked to commit to ambitious emissions reduction targets under a new climate pact.",
     domain: "environmental",
     category: "diplomatic",
     baseSeverity: "medium",
     baseUrgency: 40,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "currentTotalGdp", op: ">", value: 200000000000 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "currentTotalGdp", op: ">", value: 200000000000 }, { random: 0.1 }],
+    }),
     cooldownDays: 365,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "ambitious", label: "Lead on Climate", description: "Commit to ambitious targets and invest in green technology.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.3 }, { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }], previewEffects: { publicApproval: 4, economicImpact: "Transition costs", diplomaticImpact: "Climate leadership" }, outcomeText: "{{countryName}} leads the green transition. New industries emerge as old ones adapt." },
-      { id: "moderate", label: "Moderate Commitments", description: "Accept reasonable targets with flexibility.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 }], previewEffects: { publicApproval: 1, economicImpact: "Manageable" }, outcomeText: "Balanced commitments allow transition without economic shock." },
-      { id: "reject", label: "Reject the Agreement", description: "Prioritize economic growth over climate commitments.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }], previewEffects: { publicApproval: -3, diplomaticImpact: "Pariah status" }, outcomeText: "Economic growth continues unabated. International isolation deepens." }
+      {
+        id: "ambitious",
+        label: "Lead on Climate",
+        description: "Commit to ambitious targets and invest in green technology.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.3,
+          },
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: {
+          publicApproval: 4,
+          economicImpact: "Transition costs",
+          diplomaticImpact: "Climate leadership",
+        },
+        outcomeText:
+          "{{countryName}} leads the green transition. New industries emerge as old ones adapt.",
+      },
+      {
+        id: "moderate",
+        label: "Moderate Commitments",
+        description: "Accept reasonable targets with flexibility.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1, economicImpact: "Manageable" },
+        outcomeText: "Balanced commitments allow transition without economic shock.",
+      },
+      {
+        id: "reject",
+        label: "Reject the Agreement",
+        description: "Prioritize economic growth over climate commitments.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+        ],
+        previewEffects: { publicApproval: -3, diplomaticImpact: "Pariah status" },
+        outcomeText: "Economic growth continues unabated. International isolation deepens.",
+      },
     ]),
     tags: JSON.stringify(["climate", "emissions", "agreement"]),
   },
   {
     slug: "deforestation_crisis",
     title: "Deforestation Crisis",
-    description: "Satellite data reveals accelerating deforestation in {{countryName}}'s remaining forests.",
+    description:
+      "Satellite data reveals accelerating deforestation in {{countryName}}'s remaining forests.",
     domain: "environmental",
     category: "social",
     baseSeverity: "medium",
     baseUrgency: 45,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 50 }, { field: "actualGdpGrowth", op: ">", value: 2 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: "<", value: 50 },
+        { field: "actualGdpGrowth", op: ">", value: 2 },
+        { random: 0.12 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "protect", label: "Forest Protection Act", description: "Ban logging in critical areas and create national parks.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.1 }], previewEffects: { publicApproval: 4, economicImpact: "Minor" }, outcomeText: "New protections halt deforestation. Ecosystems begin to recover." },
-      { id: "sustainable", label: "Sustainable Forestry Program", description: "Allow managed logging with replanting requirements.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, economicImpact: "Balanced" }, outcomeText: "Sustainable forestry balances economic and environmental needs." },
-      { id: "develop", label: "Development Priority", description: "Allow forest clearing for agricultural and industrial expansion.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -5, economicImpact: "Short-term growth" }, outcomeText: "Forests fall to make way for development. Environmentalists are outraged." }
+      {
+        id: "protect",
+        label: "Forest Protection Act",
+        description: "Ban logging in critical areas and create national parks.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.1,
+          },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Minor" },
+        outcomeText: "New protections halt deforestation. Ecosystems begin to recover.",
+      },
+      {
+        id: "sustainable",
+        label: "Sustainable Forestry Program",
+        description: "Allow managed logging with replanting requirements.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Balanced" },
+        outcomeText: "Sustainable forestry balances economic and environmental needs.",
+      },
+      {
+        id: "develop",
+        label: "Development Priority",
+        description: "Allow forest clearing for agricultural and industrial expansion.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.2 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -5, economicImpact: "Short-term growth" },
+        outcomeText: "Forests fall to make way for development. Environmentalists are outraged.",
+      },
     ]),
     tags: JSON.stringify(["deforestation", "forests", "environment"]),
   },
   {
     slug: "air_quality_emergency",
     title: "Air Quality Emergency",
-    description: "Dangerous smog levels in {{countryName}}'s cities force school closures and health warnings.",
+    description:
+      "Dangerous smog levels in {{countryName}}'s cities force school closures and health warnings.",
     domain: "environmental",
     category: "social",
     baseSeverity: "high",
     baseUrgency: 70,
     deadlineDaysBase: 14,
-    triggerConditions: trigger({ and: [{ field: "urbanPopulationPercent", op: ">", value: 55 }, { field: "infrastructureRating", op: "<", value: 45 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "urbanPopulationPercent", op: ">", value: 55 },
+        { field: "infrastructureRating", op: "<", value: 45 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 90,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "restrict", label: "Vehicle Restrictions", description: "Implement driving bans and industrial shutdowns.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.3 }], previewEffects: { publicApproval: 3, economicImpact: "Production hit" }, outcomeText: "Temporary restrictions clear the air. Long-term solutions are still needed." },
-      { id: "invest", label: "Clean Air Investment", description: "Fund long-term air quality improvements.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 3 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }], previewEffects: { publicApproval: 5, economicImpact: "Investment" }, outcomeText: "Clean energy and public transit investments promise cleaner air for the future." },
-      { id: "deny", label: "Question the Science", description: "Dispute the severity of the air quality data.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 7 }], previewEffects: { publicApproval: -7, stabilityImpact: "Trust loss" }, outcomeText: "Citizens choke while the government debates the data. Trust evaporates.", isAutoResolveDefault: true }
+      {
+        id: "restrict",
+        label: "Vehicle Restrictions",
+        description: "Implement driving bans and industrial shutdowns.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "actualGdpGrowth",
+            operation: "subtract",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Production hit" },
+        outcomeText: "Temporary restrictions clear the air. Long-term solutions are still needed.",
+      },
+      {
+        id: "invest",
+        label: "Clean Air Investment",
+        description: "Fund long-term air quality improvements.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Investment" },
+        outcomeText:
+          "Clean energy and public transit investments promise cleaner air for the future.",
+      },
+      {
+        id: "deny",
+        label: "Question the Science",
+        description: "Dispute the severity of the air quality data.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 7,
+          },
+        ],
+        previewEffects: { publicApproval: -7, stabilityImpact: "Trust loss" },
+        outcomeText: "Citizens choke while the government debates the data. Trust evaporates.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["air-quality", "pollution", "smog"]),
   },
   {
     slug: "renewable_energy_transition",
     title: "Renewable Energy Transition Debate",
-    description: "Energy experts push for {{countryName}} to transition to {{percentageLarge}}% renewable energy.",
+    description:
+      "Energy experts push for {{countryName}} to transition to {{percentageLarge}}% renewable energy.",
     domain: "environmental",
     category: "infrastructure",
     baseSeverity: "low",
     baseUrgency: 30,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "currentTotalGdp", op: ">", value: 100000000000 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "currentTotalGdp", op: ">", value: 100000000000 }, { random: 0.12 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "accelerate", label: "Accelerate Transition", description: "Massively invest in solar, wind, and storage.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }], previewEffects: { publicApproval: 3, economicImpact: "Green jobs" }, outcomeText: "Renewable energy projects boom. {{countryName}} becomes a green energy leader." },
-      { id: "gradual", label: "Gradual Transition", description: "Set long-term targets with phased implementation.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 }], previewEffects: { economicImpact: "Manageable" }, outcomeText: "A measured approach allows industries to adapt while moving toward renewables." },
-      { id: "fossil", label: "Maintain Fossil Fuels", description: "Energy security requires continued fossil fuel use.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, economicImpact: "Short-term stability" }, outcomeText: "Fossil fuels remain dominant. Climate activists step up their campaigns." }
+      {
+        id: "accelerate",
+        label: "Accelerate Transition",
+        description: "Massively invest in solar, wind, and storage.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 4,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Green jobs" },
+        outcomeText:
+          "Renewable energy projects boom. {{countryName}} becomes a green energy leader.",
+      },
+      {
+        id: "gradual",
+        label: "Gradual Transition",
+        description: "Set long-term targets with phased implementation.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 2,
+          },
+        ],
+        previewEffects: { economicImpact: "Manageable" },
+        outcomeText:
+          "A measured approach allows industries to adapt while moving toward renewables.",
+      },
+      {
+        id: "fossil",
+        label: "Maintain Fossil Fuels",
+        description: "Energy security requires continued fossil fuel use.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, economicImpact: "Short-term stability" },
+        outcomeText: "Fossil fuels remain dominant. Climate activists step up their campaigns.",
+      },
     ]),
     tags: JSON.stringify(["renewable", "energy", "transition"]),
   },
   {
     slug: "endangered_species",
     title: "Endangered Species Crisis",
-    description: "Several iconic species in {{countryName}} face extinction, prompting calls for urgent conservation action.",
+    description:
+      "Several iconic species in {{countryName}} face extinction, prompting calls for urgent conservation action.",
     domain: "environmental",
     category: "social",
     baseSeverity: "low",
     baseUrgency: 30,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 50 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 50 }, { random: 0.1 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "protect", label: "Wildlife Protection Program", description: "Create protected areas and fund conservation.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 }], previewEffects: { publicApproval: 4 }, outcomeText: "Protected areas expand. Species populations begin to stabilize." },
-      { id: "ecotourism", label: "Ecotourism Development", description: "Turn conservation into an economic opportunity.", consequences: [{ targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 }], previewEffects: { publicApproval: 2, economicImpact: "Tourism revenue" }, outcomeText: "Ecotourism creates jobs while protecting wildlife. A win-win." },
-      { id: "ignore", label: "Not a Priority", description: "Economic development takes precedence.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3 }, outcomeText: "Species continue to decline. International criticism mounts." }
+      {
+        id: "protect",
+        label: "Wildlife Protection Program",
+        description: "Create protected areas and fund conservation.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          {
+            targetModel: "Country",
+            targetField: "totalDebtGDPRatio",
+            operation: "add",
+            value: 0.3,
+          },
+        ],
+        previewEffects: { publicApproval: 4 },
+        outcomeText: "Protected areas expand. Species populations begin to stabilize.",
+      },
+      {
+        id: "ecotourism",
+        label: "Ecotourism Development",
+        description: "Turn conservation into an economic opportunity.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "Tourism revenue" },
+        outcomeText: "Ecotourism creates jobs while protecting wildlife. A win-win.",
+      },
+      {
+        id: "ignore",
+        label: "Not a Priority",
+        description: "Economic development takes precedence.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3 },
+        outcomeText: "Species continue to decline. International criticism mounts.",
+      },
     ]),
     tags: JSON.stringify(["wildlife", "conservation", "endangered"]),
   },
   {
     slug: "waste_management_crisis",
     title: "Waste Management Crisis",
-    description: "{{countryName}}'s landfills are overflowing, with illegal dumping becoming widespread.",
+    description:
+      "{{countryName}}'s landfills are overflowing, with illegal dumping becoming widespread.",
     domain: "environmental",
     category: "infrastructure",
     baseSeverity: "medium",
     baseUrgency: 50,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "urbanPopulationPercent", op: ">", value: 50 }, { field: "infrastructureRating", op: "<", value: 45 }, { random: 0.15 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "urbanPopulationPercent", op: ">", value: 50 },
+        { field: "infrastructureRating", op: "<", value: 45 },
+        { random: 0.15 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "recycle", label: "National Recycling Program", description: "Implement mandatory recycling and waste-to-energy plants.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 3 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 4, economicImpact: "Green investment" }, outcomeText: "Recycling becomes the norm. Waste-to-energy plants generate clean power." },
-      { id: "new_landfill", label: "New Landfill Sites", description: "Open new landfill locations to handle the overflow.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 1 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3 }, outcomeText: "NIMBY protests erupt near proposed landfill sites. Nobody wants trash nearby." },
-      { id: "export", label: "Export Waste", description: "Pay other countries to accept the waste.", consequences: [{ targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 200000000 }, { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 }], previewEffects: { publicApproval: -2, economicImpact: "Ongoing cost" }, outcomeText: "Waste is shipped abroad. Out of sight, out of mind—until the bills arrive." }
+      {
+        id: "recycle",
+        label: "National Recycling Program",
+        description: "Implement mandatory recycling and waste-to-energy plants.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 3,
+          },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Green investment" },
+        outcomeText: "Recycling becomes the norm. Waste-to-energy plants generate clean power.",
+      },
+      {
+        id: "new_landfill",
+        label: "New Landfill Sites",
+        description: "Open new landfill locations to handle the overflow.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 1,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3 },
+        outcomeText:
+          "NIMBY protests erupt near proposed landfill sites. Nobody wants trash nearby.",
+      },
+      {
+        id: "export",
+        label: "Export Waste",
+        description: "Pay other countries to accept the waste.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 200000000,
+          },
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 2,
+          },
+        ],
+        previewEffects: { publicApproval: -2, economicImpact: "Ongoing cost" },
+        outcomeText: "Waste is shipped abroad. Out of sight, out of mind—until the bills arrive.",
+      },
     ]),
     tags: JSON.stringify(["waste", "recycling", "landfill"]),
   },
   {
     slug: "flood_risk",
     title: "Flood Risk Increases",
-    description: "Climate patterns and poor drainage put {{countryName}}'s coastal and river cities at increased flood risk.",
+    description:
+      "Climate patterns and poor drainage put {{countryName}}'s coastal and river cities at increased flood risk.",
     domain: "environmental",
     category: "infrastructure",
     baseSeverity: "high",
     baseUrgency: 55,
     deadlineDaysBase: null,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 45 }, { field: "urbanPopulationPercent", op: ">", value: 55 }, { random: 0.12 }] }),
+    triggerConditions: trigger({
+      and: [
+        { field: "infrastructureRating", op: "<", value: 45 },
+        { field: "urbanPopulationPercent", op: ">", value: 55 },
+        { random: 0.12 },
+      ],
+    }),
     cooldownDays: 120,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "defenses", label: "Build Flood Defenses", description: "Construct levees, seawalls, and improved drainage.", consequences: [{ targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 }, { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 }], previewEffects: { publicApproval: 4, economicImpact: "Major investment" }, outcomeText: "Flood defenses protect millions. {{countryName}}'s resilience improves dramatically." },
-      { id: "relocate", label: "Managed Retreat", description: "Relocate communities from the most vulnerable areas.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: -5, economicImpact: "Relocation costs" }, outcomeText: "Families are relocated from danger zones. The moves are controversial but necessary." },
-      { id: "insurance", label: "Flood Insurance Mandate", description: "Require flood insurance for at-risk areas.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 3 }], previewEffects: { publicApproval: -3, economicImpact: "Individual burden" }, outcomeText: "Mandatory insurance shifts the financial risk to homeowners. Many struggle to afford it.", isAutoResolveDefault: true }
+      {
+        id: "defenses",
+        label: "Build Flood Defenses",
+        description: "Construct levees, seawalls, and improved drainage.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "infrastructureRating",
+            operation: "add",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 4 },
+        ],
+        previewEffects: { publicApproval: 4, economicImpact: "Major investment" },
+        outcomeText:
+          "Flood defenses protect millions. {{countryName}}'s resilience improves dramatically.",
+      },
+      {
+        id: "relocate",
+        label: "Managed Retreat",
+        description: "Relocate communities from the most vulnerable areas.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 5,
+          },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: -5, economicImpact: "Relocation costs" },
+        outcomeText:
+          "Families are relocated from danger zones. The moves are controversial but necessary.",
+      },
+      {
+        id: "insurance",
+        label: "Flood Insurance Mandate",
+        description: "Require flood insurance for at-risk areas.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 3,
+          },
+        ],
+        previewEffects: { publicApproval: -3, economicImpact: "Individual burden" },
+        outcomeText:
+          "Mandatory insurance shifts the financial risk to homeowners. Many struggle to afford it.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["flooding", "climate", "resilience"]),
   },
   {
     slug: "marine_pollution",
     title: "Marine Pollution Emergency",
-    description: "An oil spill or industrial discharge threatens {{countryName}}'s coastline and fishing industry.",
+    description:
+      "An oil spill or industrial discharge threatens {{countryName}}'s coastline and fishing industry.",
     domain: "environmental",
     category: "crisis",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 10,
-    triggerConditions: trigger({ and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.1 }] }),
+    triggerConditions: trigger({
+      and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.1 }],
+    }),
     cooldownDays: 180,
     maxActivePerCountry: 1,
     responseOptions: options([
-      { id: "cleanup", label: "Massive Cleanup Operation", description: "Deploy all resources to contain and clean the pollution.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 }, { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 }], previewEffects: { publicApproval: 5, economicImpact: "Cleanup costs" }, outcomeText: "A massive cleanup effort limits the damage. Marine ecosystems begin to recover." },
-      { id: "regulate", label: "Stricter Maritime Regulations", description: "Impose new regulations to prevent future incidents.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 }, { targetModel: "Country", targetField: "tradeBalance", operation: "subtract", value: 500000000 }], previewEffects: { publicApproval: 3, economicImpact: "Higher shipping costs" }, outcomeText: "New regulations make {{countryName}}'s waters safer but shipping costs rise." },
-      { id: "minimize", label: "Downplay the Impact", description: "Minimize public concern to protect the tourism industry.", consequences: [{ targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 7 }, { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "subtract", value: 5 }], previewEffects: { publicApproval: -7 }, outcomeText: "The cover-up fails as beaches turn black. Tourism collapses anyway.", isAutoResolveDefault: true }
+      {
+        id: "cleanup",
+        label: "Massive Cleanup Operation",
+        description: "Deploy all resources to contain and clean the pollution.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 5 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 5, economicImpact: "Cleanup costs" },
+        outcomeText:
+          "A massive cleanup effort limits the damage. Marine ecosystems begin to recover.",
+      },
+      {
+        id: "regulate",
+        label: "Stricter Maritime Regulations",
+        description: "Impose new regulations to prevent future incidents.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          {
+            targetModel: "Country",
+            targetField: "tradeBalance",
+            operation: "subtract",
+            value: 500000000,
+          },
+        ],
+        previewEffects: { publicApproval: 3, economicImpact: "Higher shipping costs" },
+        outcomeText: "New regulations make {{countryName}}'s waters safer but shipping costs rise.",
+      },
+      {
+        id: "minimize",
+        label: "Downplay the Impact",
+        description: "Minimize public concern to protect the tourism industry.",
+        consequences: [
+          {
+            targetModel: "Country",
+            targetField: "publicApproval",
+            operation: "subtract",
+            value: 7,
+          },
+          {
+            targetModel: "InternalStabilityMetrics",
+            targetField: "trustInGovernment",
+            operation: "subtract",
+            value: 5,
+          },
+        ],
+        previewEffects: { publicApproval: -7 },
+        outcomeText: "The cover-up fails as beaches turn black. Tourism collapses anyway.",
+        isAutoResolveDefault: true,
+      },
     ]),
     tags: JSON.stringify(["marine", "pollution", "oil-spill"]),
   },

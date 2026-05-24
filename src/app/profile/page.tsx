@@ -98,23 +98,27 @@ function ProfileContent() {
             <div className="mb-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+                  <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
                     Profile <span className="text-indigo-600 dark:text-indigo-400">Settings</span>
                   </h1>
                 </div>
-                
+
                 {user && (
                   <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/50 p-2 pr-6 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/50">
                     <div className="h-12 w-12 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                      <img 
-                        src={user.imageUrl} 
-                        alt={user.username || "User"} 
+                      <img
+                        src={user.imageUrl}
+                        alt={user.username || "User"}
                         className="h-full w-full object-cover"
                       />
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">Authenticated as</div>
-                      <div className="font-bold text-slate-900 dark:text-white">{user.username || user.firstName || "Diplomat"}</div>
+                      <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        Authenticated as
+                      </div>
+                      <div className="font-bold text-slate-900 dark:text-white">
+                        {user.username || user.firstName || "Diplomat"}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -210,87 +214,122 @@ function ProfileContent() {
                   </div>
                 )}
               </div>
-                <div className="glass-surface glass-refraction h-fit overflow-hidden rounded-3xl p-1 lg:col-span-4">
-                  <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
-                    <div className="mb-6 flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                        Account Settings
-                      </h3>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => {
-                          const next = !showIxnayID;
-                          setShowIxnayID(next);
-                          if (next) setTimeout(() => document.getElementById('ixnayid-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-                        }}
-                        className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
-                      >
-                        <div className="flex items-center">
-                          <Link2 className="mr-3 h-4 w-4 text-indigo-600" />
-                          IxnayID Sync
-                        </div>
-                        <div className={`h-2 w-2 rounded-full ${showIxnayID ? 'bg-indigo-600 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
-                      </button>
+              <div className="glass-surface glass-refraction h-fit overflow-hidden rounded-3xl p-1 lg:col-span-4">
+                <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
+                  <div className="mb-6 flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                      Account Settings
+                    </h3>
+                  </div>
 
-                      <button
-                        onClick={() => {
-                          const next = !showPreferences;
-                          setShowPreferences(next);
-                          if (next) setTimeout(() => document.getElementById('interface-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-                        }}
-                        className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
-                      >
-                        <div className="flex items-center">
-                          <Palette className="mr-3 h-4 w-4 text-indigo-500" />
-                          Interface Preferences
-                        </div>
-                        <div className={`h-2 w-2 rounded-full ${showPreferences ? 'bg-indigo-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
-                      </button>
-                      
-                      <button
-                        onClick={() => {
-                          const next = !showLore;
-                          setShowLore(next);
-                          if (next) setTimeout(() => document.getElementById('lore-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-                        }}
-                        className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
-                      >
-                        <div className="flex items-center">
-                          <BookOpen className="mr-3 h-4 w-4 text-blue-500" />
-                          LoreScanner Preferences
-                        </div>
-                        <div className={`h-2 w-2 rounded-full ${showLore ? 'bg-blue-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
-                      </button>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => {
+                        const next = !showIxnayID;
+                        setShowIxnayID(next);
+                        if (next)
+                          setTimeout(
+                            () =>
+                              document
+                                .getElementById("ixnayid-section")
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                            100
+                          );
+                      }}
+                      className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                    >
+                      <div className="flex items-center">
+                        <Link2 className="mr-3 h-4 w-4 text-indigo-600" />
+                        IxnayID Sync
+                      </div>
+                      <div
+                        className={`h-2 w-2 rounded-full ${showIxnayID ? "animate-pulse bg-indigo-600" : "bg-slate-300 dark:bg-slate-700"}`}
+                      />
+                    </button>
 
-                      <button
-                        onClick={() => {
-                          const next = !showThinkpages;
-                          setShowThinkpages(next);
-                          if (next) setTimeout(() => document.getElementById('thinkpages-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-                        }}
-                        className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
-                      >
-                        <div className="flex items-center">
-                          <User className="mr-3 h-4 w-4 text-purple-500" />
-                          Thinkpages Preferences
-                        </div>
-                        <div className={`h-2 w-2 rounded-full ${showThinkpages ? 'bg-purple-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-700'}`} />
-                      </button>
+                    <button
+                      onClick={() => {
+                        const next = !showPreferences;
+                        setShowPreferences(next);
+                        if (next)
+                          setTimeout(
+                            () =>
+                              document
+                                .getElementById("interface-section")
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                            100
+                          );
+                      }}
+                      className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                    >
+                      <div className="flex items-center">
+                        <Palette className="mr-3 h-4 w-4 text-indigo-500" />
+                        Interface Preferences
+                      </div>
+                      <div
+                        className={`h-2 w-2 rounded-full ${showPreferences ? "animate-pulse bg-indigo-500" : "bg-slate-300 dark:bg-slate-700"}`}
+                      />
+                    </button>
 
-                    </div>
+                    <button
+                      onClick={() => {
+                        const next = !showLore;
+                        setShowLore(next);
+                        if (next)
+                          setTimeout(
+                            () =>
+                              document
+                                .getElementById("lore-section")
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                            100
+                          );
+                      }}
+                      className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                    >
+                      <div className="flex items-center">
+                        <BookOpen className="mr-3 h-4 w-4 text-blue-500" />
+                        LoreScanner Preferences
+                      </div>
+                      <div
+                        className={`h-2 w-2 rounded-full ${showLore ? "animate-pulse bg-blue-500" : "bg-slate-300 dark:bg-slate-700"}`}
+                      />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const next = !showThinkpages;
+                        setShowThinkpages(next);
+                        if (next)
+                          setTimeout(
+                            () =>
+                              document
+                                .getElementById("thinkpages-section")
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                            100
+                          );
+                      }}
+                      className="glass-interactive flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-all hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-800/60"
+                    >
+                      <div className="flex items-center">
+                        <User className="mr-3 h-4 w-4 text-purple-500" />
+                        Thinkpages Preferences
+                      </div>
+                      <div
+                        className={`h-2 w-2 rounded-full ${showThinkpages ? "animate-pulse bg-purple-500" : "bg-slate-300 dark:bg-slate-700"}`}
+                      />
+                    </button>
                   </div>
                 </div>
+              </div>
             </div>
           </div>
         </div>
       </SignedIn>
       <SignedOut>
-          <div className="flex min-h-screen flex-col items-center justify-center">
-            <SignInButton mode="modal" />
-          </div>
-        </SignedOut>
+        <div className="flex min-h-screen flex-col items-center justify-center">
+          <SignInButton mode="modal" />
+        </div>
+      </SignedOut>
     </>
   );
 }

@@ -26,9 +26,7 @@ export function TerrainSection() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-white">Terrain Configuration</h1>
-        <p className="mt-2 text-sm text-white/60">
-          Shape the physical geography of your world.
-        </p>
+        <p className="mt-2 text-sm text-white/60">Shape the physical geography of your world.</p>
       </div>
 
       {/* Sliders */}
@@ -37,7 +35,7 @@ export function TerrainSection() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm font-medium text-white/80">Continent Count</label>
-            <span className="text-sm font-mono text-white/60">{params.continentCount}</span>
+            <span className="font-mono text-sm text-white/60">{params.continentCount}</span>
           </div>
           <input
             type="range"
@@ -58,7 +56,7 @@ export function TerrainSection() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm font-medium text-white/80">Ocean Coverage</label>
-            <span className="text-sm font-mono text-white/60">
+            <span className="font-mono text-sm text-white/60">
               {Math.round(params.oceanPercentage * 100)}%
             </span>
           </div>
@@ -81,7 +79,7 @@ export function TerrainSection() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm font-medium text-white/80">Terrain Roughness</label>
-            <span className="text-sm font-mono text-white/60">
+            <span className="font-mono text-sm text-white/60">
               {params.terrainRoughness.toFixed(2)}
             </span>
           </div>
@@ -104,7 +102,7 @@ export function TerrainSection() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm font-medium text-white/80">Erosion Intensity</label>
-            <span className="text-sm font-mono text-white/60">
+            <span className="font-mono text-sm text-white/60">
               {params.erosionIntensity.toFixed(2)}
             </span>
           </div>

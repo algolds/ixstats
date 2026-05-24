@@ -65,11 +65,9 @@ export function LinkageValidator() {
     <div className="space-y-4">
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-xl border border-border p-3">
-          <div className="text-2xl font-bold text-foreground">
-            {data.totalCountries}
-          </div>
-          <div className="text-xs text-muted-foreground">Total Countries</div>
+        <div className="border-border rounded-xl border p-3">
+          <div className="text-foreground text-2xl font-bold">{data.totalCountries}</div>
+          <div className="text-muted-foreground text-xs">Total Countries</div>
         </div>
         <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-800 dark:bg-emerald-950/20">
           <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
@@ -83,11 +81,15 @@ export function LinkageValidator() {
           </div>
           <div className="text-xs text-amber-600 dark:text-amber-500">Unlinked</div>
         </div>
-        <div className={`rounded-xl border p-3 ${data.issueCount > 0 ? "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20" : "border-border"}`}>
-          <div className={`text-2xl font-bold ${data.issueCount > 0 ? "text-red-700 dark:text-red-400" : "text-foreground"}`}>
+        <div
+          className={`rounded-xl border p-3 ${data.issueCount > 0 ? "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20" : "border-border"}`}
+        >
+          <div
+            className={`text-2xl font-bold ${data.issueCount > 0 ? "text-red-700 dark:text-red-400" : "text-foreground"}`}
+          >
             {data.issueCount}
           </div>
-          <div className="text-xs text-muted-foreground">Issues</div>
+          <div className="text-muted-foreground text-xs">Issues</div>
         </div>
       </div>
 
@@ -109,7 +111,7 @@ export function LinkageValidator() {
         </button>
         <button
           onClick={() => refetch()}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-accent"
+          className="border-border text-foreground/80 hover:bg-accent rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
         >
           Refresh
         </button>
@@ -127,56 +129,56 @@ export function LinkageValidator() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg border border-border p-1">
+      <div className="border-border flex gap-1 rounded-lg border p-1">
         {(["issues", "linked", "unlinked"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-              tab === t
-                ? "bg-blue-500 text-white"
-                : "text-foreground/80 hover:bg-accent"
+              tab === t ? "bg-blue-500 text-white" : "text-foreground/80 hover:bg-accent"
             }`}
           >
-            {t} ({t === "issues" ? data.issueCount : t === "linked" ? data.linkedCount : data.unlinkedCount})
+            {t} (
+            {t === "issues"
+              ? data.issueCount
+              : t === "linked"
+                ? data.linkedCount
+                : data.unlinkedCount}
+            )
           </button>
         ))}
       </div>
 
       {/* Issues tab */}
       {tab === "issues" && (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="border-border overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Type</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Country</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Feature</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Detail</th>
+              <tr className="border-border bg-muted border-b">
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Type</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Country</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Feature</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Detail</th>
               </tr>
             </thead>
             <tbody>
               {data.issues.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={4} className="text-muted-foreground px-4 py-8 text-center">
                     No linkage issues found.
                   </td>
                 </tr>
               ) : (
                 data.issues.map((issue, i) => (
-                  <tr key={i} className="border-b border-border/50 last:border-0">
+                  <tr key={i} className="border-border/50 border-b last:border-0">
                     <td className="px-4 py-3">
                       <IssueTypeBadge type={issue.type} />
                     </td>
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      {issue.countryName}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td className="text-foreground px-4 py-3 font-medium">{issue.countryName}</td>
+                    <td className="text-muted-foreground px-4 py-3">
                       {issue.featureName ?? "\u2014"}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {issue.detail}
-                    </td>
+                    <td className="text-muted-foreground px-4 py-3 text-xs">{issue.detail}</td>
                   </tr>
                 ))
               )}
@@ -187,33 +189,43 @@ export function LinkageValidator() {
 
       {/* Linked tab */}
       {tab === "linked" && (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="border-border overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Country</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Map Feature</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Area</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Owner</th>
+              <tr className="border-border bg-muted border-b">
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Country</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Map Feature</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Area</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Owner</th>
               </tr>
             </thead>
             <tbody>
               {data.linked.map((c) => (
-                <tr key={c.countryId} className="border-b border-border/50 last:border-0">
+                <tr key={c.countryId} className="border-border/50 border-b last:border-0">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {c.countryFlag && (
-                        <img src={c.countryFlag} alt="" className="h-4 w-6 rounded-sm border border-border object-cover" />
+                        <img
+                          src={c.countryFlag}
+                          alt=""
+                          className="border-border h-4 w-6 rounded-sm border object-cover"
+                        />
                       )}
-                      <span className="font-medium text-foreground">{c.countryName}</span>
+                      <span className="text-foreground font-medium">{c.countryName}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{c.featureName}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
+                    {c.featureName}
+                  </td>
+                  <td className="text-muted-foreground px-4 py-3">
                     {c.areaSqKm ? `${Math.round(c.areaSqKm).toLocaleString()} km\u00B2` : "\u2014"}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {c.hasOwner ? c.ownerName : <span className="italic text-muted-foreground">NPC</span>}
+                  <td className="text-muted-foreground px-4 py-3 text-xs">
+                    {c.hasOwner ? (
+                      c.ownerName
+                    ) : (
+                      <span className="text-muted-foreground italic">NPC</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -224,32 +236,36 @@ export function LinkageValidator() {
 
       {/* Unlinked tab */}
       {tab === "unlinked" && (
-        <div className="overflow-x-auto rounded-xl border border-border">
+        <div className="border-border overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted">
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Country</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Has Geometry</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Has LandArea</th>
-                <th className="px-4 py-3 text-left font-medium text-foreground/80">Owner</th>
+              <tr className="border-border bg-muted border-b">
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Country</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Has Geometry</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Has LandArea</th>
+                <th className="text-foreground/80 px-4 py-3 text-left font-medium">Owner</th>
               </tr>
             </thead>
             <tbody>
               {data.unlinked.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={4} className="text-muted-foreground px-4 py-8 text-center">
                     All countries are linked.
                   </td>
                 </tr>
               ) : (
                 data.unlinked.map((c) => (
-                  <tr key={c.countryId} className="border-b border-border/50 last:border-0">
+                  <tr key={c.countryId} className="border-border/50 border-b last:border-0">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {c.countryFlag && (
-                          <img src={c.countryFlag} alt="" className="h-4 w-6 rounded-sm border border-border object-cover" />
+                          <img
+                            src={c.countryFlag}
+                            alt=""
+                            className="border-border h-4 w-6 rounded-sm border object-cover"
+                          />
                         )}
-                        <span className="font-medium text-foreground">{c.countryName}</span>
+                        <span className="text-foreground font-medium">{c.countryName}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -266,8 +282,12 @@ export function LinkageValidator() {
                         <span className="text-muted-foreground">No</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {c.hasOwner ? c.ownerName : <span className="italic text-muted-foreground">NPC</span>}
+                    <td className="text-muted-foreground px-4 py-3 text-xs">
+                      {c.hasOwner ? (
+                        c.ownerName
+                      ) : (
+                        <span className="text-muted-foreground italic">NPC</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -297,7 +317,9 @@ function IssueTypeBadge({ type }: { type: string }) {
   };
 
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles[type] ?? "bg-muted text-foreground/80"}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles[type] ?? "bg-muted text-foreground/80"}`}
+    >
       {labels[type] ?? type}
     </span>
   );

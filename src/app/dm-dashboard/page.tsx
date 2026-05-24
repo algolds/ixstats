@@ -424,7 +424,10 @@ function DmDashboardContent() {
                     </button>
                     <button
                       type="submit"
-                      disabled={addStorytellerEffectMutation.isPending || updateStorytellerEffectMutation.isPending}
+                      disabled={
+                        addStorytellerEffectMutation.isPending ||
+                        updateStorytellerEffectMutation.isPending
+                      }
                       className="flex items-center rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                     >
                       <Save className="mr-2 h-4 w-4" />
@@ -657,8 +660,8 @@ export default function DmDashboard() {
             Authentication Not Configured
           </h1>
           <p className="mb-6 text-gray-600 dark:text-gray-300">
-            User authentication is not set up for this application. The Storyteller Dashboard requires
-            authentication to access administrative features.
+            User authentication is not set up for this application. The Storyteller Dashboard
+            requires authentication to access administrative features.
           </p>
           <div className="flex justify-center gap-4">
             <button

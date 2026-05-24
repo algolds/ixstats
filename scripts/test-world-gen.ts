@@ -7,8 +7,20 @@
  * Usage: bunx tsx scripts/test-world-gen.ts
  */
 
-import { generateWorld, PRESETS, DEFAULT_PARAMS, type WorldGenParams } from "../src/lib/procedural/world-generator";
-import type { Feature, Polygon, MultiPolygon, LineString, Position, FeatureCollection } from "geojson";
+import {
+  generateWorld,
+  PRESETS,
+  DEFAULT_PARAMS,
+  type WorldGenParams,
+} from "../src/lib/procedural/world-generator";
+import type {
+  Feature,
+  Polygon,
+  MultiPolygon,
+  LineString,
+  Position,
+  FeatureCollection,
+} from "geojson";
 
 // ─── Geometry Analysis Helpers ─────────────────────────────────
 
@@ -22,7 +34,9 @@ function getCoords(feature: Feature): Position[][] {
 
 function ringVertexCount(ring: Position[]): number {
   // Exclude closing vertex (same as first)
-  return ring.length > 0 && ring[0]![0] === ring[ring.length - 1]![0] && ring[0]![1] === ring[ring.length - 1]![1]
+  return ring.length > 0 &&
+    ring[0]![0] === ring[ring.length - 1]![0] &&
+    ring[0]![1] === ring[ring.length - 1]![1]
     ? ring.length - 1
     : ring.length;
 }
@@ -89,7 +103,11 @@ function hasSelfIntersection(ring: Position[]): boolean {
     else if (cross < 0) negativeSegments++;
   }
   // If both positive and negative, likely self-intersecting
-  return positiveSegments > 0 && negativeSegments > 0 && Math.min(positiveSegments, negativeSegments) > ring.length * 0.3;
+  return (
+    positiveSegments > 0 &&
+    negativeSegments > 0 &&
+    Math.min(positiveSegments, negativeSegments) > ring.length * 0.3
+  );
 }
 
 // ─── Analysis Functions ────────────────────────────────────────
@@ -135,13 +153,14 @@ function analyzeLayer(fc: FeatureCollection | undefined): LayerStats | null {
       avg: Math.round(sum(vertexCounts) / vertexCounts.length),
       total: sum(vertexCounts),
     },
-    convexityStats: convexityRatios.length > 0
-      ? {
-          min: Number(minArr(convexityRatios).toFixed(3)),
-          max: Number(maxArr(convexityRatios).toFixed(3)),
-          avg: Number((sum(convexityRatios) / convexityRatios.length).toFixed(3)),
-        }
-      : { min: 0, max: 0, avg: 0 },
+    convexityStats:
+      convexityRatios.length > 0
+        ? {
+            min: Number(minArr(convexityRatios).toFixed(3)),
+            max: Number(maxArr(convexityRatios).toFixed(3)),
+            avg: Number((sum(convexityRatios) / convexityRatios.length).toFixed(3)),
+          }
+        : { min: 0, max: 0, avg: 0 },
     selfIntersections,
   };
 }
@@ -161,7 +180,9 @@ function formatStats(name: string, stats: LayerStats | null): string {
 function runTest(name: string, params: WorldGenParams) {
   console.log(`\n${"=".repeat(60)}`);
   console.log(`Generating: ${name}`);
-  console.log(`  seed=${params.seed} continents=${params.continentCount} countries=${params.countryCountRange} res=${params.gridResolution}`);
+  console.log(
+    `  seed=${params.seed} continents=${params.continentCount} countries=${params.countryCountRange} res=${params.gridResolution}`
+  );
   console.log(`  similarity=${params.similarity ?? 0}`);
 
   const result = generateWorld(params);
@@ -203,7 +224,9 @@ function runTest(name: string, params: WorldGenParams) {
       }
     }
     if (totalPolArea > 0) {
-      console.log(`\n  Altitude coverage: ${((totalAltArea / totalPolArea) * 100).toFixed(1)}% of political area`);
+      console.log(
+        `\n  Altitude coverage: ${((totalAltArea / totalPolArea) * 100).toFixed(1)}% of political area`
+      );
     }
   }
 

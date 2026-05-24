@@ -53,9 +53,7 @@ export default function MemberProfilePage() {
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-bold text-[var(--forum-text)]">
-                  {member.username}
-                </h1>
+                <h1 className="text-xl font-bold text-[var(--forum-text)]">{member.username}</h1>
                 {member.userTitle && (
                   <p className="text-sm text-[var(--forum-accent)]">{member.userTitle}</p>
                 )}
@@ -84,21 +82,13 @@ export default function MemberProfilePage() {
               label="Reactions"
               value={member.reactionScore.toLocaleString()}
             />
-            <StatCard
-              icon={Trophy}
-              label="Trophies"
-              value={member.trophyPoints.toLocaleString()}
-            />
-            <StatCard
-              icon={Calendar}
-              label="Joined"
-              value={formatDate(member.registerDate)}
-            />
+            <StatCard icon={Trophy} label="Trophies" value={member.trophyPoints.toLocaleString()} />
+            <StatCard icon={Calendar} label="Joined" value={formatDate(member.registerDate)} />
           </div>
 
           {/* About */}
           {member.about && (
-            <div className="mt-4 glass-forum-child p-4">
+            <div className="glass-forum-child mt-4 p-4">
               <h2 className="mb-2 text-sm font-semibold text-[var(--forum-text)]">About</h2>
               <div
                 className="forum-post-content text-sm"
@@ -109,7 +99,7 @@ export default function MemberProfilePage() {
 
           {/* Custom fields (IxStats data) */}
           {member.customFields && Object.keys(member.customFields).length > 0 && (
-            <div className="mt-4 glass-forum-child p-4">
+            <div className="glass-forum-child mt-4 p-4">
               <h2 className="mb-2 text-sm font-semibold text-[var(--forum-text)]">IxStats</h2>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(member.customFields).map(([key, value]) => (

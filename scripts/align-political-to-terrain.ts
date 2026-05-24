@@ -15,8 +15,7 @@ import { join } from "path";
 const isDryRun = process.argv.includes("--dry-run");
 const isVerbose = process.argv.includes("--verbose");
 const thresholdIdx = process.argv.indexOf("--threshold");
-const SNAP_THRESHOLD =
-  thresholdIdx !== -1 ? parseFloat(process.argv[thresholdIdx + 1]) : 0.05;
+const SNAP_THRESHOLD = thresholdIdx !== -1 ? parseFloat(process.argv[thresholdIdx + 1]) : 0.05;
 const SNAP_THRESHOLD_SQ = SNAP_THRESHOLD * SNAP_THRESHOLD;
 
 const GEOJSON_DIR = join(process.cwd(), "scripts", "geojson_fixed");
@@ -90,11 +89,7 @@ class SpatialIndex {
 
 function extractPositions(coords: unknown): Coord[] {
   if (!Array.isArray(coords)) return [];
-  if (
-    coords.length >= 2 &&
-    typeof coords[0] === "number" &&
-    typeof coords[1] === "number"
-  ) {
+  if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
     return [[coords[0] as number, coords[1] as number]];
   }
   const result: Coord[] = [];
@@ -113,19 +108,11 @@ interface Stats {
   totalSnapDist: number;
 }
 
-function walkAndTransform(
-  coords: unknown,
-  index: SpatialIndex,
-  stats: Stats
-): unknown {
+function walkAndTransform(coords: unknown, index: SpatialIndex, stats: Stats): unknown {
   if (!Array.isArray(coords)) return coords;
 
   // Leaf: [lng, lat, ...]
-  if (
-    coords.length >= 2 &&
-    typeof coords[0] === "number" &&
-    typeof coords[1] === "number"
-  ) {
+  if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
     stats.totalVertices++;
     let lng = coords[0] as number;
     const lat = coords[1] as number;
@@ -216,10 +203,7 @@ async function main() {
     globalStats.totalSnapDist += featureStats.totalSnapDist;
 
     const name =
-      feature.properties?.displayName ||
-      feature.properties?.id ||
-      feature.id ||
-      "unknown";
+      feature.properties?.displayName || feature.properties?.id || feature.id || "unknown";
 
     featureReports.push({ name, stats: featureStats });
   }

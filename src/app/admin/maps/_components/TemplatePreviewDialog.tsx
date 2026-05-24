@@ -63,7 +63,15 @@ export const TemplatePreviewDialog = React.memo(function TemplatePreviewDialog({
 
     map.on("load", () => {
       // Add each layer type
-      const layerOrder = ["background", "altitudes", "climate", "icecaps", "lakes", "rivers", "political"];
+      const layerOrder = [
+        "background",
+        "altitudes",
+        "climate",
+        "icecaps",
+        "lakes",
+        "rivers",
+        "political",
+      ];
 
       for (const layerType of layerOrder) {
         const fc = layers[layerType];
@@ -94,7 +102,8 @@ export const TemplatePreviewDialog = React.memo(function TemplatePreviewDialog({
           id: `${sourceId}-line`,
           type: "line",
           source: sourceId,
-          filter: ["any",
+          filter: [
+            "any",
             ["==", "$type", "Polygon"],
             ["==", "$type", "MultiPolygon"],
             ["==", "$type", "LineString"],
@@ -128,17 +137,17 @@ export const TemplatePreviewDialog = React.memo(function TemplatePreviewDialog({
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="flex h-[80vh] w-[90vw] max-w-5xl flex-col rounded-xl border border-border bg-card shadow-2xl">
+    <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+      <div className="border-border bg-card flex h-[80vh] w-[90vw] max-w-5xl flex-col rounded-xl border shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+        <div className="border-border flex items-center justify-between border-b px-5 py-3">
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-purple-400" />
-            <h3 className="text-lg font-semibold text-foreground">Template Preview</h3>
+            <h3 className="text-foreground text-lg font-semibold">Template Preview</h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
           >
             <X className="h-5 w-5" />
           </button>
@@ -149,34 +158,28 @@ export const TemplatePreviewDialog = React.memo(function TemplatePreviewDialog({
           {/* Map */}
           <div className="relative flex-1">
             {isLoading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/90">
-                <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="bg-card/90 absolute inset-0 z-10 flex items-center justify-center">
+                <div className="text-muted-foreground flex items-center gap-2">
                   <Loader2 className="h-5 w-5 animate-spin" />
                   <span className="text-sm">Loading template data...</span>
                 </div>
               </div>
             )}
             {error && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/90">
+              <div className="bg-card/90 absolute inset-0 z-10 flex items-center justify-center">
                 <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">
                   Failed to load: {error.message}
                 </div>
               </div>
             )}
-            <div
-              ref={containerRef}
-              className="h-full w-full"
-              style={{ minHeight: 300 }}
-            />
+            <div ref={containerRef} className="h-full w-full" style={{ minHeight: 300 }} />
           </div>
 
           {/* Sidebar */}
-          <div className="w-56 border-l border-border p-4">
-            <h4 className="mb-3 text-xs font-medium uppercase text-muted-foreground">
-              Layers
-            </h4>
+          <div className="border-border w-56 border-l p-4">
+            <h4 className="text-muted-foreground mb-3 text-xs font-medium uppercase">Layers</h4>
             {layerSummary.length === 0 && !isLoading && (
-              <p className="text-xs text-muted-foreground/50">No layers</p>
+              <p className="text-muted-foreground/50 text-xs">No layers</p>
             )}
             <div className="space-y-2">
               {layerSummary.map(({ type, count }) => (
@@ -186,33 +189,28 @@ export const TemplatePreviewDialog = React.memo(function TemplatePreviewDialog({
                       className="h-3 w-3 rounded-sm"
                       style={{ backgroundColor: LAYER_COLORS[type] || "#888" }}
                     />
-                    <span className="text-xs text-foreground capitalize">{type}</span>
+                    <span className="text-foreground text-xs capitalize">{type}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{count}</span>
+                  <span className="text-muted-foreground text-xs">{count}</span>
                 </div>
               ))}
             </div>
 
             {data?.metadata && (
-              <div className="mt-4 border-t border-border pt-3">
-                <h4 className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+              <div className="border-border mt-4 border-t pt-3">
+                <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase">
                   Metadata
                 </h4>
-                <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="text-muted-foreground space-y-1 text-xs">
                   {(() => {
                     const meta = data.metadata as Record<string, unknown>;
                     return (
                       <>
-                        {meta.totalFeatures && (
-                          <div>Features: {String(meta.totalFeatures)}</div>
-                        )}
-                        {meta.totalCountries && (
-                          <div>Countries: {String(meta.totalCountries)}</div>
-                        )}
+                        {meta.totalFeatures && <div>Features: {String(meta.totalFeatures)}</div>}
+                        {meta.totalCountries && <div>Countries: {String(meta.totalCountries)}</div>}
                         {meta.exportedAt && (
                           <div>
-                            Exported:{" "}
-                            {new Date(meta.exportedAt as string).toLocaleDateString()}
+                            Exported: {new Date(meta.exportedAt as string).toLocaleDateString()}
                           </div>
                         )}
                       </>

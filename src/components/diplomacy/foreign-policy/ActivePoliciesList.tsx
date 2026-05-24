@@ -96,14 +96,8 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">
-          Active Foreign Policies ({policies.length})
-        </h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowExpired(!showExpired)}
-        >
+        <h3 className="text-sm font-semibold">Active Foreign Policies ({policies.length})</h3>
+        <Button variant="ghost" size="sm" onClick={() => setShowExpired(!showExpired)}>
           {showExpired ? "Hide expired" : "Show all"}
         </Button>
       </div>
@@ -130,7 +124,7 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{config.label}</span>
+                    <span className="text-sm font-medium">{config.label}</span>
                     <Badge
                       variant="outline"
                       className={
@@ -147,8 +141,13 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
                   </div>
                   <p className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
                     {isInitiator ? "Imposed on" : "Received from"}{" "}
-                    <UnifiedCountryFlag countryName={otherCountry.name} flagUrl={otherCountry.flagUrl} size="xs" showTooltip={false} />
-                    <span className="font-medium text-foreground">{otherCountry.name}</span>
+                    <UnifiedCountryFlag
+                      countryName={otherCountry.name}
+                      flagUrl={otherCountry.flagUrl}
+                      size="xs"
+                      showTooltip={false}
+                    />
+                    <span className="text-foreground font-medium">{otherCountry.name}</span>
                   </p>
                   {policy.reason && (
                     <p className="text-muted-foreground mt-1 text-xs italic">
@@ -191,8 +190,8 @@ export function ActivePoliciesList({ countryId }: ActivePoliciesListProps) {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Lift {config.label}?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will end the {config.label.toLowerCase()} against {otherCountry.name}.
-                          Economic effects will cease and partial diplomatic recovery will begin.
+                          This will end the {config.label.toLowerCase()} against {otherCountry.name}
+                          . Economic effects will cease and partial diplomatic recovery will begin.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

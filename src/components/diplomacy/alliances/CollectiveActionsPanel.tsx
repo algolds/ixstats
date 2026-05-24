@@ -47,7 +47,11 @@ const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string }> = {
   expired: { icon: MinusCircle, color: "text-gray-500" },
 };
 
-export function CollectiveActionsPanel({ allianceId, countryId, myRole }: CollectiveActionsPanelProps) {
+export function CollectiveActionsPanel({
+  allianceId,
+  countryId,
+  myRole,
+}: CollectiveActionsPanelProps) {
   const [proposeOpen, setProposeOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [actionType, setActionType] = useState<string>("joint_statement");
@@ -129,7 +133,11 @@ export function CollectiveActionsPanel({ allianceId, countryId, myRole }: Collec
                   onClick={() =>
                     proposeMutation.mutate({
                       allianceId,
-                      actionType: actionType as "collective_sanction" | "shared_defense" | "trade_bloc" | "joint_statement",
+                      actionType: actionType as
+                        | "collective_sanction"
+                        | "shared_defense"
+                        | "trade_bloc"
+                        | "joint_statement",
                       title,
                       description: description || undefined,
                     })
@@ -149,7 +157,7 @@ export function CollectiveActionsPanel({ allianceId, countryId, myRole }: Collec
       </div>
 
       {actions.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-4">
+        <p className="text-muted-foreground py-4 text-center text-xs">
           No proposals yet. Members can propose collective actions for a vote.
         </p>
       ) : (
@@ -167,13 +175,13 @@ export function CollectiveActionsPanel({ allianceId, countryId, myRole }: Collec
                       <StatusIcon className={`h-3 w-3 ${statusCfg.color}`} />
                       <span className="font-medium">{action.title}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="mt-1 flex items-center gap-2">
                       <Badge variant="outline" className="text-[10px]">
                         {action.actionType.replace("_", " ")}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        Votes: {action.votesFor} for / {action.votesAgainst} against
-                        (need {action.requiredVotes})
+                      <span className="text-muted-foreground text-xs">
+                        Votes: {action.votesFor} for / {action.votesAgainst} against (need{" "}
+                        {action.requiredVotes})
                       </span>
                     </div>
                   </div>
@@ -184,9 +192,7 @@ export function CollectiveActionsPanel({ allianceId, countryId, myRole }: Collec
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-green-500 hover:text-green-600"
-                        onClick={() =>
-                          voteMutation.mutate({ actionId: action.id, vote: "for" })
-                        }
+                        onClick={() => voteMutation.mutate({ actionId: action.id, vote: "for" })}
                         disabled={voteMutation.isPending}
                       >
                         <ThumbsUp className="h-3 w-3" />

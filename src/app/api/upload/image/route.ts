@@ -47,10 +47,16 @@ function sanitizeSvg(svgContent: string): string {
 
   // Remove javascript: and data: URLs in href/xlink:href/src attributes
   sanitized = sanitized.replace(/(href|xlink:href|src)\s*=\s*["']?\s*javascript:[^"'\s>]*/gi, "");
-  sanitized = sanitized.replace(/(href|xlink:href|src)\s*=\s*["']?\s*data:text\/html[^"'\s>]*/gi, "");
+  sanitized = sanitized.replace(
+    /(href|xlink:href|src)\s*=\s*["']?\s*data:text\/html[^"'\s>]*/gi,
+    ""
+  );
 
   // Remove foreignObject elements (can embed HTML)
-  sanitized = sanitized.replace(/<foreignObject\b[^<]*(?:(?!<\/foreignObject>)<[^<]*)*<\/foreignObject>/gi, "");
+  sanitized = sanitized.replace(
+    /<foreignObject\b[^<]*(?:(?!<\/foreignObject>)<[^<]*)*<\/foreignObject>/gi,
+    ""
+  );
 
   // Remove use elements with external references (can load external content)
   sanitized = sanitized.replace(/<use\b[^>]*xlink:href\s*=\s*["'][^#][^"']*["'][^>]*>/gi, "");
@@ -88,24 +94,18 @@ export async function POST(request: NextRequest) {
     // SECURITY: Rate limit file uploads
     const rateLimitResult = await rateLimiter.check(userId, "file_upload");
     if (!rateLimitResult.success) {
-      console.warn(
-        `[SECURITY] Rate limit exceeded for file upload: userId=${userId}`
-      );
+      console.warn(`[SECURITY] Rate limit exceeded for file upload: userId=${userId}`);
       return NextResponse.json(
         {
           success: false,
           error: "Rate limit exceeded. Please try again later.",
-          retryAfter: Math.ceil(
-            (rateLimitResult.resetAt.getTime() - Date.now()) / 1000
-          ),
+          retryAfter: Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000),
         },
         {
           status: 429,
           headers: {
             "Retry-After": String(
-              Math.ceil(
-                (rateLimitResult.resetAt.getTime() - Date.now()) / 1000
-              )
+              Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000)
             ),
           },
         }
@@ -161,9 +161,7 @@ export async function POST(request: NextRequest) {
       const svgContent = buffer.toString("utf-8");
       const sanitizedSvg = sanitizeSvg(svgContent);
       buffer = Buffer.from(sanitizedSvg, "utf-8");
-      console.log(
-        `[ImageUpload] Sanitized SVG file for user ${userId}: ${file.name}`
-      );
+      console.log(`[ImageUpload] Sanitized SVG file for user ${userId}: ${file.name}`);
     }
 
     // Save the file to disk
@@ -171,7 +169,9 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Generate public URL with base path for production
-    const publicUrl = BASE_PATH ? `${BASE_PATH}/images/uploads/${fileName}` : `/images/uploads/${fileName}`;
+    const publicUrl = BASE_PATH
+      ? `${BASE_PATH}/images/uploads/${fileName}`
+      : `/images/uploads/${fileName}`;
 
     console.log(
       `[ImageUpload] Successfully saved ${file.name} as ${fileName} (${file.size} bytes) for user ${userId} at ${publicUrl}`

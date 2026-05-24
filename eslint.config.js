@@ -36,7 +36,7 @@ export default tseslint.config(
     },
     plugins: {
       "@typescript-eslint": tseslint.plugin,
-      "react": reactPlugin,
+      react: reactPlugin,
       "react-hooks": reactHooksPlugin,
       "unused-imports": unusedImports,
     },
@@ -48,33 +48,36 @@ export default tseslint.config(
     rules: {
       // Unused imports - auto-fixable!
       "unused-imports/no-unused-imports": "warn",
-      "unused-imports/no-unused-vars": ["warn", {
-        vars: "all",
-        varsIgnorePattern: "^_",
-        args: "after-used",
-        argsIgnorePattern: "^_",
-        caughtErrorsIgnorePattern: "^_"
-      }],
-      
+      "unused-imports/no-unused-vars": [
+        "warn",
+        {
+          vars: "all",
+          varsIgnorePattern: "^_",
+          args: "after-used",
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+
       // Disable the base rule as it conflicts
       "@typescript-eslint/no-unused-vars": "off",
-      
+
       // TypeScript rules - relaxed for large codebase
       "@typescript-eslint/no-explicit-any": "off", // Too many to fix at once
       "@typescript-eslint/no-empty-function": "off",
       "@typescript-eslint/no-empty-interface": "off",
       "@typescript-eslint/ban-ts-comment": "warn",
       "@typescript-eslint/no-require-imports": "off",
-      
+
       // React hooks rules - important for correctness
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
-      
+
       // General rules
       "no-console": "off", // Handled by logger system
       "prefer-const": "warn",
       "no-var": "error",
-      "eqeqeq": ["warn", "always", { null: "ignore" }],
+      eqeqeq: ["warn", "always", { null: "ignore" }],
     },
   }
 );

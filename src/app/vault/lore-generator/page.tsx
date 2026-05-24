@@ -21,22 +21,20 @@ export default function LoreGeneratorPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-blue-900/20 p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Wiki Lore Card Generator</h1>
-          <p className="text-white/70">
-            Request custom lore cards from IxWiki and IIWiki articles
-          </p>
+          <h1 className="mb-2 text-4xl font-bold text-white">Wiki Lore Card Generator</h1>
+          <p className="text-white/70">Request custom lore cards from IxWiki and IIWiki articles</p>
         </div>
 
         {/* Info Panel */}
-        <div className="glass-parent p-6 mb-6 space-y-4">
+        <div className="glass-parent mb-6 space-y-4 p-6">
           <h2 className="text-2xl font-bold text-white">How It Works</h2>
 
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-400 text-gray-900 font-bold flex items-center justify-center flex-shrink-0">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-400 font-bold text-gray-900">
                 1
               </div>
               <div>
@@ -48,7 +46,7 @@ export default function LoreGeneratorPage() {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-400 text-gray-900 font-bold flex items-center justify-center flex-shrink-0">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-400 font-bold text-gray-900">
                 2
               </div>
               <div>
@@ -60,7 +58,7 @@ export default function LoreGeneratorPage() {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-400 text-gray-900 font-bold flex items-center justify-center flex-shrink-0">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-400 font-bold text-gray-900">
                 3
               </div>
               <div>
@@ -72,22 +70,23 @@ export default function LoreGeneratorPage() {
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-400 text-gray-900 font-bold flex items-center justify-center flex-shrink-0">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-400 font-bold text-gray-900">
                 4
               </div>
               <div>
                 <div className="font-semibold text-white">Card Generation</div>
                 <div className="text-sm text-white/60">
-                  Once approved, the system automatically generates your lore card with quality-based rarity
+                  Once approved, the system automatically generates your lore card with
+                  quality-based rarity
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="glass-child p-4 rounded-lg bg-indigo-500/10 border border-indigo-400/20">
+          <div className="glass-child rounded-lg border border-indigo-400/20 bg-indigo-500/10 p-4">
             <div className="flex items-start gap-3">
               <svg
-                className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5"
+                className="mt-0.5 h-5 w-5 flex-shrink-0 text-indigo-400"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -98,18 +97,17 @@ export default function LoreGeneratorPage() {
                 />
               </svg>
               <div className="text-sm text-white/80">
-                <strong className="text-white">Lore Card Quality:</strong> Card rarity is
-                determined by article quality metrics including length, references, inbound links,
-                categories, infoboxes, and featured status. Higher quality articles generate rarer
-                cards!
+                <strong className="text-white">Lore Card Quality:</strong> Card rarity is determined
+                by article quality metrics including length, references, inbound links, categories,
+                infoboxes, and featured status. Higher quality articles generate rarer cards!
               </div>
             </div>
           </div>
 
-          <div className="glass-child p-4 rounded-lg bg-yellow-500/10 border border-yellow-400/20">
+          <div className="glass-child rounded-lg border border-yellow-400/20 bg-yellow-500/10 p-4">
             <div className="flex items-start gap-3">
               <svg
-                className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5"
+                className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-400"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -134,10 +132,10 @@ export default function LoreGeneratorPage() {
         </div>
 
         {/* Back Button */}
-        <div className="text-center mt-6">
+        <div className="mt-6 text-center">
           <button
             onClick={() => router.push("/vault")}
-            className="text-white/60 hover:text-white transition-colors text-sm"
+            className="text-sm text-white/60 transition-colors hover:text-white"
           >
             Back to MyVault
           </button>

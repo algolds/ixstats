@@ -387,7 +387,7 @@ async function auditIntelligenceSystem() {
 
   // Test Historical Data Collection
   try {
-    const historicalDataCount = await db.historicalDataPoint?.count() ?? 0;
+    const historicalDataCount = (await db.historicalDataPoint?.count()) ?? 0;
     log({
       category: "Intelligence",
       subsystem: "Forecasting",
@@ -687,7 +687,9 @@ async function runAudit() {
       const subsystemPassed = subsystemResults.filter((r) => r.status === "PASS").length;
       const subsystemTotal = subsystemResults.length;
       const subsystemRate = ((subsystemPassed / subsystemTotal) * 100).toFixed(0);
-      console.log(`  ${subsystem}: ${subsystemPassed}/${subsystemTotal} passed (${subsystemRate}%)`);
+      console.log(
+        `  ${subsystem}: ${subsystemPassed}/${subsystemTotal} passed (${subsystemRate}%)`
+      );
     }
 
     // Export detailed results

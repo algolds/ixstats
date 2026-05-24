@@ -42,16 +42,32 @@ const EVENT_ICONS: Record<string, typeof TrendingDown> = {
 const EVENT_COLORS: Record<string, { text: string; bg: string; border: string }> = {
   economic_crisis: { text: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" },
   trade_war: { text: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20" },
-  natural_disaster: { text: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-  political_upheaval: { text: "text-purple-500", bg: "bg-purple-500/10", border: "border-purple-500/20" },
+  natural_disaster: {
+    text: "text-amber-500",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+  },
+  political_upheaval: {
+    text: "text-purple-500",
+    bg: "bg-purple-500/10",
+    border: "border-purple-500/20",
+  },
   tech_revolution: { text: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20" },
   peace_era: { text: "text-green-500", bg: "bg-green-500/10", border: "border-green-500/20" },
   pandemic: { text: "text-pink-500", bg: "bg-pink-500/10", border: "border-pink-500/20" },
-  climate_disaster: { text: "text-orange-600", bg: "bg-orange-600/10", border: "border-orange-600/20" },
+  climate_disaster: {
+    text: "text-orange-600",
+    bg: "bg-orange-600/10",
+    border: "border-orange-600/20",
+  },
   custom: { text: "text-indigo-500", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
 };
 
-const DEFAULT_COLORS = { text: "text-gray-500", bg: "bg-gray-500/10", border: "border-gray-500/20" };
+const DEFAULT_COLORS = {
+  text: "text-gray-500",
+  bg: "bg-gray-500/10",
+  border: "border-gray-500/20",
+};
 
 export function WorldTimeline() {
   const { data, isLoading } = api.admin.getWorldEvents.useQuery(
@@ -92,7 +108,7 @@ export function WorldTimeline() {
     <ScrollArea className="h-[600px]">
       <div className="relative space-y-3 pl-6">
         {/* Timeline line */}
-        <div className="absolute bottom-0 left-[11px] top-0 w-px bg-border" />
+        <div className="bg-border absolute top-0 bottom-0 left-[11px] w-px" />
 
         {data.events.map((event) => {
           const Icon = EVENT_ICONS[event.type] ?? Wand2;
@@ -104,10 +120,8 @@ export function WorldTimeline() {
             <div key={event.id} className="relative">
               {/* Timeline dot */}
               <div
-                className={`absolute -left-6 top-4 h-[22px] w-[22px] rounded-full border-2 ${
-                  isActive
-                    ? `${colors.bg} ${colors.border}`
-                    : "border-muted bg-muted/50"
+                className={`absolute top-4 -left-6 h-[22px] w-[22px] rounded-full border-2 ${
+                  isActive ? `${colors.bg} ${colors.border}` : "border-muted bg-muted/50"
                 } flex items-center justify-center`}
               >
                 <div
@@ -127,8 +141,12 @@ export function WorldTimeline() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className={`rounded-lg border p-2 ${isActive ? colors.border : "border-border/30"}`}>
-                      <Icon className={`h-5 w-5 ${isActive ? colors.text : "text-muted-foreground"}`} />
+                    <div
+                      className={`rounded-lg border p-2 ${isActive ? colors.border : "border-border/30"}`}
+                    >
+                      <Icon
+                        className={`h-5 w-5 ${isActive ? colors.text : "text-muted-foreground"}`}
+                      />
                     </div>
                     <div className="min-w-0">
                       <h4 className="text-foreground font-semibold">{event.name}</h4>
@@ -154,7 +172,10 @@ export function WorldTimeline() {
                           </Badge>
                         )}
                         {!isActive && (
-                          <Badge variant="outline" className="border-red-500/30 text-xs text-red-500">
+                          <Badge
+                            variant="outline"
+                            className="border-red-500/30 text-xs text-red-500"
+                          >
                             Inactive
                           </Badge>
                         )}
@@ -183,9 +204,7 @@ export function WorldTimeline() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() =>
-                        setExpandedId(isExpanded ? null : event.id)
-                      }
+                      onClick={() => setExpandedId(isExpanded ? null : event.id)}
                     >
                       {isExpanded ? (
                         <ChevronUp className="h-4 w-4" />
@@ -219,8 +238,8 @@ export function WorldTimeline() {
 
                 {/* Expanded detail */}
                 {isExpanded && (
-                  <div className="mt-3 space-y-2 border-t border-border/30 pt-3">
-                    <h5 className="text-foreground text-xs font-semibold uppercase tracking-wider">
+                  <div className="border-border/30 mt-3 space-y-2 border-t pt-3">
+                    <h5 className="text-foreground text-xs font-semibold tracking-wider uppercase">
                       Affected Countries
                     </h5>
                     <div className="flex flex-wrap gap-1.5">
@@ -230,7 +249,7 @@ export function WorldTimeline() {
                         </Badge>
                       ))}
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-2 text-xs">
                       Created {format(new Date(event.createdAt), "MMM d, yyyy 'at' HH:mm")}
                     </div>
                   </div>

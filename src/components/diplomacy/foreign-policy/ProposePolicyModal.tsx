@@ -124,12 +124,14 @@ export function ProposePolicyModal({ countryId, onSuccess }: ProposePolicyModalP
 
   // Deduplicate target countries from relationships
   const targetCountries = relationships
-    ? [...new Map(
-        relationships.map((r) => {
-          const id = r.targetCountryId;
-          return [id, { id, name: r.targetCountry ?? id }];
-        })
-      ).values()]
+    ? [
+        ...new Map(
+          relationships.map((r) => {
+            const id = r.targetCountryId;
+            return [id, { id, name: r.targetCountry ?? id }];
+          })
+        ).values(),
+      ]
     : [];
 
   return (
@@ -162,7 +164,7 @@ export function ProposePolicyModal({ countryId, onSuccess }: ProposePolicyModalP
                       <opt.icon className="h-4 w-4" />
                       <span>{opt.label}</span>
                       {opt.hostile && (
-                        <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                        <Badge variant="destructive" className="px-1 py-0 text-[10px]">
                           Hostile
                         </Badge>
                       )}
@@ -224,19 +226,17 @@ export function ProposePolicyModal({ countryId, onSuccess }: ProposePolicyModalP
             <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4">
               <h4 className="mb-2 text-sm font-semibold">Impact Preview</h4>
               {previewLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Calculating impact...
                 </div>
               ) : preview ? (
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground text-xs mb-1">Your economy</p>
+                    <p className="text-muted-foreground mb-1 text-xs">Your economy</p>
                     <div
                       className={`flex items-center gap-1 font-medium ${
-                        Number(preview.initiator.gdpImpact) < 0
-                          ? "text-red-500"
-                          : "text-green-500"
+                        Number(preview.initiator.gdpImpact) < 0 ? "text-red-500" : "text-green-500"
                       }`}
                     >
                       {Number(preview.initiator.gdpImpact) < 0 ? (
@@ -251,7 +251,7 @@ export function ProposePolicyModal({ countryId, onSuccess }: ProposePolicyModalP
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-xs mb-1">
+                    <p className="text-muted-foreground mb-1 text-xs">
                       {preview.target.name}&apos;s economy
                     </p>
                     <div

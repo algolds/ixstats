@@ -283,9 +283,9 @@ export default function DiplomaticOptionsPage() {
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="rounded-lg border border-border bg-card p-8 text-center shadow-lg">
+        <div className="border-border bg-card rounded-lg border p-8 text-center shadow-lg">
           <h1 className="mb-4 text-2xl font-bold text-red-600">Access Denied</h1>
-          <p className="mb-6 text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             You do not have permission to view this page.
           </p>
         </div>
@@ -404,14 +404,14 @@ export default function DiplomaticOptionsPage() {
         </div>
 
         {/* Table */}
-        <div className="glass-card-child border-border/50 rounded-xl border overflow-hidden">
+        <div className="glass-card-child border-border/50 overflow-hidden rounded-xl border">
           {isLoading ? (
-            <div className="py-12 text-center px-6">
+            <div className="px-6 py-12 text-center">
               <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
               <p className="text-muted-foreground">Loading diplomatic options...</p>
             </div>
           ) : filteredOptions.length === 0 ? (
-            <div className="py-12 text-center px-6">
+            <div className="px-6 py-12 text-center">
               <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
               <p className="text-muted-foreground">No diplomatic options found</p>
               <Button className="mt-4" onClick={() => setIsAddDialogOpen(true)}>

@@ -16,13 +16,17 @@ export function CrisisView({ crises, onClose }: CrisisViewProps) {
   const { permissions, user } = usePermissions();
 
   // Check if user can access SDI/ECI based on permissions
-  const userProfile = user ? {
-    id: user.id,
-    role: (user.role?.name as "admin" | "dm" | "observer" | "user") || "user",
-    countryId: undefined, // Will be set from user data if available
-  } : null;
+  const userProfile = user
+    ? {
+        id: user.id,
+        role: (user.role?.name as "admin" | "dm" | "observer" | "user") || "user",
+        countryId: undefined, // Will be set from user data if available
+      }
+    : null;
 
-  const interfacePrefs = userProfile ? getUserInterfacePreferences(userProfile) : { canAccessSDI: false, canAccessECI: false };
+  const interfacePrefs = userProfile
+    ? getUserInterfacePreferences(userProfile)
+    : { canAccessSDI: false, canAccessECI: false };
   const canAccessSDI = interfacePrefs.canAccessSDI;
   const canAccessECI = interfacePrefs.canAccessECI;
 
@@ -38,7 +42,7 @@ export function CrisisView({ crises, onClose }: CrisisViewProps) {
     >
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-foreground">Crisis Monitor</h3>
+        <h3 className="text-foreground text-lg font-bold">Crisis Monitor</h3>
         <Button
           size="sm"
           variant="ghost"
@@ -57,14 +61,14 @@ export function CrisisView({ crises, onClose }: CrisisViewProps) {
       {/* Action Buttons */}
       {(canAccessSDI || canAccessECI) && (
         <div className="border-t border-white/10 pt-4">
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Quick Actions</div>
+          <div className="text-muted-foreground mb-2 text-xs font-medium">Quick Actions</div>
           <CrisisActionButtons canAccessSDI={canAccessSDI} canAccessECI={canAccessECI} />
         </div>
       )}
 
       {/* Help Text */}
       <div className="mt-4 rounded-lg bg-white/5 p-3">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Crisis events are monitored in real-time. Use the SDI Dashboard for strategic intelligence
           or the Executive Command for immediate response actions.
         </p>

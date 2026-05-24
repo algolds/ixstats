@@ -37,7 +37,8 @@ export function ActiveInterventions() {
         <Zap className="text-muted-foreground mb-3 h-10 w-10" />
         <h3 className="text-foreground text-lg font-semibold">No Active Interventions</h3>
         <p className="text-muted-foreground mt-1 text-sm">
-          All storyteller effects are currently inactive. Create a world event to generate interventions.
+          All storyteller effects are currently inactive. Create a world event to generate
+          interventions.
         </p>
       </div>
     );
@@ -85,25 +86,20 @@ function CountryInterventionRow({
     { enabled: expanded, refetchOnWindowFocus: false }
   );
 
-  const effects = detail?.country?.storytellerEffects?.filter((d: { isActive: boolean }) => d.isActive) ?? [];
+  const effects =
+    detail?.country?.storytellerEffects?.filter((d: { isActive: boolean }) => d.isActive) ?? [];
 
   return (
-    <div className="rounded-xl border border-border/50 transition-colors hover:border-border">
+    <div className="border-border/50 hover:border-border rounded-xl border transition-colors">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center justify-between p-3 text-left"
       >
         <div className="flex items-center gap-3">
-          <UnifiedCountryFlag
-            countryName={country.name}
-            flagUrl={country.flag}
-            size="sm"
-          />
+          <UnifiedCountryFlag countryName={country.name} flagUrl={country.flag} size="sm" />
           <div>
             <span className="text-foreground font-medium">{country.name}</span>
-            <span className="text-muted-foreground ml-2 text-xs">
-              {country.economicTier}
-            </span>
+            <span className="text-muted-foreground ml-2 text-xs">{country.economicTier}</span>
           </div>
         </div>
         <Badge
@@ -116,49 +112,54 @@ function CountryInterventionRow({
       </button>
 
       {expanded && effects.length > 0 && (
-        <div className="border-t border-border/30 px-3 pb-3">
+        <div className="border-border/30 border-t px-3 pb-3">
           <div className="mt-2 space-y-1.5">
-            {effects.map((dm: {
-              id: string;
-              inputType: string;
-              value: number;
-              description: string | null;
-              duration: number | null;
-              createdAt: Date;
-              worldEventId?: string | null;
-            }) => (
-              <div
-                key={dm.id}
-                className="flex items-center justify-between rounded-lg bg-muted/20 px-3 py-2"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {dm.inputType.replace(/_/g, " ")}
-                    </Badge>
-                    <span className="font-mono text-xs font-medium">
-                      {dm.value >= 0 ? "+" : ""}
-                      {(dm.value * 100).toFixed(1)}%
-                    </span>
-                    {dm.worldEventId && (
-                      <Badge variant="outline" className="border-blue-500/20 text-xs text-blue-600">
-                        World Event
+            {effects.map(
+              (dm: {
+                id: string;
+                inputType: string;
+                value: number;
+                description: string | null;
+                duration: number | null;
+                createdAt: Date;
+                worldEventId?: string | null;
+              }) => (
+                <div
+                  key={dm.id}
+                  className="bg-muted/20 flex items-center justify-between rounded-lg px-3 py-2"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {dm.inputType.replace(/_/g, " ")}
                       </Badge>
+                      <span className="font-mono text-xs font-medium">
+                        {dm.value >= 0 ? "+" : ""}
+                        {(dm.value * 100).toFixed(1)}%
+                      </span>
+                      {dm.worldEventId && (
+                        <Badge
+                          variant="outline"
+                          className="border-blue-500/20 text-xs text-blue-600"
+                        >
+                          World Event
+                        </Badge>
+                      )}
+                    </div>
+                    {dm.description && (
+                      <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                        {dm.description}
+                      </p>
                     )}
-                  </div>
-                  {dm.description && (
-                    <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                      {dm.description}
-                    </p>
-                  )}
-                  <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
-                    <Clock className="h-3 w-3" />
-                    {formatDistanceToNow(new Date(dm.createdAt), { addSuffix: true })}
-                    {dm.duration && <span>({dm.duration}yr)</span>}
+                    <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
+                      <Clock className="h-3 w-3" />
+                      {formatDistanceToNow(new Date(dm.createdAt), { addSuffix: true })}
+                      {dm.duration && <span>({dm.duration}yr)</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       )}

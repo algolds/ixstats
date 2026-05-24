@@ -269,7 +269,10 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   // Game action mutations
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      notify.success(`Embassy established`, `Embassy now active in ${(data as any).hostCountryName || "the host nation"}.`);
+      notify.success(
+        `Embassy established`,
+        `Embassy now active in ${(data as any).hostCountryName || "the host nation"}.`
+      );
       setShowEstablishEmbassy(false);
       setSelectedHostCountryId("");
       setNewEmbassyName("");
@@ -341,7 +344,10 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
 
   const startMissionMutation = api.diplomatic.startMission.useMutation({
     onSuccess: (data) => {
-      notify.success(`Mission "${(data as any).name || "Mission"}" started!`, `Expected completion in ${(data as any).duration || 0} hours.`);
+      notify.success(
+        `Mission "${(data as any).name || "Mission"}" started!`,
+        `Expected completion in ${(data as any).duration || 0} hours.`
+      );
     },
     onError: (error) => {
       notify.error("Failed to start mission", error.message);
@@ -351,9 +357,15 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   const completeMissionMutation = api.diplomatic.completeMission.useMutation({
     onSuccess: (data) => {
       if (data.success) {
-        notify.success(`Mission completed successfully!`, `Gained ${(data as any).rewards?.experience || 0} XP and ${(data as any).rewards?.influence || 0} influence.`);
+        notify.success(
+          `Mission completed successfully!`,
+          `Gained ${(data as any).rewards?.experience || 0} XP and ${(data as any).rewards?.influence || 0} influence.`
+        );
       } else {
-        notify.warning(`Mission failed`, (data as any).message || "The mission did not succeed, but experience was gained.");
+        notify.warning(
+          `Mission failed`,
+          (data as any).message || "The mission did not succeed, but experience was gained."
+        );
       }
     },
     onError: (error) => {
@@ -363,7 +375,10 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
 
   const upgradeEmbassyMutation = api.diplomatic.upgradeEmbassy.useMutation({
     onSuccess: (data) => {
-      notify.success(`Embassy upgraded!`, `${(data as any).upgradeType || "Upgrade"} has been installed successfully.`);
+      notify.success(
+        `Embassy upgraded!`,
+        `${(data as any).upgradeType || "Upgrade"} has been installed successfully.`
+      );
     },
     onError: (error) => {
       notify.error("Failed to upgrade embassy", error.message);

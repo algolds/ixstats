@@ -2,14 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { api } from "~/trpc/react";
-import {
-  Sparkles,
-  Loader2,
-  Check,
-  History,
-  Zap,
-  AlertTriangle,
-} from "lucide-react";
+import { Sparkles, Loader2, Check, History, Zap, AlertTriangle } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { GenerationParamsForm, type GenParams } from "./GenerationParamsForm";
 import { WorldGeneratorPreview } from "./WorldGeneratorPreview";
@@ -117,7 +110,7 @@ export function WorldGeneratorTab() {
         <Button
           onClick={handleQuickGenerate}
           disabled={generateMutation.isPending}
-          className="w-full bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-medium"
+          className="w-full bg-gradient-to-r from-amber-600 to-orange-500 font-medium text-white hover:from-amber-500 hover:to-orange-400"
         >
           {generateMutation.isPending ? (
             <>
@@ -133,10 +126,10 @@ export function WorldGeneratorTab() {
         </Button>
 
         {/* Parameters */}
-        <div className="rounded-xl border border-border bg-muted/50 p-4 ">
+        <div className="border-border bg-muted/50 rounded-xl border p-4">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-400" />
-            <h3 className="text-sm font-semibold text-foreground">World Parameters</h3>
+            <h3 className="text-foreground text-sm font-semibold">World Parameters</h3>
           </div>
 
           <GenerationParamsForm
@@ -148,7 +141,7 @@ export function WorldGeneratorTab() {
           <Button
             onClick={handleGenerate}
             disabled={generateMutation.isPending}
-            className="mt-4 w-full bg-amber-600 hover:bg-amber-500 text-white"
+            className="mt-4 w-full bg-amber-600 text-white hover:bg-amber-500"
           >
             {generateMutation.isPending ? (
               <>
@@ -172,11 +165,11 @@ export function WorldGeneratorTab() {
 
         {/* Generation Stats */}
         {stats && (
-          <div className="rounded-xl border border-border bg-muted/50 p-4 ">
-            <h4 className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+          <div className="border-border bg-muted/50 rounded-xl border p-4">
+            <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase">
               Generation Results
             </h4>
-            <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="text-muted-foreground space-y-1 text-xs">
               <div className="flex justify-between">
                 <span>Land coverage</span>
                 <span>{Math.round(stats.landPercentage * 100)}%</span>
@@ -211,7 +204,7 @@ export function WorldGeneratorTab() {
               {/* Profile-guided stats */}
               {stats.areaGini !== undefined && (
                 <>
-                  <div className="mt-2 border-t border-border pt-2" />
+                  <div className="border-border mt-2 border-t pt-2" />
                   <div className="flex justify-between">
                     <span>Area inequality (Gini)</span>
                     <span>{stats.areaGini.toFixed(2)}</span>
@@ -220,27 +213,26 @@ export function WorldGeneratorTab() {
                     <span>Landlocked ratio</span>
                     <span>{Math.round(stats.landlockedRatio * 100)}%</span>
                   </div>
-                  {stats.profileSimilarity !== null &&
-                    stats.profileSimilarity !== undefined && (
-                      <div className="flex justify-between">
-                        <span>Profile match</span>
-                        <span
-                          className={
-                            stats.profileSimilarity > 0.7
-                              ? "text-green-500"
-                              : stats.profileSimilarity > 0.4
-                                ? "text-amber-500"
-                                : "text-red-500"
-                          }
-                        >
-                          {Math.round(stats.profileSimilarity * 100)}%
-                        </span>
-                      </div>
-                    )}
+                  {stats.profileSimilarity !== null && stats.profileSimilarity !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Profile match</span>
+                      <span
+                        className={
+                          stats.profileSimilarity > 0.7
+                            ? "text-green-500"
+                            : stats.profileSimilarity > 0.4
+                              ? "text-amber-500"
+                              : "text-red-500"
+                        }
+                      >
+                        {Math.round(stats.profileSimilarity * 100)}%
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
 
-              <div className="flex justify-between border-t border-border pt-1 text-muted-foreground">
+              <div className="border-border text-muted-foreground flex justify-between border-t pt-1">
                 <span>Generation time</span>
                 <span>{Math.round(stats.generationTimeMs)}ms</span>
               </div>
@@ -249,7 +241,7 @@ export function WorldGeneratorTab() {
             {/* Validation warnings */}
             {stats.warnings && stats.warnings.length > 0 && (
               <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
-                <div className="flex items-center gap-1 text-xs font-medium text-amber-500 mb-1">
+                <div className="mb-1 flex items-center gap-1 text-xs font-medium text-amber-500">
                   <AlertTriangle className="h-3 w-3" />
                   Warnings
                 </div>
@@ -265,11 +257,11 @@ export function WorldGeneratorTab() {
 
         {/* Commit to Map */}
         {currentWorldId && (
-          <div className="rounded-xl border border-border bg-muted/50 p-4 ">
-            <h4 className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+          <div className="border-border bg-muted/50 rounded-xl border p-4">
+            <h4 className="text-muted-foreground mb-2 text-xs font-medium uppercase">
               Apply to World Map
             </h4>
-            <p className="mb-3 text-xs text-muted-foreground">
+            <p className="text-muted-foreground mb-3 text-xs">
               This will replace all current map layers with the generated world.
             </p>
             <input
@@ -277,12 +269,12 @@ export function WorldGeneratorTab() {
               value={commitName}
               onChange={(e) => setCommitName(e.target.value)}
               placeholder="Template name (optional, to save)"
-              className="mb-2 w-full rounded border border-border bg-muted/50 px-3 py-1.5 text-xs text-foreground placeholder-muted-foreground focus:border-green-500/50 focus:outline-none"
+              className="border-border bg-muted/50 text-foreground placeholder-muted-foreground mb-2 w-full rounded border px-3 py-1.5 text-xs focus:border-green-500/50 focus:outline-none"
             />
             <Button
               onClick={handleCommit}
               disabled={commitMutation.isPending}
-              className="w-full bg-green-600 hover:bg-green-500 text-white"
+              className="w-full bg-green-600 text-white hover:bg-green-500"
             >
               {commitMutation.isPending ? (
                 <>
@@ -308,7 +300,7 @@ export function WorldGeneratorTab() {
         {/* History Toggle */}
         <button
           onClick={() => setShowHistory(!showHistory)}
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-xs"
         >
           <History className="h-3.5 w-3.5" />
           {showHistory ? "Hide" : "Show"} generation history
@@ -318,27 +310,23 @@ export function WorldGeneratorTab() {
         {showHistory && history && (
           <div className="space-y-2">
             {history.length === 0 ? (
-              <p className="text-xs text-muted-foreground/50">No generated worlds yet.</p>
+              <p className="text-muted-foreground/50 text-xs">No generated worlds yet.</p>
             ) : (
               history.map((w) => {
                 const meta = w.metadata as Record<string, unknown> | null;
                 return (
-                  <div
-                    key={w.id}
-                    className="rounded-lg border border-border bg-muted/30 p-3"
-                  >
+                  <div key={w.id} className="border-border bg-muted/30 rounded-lg border p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-foreground">
-                        Seed: {w.seed}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground/50">
+                      <span className="text-foreground text-xs font-medium">Seed: {w.seed}</span>
+                      <span className="text-muted-foreground/50 text-[10px]">
                         {new Date(w.createdAt).toLocaleString()}
                       </span>
                     </div>
                     {meta && (
-                      <div className="mt-1 text-[10px] text-muted-foreground">
+                      <div className="text-muted-foreground mt-1 text-[10px]">
                         {meta.countryCount && `${meta.countryCount} countries`}
-                        {meta.generationTimeMs && ` · ${Math.round(meta.generationTimeMs as number)}ms`}
+                        {meta.generationTimeMs &&
+                          ` · ${Math.round(meta.generationTimeMs as number)}ms`}
                         {typeof meta.profileSimilarity === "number" &&
                           ` · ${Math.round(meta.profileSimilarity * 100)}% match`}
                       </div>
@@ -346,7 +334,7 @@ export function WorldGeneratorTab() {
                     <div className="mt-2 flex gap-1">
                       <button
                         onClick={() => setCurrentWorldId(w.id)}
-                        className="rounded bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted/80"
+                        className="bg-muted/50 text-muted-foreground hover:bg-muted/80 rounded px-2 py-0.5 text-[10px]"
                       >
                         Preview
                       </button>
@@ -365,7 +353,7 @@ export function WorldGeneratorTab() {
       </div>
 
       {/* Right: Map Preview */}
-      <div className="flex-1 overflow-hidden rounded-xl border border-border">
+      <div className="border-border flex-1 overflow-hidden rounded-xl border">
         <WorldGeneratorPreview worldId={currentWorldId} />
       </div>
     </div>

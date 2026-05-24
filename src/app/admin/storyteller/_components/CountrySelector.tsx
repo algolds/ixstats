@@ -43,9 +43,7 @@ export function CountrySelector({
 
   const toggle = (id: string) => {
     onSelectionChange(
-      selectedIds.includes(id)
-        ? selectedIds.filter((i) => i !== id)
-        : [...selectedIds, id]
+      selectedIds.includes(id) ? selectedIds.filter((i) => i !== id) : [...selectedIds, id]
     );
   };
 
@@ -57,7 +55,7 @@ export function CountrySelector({
       {/* Search + bulk actions */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Search countries..."
             value={search}
@@ -93,14 +91,10 @@ export function CountrySelector({
               <Badge
                 key={id}
                 variant="outline"
-                className="cursor-pointer gap-1 pr-1 hover:bg-destructive/10"
+                className="hover:bg-destructive/10 cursor-pointer gap-1 pr-1"
                 onClick={() => toggle(id)}
               >
-                <UnifiedCountryFlag
-                  countryName={c.name}
-                  flagUrl={c.flag}
-                  size="xs"
-                />
+                <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" />
                 {c.name}
                 <X className="h-3 w-3" />
               </Badge>
@@ -113,7 +107,7 @@ export function CountrySelector({
       )}
 
       {/* Country list */}
-      <ScrollArea className="h-[280px] rounded-lg border border-border/50">
+      <ScrollArea className="border-border/50 h-[280px] rounded-lg border">
         <div className="space-y-0.5 p-2">
           {filtered.map((c) => {
             const isSelected = selectedIds.includes(c.id);
@@ -122,32 +116,22 @@ export function CountrySelector({
                 key={c.id}
                 onClick={() => toggle(c.id)}
                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                  isSelected
-                    ? "border border-primary/30 bg-primary/10"
-                    : "hover:bg-muted/30"
+                  isSelected ? "border-primary/30 bg-primary/10 border" : "hover:bg-muted/30"
                 }`}
               >
-                <UnifiedCountryFlag
-                  countryName={c.name}
-                  flagUrl={c.flag}
-                  size="sm"
-                />
+                <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="sm" />
                 <div className="min-w-0 flex-1">
                   <span className="text-foreground font-medium">{c.name}</span>
                   <span className="text-muted-foreground ml-2 text-xs">
                     {c.economicTier ?? "Unknown"}
                   </span>
                 </div>
-                {isSelected && (
-                  <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                )}
+                {isSelected && <CheckCircle2 className="text-primary h-4 w-4 flex-shrink-0" />}
               </button>
             );
           })}
           {filtered.length === 0 && (
-            <p className="text-muted-foreground py-4 text-center text-sm">
-              No countries found
-            </p>
+            <p className="text-muted-foreground py-4 text-center text-sm">No countries found</p>
           )}
         </div>
       </ScrollArea>

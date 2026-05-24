@@ -165,9 +165,7 @@ export function SliderWithDirectInput({
 
   // Reference value position if provided
   const referencePercentage =
-    referenceValue !== undefined
-      ? ((referenceValue - safeMin) / (safeMax - safeMin)) * 100
-      : null;
+    referenceValue !== undefined ? ((referenceValue - safeMin) / (safeMax - safeMin)) * 100 : null;
 
   return (
     <div className={cn("space-y-3", className)} style={cssVars as React.CSSProperties}>
@@ -188,7 +186,11 @@ export function SliderWithDirectInput({
             <div className="flex items-center gap-2">
               {showValue && (
                 <motion.div className="text-foreground flex items-center gap-1 text-sm font-semibold">
-                  <span>{!isNaN(parseFloat(localValue)) ? (parseFloat(localValue) || 0).toFixed(precision) : "0"}</span>
+                  <span>
+                    {!isNaN(parseFloat(localValue))
+                      ? (parseFloat(localValue) || 0).toFixed(precision)
+                      : "0"}
+                  </span>
                   {unit && <span className="text-muted-foreground">{unit}</span>}
                 </motion.div>
               )}
@@ -250,7 +252,7 @@ export function SliderWithDirectInput({
             }}
           />
           {unit && (
-            <span className="text-muted-foreground absolute right-4 top-1/2 -translate-y-1/2 text-sm pointer-events-none">
+            <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm">
               {unit}
             </span>
           )}

@@ -113,7 +113,7 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
     const fonts = fontSizes[size];
 
     // Extract nation-specific metadata
-    const nationStats = card.stats as Record<string, any> || {};
+    const nationStats = (card.stats as Record<string, any>) || {};
     const governmentType = nationStats.governmentType || "Unknown";
     const economyTier = nationStats.economyTier || "N/A";
     const population = nationStats.population || 0;
@@ -146,8 +146,8 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
       size === "small" || size === "sm"
         ? "h-[179px]"
         : size === "medium" || size === "md"
-        ? "h-[269px]"
-        : "h-[358px]";
+          ? "h-[269px]"
+          : "h-[358px]";
 
     return (
       <CometCard
@@ -176,11 +176,7 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
           onHoverStart={handleMouseEnter}
           onHoverEnd={handleMouseLeave}
           onClick={handleClick}
-          whileHover={
-            !performanceMode
-              ? { scale: 1.02, transition: { duration: 0.2 } }
-              : undefined
-          }
+          whileHover={!performanceMode ? { scale: 1.02, transition: { duration: 0.2 } } : undefined}
         >
           {/* Card artwork */}
           <div
@@ -190,8 +186,8 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                 size === "small" || size === "sm"
                   ? "179px"
                   : size === "medium" || size === "md"
-                  ? "269px"
-                  : "358px",
+                    ? "269px"
+                    : "358px",
             }}
           >
             {!imageError ? (
@@ -205,8 +201,8 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                   size === "small" || size === "sm"
                     ? "128px"
                     : size === "medium" || size === "md"
-                    ? "192px"
-                    : "256px"
+                      ? "192px"
+                      : "256px"
                 }
                 onError={() => setImageError(true)}
                 unoptimized
@@ -222,14 +218,14 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
             {/* Metallic gradient overlay for premium feel */}
             {!performanceMode && (
               <div
-                className="absolute inset-0 mix-blend-overlay opacity-10"
+                className="absolute inset-0 opacity-10 mix-blend-overlay"
                 style={{
                   background: getMetallicGradient(
                     card.rarity === "LEGENDARY"
                       ? "gold"
                       : card.rarity === "EPIC"
-                      ? "purple"
-                      : "silver"
+                        ? "purple"
+                        : "silver"
                   ),
                 }}
               />
@@ -252,10 +248,7 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
 
             {/* Rarity glow effect */}
             <motion.div
-              className={cn(
-                "absolute inset-0 rounded-2xl",
-                getRarityGlow(card.rarity)
-              )}
+              className={cn("absolute inset-0 rounded-2xl", getRarityGlow(card.rarity))}
               initial={{ opacity: 0 }}
               animate={{ opacity: isHovered ? 0.5 : 0.2 }}
               transition={{ duration: 0.3 }}
@@ -269,7 +262,7 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="relative w-16 h-12 rounded-md overflow-hidden border-2 border-white/50 shadow-lg">
+                <div className="relative h-12 w-16 overflow-hidden rounded-md border-2 border-white/50 shadow-lg">
                   <Image
                     src={card.country.flag}
                     alt={`${card.country.name} flag`}
@@ -296,11 +289,10 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                 className={cn(
                   "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
                   fonts.type,
-                  "text-white border border-white/20"
+                  "border border-white/20 text-white"
                 )}
                 style={{
-                  textShadow:
-                    "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
                 }}
               >
                 {getCardTypeLabel(card.cardType)}
@@ -311,26 +303,19 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
             <div className="space-y-1">
               {/* Card title with embossed effect */}
               <motion.h3
-                className={cn(
-                  "font-black text-white line-clamp-2 tracking-wide",
-                  fonts.title
-                )}
+                className={cn("line-clamp-2 font-black tracking-wide text-white", fonts.title)}
                 style={{
                   textShadow: getEmbossedTextShadow(
                     card.rarity === "LEGENDARY"
                       ? "gold"
                       : card.rarity === "EPIC"
-                      ? "purple"
-                      : "silver"
+                        ? "purple"
+                        : "silver"
                   ),
                   WebkitTextStroke: "0.5px rgba(0,0,0,0.8)",
                   textRendering: "geometricPrecision",
                 }}
-                animate={
-                  !performanceMode && isHovered
-                    ? { scale: [1, 1.02, 1] }
-                    : {}
-                }
+                animate={!performanceMode && isHovered ? { scale: [1, 1.02, 1] } : {}}
                 transition={{ duration: 0.4 }}
               >
                 {card.title}
@@ -340,13 +325,13 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
               {card.country && (
                 <div className="space-y-0.5">
                   <p
-                    className={cn("text-white/90 font-semibold", fonts.type)}
+                    className={cn("font-semibold text-white/90", fonts.type)}
                     style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8)" }}
                   >
                     {card.country.name}
                   </p>
                   {card.country.continent && (
-                    <p className={cn("text-white/70 font-medium", fonts.stats)}>
+                    <p className={cn("font-medium text-white/70", fonts.stats)}>
                       {card.country.continent}
                       {card.country.region && ` • ${card.country.region}`}
                     </p>
@@ -358,35 +343,29 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
               <div
                 className={cn(
                   "flex items-center justify-between rounded-lg px-2 py-1",
-                  "bg-black/70 backdrop-blur-md border border-white/10",
+                  "border border-white/10 bg-black/70 backdrop-blur-md",
                   fonts.stats
                 )}
               >
-                <span className="text-white/80 font-medium">{governmentType}</span>
-                <span className="text-emerald-400 font-bold">Tier {economyTier}</span>
+                <span className="font-medium text-white/80">{governmentType}</span>
+                <span className="font-bold text-emerald-400">Tier {economyTier}</span>
               </div>
 
               {/* Season & Market value bar */}
               <div
                 className={cn(
                   "flex items-center justify-between rounded-lg px-2 py-1",
-                  "bg-black/70 backdrop-blur-md border border-white/10",
+                  "border border-white/10 bg-black/70 backdrop-blur-md",
                   fonts.type
                 )}
               >
-                <span className="text-white/80 font-medium">
-                  Season {card.season}
-                </span>
+                <span className="font-medium text-white/80">Season {card.season}</span>
                 <motion.span
                   className={cn("font-black", rarityConfig.color)}
                   style={{
                     textShadow: `0 0 10px ${rarityConfig.color.includes("yellow") ? "rgba(234, 179, 8, 0.8)" : "rgba(147, 51, 234, 0.8)"}`,
                   }}
-                  animate={
-                    !performanceMode && isHovered
-                      ? { scale: [1, 1.1, 1] }
-                      : {}
-                  }
+                  animate={!performanceMode && isHovered ? { scale: [1, 1.1, 1] } : {}}
                   transition={{ duration: 0.5 }}
                 >
                   {formatMarketValue(card.marketValue)}
@@ -403,32 +382,31 @@ export const NationCardLayout = React.memo<NationCardLayoutProps>(
                     transition={{ duration: 0.2 }}
                     className={cn(
                       "grid grid-cols-2 gap-1 rounded-lg p-2",
-                      "bg-black/80 backdrop-blur-xl border border-white/20",
+                      "border border-white/20 bg-black/80 backdrop-blur-xl",
                       fonts.stats
                     )}
                     style={{
-                      boxShadow:
-                        "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
                     }}
                   >
                     <div className="flex flex-col px-1">
-                      <span className="text-white/70 font-medium">Population</span>
+                      <span className="font-medium text-white/70">Population</span>
                       <span className="font-black text-blue-400">
                         {population >= 1000000
                           ? `${Math.round(population / 1000000)}M`
                           : population >= 1000
-                          ? `${Math.round(population / 1000)}K`
-                          : population}
+                            ? `${Math.round(population / 1000)}K`
+                            : population}
                       </span>
                     </div>
                     <div className="flex flex-col px-1">
-                      <span className="text-white/70 font-medium">GDP</span>
+                      <span className="font-medium text-white/70">GDP</span>
                       <span className="font-black text-emerald-400">
                         {gdp >= 1000000
                           ? `$${(gdp / 1000000).toFixed(1)}T`
                           : gdp >= 1000
-                          ? `$${(gdp / 1000).toFixed(1)}B`
-                          : `$${gdp}M`}
+                            ? `$${(gdp / 1000).toFixed(1)}B`
+                            : `$${gdp}M`}
                       </span>
                     </div>
                   </motion.div>

@@ -106,9 +106,7 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
                 initial={{ backgroundColor: "rgba(255, 255, 255, 0.3)" }}
                 animate={{
                   backgroundColor:
-                    index <= revealedIndex
-                      ? "rgba(255, 255, 255, 1)"
-                      : "rgba(255, 255, 255, 0.3)",
+                    index <= revealedIndex ? "rgba(255, 255, 255, 1)" : "rgba(255, 255, 255, 0.3)",
                   scale: index === revealedIndex ? 1.5 : 1,
                 }}
                 transition={{ duration: 0.3 }}
@@ -122,7 +120,7 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
           <>
             {/* Radial burst */}
             <motion.div
-              className="pointer-events-none absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-yellow-400/30 via-orange-400/30 to-red-400/30"
+              className="pointer-events-none absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-yellow-400/30 via-orange-400/30 to-red-400/30"
               initial={{ scale: 0, opacity: 1 }}
               animate={{ scale: [0, 2, 3], opacity: [1, 0.5, 0] }}
               transition={{ duration: 1.2, ease: "easeOut" }}
@@ -140,7 +138,7 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
               return (
                 <motion.div
                   key={`celebration-${i}`}
-                  className="pointer-events-none absolute left-1/2 top-1/2 rounded-full"
+                  className="pointer-events-none absolute top-1/2 left-1/2 rounded-full"
                   style={{
                     width: `${size}px`,
                     height: `${size}px`,
@@ -310,111 +308,108 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
             />
 
             {/* Holographic shimmer burst for rare+ cards */}
-            {isFlipped && ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY", "MYTHIC"].includes(card.rarity) && (
-              <>
-                {/* Primary shimmer burst */}
-                <motion.div
-                  className="pointer-events-none absolute inset-0 rounded-2xl"
-                  style={{
-                    background: `radial-gradient(circle at center, ${rarityColor}40 0%, transparent 70%)`,
-                  }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{
-                    opacity: [0, 0.8, 0.4, 0.6],
-                    scale: [0.8, 1.2, 1, 1.1],
-                    rotate: [0, 45, 90],
-                  }}
-                  transition={{
-                    duration: 2,
-                    times: [0, 0.3, 0.6, 1],
-                    repeat: Infinity,
-                    repeatDelay: 1,
-                  }}
-                />
-
-                {/* Particle shimmer ring for legendary+ */}
-                {["LEGENDARY", "MYTHIC"].includes(card.rarity) && (
+            {isFlipped &&
+              ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY", "MYTHIC"].includes(card.rarity) && (
+                <>
+                  {/* Primary shimmer burst */}
                   <motion.div
-                    className="pointer-events-none absolute -inset-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    {Array.from({ length: isMobile ? 8 : 12 }).map((_, i) => {
-                      const angle = (Math.PI * 2 * i) / (isMobile ? 8 : 12);
-                      const radius = 140;
-                      const x = Math.cos(angle) * radius;
-                      const y = Math.sin(angle) * radius;
+                    className="pointer-events-none absolute inset-0 rounded-2xl"
+                    style={{
+                      background: `radial-gradient(circle at center, ${rarityColor}40 0%, transparent 70%)`,
+                    }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{
+                      opacity: [0, 0.8, 0.4, 0.6],
+                      scale: [0.8, 1.2, 1, 1.1],
+                      rotate: [0, 45, 90],
+                    }}
+                    transition={{
+                      duration: 2,
+                      times: [0, 0.3, 0.6, 1],
+                      repeat: Infinity,
+                      repeatDelay: 1,
+                    }}
+                  />
 
-                      return (
-                        <motion.div
-                          key={`shimmer-${i}`}
-                          className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full"
-                          style={{
-                            backgroundColor: particleConfig.colors[i % particleConfig.colors.length],
-                            boxShadow: `0 0 10px ${particleConfig.colors[i % particleConfig.colors.length]}`,
-                          }}
-                          animate={{
-                            x: [0, x, x * 1.2, x],
-                            y: [0, y, y * 1.2, y],
-                            scale: [0, 1, 1.5, 1],
-                            opacity: [0, 1, 0.5, 0.8],
-                          }}
-                          transition={{
-                            duration: 2,
-                            delay: i * 0.05,
-                            repeat: Infinity,
-                            repeatDelay: 1,
-                          }}
-                        />
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </>
-            )}
+                  {/* Particle shimmer ring for legendary+ */}
+                  {["LEGENDARY", "MYTHIC"].includes(card.rarity) && (
+                    <motion.div
+                      className="pointer-events-none absolute -inset-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {Array.from({ length: isMobile ? 8 : 12 }).map((_, i) => {
+                        const angle = (Math.PI * 2 * i) / (isMobile ? 8 : 12);
+                        const radius = 140;
+                        const x = Math.cos(angle) * radius;
+                        const y = Math.sin(angle) * radius;
+
+                        return (
+                          <motion.div
+                            key={`shimmer-${i}`}
+                            className="absolute top-1/2 left-1/2 h-2 w-2 rounded-full"
+                            style={{
+                              backgroundColor:
+                                particleConfig.colors[i % particleConfig.colors.length],
+                              boxShadow: `0 0 10px ${particleConfig.colors[i % particleConfig.colors.length]}`,
+                            }}
+                            animate={{
+                              x: [0, x, x * 1.2, x],
+                              y: [0, y, y * 1.2, y],
+                              scale: [0, 1, 1.5, 1],
+                              opacity: [0, 1, 0.5, 0.8],
+                            }}
+                            transition={{
+                              duration: 2,
+                              delay: i * 0.05,
+                              repeat: Infinity,
+                              repeatDelay: 1,
+                            }}
+                          />
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </>
+              )}
 
             {/* Card content */}
             <div className="relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 p-1">
               {/* Card image with holographic fallback */}
-              <div className="relative h-full w-full rounded-xl overflow-hidden">
-                <CardHolographicCover
-                  cardType={card.cardType}
-                  rarity={card.rarity}
-                />
+              <div className="relative h-full w-full overflow-hidden rounded-xl">
+                <CardHolographicCover cardType={card.cardType} rarity={card.rarity} />
                 <div
                   className="absolute inset-0 bg-cover bg-center"
                   style={{
                     backgroundImage: `url(${card.artwork})`,
                   }}
                 >
-                {/* Gradient overlay */}
-                <div className="h-full w-full bg-gradient-to-t from-black/80 via-transparent to-transparent p-4">
-                  {/* Card info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <div className="text-sm font-medium uppercase tracking-wide text-white/60">
+                  {/* Gradient overlay */}
+                  <div className="h-full w-full bg-gradient-to-t from-black/80 via-transparent to-transparent p-4">
+                    {/* Card info */}
+                    <div className="absolute right-0 bottom-0 left-0 p-4">
+                      <div className="text-sm font-medium tracking-wide text-white/60 uppercase">
+                        {card.rarity.replace("_", " ")}
+                      </div>
+                      <div className="mt-1 text-xl font-bold text-white">
+                        {card.name || card.title || "Unknown Card"}
+                      </div>
+                      <div className="mt-1 text-sm text-white/70">Season {card.season}</div>
+                    </div>
+
+                    {/* Rarity badge */}
+                    <div
+                      className="absolute top-4 right-4 rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase"
+                      style={{
+                        backgroundColor: `${rarityColor}80`,
+                        color: "white",
+                        boxShadow: `0 0 20px ${rarityColor}`,
+                      }}
+                    >
                       {card.rarity.replace("_", " ")}
                     </div>
-                    <div className="mt-1 text-xl font-bold text-white">
-                      {card.name || card.title || "Unknown Card"}
-                    </div>
-                    <div className="mt-1 text-sm text-white/70">
-                      Season {card.season}
-                    </div>
-                  </div>
-
-                  {/* Rarity badge */}
-                  <div
-                    className="absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide"
-                    style={{
-                      backgroundColor: `${rarityColor}80`,
-                      color: "white",
-                      boxShadow: `0 0 20px ${rarityColor}`,
-                    }}
-                  >
-                    {card.rarity.replace("_", " ")}
                   </div>
                 </div>
-              </div>
               </div>
             </div>
 

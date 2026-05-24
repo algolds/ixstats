@@ -631,7 +631,9 @@ export function DMControlPanel() {
               <Gamepad2 className="h-8 w-8 text-indigo-500" />
             </div>
             <div>
-              <h2 className="text-foreground text-3xl font-bold">Advanced Storyteller Control Center</h2>
+              <h2 className="text-foreground text-3xl font-bold">
+                Advanced Storyteller Control Center
+              </h2>
               <p className="text-lg text-indigo-700/70 dark:text-indigo-300/70">
                 Granular Economic Manipulation & Impact Analysis
               </p>

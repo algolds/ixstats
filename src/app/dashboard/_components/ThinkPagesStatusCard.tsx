@@ -5,12 +5,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import {
-  ChevronRight,
-  Zap,
-  Brain,
-  Lightbulb,
-} from "lucide-react";
+import { ChevronRight, Zap, Brain, Lightbulb } from "lucide-react";
 
 interface ThinkPagesStatusCardProps {
   userProfile?: any;

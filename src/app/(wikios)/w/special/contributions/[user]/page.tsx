@@ -47,8 +47,11 @@ export default function ContributionsPage() {
                 <span className="wikios-rc-meta">
                   <span className="wikios-rc-time">
                     {new Date(c.timestamp).toLocaleString("en-US", {
-                      month: "short", day: "numeric", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </span>
                   <span className="wikios-contrib-size">{c.size.toLocaleString()}b</span>

@@ -193,7 +193,12 @@ export function GovernmentBuilder({
               errorMessage={syncState.syncError?.message}
             />
           )}
-          <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} disabled={isReadOnly}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplates(true)}
+            disabled={isReadOnly}
+          >
             Use Template
           </Button>
         </div>

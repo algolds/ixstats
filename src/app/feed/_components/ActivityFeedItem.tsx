@@ -88,11 +88,13 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   const IconComponent = config.icon;
 
   return (
-    <div className="glass-hierarchy-child group rounded-lg p-4 sm:p-6 transition-all hover:scale-[1.01]">
+    <div className="glass-hierarchy-child group rounded-lg p-4 transition-all hover:scale-[1.01] sm:p-6">
       {/* Header */}
-      <div className="mb-3 sm:mb-4 flex items-start gap-3 sm:gap-4">
+      <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
         {/* Icon */}
-        <div className={`rounded-full p-2 sm:p-3 ${config.bgColor} transition-transform group-hover:scale-110 flex-shrink-0`}>
+        <div
+          className={`rounded-full p-2 sm:p-3 ${config.bgColor} flex-shrink-0 transition-transform group-hover:scale-110`}
+        >
           <IconComponent className={`h-4 w-4 sm:h-5 sm:w-5 ${config.color}`} />
         </div>
 
@@ -100,22 +102,26 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
         <div className="min-w-0 flex-1">
           {/* Title and Badge */}
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h3 className="text-foreground text-sm sm:text-base font-semibold break-words">{activity.content.title}</h3>
+            <h3 className="text-foreground text-sm font-semibold break-words sm:text-base">
+              {activity.content.title}
+            </h3>
             <Badge variant="outline" className={`text-xs ${config.color}`}>
               {config.label}
             </Badge>
           </div>
 
           {/* User/Country Info */}
-          <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+          <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-1.5 text-xs sm:gap-2 sm:text-sm">
             {activity.user.countryName && (
               <>
                 <SimpleFlag countryName={activity.user.countryName} size="sm" />
-                <span className="truncate max-w-[120px] sm:max-w-none">{activity.user.countryName}</span>
+                <span className="max-w-[120px] truncate sm:max-w-none">
+                  {activity.user.countryName}
+                </span>
                 <span className="hidden sm:inline">•</span>
               </>
             )}
-            <span className="truncate max-w-[100px] sm:max-w-none">{activity.user.name}</span>
+            <span className="max-w-[100px] truncate sm:max-w-none">{activity.user.name}</span>
             <span className="hidden sm:inline">•</span>
             <Clock className="h-3 w-3 flex-shrink-0" />
             <span className="text-xs">
@@ -172,19 +178,19 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
       {/* Footer - Engagement Stats */}
       <div className="border-border flex flex-wrap items-center justify-between gap-2 border-t pt-3 sm:pt-4">
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="text-muted-foreground flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs sm:gap-1.5 sm:text-sm">
             <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.likes}</span>
           </div>
-          <div className="text-muted-foreground flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs sm:gap-1.5 sm:text-sm">
             <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.comments}</span>
           </div>
-          <div className="text-muted-foreground flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs sm:gap-1.5 sm:text-sm">
             <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.shares}</span>
           </div>
-          <div className="text-muted-foreground hidden sm:flex items-center gap-1.5 text-sm">
+          <div className="text-muted-foreground hidden items-center gap-1.5 text-sm sm:flex">
             <Eye className="h-4 w-4" />
             <span>{activity.engagement.views}</span>
           </div>

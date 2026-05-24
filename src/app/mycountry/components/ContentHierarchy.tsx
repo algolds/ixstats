@@ -1,6 +1,5 @@
 "use client";
 
-
 // Content hierarchy definition for MyCountry system
 // This establishes clear purpose, priority, and relationships between different content areas
 

@@ -49,10 +49,7 @@ const LAYER_TYPES = [
 
 type LayerType = (typeof LAYER_TYPES)[number]["value"];
 
-const STATUS_CONFIG: Record<
-  string,
-  { icon: React.ElementType; color: string; label: string }
-> = {
+const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
   pending: { icon: Clock, color: "text-amber-500", label: "Pending" },
   processing: { icon: Cog, color: "text-blue-500", label: "Processing" },
   processed: { icon: CheckCircle2, color: "text-emerald-500", label: "Processed" },
@@ -72,11 +69,10 @@ export function SvgUploadManager() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utils = api.useUtils();
 
-  const { data: history, isLoading: historyLoading } =
-    api.geo.getSvgUploadHistory.useQuery(
-      { layerType: selectedLayer },
-      { refetchInterval: 10000 }
-    );
+  const { data: history, isLoading: historyLoading } = api.geo.getSvgUploadHistory.useQuery(
+    { layerType: selectedLayer },
+    { refetchInterval: 10000 }
+  );
 
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -176,13 +172,8 @@ export function SvgUploadManager() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left: Layer selector */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-foreground">
-            Target Layer
-          </label>
-          <Select
-            value={selectedLayer}
-            onValueChange={(v) => setSelectedLayer(v as LayerType)}
-          >
+          <label className="text-foreground text-sm font-medium">Target Layer</label>
+          <Select value={selectedLayer} onValueChange={(v) => setSelectedLayer(v as LayerType)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -195,14 +186,11 @@ export function SvgUploadManager() {
             </SelectContent>
           </Select>
 
-          <div className="rounded-lg border border-border bg-muted p-3 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">
-              Upload an Inkscape SVG
-            </p>
+          <div className="border-border bg-muted text-muted-foreground rounded-lg border p-3 text-xs">
+            <p className="text-foreground font-medium">Upload an Inkscape SVG</p>
             <p className="mt-1">
-              The SVG should contain a layer group matching the selected type.
-              Features are extracted from <code>&lt;path&gt;</code> elements within
-              the layer.
+              The SVG should contain a layer group matching the selected type. Features are
+              extracted from <code>&lt;path&gt;</code> elements within the layer.
             </p>
           </div>
         </div>
@@ -234,17 +222,17 @@ export function SvgUploadManager() {
             {isUploading ? (
               <div className="flex items-center gap-3">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                <span className="text-sm text-foreground/80">Uploading...</span>
+                <span className="text-foreground/80 text-sm">Uploading...</span>
               </div>
             ) : (
               <>
                 <FileUp
                   className={`h-10 w-10 ${isDragging ? "text-blue-500" : "text-muted-foreground"}`}
                 />
-                <p className="mt-3 text-sm font-medium text-foreground/80">
+                <p className="text-foreground/80 mt-3 text-sm font-medium">
                   Drop SVG file here or click to browse
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">Max 50MB</p>
+                <p className="text-muted-foreground mt-1 text-xs">Max 50MB</p>
               </>
             )}
           </div>
@@ -259,7 +247,7 @@ export function SvgUploadManager() {
 
       {/* Upload history */}
       <div>
-        <h3 className="mb-3 text-sm font-medium text-foreground">
+        <h3 className="text-foreground mb-3 text-sm font-medium">
           Upload History — {LAYER_TYPES.find((l) => l.value === selectedLayer)?.label}
         </h3>
 
@@ -270,32 +258,22 @@ export function SvgUploadManager() {
             ))}
           </div>
         ) : !history || history.length === 0 ? (
-          <div className="rounded-lg border border-border bg-muted p-8 text-center text-sm text-muted-foreground">
+          <div className="border-border bg-muted text-muted-foreground rounded-lg border p-8 text-center text-sm">
             No uploads yet for this layer type.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border">
+          <div className="border-border overflow-hidden rounded-lg border">
             <table className="w-full text-sm">
               <thead className="bg-muted">
                 <tr>
-                  <th className="px-4 py-2.5 text-left font-medium text-foreground/80">
-                    File
-                  </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-foreground/80">
-                    Status
-                  </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-foreground/80">
-                    Features
-                  </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-foreground/80">
-                    Date
-                  </th>
-                  <th className="px-4 py-2.5 text-right font-medium text-foreground/80">
-                    Actions
-                  </th>
+                  <th className="text-foreground/80 px-4 py-2.5 text-left font-medium">File</th>
+                  <th className="text-foreground/80 px-4 py-2.5 text-left font-medium">Status</th>
+                  <th className="text-foreground/80 px-4 py-2.5 text-left font-medium">Features</th>
+                  <th className="text-foreground/80 px-4 py-2.5 text-left font-medium">Date</th>
+                  <th className="text-foreground/80 px-4 py-2.5 text-right font-medium">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody className="divide-border/50 divide-y">
                 {history.map((upload) => {
                   const statusCfg = STATUS_CONFIG[upload.status] ?? STATUS_CONFIG.pending!;
                   const StatusIcon = statusCfg.icon;
@@ -308,7 +286,7 @@ export function SvgUploadManager() {
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{upload.fileName}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             {formatBytes(upload.fileSizeBytes)}
                           </span>
                           {upload.isActive && (
@@ -324,20 +302,22 @@ export function SvgUploadManager() {
                           <span className="text-xs font-medium">{statusCfg.label}</span>
                         </div>
                         {upload.errorMessage && (
-                          <p className="mt-0.5 text-xs text-red-500 truncate max-w-[200px]">
+                          <p className="mt-0.5 max-w-[200px] truncate text-xs text-red-500">
                             {upload.errorMessage}
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-foreground/80">
+                      <td className="text-foreground/80 px-4 py-2.5">
                         {upload.featureCount ?? "—"}
                       </td>
-                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                      <td className="text-muted-foreground px-4 py-2.5 text-xs">
                         {formatDate(upload.createdAt)}
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex justify-end gap-1.5">
-                          {(upload.status === "pending" || upload.status === "processed" || upload.status === "failed") && (
+                          {(upload.status === "pending" ||
+                            upload.status === "processed" ||
+                            upload.status === "failed") && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -356,9 +336,7 @@ export function SvgUploadManager() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() =>
-                                rollbackMutation.mutate({ uploadId: upload.id })
-                              }
+                              onClick={() => rollbackMutation.mutate({ uploadId: upload.id })}
                               disabled={rollbackMutation.isPending}
                             >
                               <RotateCcw className="mr-1 h-3 w-3" />
@@ -370,9 +348,7 @@ export function SvgUploadManager() {
                               size="sm"
                               variant="ghost"
                               className="text-red-500 hover:text-red-700"
-                              onClick={() =>
-                                deleteMutation.mutate({ uploadId: upload.id })
-                              }
+                              onClick={() => deleteMutation.mutate({ uploadId: upload.id })}
                               disabled={deleteMutation.isPending}
                             >
                               <Trash2 className="h-3 w-3" />

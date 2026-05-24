@@ -5,8 +5,22 @@
 
 import type { UnifiedInfoboxData } from "~/lib/unified-wiki-parser";
 import type { ComponentType } from "~/lib/enums";
-import type { EconomicInputs, NationalIdentityData, CoreEconomicIndicators, LaborEmploymentData, FiscalSystemData, IncomeWealthData, DemographicData, GeographyData } from "../lib/economy-data-service";
-import type { GovernmentBuilderState, DepartmentInput, BudgetAllocationInput, RevenueSourceInput } from "~/types/government";
+import type {
+  EconomicInputs,
+  NationalIdentityData,
+  CoreEconomicIndicators,
+  LaborEmploymentData,
+  FiscalSystemData,
+  IncomeWealthData,
+  DemographicData,
+  GeographyData,
+} from "../lib/economy-data-service";
+import type {
+  GovernmentBuilderState,
+  DepartmentInput,
+  BudgetAllocationInput,
+  RevenueSourceInput,
+} from "~/types/government";
 import type { GovernmentSpendingData } from "~/types/economics";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { ExtractedBuilderData } from "./wiki-data-extractor";
@@ -61,9 +75,16 @@ function parseWikiNumericValue(value: unknown): number | null {
 function normalizeGovernmentType(raw: string): string {
   const normalized = raw.trim();
   const knownTypes = [
-    "Constitutional Monarchy", "Federal Republic", "Parliamentary Democracy",
-    "Presidential Republic", "Federal Constitutional Republic", "Unitary State",
-    "Federation", "Confederation", "Empire", "City-State",
+    "Constitutional Monarchy",
+    "Federal Republic",
+    "Parliamentary Democracy",
+    "Presidential Republic",
+    "Federal Constitutional Republic",
+    "Unitary State",
+    "Federation",
+    "Confederation",
+    "Empire",
+    "City-State",
   ];
   for (const known of knownTypes) {
     if (normalized.toLowerCase() === known.toLowerCase()) return known;
@@ -71,18 +92,25 @@ function normalizeGovernmentType(raw: string): string {
   return normalized.replace(/\b\w/g, (c) => c.toUpperCase()) || "Other";
 }
 
-function getEconomicTier(gdpPerCapita: number): "Developing" | "Emerging" | "Developed" | "Advanced" {
+function getEconomicTier(
+  gdpPerCapita: number
+): "Developing" | "Emerging" | "Developed" | "Advanced" {
   if (gdpPerCapita > 50000) return "Advanced";
   if (gdpPerCapita > 20000) return "Developed";
   if (gdpPerCapita > 5000) return "Emerging";
   return "Developing";
 }
 
-function createDefaultNationalIdentity(name: string, infobox: UnifiedInfoboxData): NationalIdentityData {
+function createDefaultNationalIdentity(
+  name: string,
+  infobox: UnifiedInfoboxData
+): NationalIdentityData {
   return {
     countryName: name,
     officialName: infobox.official_name || infobox.conventional_long_name || name,
-    governmentType: infobox.government_type ? normalizeGovernmentType(infobox.government_type) : "Republic",
+    governmentType: infobox.government_type
+      ? normalizeGovernmentType(infobox.government_type)
+      : "Republic",
     motto: infobox.motto || infobox.national_motto || "",
     mottoNative: "",
     capitalCity: infobox.capital || "",
@@ -109,10 +137,12 @@ function createDefaultCoreIndicators(infobox: UnifiedInfoboxData): CoreEconomicI
   const popValue = infobox.population ?? infobox.population_estimate ?? infobox.population_census;
   const totalPopulation = parseWikiNumericValue(popValue) ?? 10000000;
 
-  const gdpPcValue = infobox.gdpPerCapita ?? infobox.GDP_nominal_per_capita ?? infobox.GDP_PPP_per_capita;
+  const gdpPcValue =
+    infobox.gdpPerCapita ?? infobox.GDP_nominal_per_capita ?? infobox.GDP_PPP_per_capita;
   const gdpPerCapita = parseWikiNumericValue(gdpPcValue) ?? 25000;
 
-  const gdpNomValue = infobox.gdp_nominal ?? infobox.GDP_nominal ?? infobox.gdp_ppp ?? infobox.GDP_PPP;
+  const gdpNomValue =
+    infobox.gdp_nominal ?? infobox.GDP_nominal ?? infobox.gdp_ppp ?? infobox.GDP_PPP;
   let nominalGDP = parseWikiNumericValue(gdpNomValue) ?? null;
   if (!nominalGDP && totalPopulation && gdpPerCapita) {
     nominalGDP = totalPopulation * gdpPerCapita;
@@ -129,10 +159,15 @@ function createDefaultCoreIndicators(infobox: UnifiedInfoboxData): CoreEconomicI
   };
 }
 
-function createDefaultLaborEmployment(core: CoreEconomicIndicators, tier: ReturnType<typeof getEconomicTier>): LaborEmploymentData {
+function createDefaultLaborEmployment(
+  core: CoreEconomicIndicators,
+  tier: ReturnType<typeof getEconomicTier>
+): LaborEmploymentData {
   const participationRate = tier === "Advanced" ? 68 : tier === "Developed" ? 65 : 60;
   const employmentRate = tier === "Advanced" ? 96 : tier === "Developed" ? 94 : 90;
-  const totalWorkforce = Math.round(core.totalPopulation * (participationRate / 100) * (employmentRate / 100));
+  const totalWorkforce = Math.round(
+    core.totalPopulation * (participationRate / 100) * (employmentRate / 100)
+  );
 
   return {
     laborForceParticipationRate: participationRate,
@@ -146,7 +181,10 @@ function createDefaultLaborEmployment(core: CoreEconomicIndicators, tier: Return
   };
 }
 
-function createDefaultFiscalSystem(core: CoreEconomicIndicators, tier: ReturnType<typeof getEconomicTier>): FiscalSystemData {
+function createDefaultFiscalSystem(
+  core: CoreEconomicIndicators,
+  tier: ReturnType<typeof getEconomicTier>
+): FiscalSystemData {
   const taxRevenuePercent = tier === "Advanced" ? 35 : tier === "Developed" ? 25 : 18;
   const budgetPercent = tier === "Advanced" ? 40 : tier === "Developed" ? 30 : 22;
   const totalRevenue = core.nominalGDP * (taxRevenuePercent / 100);
@@ -186,14 +224,41 @@ function createDefaultFiscalSystem(core: CoreEconomicIndicators, tier: ReturnTyp
   };
 }
 
-function createDefaultIncomeWealth(core: CoreEconomicIndicators, tier: ReturnType<typeof getEconomicTier>): IncomeWealthData {
-  const gini = tier === "Advanced" ? 0.30 : tier === "Developed" ? 0.35 : 0.45;
+function createDefaultIncomeWealth(
+  core: CoreEconomicIndicators,
+  tier: ReturnType<typeof getEconomicTier>
+): IncomeWealthData {
+  const gini = tier === "Advanced" ? 0.3 : tier === "Developed" ? 0.35 : 0.45;
   return {
     economicClasses: [
-      { name: "Upper Class", populationPercent: 5, wealthPercent: 60, averageIncome: core.gdpPerCapita * 5, color: "#f59e0b" },
-      { name: "Middle Class", populationPercent: 40, wealthPercent: 30, averageIncome: core.gdpPerCapita * 1.2, color: "#3b82f6" },
-      { name: "Working Class", populationPercent: 40, wealthPercent: 8, averageIncome: core.gdpPerCapita * 0.5, color: "#10b981" },
-      { name: "Lower Class", populationPercent: 15, wealthPercent: 2, averageIncome: core.gdpPerCapita * 0.2, color: "#ef4444" },
+      {
+        name: "Upper Class",
+        populationPercent: 5,
+        wealthPercent: 60,
+        averageIncome: core.gdpPerCapita * 5,
+        color: "#f59e0b",
+      },
+      {
+        name: "Middle Class",
+        populationPercent: 40,
+        wealthPercent: 30,
+        averageIncome: core.gdpPerCapita * 1.2,
+        color: "#3b82f6",
+      },
+      {
+        name: "Working Class",
+        populationPercent: 40,
+        wealthPercent: 8,
+        averageIncome: core.gdpPerCapita * 0.5,
+        color: "#10b981",
+      },
+      {
+        name: "Lower Class",
+        populationPercent: 15,
+        wealthPercent: 2,
+        averageIncome: core.gdpPerCapita * 0.2,
+        color: "#ef4444",
+      },
     ],
     povertyRate: tier === "Advanced" ? 10 : tier === "Developed" ? 15 : 25,
     incomeInequalityGini: gini,
@@ -201,7 +266,10 @@ function createDefaultIncomeWealth(core: CoreEconomicIndicators, tier: ReturnTyp
   };
 }
 
-function createDefaultDemographics(core: CoreEconomicIndicators, infobox: UnifiedInfoboxData): DemographicData {
+function createDefaultDemographics(
+  core: CoreEconomicIndicators,
+  infobox: UnifiedInfoboxData
+): DemographicData {
   const lifeExp = parseWikiNumericValue(infobox.life_expectancy) ?? 72;
   const literacy = parseWikiNumericValue(infobox.literacy_rate) ?? 90;
   const urbanization = parseWikiNumericValue(infobox.urbanization) ?? 65;
@@ -230,12 +298,27 @@ function createDefaultDemographics(core: CoreEconomicIndicators, infobox: Unifie
   };
 }
 
-function createDefaultGovernmentSpending(govAttrs: WikiGovernmentAttributes, econAttrs: WikiEconomyAttributes, core: CoreEconomicIndicators, tier: ReturnType<typeof getEconomicTier>): GovernmentSpendingData {
-  const hasWelfare = govAttrs.socialPolicies.some(p => p.type === "welfare_state" && p.confidence >= 80) || econAttrs.hasWelfarePrograms;
-  const hasHealthcare = govAttrs.socialPolicies.some(p => p.type === "universal_healthcare" && p.confidence >= 80) || econAttrs.hasUniversalHealthcare;
-  const hasEducation = govAttrs.socialPolicies.some(p => p.type === "public_education" && p.confidence >= 80) || econAttrs.hasPublicEducation;
-  const hasEnvProtection = govAttrs.socialPolicies.some(p => p.type === "environmental_protection" && p.confidence >= 80);
-  const hasDigitalGov = govAttrs.administrativeFeatures.some(f => f.type === "digital_government" && f.confidence >= 80);
+function createDefaultGovernmentSpending(
+  govAttrs: WikiGovernmentAttributes,
+  econAttrs: WikiEconomyAttributes,
+  core: CoreEconomicIndicators,
+  tier: ReturnType<typeof getEconomicTier>
+): GovernmentSpendingData {
+  const hasWelfare =
+    govAttrs.socialPolicies.some((p) => p.type === "welfare_state" && p.confidence >= 80) ||
+    econAttrs.hasWelfarePrograms;
+  const hasHealthcare =
+    govAttrs.socialPolicies.some((p) => p.type === "universal_healthcare" && p.confidence >= 80) ||
+    econAttrs.hasUniversalHealthcare;
+  const hasEducation =
+    govAttrs.socialPolicies.some((p) => p.type === "public_education" && p.confidence >= 80) ||
+    econAttrs.hasPublicEducation;
+  const hasEnvProtection = govAttrs.socialPolicies.some(
+    (p) => p.type === "environmental_protection" && p.confidence >= 80
+  );
+  const hasDigitalGov = govAttrs.administrativeFeatures.some(
+    (f) => f.type === "digital_government" && f.confidence >= 80
+  );
 
   return {
     education: tier === "Advanced" ? 5 : 3,
@@ -314,7 +397,10 @@ function createDefaultGovernmentSpending(govAttrs: WikiGovernmentAttributes, eco
   };
 }
 
-function createDepartmentsFromParsed(parsed: ParsedDepartment[], totalBudget: number): { departments: DepartmentInput[]; allocations: BudgetAllocationInput[] } {
+function createDepartmentsFromParsed(
+  parsed: ParsedDepartment[],
+  totalBudget: number
+): { departments: DepartmentInput[]; allocations: BudgetAllocationInput[] } {
   const departments: DepartmentInput[] = [];
   const allocations: BudgetAllocationInput[] = [];
 
@@ -345,8 +431,11 @@ function createDepartmentsFromParsed(parsed: ParsedDepartment[], totalBudget: nu
   return { departments, allocations };
 }
 
-function createRevenueSourcesFromParsed(revenueAttrs: WikiRevenueAttributes, totalRevenue: number): RevenueSourceInput[] {
-  return revenueAttrs.sources.map(source => ({
+function createRevenueSourcesFromParsed(
+  revenueAttrs: WikiRevenueAttributes,
+  totalRevenue: number
+): RevenueSourceInput[] {
+  return revenueAttrs.sources.map((source) => ({
     name: source.name,
     category: source.category,
     description: `Revenue from ${source.name.toLowerCase()}`,
@@ -357,18 +446,45 @@ function createRevenueSourcesFromParsed(revenueAttrs: WikiRevenueAttributes, tot
   }));
 }
 
-function calculateCompleteness(infobox: UnifiedInfoboxData, matchResult: MatchResult, departments: ParsedDepartment[]): Record<string, number> {
-  const identityFields = ["name", "official_name", "government_type", "capital", "currency", "languages", "motto", "demonym", "national_anthem", "religion", "calling_code", "internet_tld", "time_zone", "iso_code", "drives_on"];
-  const identityFilled = identityFields.filter(f => infobox[f as keyof UnifiedInfoboxData]).length;
+function calculateCompleteness(
+  infobox: UnifiedInfoboxData,
+  matchResult: MatchResult,
+  departments: ParsedDepartment[]
+): Record<string, number> {
+  const identityFields = [
+    "name",
+    "official_name",
+    "government_type",
+    "capital",
+    "currency",
+    "languages",
+    "motto",
+    "demonym",
+    "national_anthem",
+    "religion",
+    "calling_code",
+    "internet_tld",
+    "time_zone",
+    "iso_code",
+    "drives_on",
+  ];
+  const identityFilled = identityFields.filter(
+    (f) => infobox[f as keyof UnifiedInfoboxData]
+  ).length;
   const identityPct = Math.round((identityFilled / identityFields.length) * 100);
 
   const coreFields = ["population", "gdpPerCapita", "gdp_nominal"];
-  const coreFilled = coreFields.filter(f => infobox[f as keyof UnifiedInfoboxData]).length;
+  const coreFilled = coreFields.filter((f) => infobox[f as keyof UnifiedInfoboxData]).length;
   const corePct = Math.round((coreFilled / coreFields.length) * 100);
 
-  const govPct = matchResult.selected.length > 0 ? Math.min(100, Math.round((matchResult.selected.length / 5) * 100)) : infobox.government_type ? 40 : 0;
+  const govPct =
+    matchResult.selected.length > 0
+      ? Math.min(100, Math.round((matchResult.selected.length / 5) * 100))
+      : infobox.government_type
+        ? 40
+        : 0;
   const econPct = infobox.GDP_nominal || infobox.gdp_nominal ? 75 : 0;
-  const demoPct = (infobox.population || infobox.population_estimate) ? 80 : 0;
+  const demoPct = infobox.population || infobox.population_estimate ? 80 : 0;
   const laborPct = 40;
   const fiscalPct = 35;
 
@@ -385,7 +501,11 @@ function calculateCompleteness(infobox: UnifiedInfoboxData, matchResult: MatchRe
 
 export async function assembleWikiImport(input: AssembleInput): Promise<WikiImportResult> {
   const { infoboxData, pages } = input;
-  const name = infoboxData.name || infoboxData.common_name || infoboxData.conventional_long_name || "Unknown Nation";
+  const name =
+    infoboxData.name ||
+    infoboxData.common_name ||
+    infoboxData.conventional_long_name ||
+    "Unknown Nation";
 
   // Parse all wiki attributes
   const govAttrs = parseGovernmentAttributes(pages, infoboxData.government_type);
@@ -426,10 +546,18 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
 
   // Build government structure
   const totalBudget = core.nominalGDP * 0.35;
-  const { departments: deptInputs, allocations } = createDepartmentsFromParsed(departments, totalBudget);
-  const revenueSources = createRevenueSourcesFromParsed(revenueAttrs, fiscal.governmentRevenueTotal);
+  const { departments: deptInputs, allocations } = createDepartmentsFromParsed(
+    departments,
+    totalBudget
+  );
+  const revenueSources = createRevenueSourcesFromParsed(
+    revenueAttrs,
+    fiscal.governmentRevenueTotal
+  );
 
-  const govType = infoboxData.government_type ? normalizeGovernmentType(infoboxData.government_type) : "Other";
+  const govType = infoboxData.government_type
+    ? normalizeGovernmentType(infoboxData.government_type)
+    : "Other";
   const governmentStructure: Partial<GovernmentBuilderState> = {
     structure: {
       governmentName: `Government of ${name}`,
@@ -451,7 +579,12 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
   // Build economy builder state
   const economyBuilderState: Partial<EconomyBuilderState> = {
     structure: {
-      economicModel: econAttrs.economicSystem === "free_market" ? "Market Economy" : econAttrs.economicSystem === "planned" ? "Planned Economy" : "Mixed Economy",
+      economicModel:
+        econAttrs.economicSystem === "free_market"
+          ? "Market Economy"
+          : econAttrs.economicSystem === "planned"
+            ? "Planned Economy"
+            : "Mixed Economy",
       primarySectors: [],
       secondarySectors: [],
       tertiarySectors: [],
@@ -472,10 +605,25 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
       femaleParticipationRate: 50,
       maleParticipationRate: 70,
       sectorDistribution: {
-        agriculture: 5, mining: 2, manufacturing: 15, construction: 8, utilities: 2,
-        wholesale: 5, retail: 10, transportation: 5, hospitality: 5, information: 3,
-        finance: 5, realEstate: 3, professional: 10, admin: 5, public: 8,
-        education: 6, health: 8, arts: 2, other: 5,
+        agriculture: 5,
+        mining: 2,
+        manufacturing: 15,
+        construction: 8,
+        utilities: 2,
+        wholesale: 5,
+        retail: 10,
+        transportation: 5,
+        hospitality: 5,
+        information: 3,
+        finance: 5,
+        realEstate: 3,
+        professional: 10,
+        admin: 5,
+        public: 8,
+        education: 6,
+        health: 8,
+        arts: 2,
+        other: 5,
       },
       employmentTypes: { fullTime: 70, partTime: 15, contract: 8, gig: 5, informal: 2 },
       averageWorkingHours: 40,
@@ -534,13 +682,16 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
   // Calculate completeness
   const sectionCompleteness = calculateCompleteness(infoboxData, matchResult, departments);
   const overallCompleteness = Math.round(
-    Object.values(sectionCompleteness).reduce((a, b) => a + b, 0) / Object.keys(sectionCompleteness).length
+    Object.values(sectionCompleteness).reduce((a, b) => a + b, 0) /
+      Object.keys(sectionCompleteness).length
   );
 
   // Generate warnings
   const warnings: string[] = [];
   if (matchResult.missingEssential.length > 0) {
-    warnings.push(`Missing essential government components: ${matchResult.missingEssential.join(", ")}`);
+    warnings.push(
+      `Missing essential government components: ${matchResult.missingEssential.join(", ")}`
+    );
   }
   if (departments.length === 0) {
     warnings.push("No government departments found in wiki pages — defaults will be used.");
@@ -549,7 +700,9 @@ export async function assembleWikiImport(input: AssembleInput): Promise<WikiImpo
     warnings.push("No revenue sources found at ≥95% confidence — defaults will be used.");
   }
   if (overallCompleteness < 50) {
-    warnings.push("Low data completeness — many fields will use derived defaults. Review all sections in the builder.");
+    warnings.push(
+      "Low data completeness — many fields will use derived defaults. Review all sections in the builder."
+    );
   }
 
   return {

@@ -36,29 +36,42 @@ export function DemoModeAdmin() {
 
   // Mutations
   const activateMutation = api.demoMode.activate.useMutation({
-    onSuccess: () => { void utils.demoMode.invalidate(); },
+    onSuccess: () => {
+      void utils.demoMode.invalidate();
+    },
   });
   const deactivateMutation = api.demoMode.deactivate.useMutation({
-    onSuccess: () => { void utils.demoMode.invalidate(); },
+    onSuccess: () => {
+      void utils.demoMode.invalidate();
+    },
   });
   const reactivateMutation = api.demoMode.reactivate.useMutation({
-    onSuccess: () => { void utils.demoMode.invalidate(); },
+    onSuccess: () => {
+      void utils.demoMode.invalidate();
+    },
   });
   const reseedMutation = api.demoMode.reseed.useMutation({
-    onSuccess: () => { void utils.demoMode.invalidate(); },
+    onSuccess: () => {
+      void utils.demoMode.invalidate();
+    },
   });
   const destroyMutation = api.demoMode.destroy.useMutation({
-    onSuccess: () => { void utils.demoMode.invalidate(); },
+    onSuccess: () => {
+      void utils.demoMode.invalidate();
+    },
   });
 
   const isAnyMutationLoading =
-    activateMutation.isPending || deactivateMutation.isPending ||
-    reactivateMutation.isPending || reseedMutation.isPending || destroyMutation.isPending;
+    activateMutation.isPending ||
+    deactivateMutation.isPending ||
+    reactivateMutation.isPending ||
+    reseedMutation.isPending ||
+    destroyMutation.isPending;
 
   if (statusLoading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -75,33 +88,38 @@ export function DemoModeAdmin() {
         </div>
         <div>
           <h2 className="text-xl font-bold">Demo Mode Management</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Create and manage a demo country with seeded data for live demonstrations.
           </p>
         </div>
       </div>
 
       {/* Status Card */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="border-border/50 bg-card rounded-xl border p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`h-3 w-3 rounded-full ${isActive ? "bg-green-500 animate-pulse" : hasDemo ? "bg-amber-500" : "bg-gray-500"}`} />
+            <div
+              className={`h-3 w-3 rounded-full ${isActive ? "animate-pulse bg-green-500" : hasDemo ? "bg-amber-500" : "bg-gray-500"}`}
+            />
             <div>
               <span className="font-semibold">
                 {isActive ? "Demo Mode Active" : hasDemo ? "Demo Mode Inactive" : "No Demo Country"}
               </span>
               {status?.demoCountryName && (
-                <p className="text-sm text-muted-foreground">{status.demoCountryName}</p>
+                <p className="text-muted-foreground text-sm">{status.demoCountryName}</p>
               )}
             </div>
           </div>
-          <Badge variant={isActive ? "default" : "secondary"} className={isActive ? "bg-green-600" : ""}>
+          <Badge
+            variant={isActive ? "default" : "secondary"}
+            className={isActive ? "bg-green-600" : ""}
+          >
             {isActive ? "ACTIVE" : hasDemo ? "PAUSED" : "OFF"}
           </Badge>
         </div>
 
         {status?.createdAt && (
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-xs">
             Created: {new Date(status.createdAt).toLocaleString()}
           </p>
         )}
@@ -109,7 +127,7 @@ export function DemoModeAdmin() {
 
       {/* Seed Stats */}
       {status?.seedStats && (
-        <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="border-border/50 bg-card rounded-xl border p-6">
           <h3 className="mb-4 flex items-center gap-2 font-semibold">
             <Database className="h-4 w-4" />
             Seeded Data Statistics
@@ -118,20 +136,25 @@ export function DemoModeAdmin() {
             {Object.entries(status.seedStats)
               .filter(([key]) => key !== "total")
               .map(([key, value]) => (
-                <div key={key} className="rounded-lg border border-border/30 bg-muted/30 p-3 text-center">
+                <div
+                  key={key}
+                  className="border-border/30 bg-muted/30 rounded-lg border p-3 text-center"
+                >
                   <div className="text-lg font-bold">{value as number}</div>
-                  <div className="text-xs capitalize text-muted-foreground">{key.replace(/([A-Z])/g, " $1").trim()}</div>
+                  <div className="text-muted-foreground text-xs capitalize">
+                    {key.replace(/([A-Z])/g, " $1").trim()}
+                  </div>
                 </div>
               ))}
           </div>
-          <div className="mt-3 text-right text-sm text-muted-foreground">
+          <div className="text-muted-foreground mt-3 text-right text-sm">
             Total records: <span className="font-semibold">{status.seedStats.total}</span>
           </div>
         </div>
       )}
 
       {/* Actions */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="border-border/50 bg-card rounded-xl border p-6">
         <h3 className="mb-4 font-semibold">Actions</h3>
         <div className="flex flex-wrap gap-3">
           {/* Activate: only show when no demo exists */}
@@ -140,11 +163,13 @@ export function DemoModeAdmin() {
               <select
                 value={sourceCountryId}
                 onChange={(e) => setSourceCountryId(e.target.value)}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+                className="border-border bg-background rounded-md border px-3 py-2 text-sm"
               >
                 <option value="">Select source country...</option>
                 {countries?.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
               <Button
@@ -152,7 +177,11 @@ export function DemoModeAdmin() {
                 disabled={!sourceCountryId || isAnyMutationLoading}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {activateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Power className="mr-2 h-4 w-4" />}
+                {activateMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Power className="mr-2 h-4 w-4" />
+                )}
                 Activate Demo
               </Button>
             </div>
@@ -165,7 +194,11 @@ export function DemoModeAdmin() {
               onClick={() => deactivateMutation.mutate()}
               disabled={isAnyMutationLoading}
             >
-              {deactivateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PowerOff className="mr-2 h-4 w-4" />}
+              {deactivateMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <PowerOff className="mr-2 h-4 w-4" />
+              )}
               Deactivate
             </Button>
           )}
@@ -175,7 +208,11 @@ export function DemoModeAdmin() {
               disabled={isAnyMutationLoading}
               className="bg-green-600 hover:bg-green-700"
             >
-              {reactivateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Power className="mr-2 h-4 w-4" />}
+              {reactivateMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Power className="mr-2 h-4 w-4" />
+              )}
               Reactivate
             </Button>
           )}
@@ -187,7 +224,11 @@ export function DemoModeAdmin() {
               onClick={() => reseedMutation.mutate()}
               disabled={isAnyMutationLoading}
             >
-              {reseedMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              {reseedMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
               Re-seed Data
             </Button>
           )}
@@ -208,8 +249,8 @@ export function DemoModeAdmin() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Destroy Demo Country?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete the demo country and ALL seeded data.
-                      You&apos;ll need to re-activate to create a new demo.
+                      This will permanently delete the demo country and ALL seeded data. You&apos;ll
+                      need to re-activate to create a new demo.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -218,7 +259,9 @@ export function DemoModeAdmin() {
                       className="bg-red-600 text-white hover:bg-red-700"
                       onClick={() => destroyMutation.mutate()}
                     >
-                      {destroyMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {destroyMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
                       Destroy
                     </AlertDialogClose>
                   </AlertDialogFooter>
@@ -244,18 +287,27 @@ export function DemoModeAdmin() {
         {(activateMutation.isError || reseedMutation.isError || destroyMutation.isError) && (
           <div className="mt-3 flex items-center gap-2 text-sm text-red-500">
             <AlertTriangle className="h-4 w-4" />
-            {activateMutation.error?.message || reseedMutation.error?.message || destroyMutation.error?.message}
+            {activateMutation.error?.message ||
+              reseedMutation.error?.message ||
+              destroyMutation.error?.message}
           </div>
         )}
       </div>
 
       {/* How it works */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="border-border/50 bg-card rounded-xl border p-6">
         <h3 className="mb-3 font-semibold">How Demo Mode Works</h3>
-        <ul className="space-y-2 text-sm text-muted-foreground">
-          <li>1. Select a source country and click "Activate Demo" to create a cloned demo country.</li>
-          <li>2. The demo country is seeded with realistic data across all MyCountry subsystems.</li>
-          <li>3. When active, system owners see the demo country instead of their real one in MyCountry.</li>
+        <ul className="text-muted-foreground space-y-2 text-sm">
+          <li>
+            1. Select a source country and click "Activate Demo" to create a cloned demo country.
+          </li>
+          <li>
+            2. The demo country is seeded with realistic data across all MyCountry subsystems.
+          </li>
+          <li>
+            3. When active, system owners see the demo country instead of their real one in
+            MyCountry.
+          </li>
           <li>4. A purple "DEMO MODE" banner appears at the top to indicate demo state.</li>
           <li>5. Deactivate to return to your real country. Re-seed to refresh demo data.</li>
           <li>6. Demo countries are hidden from public country listings and leaderboards.</li>

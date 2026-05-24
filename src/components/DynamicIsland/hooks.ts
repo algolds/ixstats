@@ -132,7 +132,11 @@ export function useDynamicIslandState() {
   const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "");
-  const isOnWikiPage = normalizedPathname.startsWith("/w/") || normalizedPathname.startsWith("/w/special/") || normalizedPathname.startsWith("/blurbs") || false;
+  const isOnWikiPage =
+    normalizedPathname.startsWith("/w/") ||
+    normalizedPathname.startsWith("/w/special/") ||
+    normalizedPathname.startsWith("/blurbs") ||
+    false;
   const isOnForumPage = pathname?.startsWith("/forum") || false;
   const [mode, setMode] = useState<ViewMode>("compact");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -156,7 +160,8 @@ export function useDynamicIslandState() {
   const { data: wikiSearchData } = api.wikios.advancedSearch.useQuery(
     { query: debouncedSearchQuery, limit: 5 },
     {
-      enabled: debouncedSearchQuery.length >= 2 && (searchFilter === "all" || searchFilter === "wiki"),
+      enabled:
+        debouncedSearchQuery.length >= 2 && (searchFilter === "all" || searchFilter === "wiki"),
       staleTime: 60_000,
     }
   );
@@ -204,21 +209,51 @@ export function useDynamicIslandState() {
     const ctx = [...commands];
     if (!isSignedIn || !user) {
       ctx.push(
-        { name: "Sign In", path: "/sign-in", icon: LogIn, description: "Sign in to your IxStats account" },
-        { name: "Sign Up", path: "/sign-up", icon: LogIn, description: "Create a new IxStats account" },
+        {
+          name: "Sign In",
+          path: "/sign-in",
+          icon: LogIn,
+          description: "Sign in to your IxStats account",
+        },
+        {
+          name: "Sign Up",
+          path: "/sign-up",
+          icon: LogIn,
+          description: "Create a new IxStats account",
+        }
       );
     } else {
-      ctx.push({ name: "Sign Out", path: "/sign-out", icon: LogOut, description: "Sign out of your account" });
+      ctx.push({
+        name: "Sign Out",
+        path: "/sign-out",
+        icon: LogOut,
+        description: "Sign out of your account",
+      });
     }
     if (pathname !== "/") {
-      ctx.unshift({ name: "Home", path: "/", icon: Home, description: "Return to IxStats homepage" });
+      ctx.unshift({
+        name: "Home",
+        path: "/",
+        icon: Home,
+        description: "Return to IxStats homepage",
+      });
     }
     if (pathname?.includes("/countries/") && !pathname?.includes("/countries/new")) {
       const cid = pathname.split("/countries/")[1]?.split("/")[0];
       if (cid) {
         ctx.push(
-          { name: "Country Profile", path: `/countries/${cid}/profile`, icon: Globe, description: "View detailed country profile" },
-          { name: "Economic Modeling", path: `/countries/${cid}/modeling`, icon: BarChart3, description: "Economic modeling and analysis" },
+          {
+            name: "Country Profile",
+            path: `/countries/${cid}/profile`,
+            icon: Globe,
+            description: "View detailed country profile",
+          },
+          {
+            name: "Economic Modeling",
+            path: `/countries/${cid}/modeling`,
+            icon: BarChart3,
+            description: "Economic modeling and analysis",
+          }
         );
       }
     }
@@ -253,7 +288,9 @@ export function useDynamicIslandState() {
             type: "country",
             title: country.name,
             subtitle: `Economic Tier: ${country.economicTier || "Unknown"}`,
-            description: country.economicTier ? `Tier: ${country.economicTier}` : "View country profile",
+            description: country.economicTier
+              ? `Tier: ${country.economicTier}`
+              : "View country profile",
             metadata: { countryName: country.name, economicTier: country.economicTier },
             action: () => (window.location.href = createAbsoluteUrl(`/countries/${slug}`)),
           });
@@ -292,12 +329,20 @@ export function useDynamicIslandState() {
             description: feat.description,
             icon: feat.icon,
             action: () => {
-              if (feat.path === "#refresh") { window.location.reload(); return; }
-              if (feat.path === "#search") {
-                (document.querySelector('[data-command-palette-search="true"]') as HTMLInputElement)?.focus();
+              if (feat.path === "#refresh") {
+                window.location.reload();
                 return;
               }
-              if (feat.path === "#notifications") { switchMode("notifications"); return; }
+              if (feat.path === "#search") {
+                (
+                  document.querySelector('[data-command-palette-search="true"]') as HTMLInputElement
+                )?.focus();
+                return;
+              }
+              if (feat.path === "#notifications") {
+                switchMode("notifications");
+                return;
+              }
               window.location.href = createAbsoluteUrl(feat.path);
             },
           });
@@ -318,14 +363,24 @@ export function useDynamicIslandState() {
             : "Wiki article",
           icon: BookOpen,
           action: () => {
-            window.location.href = createAbsoluteUrl(`/w/${encodeURIComponent(article.title.replace(/ /g, "_"))}`);
+            window.location.href = createAbsoluteUrl(
+              `/w/${encodeURIComponent(article.title.replace(/ /g, "_"))}`
+            );
           },
         });
       }
     }
 
     return results.slice(0, 12);
-  }, [debouncedSearchQuery, searchFilter, countryIndex, commandIndex, featureIndex, switchMode, wikiSearchData]);
+  }, [
+    debouncedSearchQuery,
+    searchFilter,
+    countryIndex,
+    commandIndex,
+    featureIndex,
+    switchMode,
+    wikiSearchData,
+  ]);
 
   // Cycling timeout ref
   const cyclingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -378,8 +433,8 @@ export function useDynamicIslandState() {
         activeElement?.tagName === "TEXTAREA" ||
         activeElement?.getAttribute("contenteditable") === "true" ||
         activeElement?.closest('[contenteditable="true"]') != null ||
-        activeElement?.closest('.cm-editor') != null ||
-        activeElement?.closest('[data-slate-editor]') != null;
+        activeElement?.closest(".cm-editor") != null ||
+        activeElement?.closest("[data-slate-editor]") != null;
 
       // Debug active element
       devLog(
@@ -499,7 +554,9 @@ export function useDynamicIslandState() {
       // Double-tap Tab within 400ms on wiki — enter editor mode
       if (
         e.key === "Tab" &&
-        !e.metaKey && !e.ctrlKey && !e.altKey &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
         !isInputFocused &&
         mode !== "search" &&
         !isProcessingShortcut &&

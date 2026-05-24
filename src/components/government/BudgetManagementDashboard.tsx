@@ -21,12 +21,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import {
-  DollarSign,
-  TrendingUp,
-  BarChart3,
-  Target,
-} from "lucide-react";
+import { DollarSign, TrendingUp, BarChart3, Target } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 import type {
   GovernmentStructure,

@@ -24,35 +24,44 @@ export const ValidationCategory = React.memo(function ValidationCategory({
   return (
     <Card className={`border ${getStatusBgColor(overallStatus)} transition-all`}>
       <CardHeader
-        className="cursor-pointer select-none pb-3"
+        className="cursor-pointer pb-3 select-none"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="text-muted-foreground h-4 w-4" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="text-muted-foreground h-4 w-4" />
             )}
             <CardTitle className="text-base">{category.category}</CardTitle>
           </div>
           <div className="flex items-center gap-1.5">
             {passed > 0 && (
-              <Badge variant="outline" className="border-green-500/30 bg-green-500/10 text-green-400 text-xs">
+              <Badge
+                variant="outline"
+                className="border-green-500/30 bg-green-500/10 text-xs text-green-400"
+              >
                 {passed} passed
               </Badge>
             )}
             {warnings > 0 && (
-              <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs">
+              <Badge
+                variant="outline"
+                className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-400"
+              >
                 {warnings} warn
               </Badge>
             )}
             {failures > 0 && (
-              <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-400 text-xs">
+              <Badge
+                variant="outline"
+                className="border-red-500/30 bg-red-500/10 text-xs text-red-400"
+              >
                 {failures} fail
               </Badge>
             )}
-            <span className="text-muted-foreground text-xs ml-1">{category.duration}ms</span>
+            <span className="text-muted-foreground ml-1 text-xs">{category.duration}ms</span>
           </div>
         </div>
       </CardHeader>

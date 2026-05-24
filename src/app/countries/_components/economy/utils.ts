@@ -1,6 +1,4 @@
-import type {
-  EconomyData,
-} from "~/types/economics";
+import type { EconomyData } from "~/types/economics";
 import {
   formatCurrency as formatCurrencyUtil,
   formatPopulation as formatPopulationUtil,

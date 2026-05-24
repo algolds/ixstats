@@ -501,9 +501,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
             data={sortedRankings}
             increaseViewportBy={300}
             itemContent={(index, country) => (
-              <div className="pb-3">
-                {renderRankingItem(country, index)}
-              </div>
+              <div className="pb-3">{renderRankingItem(country, index)}</div>
             )}
           />
         ) : null}

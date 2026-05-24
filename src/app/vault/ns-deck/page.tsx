@@ -31,23 +31,23 @@ export default function NSImportPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-indigo-900/20 p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">NationStates Deck Import</h1>
+          <h1 className="mb-2 text-4xl font-bold text-white">NationStates Deck Import</h1>
           <p className="text-white/70">
             Import your NationStates trading card collection into IxCards
           </p>
         </div>
 
         {!showWizard ? (
-          <div className="glass-parent p-8 space-y-6">
+          <div className="glass-parent space-y-6 p-8">
             <div className="space-y-4">
               <h2 className="text-2xl font-bold text-white">How It Works</h2>
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gold-400 text-gray-900 font-bold flex items-center justify-center flex-shrink-0">
+                  <div className="bg-gold-400 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
                     1
                   </div>
                   <div>
@@ -59,19 +59,20 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gold-400 text-gray-900 font-bold flex items-center justify-center flex-shrink-0">
+                  <div className="bg-gold-400 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
                     2
                   </div>
                   <div>
                     <div className="font-semibold text-white">Preview Your Deck</div>
                     <div className="text-sm text-white/60">
-                      See your collection before importing - including total cards, rarity distribution, and deck value
+                      See your collection before importing - including total cards, rarity
+                      distribution, and deck value
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gold-400 text-gray-900 font-bold flex items-center justify-center flex-shrink-0">
+                  <div className="bg-gold-400 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
                     3
                   </div>
                   <div>
@@ -83,7 +84,7 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gold-400 text-gray-900 font-bold flex items-center justify-center flex-shrink-0">
+                  <div className="bg-gold-400 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
                     4
                   </div>
                   <div>
@@ -96,10 +97,10 @@ export default function NSImportPage() {
               </div>
             </div>
 
-            <div className="glass-child p-4 rounded-lg bg-blue-500/10 border border-blue-400/20">
+            <div className="glass-child rounded-lg border border-blue-400/20 bg-blue-500/10 p-4">
               <div className="flex items-start gap-3">
                 <svg
-                  className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5"
+                  className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-400"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -119,7 +120,7 @@ export default function NSImportPage() {
 
             <button
               onClick={() => setShowWizard(true)}
-              className="w-full glass-interactive px-6 py-4 rounded-lg font-semibold text-white hover:bg-white/20 transition-colors text-lg"
+              className="glass-interactive w-full rounded-lg px-6 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/20"
             >
               Start Import Wizard
             </button>
@@ -127,7 +128,7 @@ export default function NSImportPage() {
             <div className="text-center">
               <button
                 onClick={() => router.push("/vault")}
-                className="text-white/60 hover:text-white transition-colors text-sm"
+                className="text-sm text-white/60 transition-colors hover:text-white"
               >
                 Back to MyVault
               </button>

@@ -352,12 +352,7 @@ function SliderField({
         <Label>{label}</Label>
         <span className="text-sm font-medium">{value}%</span>
       </div>
-      <Slider
-        value={[value]}
-        onValueChange={([v]) => onChange(v)}
-        max={100}
-        step={1}
-      />
+      <Slider value={[value]} onValueChange={([v]) => onChange(v)} max={100} step={1} />
     </div>
   );
 }

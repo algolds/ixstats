@@ -36,10 +36,12 @@ export function TemplateManager() {
 
   const utils = api.useUtils();
 
-  const { data: templates, isLoading: templatesLoading } =
-    api.geo.listWorldTemplates.useQuery(undefined, {
+  const { data: templates, isLoading: templatesLoading } = api.geo.listWorldTemplates.useQuery(
+    undefined,
+    {
       refetchOnWindowFocus: false,
-    });
+    }
+  );
 
   const exportMutation = api.geo.exportWorldTemplate.useMutation({
     onSuccess: () => {
@@ -72,20 +74,17 @@ export function TemplateManager() {
     });
   }, [exportName, exportDescription, isPublic, exportMutation]);
 
-  const handleFileUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImportJson(reader.result as string);
-      };
-      reader.readAsText(file);
-      // Reset the input so the same file can be re-selected
-      e.target.value = "";
-    },
-    []
-  );
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImportJson(reader.result as string);
+    };
+    reader.readAsText(file);
+    // Reset the input so the same file can be re-selected
+    e.target.value = "";
+  }, []);
 
   const handleImportFromFile = useCallback(() => {
     if (!importJson) return;
@@ -129,18 +128,19 @@ export function TemplateManager() {
   return (
     <div className="space-y-6">
       {/* Export Section */}
-      <div className="rounded-xl border border-border bg-muted/50 p-5 ">
+      <div className="border-border bg-muted/50 rounded-xl border p-5">
         <div className="mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-emerald-400" />
-          <h3 className="text-lg font-semibold text-foreground">Export World Template</h3>
+          <h3 className="text-foreground text-lg font-semibold">Export World Template</h3>
         </div>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Export the current world state (all map layers, countries, sovereignty) as a reusable template.
+        <p className="text-muted-foreground mb-4 text-sm">
+          Export the current world state (all map layers, countries, sovereignty) as a reusable
+          template.
         </p>
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+            <label className="text-muted-foreground mb-1 block text-xs font-medium">
               Template Name *
             </label>
             <Input
@@ -150,7 +150,7 @@ export function TemplateManager() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+            <label className="text-muted-foreground mb-1 block text-xs font-medium">
               Description
             </label>
             <textarea
@@ -158,15 +158,15 @@ export function TemplateManager() {
               onChange={(e) => setExportDescription(e.target.value)}
               placeholder="Optional description..."
               rows={2}
-              className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-emerald-500/50 focus:outline-none"
+              className="border-border bg-muted/50 text-foreground placeholder-muted-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-emerald-500/50 focus:outline-none"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <label className="text-muted-foreground flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={isPublic}
               onChange={(e) => setIsPublic(e.target.checked)}
-              className="rounded border-border"
+              className="border-border rounded"
             />
             Make template public
           </label>
@@ -174,7 +174,7 @@ export function TemplateManager() {
           <Button
             onClick={handleExport}
             disabled={!exportName.trim() || exportMutation.isPending}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white"
+            className="bg-emerald-600 text-white hover:bg-emerald-500"
           >
             {exportMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -199,14 +199,14 @@ export function TemplateManager() {
       </div>
 
       {/* Import Section */}
-      <div className="rounded-xl border border-border bg-muted/50 p-5 ">
+      <div className="border-border bg-muted/50 rounded-xl border p-5">
         <div className="mb-4 flex items-center gap-2">
           <Upload className="h-5 w-5 text-blue-400" />
-          <h3 className="text-lg font-semibold text-foreground">Import Template</h3>
+          <h3 className="text-foreground text-lg font-semibold">Import Template</h3>
         </div>
 
         <div className="mb-4 flex gap-3">
-          <label className="flex items-center gap-2 text-sm text-foreground">
+          <label className="text-foreground flex items-center gap-2 text-sm">
             <input
               type="radio"
               name="importMode"
@@ -216,7 +216,7 @@ export function TemplateManager() {
             />
             Replace (deactivate all existing)
           </label>
-          <label className="flex items-center gap-2 text-sm text-foreground">
+          <label className="text-foreground flex items-center gap-2 text-sm">
             <input
               type="radio"
               name="importMode"
@@ -243,7 +243,7 @@ export function TemplateManager() {
 
           {importJson && (
             <>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-muted-foreground text-xs">
                 {formatBytes(importJson.length)} loaded
               </span>
               <Button onClick={handleImportFromFile} disabled={importMutation.isPending}>
@@ -260,7 +260,9 @@ export function TemplateManager() {
 
         {importMutation.isSuccess && (
           <div className="mt-3 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3 text-sm text-blue-500">
-            <p className="font-medium">Import complete: {importMutation.data.totalImported} features</p>
+            <p className="font-medium">
+              Import complete: {importMutation.data.totalImported} features
+            </p>
             <ul className="mt-1 space-y-0.5 text-xs text-blue-500/70">
               {importMutation.data.log.map((msg, i) => (
                 <li key={i}>{msg}</li>
@@ -276,19 +278,19 @@ export function TemplateManager() {
       </div>
 
       {/* Template Library */}
-      <div className="rounded-xl border border-border bg-muted/50 p-5 ">
+      <div className="border-border bg-muted/50 rounded-xl border p-5">
         <div className="mb-4 flex items-center gap-2">
           <Globe2 className="h-5 w-5 text-purple-400" />
-          <h3 className="text-lg font-semibold text-foreground">Template Library</h3>
+          <h3 className="text-foreground text-lg font-semibold">Template Library</h3>
         </div>
 
         {templatesLoading ? (
-          <div className="flex items-center gap-2 py-8 text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 py-8">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span className="text-sm">Loading templates...</span>
           </div>
         ) : !templates || templates.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground py-8 text-center text-sm">
             No templates saved yet. Export your first world template above.
           </div>
         ) : (
@@ -299,12 +301,12 @@ export function TemplateManager() {
               return (
                 <div
                   key={t.id}
-                  className="flex items-start justify-between rounded-lg border border-border bg-muted/30 p-4"
+                  className="border-border bg-muted/30 flex items-start justify-between rounded-lg border p-4"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-foreground">{t.name}</h4>
-                      <span className="rounded bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      <h4 className="text-foreground font-medium">{t.name}</h4>
+                      <span className="bg-muted/50 text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">
                         v{t.version}
                       </span>
                       {t.isPublic && (
@@ -314,9 +316,9 @@ export function TemplateManager() {
                       )}
                     </div>
                     {t.description && (
-                      <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+                      <p className="text-muted-foreground mt-1 text-xs">{t.description}</p>
                     )}
-                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-2 flex flex-wrap gap-3 text-xs">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {new Date(t.createdAt).toLocaleDateString()}
@@ -338,14 +340,14 @@ export function TemplateManager() {
                   <div className="ml-4 flex gap-1">
                     <button
                       onClick={() => setPreviewTemplateId(t.id)}
-                      className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1.5"
                       title="Preview"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => void handleDownload(t.id, t.name)}
-                      className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1.5"
                       title="Download JSON"
                     >
                       <Download className="h-4 w-4" />

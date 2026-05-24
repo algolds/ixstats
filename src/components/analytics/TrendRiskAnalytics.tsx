@@ -8,11 +8,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Progress } from "~/components/ui/progress";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "~/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
   TrendingUp,
   TrendingDown,
@@ -74,7 +70,10 @@ export function TrendRiskAnalytics({ countryId, userId }: TrendRiskAnalyticsProp
 
   // Get security dashboard for risk assessment
   const { data: securityDashboard, isLoading: securityLoading } =
-    api.unifiedIntelligence.getSecurityDashboard.useQuery({ userId: userId ?? "" }, { enabled: !!userId });
+    api.unifiedIntelligence.getSecurityDashboard.useQuery(
+      { userId: userId ?? "" },
+      { enabled: !!userId }
+    );
 
   // Get country data for context
   const { data: countryData, isLoading: countryLoading } =

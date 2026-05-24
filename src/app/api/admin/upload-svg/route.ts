@@ -14,7 +14,13 @@ import { createHash } from "crypto";
 import { extractSvgMetadata } from "~/lib/svg-parser";
 
 const VALID_LAYER_TYPES = [
-  "political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background",
+  "political",
+  "climate",
+  "altitudes",
+  "rivers",
+  "lakes",
+  "icecaps",
+  "background",
 ];
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB

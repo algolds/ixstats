@@ -137,7 +137,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate content type
-    if (!ALLOWED_TYPES.includes(contentType) && !(isSvgFile && SVG_CONTENT_TYPES.includes(contentType))) {
+    if (
+      !ALLOWED_TYPES.includes(contentType) &&
+      !(isSvgFile && SVG_CONTENT_TYPES.includes(contentType))
+    ) {
       return NextResponse.json(
         {
           success: false,
@@ -177,7 +180,9 @@ export async function POST(request: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Generate public URL with base path for production
-    const publicUrl = BASE_PATH ? `${BASE_PATH}/images/downloaded/${fileName}` : `/images/downloaded/${fileName}`;
+    const publicUrl = BASE_PATH
+      ? `${BASE_PATH}/images/downloaded/${fileName}`
+      : `/images/downloaded/${fileName}`;
 
     console.log(
       `[ExternalImageDownload] Successfully saved: ${fileName} (${imageBuffer.byteLength} bytes) to ${publicUrl}`

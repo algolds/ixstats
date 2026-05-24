@@ -294,10 +294,18 @@ async function generateReport(categoryStats: CategoryStats[]) {
   console.log("📊 OVERALL STATISTICS");
   console.log("═".repeat(65));
   console.log(`Total Equipment:        ${stats.total}`);
-  console.log(`With Images:            ${stats.withImages} (${((stats.withImages / stats.total) * 100).toFixed(1)}%)`);
-  console.log(`Missing Images:         ${stats.missingImages} (${((stats.missingImages / stats.total) * 100).toFixed(1)}%)`);
-  console.log(`Valid URLs:             ${stats.validUrls} (${stats.withImages > 0 ? ((stats.validUrls / stats.withImages) * 100).toFixed(1) : 0}%)`);
-  console.log(`Broken URLs:            ${stats.brokenUrls} (${stats.withImages > 0 ? ((stats.brokenUrls / stats.withImages) * 100).toFixed(1) : 0}%)`);
+  console.log(
+    `With Images:            ${stats.withImages} (${((stats.withImages / stats.total) * 100).toFixed(1)}%)`
+  );
+  console.log(
+    `Missing Images:         ${stats.missingImages} (${((stats.missingImages / stats.total) * 100).toFixed(1)}%)`
+  );
+  console.log(
+    `Valid URLs:             ${stats.validUrls} (${stats.withImages > 0 ? ((stats.validUrls / stats.withImages) * 100).toFixed(1) : 0}%)`
+  );
+  console.log(
+    `Broken URLs:            ${stats.brokenUrls} (${stats.withImages > 0 ? ((stats.brokenUrls / stats.withImages) * 100).toFixed(1) : 0}%)`
+  );
   console.log(`Untested (no URL):      ${stats.untested}`);
 
   // Category breakdown
@@ -346,7 +354,9 @@ async function generateReport(categoryStats: CategoryStats[]) {
   });
 
   Object.entries(byCategory).forEach(([category, categoryIssues]) => {
-    console.log(`\n📁 ${category.toUpperCase().replace(/_/g, " ")} (${categoryIssues.length} issues)`);
+    console.log(
+      `\n📁 ${category.toUpperCase().replace(/_/g, " ")} (${categoryIssues.length} issues)`
+    );
     console.log("─".repeat(65));
 
     categoryIssues.slice(0, 10).forEach((issue, idx) => {
@@ -373,7 +383,8 @@ async function generateReport(categoryStats: CategoryStats[]) {
   console.log("IMAGE VALIDATION STATUS");
   console.log("═".repeat(65));
 
-  const imageQualityScore = stats.total > 0 ? ((stats.validUrls / stats.total) * 100).toFixed(1) : "0";
+  const imageQualityScore =
+    stats.total > 0 ? ((stats.validUrls / stats.total) * 100).toFixed(1) : "0";
   const coverageScore = stats.total > 0 ? ((stats.withImages / stats.total) * 100).toFixed(1) : "0";
 
   console.log(`Image Coverage:         ${coverageScore}%`);

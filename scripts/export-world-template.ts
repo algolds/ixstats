@@ -25,7 +25,9 @@ async function main() {
   const description = getArg("--description");
 
   if (!name) {
-    console.error("Usage: bunx tsx scripts/export-world-template.ts --name <name> [--output <file>] [--description <d>]");
+    console.error(
+      "Usage: bunx tsx scripts/export-world-template.ts --name <name> [--output <file>] [--description <d>]"
+    );
     process.exit(1);
   }
 
@@ -81,7 +83,13 @@ async function main() {
 
   // Gather sovereignty
   const sovereignty = await prisma.countrySovereignty.findMany({
-    select: { sovereignId: true, subjectId: true, relationshipType: true, autonomyLevel: true, description: true },
+    select: {
+      sovereignId: true,
+      subjectId: true,
+      relationshipType: true,
+      autonomyLevel: true,
+      description: true,
+    },
   });
   console.log(`  ${sovereignty.length} sovereignty relationships`);
 

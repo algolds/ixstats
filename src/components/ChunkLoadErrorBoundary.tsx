@@ -62,11 +62,11 @@ export class ChunkLoadErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.hasChunkError) {
       return (
-        <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="bg-background flex min-h-screen items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
             <p className="text-muted-foreground">Reconnecting to server...</p>
-            <p className="mt-2 text-xs text-muted-foreground/60">
+            <p className="text-muted-foreground/60 mt-2 text-xs">
               The development server restarted. Refreshing automatically...
             </p>
           </div>
@@ -84,8 +84,13 @@ export class ChunkLoadErrorBoundary extends Component<Props, State> {
 export function ChunkLoadErrorHandler(): null {
   if (typeof window !== "undefined") {
     // Only set up once
-    if (!(window as unknown as { __chunkErrorHandlerInstalled?: boolean }).__chunkErrorHandlerInstalled) {
-      (window as unknown as { __chunkErrorHandlerInstalled?: boolean }).__chunkErrorHandlerInstalled = true;
+    if (
+      !(window as unknown as { __chunkErrorHandlerInstalled?: boolean })
+        .__chunkErrorHandlerInstalled
+    ) {
+      (
+        window as unknown as { __chunkErrorHandlerInstalled?: boolean }
+      ).__chunkErrorHandlerInstalled = true;
 
       const handleError = (event: ErrorEvent) => {
         const isChunkError =

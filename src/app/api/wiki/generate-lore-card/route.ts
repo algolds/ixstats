@@ -17,10 +17,7 @@ export async function POST(request: Request) {
     const userId = session?.userId;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
     // Check admin permissions
@@ -34,20 +31,14 @@ export async function POST(request: Request) {
       allowedRoles.has(session.sessionClaims.metadata.role);
 
     if (!isOwner && !hasAdminRole) {
-      return NextResponse.json(
-        { error: "Admin permissions required" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Admin permissions required" }, { status: 403 });
     }
 
     const body = await request.json();
     const { articleTitle, wikiSource } = body;
 
     if (!articleTitle || typeof articleTitle !== "string") {
-      return NextResponse.json(
-        { error: "Article title is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Article title is required" }, { status: 400 });
     }
 
     if (!wikiSource || !["ixwiki", "iiwiki"].includes(wikiSource)) {

@@ -19,9 +19,7 @@ export default function ThinkPagesArticle() {
             posts from other players across the game world.
           </p>
           <ul className="list-disc space-y-2 pl-6">
-            <li>
-              Compose rich text posts with embedded wiki lookups, images, and tags.
-            </li>
+            <li>Compose rich text posts with embedded wiki lookups, images, and tags.</li>
             <li>
               The live event feed highlights featured and trending posts so important news reaches
               everyone.
@@ -50,14 +48,15 @@ export default function ThinkPagesArticle() {
               </li>
               <li>
                 Choose to publish publicly for everyone to see, or share it with a specific{" "}
-                <Link href="/help/social/thinktanks" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/help/social/thinktanks"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   ThinkTank
                 </Link>{" "}
                 group.
               </li>
-              <li>
-                Once published, monitor reactions and replies in your feed.
-              </li>
+              <li>Once published, monitor reactions and replies in your feed.</li>
             </ol>
           </InfoBox>
         </Section>
@@ -71,8 +70,8 @@ export default function ThinkPagesArticle() {
               other players{"'"} feeds.
             </li>
             <li>
-              Link to wiki articles using the built-in search tool to add credibility and context
-              to your writing.
+              Link to wiki articles using the built-in search tool to add credibility and context to
+              your writing.
             </li>
             <li>
               Embed policy proposals, mission reports, or diplomatic summaries to keep your allies
@@ -85,14 +84,20 @@ export default function ThinkPagesArticle() {
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <PenSquare className="inline h-4 w-4" />{" "}
-              <Link href="/help/social/thinkshare" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/social/thinkshare"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 ThinkShare Messaging
               </Link>{" "}
               — follow up on posts with private conversations.
             </li>
             <li>
               <Users className="inline h-4 w-4" />{" "}
-              <Link href="/help/social/thinktanks" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/social/thinktanks"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 ThinkTanks
               </Link>{" "}
               — collaborate with groups on shared research and planning.

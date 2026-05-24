@@ -2,14 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import {
-  TrendingUp,
-  Users,
-  BarChart3,
-  Crown,
-  Activity,
-  Sparkles,
-} from "lucide-react";
+import { TrendingUp, Users, BarChart3, Crown, Activity, Sparkles } from "lucide-react";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
@@ -141,14 +134,18 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
           <div className="glass-hierarchy-child grid grid-cols-3 gap-3 rounded-xl p-3">
             {identity.capitalCity && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] uppercase tracking-wider">Capital</div>
-                <div className="text-xs font-medium text-foreground">{identity.capitalCity}</div>
+                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                  Capital
+                </div>
+                <div className="text-foreground text-xs font-medium">{identity.capitalCity}</div>
               </div>
             )}
             {identity.currency && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] uppercase tracking-wider">Currency</div>
-                <div className="text-xs font-medium text-foreground">
+                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                  Currency
+                </div>
+                <div className="text-foreground text-xs font-medium">
                   {identity.currencySymbol
                     ? `${identity.currency} (${identity.currencySymbol})`
                     : identity.currency}
@@ -157,8 +154,10 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {identity.demonym && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-[10px] uppercase tracking-wider">Demonym</div>
-                <div className="text-xs font-medium text-foreground">{identity.demonym}</div>
+                <div className="text-muted-foreground mb-0.5 text-[10px] tracking-wider uppercase">
+                  Demonym
+                </div>
+                <div className="text-foreground text-xs font-medium">{identity.demonym}</div>
               </div>
             )}
           </div>
@@ -166,7 +165,9 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
 
         {wikiIntro && (
           <div className="glass-hierarchy-child space-y-3 rounded-xl p-4">
-            <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">{wikiIntro}</p>
+            <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
+              {wikiIntro}
+            </p>
             <div className="flex items-center gap-4">
               <a
                 href={wikiUrl}
@@ -177,7 +178,10 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
                 <ExternalLink className="h-3 w-3" />
                 Read more on IxWiki
               </a>
-              <Link href={ixstatsUrl} className={`inline-flex items-center gap-2 text-xs ${splashGold.link}`}>
+              <Link
+                href={ixstatsUrl}
+                className={`inline-flex items-center gap-2 text-xs ${splashGold.link}`}
+              >
                 <BarChart3 className="h-3 w-3" />
                 View in IxStats
               </Link>
@@ -190,35 +194,50 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             <div className="glass-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <TrendingUp className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] uppercase tracking-wider">Total GDP</span>
+                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                  Total GDP
+                </span>
               </div>
-              <div className={`text-lg font-bold ${splashGold.text}`}>{formatCurrency(currentTotalGdp)}</div>
+              <div className={`text-lg font-bold ${splashGold.text}`}>
+                {formatCurrency(currentTotalGdp)}
+              </div>
             </div>
             <div className="glass-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <Users className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] uppercase tracking-wider">Population</span>
+                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                  Population
+                </span>
               </div>
-              <div className={`text-lg font-bold ${splashGold.text}`}>{formatPopulation(currentPopulation)}</div>
+              <div className={`text-lg font-bold ${splashGold.text}`}>
+                {formatPopulation(currentPopulation)}
+              </div>
             </div>
             <div className="glass-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <BarChart3 className={`h-3 w-3 ${splashGold.text}`} />
-                <span className="text-muted-foreground text-[10px] uppercase tracking-wider">Per Capita</span>
+                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                  Per Capita
+                </span>
               </div>
-              <div className={`text-lg font-bold ${splashGold.text}`}>{formatCurrency(currentGdpPerCapita)}</div>
+              <div className={`text-lg font-bold ${splashGold.text}`}>
+                {formatCurrency(currentGdpPerCapita)}
+              </div>
             </div>
             <div className="glass-hierarchy-child rounded-xl p-3">
               <div className="mb-1 flex items-center gap-1.5">
                 <Activity
                   className={`h-3 w-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
                 />
-                <span className="text-muted-foreground text-[10px] uppercase tracking-wider">Growth</span>
+                <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                  Growth
+                </span>
               </div>
               <div
                 className={`text-lg font-bold ${growthPositive ? splashGold.text : "text-destructive"}`}
               >
-                {growthPositive ? "+" : ""}{(growthRate * 100).toFixed(2)}%
+                {growthPositive ? "+" : ""}
+                {(growthRate * 100).toFixed(2)}%
               </div>
             </div>
           </div>
@@ -255,7 +274,9 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             {lifeExpectancy != null && (
               <div className="text-center">
                 <div className="text-muted-foreground text-[10px]">Life Exp.</div>
-                <div className="text-foreground text-xs font-semibold">{lifeExpectancy.toFixed(1)} yrs</div>
+                <div className="text-foreground text-xs font-semibold">
+                  {lifeExpectancy.toFixed(1)} yrs
+                </div>
               </div>
             )}
           </div>
@@ -273,7 +294,9 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             {identity?.motto && (
               <div className={`flex items-start gap-2 ${leader ? "mt-2" : ""}`}>
                 <Sparkles className="text-muted-foreground mt-0.5 h-3.5 w-3.5" />
-                <span className="text-muted-foreground text-xs italic">&ldquo;{identity.motto}&rdquo;</span>
+                <span className="text-muted-foreground text-xs italic">
+                  &ldquo;{identity.motto}&rdquo;
+                </span>
               </div>
             )}
           </div>
@@ -335,7 +358,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="text-muted-foreground h-4 w-4" />
-                  <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+                  <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                     Country Health
                   </span>
                 </div>

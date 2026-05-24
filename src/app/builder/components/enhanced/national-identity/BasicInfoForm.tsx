@@ -59,202 +59,187 @@ const GOVERNMENT_TYPES = [
   { value: "custom", label: "Custom", prefix: "" },
 ];
 
-export const BasicInfoForm = React.memo(function BasicInfoForm({
-  identity,
-  onIdentityChange,
-  selectedGovernmentType,
-  customOfficialName,
-  isEditingCustomName,
-  onGovernmentTypeChange,
-  onCustomOfficialNameChange,
-  onCustomOfficialNameFocus,
-  onCustomOfficialNameBlur,
-  setShouldFetchCustomTypes,
-  customGovernmentTypes,
-  onFieldSave,
-}: BasicInfoFormProps) {
-  // Memoize input change handlers with empty deps since parent callback is stable
-  const handleCountryNameChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onIdentityChange("countryName", event.target.value);
-    },
-    [] // Empty - parent onIdentityChange is stable via refs
-  );
+export const BasicInfoForm = React.memo(
+  function BasicInfoForm({
+    identity,
+    onIdentityChange,
+    selectedGovernmentType,
+    customOfficialName,
+    isEditingCustomName,
+    onGovernmentTypeChange,
+    onCustomOfficialNameChange,
+    onCustomOfficialNameFocus,
+    onCustomOfficialNameBlur,
+    setShouldFetchCustomTypes,
+    customGovernmentTypes,
+    onFieldSave,
+  }: BasicInfoFormProps) {
+    // Memoize input change handlers with empty deps since parent callback is stable
+    const handleCountryNameChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        onIdentityChange("countryName", event.target.value);
+      },
+      [] // Empty - parent onIdentityChange is stable via refs
+    );
 
-  const handleOfficialNameChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleOfficialNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
       onIdentityChange("officialName", event.target.value);
-    },
-    []
-  );
+    }, []);
 
-  const handleCapitalCityChange = useCallback(
-    (value: string) => {
+    const handleCapitalCityChange = useCallback((value: string) => {
       onIdentityChange("capitalCity", value);
-    },
-    []
-  );
+    }, []);
 
-  const handleLargestCityChange = useCallback(
-    (value: string) => {
+    const handleLargestCityChange = useCallback((value: string) => {
       onIdentityChange("largestCity", value);
-    },
-    []
-  );
+    }, []);
 
-  const handleDemonymChange = useCallback(
-    (value: string) => {
+    const handleDemonymChange = useCallback((value: string) => {
       onIdentityChange("demonym", value);
-    },
-    []
-  );
+    }, []);
 
-  const handleCurrencyChange = useCallback(
-    (value: string) => {
+    const handleCurrencyChange = useCallback((value: string) => {
       onIdentityChange("currency", value);
-    },
-    []
-  );
+    }, []);
 
-  const handleCurrencySymbolChange = useCallback(
-    (symbol: string) => {
+    const handleCurrencySymbolChange = useCallback((symbol: string) => {
       onIdentityChange("currencySymbol", symbol);
-    },
-    []
-  );
+    }, []);
 
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-      <div className="space-y-2">
-        <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-          <Globe className="h-4 w-4" />
-          Country Name
-        </label>
-        <Input
-          value={identity.countryName ?? ""}
-          onChange={handleCountryNameChange}
-          placeholder="Enter country name"
-        />
-      </div>
-
-      {/* Government Type Selector - inline to prevent remounting */}
-      <div className="space-y-2">
-        <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-          <Crown className="h-4 w-4" />
-          Government Type
-        </label>
-        <select
-          value={selectedGovernmentType}
-          onChange={(e) => onGovernmentTypeChange(e.target.value)}
-          onFocus={() => setShouldFetchCustomTypes(true)}
-          className="border-input bg-background text-foreground focus:border-ring focus:ring-ring hover:bg-accent/5 w-full rounded-lg border px-4 py-3 transition-all duration-200 focus:ring-2 focus:outline-none"
-        >
-          {GOVERNMENT_TYPES.map((type) => (
-            <option key={type.value} value={type.value} className="bg-background text-foreground">
-              {type.label}
-            </option>
-          ))}
-          {customGovernmentTypes && customGovernmentTypes.length > 0 && (
-            <optgroup label="Custom">
-              {customGovernmentTypes.map((type) => (
-                <option
-                  key={type.id}
-                  value={type.customTypeName}
-                  className="bg-background text-foreground"
-                >
-                  {type.customTypeName}
-                </option>
-              ))}
-            </optgroup>
-          )}
-        </select>
-        {selectedGovernmentType === "custom" && (
-          <input
-            type="text"
-            value={customOfficialName}
-            onFocus={onCustomOfficialNameFocus}
-            onChange={(e) => onCustomOfficialNameChange(e.target.value)}
-            onBlur={(e) => onCustomOfficialNameBlur(e.target.value)}
-            placeholder="Enter custom official name..."
-            className="border-input bg-background text-foreground focus:border-ring focus:ring-ring w-full rounded-lg border px-4 py-3 transition-all duration-200 focus:ring-2 focus:outline-none"
-          />
-        )}
-      </div>
-
-      <div className="space-y-2 lg:col-span-2">
-        <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-          <Crown className="h-4 w-4" />
-          Official Name
-        </label>
-        <p className="text-muted-foreground text-xs">Full ceremonial name of the country</p>
-        <Input
-          value={identity.officialName ?? ""}
-          onChange={handleOfficialNameChange}
-          placeholder="The Republic of..."
-        />
-      </div>
-
-      <IdentityAutocomplete
-        fieldName="capitalCity"
-        value={String(identity.capitalCity || "")}
-        onChange={handleCapitalCityChange}
-        placeholder="Capital city name"
-        icon={Building}
-        onSave={onFieldSave}
-      />
-
-      <IdentityAutocomplete
-        fieldName="largestCity"
-        value={String(identity.largestCity || "")}
-        onChange={handleLargestCityChange}
-        placeholder="Largest city name"
-        icon={MapPin}
-        onSave={onFieldSave}
-      />
-
-      <IdentityAutocomplete
-        fieldName="demonym"
-        value={String(identity.demonym || "")}
-        onChange={handleDemonymChange}
-        placeholder="Demonym (e.g., American, French)"
-        icon={Users}
-        onSave={onFieldSave}
-      />
-
-      <div className="space-y-4">
-        <CurrencyAutocomplete
-          fieldName="currency"
-          value={String(identity.currency || "")}
-          onChange={handleCurrencyChange}
-          placeholder="Select or enter currency"
-        />
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         <div className="space-y-2">
           <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-            <Coins className="h-4 w-4" />
-            Currency Symbol
+            <Globe className="h-4 w-4" />
+            Country Name
           </label>
-          <CurrencySymbolPicker
-            value={identity.currencySymbol || "$"}
-            onSymbolSelect={handleCurrencySymbolChange}
-            sectionId="symbols"
+          <Input
+            value={identity.countryName ?? ""}
+            onChange={handleCountryNameChange}
+            placeholder="Enter country name"
           />
         </div>
+
+        {/* Government Type Selector - inline to prevent remounting */}
+        <div className="space-y-2">
+          <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+            <Crown className="h-4 w-4" />
+            Government Type
+          </label>
+          <select
+            value={selectedGovernmentType}
+            onChange={(e) => onGovernmentTypeChange(e.target.value)}
+            onFocus={() => setShouldFetchCustomTypes(true)}
+            className="border-input bg-background text-foreground focus:border-ring focus:ring-ring hover:bg-accent/5 w-full rounded-lg border px-4 py-3 transition-all duration-200 focus:ring-2 focus:outline-none"
+          >
+            {GOVERNMENT_TYPES.map((type) => (
+              <option key={type.value} value={type.value} className="bg-background text-foreground">
+                {type.label}
+              </option>
+            ))}
+            {customGovernmentTypes && customGovernmentTypes.length > 0 && (
+              <optgroup label="Custom">
+                {customGovernmentTypes.map((type) => (
+                  <option
+                    key={type.id}
+                    value={type.customTypeName}
+                    className="bg-background text-foreground"
+                  >
+                    {type.customTypeName}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          {selectedGovernmentType === "custom" && (
+            <input
+              type="text"
+              value={customOfficialName}
+              onFocus={onCustomOfficialNameFocus}
+              onChange={(e) => onCustomOfficialNameChange(e.target.value)}
+              onBlur={(e) => onCustomOfficialNameBlur(e.target.value)}
+              placeholder="Enter custom official name..."
+              className="border-input bg-background text-foreground focus:border-ring focus:ring-ring w-full rounded-lg border px-4 py-3 transition-all duration-200 focus:ring-2 focus:outline-none"
+            />
+          )}
+        </div>
+
+        <div className="space-y-2 lg:col-span-2">
+          <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+            <Crown className="h-4 w-4" />
+            Official Name
+          </label>
+          <p className="text-muted-foreground text-xs">Full ceremonial name of the country</p>
+          <Input
+            value={identity.officialName ?? ""}
+            onChange={handleOfficialNameChange}
+            placeholder="The Republic of..."
+          />
+        </div>
+
+        <IdentityAutocomplete
+          fieldName="capitalCity"
+          value={String(identity.capitalCity || "")}
+          onChange={handleCapitalCityChange}
+          placeholder="Capital city name"
+          icon={Building}
+          onSave={onFieldSave}
+        />
+
+        <IdentityAutocomplete
+          fieldName="largestCity"
+          value={String(identity.largestCity || "")}
+          onChange={handleLargestCityChange}
+          placeholder="Largest city name"
+          icon={MapPin}
+          onSave={onFieldSave}
+        />
+
+        <IdentityAutocomplete
+          fieldName="demonym"
+          value={String(identity.demonym || "")}
+          onChange={handleDemonymChange}
+          placeholder="Demonym (e.g., American, French)"
+          icon={Users}
+          onSave={onFieldSave}
+        />
+
+        <div className="space-y-4">
+          <CurrencyAutocomplete
+            fieldName="currency"
+            value={String(identity.currency || "")}
+            onChange={handleCurrencyChange}
+            placeholder="Select or enter currency"
+          />
+          <div className="space-y-2">
+            <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+              <Coins className="h-4 w-4" />
+              Currency Symbol
+            </label>
+            <CurrencySymbolPicker
+              value={identity.currencySymbol || "$"}
+              onSymbolSelect={handleCurrencySymbolChange}
+              sectionId="symbols"
+            />
+          </div>
+        </div>
       </div>
-    </div>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison to prevent re-renders
-  // Only re-render if the actual identity values we display have changed
-  return (
-    prevProps.identity.countryName === nextProps.identity.countryName &&
-    prevProps.identity.officialName === nextProps.identity.officialName &&
-    prevProps.identity.capitalCity === nextProps.identity.capitalCity &&
-    prevProps.identity.largestCity === nextProps.identity.largestCity &&
-    prevProps.identity.demonym === nextProps.identity.demonym &&
-    prevProps.identity.currency === nextProps.identity.currency &&
-    prevProps.identity.currencySymbol === nextProps.identity.currencySymbol &&
-    prevProps.selectedGovernmentType === nextProps.selectedGovernmentType &&
-    prevProps.customOfficialName === nextProps.customOfficialName &&
-    prevProps.isEditingCustomName === nextProps.isEditingCustomName
-  );
-});
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison to prevent re-renders
+    // Only re-render if the actual identity values we display have changed
+    return (
+      prevProps.identity.countryName === nextProps.identity.countryName &&
+      prevProps.identity.officialName === nextProps.identity.officialName &&
+      prevProps.identity.capitalCity === nextProps.identity.capitalCity &&
+      prevProps.identity.largestCity === nextProps.identity.largestCity &&
+      prevProps.identity.demonym === nextProps.identity.demonym &&
+      prevProps.identity.currency === nextProps.identity.currency &&
+      prevProps.identity.currencySymbol === nextProps.identity.currencySymbol &&
+      prevProps.selectedGovernmentType === nextProps.selectedGovernmentType &&
+      prevProps.customOfficialName === nextProps.customOfficialName &&
+      prevProps.isEditingCustomName === nextProps.isEditingCustomName
+    );
+  }
+);

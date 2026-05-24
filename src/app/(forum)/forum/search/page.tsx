@@ -50,14 +50,14 @@ export default function ForumSearchPage() {
       {/* Search input */}
       <div className="mb-4 flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--forum-text-dim)]" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--forum-text-dim)]" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Search threads and posts..."
-            className="w-full rounded-lg border border-[var(--forum-border)] bg-[var(--forum-surface)] py-2 pl-9 pr-3 text-sm text-[var(--forum-text)] outline-none focus:border-[var(--forum-accent)] placeholder:text-[var(--forum-text-dim)]"
+            className="w-full rounded-lg border border-[var(--forum-border)] bg-[var(--forum-surface)] py-2 pr-3 pl-9 text-sm text-[var(--forum-text)] outline-none placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
           />
         </div>
         <button onClick={handleSearch} className="forum-composer-submit">
@@ -67,16 +67,17 @@ export default function ForumSearchPage() {
 
       {/* Type filter */}
       <div className="mb-4 flex gap-2">
-        {(
-          [
-            { key: undefined, label: "All" },
-            { key: "thread" as const, label: "Threads" },
-            { key: "post" as const, label: "Posts" },
-          ]
-        ).map((opt) => (
+        {[
+          { key: undefined, label: "All" },
+          { key: "thread" as const, label: "Threads" },
+          { key: "post" as const, label: "Posts" },
+        ].map((opt) => (
           <button
             key={opt.label}
-            onClick={() => { setType(opt.key); setPage(1); }}
+            onClick={() => {
+              setType(opt.key);
+              setPage(1);
+            }}
             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
               type === opt.key
                 ? "bg-orange-500/15 text-orange-400"
@@ -104,10 +105,10 @@ export default function ForumSearchPage() {
                 result.type === "thread" && result.thread
                   ? `/forum/thread/${result.thread.threadId}`
                   : result.post
-                  ? `/forum/thread/${result.post.threadId}#post-${result.post.postId}`
-                  : "#"
+                    ? `/forum/thread/${result.post.threadId}#post-${result.post.postId}`
+                    : "#"
               )}
-              className="glass-forum-child p-3 group flex items-start gap-3"
+              className="glass-forum-child group flex items-start gap-3 p-3"
             >
               <div className="mt-0.5 shrink-0">
                 {result.type === "thread" ? (
@@ -123,7 +124,8 @@ export default function ForumSearchPage() {
                 <div className="mt-0.5 text-xs text-[var(--forum-text-dim)]">
                   {result.thread && (
                     <>
-                      by {result.thread.authorName} · {result.thread.replyCount} replies · {formatTimeAgo(result.thread.postDate)}
+                      by {result.thread.authorName} · {result.thread.replyCount} replies ·{" "}
+                      {formatTimeAgo(result.thread.postDate)}
                     </>
                   )}
                   {result.post && (

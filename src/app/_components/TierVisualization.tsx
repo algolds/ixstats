@@ -121,7 +121,7 @@ export const TierVisualization = memo(function TierVisualization({
   // Move useMemo hooks before early return to follow Rules of Hooks
   const economicDistribution = useMemo(() => {
     if (!countries || countries.length === 0) return {};
-    
+
     const distribution: Record<string, { count: number; percentage: number; countries: string[] }> =
       {};
 
@@ -146,7 +146,7 @@ export const TierVisualization = memo(function TierVisualization({
 
   const populationDistribution = useMemo(() => {
     if (!countries || countries.length === 0) return {};
-    
+
     const distribution: Record<string, { count: number; percentage: number; countries: string[] }> =
       {};
 

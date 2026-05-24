@@ -13,7 +13,9 @@ export function UserPreferencesCard({ theme, onThemeChange }: UserPreferencesCar
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Display Configuration</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Display Configuration
+              </h2>
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white/50 p-1 dark:border-slate-800 dark:bg-slate-900/50">
@@ -33,7 +35,7 @@ export function UserPreferencesCard({ theme, onThemeChange }: UserPreferencesCar
                 }`}
               >
                 <Sun className={`h-5 w-5 ${theme === "light" ? "animate-spin-slow" : ""}`} />
-                <span className="text-xs font-bold uppercase tracking-widest">Light</span>
+                <span className="text-xs font-bold tracking-widest uppercase">Light</span>
               </button>
               <button
                 onClick={() => onThemeChange("dark")}
@@ -44,7 +46,7 @@ export function UserPreferencesCard({ theme, onThemeChange }: UserPreferencesCar
                 }`}
               >
                 <Moon className={`h-5 w-5 ${theme === "dark" ? "animate-pulse" : ""}`} />
-                <span className="text-xs font-bold uppercase tracking-widest">Dark</span>
+                <span className="text-xs font-bold tracking-widest uppercase">Dark</span>
               </button>
               <button
                 onClick={() => onThemeChange("system")}
@@ -55,7 +57,7 @@ export function UserPreferencesCard({ theme, onThemeChange }: UserPreferencesCar
                 }`}
               >
                 <Monitor className="h-5 w-5" />
-                <span className="text-xs font-bold uppercase tracking-widest">Auto</span>
+                <span className="text-xs font-bold tracking-widest uppercase">Auto</span>
               </button>
             </div>
           </div>

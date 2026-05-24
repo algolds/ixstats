@@ -19,7 +19,7 @@ export default function NSDeckPage() {
   });
 
   const handleImageError = (cardKey: string) => {
-    setFailedImages(prev => new Set(prev).add(cardKey));
+    setFailedImages((prev) => new Set(prev).add(cardKey));
   };
 
   if (isLoading) {
@@ -63,71 +63,53 @@ export default function NSDeckPage() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold capitalize">{data.nation}'s Deck</h1>
-        <p className="text-muted-foreground">
-          NationStates Trading Cards Collection
-        </p>
+        <p className="text-muted-foreground">NationStates Trading Cards Collection</p>
       </div>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="glass-hierarchy-child">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Cards
-            </CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">Total Cards</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.totalCards}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              All copies
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs">All copies</p>
           </CardContent>
         </Card>
 
         <Card className="glass-hierarchy-child">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-muted-foreground text-sm font-medium">
               Unique Cards
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.uniqueCards || data.cards.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Different cards
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs">Different cards</p>
           </CardContent>
         </Card>
 
         <Card className="glass-hierarchy-child">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Deck Value
-            </CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">Deck Value</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green-500" />
               <div className="text-2xl font-bold">{data.deckValue.toFixed(2)}</div>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Bank value
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs">Bank value</p>
           </CardContent>
         </Card>
 
         <Card className="glass-hierarchy-child">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Showing
-            </CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">Showing</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {data.cards.length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Unique cards displayed
-            </p>
+            <div className="text-2xl font-bold">{data.cards.length}</div>
+            <p className="text-muted-foreground mt-1 text-xs">Unique cards displayed</p>
           </CardContent>
         </Card>
       </div>
@@ -154,70 +136,64 @@ export default function NSDeckPage() {
                         onError={() => handleImageError(cardKey)}
                       />
                     ) : (
-                      <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
                         <ImageOff className="h-8 w-8" />
                         <span className="text-xs">Image Unavailable</span>
                       </div>
                     )}
-                    <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
+                    <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
                       <Badge className={`${getRarityColor(card.rarity)} text-white`}>
                         {card.rarity.replace("_", " ")}
                       </Badge>
                       {card.quantity && card.quantity > 1 && (
-                        <Badge variant="default" className="bg-blue-600 text-white font-bold">
+                        <Badge variant="default" className="bg-blue-600 font-bold text-white">
                           x{card.quantity}
                         </Badge>
                       )}
                     </div>
-                    <div className="absolute bottom-2 right-2">
+                    <div className="absolute right-2 bottom-2">
                       <Badge variant="secondary">S{card.season}</Badge>
                     </div>
                   </div>
                 </CardHeader>
-              <CardContent className="space-y-2 p-4">
-                <div>
-                  <h3 className="font-semibold line-clamp-1">
-                    {card.name || `Card ${card.id}`}
-                  </h3>
-                  {card.region && (
-                    <p className="text-sm text-muted-foreground line-clamp-1">
-                      {card.region}
+                <CardContent className="space-y-2 p-4">
+                  <div>
+                    <h3 className="line-clamp-1 font-semibold">{card.name || `Card ${card.id}`}</h3>
+                    {card.region && (
+                      <p className="text-muted-foreground line-clamp-1 text-sm">{card.region}</p>
+                    )}
+                  </div>
+                  {card.category && (
+                    <p className="text-muted-foreground line-clamp-2 text-xs">{card.category}</p>
+                  )}
+                  {card.slogan && (
+                    <p className="text-muted-foreground/80 line-clamp-1 text-xs italic">
+                      "{card.slogan}"
                     </p>
                   )}
-                </div>
-                {card.category && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">
-                    {card.category}
-                  </p>
-                )}
-                {card.slogan && (
-                  <p className="text-xs italic text-muted-foreground/80 line-clamp-1">
-                    "{card.slogan}"
-                  </p>
-                )}
-                <div className="space-y-1 pt-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Market Value:</span>
-                    <span className="font-medium">{card.market_value}</span>
-                  </div>
-                  {card.quantity && card.quantity > 1 && (
+                  <div className="space-y-1 pt-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Owned:</span>
-                      <span className="font-bold text-blue-600">{card.quantity}x</span>
+                      <span className="text-muted-foreground">Market Value:</span>
+                      <span className="font-medium">{card.market_value}</span>
                     </div>
-                  )}
-                </div>
-                <a
-                  href={`https://www.nationstates.net/page=deck/card=${card.id}/season=${card.season}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline flex items-center gap-1 pt-2"
-                >
-                  View on NationStates <ExternalLink className="h-3 w-3" />
-                </a>
-              </CardContent>
-            </Card>
-          );
+                    {card.quantity && card.quantity > 1 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Owned:</span>
+                        <span className="font-bold text-blue-600">{card.quantity}x</span>
+                      </div>
+                    )}
+                  </div>
+                  <a
+                    href={`https://www.nationstates.net/page=deck/card=${card.id}/season=${card.season}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary flex items-center gap-1 pt-2 text-xs hover:underline"
+                  >
+                    View on NationStates <ExternalLink className="h-3 w-3" />
+                  </a>
+                </CardContent>
+              </Card>
+            );
           })}
         </div>
       </div>
@@ -226,9 +202,7 @@ export default function NSDeckPage() {
       <Card className="glass-hierarchy-child">
         <CardHeader>
           <CardTitle>About This Deck</CardTitle>
-          <CardDescription>
-            Data pulled from NationStates public API
-          </CardDescription>
+          <CardDescription>Data pulled from NationStates public API</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p>
@@ -237,9 +211,10 @@ export default function NSDeckPage() {
           </p>
           <p className="text-muted-foreground">
             Showing {data.cards.length} unique cards from their collection. Full deck contains{" "}
-            {data.totalCards} total cards ({data.uniqueCards || data.cards.length} unique) with a total value of {data.deckValue.toFixed(2)}.
+            {data.totalCards} total cards ({data.uniqueCards || data.cards.length} unique) with a
+            total value of {data.deckValue.toFixed(2)}.
           </p>
-          {data.cards.some(card => card.quantity && card.quantity > 1) && (
+          {data.cards.some((card) => card.quantity && card.quantity > 1) && (
             <p className="text-xs text-blue-600 dark:text-blue-400">
               <strong>Note:</strong> Cards marked with "x#" indicate multiple copies owned.
             </p>

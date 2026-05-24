@@ -95,10 +95,12 @@ export function AutosaveMonitoringDashboard() {
       { refetchInterval: autoRefresh ? 30000 : false }
     );
 
-  const { data: health, refetch: refetchHealth } =
-    api.autosaveMonitoring.getSystemHealth.useQuery(undefined, {
+  const { data: health, refetch: refetchHealth } = api.autosaveMonitoring.getSystemHealth.useQuery(
+    undefined,
+    {
       refetchInterval: autoRefresh ? 10000 : false,
-    });
+    }
+  );
 
   const handleRefreshAll = () => {
     void refetchStats();
@@ -168,9 +170,7 @@ export function AutosaveMonitoringDashboard() {
               />
             </div>
             <div>
-              <h3 className="text-lg font-semibold capitalize">
-                {health?.status || "Loading..."}
-              </h3>
+              <h3 className="text-lg font-semibold capitalize">{health?.status || "Loading..."}</h3>
               <p className="text-sm text-gray-500">
                 {health?.autosavesLast5Min || 0} autosaves in last 5 minutes
               </p>
@@ -237,9 +237,14 @@ export function AutosaveMonitoringDashboard() {
           </CardHeader>
           <CardContent>
             <SectionBreakdownChart
-              data={stats?.sectionBreakdown
-                ? Object.entries(stats.sectionBreakdown).map(([section, count]) => ({ section, count }))
-                : []}
+              data={
+                stats?.sectionBreakdown
+                  ? Object.entries(stats.sectionBreakdown).map(([section, count]) => ({
+                      section,
+                      count,
+                    }))
+                  : []
+              }
             />
           </CardContent>
         </Card>
@@ -287,12 +292,17 @@ export function AutosaveMonitoringDashboard() {
         </CardHeader>
         <CardContent>
           <ActiveUsersTable
-            users={activeUsers?.users.map(u => ({
-              ...u,
-              userName: null,
-              section: null,
-              lastAutosave: u.lastAutosave instanceof Date ? u.lastAutosave.toISOString() : String(u.lastAutosave),
-            })) || []}
+            users={
+              activeUsers?.users.map((u) => ({
+                ...u,
+                userName: null,
+                section: null,
+                lastAutosave:
+                  u.lastAutosave instanceof Date
+                    ? u.lastAutosave.toISOString()
+                    : String(u.lastAutosave),
+              })) || []
+            }
           />
         </CardContent>
       </Card>
@@ -476,7 +486,7 @@ function ActiveUsersTable({ users }: ActiveUsersTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
-        <thead className="border-b bg-gray-50 text-xs uppercase text-gray-700">
+        <thead className="border-b bg-gray-50 text-xs text-gray-700 uppercase">
           <tr>
             <th className="px-4 py-3">User</th>
             <th className="px-4 py-3">Last Autosave</th>

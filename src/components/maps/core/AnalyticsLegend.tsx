@@ -85,8 +85,8 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
   if (!legend) return null;
 
   return (
-    <div className="absolute bottom-6 left-3 z-10 animate-in fade-in slide-in-from-bottom-2 rounded-lg bg-card/95 px-3 py-2.5 shadow-lg ring-1 ring-border/50 backdrop-blur-sm duration-200 sm:bottom-8">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="animate-in fade-in slide-in-from-bottom-2 bg-card/95 ring-border/50 absolute bottom-6 left-3 z-10 rounded-lg px-3 py-2.5 shadow-lg ring-1 backdrop-blur-sm duration-200 sm:bottom-8">
+      <div className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
         {legend.title}
       </div>
 
@@ -104,7 +104,7 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
             {legend.stops
               .filter((s) => s.label)
               .map((s, i) => (
-                <span key={i} className="text-[9px] text-muted-foreground">
+                <span key={i} className="text-muted-foreground text-[9px]">
                   {s.label}
                 </span>
               ))}
@@ -126,7 +126,7 @@ export function AnalyticsLegend({ overlayVisibility }: AnalyticsLegendProps) {
                   height: line.style === "dashed" ? 0 : undefined,
                 }}
               />
-              <span className="text-[10px] text-foreground/80">{line.label}</span>
+              <span className="text-foreground/80 text-[10px]">{line.label}</span>
             </div>
           ))}
         </div>

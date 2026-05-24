@@ -27,9 +27,7 @@ import { WikiIntelligenceTab } from "~/components/countries/WikiIntelligenceTab"
 
 import { useCountryPageState } from "./_hooks/useCountryPageState";
 
-import {
-  calculateVitalityData,
-} from "./_utils/countryDataTransformers";
+import { calculateVitalityData } from "./_utils/countryDataTransformers";
 
 interface PublicCountryPageProps {
   params: Promise<{ slug: string }>;
@@ -199,12 +197,8 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
         )}
 
         {activeTab === "activity" && country && (
-          <CountryActivityPanel
-            countryId={country.id}
-            countryName={country.name}
-          />
+          <CountryActivityPanel countryId={country.id} countryName={country.name} />
         )}
-
       </div>
 
       {country && (

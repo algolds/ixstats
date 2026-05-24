@@ -181,14 +181,16 @@ export const WorldGeneratorPreview = React.memo(function WorldGeneratorPreview({
     if (!map) return;
     const handler = () => updateMap();
     map.on("load", handler);
-    return () => { map.off("load", handler); };
+    return () => {
+      map.off("load", handler);
+    };
   }, [layers, updateMap]);
 
   return (
     <div className="relative h-full w-full">
       {!layers && !directLayers && worldId && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/80">
-          <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="bg-card/80 absolute inset-0 z-10 flex items-center justify-center">
+          <div className="text-muted-foreground flex items-center gap-2">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span className="text-sm">Loading preview...</span>
           </div>
@@ -196,12 +198,12 @@ export const WorldGeneratorPreview = React.memo(function WorldGeneratorPreview({
       )}
       {!worldId && !directLayers && (
         <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <span className="text-sm text-muted-foreground/50">Generate a world to see preview</span>
+          <span className="text-muted-foreground/50 text-sm">Generate a world to see preview</span>
         </div>
       )}
       <div
         ref={containerRef}
-        className="h-full w-full rounded-lg bg-muted"
+        className="bg-muted h-full w-full rounded-lg"
         style={{ minHeight: 400 }}
       />
     </div>

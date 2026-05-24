@@ -143,23 +143,21 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
     <div className="glass-parent min-h-[600px] p-8">
       {/* Progress Bar */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           {["auth", "preview", "options", "progress", "summary"].map((step, idx) => (
-            <div
-              key={step}
-              className={`flex items-center ${idx > 0 ? "flex-1" : ""}`}
-            >
+            <div key={step} className={`flex items-center ${idx > 0 ? "flex-1" : ""}`}>
               {idx > 0 && (
                 <div
-                  className={`h-1 flex-1 mx-2 ${
-                    ["auth", "preview", "options", "progress", "summary"].indexOf(currentStep) > idx - 1
+                  className={`mx-2 h-1 flex-1 ${
+                    ["auth", "preview", "options", "progress", "summary"].indexOf(currentStep) >
+                    idx - 1
                       ? "bg-gold-400"
                       : "bg-white/20"
                   }`}
                 />
               )}
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
                   ["auth", "preview", "options", "progress", "summary"].indexOf(currentStep) >= idx
                     ? "bg-gold-400 text-gray-900"
                     : "bg-white/20 text-white/60"
@@ -188,14 +186,12 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           </p>
 
           <div>
-            <label className="block text-sm font-medium text-white/90 mb-2">
-              Nation Name
-            </label>
+            <label className="mb-2 block text-sm font-medium text-white/90">Nation Name</label>
             <input
               type="text"
               value={nationName}
               onChange={(e) => setNationName(e.target.value)}
-              className="glass-child w-full px-4 py-2 rounded-lg text-white placeholder-white/40"
+              className="glass-child w-full rounded-lg px-4 py-2 text-white placeholder-white/40"
               placeholder="Enter nation name"
             />
           </div>
@@ -204,27 +200,28 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             <button
               onClick={handleRequestVerification}
               disabled={requestVerificationMutation.isPending}
-              className="w-full glass-interactive px-6 py-3 rounded-lg font-semibold text-white hover:bg-white/20 transition-colors disabled:opacity-50"
+              className="glass-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-50"
             >
               {requestVerificationMutation.isPending ? "Requesting..." : "Request Verification"}
             </button>
           ) : (
             <div className="space-y-4">
-              <div className="glass-child p-4 rounded-lg">
-                <p className="text-sm text-white/80 mb-2">
-                  A verification window has been opened. Copy your verification code and paste it below.
+              <div className="glass-child rounded-lg p-4">
+                <p className="mb-2 text-sm text-white/80">
+                  A verification window has been opened. Copy your verification code and paste it
+                  below.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/90 mb-2">
+                <label className="mb-2 block text-sm font-medium text-white/90">
                   Verification Code
                 </label>
                 <input
                   type="text"
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
-                  className="glass-child w-full px-4 py-2 rounded-lg text-white placeholder-white/40"
+                  className="glass-child w-full rounded-lg px-4 py-2 text-white placeholder-white/40"
                   placeholder="Paste verification code"
                 />
               </div>
@@ -232,7 +229,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
               <button
                 onClick={handleCheckVerification}
                 disabled={checkVerificationMutation.isPending}
-                className="w-full glass-interactive px-6 py-3 rounded-lg font-semibold text-white hover:bg-white/20 transition-colors disabled:opacity-50"
+                className="glass-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-50"
               >
                 {checkVerificationMutation.isPending ? "Verifying..." : "Verify & Continue"}
               </button>
@@ -241,7 +238,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
 
           <button
             onClick={onCancel}
-            className="w-full px-6 py-3 rounded-lg font-semibold text-white/60 hover:text-white transition-colors"
+            className="w-full rounded-lg px-6 py-3 font-semibold text-white/60 transition-colors hover:text-white"
           >
             Cancel
           </button>
@@ -251,34 +248,36 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
       {currentStep === "preview" && deckData && (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-white">Step 2: Deck Preview</h2>
-          <p className="text-white/80">
-            Review your NationStates deck before importing.
-          </p>
+          <p className="text-white/80">Review your NationStates deck before importing.</p>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="glass-child p-4 rounded-lg">
+            <div className="glass-child rounded-lg p-4">
               <div className="text-sm text-white/60">Total Cards</div>
               <div className="text-2xl font-bold text-white">{deckData.totalCards}</div>
             </div>
-            <div className="glass-child p-4 rounded-lg">
+            <div className="glass-child rounded-lg p-4">
               <div className="text-sm text-white/60">Unique Cards</div>
               <div className="text-2xl font-bold text-white">{deckData.uniqueCards}</div>
             </div>
-            <div className="glass-child p-4 rounded-lg col-span-2">
+            <div className="glass-child col-span-2 rounded-lg p-4">
               <div className="text-sm text-white/60">Deck Value</div>
-              <div className="text-2xl font-bold text-gold-400">{deckData.deckValue.toFixed(2)} Bank</div>
+              <div className="text-gold-400 text-2xl font-bold">
+                {deckData.deckValue.toFixed(2)} Bank
+              </div>
             </div>
           </div>
 
-          <div className="glass-child p-4 rounded-lg max-h-96 overflow-y-auto">
-            <h3 className="font-semibold text-white mb-4">Cards (showing first 20)</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="glass-child max-h-96 overflow-y-auto rounded-lg p-4">
+            <h3 className="mb-4 font-semibold text-white">Cards (showing first 20)</h3>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {deckData.cards.slice(0, 20).map((card, idx) => (
-                <div key={idx} className="glass-child p-3 rounded-lg text-center">
-                  <div className="text-xs font-semibold text-white/90 truncate">{card.name || `Card ${card.id}`}</div>
-                  <div className="text-xs text-white/60 mt-1">{card.rarity}</div>
+                <div key={idx} className="glass-child rounded-lg p-3 text-center">
+                  <div className="truncate text-xs font-semibold text-white/90">
+                    {card.name || `Card ${card.id}`}
+                  </div>
+                  <div className="mt-1 text-xs text-white/60">{card.rarity}</div>
                   {card.quantity && card.quantity > 1 && (
-                    <div className="text-xs text-gold-400 mt-1">x{card.quantity}</div>
+                    <div className="text-gold-400 mt-1 text-xs">x{card.quantity}</div>
                   )}
                 </div>
               ))}
@@ -288,13 +287,13 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           <div className="flex gap-4">
             <button
               onClick={() => setCurrentStep("auth")}
-              className="flex-1 px-6 py-3 rounded-lg font-semibold text-white/60 hover:text-white transition-colors"
+              className="flex-1 rounded-lg px-6 py-3 font-semibold text-white/60 transition-colors hover:text-white"
             >
               Back
             </button>
             <button
               onClick={handleProceedToOptions}
-              className="flex-1 glass-interactive px-6 py-3 rounded-lg font-semibold text-white hover:bg-white/20 transition-colors"
+              className="glass-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
             >
               Continue
             </button>
@@ -305,12 +304,10 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
       {currentStep === "options" && (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-white">Step 3: Import Options</h2>
-          <p className="text-white/80">
-            Choose how to handle duplicate cards.
-          </p>
+          <p className="text-white/80">Choose how to handle duplicate cards.</p>
 
           <div className="space-y-3">
-            <label className="glass-child p-4 rounded-lg flex items-start gap-3 cursor-pointer hover:bg-white/10 transition-colors">
+            <label className="glass-child flex cursor-pointer items-start gap-3 rounded-lg p-4 transition-colors hover:bg-white/10">
               <input
                 type="radio"
                 name="duplicateOption"
@@ -327,7 +324,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
               </div>
             </label>
 
-            <label className="glass-child p-4 rounded-lg flex items-start gap-3 cursor-pointer hover:bg-white/10 transition-colors">
+            <label className="glass-child flex cursor-pointer items-start gap-3 rounded-lg p-4 transition-colors hover:bg-white/10">
               <input
                 type="radio"
                 name="duplicateOption"
@@ -348,13 +345,13 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           <div className="flex gap-4">
             <button
               onClick={() => setCurrentStep("preview")}
-              className="flex-1 px-6 py-3 rounded-lg font-semibold text-white/60 hover:text-white transition-colors"
+              className="flex-1 rounded-lg px-6 py-3 font-semibold text-white/60 transition-colors hover:text-white"
             >
               Back
             </button>
             <button
               onClick={handleStartImport}
-              className="flex-1 glass-interactive px-6 py-3 rounded-lg font-semibold text-white hover:bg-white/20 transition-colors"
+              className="glass-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
             >
               Start Import
             </button>
@@ -369,10 +366,10 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             Please wait while we import your cards. This may take a few moments.
           </p>
 
-          <div className="glass-child p-8 rounded-lg text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-white/20 border-t-gold-400 mx-auto mb-4"></div>
+          <div className="glass-child rounded-lg p-8 text-center">
+            <div className="border-t-gold-400 mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-white/20"></div>
             <div className="text-lg font-semibold text-white">Importing your deck...</div>
-            <div className="text-sm text-white/60 mt-2">This may take a minute</div>
+            <div className="mt-2 text-sm text-white/60">This may take a minute</div>
           </div>
         </div>
       )}
@@ -380,28 +377,28 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
       {currentStep === "summary" && importResults && (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-white">Step 5: Import Complete!</h2>
-          <p className="text-white/80">
-            Your NationStates deck has been successfully imported.
-          </p>
+          <p className="text-white/80">Your NationStates deck has been successfully imported.</p>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="glass-child p-4 rounded-lg">
+            <div className="glass-child rounded-lg p-4">
               <div className="text-sm text-white/60">Cards Imported</div>
               <div className="text-2xl font-bold text-green-400">{importResults.cardsImported}</div>
             </div>
-            <div className="glass-child p-4 rounded-lg">
+            <div className="glass-child rounded-lg p-4">
               <div className="text-sm text-white/60">Cards Skipped</div>
               <div className="text-2xl font-bold text-white/60">{importResults.cardsSkipped}</div>
             </div>
-            <div className="glass-child p-4 rounded-lg col-span-2">
+            <div className="glass-child col-span-2 rounded-lg p-4">
               <div className="text-sm text-white/60">Bonus Credits Earned</div>
-              <div className="text-2xl font-bold text-gold-400">{importResults.bonusCredits} IxC</div>
+              <div className="text-gold-400 text-2xl font-bold">
+                {importResults.bonusCredits} IxC
+              </div>
             </div>
           </div>
 
           <button
             onClick={handleComplete}
-            className="w-full glass-interactive px-6 py-3 rounded-lg font-semibold text-white hover:bg-white/20 transition-colors"
+            className="glass-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
           >
             View My Collection
           </button>

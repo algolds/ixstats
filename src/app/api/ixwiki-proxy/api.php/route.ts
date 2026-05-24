@@ -24,8 +24,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
-  const allowedOrigin =
-    origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
 
   return {
     "Access-Control-Allow-Origin": allowedOrigin ?? "https://ixwiki.com",
@@ -48,9 +47,7 @@ export async function GET(request: NextRequest) {
 
     const rateLimitResult = await rateLimiter.check(clientIp, "wiki_proxy");
     if (!rateLimitResult.success) {
-      console.warn(
-        `[SECURITY] Rate limit exceeded for wiki proxy: ip=${clientIp}`
-      );
+      console.warn(`[SECURITY] Rate limit exceeded for wiki proxy: ip=${clientIp}`);
       return NextResponse.json(
         { error: "Rate limit exceeded" },
         {
@@ -58,9 +55,7 @@ export async function GET(request: NextRequest) {
           headers: {
             ...corsHeaders,
             "Retry-After": String(
-              Math.ceil(
-                (rateLimitResult.resetAt.getTime() - Date.now()) / 1000
-              )
+              Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000)
             ),
           },
         }

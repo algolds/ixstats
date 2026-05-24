@@ -75,14 +75,10 @@ export function PublishSection() {
             >
               <div
                 className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                  visibility === opt.value
-                    ? "border-rose-500 bg-rose-500"
-                    : "border-white/30"
+                  visibility === opt.value ? "border-rose-500 bg-rose-500" : "border-white/30"
                 }`}
               >
-                {visibility === opt.value && (
-                  <div className="h-2 w-2 rounded-full bg-white" />
-                )}
+                {visibility === opt.value && <div className="h-2 w-2 rounded-full bg-white" />}
               </div>
               <div>
                 <p className="text-sm font-medium text-white">{opt.label}</p>

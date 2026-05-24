@@ -440,7 +440,8 @@ export default function MilitaryEquipmentPage() {
         return false;
 
       // Cost filter
-      if (item.acquisitionCost < costRange[0]! || item.acquisitionCost > costRange[1]!) return false;
+      if (item.acquisitionCost < costRange[0]! || item.acquisitionCost > costRange[1]!)
+        return false;
 
       return true;
     });
@@ -692,7 +693,10 @@ export default function MilitaryEquipmentPage() {
     createManufacturerMutation.mutate({
       name: manufacturerFormData.name,
       country: manufacturerFormData.country,
-      specialty: manufacturerFormData.specialty.length > 0 ? manufacturerFormData.specialty.join(", ") : undefined,
+      specialty:
+        manufacturerFormData.specialty.length > 0
+          ? manufacturerFormData.specialty.join(", ")
+          : undefined,
       founded: manufacturerFormData.founded,
       description: manufacturerFormData.description || undefined,
       isActive: manufacturerFormData.isActive,
@@ -724,7 +728,10 @@ export default function MilitaryEquipmentPage() {
       id: editingManufacturerId,
       name: manufacturerFormData.name,
       country: manufacturerFormData.country,
-      specialty: manufacturerFormData.specialty.length > 0 ? manufacturerFormData.specialty.join(", ") : undefined,
+      specialty:
+        manufacturerFormData.specialty.length > 0
+          ? manufacturerFormData.specialty.join(", ")
+          : undefined,
       founded: manufacturerFormData.founded,
       description: manufacturerFormData.description || undefined,
       isActive: manufacturerFormData.isActive,
@@ -783,9 +790,9 @@ export default function MilitaryEquipmentPage() {
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="rounded-lg border border-border bg-card p-8 text-center shadow-lg">
+        <div className="border-border bg-card rounded-lg border p-8 text-center shadow-lg">
           <h1 className="mb-4 text-2xl font-bold text-red-600">Access Denied</h1>
-          <p className="mb-6 text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             You do not have permission to view this page.
           </p>
         </div>
@@ -987,7 +994,9 @@ export default function MilitaryEquipmentPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <Card className="glass-card-child p-4">
                 <p className="text-muted-foreground text-sm">Total Equipment</p>
-                <p className="text-foreground mt-2 text-3xl font-bold">{equipmentData?.length || 0}</p>
+                <p className="text-foreground mt-2 text-3xl font-bold">
+                  {equipmentData?.length || 0}
+                </p>
               </Card>
               <Card className="glass-card-child p-4">
                 <p className="text-muted-foreground text-sm">Active Equipment</p>
@@ -1001,7 +1010,9 @@ export default function MilitaryEquipmentPage() {
               </Card>
               <Card className="glass-card-child p-4">
                 <p className="text-muted-foreground text-sm">Manufacturers</p>
-                <p className="mt-2 text-3xl font-bold text-purple-400">{manufacturers?.length || 0}</p>
+                <p className="mt-2 text-3xl font-bold text-purple-400">
+                  {manufacturers?.length || 0}
+                </p>
               </Card>
             </div>
 
@@ -1300,10 +1311,7 @@ export default function MilitaryEquipmentPage() {
               </div>
               <div className="glass-card-child border-border/50 rounded-lg border p-4">
                 <div className="text-foreground text-2xl font-bold">
-                  {normalizedManufacturers.reduce(
-                    (sum, m) => sum + (m.equipment?.length ?? 0),
-                    0
-                  )}
+                  {normalizedManufacturers.reduce((sum, m) => sum + (m.equipment?.length ?? 0), 0)}
                 </div>
                 <div className="text-muted-foreground text-sm">Total Equipment</div>
               </div>
@@ -1433,7 +1441,9 @@ export default function MilitaryEquipmentPage() {
                 <label className="text-foreground mb-2 block text-sm font-medium">Name *</label>
                 <Input
                   value={manufacturerFormData.name}
-                  onChange={(e) => setManufacturerFormData({ ...manufacturerFormData, name: e.target.value })}
+                  onChange={(e) =>
+                    setManufacturerFormData({ ...manufacturerFormData, name: e.target.value })
+                  }
                   placeholder="e.g., Lockheed Martin"
                 />
               </div>
@@ -1442,7 +1452,9 @@ export default function MilitaryEquipmentPage() {
                 <label className="text-foreground mb-2 block text-sm font-medium">Country *</label>
                 <Input
                   value={manufacturerFormData.country}
-                  onChange={(e) => setManufacturerFormData({ ...manufacturerFormData, country: e.target.value })}
+                  onChange={(e) =>
+                    setManufacturerFormData({ ...manufacturerFormData, country: e.target.value })
+                  }
                   placeholder="e.g., United States"
                 />
               </div>
@@ -1454,7 +1466,9 @@ export default function MilitaryEquipmentPage() {
                 <MultiSelect
                   options={SPECIALTIES}
                   value={manufacturerFormData.specialty}
-                  onChange={(value) => setManufacturerFormData({ ...manufacturerFormData, specialty: value })}
+                  onChange={(value) =>
+                    setManufacturerFormData({ ...manufacturerFormData, specialty: value })
+                  }
                   placeholder="Select specialties..."
                   className="w-full"
                 />
@@ -1483,7 +1497,12 @@ export default function MilitaryEquipmentPage() {
                 </label>
                 <Input
                   value={manufacturerFormData.description}
-                  onChange={(e) => setManufacturerFormData({ ...manufacturerFormData, description: e.target.value })}
+                  onChange={(e) =>
+                    setManufacturerFormData({
+                      ...manufacturerFormData,
+                      description: e.target.value,
+                    })
+                  }
                   placeholder="Optional description..."
                 />
               </div>
@@ -1493,7 +1512,9 @@ export default function MilitaryEquipmentPage() {
                   type="checkbox"
                   id="isActive"
                   checked={manufacturerFormData.isActive}
-                  onChange={(e) => setManufacturerFormData({ ...manufacturerFormData, isActive: e.target.checked })}
+                  onChange={(e) =>
+                    setManufacturerFormData({ ...manufacturerFormData, isActive: e.target.checked })
+                  }
                   className="border-border rounded"
                 />
                 <label
@@ -1510,7 +1531,9 @@ export default function MilitaryEquipmentPage() {
                 Cancel
               </Button>
               <Button
-                onClick={editingManufacturerId ? handleUpdateManufacturer : handleCreateManufacturer}
+                onClick={
+                  editingManufacturerId ? handleUpdateManufacturer : handleCreateManufacturer
+                }
                 disabled={
                   !manufacturerFormData.name ||
                   !manufacturerFormData.country ||
@@ -2128,10 +2151,7 @@ function AnalyticsContent({
 }: AnalyticsContentProps) {
   // useMemo must be called unconditionally before any early returns
   const manufacturerLookup = useMemo(
-    () =>
-      new Map(
-        (manufacturerStats?.manufacturers ?? []).map((m) => [m.name, m] as const)
-      ),
+    () => new Map((manufacturerStats?.manufacturers ?? []).map((m) => [m.name, m] as const)),
     [manufacturerStats?.manufacturers]
   );
 
@@ -2349,7 +2369,9 @@ function AnalyticsContent({
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }: any) => `${name ?? ''}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  label={({ name, percent }: any) =>
+                    `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(0)}%`
+                  }
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -2378,7 +2400,9 @@ function AnalyticsContent({
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }: any) => `${name ?? ''}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  label={({ name, percent }: any) =>
+                    `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(0)}%`
+                  }
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"

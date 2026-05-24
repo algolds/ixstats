@@ -6,11 +6,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { PackType, CardRarity, CardType } from "@prisma/client";
-import type {
-  PackOpeningStage,
-  CardInstance,
-  QuickActionEvent,
-} from "~/types/pack-opening";
+import type { PackOpeningStage, CardInstance, QuickActionEvent } from "~/types/pack-opening";
 import { api } from "~/trpc/react";
 import { Stage1_PackReveal } from "./Stage1_PackReveal";
 import { Stage2_PackExplosion } from "./Stage2_PackExplosion";
@@ -59,7 +55,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
             title: card.name,
             rarity: card.rarity as CardRarity,
             cardType: card.cardType as CardType,
-            artwork: card.artwork ?? '/default-card-artwork.png',
+            artwork: card.artwork ?? "/default-card-artwork.png",
             season: card.season,
           }));
 
@@ -123,9 +119,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
             className="max-w-md rounded-2xl bg-red-500/10 p-8 text-center backdrop-blur-sm"
           >
             <div className="mb-4 text-6xl">⚠️</div>
-            <h3 className="text-2xl font-bold text-red-400">
-              Error Opening Pack
-            </h3>
+            <h3 className="text-2xl font-bold text-red-400">Error Opening Pack</h3>
             <p className="mt-2 text-white/70">{error}</p>
             <button
               onClick={onCancel}
@@ -155,9 +149,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
             className="text-center"
           >
             <div className="text-6xl">✨</div>
-            <div className="mt-4 text-xl font-semibold text-white/80">
-              Opening pack...
-            </div>
+            <div className="mt-4 text-xl font-semibold text-white/80">Opening pack...</div>
           </motion.div>
         </div>
       );
@@ -170,16 +162,11 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute right-4 top-4 z-50 rounded-lg bg-black/40 p-3 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
+            className="absolute top-4 right-4 z-50 rounded-lg bg-black/40 p-3 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
             onClick={onCancel}
             aria-label="Close"
           >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -218,10 +205,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
               transition={{ duration: 0.2 }}
               className="h-full w-full"
             >
-              <Stage2_PackExplosion
-                cards={cards}
-                onComplete={handleExplosionComplete}
-              />
+              <Stage2_PackExplosion cards={cards} onComplete={handleExplosionComplete} />
             </motion.div>
           )}
 
@@ -234,10 +218,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
               transition={{ duration: 0.3 }}
               className="h-full w-full"
             >
-              <Stage3_CardReveal
-                cards={cards}
-                onRevealComplete={handleRevealComplete}
-              />
+              <Stage3_CardReveal cards={cards} onRevealComplete={handleRevealComplete} />
             </motion.div>
           )}
 
@@ -261,7 +242,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
 
         {/* Stage indicator (dev/debug) */}
         {process.env.NODE_ENV === "development" && (
-          <div className="absolute left-4 top-4 rounded-lg bg-black/60 px-3 py-2 text-xs font-mono text-white/60 backdrop-blur-sm">
+          <div className="absolute top-4 left-4 rounded-lg bg-black/60 px-3 py-2 font-mono text-xs text-white/60 backdrop-blur-sm">
             Stage: {stage} | Cards: {cards.length}
           </div>
         )}

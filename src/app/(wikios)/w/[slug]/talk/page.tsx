@@ -52,7 +52,15 @@ export default function TalkPage() {
     <WikiOSLayout title={`Talk: ${title}`}>
       <div className="wikios-special-page">
         {/* Navigation */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            marginBottom: 16,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <Link
             href={withBasePath(`/w/${encodeURIComponent(title.replace(/ /g, "_"))}`)}
             className="wikios-action-btn"
@@ -61,7 +69,9 @@ export default function TalkPage() {
             &larr; Article
           </Link>
           <Link
-            href={withBasePath(`/w/special/history/${encodeURIComponent(`Talk:${title.replace(/ /g, "_")}`)}`)}
+            href={withBasePath(
+              `/w/special/history/${encodeURIComponent(`Talk:${title.replace(/ /g, "_")}`)}`
+            )}
             className="wikios-action-btn"
             style={{ fontSize: "0.8125rem" }}
           >
@@ -85,11 +95,16 @@ export default function TalkPage() {
         {showNewSection && (
           <div
             style={{
-              marginBottom: 20, padding: "16px", borderRadius: 10,
-              background: "rgba(59,130,246,0.05)", border: "1px solid rgba(59,130,246,0.2)",
+              marginBottom: 20,
+              padding: "16px",
+              borderRadius: 10,
+              background: "rgba(59,130,246,0.05)",
+              border: "1px solid rgba(59,130,246,0.2)",
             }}
           >
-            <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: 10, color: "#93c5fd" }}>
+            <h3
+              style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: 10, color: "#93c5fd" }}
+            >
               New Discussion Section
             </h3>
             <input
@@ -98,9 +113,14 @@ export default function TalkPage() {
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
               style={{
-                width: "100%", padding: "8px 12px", borderRadius: 6, marginBottom: 8,
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                color: "inherit", fontSize: "0.875rem",
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                marginBottom: 8,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "inherit",
+                fontSize: "0.875rem",
               }}
             />
             <textarea
@@ -109,17 +129,32 @@ export default function TalkPage() {
               onChange={(e) => setSectionContent(e.target.value)}
               rows={5}
               style={{
-                width: "100%", padding: "8px 12px", borderRadius: 6, marginBottom: 8,
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                color: "inherit", fontSize: "0.875rem", fontFamily: "monospace", resize: "vertical",
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                marginBottom: 8,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "inherit",
+                fontSize: "0.875rem",
+                fontFamily: "monospace",
+                resize: "vertical",
               }}
             />
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 className="wikios-action-btn"
-                style={{ background: "rgba(59,130,246,0.15)", borderColor: "rgba(59,130,246,0.3)", color: "#60a5fa" }}
-                disabled={!sectionTitle.trim() || !sectionContent.trim() || addSectionMutation.isPending}
-                onClick={() => addSectionMutation.mutate({ title, sectionTitle, content: sectionContent })}
+                style={{
+                  background: "rgba(59,130,246,0.15)",
+                  borderColor: "rgba(59,130,246,0.3)",
+                  color: "#60a5fa",
+                }}
+                disabled={
+                  !sectionTitle.trim() || !sectionContent.trim() || addSectionMutation.isPending
+                }
+                onClick={() =>
+                  addSectionMutation.mutate({ title, sectionTitle, content: sectionContent })
+                }
               >
                 {addSectionMutation.isPending ? "Posting..." : "Post Section"}
               </button>
@@ -139,11 +174,16 @@ export default function TalkPage() {
         {replyTarget && (
           <div
             style={{
-              marginBottom: 20, padding: "16px", borderRadius: 10,
-              background: "rgba(34,197,94,0.05)", border: "1px solid rgba(34,197,94,0.2)",
+              marginBottom: 20,
+              padding: "16px",
+              borderRadius: 10,
+              background: "rgba(34,197,94,0.05)",
+              border: "1px solid rgba(34,197,94,0.2)",
             }}
           >
-            <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: 10, color: "#86efac" }}>
+            <h3
+              style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: 10, color: "#86efac" }}
+            >
               Replying to: {replyTarget.title}
             </h3>
             <textarea
@@ -152,18 +192,33 @@ export default function TalkPage() {
               onChange={(e) => setReplyContent(e.target.value)}
               rows={4}
               style={{
-                width: "100%", padding: "8px 12px", borderRadius: 6, marginBottom: 8,
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                color: "inherit", fontSize: "0.875rem", fontFamily: "monospace", resize: "vertical",
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 6,
+                marginBottom: 8,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "inherit",
+                fontSize: "0.875rem",
+                fontFamily: "monospace",
+                resize: "vertical",
               }}
             />
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 className="wikios-action-btn"
-                style={{ background: "rgba(34,197,94,0.15)", borderColor: "rgba(34,197,94,0.3)", color: "#4ade80" }}
+                style={{
+                  background: "rgba(34,197,94,0.15)",
+                  borderColor: "rgba(34,197,94,0.3)",
+                  color: "#4ade80",
+                }}
                 disabled={!replyContent.trim() || replyMutation.isPending}
                 onClick={() =>
-                  replyMutation.mutate({ title, sectionIndex: replyTarget.index, content: replyContent })
+                  replyMutation.mutate({
+                    title,
+                    sectionIndex: replyTarget.index,
+                    content: replyContent,
+                  })
                 }
               >
                 {replyMutation.isPending ? "Posting..." : "Post Reply"}
@@ -219,13 +274,12 @@ export default function TalkPage() {
         {data && !data.exists && (
           <div
             style={{
-              textAlign: "center", padding: "40px 20px",
+              textAlign: "center",
+              padding: "40px 20px",
               color: "var(--wikios-text-muted, #71717a)",
             }}
           >
-            <p style={{ fontSize: "1rem", marginBottom: 8 }}>
-              No discussion yet for this article.
-            </p>
+            <p style={{ fontSize: "1rem", marginBottom: 8 }}>No discussion yet for this article.</p>
             <p style={{ fontSize: "0.875rem" }}>
               Click &ldquo;+ New Section&rdquo; above to start a discussion.
             </p>

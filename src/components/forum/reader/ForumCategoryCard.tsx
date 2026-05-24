@@ -50,16 +50,14 @@ export function ForumCategoryCard({
       <div className="mb-6">
         <div className="mb-3 flex items-center gap-2">
           <div className="h-1 w-4 rounded-full bg-[var(--forum-accent)]" />
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-[var(--forum-accent)]">
+          <h2 className="text-xs font-semibold tracking-widest text-[var(--forum-accent)] uppercase">
             {title}
           </h2>
         </div>
         {description && (
-          <p className="mb-3 text-xs text-[var(--forum-text-dim)] ml-6">{description}</p>
+          <p className="mb-3 ml-6 text-xs text-[var(--forum-text-dim)]">{description}</p>
         )}
-        <div className="glass-forum-parent overflow-hidden p-1 space-y-0.5">
-          {children}
-        </div>
+        <div className="glass-forum-parent space-y-0.5 overflow-hidden p-1">{children}</div>
       </div>
     );
   }
@@ -76,13 +74,11 @@ export function ForumCategoryCard({
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-medium text-[var(--forum-text)] group-hover:text-[var(--forum-accent)] transition-colors">
+        <h3 className="text-sm font-medium text-[var(--forum-text)] transition-colors group-hover:text-[var(--forum-accent)]">
           {title}
         </h3>
         {description && (
-          <p className="mt-0.5 truncate text-xs text-[var(--forum-text-dim)]">
-            {description}
-          </p>
+          <p className="mt-0.5 truncate text-xs text-[var(--forum-text-dim)]">{description}</p>
         )}
       </div>
 
@@ -100,7 +96,10 @@ export function ForumCategoryCard({
       {lastPostDate && (
         <div className="hidden shrink-0 text-right md:block" style={{ minWidth: "140px" }}>
           {lastThreadTitle && lastThreadId && (
-            <div className="truncate text-xs text-[var(--forum-text-muted)]" style={{ maxWidth: "140px" }}>
+            <div
+              className="truncate text-xs text-[var(--forum-text-muted)]"
+              style={{ maxWidth: "140px" }}
+            >
               {lastThreadTitle}
             </div>
           )}

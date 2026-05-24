@@ -18,9 +18,7 @@ import { Badge } from "~/components/ui/badge";
 import { IxTime } from "~/lib/ixtime";
 
 // Type imports
-import type {
-  EnhancedIntelligenceBriefingProps,
-} from "~/types/intelligence-briefing";
+import type { EnhancedIntelligenceBriefingProps } from "~/types/intelligence-briefing";
 
 // Extracted components
 import {
@@ -50,7 +48,6 @@ import {
   RiBuildingLine,
   RiMapLine,
 } from "react-icons/ri";
-
 
 export const EnhancedIntelligenceBriefing: React.FC<EnhancedIntelligenceBriefingProps> = ({
   country,

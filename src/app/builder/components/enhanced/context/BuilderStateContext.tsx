@@ -60,12 +60,15 @@ export function BuilderStateProvider({
   /**
    * Register an autosync function for a specific builder section
    */
-  const registerAutoSync = useCallback((section: keyof AutoSyncRegistry, syncFn: AutoSyncFunction) => {
-    setAutoSyncRegistry((prev) => ({
-      ...prev,
-      [section]: syncFn,
-    }));
-  }, []);
+  const registerAutoSync = useCallback(
+    (section: keyof AutoSyncRegistry, syncFn: AutoSyncFunction) => {
+      setAutoSyncRegistry((prev) => ({
+        ...prev,
+        [section]: syncFn,
+      }));
+    },
+    []
+  );
 
   /**
    * Unregister an autosync function when component unmounts
@@ -118,9 +121,7 @@ export function BuilderStateProvider({
   );
 
   return (
-    <BuilderStateContext.Provider value={contextValue}>
-      {children}
-    </BuilderStateContext.Provider>
+    <BuilderStateContext.Provider value={contextValue}>{children}</BuilderStateContext.Provider>
   );
 }
 

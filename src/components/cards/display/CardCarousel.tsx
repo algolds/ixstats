@@ -119,8 +119,7 @@ export const CardCarousel = React.memo<CardCarouselProps>(
 
           // Scroll to next card
           if (carouselRef.current) {
-            const cardWidth =
-              cardSize === "small" ? 144 : cardSize === "medium" ? 208 : 272;
+            const cardWidth = cardSize === "small" ? 144 : cardSize === "medium" ? 208 : 272;
             const gap = 16;
             const scrollPosition = nextIndex * (cardWidth + gap);
 
@@ -182,11 +181,11 @@ export const CardCarousel = React.memo<CardCarouselProps>(
         <div
           ref={carouselRef}
           className={cn(
-            "flex gap-3 sm:gap-4 overflow-x-auto scroll-smooth py-2 sm:py-4 px-2 sm:px-0",
+            "flex gap-3 overflow-x-auto scroll-smooth px-2 py-2 sm:gap-4 sm:px-0 sm:py-4",
             // Hide scrollbar
             "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
             // Better mobile touch scrolling
-            "overscroll-x-contain snap-x snap-mandatory"
+            "snap-x snap-mandatory overscroll-x-contain"
           )}
           onScroll={checkScrollability}
         >
@@ -204,17 +203,13 @@ export const CardCarousel = React.memo<CardCarouselProps>(
                 }}
                 className="flex-shrink-0 snap-center"
               >
-                <CardDisplay
-                  card={card}
-                  size={cardSize}
-                  onClick={onCardClick}
-                />
+                <CardDisplay card={card} size={cardSize} onClick={onCardClick} />
               </motion.div>
             ))}
           </AnimatePresence>
 
           {/* Padding at the end */}
-          <div className="flex-shrink-0 w-2 sm:w-4" />
+          <div className="w-2 flex-shrink-0 sm:w-4" />
         </div>
 
         {/* Navigation arrows */}
@@ -229,16 +224,16 @@ export const CardCarousel = React.memo<CardCarouselProps>(
                   exit={{ opacity: 0, x: 10 }}
                   onClick={scrollLeft}
                   className={cn(
-                    "absolute left-1 sm:left-2 top-1/2 z-10 -translate-y-1/2",
+                    "absolute top-1/2 left-1 z-10 -translate-y-1/2 sm:left-2",
                     "glass-hierarchy-interactive",
-                    "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full",
+                    "flex h-8 w-8 items-center justify-center rounded-full sm:h-10 sm:w-10",
                     "transition-all hover:scale-110 active:scale-95",
                     "shadow-lg",
                     "hidden sm:flex"
                   )}
                   aria-label="Scroll left"
                 >
-                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  <ChevronLeft className="h-5 w-5 text-white sm:h-6 sm:w-6" />
                 </motion.button>
               )}
             </AnimatePresence>
@@ -252,16 +247,16 @@ export const CardCarousel = React.memo<CardCarouselProps>(
                   exit={{ opacity: 0, x: -10 }}
                   onClick={scrollRight}
                   className={cn(
-                    "absolute right-1 sm:right-2 top-1/2 z-10 -translate-y-1/2",
+                    "absolute top-1/2 right-1 z-10 -translate-y-1/2 sm:right-2",
                     "glass-hierarchy-interactive",
-                    "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full",
+                    "flex h-8 w-8 items-center justify-center rounded-full sm:h-10 sm:w-10",
                     "transition-all hover:scale-110 active:scale-95",
                     "shadow-lg",
                     "hidden sm:flex"
                   )}
                   aria-label="Scroll right"
                 >
-                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  <ChevronRight className="h-5 w-5 text-white sm:h-6 sm:w-6" />
                 </motion.button>
               )}
             </AnimatePresence>
@@ -270,7 +265,7 @@ export const CardCarousel = React.memo<CardCarouselProps>(
 
         {/* Auto-play indicator dots */}
         {autoPlay && cards.length > 1 && (
-          <div className="mt-3 sm:mt-4 flex justify-center gap-1.5 sm:gap-2">
+          <div className="mt-3 flex justify-center gap-1.5 sm:mt-4 sm:gap-2">
             {cards.map((_, index) => (
               <button
                 key={index}
@@ -289,10 +284,10 @@ export const CardCarousel = React.memo<CardCarouselProps>(
                   }
                 }}
                 className={cn(
-                  "h-1.5 sm:h-2 rounded-full transition-all duration-300 touch-manipulation",
+                  "h-1.5 touch-manipulation rounded-full transition-all duration-300 sm:h-2",
                   currentIndex === index
-                    ? "w-6 sm:w-8 bg-white"
-                    : "w-1.5 sm:w-2 bg-white/30 hover:bg-white/50 active:bg-white/60"
+                    ? "w-6 bg-white sm:w-8"
+                    : "w-1.5 bg-white/30 hover:bg-white/50 active:bg-white/60 sm:w-2"
                 )}
                 aria-label={`Go to card ${index + 1}`}
               />

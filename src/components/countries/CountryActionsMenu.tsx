@@ -97,7 +97,9 @@ export function CountryActionsMenu({
         sanction: "Sanctions",
         embargo: "Trade embargo",
       };
-      notify.success(`${labels[variables.actionType] ?? "Action"} proposed to ${targetCountryName}`);
+      notify.success(
+        `${labels[variables.actionType] ?? "Action"} proposed to ${targetCountryName}`
+      );
       onClose();
     },
     onError: (error) => notify.error(`Failed: ${error.message}`),
@@ -118,9 +120,15 @@ export function CountryActionsMenu({
       return;
     }
     if (followStatus?.isFollowing) {
-      unfollowMutation.mutate({ followerCountryId: viewerCountryId, followedCountryId: targetCountryId });
+      unfollowMutation.mutate({
+        followerCountryId: viewerCountryId,
+        followedCountryId: targetCountryId,
+      });
     } else {
-      followMutation.mutate({ followerCountryId: viewerCountryId, followedCountryId: targetCountryId });
+      followMutation.mutate({
+        followerCountryId: viewerCountryId,
+        followedCountryId: targetCountryId,
+      });
     }
   }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]);
 
@@ -142,13 +150,16 @@ export function CountryActionsMenu({
     });
   }, [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation, notify]);
 
-  const handleForeignPolicy = useCallback((actionType: ForeignPolicyType) => {
-    if (!viewerCountryId) {
-      notify.error("You must be logged in to propose foreign policy");
-      return;
-    }
-    foreignPolicyMutation.mutate({ targetId: targetCountryId, actionType, severity: "moderate" });
-  }, [viewerCountryId, targetCountryId, foreignPolicyMutation, notify]);
+  const handleForeignPolicy = useCallback(
+    (actionType: ForeignPolicyType) => {
+      if (!viewerCountryId) {
+        notify.error("You must be logged in to propose foreign policy");
+        return;
+      }
+      foreignPolicyMutation.mutate({ targetId: targetCountryId, actionType, severity: "moderate" });
+    },
+    [viewerCountryId, targetCountryId, foreignPolicyMutation, notify]
+  );
 
   const handleCongratulate = useCallback(() => {
     if (!viewerCountryId) {
@@ -159,7 +170,9 @@ export function CountryActionsMenu({
       notify.error("Please select an achievement to congratulate");
       return;
     }
-    const achievement = recentAchievements?.find((a: { id: string }) => a.id === selectedAchievement);
+    const achievement = recentAchievements?.find(
+      (a: { id: string }) => a.id === selectedAchievement
+    );
     if (!achievement) return;
 
     congratulateMutation.mutate({
@@ -168,7 +181,14 @@ export function CountryActionsMenu({
       visibility: "public" as const,
       hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
     });
-  }, [viewerCountryId, targetCountryName, selectedAchievement, recentAchievements, congratulateMutation, notify]);
+  }, [
+    viewerCountryId,
+    targetCountryName,
+    selectedAchievement,
+    recentAchievements,
+    congratulateMutation,
+    notify,
+  ]);
 
   const handleCopyLink = useCallback(() => {
     const slug = targetCountryName.replace(/\s/g, "_");
@@ -234,51 +254,83 @@ export function CountryActionsMenu({
                 {/* Own Country Actions */}
                 {isOwnCountry && (
                   <div className="space-y-2.5">
-                    <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Management</p>
+                    <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                      Management
+                    </p>
 
                     <button
-                      onClick={() => { router.push(createUrl("/mycountry")); onClose(); }}
-                      className={actionButtonClass("border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30")}
+                      onClick={() => {
+                        router.push(createUrl("/mycountry"));
+                        onClose();
+                      }}
+                      className={actionButtonClass(
+                        "border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30"
+                      )}
                     >
                       <Building2 className="h-4 w-4" />
                       MyCountry Dashboard
                     </button>
 
                     <button
-                      onClick={() => { router.push(createUrl("/mycountry/executive")); onClose(); }}
-                      className={actionButtonClass("border-indigo-500/20 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-violet-500/30")}
+                      onClick={() => {
+                        router.push(createUrl("/mycountry/executive"));
+                        onClose();
+                      }}
+                      className={actionButtonClass(
+                        "border-indigo-500/20 bg-gradient-to-r from-indigo-500/20 to-violet-500/20 text-indigo-300 hover:from-indigo-500/30 hover:to-violet-500/30"
+                      )}
                     >
                       <ScrollText className="h-4 w-4" />
                       Executive Actions
                     </button>
 
                     <button
-                      onClick={() => { router.push(createUrl("/mycountry/diplomacy")); onClose(); }}
-                      className={actionButtonClass("border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30")}
+                      onClick={() => {
+                        router.push(createUrl("/mycountry/diplomacy"));
+                        onClose();
+                      }}
+                      className={actionButtonClass(
+                        "border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30"
+                      )}
                     >
                       <Handshake className="h-4 w-4" />
                       Manage Diplomacy
                     </button>
 
                     <button
-                      onClick={() => { router.push(createUrl("/mycountry/intelligence")); onClose(); }}
-                      className={actionButtonClass("border-cyan-500/20 bg-gradient-to-r from-cyan-500/20 to-sky-500/20 text-cyan-300 hover:from-cyan-500/30 hover:to-sky-500/30")}
+                      onClick={() => {
+                        router.push(createUrl("/mycountry/intelligence"));
+                        onClose();
+                      }}
+                      className={actionButtonClass(
+                        "border-cyan-500/20 bg-gradient-to-r from-cyan-500/20 to-sky-500/20 text-cyan-300 hover:from-cyan-500/30 hover:to-sky-500/30"
+                      )}
                     >
                       <BarChart3 className="h-4 w-4" />
                       Intelligence Center
                     </button>
 
                     <button
-                      onClick={() => { router.push(createUrl("/mycountry/defense")); onClose(); }}
-                      className={actionButtonClass("border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30")}
+                      onClick={() => {
+                        router.push(createUrl("/mycountry/defense"));
+                        onClose();
+                      }}
+                      className={actionButtonClass(
+                        "border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30"
+                      )}
                     >
                       <Shield className="h-4 w-4" />
                       Defense Operations
                     </button>
 
                     <button
-                      onClick={() => { router.push(createUrl("/mycountry/politics")); onClose(); }}
-                      className={actionButtonClass("border-teal-500/20 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-300 hover:from-teal-500/30 hover:to-emerald-500/30")}
+                      onClick={() => {
+                        router.push(createUrl("/mycountry/politics"));
+                        onClose();
+                      }}
+                      className={actionButtonClass(
+                        "border-teal-500/20 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-300 hover:from-teal-500/30 hover:to-emerald-500/30"
+                      )}
                     >
                       <Scale className="h-4 w-4" />
                       Politics & Elections
@@ -290,7 +342,9 @@ export function CountryActionsMenu({
                 {!isOwnCountry && (
                   <>
                     <div className="space-y-2.5">
-                      <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Social</p>
+                      <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                        Social
+                      </p>
 
                       <button
                         onClick={handleFollowToggle}
@@ -315,7 +369,9 @@ export function CountryActionsMenu({
                       <button
                         onClick={handleDiplomaticMessage}
                         disabled={!viewerCountryId}
-                        className={actionButtonClass("border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30")}
+                        className={actionButtonClass(
+                          "border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 text-purple-300 hover:from-purple-500/30 hover:to-fuchsia-500/30"
+                        )}
                       >
                         <MessageSquare className="h-4 w-4" />
                         Secure Message
@@ -326,7 +382,9 @@ export function CountryActionsMenu({
                           <button
                             onClick={handleCongratulate}
                             disabled={!viewerCountryId || isLoading || !selectedAchievement}
-                            className={actionButtonClass("border-green-500/20 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 hover:from-green-500/30 hover:to-emerald-500/30")}
+                            className={actionButtonClass(
+                              "border-green-500/20 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-300 hover:from-green-500/30 hover:to-emerald-500/30"
+                            )}
                           >
                             <div className="flex items-center gap-3">
                               {congratulateMutation.isPending ? (
@@ -342,12 +400,24 @@ export function CountryActionsMenu({
                               onClick={(e) => e.stopPropagation()}
                               className="min-w-[140px] cursor-pointer rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white/90 backdrop-blur-sm transition-colors hover:bg-white/20 focus:ring-2 focus:ring-green-500/50 focus:outline-none"
                             >
-                              <option value="" className="bg-gray-800 text-white">Select achievement...</option>
-                              {recentAchievements.map((achievement: { id: string; icon?: string | null; title: string }) => (
-                                <option key={achievement.id} value={achievement.id} className="bg-gray-800 text-white">
-                                  {achievement.icon} {achievement.title}
-                                </option>
-                              ))}
+                              <option value="" className="bg-gray-800 text-white">
+                                Select achievement...
+                              </option>
+                              {recentAchievements.map(
+                                (achievement: {
+                                  id: string;
+                                  icon?: string | null;
+                                  title: string;
+                                }) => (
+                                  <option
+                                    key={achievement.id}
+                                    value={achievement.id}
+                                    className="bg-gray-800 text-white"
+                                  >
+                                    {achievement.icon} {achievement.title}
+                                  </option>
+                                )
+                              )}
                             </select>
                           </button>
                         </div>
@@ -356,12 +426,16 @@ export function CountryActionsMenu({
 
                     {/* Diplomatic Actions */}
                     <div className="mt-4 space-y-2.5">
-                      <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Diplomacy</p>
+                      <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                        Diplomacy
+                      </p>
 
                       <button
                         onClick={handleEstablishEmbassy}
                         disabled={!viewerCountryId || isLoading}
-                        className={actionButtonClass("border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 hover:from-amber-500/30 hover:to-yellow-500/30")}
+                        className={actionButtonClass(
+                          "border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-300 hover:from-amber-500/30 hover:to-yellow-500/30"
+                        )}
                       >
                         {establishEmbassyMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -374,7 +448,9 @@ export function CountryActionsMenu({
                       <button
                         onClick={() => handleForeignPolicy("free_trade")}
                         disabled={!viewerCountryId || isLoading}
-                        className={actionButtonClass("border-emerald-500/20 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 hover:from-emerald-500/30 hover:to-green-500/30")}
+                        className={actionButtonClass(
+                          "border-emerald-500/20 bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-300 hover:from-emerald-500/30 hover:to-green-500/30"
+                        )}
                       >
                         {foreignPolicyMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -387,7 +463,9 @@ export function CountryActionsMenu({
                       <button
                         onClick={() => handleForeignPolicy("military_alliance")}
                         disabled={!viewerCountryId || isLoading}
-                        className={actionButtonClass("border-sky-500/20 bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 hover:from-sky-500/30 hover:to-blue-500/30")}
+                        className={actionButtonClass(
+                          "border-sky-500/20 bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 hover:from-sky-500/30 hover:to-blue-500/30"
+                        )}
                       >
                         <Shield className="h-4 w-4" />
                         Propose Military Alliance
@@ -396,12 +474,16 @@ export function CountryActionsMenu({
 
                     {/* Foreign Policy (Adversarial) */}
                     <div className="mt-4 space-y-2.5">
-                      <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Foreign Policy</p>
+                      <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                        Foreign Policy
+                      </p>
 
                       <button
                         onClick={() => handleForeignPolicy("sanction")}
                         disabled={!viewerCountryId || isLoading}
-                        className={actionButtonClass("border-orange-500/20 bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 hover:from-orange-500/30 hover:to-amber-500/30")}
+                        className={actionButtonClass(
+                          "border-orange-500/20 bg-gradient-to-r from-orange-500/20 to-amber-500/20 text-orange-300 hover:from-orange-500/30 hover:to-amber-500/30"
+                        )}
                       >
                         <Scale className="h-4 w-4" />
                         Impose Sanctions
@@ -410,7 +492,9 @@ export function CountryActionsMenu({
                       <button
                         onClick={() => handleForeignPolicy("embargo")}
                         disabled={!viewerCountryId || isLoading}
-                        className={actionButtonClass("border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30")}
+                        className={actionButtonClass(
+                          "border-red-500/20 bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 hover:from-red-500/30 hover:to-rose-500/30"
+                        )}
                       >
                         <Swords className="h-4 w-4" />
                         Declare Embargo
@@ -421,14 +505,18 @@ export function CountryActionsMenu({
 
                 {/* Quick Links (always shown) */}
                 <div className="mt-4 space-y-2.5">
-                  <p className="px-1 text-[10px] font-semibold uppercase tracking-widest text-white/40">Quick Links</p>
+                  <p className="px-1 text-[10px] font-semibold tracking-widest text-white/40 uppercase">
+                    Quick Links
+                  </p>
 
                   <button
                     onClick={() => {
                       router.push(createUrl(`/countries?compare=${targetCountryId}`));
                       onClose();
                     }}
-                    className={actionButtonClass("border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 text-indigo-300 hover:from-indigo-500/20 hover:to-violet-500/20")}
+                    className={actionButtonClass(
+                      "border-indigo-500/20 bg-gradient-to-r from-indigo-500/10 to-violet-500/10 text-indigo-300 hover:from-indigo-500/20 hover:to-violet-500/20"
+                    )}
                   >
                     <BarChart3 className="h-4 w-4" />
                     Compare Countries
@@ -439,7 +527,9 @@ export function CountryActionsMenu({
                       href={`https://ixwiki.com/wiki/${targetCountryName.replace(/\s/g, "_")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={actionButtonClass("border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10")}
+                      className={actionButtonClass(
+                        "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
+                      )}
                       onClick={onClose}
                     >
                       <Globe className="h-4 w-4" />
@@ -450,9 +540,15 @@ export function CountryActionsMenu({
 
                   <button
                     onClick={handleCopyLink}
-                    className={actionButtonClass("border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10")}
+                    className={actionButtonClass(
+                      "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
+                    )}
                   >
-                    {copiedLink ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                    {copiedLink ? (
+                      <Check className="h-4 w-4 text-green-400" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                     {copiedLink ? "Link Copied!" : "Copy Profile Link"}
                   </button>
 
@@ -468,7 +564,9 @@ export function CountryActionsMenu({
                       }
                       onClose();
                     }}
-                    className={actionButtonClass("border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10")}
+                    className={actionButtonClass(
+                      "border-white/10 bg-gradient-to-r from-white/5 to-white/5 text-white/70 hover:from-white/10 hover:to-white/10"
+                    )}
                   >
                     <Share2 className="h-4 w-4" />
                     Share Profile

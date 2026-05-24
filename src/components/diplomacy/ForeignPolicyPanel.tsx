@@ -19,20 +19,20 @@ export function ForeignPolicyPanel({ countryId }: ForeignPolicyPanelProps) {
 
   const { data: policies } = api.diplomatic.getActiveForeignPolicies.useQuery(
     { countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   const { data: relations } = api.diplomatic.getRelationships.useQuery(
     { countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   const stats = useMemo(() => {
-    const active = policies?.filter((p: any) => p.status === "ACTIVE" || p.status === "active").length ?? 0;
-    const proposed = policies?.filter((p: any) => p.status === "PROPOSED" || p.status === "proposed").length ?? 0;
-    const tradePartners = relations
-      ? new Set(relations.map((r) => r.targetCountryId)).size
-      : 0;
+    const active =
+      policies?.filter((p: any) => p.status === "ACTIVE" || p.status === "active").length ?? 0;
+    const proposed =
+      policies?.filter((p: any) => p.status === "PROPOSED" || p.status === "proposed").length ?? 0;
+    const tradePartners = relations ? new Set(relations.map((r) => r.targetCountryId)).size : 0;
     return { active, proposed, tradePartners };
   }, [policies, relations]);
 

@@ -67,7 +67,9 @@ async function main() {
   }
 
   console.log(`✅ Found country: ${country.name} (ID: ${country.id})`);
-  console.log(`   Currently linked users: ${country.users.map((u) => u.clerkUserId).join(", ") || "none"}`);
+  console.log(
+    `   Currently linked users: ${country.users.map((u) => u.clerkUserId).join(", ") || "none"}`
+  );
 
   // Link each system owner to the country
   console.log(`\n📎 Linking ${systemOwnerIds.length} system owner(s) to ${country.name}...`);

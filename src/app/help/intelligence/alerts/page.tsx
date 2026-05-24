@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { BellRing, Inbox, ShieldAlert, LayoutDashboard, Compass } from "lucide-react";
-import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
+import {
+  ArticleLayout,
+  Section,
+  InfoBox,
+  WarningBox,
+  ContentCard,
+} from "../../_components/ArticleLayout";
 
 export default function IntelligenceAlertsArticle() {
   return (
@@ -29,9 +35,9 @@ export default function IntelligenceAlertsArticle() {
               of your diplomatic obligations.
             </li>
             <li>
-              <strong>Defense Alerts:</strong> Cover incident reports, military readiness downgrades,
-              and crisis escalations. If your security situation is changing, you&apos;ll know
-              immediately.
+              <strong>Defense Alerts:</strong> Cover incident reports, military readiness
+              downgrades, and crisis escalations. If your security situation is changing,
+              you&apos;ll know immediately.
             </li>
             <li>
               <strong>Compliance Alerts:</strong> Remind you about overdue tasks and upcoming policy
@@ -50,7 +56,10 @@ export default function IntelligenceAlertsArticle() {
             <ul className="list-disc space-y-1 pl-6">
               <li>
                 <strong>Intelligence Feed:</strong> Your primary alert center within the{" "}
-                <Link href="/mycountry/intelligence" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/mycountry/intelligence"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   Intelligence page
                 </Link>
                 , showing all alerts with full context and action buttons.
@@ -71,8 +80,8 @@ export default function IntelligenceAlertsArticle() {
         <Section title="How to Handle Alerts">
           <ol className="list-decimal space-y-2 pl-6">
             <li>
-              <strong>Review the alert:</strong> Open the alert card to see the full context --
-              what happened, why it matters, and what the system recommends.
+              <strong>Review the alert:</strong> Open the alert card to see the full context -- what
+              happened, why it matters, and what the system recommends.
             </li>
             <li>
               <strong>Take action:</strong> Use the built-in action buttons to respond directly.
@@ -92,14 +101,14 @@ export default function IntelligenceAlertsArticle() {
         <WarningBox title="Stay Organized">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <Inbox className="inline h-4 w-4" /> Clear resolved alerts regularly to keep your
-              feed manageable. A cluttered alert list makes it harder to spot what truly needs your
+              <Inbox className="inline h-4 w-4" /> Clear resolved alerts regularly to keep your feed
+              manageable. A cluttered alert list makes it harder to spot what truly needs your
               attention.
             </li>
             <li>
               <ShieldAlert className="inline h-4 w-4" /> Configure your alert thresholds in the
-              Intelligence Settings tab so you receive notifications tuned to your play style --
-              not too many, not too few.
+              Intelligence Settings tab so you receive notifications tuned to your play style -- not
+              too many, not too few.
             </li>
           </ul>
         </WarningBox>
@@ -108,14 +117,20 @@ export default function IntelligenceAlertsArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <LayoutDashboard className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/intelligence/dashboard"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Executive Intelligence Dashboard
               </Link>{" "}
               -- see all your alerts in context alongside your nation&apos;s overall health.
             </li>
             <li>
               <Compass className="inline h-4 w-4" />{" "}
-              <Link href="/help/mycountry/intelligence" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/mycountry/intelligence"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 MyCountry Intelligence Guide
               </Link>{" "}
               -- full walkthrough of the Intelligence section.

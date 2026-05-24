@@ -5,16 +5,7 @@ import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
-import {
-  TrendingUp,
-  Users,
-  DollarSign,
-  Shield,
-  Target,
-  Activity,
-  Crown,
-  Zap,
-} from "lucide-react";
+import { TrendingUp, Users, DollarSign, Shield, Target, Activity, Crown, Zap } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { EconomicInputs } from "../lib/economy-data-service";
 import type { ExtractedColors } from "~/lib/image-color-extractor";

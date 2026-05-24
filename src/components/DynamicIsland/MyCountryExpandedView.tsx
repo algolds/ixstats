@@ -34,7 +34,7 @@ export function MyCountryExpandedView({
   onClose,
 }: MyCountryExpandedViewProps) {
   return (
-    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] sm:w-[90vw] md:w-[600px] lg:max-w-2xl -translate-x-1/2 transform">
+    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] -translate-x-1/2 transform sm:w-[90vw] md:w-[600px] lg:max-w-2xl">
       <div
         className="command-palette-dropdown border-border relative mx-auto w-full overflow-hidden rounded-xl shadow-2xl dark:border-white/10"
         style={{
@@ -57,7 +57,7 @@ export function MyCountryExpandedView({
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-amber-500" />
-              <h3 className="text-lg font-bold text-foreground">MyCountry® Command</h3>
+              <h3 className="text-foreground text-lg font-bold">MyCountry® Command</h3>
             </div>
             <Button
               size="sm"
@@ -82,18 +82,14 @@ export function MyCountryExpandedView({
                 </TabsTrigger>
                 <TabsTrigger
                   value="executive"
-                  onClick={() =>
-                    (window.location.href = createAbsoluteUrl("/mycountry/executive"))
-                  }
+                  onClick={() => (window.location.href = createAbsoluteUrl("/mycountry/executive"))}
                   className="text-xs"
                 >
                   Executive
                 </TabsTrigger>
                 <TabsTrigger
                   value="diplomacy"
-                  onClick={() =>
-                    (window.location.href = createAbsoluteUrl("/mycountry/diplomacy"))
-                  }
+                  onClick={() => (window.location.href = createAbsoluteUrl("/mycountry/diplomacy"))}
                   className="text-xs"
                 >
                   Diplomacy
@@ -109,9 +105,7 @@ export function MyCountryExpandedView({
                 </TabsTrigger>
                 <TabsTrigger
                   value="defense"
-                  onClick={() =>
-                    (window.location.href = createAbsoluteUrl("/mycountry/defense"))
-                  }
+                  onClick={() => (window.location.href = createAbsoluteUrl("/mycountry/defense"))}
                   className="text-xs"
                 >
                   Defense
@@ -122,8 +116,8 @@ export function MyCountryExpandedView({
 
           {/* Quick Actions */}
           <div className="mb-4">
-            <div className="mb-2 text-xs font-medium text-muted-foreground">Quick Actions</div>
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="text-muted-foreground mb-2 text-xs font-medium">Quick Actions</div>
+            <div className="xs:grid-cols-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {quickActions.map((action, index) => {
                 const ActionIcon = action.icon;
                 return (
@@ -141,7 +135,7 @@ export function MyCountryExpandedView({
                     className="flex flex-col items-center gap-1 p-3 hover:bg-amber-500/10"
                   >
                     <ActionIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                    <span className="text-[10px] sm:text-[11px] text-center">{action.label}</span>
+                    <span className="text-center text-[10px] sm:text-[11px]">{action.label}</span>
                   </Button>
                 );
               })}
@@ -150,17 +144,17 @@ export function MyCountryExpandedView({
 
           {/* All Vitals Display */}
           <div>
-            <div className="mb-2 text-xs font-medium text-muted-foreground">Country Vitals</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            <div className="text-muted-foreground mb-2 text-xs font-medium">Country Vitals</div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {vitals.map((vital, index) => {
                 const VIcon = vital.icon;
                 return (
                   <div
                     key={index}
-                    className="flex flex-col items-center gap-1.5 rounded-lg border border-amber-400/20 bg-card/50 p-3 transition-all hover:border-amber-400/40 hover:bg-amber-500/5"
+                    className="bg-card/50 flex flex-col items-center gap-1.5 rounded-lg border border-amber-400/20 p-3 transition-all hover:border-amber-400/40 hover:bg-amber-500/5"
                   >
                     <VIcon className={`h-5 w-5 ${vital.color}`} />
-                    <span className="text-[10px] font-medium text-foreground/60">
+                    <span className="text-foreground/60 text-[10px] font-medium">
                       {vital.label}
                     </span>
                     <span className={`text-sm font-bold ${vital.color}`}>{vital.value}</span>

@@ -42,13 +42,9 @@ export function SovereigntyManager() {
 
   const utils = api.useUtils();
 
-  const { data: relations, isLoading } =
-    api.geo.getSovereigntyRelations.useQuery();
+  const { data: relations, isLoading } = api.geo.getSovereigntyRelations.useQuery();
 
-  const { data: dbCountries } = api.countries.getAll.useQuery(
-    { limit: 500 },
-    { staleTime: 60000 },
-  );
+  const { data: dbCountries } = api.countries.getAll.useQuery({ limit: 500 }, { staleTime: 60000 });
 
   const createMutation = api.geo.createSovereignty.useMutation({
     onSuccess: () => {
@@ -126,8 +122,7 @@ export function SovereigntyManager() {
   const filtered = useMemo(() => {
     if (!relations) return [];
     return relations.filter((r) => {
-      if (typeFilter !== "all" && r.relationshipType !== typeFilter)
-        return false;
+      if (typeFilter !== "all" && r.relationshipType !== typeFilter) return false;
       if (
         search &&
         !r.sovereignName.toLowerCase().includes(search.toLowerCase()) &&
@@ -138,8 +133,7 @@ export function SovereigntyManager() {
     });
   }, [relations, typeFilter, search]);
 
-  const typeLabel = (t: string) =>
-    SOVEREIGNTY_TYPES.find((s) => s.value === t)?.label ?? t;
+  const typeLabel = (t: string) => SOVEREIGNTY_TYPES.find((s) => s.value === t)?.label ?? t;
 
   if (isLoading) {
     return (
@@ -166,7 +160,7 @@ export function SovereigntyManager() {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+          className="border-border bg-background text-foreground rounded-lg border px-3 py-2 text-sm"
         >
           <option value="all">All Types</option>
           {SOVEREIGNTY_TYPES.map((t) => (
@@ -175,7 +169,7 @@ export function SovereigntyManager() {
             </option>
           ))}
         </select>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-muted-foreground text-sm">
           {filtered.length} relationship{filtered.length !== 1 ? "s" : ""}
         </span>
         <div className="flex-1" />
@@ -193,20 +187,18 @@ export function SovereigntyManager() {
       {/* Create/Edit Form */}
       {showForm && (
         <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
-          <h4 className="mb-3 text-sm font-semibold text-foreground">
+          <h4 className="text-foreground mb-3 text-sm font-semibold">
             {editingId ? "Edit Relationship" : "New Sovereignty Relationship"}
           </h4>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {/* Sovereign */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-foreground/80">
+              <label className="text-foreground/80 mb-1 block text-xs font-medium">
                 Sovereign (Parent)
               </label>
               <select
                 value={form.sovereignId}
-                onChange={(e) =>
-                  setForm({ ...form, sovereignId: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, sovereignId: e.target.value })}
                 disabled={!!editingId}
                 className={inputClasses}
               >
@@ -221,22 +213,18 @@ export function SovereigntyManager() {
 
             {/* Subject */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-foreground/80">
+              <label className="text-foreground/80 mb-1 block text-xs font-medium">
                 Subject (Dependency)
               </label>
               <select
                 value={form.subjectId}
-                onChange={(e) =>
-                  setForm({ ...form, subjectId: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
                 disabled={!!editingId}
                 className={inputClasses}
               >
                 <option value="">Select subject...</option>
                 {dbCountries?.countries
-                  ?.filter(
-                    (c: { id: string }) => c.id !== form.sovereignId
-                  )
+                  ?.filter((c: { id: string }) => c.id !== form.sovereignId)
                   .map((c: { id: string; name: string }) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -247,14 +235,12 @@ export function SovereigntyManager() {
 
             {/* Type */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-foreground/80">
+              <label className="text-foreground/80 mb-1 block text-xs font-medium">
                 Relationship Type
               </label>
               <select
                 value={form.relationshipType}
-                onChange={(e) =>
-                  setForm({ ...form, relationshipType: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, relationshipType: e.target.value })}
                 className={inputClasses}
               >
                 {SOVEREIGNTY_TYPES.map((t) => (
@@ -267,7 +253,7 @@ export function SovereigntyManager() {
 
             {/* Autonomy */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-foreground/80">
+              <label className="text-foreground/80 mb-1 block text-xs font-medium">
                 Autonomy Level: {form.autonomyLevel}%
               </label>
               <input
@@ -283,7 +269,7 @@ export function SovereigntyManager() {
                 }
                 className="w-full"
               />
-              <div className="flex justify-between text-[10px] text-muted-foreground">
+              <div className="text-muted-foreground flex justify-between text-[10px]">
                 <span>Full control</span>
                 <span>Autonomous</span>
               </div>
@@ -291,32 +277,28 @@ export function SovereigntyManager() {
 
             {/* Established Date */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-foreground/80">
+              <label className="text-foreground/80 mb-1 block text-xs font-medium">
                 Established Date
               </label>
               <input
                 type="text"
                 placeholder="e.g. 1832, IxYear 45"
                 value={form.establishedDate}
-                onChange={(e) =>
-                  setForm({ ...form, establishedDate: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, establishedDate: e.target.value })}
                 className={inputClasses}
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-foreground/80">
+              <label className="text-foreground/80 mb-1 block text-xs font-medium">
                 Description
               </label>
               <input
                 type="text"
                 placeholder="Optional notes..."
                 value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
                 className={inputClasses}
               />
             </div>
@@ -347,7 +329,7 @@ export function SovereigntyManager() {
             </button>
             <button
               onClick={resetForm}
-              className="rounded-lg px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent"
+              className="text-muted-foreground hover:bg-accent rounded-lg px-4 py-2 text-sm transition-colors"
             >
               Cancel
             </button>
@@ -356,37 +338,22 @@ export function SovereigntyManager() {
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <div className="border-border overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted">
-              <th className="px-4 py-3 text-left font-medium text-foreground/80">
-                Sovereign
-              </th>
-              <th className="px-4 py-3 text-left font-medium text-foreground/80">
-                Subject
-              </th>
-              <th className="px-4 py-3 text-left font-medium text-foreground/80">
-                Type
-              </th>
-              <th className="px-4 py-3 text-left font-medium text-foreground/80">
-                Autonomy
-              </th>
-              <th className="px-4 py-3 text-left font-medium text-foreground/80">
-                Est.
-              </th>
-              <th className="px-4 py-3 text-right font-medium text-foreground/80">
-                Actions
-              </th>
+            <tr className="border-border bg-muted border-b">
+              <th className="text-foreground/80 px-4 py-3 text-left font-medium">Sovereign</th>
+              <th className="text-foreground/80 px-4 py-3 text-left font-medium">Subject</th>
+              <th className="text-foreground/80 px-4 py-3 text-left font-medium">Type</th>
+              <th className="text-foreground/80 px-4 py-3 text-left font-medium">Autonomy</th>
+              <th className="text-foreground/80 px-4 py-3 text-left font-medium">Est.</th>
+              <th className="text-foreground/80 px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-8 text-center text-muted-foreground"
-                >
+                <td colSpan={6} className="text-muted-foreground px-4 py-8 text-center">
                   {relations?.length === 0
                     ? "No sovereignty relationships yet. Create one above."
                     : "No results match your filter."}
@@ -394,22 +361,17 @@ export function SovereigntyManager() {
               </tr>
             ) : (
               filtered.map((rel) => (
-                <tr
-                  key={rel.id}
-                  className="border-b border-border/50 last:border-0"
-                >
+                <tr key={rel.id} className="border-border/50 border-b last:border-0">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {rel.sovereignFlag && (
                         <img
                           src={rel.sovereignFlag}
                           alt=""
-                          className="h-4 w-6 rounded-sm border border-border object-cover"
+                          className="border-border h-4 w-6 rounded-sm border object-cover"
                         />
                       )}
-                      <span className="font-medium text-foreground">
-                        {rel.sovereignName}
-                      </span>
+                      <span className="text-foreground font-medium">{rel.sovereignName}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -418,12 +380,10 @@ export function SovereigntyManager() {
                         <img
                           src={rel.subjectFlag}
                           alt=""
-                          className="h-4 w-6 rounded-sm border border-border object-cover"
+                          className="border-border h-4 w-6 rounded-sm border object-cover"
                         />
                       )}
-                      <span className="text-foreground">
-                        {rel.subjectName}
-                      </span>
+                      <span className="text-foreground">{rel.subjectName}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -433,7 +393,7 @@ export function SovereigntyManager() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-16 rounded-full bg-muted">
+                      <div className="bg-muted h-1.5 w-16 rounded-full">
                         <div
                           className="h-1.5 rounded-full bg-blue-500"
                           style={{
@@ -441,12 +401,12 @@ export function SovereigntyManager() {
                           }}
                         />
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {Math.round(rel.autonomyLevel * 100)}%
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-3 text-xs">
                     {rel.establishedDate || "\u2014"}
                   </td>
                   <td className="px-4 py-3 text-right">

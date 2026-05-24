@@ -22,20 +22,14 @@ export async function GET(request: Request) {
     }
 
     if (!title) {
-      return NextResponse.json(
-        { error: "Article title is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Article title is required" }, { status: 400 });
     }
 
     // Generate card candidate (doesn't save to DB)
     const candidate = await wikiLoreCardGenerator.generateCard(title, source);
 
     if (!candidate) {
-      return NextResponse.json(
-        { error: "Article not found or quality too low" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Article not found or quality too low" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -49,9 +43,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("[Preview Article API] Error:", error);
-    return NextResponse.json(
-      { error: "Failed to preview article" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to preview article" }, { status: 500 });
   }
 }

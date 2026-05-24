@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Users,
-  FileText,
-  Vote,
-  Crown,
-  Eye,
-  UserPlus,
-  LogOut,
-  Loader2,
-} from "lucide-react";
+import { Users, FileText, Vote, Crown, Eye, UserPlus, LogOut, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -45,7 +36,12 @@ const ROLE_BADGES: Record<string, { color: string; label: string }> = {
   observer: { color: "bg-gray-500/20 text-gray-500", label: "Observer" },
 };
 
-export function AllianceDashboard({ allianceId, countryId, myRole, onLeave }: AllianceDashboardProps) {
+export function AllianceDashboard({
+  allianceId,
+  countryId,
+  myRole,
+  onLeave,
+}: AllianceDashboardProps) {
   const [inviteTarget, setInviteTarget] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
 
@@ -84,29 +80,38 @@ export function AllianceDashboard({ allianceId, countryId, myRole, onLeave }: Al
   };
 
   const targetCountries = relationships
-    ? [...new Map(
-        relationships
-          .filter((r) => !alliance.members.some((m) => m.countryId === r.targetCountryId))
-          .map((r) => [r.targetCountryId, { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId }])
-      ).values()]
+    ? [
+        ...new Map(
+          relationships
+            .filter((r) => !alliance.members.some((m) => m.countryId === r.targetCountryId))
+            .map((r) => [
+              r.targetCountryId,
+              { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },
+            ])
+        ).values(),
+      ]
     : [];
 
   return (
-    <div className="rounded-lg border border-cyan-500/20 p-4 space-y-4">
+    <div className="space-y-4 rounded-lg border border-cyan-500/20 p-4">
       {/* Alliance header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
-            className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
             style={{ backgroundColor: alliance.color }}
           >
             {alliance.shortName ?? alliance.name.slice(0, 2).toUpperCase()}
           </div>
           <div>
             <h3 className="font-semibold">{alliance.name}</h3>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Badge variant="outline" className="text-[10px]">{alliance.type}</Badge>
-              <Badge variant="outline" className="text-[10px]">{alliance.visibility}</Badge>
+            <div className="text-muted-foreground flex items-center gap-2 text-xs">
+              <Badge variant="outline" className="text-[10px]">
+                {alliance.type}
+              </Badge>
+              <Badge variant="outline" className="text-[10px]">
+                {alliance.visibility}
+              </Badge>
               <span>{alliance.memberCount} members</span>
             </div>
           </div>
@@ -124,9 +129,7 @@ export function AllianceDashboard({ allianceId, countryId, myRole, onLeave }: Al
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Invite Nation</DialogTitle>
-                  <DialogDescription>
-                    Invite a country to join {alliance.name}.
-                  </DialogDescription>
+                  <DialogDescription>Invite a country to join {alliance.name}.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <Select value={inviteTarget} onValueChange={setInviteTarget}>
@@ -172,28 +175,28 @@ export function AllianceDashboard({ allianceId, countryId, myRole, onLeave }: Al
       </div>
 
       {alliance.description && (
-        <p className="text-sm text-muted-foreground">{alliance.description}</p>
+        <p className="text-muted-foreground text-sm">{alliance.description}</p>
       )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 text-center">
         <div className="rounded-lg border p-2">
           <p className="text-lg font-bold">{alliance.memberCount}</p>
-          <p className="text-xs text-muted-foreground">Members</p>
+          <p className="text-muted-foreground text-xs">Members</p>
         </div>
         <div className="rounded-lg border p-2">
           <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalGdp)}</p>
-          <p className="text-xs text-muted-foreground">Combined GDP</p>
+          <p className="text-muted-foreground text-xs">Combined GDP</p>
         </div>
         <div className="rounded-lg border p-2">
           <p className="text-lg font-bold">{formatNumber(alliance.calculatedTotalPopulation, 0)}</p>
-          <p className="text-xs text-muted-foreground">Total Pop.</p>
+          <p className="text-muted-foreground text-xs">Total Pop.</p>
         </div>
       </div>
 
       {/* Members list */}
       <div>
-        <h4 className="text-sm font-semibold mb-2 flex items-center gap-1">
+        <h4 className="mb-2 flex items-center gap-1 text-sm font-semibold">
           <Users className="h-4 w-4" />
           Members
         </h4>
@@ -201,7 +204,7 @@ export function AllianceDashboard({ allianceId, countryId, myRole, onLeave }: Al
           {alliance.members.map((m) => {
             const roleBadge = ROLE_BADGES[m.role] ?? ROLE_BADGES.member!;
             return (
-              <div key={m.id} className="flex items-center justify-between text-sm py-1">
+              <div key={m.id} className="flex items-center justify-between py-1 text-sm">
                 <div className="flex items-center gap-2">
                   {m.role === "founder" && <Crown className="h-3 w-3 text-yellow-500" />}
                   {m.role === "observer" && <Eye className="h-3 w-3 text-gray-400" />}
@@ -217,14 +220,10 @@ export function AllianceDashboard({ allianceId, countryId, myRole, onLeave }: Al
       </div>
 
       {/* Collective actions */}
-      <CollectiveActionsPanel
-        allianceId={allianceId}
-        countryId={countryId}
-        myRole={myRole}
-      />
+      <CollectiveActionsPanel allianceId={allianceId} countryId={countryId} myRole={myRole} />
 
       {/* Quick stats */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-4 text-xs">
         <span className="flex items-center gap-1">
           <Vote className="h-3 w-3" />
           {alliance.pendingActions} pending proposals

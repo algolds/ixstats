@@ -96,24 +96,24 @@ export function BorderEditorTab() {
       <div className="flex w-72 flex-col gap-3">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search countries..."
-            className="w-full rounded-lg border border-border bg-muted/50 py-2 pl-9 pr-3 text-sm text-foreground placeholder-muted-foreground focus:border-blue-500/50 focus:outline-none"
+            className="border-border bg-muted/50 text-foreground placeholder-muted-foreground w-full rounded-lg border py-2 pr-3 pl-9 text-sm focus:border-blue-500/50 focus:outline-none"
           />
           {searchResults && searchQuery.length >= 2 && (
-            <div className="absolute top-full z-10 mt-1 w-full rounded-lg border border-border bg-card py-1 shadow-xl">
+            <div className="border-border bg-card absolute top-full z-10 mt-1 w-full rounded-lg border py-1 shadow-xl">
               {searchResults.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-muted-foreground">No results</div>
+                <div className="text-muted-foreground px-3 py-2 text-xs">No results</div>
               ) : (
                 searchResults.map((r) => (
                   <button
                     key={r.id}
                     onClick={() => handleSelectFeature(r.id, r.name)}
-                    className="w-full px-3 py-1.5 text-left text-sm text-foreground hover:bg-muted"
+                    className="text-foreground hover:bg-muted w-full px-3 py-1.5 text-left text-sm"
                   >
                     {r.name || r.id}
                   </button>
@@ -125,7 +125,7 @@ export function BorderEditorTab() {
 
         {/* Loading state */}
         {state.isLoading && (
-          <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-center gap-2 py-8">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span className="text-sm">Loading feature...</span>
           </div>
@@ -153,7 +153,7 @@ export function BorderEditorTab() {
       </div>
 
       {/* Center: Map */}
-      <div className="relative flex-1 overflow-hidden rounded-lg border border-border">
+      <div className="border-border relative flex-1 overflow-hidden rounded-lg border">
         <BorderEditorMap
           geometry={state.geometry}
           neighborGeometries={neighborGeoms}
@@ -168,7 +168,7 @@ export function BorderEditorTab() {
 
         {/* Toolbar overlay */}
         {state.featureId && (
-          <div className="absolute left-3 top-3 z-10">
+          <div className="absolute top-3 left-3 z-10">
             <BorderEditorToolbar
               mode={state.mode}
               onModeChange={actions.setMode}

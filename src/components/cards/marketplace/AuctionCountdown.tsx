@@ -81,9 +81,7 @@ function calculateCountdown(endTime: number): CountdownState {
  */
 export const AuctionCountdown = memo<AuctionCountdownProps>(
   ({ endTime, onExpire, className, showIcon = true, compact = false }) => {
-    const [countdown, setCountdown] = useState<CountdownState>(() =>
-      calculateCountdown(endTime)
-    );
+    const [countdown, setCountdown] = useState<CountdownState>(() => calculateCountdown(endTime));
 
     // Update countdown every second
     useEffect(() => {
@@ -123,8 +121,7 @@ export const AuctionCountdown = memo<AuctionCountdownProps>(
       // Full format: "1d 2h 30m 45s"
       const parts: string[] = [];
       if (countdown.days > 0) parts.push(`${countdown.days}d`);
-      if (countdown.hours > 0 || countdown.days > 0)
-        parts.push(`${countdown.hours}h`);
+      if (countdown.hours > 0 || countdown.days > 0) parts.push(`${countdown.hours}h`);
       if (countdown.minutes > 0 || countdown.hours > 0 || countdown.days > 0)
         parts.push(`${countdown.minutes}m`);
       parts.push(`${countdown.seconds}s`);
@@ -173,9 +170,7 @@ export const AuctionCountdown = memo<AuctionCountdownProps>(
           urgencyColors.bg,
           urgencyColors.border,
           urgencyColors.text,
-          countdown.urgency === "critical" &&
-            !countdown.isExpired &&
-            "animate-pulse",
+          countdown.urgency === "critical" && !countdown.isExpired && "animate-pulse",
           countdown.isExpired && "opacity-50",
           className
         )}
@@ -224,9 +219,7 @@ AuctionCountdown.displayName = "AuctionCountdown";
  * Hook for getting countdown state (useful for custom UI)
  */
 export function useCountdown(endTime: number): CountdownState {
-  const [countdown, setCountdown] = useState<CountdownState>(() =>
-    calculateCountdown(endTime)
-  );
+  const [countdown, setCountdown] = useState<CountdownState>(() => calculateCountdown(endTime));
 
   useEffect(() => {
     const interval = setInterval(() => {

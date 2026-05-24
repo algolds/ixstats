@@ -16,14 +16,7 @@ import {
   Line,
 } from "recharts";
 import { api, type RouterOutputs } from "~/trpc/react";
-import {
-  Loader2,
-  Shield,
-  Activity,
-  Factory,
-  TrendingUp,
-  AlertTriangle,
-} from "lucide-react";
+import { Loader2, Shield, Activity, Factory, TrendingUp, AlertTriangle } from "lucide-react";
 
 type UsageStats = RouterOutputs["militaryEquipment"]["getEquipmentUsageStats"];
 type ManufacturerStats = RouterOutputs["militaryEquipment"]["getManufacturerStats"];
@@ -109,7 +102,6 @@ export default function MilitaryEquipmentAnalyticsPage() {
     totalEquipment > 0
       ? allEquipment.reduce((sum, eq) => sum + (eq.technologyLevel ?? 0), 0) / totalEquipment
       : 0;
-
 
   // Prepare chart data
   const topEquipmentChartData = usageStats.topEquipment.map((eq) => ({
@@ -288,7 +280,9 @@ export default function MilitaryEquipmentAnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }: any) => `${name ?? ''}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  label={({ name, percent }: any) =>
+                    `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(0)}%`
+                  }
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -317,7 +311,9 @@ export default function MilitaryEquipmentAnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }: any) => `${name ?? ''}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  label={({ name, percent }: any) =>
+                    `${name ?? ""}: ${((percent ?? 0) * 100).toFixed(0)}%`
+                  }
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"

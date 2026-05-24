@@ -7,14 +7,7 @@
 import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { EnhancedBarChart, MetricCard } from "../../primitives/enhanced";
-import {
-  Target,
-  AlertTriangle,
-  DollarSign,
-  Zap,
-  CheckCircle,
-  Network,
-} from "lucide-react";
+import { Target, AlertTriangle, DollarSign, Zap, CheckCircle, Network } from "lucide-react";
 import { SPENDING_POLICIES } from "../../data/government-spending-policies";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { Badge } from "~/components/ui/badge";

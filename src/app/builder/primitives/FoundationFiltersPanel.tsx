@@ -2,13 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  ChevronDown,
-  ChevronUp,
-  X,
-  Sparkles,
-  RotateCcw,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, X, Sparkles, RotateCcw } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   archetypes,
@@ -144,8 +138,8 @@ export function FoundationFiltersPanel({
                     onClick={() => handleFilterSelect(archetype.id)}
                     className={cn(
                       "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs",
-                      "bg-emerald-500/20 border border-emerald-500/50 text-emerald-300",
-                      "hover:bg-emerald-500/30 transition-colors"
+                      "border border-emerald-500/50 bg-emerald-500/20 text-emerald-300",
+                      "transition-colors hover:bg-emerald-500/30"
                     )}
                   >
                     {archetype.name}
@@ -164,7 +158,7 @@ export function FoundationFiltersPanel({
             {selectedArchetypes.length > 0 && (
               <button
                 onClick={handleClearAll}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-secondary)] transition-colors"
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-secondary)]"
               >
                 <RotateCcw className="h-3 w-3" />
                 Clear
@@ -174,9 +168,13 @@ export function FoundationFiltersPanel({
             {/* Expand/Collapse toggle */}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="rounded-md p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="rounded-md p-1 text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]"
             >
-              {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              {isCollapsed ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronUp className="h-4 w-4" />
+              )}
             </button>
           </div>
         </div>
@@ -188,15 +186,15 @@ export function FoundationFiltersPanel({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ 
+              transition={{
                 height: { duration: 0.25, ease: [0.4, 0, 0.2, 1] },
-                opacity: { duration: 0.2, ease: "easeOut" }
+                opacity: { duration: 0.2, ease: "easeOut" },
               }}
               className="overflow-hidden"
             >
-              <div className="px-4 pb-4 pt-2">
+              <div className="px-4 pt-2 pb-4">
                 {/* Category tabs */}
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="mb-3 flex flex-wrap gap-2">
                   {consolidatedCategories.map((category) => {
                     const categoryArchetypes = archetypesByCategory.get(category.id) || [];
                     const selectedInCategory = selectedArchetypes.filter((id) =>
@@ -210,8 +208,8 @@ export function FoundationFiltersPanel({
                         className={cn(
                           "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all",
                           activeCategory === category.id
-                            ? "bg-emerald-500/20 border border-emerald-500/50 text-emerald-300"
-                            : "bg-[var(--color-bg-tertiary)] border border-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]/80 hover:text-[var(--color-text-primary)]"
+                            ? "border border-emerald-500/50 bg-emerald-500/20 text-emerald-300"
+                            : "border border-transparent bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]/80 hover:text-[var(--color-text-primary)]"
                         )}
                       >
                         {category.name}
@@ -239,10 +237,10 @@ export function FoundationFiltersPanel({
                       initial={{ height: 0, opacity: 0, y: -8 }}
                       animate={{ height: "auto", opacity: 1, y: 0 }}
                       exit={{ height: 0, opacity: 0, y: -8 }}
-                      transition={{ 
+                      transition={{
                         height: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
                         opacity: { duration: 0.15 },
-                        y: { duration: 0.2, ease: [0.4, 0, 0.2, 1] }
+                        y: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
                       }}
                       className="overflow-hidden"
                     >
@@ -259,8 +257,8 @@ export function FoundationFiltersPanel({
                               className={cn(
                                 "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all",
                                 isSelected
-                                  ? "bg-emerald-500/20 border border-emerald-500/50 text-emerald-300"
-                                  : "bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]/50 text-[var(--color-text-secondary)] hover:border-emerald-500/30 hover:text-[var(--color-text-primary)]"
+                                  ? "border border-emerald-500/50 bg-emerald-500/20 text-emerald-300"
+                                  : "border border-[var(--color-border-primary)]/50 bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:border-emerald-500/30 hover:text-[var(--color-text-primary)]"
                               )}
                             >
                               <Icon className={cn("h-4 w-4", archetype.color)} />
@@ -295,8 +293,8 @@ export function FoundationFiltersPanel({
                           onClick={() => handleFilterSelect(archetype.id)}
                           className={cn(
                             "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs",
-                            "bg-emerald-500/20 border border-emerald-500/50 text-emerald-300",
-                            "hover:bg-emerald-500/30 transition-colors"
+                            "border border-emerald-500/50 bg-emerald-500/20 text-emerald-300",
+                            "transition-colors hover:bg-emerald-500/30"
                           )}
                         >
                           <Icon className="h-3 w-3" />

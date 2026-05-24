@@ -46,7 +46,10 @@ export default function ExecutiveOperationsArticle() {
             <ol className="list-decimal space-y-1 pl-6">
               <li>
                 <strong>Review your dashboard:</strong> Open{" "}
-                <Link href="/mycountry/intelligence" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/mycountry/intelligence"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   MyCountry &rarr; Intelligence
                 </Link>{" "}
                 and scan for new signals -- vitality changes, hot issues, and fresh forecasts.
@@ -58,7 +61,8 @@ export default function ExecutiveOperationsArticle() {
               </li>
               <li>
                 <strong>Work the compliance queue:</strong> Review and clear overdue tasks. Each
-                resolved item keeps your governance running cleanly and can unlock new opportunities.
+                resolved item keeps your governance running cleanly and can unlock new
+                opportunities.
               </li>
               <li>
                 <strong>Document your decisions:</strong> Log important choices in ThinkPages so you
@@ -105,21 +109,30 @@ export default function ExecutiveOperationsArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <ClipboardSignature className="inline h-4 w-4" />{" "}
-              <Link href="/help/diplomacy/missions" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/diplomacy/missions"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Diplomatic Missions
               </Link>{" "}
               -- plan and execute missions that respond to intelligence findings.
             </li>
             <li>
               <ChartLine className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/forecasting" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/intelligence/forecasting"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Forecasting &amp; Predictions
               </Link>{" "}
               -- use forward-looking analytics to plan your next moves.
             </li>
             <li>
               <Target className="inline h-4 w-4" />{" "}
-              <Link href="/help/mycountry/executive" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/mycountry/executive"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 MyCountry Executive Guide
               </Link>{" "}
               -- full walkthrough of your executive command center.

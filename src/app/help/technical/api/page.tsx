@@ -1,7 +1,13 @@
 "use client";
 
 import { Code2, ShieldCheck } from "lucide-react";
-import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
+import {
+  ArticleLayout,
+  Section,
+  InfoBox,
+  WarningBox,
+  ContentCard,
+} from "../../_components/ArticleLayout";
 
 export default function ApiArticle() {
   return (
@@ -14,7 +20,10 @@ export default function ApiArticle() {
         <Section title="Structure">
           <ul className="list-disc space-y-2 pl-6">
             <li>61 tRPC routers providing 927 endpoints across all platform domains.</li>
-            <li>Shared context, middleware, rate limiting, and helpers defined in the tRPC base configuration.</li>
+            <li>
+              Shared context, middleware, rate limiting, and helpers defined in the tRPC base
+              configuration.
+            </li>
             <li>Type-safe client hooks are auto-generated for use in React components.</li>
             <li>Rate limiting middleware with tiered limits (10-120 req/min) for security.</li>
           </ul>
@@ -39,12 +48,10 @@ export default function ApiArticle() {
         <WarningBox title="Best Practices">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              <ShieldCheck className="inline h-4 w-4" /> Use protected procedures and role checks for
-              sensitive operations.
+              <ShieldCheck className="inline h-4 w-4" /> Use protected procedures and role checks
+              for sensitive operations.
             </li>
-            <li>
-              Add test coverage for complex business logic in router procedures.
-            </li>
+            <li>Add test coverage for complex business logic in router procedures.</li>
           </ul>
         </WarningBox>
       </ContentCard>

@@ -41,38 +41,62 @@ export function CommunicationsPanel({ countryId }: CommunicationsPanelProps) {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Secure Communications - Help</DialogTitle>
-              <DialogDescription>Understanding security classifications, encryption, and channels</DialogDescription>
+              <DialogDescription>
+                Understanding security classifications, encryption, and channels
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <h3 className="font-semibold mb-2">🔒 Security Classifications</h3>
+                <h3 className="mb-2 font-semibold">🔒 Security Classifications</h3>
                 <div className="space-y-2 text-sm">
-                  <p><strong>PUBLIC:</strong> General diplomatic correspondence</p>
-                  <p><strong>RESTRICTED:</strong> Internal government communications</p>
-                  <p><strong>CONFIDENTIAL:</strong> Sensitive diplomatic matters</p>
-                  <p><strong>SECRET:</strong> Highly sensitive state affairs</p>
-                  <p><strong>TOP SECRET:</strong> Most critical national security matters</p>
+                  <p>
+                    <strong>PUBLIC:</strong> General diplomatic correspondence
+                  </p>
+                  <p>
+                    <strong>RESTRICTED:</strong> Internal government communications
+                  </p>
+                  <p>
+                    <strong>CONFIDENTIAL:</strong> Sensitive diplomatic matters
+                  </p>
+                  <p>
+                    <strong>SECRET:</strong> Highly sensitive state affairs
+                  </p>
+                  <p>
+                    <strong>TOP SECRET:</strong> Most critical national security matters
+                  </p>
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold mb-2">🔐 Encryption Status</h3>
+                <h3 className="mb-2 font-semibold">🔐 Encryption Status</h3>
                 <div className="space-y-2 text-sm">
-                  <p><strong>Encrypted:</strong> End-to-end encrypted with verified keys</p>
-                  <p><strong>Signature Verified:</strong> Sender identity confirmed</p>
-                  <p><strong>Key Expiry:</strong> Encryption keys have expiration dates</p>
+                  <p>
+                    <strong>Encrypted:</strong> End-to-end encrypted with verified keys
+                  </p>
+                  <p>
+                    <strong>Signature Verified:</strong> Sender identity confirmed
+                  </p>
+                  <p>
+                    <strong>Key Expiry:</strong> Encryption keys have expiration dates
+                  </p>
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold mb-2">📡 Channel Types</h3>
+                <h3 className="mb-2 font-semibold">📡 Channel Types</h3>
                 <div className="space-y-2 text-sm">
-                  <p><strong>BILATERAL:</strong> One-on-one communication between two nations</p>
-                  <p><strong>MULTILATERAL:</strong> Group communication with multiple nations</p>
-                  <p><strong>EMERGENCY:</strong> High-priority crisis communication</p>
+                  <p>
+                    <strong>BILATERAL:</strong> One-on-one communication between two nations
+                  </p>
+                  <p>
+                    <strong>MULTILATERAL:</strong> Group communication with multiple nations
+                  </p>
+                  <p>
+                    <strong>EMERGENCY:</strong> High-priority crisis communication
+                  </p>
                 </div>
               </div>
               <div>
-                <h3 className="font-semibold mb-2">💡 Tips</h3>
-                <div className="space-y-1 text-sm text-muted-foreground">
+                <h3 className="mb-2 font-semibold">💡 Tips</h3>
+                <div className="text-muted-foreground space-y-1 text-sm">
                   <p>• Always verify encryption status before sending sensitive information</p>
                   <p>• Use appropriate classification levels for message content</p>
                   <p>• Emergency channels are monitored 24/7 for urgent matters</p>

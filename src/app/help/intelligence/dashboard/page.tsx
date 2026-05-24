@@ -39,8 +39,8 @@ export default function IntelligenceDashboardArticle() {
           <InfoBox title="Tips for Getting the Most Out of Your Dashboard">
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                Start each session here to review new alerts, compliance tasks, and quick wins before
-                diving into other areas.
+                Start each session here to review new alerts, compliance tasks, and quick wins
+                before diving into other areas.
               </li>
               <li>
                 Use the action buttons on each card to jump directly into related areas -- schedule
@@ -80,21 +80,30 @@ export default function IntelligenceDashboardArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Radar className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/metrics" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/intelligence/metrics"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Key Metrics &amp; Indicators
               </Link>{" "}
               -- deep dive into what each score means and how to act on it.
             </li>
             <li>
               <Globe className="inline h-4 w-4" />{" "}
-              <Link href="/help/diplomacy/embassies" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/diplomacy/embassies"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Embassies &amp; Diplomacy
               </Link>{" "}
               -- learn how your diplomatic network feeds into your intelligence picture.
             </li>
             <li>
               <Compass className="inline h-4 w-4" />{" "}
-              <Link href="/help/mycountry/intelligence" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/mycountry/intelligence"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 MyCountry Intelligence Guide
               </Link>{" "}
               -- full walkthrough of the Intelligence section.

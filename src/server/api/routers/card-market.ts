@@ -57,7 +57,7 @@ export const cardMarketRouter = createTRPCRouter({
 
         const auction = await auctionService.createAuction(
           {
-            userId: ctx.auth.userId,
+            userId: ctx.user.id,
             cardId: input.cardId,
             startingPrice: input.startingPrice,
             buyoutPrice: input.buyoutPrice,
@@ -119,7 +119,7 @@ export const cardMarketRouter = createTRPCRouter({
 
         await auctionService.placeBid(
           {
-            userId: ctx.auth.userId,
+            userId: ctx.user.id,
             auctionId: input.auctionId,
             amount: input.amount,
           },
@@ -130,11 +130,16 @@ export const cardMarketRouter = createTRPCRouter({
         try {
           const auction = await ctx.db.cardAuction.findUnique({
             where: { id: input.auctionId },
-            select: { sellerId: true },
+            select: {
+              sellerId: true,
+              User: {
+                select: { clerkUserId: true },
+              },
+            },
           });
-          if (auction && auction.sellerId !== ctx.auth.userId) {
+          if (auction && auction.User?.clerkUserId !== ctx.auth.userId) {
             await notificationAPI.create({
-              userId: auction.sellerId,
+              userId: auction.User.clerkUserId,
               title: "New Bid on Your Auction",
               message: `Someone bid ${input.amount} IxC on your auction`,
               type: "CARD",
@@ -182,7 +187,7 @@ export const cardMarketRouter = createTRPCRouter({
 
         await auctionService.executeBuyout(
           {
-            userId: ctx.auth.userId,
+            userId: ctx.user.id,
             auctionId: input.auctionId,
           },
           ctx.db
@@ -192,11 +197,17 @@ export const cardMarketRouter = createTRPCRouter({
         try {
           const auction = await ctx.db.cardAuction.findUnique({
             where: { id: input.auctionId },
-            select: { sellerId: true, buyoutPrice: true },
+            select: {
+              sellerId: true,
+              buyoutPrice: true,
+              User: {
+                select: { clerkUserId: true },
+              },
+            },
           });
-          if (auction && auction.sellerId !== ctx.auth.userId) {
+          if (auction && auction.User?.clerkUserId !== ctx.auth.userId) {
             await notificationAPI.create({
-              userId: auction.sellerId,
+              userId: auction.User.clerkUserId,
               title: "Card Sold!",
               message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxC`,
               type: "CARD",
@@ -243,18 +254,24 @@ export const cardMarketRouter = createTRPCRouter({
         }
 
         // Get bidder before cancellation (fire-and-forget notification)
-        let currentBidderId: string | null = null;
+        let currentBidderClerkId: string | null = null;
         try {
           const auction = await ctx.db.cardAuction.findUnique({
             where: { id: input.auctionId },
             select: { currentBidderId: true },
           });
-          currentBidderId = auction?.currentBidderId ?? null;
+          if (auction?.currentBidderId) {
+            const bidder = await ctx.db.user.findUnique({
+              where: { id: auction.currentBidderId },
+              select: { clerkUserId: true },
+            });
+            currentBidderClerkId = bidder?.clerkUserId ?? null;
+          }
         } catch {}
 
         await auctionService.cancelAuction(
           {
-            userId: ctx.auth.userId,
+            userId: ctx.user.id,
             auctionId: input.auctionId,
           },
           ctx.db
@@ -262,9 +279,9 @@ export const cardMarketRouter = createTRPCRouter({
 
         // Notification: notify current bidder about cancellation
         try {
-          if (currentBidderId && currentBidderId !== ctx.auth.userId) {
+          if (currentBidderClerkId && currentBidderClerkId !== ctx.auth.userId) {
             await notificationAPI.create({
-              userId: currentBidderId,
+              userId: currentBidderClerkId,
               title: "Auction Cancelled",
               message: "An auction you bid on has been cancelled",
               type: "CARD",
@@ -453,7 +470,7 @@ export const cardMarketRouter = createTRPCRouter({
 
       const auctions = await ctx.db.cardAuction.findMany({
         where: {
-          sellerId: ctx.auth.userId,
+          sellerId: ctx.user.id,
           status: "ACTIVE",
         },
         include: {
@@ -506,7 +523,7 @@ export const cardMarketRouter = createTRPCRouter({
       // Get auctions where user is current bidder
       const auctions = await ctx.db.cardAuction.findMany({
         where: {
-          currentBidderId: ctx.auth.userId,
+          currentBidderId: ctx.user.id,
           status: "ACTIVE",
         },
         include: {
@@ -560,9 +577,19 @@ export const cardMarketRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
+        let sellerId = input.userId;
+        if (sellerId && sellerId.startsWith("user_")) {
+          const dbUser = await ctx.db.user.findUnique({
+            where: { clerkUserId: sellerId },
+            select: { id: true },
+          });
+          if (dbUser) {
+            sellerId = dbUser.id;
+          }
+        }
         const where = {
           status: { in: ["COMPLETED", "CANCELLED"] },
-          ...(input.userId ? { sellerId: input.userId } : {}),
+          ...(sellerId ? { sellerId } : {}),
         };
 
         const [total, auctions] = await Promise.all([

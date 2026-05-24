@@ -81,8 +81,8 @@ export function EconomicControlCard({
           Global Economic Controls
         </CardTitle>
         <CardDescription>
-          Growth factor, inflation, tier modifiers, and diminishing returns.
-          Changes apply on next calculation cycle.
+          Growth factor, inflation, tier modifiers, and diminishing returns. Changes apply on next
+          calculation cycle.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -101,7 +101,7 @@ export function EconomicControlCard({
             max={2.0}
             step={0.001}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>-50%</span>
             <span>0%</span>
             <span>+3.21%</span>
@@ -111,11 +111,17 @@ export function EconomicControlCard({
             {GROWTH_PRESETS.map((preset) => (
               <Button
                 key={preset.label}
-                variant={Math.abs(globalGrowthFactor - preset.value) < 0.001 ? "default" : "outline"}
+                variant={
+                  Math.abs(globalGrowthFactor - preset.value) < 0.001 ? "default" : "outline"
+                }
                 size="sm"
                 onClick={() => onGlobalGrowthFactorChange(preset.value)}
               >
-                <span className={Math.abs(globalGrowthFactor - preset.value) < 0.001 ? "" : preset.color}>
+                <span
+                  className={
+                    Math.abs(globalGrowthFactor - preset.value) < 0.001 ? "" : preset.color
+                  }
+                >
                   {preset.label}
                 </span>
               </Button>
@@ -140,7 +146,7 @@ export function EconomicControlCard({
             max={0.1}
             step={0.001}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>0%</span>
             <span>2% (default)</span>
             <span>5%</span>
@@ -154,9 +160,9 @@ export function EconomicControlCard({
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Label className="text-sm font-medium">Diminishing Returns</Label>
-            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+            <Info className="text-muted-foreground h-3.5 w-3.5" />
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Countries above the GDP/capita threshold experience reduced growth rates.
           </p>
 
@@ -190,7 +196,7 @@ export function EconomicControlCard({
               max={1.0}
               step={0.01}
             />
-            <div className="flex justify-between text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex justify-between text-xs">
               <span>Weak (0.1)</span>
               <span>Default (0.5)</span>
               <span>Strong (1.0)</span>
@@ -215,7 +221,7 @@ export function EconomicControlCard({
             max={0}
             step={0.005}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>-20%</span>
             <span>-10% (default)</span>
             <span>0%</span>
@@ -231,21 +237,19 @@ export function EconomicControlCard({
             onClick={() => setShowTierModifiers(!showTierModifiers)}
             className="flex w-full items-center justify-between text-left"
           >
-            <Label className="cursor-pointer text-sm font-medium">
-              Tier Growth Modifiers
-            </Label>
+            <Label className="cursor-pointer text-sm font-medium">Tier Growth Modifiers</Label>
             {showTierModifiers ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              <ChevronUp className="text-muted-foreground h-4 w-4" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="text-muted-foreground h-4 w-4" />
             )}
           </button>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Per-tier multipliers applied to base growth rates. 1.0x = no change.
           </p>
 
           {showTierModifiers && (
-            <div className="space-y-3 rounded-lg border border-border/50 bg-card/50 p-3">
+            <div className="border-border/50 bg-card/50 space-y-3 rounded-lg border p-3">
               {TIER_INFO.map(({ tier, range, maxGrowth }) => {
                 const value = tierGrowthModifiers[tier] ?? 1.0;
                 return (
@@ -253,12 +257,17 @@ export function EconomicControlCard({
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-medium">{tier}</span>
                       <span className="text-muted-foreground">
-                        {range} | max {maxGrowth} | <span className="tabular-nums font-medium text-foreground">{value.toFixed(2)}x</span>
+                        {range} | max {maxGrowth} |{" "}
+                        <span className="text-foreground font-medium tabular-nums">
+                          {value.toFixed(2)}x
+                        </span>
                       </span>
                     </div>
                     <Slider
                       value={[value]}
-                      onValueChange={([v]) => v !== undefined && onTierGrowthModifierChange(tier, v)}
+                      onValueChange={([v]) =>
+                        v !== undefined && onTierGrowthModifierChange(tier, v)
+                      }
                       min={0.5}
                       max={2.0}
                       step={0.01}
@@ -270,7 +279,9 @@ export function EconomicControlCard({
                 variant="ghost"
                 size="sm"
                 className="w-full text-xs"
-                onClick={() => TIER_INFO.forEach(({ tier }) => onTierGrowthModifierChange(tier, 1.0))}
+                onClick={() =>
+                  TIER_INFO.forEach(({ tier }) => onTierGrowthModifierChange(tier, 1.0))
+                }
               >
                 Reset All to 1.0x
               </Button>
@@ -282,22 +293,26 @@ export function EconomicControlCard({
 
         {/* Toggle Settings */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border border-border/50 bg-card/50 p-3">
+          <div className="border-border/50 bg-card/50 flex items-center justify-between rounded-lg border p-3">
             <div className="space-y-0.5">
-              <Label htmlFor="auto-update" className="text-sm font-medium">Auto Calculations</Label>
-              <p className="text-xs text-muted-foreground">Enable automatic economic calculations</p>
+              <Label htmlFor="auto-update" className="text-sm font-medium">
+                Auto Calculations
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Enable automatic economic calculations
+              </p>
             </div>
-            <Switch
-              id="auto-update"
-              checked={autoUpdate}
-              onCheckedChange={onAutoUpdateChange}
-            />
+            <Switch id="auto-update" checked={autoUpdate} onCheckedChange={onAutoUpdateChange} />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-border/50 bg-card/50 p-3">
+          <div className="border-border/50 bg-card/50 flex items-center justify-between rounded-lg border p-3">
             <div className="space-y-0.5">
-              <Label htmlFor="bot-sync" className="text-sm font-medium">Discord Bot Sync</Label>
-              <p className="text-xs text-muted-foreground">Enable time synchronization with Discord bot</p>
+              <Label htmlFor="bot-sync" className="text-sm font-medium">
+                Discord Bot Sync
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Enable time synchronization with Discord bot
+              </p>
             </div>
             <Switch
               id="bot-sync"
@@ -313,7 +328,7 @@ export function EconomicControlCard({
         <Button
           onClick={onForceCalculation}
           disabled={calculationPending}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+          className="w-full bg-orange-600 text-white hover:bg-orange-700"
         >
           {calculationPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -246,12 +246,13 @@ export function SecureCommunications({
         encrypted: conv.encrypted || false,
         lastActivity: conv.lastActivity,
         unreadCount: conv.unreadCount || 0,
-        participants: conv.otherParticipants?.map((p: any) => ({
-          countryId: p.userId,
-          countryName: p.account?.displayName || p.userId,
-          flagUrl: p.account?.profileImageUrl || undefined,
-          role: p.role?.toUpperCase() || "MEMBER",
-        })) || [],
+        participants:
+          conv.otherParticipants?.map((p: any) => ({
+            countryId: p.userId,
+            countryName: p.account?.displayName || p.userId,
+            flagUrl: p.account?.profileImageUrl || undefined,
+            role: p.role?.toUpperCase() || "MEMBER",
+          })) || [],
       }));
   }, [conversationsData, clearanceLevel]);
 
@@ -298,7 +299,10 @@ export function SecureCommunications({
 
   const sendMessageMutation = api.thinkpages.sendMessage.useMutation({
     onSuccess: () => {
-      notify.success("Message sent successfully", encryptMessage ? "Message encrypted and delivered" : "Message delivered");
+      notify.success(
+        "Message sent successfully",
+        encryptMessage ? "Message encrypted and delivered" : "Message delivered"
+      );
       setMessageContent("");
       setMessageSubject("");
       setShowNewMessage(false);
@@ -329,8 +333,9 @@ export function SecureCommunications({
       filtered = filtered.filter(
         (ch) =>
           ch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ch.participants.some((p: { countryId: string; countryName: string; flagUrl?: string; role: string }) =>
-            p.countryName.toLowerCase().includes(searchQuery.toLowerCase())
+          ch.participants.some(
+            (p: { countryId: string; countryName: string; flagUrl?: string; role: string }) =>
+              p.countryName.toLowerCase().includes(searchQuery.toLowerCase())
           )
       );
     }

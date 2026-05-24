@@ -72,7 +72,9 @@ async function enhanceAltitudeFeatures() {
     // Match by color
     const zone = getZoneByColor(fillColor);
     if (!zone) {
-      console.log(`  WARNING: No zone match for color "${fillColor}" on feature ${layer.featureId}`);
+      console.log(
+        `  WARNING: No zone match for color "${fillColor}" on feature ${layer.featureId}`
+      );
       unmatched++;
       continue;
     }
@@ -88,7 +90,9 @@ async function enhanceAltitudeFeatures() {
     };
 
     if (isDryRun) {
-      console.log(`  [DRY RUN] Would update ${layer.featureId}: ${zone.zoneName} (${zone.elevationMin}-${zone.elevationMax}m)`);
+      console.log(
+        `  [DRY RUN] Would update ${layer.featureId}: ${zone.zoneName} (${zone.elevationMin}-${zone.elevationMax}m)`
+      );
     } else {
       await prisma.mapLayer.update({
         where: { id: layer.id },

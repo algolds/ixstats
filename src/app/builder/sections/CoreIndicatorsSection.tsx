@@ -2,11 +2,7 @@
 
 import React, { useMemo } from "react";
 import { BarChart3, TrendingUp, Users, DollarSign, Activity } from "lucide-react";
-import {
-  EnhancedNumberInput,
-  MetricCard,
-  SliderWithDirectInput,
-} from "../primitives/enhanced";
+import { EnhancedNumberInput, MetricCard, SliderWithDirectInput } from "../primitives/enhanced";
 import { GlassBarChart } from "~/components/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";

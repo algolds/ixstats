@@ -42,22 +42,24 @@ export function ActivityFeedContainer() {
   });
 
   // Type-cast activities to ensure type safety
-  const activities = (feedData?.activities || []).map(activity => ({
+  const activities = (feedData?.activities || []).map((activity) => ({
     ...activity,
-    type: activity.type as "achievement" | "diplomatic" | "economic" | "social" | "meta"
+    type: activity.type as "achievement" | "diplomatic" | "economic" | "social" | "meta",
   }));
 
   return (
-    <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8">
+    <div className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2 sm:gap-3">
-              <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 dark:text-purple-400" />
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Activity Feed</h1>
+              <Activity className="h-6 w-6 text-purple-600 sm:h-8 sm:w-8 dark:text-purple-400" />
+              <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
+                Activity Feed
+              </h1>
             </div>
-            <p className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300">
+            <p className="text-sm text-slate-600 sm:text-base lg:text-lg dark:text-slate-300">
               Real-time platform activity and updates
             </p>
           </div>
@@ -72,12 +74,7 @@ export function ActivityFeedContainer() {
               <Filter className="mr-2 h-4 w-4" />
               Filters
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
           </div>
@@ -85,26 +82,34 @@ export function ActivityFeedContainer() {
 
         {/* Stats Bar */}
         {stats && (
-          <div className="mt-4 sm:mt-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
             <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Total Activities</div>
-              <div className="text-foreground text-xl sm:text-2xl font-bold">{stats.totalActivities}</div>
+              <div className="text-foreground text-xl font-bold sm:text-2xl">
+                {stats.totalActivities}
+              </div>
             </div>
             <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Likes</div>
-              <div className="text-foreground text-xl sm:text-2xl font-bold">{stats.totalLikes}</div>
+              <div className="text-foreground text-xl font-bold sm:text-2xl">
+                {stats.totalLikes}
+              </div>
             </div>
             <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Comments</div>
-              <div className="text-foreground text-xl sm:text-2xl font-bold">{stats.totalComments}</div>
+              <div className="text-foreground text-xl font-bold sm:text-2xl">
+                {stats.totalComments}
+              </div>
             </div>
             <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Shares</div>
-              <div className="text-foreground text-xl sm:text-2xl font-bold">{stats.totalShares}</div>
+              <div className="text-foreground text-xl font-bold sm:text-2xl">
+                {stats.totalShares}
+              </div>
             </div>
-            <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 col-span-2 sm:col-span-1">
+            <div className="glass-hierarchy-child col-span-2 rounded-lg p-3 sm:col-span-1 sm:p-4">
               <div className="text-muted-foreground mb-1 text-xs">Views</div>
-              <div className="text-foreground text-xl sm:text-2xl font-bold">
+              <div className="text-foreground text-xl font-bold sm:text-2xl">
                 {(stats.totalViews / 1000).toFixed(1)}k
               </div>
             </div>
@@ -114,7 +119,7 @@ export function ActivityFeedContainer() {
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Main Feed */}
-        <div className="lg:col-span-2 min-w-0">
+        <div className="min-w-0 lg:col-span-2">
           {/* Mobile Filter Button */}
           <div className="mb-4 sm:hidden">
             <Button
@@ -218,9 +223,7 @@ export function ActivityFeedContainer() {
                 />
               </button>
             </div>
-            <p className="text-muted-foreground text-xs">
-              Automatically refresh every 30 seconds
-            </p>
+            <p className="text-muted-foreground text-xs">Automatically refresh every 30 seconds</p>
           </div>
 
           {/* Quick Stats */}

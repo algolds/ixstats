@@ -38,16 +38,21 @@ export const ComparativeAnalysisChart = React.memo(function ComparativeAnalysisC
           <BarChart3 className="h-5 w-5 text-blue-600" />
           Comparative Policy Analysis
         </CardTitle>
-        <CardDescription>
-          Your country vs. similar nations (by GDP per capita)
-        </CardDescription>
+        <CardDescription>Your country vs. similar nations (by GDP per capita)</CardDescription>
       </CardHeader>
       <CardContent>
         {comparativeData && comparativeData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300} className="sm:h-[350px] lg:h-[400px]">
             <BarChart data={comparativeData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="name" className="text-xs" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
+              <XAxis
+                dataKey="name"
+                className="text-xs"
+                tick={{ fontSize: 10 }}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
               <YAxis className="text-xs" tick={{ fontSize: 10 }} />
               <Tooltip
                 contentStyle={{
@@ -64,8 +69,8 @@ export const ComparativeAnalysisChart = React.memo(function ComparativeAnalysisC
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            <BarChart3 className="mx-auto h-12 w-12 opacity-50 mb-4" />
+          <div className="text-muted-foreground py-12 text-center">
+            <BarChart3 className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>No comparative data available</p>
           </div>
         )}

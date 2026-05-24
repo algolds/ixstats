@@ -157,19 +157,22 @@ export function DiplomaticHealthRing({
           whileHover={interactive ? { scale: 1.05 } : {}}
           whileTap={interactive ? { scale: 0.95 } : {}}
         >
-          <HealthRing value={score} size={config.diameter} color={color} label="Diplomatic Health" />
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none"
-          >
+          <HealthRing
+            value={score}
+            size={config.diameter}
+            color={color}
+            label="Diplomatic Health"
+          />
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
             <Globe size={config.iconSize} className="mb-0.5" style={{ color }} />
-            <div className="text-[10px] font-bold leading-tight" style={{ color }}>
+            <div className="text-[10px] leading-tight font-bold" style={{ color }}>
               {score}
             </div>
           </div>
         </motion.div>
       </TooltipTrigger>
 
-      <TooltipContent className="glass-hierarchy-child max-w-xs p-4 bg-background/95 backdrop-blur-xl border-2">
+      <TooltipContent className="glass-hierarchy-child bg-background/95 max-w-xs border-2 p-4 backdrop-blur-xl">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Globe size={16} style={{ color }} />

@@ -13,8 +13,7 @@ import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 
 export function WorldMapManager() {
-  const [selectedFeature, setSelectedFeature] =
-    useState<SelectedCountry | null>(null);
+  const [selectedFeature, setSelectedFeature] = useState<SelectedCountry | null>(null);
 
   // Fetch country list for the selected feature lookup
   const { data: featureList } = api.geo.listCountries.useQuery();
@@ -23,15 +22,13 @@ export function WorldMapManager() {
     setSelectedFeature(country);
   }, []);
 
-  const selectedInfo = featureList?.find(
-    (f) => f.featureId === selectedFeature?.featureId
-  );
+  const selectedInfo = featureList?.find((f) => f.featureId === selectedFeature?.featureId);
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {/* Map area */}
       <div className="lg:col-span-2">
-        <div className="relative h-[500px] overflow-hidden rounded-xl border border-border">
+        <div className="border-border relative h-[500px] overflow-hidden rounded-xl border">
           <MapContainer
             showControls={true}
             showTools={false}
@@ -43,20 +40,18 @@ export function WorldMapManager() {
 
       {/* Detail panel */}
       <div className="space-y-4">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold text-foreground">
-            Feature Inspector
-          </h3>
+        <div className="border-border bg-card rounded-xl border p-4">
+          <h3 className="text-foreground text-sm font-semibold">Feature Inspector</h3>
 
           {selectedFeature ? (
             <div className="mt-3 space-y-3">
               {/* Feature header */}
               <div className="flex items-center gap-2">
                 <div
-                  className="h-5 w-5 rounded border border-border"
+                  className="border-border h-5 w-5 rounded border"
                   style={{ backgroundColor: selectedFeature.fillColor }}
                 />
-                <span className="text-lg font-semibold text-foreground">
+                <span className="text-foreground text-lg font-semibold">
                   {selectedFeature.displayName}
                 </span>
               </div>
@@ -65,13 +60,11 @@ export function WorldMapManager() {
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Feature ID</dt>
-                  <dd className="font-mono text-foreground">
-                    {selectedFeature.featureId}
-                  </dd>
+                  <dd className="text-foreground font-mono">{selectedFeature.featureId}</dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Centroid</dt>
-                  <dd className="font-mono text-foreground">
+                  <dd className="text-foreground font-mono">
                     {selectedFeature.centroidLat.toFixed(2)},{" "}
                     {selectedFeature.centroidLng.toFixed(2)}
                   </dd>
@@ -101,7 +94,7 @@ export function WorldMapManager() {
                 {selectedInfo?.countryId && (
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">Country ID</dt>
-                    <dd className="truncate font-mono text-xs text-muted-foreground">
+                    <dd className="text-muted-foreground truncate font-mono text-xs">
                       {selectedInfo.countryId}
                     </dd>
                   </div>
@@ -109,17 +102,15 @@ export function WorldMapManager() {
               </dl>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-3 text-sm">
               Click a country on the map to inspect it
             </p>
           )}
         </div>
 
         {/* Quick stats */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="text-sm font-semibold text-foreground">
-            Layer Counts
-          </h3>
+        <div className="border-border bg-card rounded-xl border p-4">
+          <h3 className="text-foreground text-sm font-semibold">Layer Counts</h3>
           <LayerCountList />
         </div>
       </div>
@@ -131,17 +122,15 @@ function LayerCountList() {
   const { data: layerInfo, isLoading } = api.geo.getLayerInfo.useQuery();
 
   if (isLoading) {
-    return <p className="mt-2 text-sm text-muted-foreground">Loading...</p>;
+    return <p className="text-muted-foreground mt-2 text-sm">Loading...</p>;
   }
 
   return (
     <ul className="mt-2 space-y-1.5">
       {layerInfo?.map((layer) => (
         <li key={layer.type} className="flex items-center justify-between text-sm">
-          <span className="capitalize text-foreground/80">
-            {layer.type}
-          </span>
-          <span className="font-mono text-muted-foreground">
+          <span className="text-foreground/80 capitalize">{layer.type}</span>
+          <span className="text-muted-foreground font-mono">
             {layer.featureCount.toLocaleString()}
           </span>
         </li>

@@ -53,8 +53,11 @@ export default function DiffPage() {
                 {data.from.timestamp && (
                   <span className="wikios-diff-time">
                     {new Date(data.from.timestamp).toLocaleString("en-US", {
-                      month: "short", day: "numeric", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </span>
                 )}
@@ -69,8 +72,11 @@ export default function DiffPage() {
                 {data.to.timestamp && (
                   <span className="wikios-diff-time">
                     {new Date(data.to.timestamp).toLocaleString("en-US", {
-                      month: "short", day: "numeric", year: "numeric",
-                      hour: "2-digit", minute: "2-digit",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </span>
                 )}
@@ -85,7 +91,12 @@ export default function DiffPage() {
               {!undoConfirm ? (
                 <button
                   className="wikios-action-btn"
-                  style={{ background: "rgba(251,191,36,0.12)", borderColor: "rgba(251,191,36,0.3)", color: "#fbbf24", fontSize: "0.8125rem" }}
+                  style={{
+                    background: "rgba(251,191,36,0.12)",
+                    borderColor: "rgba(251,191,36,0.3)",
+                    color: "#fbbf24",
+                    fontSize: "0.8125rem",
+                  }}
                   onClick={() => setUndoConfirm(true)}
                 >
                   Undo this change (revert to r{data.from.revid})
@@ -94,7 +105,12 @@ export default function DiffPage() {
                 <>
                   <button
                     className="wikios-action-btn"
-                    style={{ background: "rgba(239,68,68,0.15)", borderColor: "rgba(239,68,68,0.3)", color: "#f87171", fontSize: "0.8125rem" }}
+                    style={{
+                      background: "rgba(239,68,68,0.15)",
+                      borderColor: "rgba(239,68,68,0.3)",
+                      color: "#f87171",
+                      fontSize: "0.8125rem",
+                    }}
                     disabled={revertMutation.isPending || !revContent}
                     onClick={() => {
                       if (revContent) {
@@ -120,12 +136,32 @@ export default function DiffPage() {
             </div>
 
             {revertMutation.isSuccess && (
-              <div style={{ marginBottom: 12, padding: "8px 12px", borderRadius: 8, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.3)", color: "#4ade80", fontSize: "0.875rem" }}>
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  background: "rgba(34,197,94,0.08)",
+                  border: "1px solid rgba(34,197,94,0.3)",
+                  color: "#4ade80",
+                  fontSize: "0.875rem",
+                }}
+              >
                 Successfully reverted to revision r{data.from.revid}.
               </div>
             )}
             {revertMutation.isError && (
-              <div style={{ marginBottom: 12, padding: "8px 12px", borderRadius: 8, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171", fontSize: "0.875rem" }}>
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  background: "rgba(239,68,68,0.08)",
+                  border: "1px solid rgba(239,68,68,0.3)",
+                  color: "#f87171",
+                  fontSize: "0.875rem",
+                }}
+              >
                 Revert failed: {revertMutation.error.message}
               </div>
             )}

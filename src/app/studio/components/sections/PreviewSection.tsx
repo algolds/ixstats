@@ -123,7 +123,8 @@ export function PreviewSection() {
             });
           } else {
             // Fill layer
-            const usePropColor = layerType === "altitudes" || layerType === "climate" || layerType === "political";
+            const usePropColor =
+              layerType === "altitudes" || layerType === "climate" || layerType === "political";
             map.addLayer({
               id: `fill-${layerType}`,
               type: "fill",
@@ -131,15 +132,23 @@ export function PreviewSection() {
               paint: {
                 "fill-color": usePropColor
                   ? ["coalesce", ["get", "_fillColor"], ["get", "fill"], "#e8e5da"]
-                  : layerType === "lakes" ? "#7cb5d2"
-                  : layerType === "icecaps" ? "#f0f4f8"
-                  : "#e8e5da",
-                "fill-opacity": layerType === "political" ? 0.4
-                  : layerType === "altitudes" ? 0.75
-                  : layerType === "climate" ? 0.3
-                  : layerType === "icecaps" ? 0.7
-                  : layerType === "lakes" ? 0.65
-                  : 1,
+                  : layerType === "lakes"
+                    ? "#7cb5d2"
+                    : layerType === "icecaps"
+                      ? "#f0f4f8"
+                      : "#e8e5da",
+                "fill-opacity":
+                  layerType === "political"
+                    ? 0.4
+                    : layerType === "altitudes"
+                      ? 0.75
+                      : layerType === "climate"
+                        ? 0.3
+                        : layerType === "icecaps"
+                          ? 0.7
+                          : layerType === "lakes"
+                            ? 0.65
+                            : 1,
               },
             });
 
@@ -173,7 +182,10 @@ export function PreviewSection() {
 
   const statEntries = stats
     ? Object.entries(stats).map(([key, value]) => ({
-        label: key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()).trim(),
+        label: key
+          .replace(/([A-Z])/g, " $1")
+          .replace(/^./, (s) => s.toUpperCase())
+          .trim(),
         value,
       }))
     : [];
@@ -207,13 +219,15 @@ export function PreviewSection() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="text-center">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-teal-400 border-t-transparent" />
-              <p className="mt-3 text-sm text-white/80">{state.generationMessage || "Generating..."}</p>
+              <p className="mt-3 text-sm text-white/80">
+                {state.generationMessage || "Generating..."}
+              </p>
             </div>
           </div>
         )}
 
         {state.generationStatus === "error" && (
-          <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-red-900/80 p-3 text-sm text-red-200">
+          <div className="absolute right-4 bottom-4 left-4 rounded-lg bg-red-900/80 p-3 text-sm text-red-200">
             Error: {state.generationMessage}
           </div>
         )}
@@ -225,7 +239,10 @@ export function PreviewSection() {
           <h2 className="mb-4 text-lg font-semibold text-white">Generation Summary</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {statEntries.map((entry) => (
-              <div key={entry.label} className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div
+                key={entry.label}
+                className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm"
+              >
                 <p className="text-xs text-white/40">{entry.label}</p>
                 <p className="mt-1 text-xl font-bold text-teal-300">
                   {typeof entry.value === "number" ? entry.value.toLocaleString() : entry.value}

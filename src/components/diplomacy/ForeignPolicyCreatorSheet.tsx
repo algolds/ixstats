@@ -4,13 +4,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useLocalActions } from "~/hooks/useLocalActions";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Textarea } from "~/components/ui/textarea";
@@ -53,11 +47,41 @@ const ACTION_OPTIONS: {
   description: string;
   hostile: boolean;
 }[] = [
-  { value: "embargo", label: "Trade Embargo", icon: Ban, description: "Block trade with target nation. Hurts both economies.", hostile: true },
-  { value: "sanction", label: "Economic Sanction", icon: AlertTriangle, description: "Restrict specific economic sectors of target nation.", hostile: true },
-  { value: "blockade", label: "Naval Blockade", icon: ShipWheel, description: "Military blockade of target ports. Severe economic damage.", hostile: true },
-  { value: "free_trade", label: "Free Trade Agreement", icon: HandshakeIcon, description: "Reduce trade barriers. Mutual GDP boost.", hostile: false },
-  { value: "military_alliance", label: "Military Alliance", icon: Shield, description: "Mutual defense pact with shared strategic benefits.", hostile: false },
+  {
+    value: "embargo",
+    label: "Trade Embargo",
+    icon: Ban,
+    description: "Block trade with target nation. Hurts both economies.",
+    hostile: true,
+  },
+  {
+    value: "sanction",
+    label: "Economic Sanction",
+    icon: AlertTriangle,
+    description: "Restrict specific economic sectors of target nation.",
+    hostile: true,
+  },
+  {
+    value: "blockade",
+    label: "Naval Blockade",
+    icon: ShipWheel,
+    description: "Military blockade of target ports. Severe economic damage.",
+    hostile: true,
+  },
+  {
+    value: "free_trade",
+    label: "Free Trade Agreement",
+    icon: HandshakeIcon,
+    description: "Reduce trade barriers. Mutual GDP boost.",
+    hostile: false,
+  },
+  {
+    value: "military_alliance",
+    label: "Military Alliance",
+    icon: Shield,
+    description: "Mutual defense pact with shared strategic benefits.",
+    hostile: false,
+  },
 ];
 
 export function ForeignPolicyCreatorSheet({
@@ -75,24 +99,26 @@ export function ForeignPolicyCreatorSheet({
 
   const { data: relationships } = api.diplomatic.getRelationships.useQuery(
     { countryId },
-    { enabled: open },
+    { enabled: open }
   );
 
   const { data: preview, isFetching: previewLoading } =
     api.diplomatic.previewForeignPolicyImpact.useQuery(
       { initiatorId: countryId, targetId, actionType, severity },
-      { enabled: !!targetId && open },
+      { enabled: !!targetId && open }
     );
 
   const selectedAction = ACTION_OPTIONS.find((a) => a.value === actionType);
 
   const targetCountries = relationships
-    ? [...new Map(
-        relationships.map((r) => {
-          const id = r.targetCountryId;
-          return [id, { id, name: r.targetCountryName ?? id, flag: r.targetCountryFlag ?? null }];
-        })
-      ).values()]
+    ? [
+        ...new Map(
+          relationships.map((r) => {
+            const id = r.targetCountryId;
+            return [id, { id, name: r.targetCountryName ?? id, flag: r.targetCountryFlag ?? null }];
+          })
+        ).values(),
+      ]
     : [];
 
   const handleEnact = () => {
@@ -146,7 +172,9 @@ export function ForeignPolicyCreatorSheet({
                       <opt.icon className="h-4 w-4" />
                       <span>{opt.label}</span>
                       {opt.hostile && (
-                        <Badge variant="destructive" className="px-1 py-0 text-[10px]">Hostile</Badge>
+                        <Badge variant="destructive" className="px-1 py-0 text-[10px]">
+                          Hostile
+                        </Badge>
                       )}
                     </div>
                   </SelectItem>
@@ -169,7 +197,12 @@ export function ForeignPolicyCreatorSheet({
                 {targetCountries.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     <span className="flex items-center gap-1.5">
-                      <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" showTooltip={false} />
+                      <UnifiedCountryFlag
+                        countryName={c.name}
+                        flagUrl={c.flag}
+                        size="xs"
+                        showTooltip={false}
+                      />
                       {c.name}
                     </span>
                   </SelectItem>
@@ -214,34 +247,59 @@ export function ForeignPolicyCreatorSheet({
                   Impact Preview
                 </h4>
                 {previewLoading ? (
-                  <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-2 py-3 text-sm">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Calculating impact...
                   </div>
                 ) : preview ? (
-                  <div className="rounded-md border border-border bg-muted/30 p-3">
+                  <div className="border-border bg-muted/30 rounded-md border p-3">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground mb-1 text-xs">Your economy</p>
-                        <div className={`flex items-center gap-1 font-medium ${Number(preview.initiator.gdpImpact) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                          {Number(preview.initiator.gdpImpact) < 0 ? <ArrowDownRight className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />}
+                        <div
+                          className={`flex items-center gap-1 font-medium ${Number(preview.initiator.gdpImpact) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
+                        >
+                          {Number(preview.initiator.gdpImpact) < 0 ? (
+                            <ArrowDownRight className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpRight className="h-3 w-3" />
+                          )}
                           {preview.initiator.gdpImpactPercent}% GDP
                         </div>
-                        <p className="text-muted-foreground text-[10px]">Trade exposure: {preview.initiator.tradeExposure}%</p>
+                        <p className="text-muted-foreground text-[10px]">
+                          Trade exposure: {preview.initiator.tradeExposure}%
+                        </p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground mb-1 text-xs">{preview.target.name}&apos;s economy</p>
-                        <div className={`flex items-center gap-1 font-medium ${Number(preview.target.gdpImpact) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-                          {Number(preview.target.gdpImpact) < 0 ? <ArrowDownRight className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />}
+                        <p className="text-muted-foreground mb-1 text-xs">
+                          {preview.target.name}&apos;s economy
+                        </p>
+                        <div
+                          className={`flex items-center gap-1 font-medium ${Number(preview.target.gdpImpact) < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}
+                        >
+                          {Number(preview.target.gdpImpact) < 0 ? (
+                            <ArrowDownRight className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpRight className="h-3 w-3" />
+                          )}
                           {preview.target.gdpImpactPercent}% GDP
                         </div>
-                        <p className="text-muted-foreground text-[10px]">Trade exposure: {preview.target.tradeExposure}%</p>
+                        <p className="text-muted-foreground text-[10px]">
+                          Trade exposure: {preview.target.tradeExposure}%
+                        </p>
                       </div>
                       <div className="col-span-2">
                         <p className="text-muted-foreground text-xs">
                           Relationship change:{" "}
-                          <span className={preview.relationshipDelta < 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}>
-                            {preview.relationshipDelta > 0 ? "+" : ""}{preview.relationshipDelta} points
+                          <span
+                            className={
+                              preview.relationshipDelta < 0
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-green-600 dark:text-green-400"
+                            }
+                          >
+                            {preview.relationshipDelta > 0 ? "+" : ""}
+                            {preview.relationshipDelta} points
                           </span>
                         </p>
                       </div>
@@ -251,19 +309,20 @@ export function ForeignPolicyCreatorSheet({
               </div>
             </>
           )}
-
         </div>
 
         <SheetFooter className="border-border/50 border-t px-6 py-4">
-          <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); resetForm(); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              onOpenChange(false);
+              resetForm();
+            }}
+          >
             Cancel
           </Button>
-          <Button
-            size="sm"
-            className="gap-1.5"
-            onClick={handleEnact}
-            disabled={!targetId}
-          >
+          <Button size="sm" className="gap-1.5" onClick={handleEnact} disabled={!targetId}>
             Enact {selectedAction?.label ?? "Policy"}
           </Button>
         </SheetFooter>

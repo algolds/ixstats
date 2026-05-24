@@ -106,12 +106,10 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
 
     // Show light rays only for rare+ cards
     const showLightRays =
-      enableLightRays &&
-      ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"].includes(rarity);
+      enableLightRays && ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"].includes(rarity);
 
     // Show particles only for epic+ cards
-    const showParticles =
-      enableParticles && ["EPIC", "LEGENDARY"].includes(rarity);
+    const showParticles = enableParticles && ["EPIC", "LEGENDARY"].includes(rarity);
 
     // Mouse tracking for light refraction
     useEffect(() => {
@@ -146,11 +144,10 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
           id: particleIdRef.current++,
           x: Math.random() * rect.width,
           y: Math.random() * rect.height,
-          size: particleConfig.size.min + Math.random() * (particleConfig.size.max - particleConfig.size.min),
-          color:
-            particleConfig.colors[
-              Math.floor(Math.random() * particleConfig.colors.length)
-            ]!,
+          size:
+            particleConfig.size.min +
+            Math.random() * (particleConfig.size.max - particleConfig.size.min),
+          color: particleConfig.colors[Math.floor(Math.random() * particleConfig.colors.length)]!,
           velocity: {
             x: (Math.random() - 0.5) * particleConfig.speed.max,
             y: -Math.random() * particleConfig.speed.max,
@@ -204,7 +201,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
       <div
         ref={containerRef}
         className={cn(
-          "absolute inset-0 overflow-hidden rounded-2xl pointer-events-none",
+          "pointer-events-none absolute inset-0 overflow-hidden rounded-2xl",
           className
         )}
         onMouseEnter={() => setIsHovered(true)}
@@ -218,10 +215,10 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
               pattern === "rainbow-shimmer"
                 ? getRainbowHolographicGradient(45, true)
                 : pattern === "cosmic"
-                ? "radial-gradient(circle at 50% 50%, rgba(147,51,234,0.4), rgba(236,72,153,0.3), rgba(59,130,246,0.2))"
-                : pattern === "liquid-glass"
-                ? getMetallicGradient("purple")
-                : getMetallicGradient("gold"),
+                  ? "radial-gradient(circle at 50% 50%, rgba(147,51,234,0.4), rgba(236,72,153,0.3), rgba(59,130,246,0.2))"
+                  : pattern === "liquid-glass"
+                    ? getMetallicGradient("purple")
+                    : getMetallicGradient("gold"),
             backgroundSize: "200% 200%",
             animation: holographicAnimation,
             willChange: "background-position, opacity",
@@ -254,7 +251,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
             {lightRays.map((ray, index) => (
               <motion.div
                 key={index}
-                className="absolute left-1/2 top-1/2 w-1 origin-left bg-gradient-to-r from-white/40 to-transparent"
+                className="absolute top-1/2 left-1/2 w-1 origin-left bg-gradient-to-r from-white/40 to-transparent"
                 style={{
                   height: `${ray.length}%`,
                   transform: `rotate(${ray.angle}deg)`,
@@ -278,10 +275,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
         {/* Premium border glow */}
         {borderConfig.animated && (
           <motion.div
-            className={cn(
-              "absolute inset-0 rounded-2xl border-2",
-              borderConfig.glow
-            )}
+            className={cn("absolute inset-0 rounded-2xl border-2", borderConfig.glow)}
             style={{
               borderImage: `linear-gradient(135deg, var(--tw-gradient-stops)) 1`,
               borderImageSlice: 1,
@@ -310,8 +304,9 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
             className={cn(
               "absolute flex items-center justify-center",
               foilStamp.position === "top-right" && "top-2 right-2",
-              foilStamp.position === "bottom-right" && "bottom-2 right-2",
-              foilStamp.position === "center" && "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+              foilStamp.position === "bottom-right" && "right-2 bottom-2",
+              foilStamp.position === "center" &&
+                "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
             )}
           >
             <motion.div

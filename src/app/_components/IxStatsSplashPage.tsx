@@ -48,7 +48,7 @@ export function IxStatsSplashPage() {
           squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30"
         />
         <div className="relative z-10 text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-muted border-t-primary" />
+          <div className="border-muted border-t-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2" />
           <p className="text-muted-foreground">Redirecting to dashboard...</p>
         </div>
       </div>

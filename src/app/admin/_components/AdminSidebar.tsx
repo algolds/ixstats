@@ -19,6 +19,7 @@ import {
   MessageCircle,
   Menu,
   Wallet,
+  Package,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -76,10 +77,10 @@ const NAV_ITEMS: NavItem[] = [
     description: "Management & Permissions",
   },
   {
-    label: "Vault & Credits",
-    href: "/admin/vault",
-    icon: Wallet,
-    description: "Manage Credits & Personal Vaults",
+    label: "Card Management",
+    href: "/admin/cards",
+    icon: Package,
+    description: "Sync, Packs, Lore & Vaults",
   },
   {
     label: "Reference Data",
@@ -169,7 +170,7 @@ export function AdminSidebar() {
   return (
     <>
       {/* Mobile Menu Button */}
-      <div className="fixed left-4 top-4 z-50 lg:hidden">
+      <div className="fixed top-4 left-4 z-50 lg:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="h-10 w-10">

@@ -23,9 +23,7 @@ function MyBlurbsList() {
 
   if (isLoading) {
     return (
-      <div className="py-12 text-center text-sm text-muted-foreground">
-        Loading your blurbs...
-      </div>
+      <div className="text-muted-foreground py-12 text-center text-sm">Loading your blurbs...</div>
     );
   }
 
@@ -33,9 +31,9 @@ function MyBlurbsList() {
     return (
       <Card className="glass-hierarchy-child">
         <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
-          <BookOpen className="h-10 w-10 text-muted-foreground" />
+          <BookOpen className="text-muted-foreground h-10 w-10" />
           <h3 className="text-base font-semibold">No blurbs yet</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Browse active prompts and share your country&apos;s perspective.
           </p>
           <Link href={withBasePath("/blurbs")}>
@@ -55,28 +53,27 @@ function MyBlurbsList() {
           className="glass-hierarchy-child block rounded-xl border border-white/10 p-4 transition-colors hover:border-white/20"
         >
           <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
               {r.country?.flag && (
-                <img
-                  src={r.country.flag}
-                  alt=""
-                  className="h-3.5 w-5 rounded-sm object-cover"
-                />
+                <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
               )}
-              <span className="text-xs font-medium text-muted-foreground truncate">
+              <span className="text-muted-foreground truncate text-xs font-medium">
                 {r.prompt.title}
               </span>
             </div>
             {r.featured && (
-              <Badge variant="outline" className="shrink-0 border-amber-500/30 text-[10px] text-amber-400">
+              <Badge
+                variant="outline"
+                className="shrink-0 border-amber-500/30 text-[10px] text-amber-400"
+              >
                 Featured
               </Badge>
             )}
           </div>
-          <p className="text-sm text-[var(--wikios-text-muted)] line-clamp-3 whitespace-pre-wrap">
+          <p className="line-clamp-3 text-sm whitespace-pre-wrap text-[var(--wikios-text-muted)]">
             {r.content}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-xs">
             {new Date(r.createdAt).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -112,9 +109,7 @@ export default function MyBlurbsPage() {
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold sm:text-2xl">My Blurbs</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Your responses across all prompts.
-            </p>
+            <p className="text-muted-foreground mt-1 text-sm">Your responses across all prompts.</p>
           </div>
           <BlurbsNav />
         </div>
@@ -124,11 +119,9 @@ export default function MyBlurbsPage() {
         ) : (
           <Card className="glass-hierarchy-child">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
-              <User className="h-10 w-10 text-muted-foreground" />
+              <User className="text-muted-foreground h-10 w-10" />
               <h3 className="text-base font-semibold">Sign In Required</h3>
-              <p className="text-sm text-muted-foreground">
-                Sign in to see your blurb responses.
-              </p>
+              <p className="text-muted-foreground text-sm">Sign in to see your blurb responses.</p>
               <Link href={withBasePath("/setup")}>
                 <Button size="sm">Sign In</Button>
               </Link>

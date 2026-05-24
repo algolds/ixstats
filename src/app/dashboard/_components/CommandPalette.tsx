@@ -1,16 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import {
-  Globe,
-  BarChart3,
-  Settings,
-  Activity,
-  TrendingUp,
-  Crown,
-  Eye,
-  Target,
-} from "lucide-react";
+import { Globe, BarChart3, Settings, Activity, TrendingUp, Crown, Eye, Target } from "lucide-react";
 import {
   CommandDialog,
   CommandEmpty,

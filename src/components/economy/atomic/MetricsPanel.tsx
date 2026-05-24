@@ -12,10 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { DollarSign, TrendingUp, Users, Gauge } from "lucide-react";
 import type { EconomicMetrics } from "~/lib/atomic-economic-utils";
-import {
-  formatCurrency,
-  getEffectivenessColor,
-} from "~/lib/atomic-economic-utils";
+import { formatCurrency, getEffectivenessColor } from "~/lib/atomic-economic-utils";
 
 export interface MetricsPanelProps {
   metrics: EconomicMetrics;

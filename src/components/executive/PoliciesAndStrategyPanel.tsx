@@ -3,14 +3,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import {
-  FileText,
-  Plus,
-  ChevronDown,
-  ChevronRight,
-  Tag,
-  Calendar,
-} from "lucide-react";
+import { FileText, Plus, ChevronDown, ChevronRight, Tag, Calendar } from "lucide-react";
 import { api } from "~/trpc/react";
 import { PolicyCreatorSheet } from "./PolicyCreatorSheet";
 import { PolicyDetailSheet } from "./PolicyDetailSheet";
@@ -37,7 +30,7 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
 
   const { data: serverPolicies = [], refetch: refetchPolicies } = api.policies.getPolicies.useQuery(
     { countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   const policies = useMemo(() => {
@@ -60,21 +53,51 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
     return {
       active: policies
         .filter((p: any) => p.status === "active")
-        .sort((a: any, b: any) => new Date(b.createdAt ?? b.effectiveDate).getTime() - new Date(a.createdAt ?? a.effectiveDate).getTime()),
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt ?? b.effectiveDate).getTime() -
+            new Date(a.createdAt ?? a.effectiveDate).getTime()
+        ),
       draft: policies
         .filter((p: any) => p.status === "draft")
-        .sort((a: any, b: any) => new Date(b.createdAt ?? b.effectiveDate).getTime() - new Date(a.createdAt ?? a.effectiveDate).getTime()),
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt ?? b.effectiveDate).getTime() -
+            new Date(a.createdAt ?? a.effectiveDate).getTime()
+        ),
       archived: policies
-        .filter((p: any) => p.status === "archived" || p.status === "expired" || p.status === "suspended" || p.status === "repealed")
-        .sort((a: any, b: any) => new Date(b.createdAt ?? b.effectiveDate).getTime() - new Date(a.createdAt ?? a.effectiveDate).getTime()),
+        .filter(
+          (p: any) =>
+            p.status === "archived" ||
+            p.status === "expired" ||
+            p.status === "suspended" ||
+            p.status === "repealed"
+        )
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt ?? b.effectiveDate).getTime() -
+            new Date(a.createdAt ?? a.effectiveDate).getTime()
+        ),
     };
   }, [policies]);
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
-      case "active": return { label: "ACTIVE", colorClass: "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400" };
-      case "draft": return { label: "DRAFT", colorClass: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400" };
-      default: return { label: status?.toUpperCase() ?? "UNKNOWN", colorClass: "bg-slate-100 text-slate-700 dark:bg-slate-950/30 dark:text-slate-400" };
+      case "active":
+        return {
+          label: "ACTIVE",
+          colorClass: "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400",
+        };
+      case "draft":
+        return {
+          label: "DRAFT",
+          colorClass: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400",
+        };
+      default:
+        return {
+          label: status?.toUpperCase() ?? "UNKNOWN",
+          colorClass: "bg-slate-100 text-slate-700 dark:bg-slate-950/30 dark:text-slate-400",
+        };
     }
   };
 
@@ -87,7 +110,10 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
       medium: "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400",
       low: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
     };
-    return { label: priority.toUpperCase(), colorClass: colorMap[p] ?? "bg-slate-100 text-slate-700" };
+    return {
+      label: priority.toUpperCase(),
+      colorClass: colorMap[p] ?? "bg-slate-100 text-slate-700",
+    };
   };
 
   const renderPolicyCard = (policy: any) => {
@@ -103,7 +129,7 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
         icon={FileText}
         title={policy.title ?? policy.name ?? "Untitled Policy"}
         subtitle={
-          <span className="flex items-center gap-1.5 flex-wrap">
+          <span className="flex flex-wrap items-center gap-1.5">
             <span>{(policy.category ?? policy.policyType ?? "general").toUpperCase()}</span>
             <span className="text-muted-foreground">•</span>
             {(policy.effectiveDate ?? policy.createdAt) ? (
@@ -120,20 +146,38 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
         isLocal={policy._isLocal}
         onClick={!policy._isLocal ? () => setSelectedPolicyId(policy.id) : undefined}
         metrics={[
-          { icon: Tag, label: "Type", value: (policy.policyType ?? policy.category ?? "general") },
-          ...(policy.effectiveDate ? [{ icon: Calendar, label: "Effective", value: new Date(policy.effectiveDate).toLocaleDateString(undefined, { month: "short", day: "numeric" }) }] : []),
+          { icon: Tag, label: "Type", value: policy.policyType ?? policy.category ?? "general" },
+          ...(policy.effectiveDate
+            ? [
+                {
+                  icon: Calendar,
+                  label: "Effective",
+                  value: new Date(policy.effectiveDate).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  }),
+                },
+              ]
+            : []),
         ]}
       />
     );
   };
 
   return (
-    <div className="space-y-3 mt-3">
+    <div className="mt-3 space-y-3">
       {/* Active Policies */}
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Policies</h4>
-          <Button size="sm" variant="ghost" onClick={() => setShowCreator(true)} className="h-6 px-2 text-xs gap-1">
+        <div className="mb-2 flex items-center justify-between">
+          <h4 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            Active Policies
+          </h4>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowCreator(true)}
+            className="h-6 gap-1 px-2 text-xs"
+          >
             <Plus className="h-3 w-3" /> New
           </Button>
         </div>
@@ -141,16 +185,21 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
           <div className="space-y-2">
             {active.slice(0, 5).map(renderPolicyCard)}
             {active.length > 5 && (
-              <p className="text-xs text-muted-foreground text-center pt-1">
+              <p className="text-muted-foreground pt-1 text-center text-xs">
                 +{active.length - 5} more active policies
               </p>
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 p-6 text-center">
-            <FileText className="h-6 w-6 text-muted-foreground/50" />
-            <p className="text-xs text-muted-foreground">No active policies</p>
-            <Button variant="outline" size="sm" onClick={() => setShowCreator(true)} className="gap-1.5 text-xs h-7">
+          <div className="border-border/50 flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-6 text-center">
+            <FileText className="text-muted-foreground/50 h-6 w-6" />
+            <p className="text-muted-foreground text-xs">No active policies</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCreator(true)}
+              className="h-7 gap-1.5 text-xs"
+            >
               <Plus className="h-3 w-3" /> Create first policy
             </Button>
           </div>
@@ -160,10 +209,10 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
       {/* Draft Policies */}
       {draft.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Drafts</h4>
-          <div className="space-y-2">
-            {draft.map(renderPolicyCard)}
-          </div>
+          <h4 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
+            Drafts
+          </h4>
+          <div className="space-y-2">{draft.map(renderPolicyCard)}</div>
         </div>
       )}
 
@@ -172,17 +221,23 @@ export function PoliciesAndStrategyPanel({ countryId }: PoliciesAndStrategyPanel
         <div>
           <button
             onClick={() => setShowArchived(!showArchived)}
-            className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground mb-2 flex items-center gap-2 text-xs font-semibold tracking-wider uppercase transition-colors"
           >
-            {showArchived ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+            {showArchived ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
             Archived
-            <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{archived.length}</Badge>
+            <Badge variant="secondary" className="px-1.5 py-0 text-[9px]">
+              {archived.length}
+            </Badge>
           </button>
           {showArchived && (
             <div className="space-y-2">
               {archived.slice(0, 5).map(renderPolicyCard)}
               {archived.length > 5 && (
-                <p className="text-xs text-muted-foreground text-center pt-1">
+                <p className="text-muted-foreground pt-1 text-center text-xs">
                   Showing 5 of {archived.length} archived
                 </p>
               )}

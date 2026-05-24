@@ -42,7 +42,9 @@ export function ActivityFilters({
     <div className="glass-hierarchy-child space-y-4 rounded-lg p-3 sm:p-4">
       {/* Activity Type Filters */}
       <div>
-        <h3 className="text-foreground mb-2 sm:mb-3 text-xs sm:text-sm font-semibold">Activity Type</h3>
+        <h3 className="text-foreground mb-2 text-xs font-semibold sm:mb-3 sm:text-sm">
+          Activity Type
+        </h3>
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {filterOptions.map((option) => {
             const Icon = option.icon;
@@ -56,7 +58,7 @@ export function ActivityFilters({
                 onClick={() => onFilterChange(option.value)}
                 className={`text-xs sm:text-sm ${!isActive && `hover:${option.color}`}`}
               >
-                <Icon className="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <Icon className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">{option.label}</span>
                 <span className="sm:hidden">{option.label.substring(0, 4)}</span>
               </Button>
@@ -67,7 +69,7 @@ export function ActivityFilters({
 
       {/* Category Filters */}
       <div>
-        <h3 className="text-foreground mb-2 sm:mb-3 text-xs sm:text-sm font-semibold">Source</h3>
+        <h3 className="text-foreground mb-2 text-xs font-semibold sm:mb-3 sm:text-sm">Source</h3>
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {categoryOptions.map((option) => {
             const isActive = category === option.value;

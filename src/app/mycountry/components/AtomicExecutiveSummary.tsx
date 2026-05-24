@@ -23,8 +23,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { AtomicIntelligenceFeed } from "~/components/intelligence/AtomicIntelligenceFeed";
 
-
-
 import { api } from "~/trpc/react";
 
 // Enhanced types for atomic integration

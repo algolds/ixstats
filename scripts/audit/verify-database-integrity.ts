@@ -182,7 +182,7 @@ async function checkIsActiveFieldConsistency() {
     }
 
     // Check for any records with null isActive (should not happen with @default(true))
-    // Note: isActive is non-nullable with @default(true) in schema, 
+    // Note: isActive is non-nullable with @default(true) in schema,
     // so we skip the null check as Prisma types prevent it at runtime.
     const nullIsActiveUsers = 0;
     if (nullIsActiveUsers > 0) {

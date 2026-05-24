@@ -12,11 +12,7 @@ import {
   RiCheckLine,
   RiMapPinLine,
 } from "react-icons/ri";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "~/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 
 interface CountriesStatsProps {
@@ -53,8 +49,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
       const continent = c.continent || "Unknown";
       counts.set(continent, (counts.get(continent) || 0) + 1);
     }
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1]);
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
   }, [allCountries]);
 
   // Top 5 by population
@@ -110,9 +105,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                   <RiGlobalLine className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-sm">
-                    {continentFilter || "Countries"}
-                  </p>
+                  <p className="text-muted-foreground text-sm">{continentFilter || "Countries"}</p>
                   <p className="text-foreground text-lg font-semibold">
                     {totalCountries.toLocaleString()}
                   </p>
@@ -123,7 +116,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
           </PopoverTrigger>
           <PopoverContent className="!glass-none bg-popover border-border w-64 rounded-xl border p-0 shadow-xl">
             <div className="p-3">
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold uppercase tracking-wide">
+              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
                 Filter by Continent
               </p>
               <button
@@ -181,7 +174,9 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                 </div>
                 <div>
                   <p className="text-muted-foreground text-sm">Total Population</p>
-                  <p className="text-foreground text-lg font-semibold">{formatPop(totalPopulation)}</p>
+                  <p className="text-foreground text-lg font-semibold">
+                    {formatPop(totalPopulation)}
+                  </p>
                 </div>
               </div>
               <RiArrowDownSLine className="text-muted-foreground h-4 w-4" />
@@ -193,7 +188,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 {Math.round(totalPopulation).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold uppercase tracking-wide">
+              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
                 Top 5 by Population
               </p>
               <div className="space-y-1">
@@ -207,7 +202,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                       <span className="text-muted-foreground w-4 text-xs">{i + 1}.</span>
                       <span className="font-medium">{c.name}</span>
                     </span>
-                    <span className="text-muted-foreground tabular-nums text-xs">
+                    <span className="text-muted-foreground text-xs tabular-nums">
                       {Math.round(c.currentPopulation).toLocaleString()}
                     </span>
                   </button>
@@ -245,7 +240,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 ${Math.round(totalGDP).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold uppercase tracking-wide">
+              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
                 Top 5 by Total GDP
               </p>
               <div className="space-y-1">
@@ -259,7 +254,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                       <span className="text-muted-foreground w-4 text-xs">{i + 1}.</span>
                       <span className="font-medium">{c.name}</span>
                     </span>
-                    <span className="text-muted-foreground tabular-nums text-xs">
+                    <span className="text-muted-foreground text-xs tabular-nums">
                       ${Math.round(c.currentTotalGdp).toLocaleString()}
                     </span>
                   </button>
@@ -285,7 +280,9 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                 </div>
                 <div>
                   <p className="text-muted-foreground text-sm">Avg GDP/Capita</p>
-                  <p className="text-foreground text-lg font-semibold">{formatShort(avgGDPPerCapita)}</p>
+                  <p className="text-foreground text-lg font-semibold">
+                    {formatShort(avgGDPPerCapita)}
+                  </p>
                 </div>
               </div>
               <RiArrowDownSLine className="text-muted-foreground h-4 w-4" />
@@ -297,7 +294,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
               <p className="text-muted-foreground mb-3 text-lg font-bold tabular-nums">
                 ${Math.round(avgGDPPerCapita).toLocaleString()}
               </p>
-              <p className="text-muted-foreground mb-2 text-[11px] font-semibold uppercase tracking-wide">
+              <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
                 Top 5 Highest
               </p>
               <div className="space-y-1">
@@ -311,7 +308,7 @@ export const CountriesStats: React.FC<CountriesStatsProps> = ({
                       <span className="text-muted-foreground w-4 text-xs">{i + 1}.</span>
                       <span className="font-medium">{c.name}</span>
                     </span>
-                    <span className="text-muted-foreground tabular-nums text-xs">
+                    <span className="text-muted-foreground text-xs tabular-nums">
                       ${Math.round(c.currentGdpPerCapita).toLocaleString()}
                     </span>
                   </button>

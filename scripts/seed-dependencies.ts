@@ -162,7 +162,9 @@ async function fetchWikiInfobox(pageName: string): Promise<WikiData | null> {
 
 function parseInfobox(wikitext: string): WikiData | null {
   // Find any infobox template (country, political division, settlement, etc.)
-  const infoboxStart = wikitext.search(/\{\{\s*Infobox\s+(?:country|political\s+division|settlement|territory|region)/i);
+  const infoboxStart = wikitext.search(
+    /\{\{\s*Infobox\s+(?:country|political\s+division|settlement|territory|region)/i
+  );
   if (infoboxStart === -1) return null;
 
   // Extract infobox content using brace counting
@@ -200,8 +202,12 @@ function parseInfobox(wikitext: string): WikiData | null {
 
   // Population (many possible field names across infobox types)
   const popStr =
-    params.population_estimate || params.population_census || params.population ||
-    params.population_total || params.pop || params.population_blank1;
+    params.population_estimate ||
+    params.population_census ||
+    params.population ||
+    params.population_total ||
+    params.pop ||
+    params.population_blank1;
   if (popStr) {
     const popNum = parseNumber(popStr);
     if (popNum && popNum > 0) result.population = popNum;
@@ -264,7 +270,10 @@ function cleanWikiValue(value: string): string {
 
 function parseNumber(str: string): number | null {
   // Remove commas, currency symbols, and non-numeric suffixes
-  const cleaned = str.replace(/[$,]/g, "").replace(/[^\d.]/g, " ").trim();
+  const cleaned = str
+    .replace(/[$,]/g, "")
+    .replace(/[^\d.]/g, " ")
+    .trim();
   const num = parseFloat(cleaned);
   return isNaN(num) ? null : num;
 }
@@ -417,9 +426,16 @@ async function main() {
 
   // Step 3: Load existing countries
   const existingCountries = await prisma.country.findMany({
-    select: { id: true, name: true, currentPopulation: true, currentGdpPerCapita: true,
-              maxGdpGrowthRate: true, adjustedGdpGrowth: true, populationGrowthRate: true,
-              actualGdpGrowth: true },
+    select: {
+      id: true,
+      name: true,
+      currentPopulation: true,
+      currentGdpPerCapita: true,
+      maxGdpGrowthRate: true,
+      adjustedGdpGrowth: true,
+      populationGrowthRate: true,
+      actualGdpGrowth: true,
+    },
   });
   const countryMap = new Map(existingCountries.map((c) => [c.name, c]));
   console.log(`Found ${existingCountries.length} existing countries in DB.\n`);
@@ -554,7 +570,9 @@ async function main() {
         };
 
         if (DRY_RUN) {
-          console.log(`  [dry-run] Would create country: ${name} (slug: ${slug}, pop: ${population}, gdp/c: ${Math.round(gdpPerCapita)})`);
+          console.log(
+            `  [dry-run] Would create country: ${name} (slug: ${slug}, pop: ${population}, gdp/c: ${Math.round(gdpPerCapita)})`
+          );
           // Add to map for sovereignty link resolution
           countryMap.set(name, {
             id: `dry-run-${slug}`,
@@ -575,7 +593,12 @@ async function main() {
               ...(wikiData?.governmentType ? { governmentType: wikiData.governmentType } : {}),
               ...(wikiData?.religion ? { religion: wikiData.religion } : {}),
               ...(wikiData?.leader ? { leader: wikiData.leader } : {}),
-              ...(wikiData?.population ? { currentPopulation: wikiData.population, baselinePopulation: wikiData.population } : {}),
+              ...(wikiData?.population
+                ? {
+                    currentPopulation: wikiData.population,
+                    baselinePopulation: wikiData.population,
+                  }
+                : {}),
               ...(wikiData?.areaKm2 ? { landArea: wikiData.areaKm2 } : {}),
               ...(flag ? { flag } : {}),
               continent,
@@ -661,9 +684,7 @@ async function main() {
         },
       });
       sovereigntyCreated++;
-      console.log(
-        `  [sovereignty] ${row.sovereign} → ${row.dependency} (${relationshipType})`
-      );
+      console.log(`  [sovereignty] ${row.sovereign} → ${row.dependency} (${relationshipType})`);
     } catch (err) {
       console.error(
         `  [error] Failed to create sovereignty: ${row.sovereign} → ${row.dependency}: ${(err as Error).message}`

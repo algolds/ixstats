@@ -3,13 +3,7 @@
 import { useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import { useLocalActions } from "~/hooks/useLocalActions";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -32,10 +26,25 @@ interface AllianceCreatorSheetProps {
 }
 
 const ALLIANCE_TYPES = [
-  { value: "military", label: "Military Alliance", icon: Shield, description: "Mutual defense pact" },
+  {
+    value: "military",
+    label: "Military Alliance",
+    icon: Shield,
+    description: "Mutual defense pact",
+  },
   { value: "economic", label: "Economic Bloc", icon: DollarSign, description: "Trade cooperation" },
-  { value: "political", label: "Political Union", icon: Landmark, description: "Governance alignment" },
-  { value: "regional", label: "Regional Bloc", icon: MapPin, description: "Geographic cooperation" },
+  {
+    value: "political",
+    label: "Political Union",
+    icon: Landmark,
+    description: "Governance alignment",
+  },
+  {
+    value: "regional",
+    label: "Regional Bloc",
+    icon: MapPin,
+    description: "Geographic cooperation",
+  },
 ] as const;
 
 export function AllianceCreatorSheet({
@@ -148,7 +157,10 @@ export function AllianceCreatorSheet({
             </div>
             <div>
               <Label className="mb-1.5 block text-xs font-medium">Visibility</Label>
-              <Select value={visibility} onValueChange={(v) => setVisibility(v as typeof visibility)}>
+              <Select
+                value={visibility}
+                onValueChange={(v) => setVisibility(v as typeof visibility)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -161,7 +173,10 @@ export function AllianceCreatorSheet({
             </div>
             <div>
               <Label className="mb-1.5 block text-xs font-medium">Join Policy</Label>
-              <Select value={joinPolicy} onValueChange={(v) => setJoinPolicy(v as typeof joinPolicy)}>
+              <Select
+                value={joinPolicy}
+                onValueChange={(v) => setJoinPolicy(v as typeof joinPolicy)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -173,11 +188,17 @@ export function AllianceCreatorSheet({
               </Select>
             </div>
           </div>
-
         </div>
 
         <SheetFooter className="border-border/50 border-t px-6 py-4">
-          <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); resetForm(); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              onOpenChange(false);
+              resetForm();
+            }}
+          >
             Cancel
           </Button>
           <Button
@@ -200,7 +221,8 @@ export function AllianceCreatorSheet({
             }}
             disabled={!name.trim()}
           >
-            <Users className="h-3 w-3" />Found Alliance
+            <Users className="h-3 w-3" />
+            Found Alliance
           </Button>
         </SheetFooter>
       </SheetContent>

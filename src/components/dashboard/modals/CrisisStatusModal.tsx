@@ -7,17 +7,17 @@ import { formatTimeAgo } from "~/lib/time-utils";
 import { cn } from "~/lib/utils";
 
 const SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  critical: { bg: "bg-red-500/10",    text: "text-red-500",    border: "border-red-500/30" },
-  high:     { bg: "bg-orange-500/10", text: "text-orange-500", border: "border-orange-500/30" },
-  medium:   { bg: "bg-amber-500/10",  text: "text-amber-500",  border: "border-amber-500/30" },
-  low:      { bg: "bg-blue-500/10",   text: "text-blue-500",   border: "border-blue-500/30" },
+  critical: { bg: "bg-red-500/10", text: "text-red-500", border: "border-red-500/30" },
+  high: { bg: "bg-orange-500/10", text: "text-orange-500", border: "border-orange-500/30" },
+  medium: { bg: "bg-amber-500/10", text: "text-amber-500", border: "border-amber-500/30" },
+  low: { bg: "bg-blue-500/10", text: "text-blue-500", border: "border-blue-500/30" },
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pending:     { label: "Pending",     color: "text-amber-500 border-amber-500/30" },
+  pending: { label: "Pending", color: "text-amber-500 border-amber-500/30" },
   in_progress: { label: "In Progress", color: "text-blue-500 border-blue-500/30" },
-  monitoring:  { label: "Monitoring",  color: "text-cyan-500 border-cyan-500/30" },
-  resolved:    { label: "Resolved",    color: "text-emerald-500 border-emerald-500/30" },
+  monitoring: { label: "Monitoring", color: "text-cyan-500 border-cyan-500/30" },
+  resolved: { label: "Resolved", color: "text-emerald-500 border-emerald-500/30" },
 };
 
 interface CrisisEvent {
@@ -45,7 +45,12 @@ interface CrisisStatusModalProps {
   activeCrises: CrisisEvent[];
 }
 
-export function CrisisStatusModal({ isOpen, onClose, crisisStats, activeCrises }: CrisisStatusModalProps) {
+export function CrisisStatusModal({
+  isOpen,
+  onClose,
+  crisisStats,
+  activeCrises,
+}: CrisisStatusModalProps) {
   const activeCount = crisisStats?.activeEvents ?? 0;
   const criticalCount = crisisStats?.criticalEvents ?? 0;
   const resolvedCount = crisisStats?.resolvedEvents ?? 0;
@@ -60,12 +65,12 @@ export function CrisisStatusModal({ isOpen, onClose, crisisStats, activeCrises }
             <Badge
               variant="outline"
               className={cn(
-                "text-[10px] px-1.5 py-0",
+                "px-1.5 py-0 text-[10px]",
                 activeCount === 0
-                  ? "text-emerald-500 border-emerald-500/30"
+                  ? "border-emerald-500/30 text-emerald-500"
                   : criticalCount > 0
-                    ? "text-red-500 border-red-500/30"
-                    : "text-amber-500 border-amber-500/30",
+                    ? "border-red-500/30 text-red-500"
+                    : "border-amber-500/30 text-amber-500"
               )}
             >
               {activeCount === 0 ? "Stable" : `${activeCount} active`}
@@ -75,31 +80,41 @@ export function CrisisStatusModal({ isOpen, onClose, crisisStats, activeCrises }
 
         {/* Summary metrics */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5 text-center">
-            <div className={cn("text-lg font-bold", activeCount > 0 ? "text-amber-500" : "text-emerald-500")}>
+          <div className="border-border/40 bg-muted/20 rounded-lg border p-2.5 text-center">
+            <div
+              className={cn(
+                "text-lg font-bold",
+                activeCount > 0 ? "text-amber-500" : "text-emerald-500"
+              )}
+            >
               {activeCount}
             </div>
-            <div className="text-[10px] text-muted-foreground">Active</div>
+            <div className="text-muted-foreground text-[10px]">Active</div>
           </div>
-          <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5 text-center">
-            <div className={cn("text-lg font-bold", criticalCount > 0 ? "text-red-500" : "text-foreground")}>
+          <div className="border-border/40 bg-muted/20 rounded-lg border p-2.5 text-center">
+            <div
+              className={cn(
+                "text-lg font-bold",
+                criticalCount > 0 ? "text-red-500" : "text-foreground"
+              )}
+            >
               {criticalCount}
             </div>
-            <div className="text-[10px] text-muted-foreground">Critical</div>
+            <div className="text-muted-foreground text-[10px]">Critical</div>
           </div>
-          <div className="rounded-lg border border-border/40 bg-muted/20 p-2.5 text-center">
+          <div className="border-border/40 bg-muted/20 rounded-lg border p-2.5 text-center">
             <div className="text-lg font-bold text-emerald-500">{resolvedCount}</div>
-            <div className="text-[10px] text-muted-foreground">Resolved</div>
+            <div className="text-muted-foreground text-[10px]">Resolved</div>
           </div>
         </div>
 
         {/* Active crises list */}
-        <div className="max-h-[350px] overflow-y-auto space-y-1.5">
+        <div className="max-h-[350px] space-y-1.5 overflow-y-auto">
           {activeCrises.length === 0 ? (
             <div className="py-8 text-center">
               <Shield className="mx-auto mb-3 h-10 w-10 text-emerald-500/40" />
               <p className="text-sm font-medium text-emerald-500">All Clear</p>
-              <p className="text-xs text-muted-foreground mt-1">No active crises worldwide</p>
+              <p className="text-muted-foreground mt-1 text-xs">No active crises worldwide</p>
             </div>
           ) : (
             activeCrises.map((crisis) => {
@@ -109,29 +124,41 @@ export function CrisisStatusModal({ isOpen, onClose, crisisStats, activeCrises }
                 <div
                   key={crisis.id}
                   className={cn(
-                    "rounded-lg border p-3 transition-colors hover:bg-muted/30",
-                    crisis.severity === "critical" ? "border-red-500/30 bg-red-500/5" : "border-border/40",
+                    "hover:bg-muted/30 rounded-lg border p-3 transition-colors",
+                    crisis.severity === "critical"
+                      ? "border-red-500/30 bg-red-500/5"
+                      : "border-border/40"
                   )}
                 >
                   <div className="flex items-start gap-2.5">
-                    <div className={cn("mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full", severity.bg)}>
+                    <div
+                      className={cn(
+                        "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                        severity.bg
+                      )}
+                    >
                       <AlertTriangle className={cn("h-3 w-3", severity.text)} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <Badge
                           variant="outline"
-                          className={cn("text-[8px] px-1 py-0 uppercase", severity.text, severity.border)}
+                          className={cn(
+                            "px-1 py-0 text-[8px] uppercase",
+                            severity.text,
+                            severity.border
+                          )}
                         >
                           {crisis.severity}
                         </Badge>
-                        <span className="text-xs font-medium leading-snug">{crisis.title}</span>
+                        <span className="text-xs leading-snug font-medium">{crisis.title}</span>
                       </div>
-                      <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
-                        {crisis.location && (
-                          <span>{crisis.location}</span>
-                        )}
-                        <Badge variant="outline" className={cn("text-[8px] px-1 py-0", status.color)}>
+                      <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-[10px]">
+                        {crisis.location && <span>{crisis.location}</span>}
+                        <Badge
+                          variant="outline"
+                          className={cn("px-1 py-0 text-[8px]", status.color)}
+                        >
                           {status.label}
                         </Badge>
                         <span className="flex items-center gap-0.5">

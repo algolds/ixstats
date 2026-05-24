@@ -36,9 +36,7 @@ export const NetworkGrowthChart = React.memo<NetworkGrowthChartProps>(({ data })
           <Activity className="h-5 w-5 text-green-600" />
           Network Power Growth
         </CardTitle>
-        <CardDescription>
-          Diplomatic influence and network expansion over time
-        </CardDescription>
+        <CardDescription>Diplomatic influence and network expansion over time</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300} className="sm:h-[350px] lg:h-[400px]">

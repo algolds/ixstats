@@ -7,7 +7,10 @@ import { Loader2, Pencil, Check, X } from "lucide-react";
 export function WorldConfigsTab() {
   const { data: configs, isLoading, refetch } = api.studio.adminListWorldConfigs.useQuery();
   const updateMutation = api.studio.adminUpdateWorldConfig.useMutation({
-    onSuccess: () => { refetch(); setEditingId(null); },
+    onSuccess: () => {
+      refetch();
+      setEditingId(null);
+    },
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -24,7 +27,7 @@ export function WorldConfigsTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span className="text-sm">Loading world configs...</span>
       </div>
@@ -32,11 +35,7 @@ export function WorldConfigsTab() {
   }
 
   if (!configs?.length) {
-    return (
-      <div className="py-16 text-center text-muted-foreground">
-        No world configs found.
-      </div>
-    );
+    return <div className="text-muted-foreground py-16 text-center">No world configs found.</div>;
   }
 
   function startEdit(config: NonNullable<typeof configs>[number]) {
@@ -69,20 +68,20 @@ export function WorldConfigsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-xl border border-border/50">
+      <div className="border-border/50 overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border/50 bg-muted/30">
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">World ID</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Realm</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Projection</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Climate</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Wiki</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Zoom</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Active</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Sync</th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
+            <tr className="border-border/50 bg-muted/30 border-b">
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">World ID</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Name</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Realm</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Projection</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Climate</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Wiki</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Zoom</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Active</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Sync</th>
+              <th className="text-muted-foreground px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -90,12 +89,14 @@ export function WorldConfigsTab() {
               const isEditing = editingId === config.id;
 
               return (
-                <tr key={config.id} className="border-b border-border/30 hover:bg-muted/20">
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{config.worldId}</td>
+                <tr key={config.id} className="border-border/30 hover:bg-muted/20 border-b">
+                  <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
+                    {config.worldId}
+                  </td>
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <input
-                        className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
+                        className="border-border bg-background w-full rounded border px-2 py-1 text-sm"
                         value={editForm.name ?? ""}
                         onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                       />
@@ -107,54 +108,64 @@ export function WorldConfigsTab() {
                     {config.realm ? (
                       <span className="text-xs text-violet-500">{config.realm.name}</span>
                     ) : (
-                      <span className="text-xs text-muted-foreground/50">Unlinked</span>
+                      <span className="text-muted-foreground/50 text-xs">Unlinked</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <select
-                        className="rounded border border-border bg-background px-2 py-1 text-xs"
+                        className="border-border bg-background rounded border px-2 py-1 text-xs"
                         value={editForm.mapProjection}
-                        onChange={(e) => setEditForm((f) => ({ ...f, mapProjection: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, mapProjection: e.target.value }))
+                        }
                       >
                         <option value="globe">Globe</option>
                         <option value="mercator">Mercator</option>
                         <option value="dynamic">Dynamic</option>
                       </select>
                     ) : (
-                      <span className="rounded bg-muted/50 px-2 py-0.5 text-xs">{config.mapProjection}</span>
+                      <span className="bg-muted/50 rounded px-2 py-0.5 text-xs">
+                        {config.mapProjection}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <input
-                        className="w-24 rounded border border-border bg-background px-2 py-1 text-xs"
+                        className="border-border bg-background w-24 rounded border px-2 py-1 text-xs"
                         value={editForm.climateSystem ?? ""}
-                        onChange={(e) => setEditForm((f) => ({ ...f, climateSystem: e.target.value }))}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, climateSystem: e.target.value }))
+                        }
                       />
                     ) : (
                       <span className="text-xs">{config.climateSystem}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-3 text-xs">
                     {isEditing ? (
                       <input
-                        className="w-36 rounded border border-border bg-background px-2 py-1 text-xs"
+                        className="border-border bg-background w-36 rounded border px-2 py-1 text-xs"
                         value={editForm.wikiBaseUrl ?? ""}
-                        onChange={(e) => setEditForm((f) => ({ ...f, wikiBaseUrl: e.target.value || null }))}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, wikiBaseUrl: e.target.value || null }))
+                        }
                         placeholder="https://..."
                       />
                     ) : (
-                      config.wikiBaseUrl ?? "—"
+                      (config.wikiBaseUrl ?? "—")
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {isEditing ? (
                       <input
                         type="number"
-                        className="w-16 rounded border border-border bg-background px-2 py-1 text-xs"
+                        className="border-border bg-background w-16 rounded border px-2 py-1 text-xs"
                         value={editForm.defaultZoom ?? 2}
-                        onChange={(e) => setEditForm((f) => ({ ...f, defaultZoom: parseFloat(e.target.value) }))}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, defaultZoom: parseFloat(e.target.value) }))
+                        }
                         step={0.1}
                       />
                     ) : (
@@ -170,28 +181,39 @@ export function WorldConfigsTab() {
                         className="h-4 w-4 rounded"
                       />
                     ) : (
-                      <div className={`h-2 w-2 rounded-full ${config.isActive ? "bg-green-500" : "bg-gray-400"}`} />
+                      <div
+                        className={`h-2 w-2 rounded-full ${config.isActive ? "bg-green-500" : "bg-gray-400"}`}
+                      />
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-3 text-xs">
                     {isEditing ? (
                       <div className="flex items-center gap-1">
                         <input
                           type="checkbox"
                           checked={editForm.syncEnabled ?? true}
-                          onChange={(e) => setEditForm((f) => ({ ...f, syncEnabled: e.target.checked }))}
+                          onChange={(e) =>
+                            setEditForm((f) => ({ ...f, syncEnabled: e.target.checked }))
+                          }
                           className="h-3 w-3 rounded"
                         />
                         <input
                           type="number"
-                          className="w-14 rounded border border-border bg-background px-1 py-0.5 text-xs"
+                          className="border-border bg-background w-14 rounded border px-1 py-0.5 text-xs"
                           value={editForm.syncIntervalMin ?? 60}
-                          onChange={(e) => setEditForm((f) => ({ ...f, syncIntervalMin: parseInt(e.target.value) }))}
+                          onChange={(e) =>
+                            setEditForm((f) => ({
+                              ...f,
+                              syncIntervalMin: parseInt(e.target.value),
+                            }))
+                          }
                         />
                         <span className="text-[10px]">min</span>
                       </div>
+                    ) : config.syncEnabled ? (
+                      `${config.syncIntervalMin}m`
                     ) : (
-                      config.syncEnabled ? `${config.syncIntervalMin}m` : "off"
+                      "off"
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -202,14 +224,24 @@ export function WorldConfigsTab() {
                           disabled={updateMutation.isPending}
                           className="rounded p-1 text-emerald-500 hover:bg-emerald-500/10"
                         >
-                          {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          {updateMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )}
                         </button>
-                        <button onClick={() => setEditingId(null)} className="rounded p-1 text-muted-foreground hover:bg-muted/50">
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="text-muted-foreground hover:bg-muted/50 rounded p-1"
+                        >
                           <X className="h-4 w-4" />
                         </button>
                       </span>
                     ) : (
-                      <button onClick={() => startEdit(config)} className="rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground">
+                      <button
+                        onClick={() => startEdit(config)}
+                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded p-1"
+                      >
                         <Pencil className="h-4 w-4" />
                       </button>
                     )}

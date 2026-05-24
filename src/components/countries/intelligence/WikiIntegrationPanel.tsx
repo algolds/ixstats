@@ -149,9 +149,9 @@ export const WikiIntegrationPanel: React.FC<WikiIntegrationPanelProps> = ({
                 <div className="text-muted-foreground">
                   {country.name} is a {country.governmentType || "sovereign"} nation located in{" "}
                   {country.continent || "an undisclosed region"}. With a population of{" "}
-                  {Math.round(country.currentPopulation).toLocaleString()} citizens and a GDP per capita of $
-                  {country.currentGdpPerCapita.toLocaleString()}, the country operates as a{" "}
-                  {country.economicTier.toLowerCase()}-tier economy.{" "}
+                  {Math.round(country.currentPopulation).toLocaleString()} citizens and a GDP per
+                  capita of ${country.currentGdpPerCapita.toLocaleString()}, the country operates as
+                  a {country.economicTier.toLowerCase()}-tier economy.{" "}
                   {country.leader ? `The current leader is ${country.leader}.` : ""}{" "}
                   {country.capital ? `The capital city is ${country.capital}.` : ""}
                 </div>

@@ -33,20 +33,38 @@ const DISCORD_TO_COUNTRY: Record<string, string> = {
 
 // Prompt detection keywords
 const PROMPT_KEYWORDS = [
-  "topic tuesday", "thot-ic", "wopic", "tropic tuesday",
-  "#tropictuesday", "#wapwednesday", "lore contest", "lore prompt",
+  "topic tuesday",
+  "thot-ic",
+  "wopic",
+  "tropic tuesday",
+  "#tropictuesday",
+  "#wapwednesday",
+  "lore contest",
+  "lore prompt",
 ];
 const QUESTION_PATTERNS = [
-  "what is your", "what are your", "how does your", "how is your",
-  "what was", "what does your", "does your nation", "in your country",
-  "in your nation", "of your nation", "of your country",
+  "what is your",
+  "what are your",
+  "how does your",
+  "how is your",
+  "what was",
+  "what does your",
+  "does your nation",
+  "in your country",
+  "in your nation",
+  "of your nation",
+  "of your country",
 ];
 
 function isPromptMessage(content: string): boolean {
   const lower = content.toLowerCase();
-  if (PROMPT_KEYWORDS.some(kw => lower.includes(kw))) return true;
-  if (content.length > 100 && content.includes("?") &&
-      QUESTION_PATTERNS.some(kw => lower.includes(kw))) return true;
+  if (PROMPT_KEYWORDS.some((kw) => lower.includes(kw))) return true;
+  if (
+    content.length > 100 &&
+    content.includes("?") &&
+    QUESTION_PATTERNS.some((kw) => lower.includes(kw))
+  )
+    return true;
   return false;
 }
 
@@ -54,7 +72,7 @@ function isPromptMessage(content: string): boolean {
 function findMatchingPrompt(
   discordContent: string,
   blurbPrompts: { id: string; title: string; question: string; slug: string }[]
-): typeof blurbPrompts[0] | null {
+): (typeof blurbPrompts)[0] | null {
   const lower = discordContent.toLowerCase();
 
   // Try exact question substring match
@@ -68,8 +86,11 @@ function findMatchingPrompt(
 
   // Try title keyword match
   for (const bp of blurbPrompts) {
-    const titleWords = bp.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-    const matchCount = titleWords.filter(w => lower.includes(w)).length;
+    const titleWords = bp.title
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3);
+    const matchCount = titleWords.filter((w) => lower.includes(w)).length;
     if (titleWords.length > 0 && matchCount >= Math.ceil(titleWords.length * 0.6)) {
       return bp;
     }
@@ -103,7 +124,7 @@ async function main() {
   });
 
   // Build lookup maps
-  const countryByName = new Map(countries.map(c => [c.name.toLowerCase(), c]));
+  const countryByName = new Map(countries.map((c) => [c.name.toLowerCase(), c]));
   const userByCountryName = new Map<string, { id: string; countryId: string }>();
   for (const u of users) {
     if (u.country?.name && u.countryId) {
@@ -117,8 +138,8 @@ async function main() {
   // Process messages chronologically
   const chronological = [...rawMsgs].reverse();
 
-  let currentDiscordPrompt: typeof rawMsgs[0] | null = null;
-  let currentBlurbPrompt: typeof blurbPrompts[0] | null = null;
+  let currentDiscordPrompt: (typeof rawMsgs)[0] | null = null;
+  let currentBlurbPrompt: (typeof blurbPrompts)[0] | null = null;
 
   let imported = 0;
   let skippedNoMapping = 0;
@@ -134,7 +155,10 @@ async function main() {
     if (!content) continue;
 
     const author = msg.author.username;
-    if (SKIP_AUTHORS.has(author)) { skippedBots++; continue; }
+    if (SKIP_AUTHORS.has(author)) {
+      skippedBots++;
+      continue;
+    }
 
     // Check if this is a prompt message
     if (isPromptMessage(content)) {
@@ -147,23 +171,38 @@ async function main() {
     }
 
     // Skip short messages
-    if (content.length < 30) { skippedTooShort++; continue; }
+    if (content.length < 30) {
+      skippedTooShort++;
+      continue;
+    }
 
     // Must have an active prompt context
-    if (!currentDiscordPrompt || !currentBlurbPrompt) { skippedNoPrompt++; continue; }
+    if (!currentDiscordPrompt || !currentBlurbPrompt) {
+      skippedNoPrompt++;
+      continue;
+    }
 
     // Check time proximity (within 30 days of prompt)
     const msgDate = new Date(msg.timestamp);
     const promptDate = new Date(currentDiscordPrompt.timestamp);
     const daysDiff = (msgDate.getTime() - promptDate.getTime()) / (1000 * 60 * 60 * 24);
-    if (daysDiff < 0 || daysDiff > 30) { skippedNoPrompt++; continue; }
+    if (daysDiff < 0 || daysDiff > 30) {
+      skippedNoPrompt++;
+      continue;
+    }
 
     // Map author to user/country
     const countryName = DISCORD_TO_COUNTRY[author];
-    if (!countryName) { skippedNoMapping++; continue; }
+    if (!countryName) {
+      skippedNoMapping++;
+      continue;
+    }
 
     const userRecord = userByCountryName.get(countryName.toLowerCase());
-    if (!userRecord) { skippedNoMapping++; continue; }
+    if (!userRecord) {
+      skippedNoMapping++;
+      continue;
+    }
 
     // Check for existing response (unique constraint: promptId + userId)
     const existing = await db.blurbResponse.findUnique({
@@ -174,7 +213,10 @@ async function main() {
         },
       },
     });
-    if (existing) { skippedDuplicate++; continue; }
+    if (existing) {
+      skippedDuplicate++;
+      continue;
+    }
 
     // Truncate to 1000 chars
     const truncatedContent = content.slice(0, 1000);

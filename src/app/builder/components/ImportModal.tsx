@@ -29,7 +29,7 @@ export function ImportModal({ open, onClose, onNavigate, onImportComplete }: Imp
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="flex max-h-[90vh] max-w-5xl flex-col overflow-hidden">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
             Import from Wiki
@@ -38,8 +38,8 @@ export function ImportModal({ open, onClose, onNavigate, onImportComplete }: Imp
             Search and import existing country data from IxWiki, IIWiki, or AltHistory Wiki
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto -mx-6 px-6">
-          <ImportSection 
+        <div className="-mx-6 flex-1 overflow-y-auto px-6">
+          <ImportSection
             onNavigate={(section) => {
               onNavigate(section);
               onClose();

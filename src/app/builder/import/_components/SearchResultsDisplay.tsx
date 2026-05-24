@@ -152,19 +152,17 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
         }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <Card className="border-blue-500/20 bg-card/60 backdrop-blur-md">
+        <Card className="bg-card/60 border-blue-500/20 backdrop-blur-md">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-lg border border-border/30 bg-amber-500/20 p-2">
+              <div className="border-border/30 rounded-lg border bg-amber-500/20 p-2">
                 <Search className="h-5 w-5 text-amber-500" />
               </div>
               <div>
-                <CardTitle className="text-lg">
-                  Search Results ({searchResults.length})
-                </CardTitle>
+                <CardTitle className="text-lg">Search Results ({searchResults.length})</CardTitle>
                 {selectedSite.name === "iiwiki" &&
                   searchResults.some((r) => r.snippet.includes("subcategory")) && (
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-1 text-sm">
                       Results include pages from subcategories
                     </p>
                   )}
@@ -213,7 +211,7 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={loadMoreResults}
-                  className="rounded-lg border border-border bg-muted/50 px-6 py-3 text-foreground transition-all duration-200 hover:bg-muted"
+                  className="border-border bg-muted/50 text-foreground hover:bg-muted rounded-lg border px-6 py-3 transition-all duration-200"
                 >
                   Load More Results ({searchResults.length - displayedResults.length} remaining)
                 </motion.button>

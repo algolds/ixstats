@@ -7,15 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { Badge } from "~/components/ui/badge";
-import {
-  RefreshCw,
-  Download,
-  Trash2,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Flag,
-} from "lucide-react";
+import { RefreshCw, Download, Trash2, Clock, CheckCircle, AlertCircle, Flag } from "lucide-react";
 
 export function FlagCacheManager() {
   const { stats, isLoading, error, updateAllFlags, initializeCache, clearCache, refreshStats } =

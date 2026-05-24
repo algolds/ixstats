@@ -124,9 +124,12 @@ export function QuickLayerUpdate() {
       }
 
       // Determine layer type
-      const layerType = selectedLayer === "auto" ? detectLayerFromFilename(file.name) : selectedLayer;
+      const layerType =
+        selectedLayer === "auto" ? detectLayerFromFilename(file.name) : selectedLayer;
       if (!layerType) {
-        setError(`Could not detect layer type from "${file.name}". Please select a layer type manually.`);
+        setError(
+          `Could not detect layer type from "${file.name}". Please select a layer type manually.`
+        );
         return;
       }
 
@@ -148,7 +151,11 @@ export function QuickLayerUpdate() {
           throw new Error(err.error || `Upload failed (${uploadRes.status})`);
         }
 
-        const uploadData = (await uploadRes.json()) as { id: string; layerType: string; fileName: string };
+        const uploadData = (await uploadRes.json()) as {
+          id: string;
+          layerType: string;
+          fileName: string;
+        };
 
         // Step 2: Process the SVG (parse, convert, match, diff)
         const processResult = await processMutation.mutateAsync({
@@ -217,7 +224,10 @@ export function QuickLayerUpdate() {
         <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="text-sm">{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto text-red-400/60 hover:text-red-400">
+          <button
+            onClick={() => setError(null)}
+            className="ml-auto text-red-400/60 hover:text-red-400"
+          >
             &times;
           </button>
         </div>
@@ -228,9 +238,9 @@ export function QuickLayerUpdate() {
         <div className="space-y-4">
           {/* Layer selector */}
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-foreground/80">Layer:</label>
+            <label className="text-foreground/80 text-sm font-medium">Layer:</label>
             <Select value={selectedLayer} onValueChange={(v) => setSelectedLayer(v as LayerOption)}>
-              <SelectTrigger className="w-48 border-border bg-muted">
+              <SelectTrigger className="border-border bg-muted w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -255,12 +265,14 @@ export function QuickLayerUpdate() {
                 : "border-border bg-muted/50 hover:border-muted-foreground hover:bg-muted"
             }`}
           >
-            <FileUp className={`h-10 w-10 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`} />
+            <FileUp
+              className={`h-10 w-10 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`}
+            />
             <div className="text-center">
-              <p className="text-sm font-medium text-foreground/80">
+              <p className="text-foreground/80 text-sm font-medium">
                 Drop SVG file here or click to browse
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Layer type will be auto-detected from filename
               </p>
             </div>
@@ -279,7 +291,9 @@ export function QuickLayerUpdate() {
       {stage === "processing" && (
         <div className="flex flex-col items-center gap-3 py-16">
           <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-          <p className="text-sm text-muted-foreground">Processing SVG... parsing, converting, computing diff</p>
+          <p className="text-muted-foreground text-sm">
+            Processing SVG... parsing, converting, computing diff
+          </p>
         </div>
       )}
 
@@ -289,14 +303,22 @@ export function QuickLayerUpdate() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">{result.fileName}</h3>
-              <p className="text-sm text-muted-foreground">
-                Layer: <Badge variant="outline" className="ml-1">{result.layerType}</Badge>
+              <h3 className="text-foreground text-lg font-semibold">{result.fileName}</h3>
+              <p className="text-muted-foreground text-sm">
+                Layer:{" "}
+                <Badge variant="outline" className="ml-1">
+                  {result.layerType}
+                </Badge>
                 {" \u00B7 "}
                 {result.featureCount} features parsed
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={reset} className="border-border text-muted-foreground">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={reset}
+              className="border-border text-muted-foreground"
+            >
               <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Start Over
             </Button>
           </div>
@@ -304,11 +326,36 @@ export function QuickLayerUpdate() {
           {/* Diff summary badges */}
           {result.diff?.summary && (
             <div className="flex flex-wrap gap-3">
-              <DiffBadge icon={Plus} label="Added" count={result.diff.summary.addedCount} color="emerald" />
-              <DiffBadge icon={Pencil} label="Modified" count={result.diff.summary.modifiedCount} color="blue" />
-              <DiffBadge icon={Minus} label="Removed" count={result.diff.summary.removedCount} color="red" />
-              <DiffBadge icon={Equal} label="Unchanged" count={result.diff.summary.unchangedCount} color="slate" />
-              <DiffBadge icon={Link2} label="Links Preserved" count={result.diff.summary.linkagesPreserved} color="amber" />
+              <DiffBadge
+                icon={Plus}
+                label="Added"
+                count={result.diff.summary.addedCount}
+                color="emerald"
+              />
+              <DiffBadge
+                icon={Pencil}
+                label="Modified"
+                count={result.diff.summary.modifiedCount}
+                color="blue"
+              />
+              <DiffBadge
+                icon={Minus}
+                label="Removed"
+                count={result.diff.summary.removedCount}
+                color="red"
+              />
+              <DiffBadge
+                icon={Equal}
+                label="Unchanged"
+                count={result.diff.summary.unchangedCount}
+                color="slate"
+              />
+              <DiffBadge
+                icon={Link2}
+                label="Links Preserved"
+                count={result.diff.summary.linkagesPreserved}
+                color="amber"
+              />
             </div>
           )}
 
@@ -329,16 +376,20 @@ export function QuickLayerUpdate() {
           {/* Expandable feature details */}
           <button
             onClick={() => setDetailsExpanded(!detailsExpanded)}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm transition-colors"
           >
-            {detailsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            {detailsExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
             Feature details
           </button>
 
           {detailsExpanded && result.diff && (
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-muted/50">
+            <div className="border-border bg-muted/50 max-h-64 overflow-y-auto rounded-lg border">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-muted text-left text-xs uppercase text-muted-foreground">
+                <thead className="bg-muted text-muted-foreground sticky top-0 text-left text-xs uppercase">
                   <tr>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Feature ID</th>
@@ -346,12 +397,22 @@ export function QuickLayerUpdate() {
                     <th className="px-3 py-2">Country Link</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody className="divide-border/50 divide-y">
                   {result.diff.added.map((f) => (
-                    <DiffRow key={f.featureId} status="added" featureId={f.featureId} displayName={f.displayName} />
+                    <DiffRow
+                      key={f.featureId}
+                      status="added"
+                      featureId={f.featureId}
+                      displayName={f.displayName}
+                    />
                   ))}
                   {result.diff.modified.map((f) => (
-                    <DiffRow key={f.featureId} status="modified" featureId={f.featureId} displayName={f.displayName} />
+                    <DiffRow
+                      key={f.featureId}
+                      status="modified"
+                      featureId={f.featureId}
+                      displayName={f.displayName}
+                    />
                   ))}
                   {result.diff.removed.map((f) => (
                     <DiffRow
@@ -363,7 +424,9 @@ export function QuickLayerUpdate() {
                     />
                   ))}
                   {result.diff.unchanged.slice(0, 20).map((f) => {
-                    const link = result.diff!.preservedLinkages.find((l) => l.featureId === f.featureId);
+                    const link = result.diff!.preservedLinkages.find(
+                      (l) => l.featureId === f.featureId
+                    );
                     return (
                       <DiffRow
                         key={f.featureId}
@@ -376,7 +439,10 @@ export function QuickLayerUpdate() {
                   })}
                   {result.diff.unchanged.length > 20 && (
                     <tr>
-                      <td colSpan={4} className="px-3 py-2 text-center text-xs text-muted-foreground">
+                      <td
+                        colSpan={4}
+                        className="text-muted-foreground px-3 py-2 text-center text-xs"
+                      >
                         ...and {result.diff.unchanged.length - 20} more unchanged features
                       </td>
                     </tr>
@@ -390,12 +456,16 @@ export function QuickLayerUpdate() {
           <div className="flex gap-3 pt-2">
             <Button
               onClick={handleCommit}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+              className="bg-emerald-600 text-white hover:bg-emerald-500"
             >
               <Upload className="mr-1.5 h-4 w-4" />
               Apply Update
             </Button>
-            <Button variant="outline" onClick={reset} className="border-border text-muted-foreground">
+            <Button
+              variant="outline"
+              onClick={reset}
+              className="border-border text-muted-foreground"
+            >
               Cancel
             </Button>
           </div>
@@ -406,7 +476,7 @@ export function QuickLayerUpdate() {
       {stage === "committing" && (
         <div className="flex flex-col items-center gap-3 py-16">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-          <p className="text-sm text-muted-foreground">Applying update... writing to database</p>
+          <p className="text-muted-foreground text-sm">Applying update... writing to database</p>
         </div>
       )}
 
@@ -415,9 +485,10 @@ export function QuickLayerUpdate() {
         <div className="flex flex-col items-center gap-4 py-12">
           <CheckCircle2 className="h-12 w-12 text-emerald-400" />
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-foreground">Update Applied</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {result.featureCount} features committed to <Badge variant="outline">{result.layerType}</Badge> layer
+            <h3 className="text-foreground text-lg font-semibold">Update Applied</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {result.featureCount} features committed to{" "}
+              <Badge variant="outline">{result.layerType}</Badge> layer
             </p>
           </div>
           <Button variant="outline" onClick={reset} className="border-border text-foreground/80">
@@ -449,7 +520,9 @@ function DiffBadge({
   };
 
   return (
-    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${colorMap[color] ?? colorMap.slate}`}>
+    <div
+      className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${colorMap[color] ?? colorMap.slate}`}
+    >
       <Icon className="h-4 w-4" />
       <span className="text-sm font-medium">{count}</span>
       <span className="text-xs opacity-70">{label}</span>
@@ -479,11 +552,13 @@ function DiffRow({
   return (
     <tr className="text-foreground">
       <td className="px-3 py-1.5">
-        <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.color}`}>
+        <span
+          className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.color}`}
+        >
           {cfg.label}
         </span>
       </td>
-      <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">{featureId}</td>
+      <td className="text-muted-foreground px-3 py-1.5 font-mono text-xs">{featureId}</td>
       <td className="px-3 py-1.5 text-sm">{displayName}</td>
       <td className="px-3 py-1.5">
         {countryName ? (
@@ -492,7 +567,7 @@ function DiffRow({
             {countryName}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">{"\u2014"}</span>
+          <span className="text-muted-foreground text-xs">{"\u2014"}</span>
         )}
       </td>
     </tr>

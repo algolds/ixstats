@@ -62,14 +62,20 @@ export const CommandPanelItem = React.memo(function CommandPanelItem({
     <div
       className={cn(
         "flex items-start gap-2.5 rounded-md px-2.5 py-2 transition-colors",
-        onClick && "cursor-pointer hover:bg-muted/50",
+        onClick && "hover:bg-muted/50 cursor-pointer",
         pulse && "bg-red-500/5",
-        className,
+        className
       )}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (e) => { if (e.key === "Enter") onClick(); } : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter") onClick();
+            }
+          : undefined
+      }
     >
       {/* Accent dot */}
       <div className="mt-1.5 flex-shrink-0">
@@ -79,21 +85,30 @@ export const CommandPanelItem = React.memo(function CommandPanelItem({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-medium truncate">{title}</span>
+          <span className="truncate text-xs font-medium">{title}</span>
           {badges?.map((badge, i) => (
-            <Badge key={i} variant="secondary" className={cn("text-[8px] px-1 py-0 leading-tight flex-shrink-0", badge.colorClass)}>
+            <Badge
+              key={i}
+              variant="secondary"
+              className={cn("flex-shrink-0 px-1 py-0 text-[8px] leading-tight", badge.colorClass)}
+            >
               {badge.label}
             </Badge>
           ))}
         </div>
         {subtitle && (
-          <p className="text-[11px] text-muted-foreground truncate mt-0.5">{subtitle}</p>
+          <p className="text-muted-foreground mt-0.5 truncate text-[11px]">{subtitle}</p>
         )}
       </div>
 
       {/* Trailing text (deadline, date) */}
       {trailingText && (
-        <span className={cn("text-[10px] font-medium flex-shrink-0 mt-0.5", trailingColor ?? "text-muted-foreground")}>
+        <span
+          className={cn(
+            "mt-0.5 flex-shrink-0 text-[10px] font-medium",
+            trailingColor ?? "text-muted-foreground"
+          )}
+        >
           {trailingText}
         </span>
       )}

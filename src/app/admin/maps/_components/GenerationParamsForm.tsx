@@ -108,14 +108,14 @@ export const GenerationParamsForm = React.memo(function GenerationParamsForm({
     <div className="space-y-4">
       {/* Presets */}
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Presets</label>
+        <label className="text-muted-foreground mb-1.5 block text-xs font-medium">Presets</label>
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(PRESETS).map(([name, preset]) => (
             <button
               key={name}
               onClick={() => onChange({ ...params, ...preset })}
               disabled={disabled}
-              className="rounded border border-border bg-muted/30 px-2.5 py-1 text-xs text-foreground hover:bg-muted disabled:opacity-40"
+              className="border-border bg-muted/30 text-foreground hover:bg-muted rounded border px-2.5 py-1 text-xs disabled:opacity-40"
             >
               {name}
             </button>
@@ -126,10 +126,8 @@ export const GenerationParamsForm = React.memo(function GenerationParamsForm({
       {/* Profile Similarity */}
       <div>
         <div className="mb-1 flex items-center justify-between">
-          <label className="text-xs font-medium text-muted-foreground">
-            Profile Similarity
-          </label>
-          <span className="text-xs text-muted-foreground">
+          <label className="text-muted-foreground text-xs font-medium">Profile Similarity</label>
+          <span className="text-muted-foreground text-xs">
             {Math.round(params.similarity * 100)}%
           </span>
         </div>
@@ -143,7 +141,7 @@ export const GenerationParamsForm = React.memo(function GenerationParamsForm({
           disabled={disabled}
           className="w-full"
         />
-        <div className="mt-0.5 flex justify-between text-[10px] text-muted-foreground/50">
+        <div className="text-muted-foreground/50 mt-0.5 flex justify-between text-[10px]">
           <span>Random</span>
           <span>IxWorld-like</span>
         </div>
@@ -151,21 +149,19 @@ export const GenerationParamsForm = React.memo(function GenerationParamsForm({
 
       {/* Seed */}
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">
-          Seed
-        </label>
+        <label className="text-muted-foreground mb-1 block text-xs font-medium">Seed</label>
         <div className="flex gap-2">
           <input
             type="number"
             value={params.seed}
             onChange={(e) => set("seed", parseInt(e.target.value) || 0)}
             disabled={disabled}
-            className="w-full rounded border border-border bg-muted/50 px-3 py-1.5 text-sm text-foreground focus:border-blue-500/50 focus:outline-none disabled:opacity-40"
+            className="border-border bg-muted/50 text-foreground w-full rounded border px-3 py-1.5 text-sm focus:border-blue-500/50 focus:outline-none disabled:opacity-40"
           />
           <button
             onClick={() => set("seed", Math.floor(Math.random() * 999999))}
             disabled={disabled}
-            className="rounded border border-border bg-muted/30 px-3 py-1.5 text-xs text-foreground hover:bg-muted disabled:opacity-40"
+            className="border-border bg-muted/30 text-foreground hover:bg-muted rounded border px-3 py-1.5 text-xs disabled:opacity-40"
           >
             Random
           </button>
@@ -186,7 +182,7 @@ export const GenerationParamsForm = React.memo(function GenerationParamsForm({
 
       {/* Country Range */}
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">
+        <label className="text-muted-foreground mb-1 block text-xs font-medium">
           Country Count: {params.countryMin} – {params.countryMax}
         </label>
         <div className="flex gap-2">
@@ -296,8 +292,8 @@ function SliderField({
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <label className="text-xs font-medium text-muted-foreground">{label}</label>
-        <span className="text-xs text-muted-foreground">{display}</span>
+        <label className="text-muted-foreground text-xs font-medium">{label}</label>
+        <span className="text-muted-foreground text-xs">{display}</span>
       </div>
       <input
         type="range"
@@ -325,13 +321,13 @@ function ToggleField({
   disabled?: boolean;
 }) {
   return (
-    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+    <label className="text-muted-foreground flex items-center gap-1.5 text-xs">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         disabled={disabled}
-        className="rounded border-border"
+        className="border-border rounded"
       />
       {label}
     </label>

@@ -1,10 +1,10 @@
 /**
  * NationStates Image Proxy API Route
- * 
+ *
  * Proxies NationStates card images to bypass hotlinking restrictions.
  * NS blocks direct image embedding (403), so we fetch server-side with
  * proper User-Agent and serve to frontend.
- * 
+ *
  * Rate Limiting: Respects NS API limits (50 req/30s)
  */
 
@@ -23,26 +23,17 @@ export async function GET(request: NextRequest) {
 
     // Validate URL parameter
     if (!imageUrl) {
-      return NextResponse.json(
-        { error: "Missing 'url' parameter" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing 'url' parameter" }, { status: 400 });
     }
 
     // Security: Only allow NationStates domains
-    const allowedDomains = [
-      "www.nationstates.net",
-      "nationstates.net",
-    ];
-    
+    const allowedDomains = ["www.nationstates.net", "nationstates.net"];
+
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(imageUrl);
     } catch {
-      return NextResponse.json(
-        { error: "Invalid URL format" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid URL format" }, { status: 400 });
     }
 
     if (!allowedDomains.includes(parsedUrl.hostname)) {
@@ -55,12 +46,12 @@ export async function GET(request: NextRequest) {
     // Fetch image from NationStates with proper User-Agent
     // NS requires proper User-Agent for API compliance
     const userAgent = "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)";
-    
+
     const nsResponse = await fetch(imageUrl, {
       headers: {
         "User-Agent": userAgent,
         // Some servers check Referer to prevent hotlinking
-        "Referer": "https://www.nationstates.net/",
+        Referer: "https://www.nationstates.net/",
       },
       // Use Next.js fetch cache for 24 hours
       next: {
@@ -69,16 +60,15 @@ export async function GET(request: NextRequest) {
     });
 
     if (!nsResponse.ok) {
-      console.error(`[NS-PROXY] Failed to fetch image: ${nsResponse.status} ${nsResponse.statusText}`);
-      
+      console.error(
+        `[NS-PROXY] Failed to fetch image: ${nsResponse.status} ${nsResponse.statusText}`
+      );
+
       // Return appropriate error
       if (nsResponse.status === 404) {
-        return NextResponse.json(
-          { error: "Image not found" },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: "Image not found" }, { status: 404 });
       }
-      
+
       return NextResponse.json(
         { error: "Failed to fetch image from NationStates" },
         { status: nsResponse.status }
@@ -100,10 +90,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("[NS-PROXY] Unexpected error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

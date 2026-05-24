@@ -60,8 +60,10 @@ export interface BuilderSyncImpact extends SyncImpact {
   confidence: number;
 }
 
-export interface UnifiedBuilderSyncState
-  extends BidirectionalSyncState<BuilderSyncRecommendation, BuilderSyncImpact> {
+export interface UnifiedBuilderSyncState extends BidirectionalSyncState<
+  BuilderSyncRecommendation,
+  BuilderSyncImpact
+> {
   economyBuilder: EconomyBuilderState | null;
   governmentBuilder: GovernmentBuilderState | null;
   taxBuilder: TaxBuilderState | null;
@@ -372,8 +374,8 @@ export class UnifiedBidirectionalSyncService extends BidirectionalSyncService<
     if (!this.state.governmentBuilder) return false;
     // Check if the component type exists in the government builder
     // This is a simplified check - full implementation would check atomic components
-    return this.state.governmentBuilder.departments.some(
-      (d) => d.name.toLowerCase().includes(componentType.toLowerCase())
+    return this.state.governmentBuilder.departments.some((d) =>
+      d.name.toLowerCase().includes(componentType.toLowerCase())
     );
   }
 
@@ -451,7 +453,8 @@ export class UnifiedBidirectionalSyncService extends BidirectionalSyncService<
     const previousRate = previousBuilder.taxSystem?.baseRate || 0;
 
     if (currentRate !== previousRate) {
-      const changePercent = previousRate > 0 ? ((currentRate - previousRate) / previousRate) * 100 : 0;
+      const changePercent =
+        previousRate > 0 ? ((currentRate - previousRate) / previousRate) * 100 : 0;
 
       impacts.push({
         field: "taxSystem.baseRate",

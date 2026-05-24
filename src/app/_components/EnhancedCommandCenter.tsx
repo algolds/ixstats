@@ -286,7 +286,7 @@ function SmartDashboardContent({
                   onClick={() =>
                     handleTabChange(mode.id as "discover" | "mycountry" | "activity" | "admin")
                   }
-                  className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
+                  className="flex items-center gap-1.5 text-xs sm:gap-2 sm:text-sm"
                 >
                   <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">{mode.label}</span>
@@ -297,7 +297,7 @@ function SmartDashboardContent({
           </div>
 
           {/* Mode Description */}
-          <div className="text-muted-foreground text-xs sm:text-sm hidden sm:block">
+          <div className="text-muted-foreground hidden text-xs sm:block sm:text-sm">
             {contentModes.find((m) => m.id === contentMode)?.description}
           </div>
         </div>
@@ -328,26 +328,26 @@ function SmartDashboardContent({
                 </h3>
 
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                  <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 text-center">
-                    <div className="text-foreground mb-1 text-xl sm:text-2xl font-bold">
+                  <div className="glass-hierarchy-child rounded-lg p-3 text-center sm:p-4">
+                    <div className="text-foreground mb-1 text-xl font-bold sm:text-2xl">
                       {adaptedGlobalStats?.totalCountries || 0}
                     </div>
                     <div className="text-muted-foreground text-xs sm:text-sm">Nations</div>
                   </div>
-                  <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 text-center">
-                    <div className="text-foreground mb-1 text-xl sm:text-2xl font-bold">
+                  <div className="glass-hierarchy-child rounded-lg p-3 text-center sm:p-4">
+                    <div className="text-foreground mb-1 text-xl font-bold sm:text-2xl">
                       {formatPopulation(adaptedGlobalStats?.totalPopulation || 0)}
                     </div>
                     <div className="text-muted-foreground text-xs sm:text-sm">Total Population</div>
                   </div>
-                  <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 text-center">
-                    <div className="text-foreground mb-1 text-xl sm:text-2xl font-bold">
+                  <div className="glass-hierarchy-child rounded-lg p-3 text-center sm:p-4">
+                    <div className="text-foreground mb-1 text-xl font-bold sm:text-2xl">
                       {formatCurrency(adaptedGlobalStats?.totalGdp || 0)}
                     </div>
                     <div className="text-muted-foreground text-xs sm:text-sm">World GDP</div>
                   </div>
-                  <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4 text-center">
-                    <div className="mb-1 text-xl sm:text-2xl font-bold text-green-500">
+                  <div className="glass-hierarchy-child rounded-lg p-3 text-center sm:p-4">
+                    <div className="mb-1 text-xl font-bold text-green-500 sm:text-2xl">
                       {adaptedGlobalStats?.globalGrowthRate
                         ? (adaptedGlobalStats.globalGrowthRate * 100).toFixed(3)
                         : "0.000"}
@@ -521,14 +521,14 @@ function SmartDashboardContent({
 
                   {/* Quick Actions */}
                   <div className="space-y-4">
-                    <h3 className="text-foreground flex items-center gap-2 sm:gap-3 text-lg sm:text-xl font-bold">
-                      <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
-                        <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                    <h3 className="text-foreground flex items-center gap-2 text-lg font-bold sm:gap-3 sm:text-xl">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 sm:h-8 sm:w-8">
+                        <Zap className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
                       </div>
                       Quick Actions
                     </h3>
 
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 md:grid-cols-3 lg:grid-cols-5">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5">
                       <button
                         onClick={() => setMyCountryTab("diplomacy")}
                         className="glass-hierarchy-child hover:glass-hierarchy-interactive group flex h-32 cursor-pointer flex-col items-center justify-center gap-3 rounded-xl p-6 transition-all duration-200 hover:scale-[1.02]"
@@ -642,8 +642,8 @@ function SmartDashboardContent({
 
                     {/* Diplomatic Actions */}
                     <div className="space-y-4">
-                      <h4 className="text-foreground flex items-center gap-2 text-base sm:text-lg font-semibold">
-                        <Users className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
+                      <h4 className="text-foreground flex items-center gap-2 text-base font-semibold sm:text-lg">
+                        <Users className="h-4 w-4 text-purple-400 sm:h-5 sm:w-5" />
                         Diplomatic Actions
                       </h4>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
@@ -1233,7 +1233,9 @@ export function EnhancedCommandCenter() {
   const isAdmin = roleUser?.role?.level !== undefined && roleUser.role.level <= 10;
 
   // Fetch all necessary data
-  const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
+  const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
   const { data: globalStatsData, isLoading: globalStatsLoading } =
     api.countries.getGlobalStats.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
@@ -1327,7 +1329,7 @@ export function EnhancedCommandCenter() {
           {/* Left Sticky Sidebar - User Profile & Context - Only show when user is logged in */}
           {user && (
             <motion.div
-              className="hidden lg:block space-y-6 lg:sticky lg:top-24 lg:self-start"
+              className="hidden space-y-6 lg:sticky lg:top-24 lg:block lg:self-start"
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}

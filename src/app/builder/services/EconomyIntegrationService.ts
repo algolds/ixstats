@@ -145,15 +145,15 @@ export class EconomyIntegrationService extends BaseBuilderService<
         );
 
         this.state.economyBuilder = generatedBuilder;
-    this.addToQueue(
-      {
-        type: "economy_updated",
-        timestamp: Date.now(),
-        data: generatedBuilder,
-        message: "Economy builder updated from atomic components",
-      },
-      { debounceMs: 100 }
-    );
+        this.addToQueue(
+          {
+            type: "economy_updated",
+            timestamp: Date.now(),
+            data: generatedBuilder,
+            message: "Economy builder updated from atomic components",
+          },
+          { debounceMs: 100 }
+        );
 
         // Sync with government and tax systems
         await this.syncWithGovernmentSystem();

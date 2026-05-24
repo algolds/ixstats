@@ -19,7 +19,7 @@ export function detectWikiImportConflicts(
     gdpEconomyBuilder?: number;
     totalBudget?: number;
     budgetAllocations?: Array<{ allocatedPercent: number }>;
-  },
+  }
 ): ConflictReport[] {
   const reports: ConflictReport[] = [];
 
@@ -56,7 +56,7 @@ export function detectWikiImportConflicts(
     const builderGdp = data.gdpEconomyBuilder;
 
     if (infoboxGdp > 0 && builderGdp > 0) {
-      const diffPercent = Math.abs(infoboxGdp - builderGdp) / infoboxGdp * 100;
+      const diffPercent = (Math.abs(infoboxGdp - builderGdp) / infoboxGdp) * 100;
 
       if (diffPercent > 10) {
         reports.push({
@@ -74,7 +74,7 @@ export function detectWikiImportConflicts(
   if (data.budgetAllocations && data.budgetAllocations.length > 0) {
     const totalAllocated = data.budgetAllocations.reduce(
       (sum, alloc) => sum + alloc.allocatedPercent,
-      0,
+      0
     );
 
     if (totalAllocated > 100) {

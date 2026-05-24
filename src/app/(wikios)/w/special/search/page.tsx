@@ -54,7 +54,8 @@ export default function SearchPage() {
         {results && results.length > 0 && (
           <div className="wikios-search-results-page">
             <p className="wikios-search-count">
-              {results.length} result{results.length !== 1 ? "s" : ""} for &ldquo;{searchTerm}&rdquo;
+              {results.length} result{results.length !== 1 ? "s" : ""} for &ldquo;{searchTerm}
+              &rdquo;
             </p>
             <ul className="wikios-search-results-list">
               {results.map((item) => (
@@ -86,7 +87,8 @@ export default function SearchPage() {
                 className="text-blue-400 underline"
               >
                 search on MediaWiki
-              </a>.
+              </a>
+              .
             </p>
           </div>
         )}

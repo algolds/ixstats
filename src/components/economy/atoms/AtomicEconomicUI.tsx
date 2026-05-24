@@ -5,13 +5,7 @@ import { motion } from "motion/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { EconomicComponentType } from "./AtomicEconomicComponents";
 import type { AtomicEconomicComponent } from "~/lib/atomic-economic-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";

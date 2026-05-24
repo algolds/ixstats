@@ -43,9 +43,9 @@ export default function ExecutiveArticle() {
                 Meetings & Decisions
               </h4>
               <p className="text-muted-foreground mt-1 text-sm">
-                Schedule cabinet meetings, manage agendas, record attendance, and track meeting outcomes.
-                Record executive decisions from meetings and track associated action items with
-                responsibilities, deadlines, and completion status.
+                Schedule cabinet meetings, manage agendas, record attendance, and track meeting
+                outcomes. Record executive decisions from meetings and track associated action items
+                with responsibilities, deadlines, and completion status.
               </p>
             </div>
 
@@ -78,8 +78,8 @@ export default function ExecutiveArticle() {
               cabinet sessions
             </li>
             <li>
-              <strong>Create Policy:</strong> Launches the policy creator for drafting new
-              national directives
+              <strong>Create Policy:</strong> Launches the policy creator for drafting new national
+              directives
             </li>
             <li>
               <strong>Strategic Planning:</strong> Plan long-term initiatives with milestones
@@ -88,9 +88,7 @@ export default function ExecutiveArticle() {
         </Section>
 
         <Section title="Workflow Integration">
-          <p>
-            The Executive Command Center integrates with other MyCountry systems:
-          </p>
+          <p>The Executive Command Center integrates with other MyCountry systems:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
               <strong>Intelligence:</strong> Intelligence analysis and key findings inform policy
@@ -115,15 +113,33 @@ export default function ExecutiveArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Target className="inline h-4 w-4" />{" "}
-              <Link href="/help/gameplay/national-issues" className="text-blue-600 hover:underline dark:text-blue-400">National Issues</Link>{" "} — National issues system details
+              <Link
+                href="/help/gameplay/national-issues"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                National Issues
+              </Link>{" "}
+              — National issues system details
             </li>
             <li>
               <Calendar className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/executive-operations" className="text-blue-600 hover:underline dark:text-blue-400">Executive Operations</Link>{" "} — Intelligence operations overview
+              <Link
+                href="/help/intelligence/executive-operations"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Executive Operations
+              </Link>{" "}
+              — Intelligence operations overview
             </li>
             <li>
               <FileText className="inline h-4 w-4" />{" "}
-              <Link href="/help/government/components" className="text-blue-600 hover:underline dark:text-blue-400">Component Catalog</Link>{" "} — Government system components
+              <Link
+                href="/help/government/components"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Component Catalog
+              </Link>{" "}
+              — Government system components
             </li>
           </ul>
         </InfoBox>

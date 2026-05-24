@@ -125,9 +125,11 @@ export const CardGrid = React.memo<CardGridProps>(
      * Responsive: xs (1-2 cols) -> sm (2-3 cols) -> md (3-4 cols) -> lg (4-5 cols) -> xl (5-6 cols)
      */
     const gridCols = {
-      small: "grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
+      small:
+        "grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
       sm: "grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
-      medium: "grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+      medium:
+        "grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       md: "grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       large: "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
     };
@@ -210,11 +212,7 @@ export const CardGrid = React.memo<CardGridProps>(
                   layout: { duration: 0.3 },
                 }}
               >
-                <CardDisplay
-                  card={card}
-                  size={cardSize}
-                  onClick={onCardClick}
-                />
+                <CardDisplay card={card} size={cardSize} onClick={onCardClick} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -244,9 +242,7 @@ export const CardGrid = React.memo<CardGridProps>(
         {/* End of list indicator */}
         {!hasMore && cards.length > 0 && (
           <div className="flex justify-center py-8">
-            <p className="text-sm text-white/40">
-              You've reached the end of the collection
-            </p>
+            <p className="text-sm text-white/40">You've reached the end of the collection</p>
           </div>
         )}
       </div>

@@ -51,9 +51,7 @@ export default function ForumThreadListPage() {
   return (
     <ForumLayout>
       {/* Breadcrumbs */}
-      <ForumBreadcrumbs
-        items={forum ? [{ label: forum.title }] : []}
-      />
+      <ForumBreadcrumbs items={forum ? [{ label: forum.title }] : []} />
 
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
@@ -62,9 +60,7 @@ export default function ForumThreadListPage() {
             {forum?.title ?? "Loading..."}
           </h1>
           {forum?.description && (
-            <p className="mt-0.5 text-sm text-[var(--forum-text-dim)]">
-              {forum.description}
-            </p>
+            <p className="mt-0.5 text-sm text-[var(--forum-text-dim)]">{forum.description}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -92,7 +88,10 @@ export default function ForumThreadListPage() {
         ).map((opt) => (
           <button
             key={opt.key}
-            onClick={() => { setOrder(opt.key); setPage(1); }}
+            onClick={() => {
+              setOrder(opt.key);
+              setPage(1);
+            }}
             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
               order === opt.key
                 ? "bg-orange-500/15 text-orange-400"

@@ -88,9 +88,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
      * Generate splash particles
      */
     const generateSplashParticles = useCallback((): SplashParticle[] => {
-      const particleCount = Math.floor(
-        particleConfig.count * 2 * intensity
-      );
+      const particleCount = Math.floor(particleConfig.count * 2 * intensity);
       const newParticles: SplashParticle[] = [];
 
       for (let i = 0; i < particleCount; i++) {
@@ -98,8 +96,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
         const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
         const speed =
           particleConfig.speed.min +
-          Math.random() *
-            (particleConfig.speed.max - particleConfig.speed.min);
+          Math.random() * (particleConfig.speed.max - particleConfig.speed.min);
 
         newParticles.push({
           id: i,
@@ -109,12 +106,8 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
           velocityY: Math.sin(angle) * speed * 10,
           size:
             particleConfig.size.min +
-            Math.random() *
-              (particleConfig.size.max - particleConfig.size.min),
-          color:
-            particleConfig.colors[
-              Math.floor(Math.random() * particleConfig.colors.length)
-            ]!,
+            Math.random() * (particleConfig.size.max - particleConfig.size.min),
+          color: particleConfig.colors[Math.floor(Math.random() * particleConfig.colors.length)]!,
           rotation: Math.random() * 360,
           rotationSpeed: (Math.random() - 0.5) * 10,
           opacity: 1,
@@ -145,13 +138,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
 
         return () => clearTimeout(timeout);
       }
-    }, [
-      trigger,
-      isActive,
-      generateSplashParticles,
-      particleConfig.lifetime,
-      onComplete,
-    ]);
+    }, [trigger, isActive, generateSplashParticles, particleConfig.lifetime, onComplete]);
 
     /**
      * Animate particles
@@ -168,9 +155,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
               y: particle.y + particle.velocityY,
               velocityY: particle.velocityY + 0.5, // Gravity effect
               rotation: particle.rotation + particle.rotationSpeed,
-              opacity:
-                (particle.lifetime - 100) /
-                particleConfig.lifetime,
+              opacity: (particle.lifetime - 100) / particleConfig.lifetime,
               lifetime: particle.lifetime - 100,
             }))
             .filter((particle) => particle.lifetime > 0)
@@ -184,15 +169,8 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
 
     return (
       <div
-        className={cn(
-          "pointer-events-none absolute inset-0 z-50 overflow-hidden",
-          className
-        )}
-        style={
-          dimensions
-            ? { width: dimensions.width, height: dimensions.height }
-            : undefined
-        }
+        className={cn("pointer-events-none absolute inset-0 z-50 overflow-hidden", className)}
+        style={dimensions ? { width: dimensions.width, height: dimensions.height } : undefined}
       >
         {/* Radial shockwave */}
         <AnimatePresence>
@@ -201,8 +179,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
             style={{
               left: `${origin.x}%`,
               top: `${origin.y}%`,
-              borderColor:
-                particleConfig.colors[0] || "rgba(147, 51, 234, 0.6)",
+              borderColor: particleConfig.colors[0] || "rgba(147, 51, 234, 0.6)",
             }}
             initial={{
               width: 0,
@@ -230,8 +207,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
             style={{
               left: `${origin.x}%`,
               top: `${origin.y}%`,
-              borderColor:
-                particleConfig.colors[1] || "rgba(236, 72, 153, 0.4)",
+              borderColor: particleConfig.colors[1] || "rgba(236, 72, 153, 0.4)",
             }}
             initial={{
               width: 0,
@@ -302,15 +278,12 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
               top: `${origin.y}%`,
               width: 2,
               height: Math.sqrt(
-                Math.pow(particle.x - origin.x, 2) +
-                  Math.pow(particle.y - origin.y, 2)
+                Math.pow(particle.x - origin.x, 2) + Math.pow(particle.y - origin.y, 2)
               ),
               background: `linear-gradient(to bottom, ${particle.color} 0%, transparent 100%)`,
               transformOrigin: "top",
-              rotate: Math.atan2(
-                particle.y - origin.y,
-                particle.x - origin.x
-              ) * (180 / Math.PI) + 90,
+              rotate:
+                Math.atan2(particle.y - origin.y, particle.x - origin.x) * (180 / Math.PI) + 90,
               opacity: particle.opacity * 0.3,
             }}
             initial={{ scaleY: 0 }}
@@ -366,7 +339,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
             {[0, 45, 90, 135].map((angle) => (
               <motion.div
                 key={angle}
-                className="absolute left-1/2 top-1/2 h-1 w-full origin-left bg-gradient-to-r from-yellow-400 to-transparent"
+                className="absolute top-1/2 left-1/2 h-1 w-full origin-left bg-gradient-to-r from-yellow-400 to-transparent"
                 style={{
                   rotate: angle,
                   x: "-50%",

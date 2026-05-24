@@ -44,7 +44,12 @@ export default function DesignSystemArticle() {
             <li>Keep accessibility in mind (contrast, focus states, ARIA attributes).</li>
             <li>
               Update the{" "}
-              <Link href="/help/getting-started/navigation" className="text-blue-600 hover:underline dark:text-blue-400">Navigation Guide</Link>{" "}
+              <Link
+                href="/help/getting-started/navigation"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Navigation Guide
+              </Link>{" "}
               if navigation or theming patterns change.
             </li>
           </ul>
@@ -54,12 +59,22 @@ export default function DesignSystemArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Layers className="inline h-4 w-4" />{" "}
-              <Link href="/help/mycountry/overview" className="text-blue-600 hover:underline dark:text-blue-400">MyCountry Overview</Link>{" "}
+              <Link
+                href="/help/mycountry/overview"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                MyCountry Overview
+              </Link>{" "}
               — see themes applied in dashboards.
             </li>
             <li>
               <Droplet className="inline h-4 w-4" />{" "}
-              <Link href="/help/technical/architecture" className="text-blue-600 hover:underline dark:text-blue-400">System Architecture</Link>{" "}
+              <Link
+                href="/help/technical/architecture"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                System Architecture
+              </Link>{" "}
               — structural context.
             </li>
           </ul>

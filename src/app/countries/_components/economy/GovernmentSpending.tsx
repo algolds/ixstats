@@ -243,8 +243,10 @@ export function GovernmentSpending({
       // This is a simplified efficiency score - in a real app, you'd use actual metrics
       // Efficiency is higher for categories with higher impact per dollar spent
       // Deterministic efficiency score based on category share and policy flags
-      const policyBonus = (performanceBasedBudgeting ? 5 : 0) + (digitalGovernmentInitiative ? 5 : 0);
-      const categoryShare = spendingData.totalSpending > 0 ? (cat.amount / spendingData.totalSpending) * 100 : 0;
+      const policyBonus =
+        (performanceBasedBudgeting ? 5 : 0) + (digitalGovernmentInitiative ? 5 : 0);
+      const categoryShare =
+        spendingData.totalSpending > 0 ? (cat.amount / spendingData.totalSpending) * 100 : 0;
       const efficiencyScore = Math.min(100, 60 + policyBonus + Math.round(categoryShare * 0.5));
       return {
         ...cat,
@@ -465,7 +467,11 @@ export function GovernmentSpending({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                        <RechartsTooltip
+                          formatter={(value) =>
+                            value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                          }
+                        />
                         <Legend />
                       </RechartsPieChart>
                     </ResponsiveContainer>

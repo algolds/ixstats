@@ -12,9 +12,7 @@ import {
   RiSparklingLine,
   RiFireLine,
 } from "react-icons/ri";
-import type {
-  DiplomaticAchievement,
-} from "~/types/achievement-constellation";
+import type { DiplomaticAchievement } from "~/types/achievement-constellation";
 import {
   ACHIEVEMENT_TIER_CONFIG,
   ACHIEVEMENT_CATEGORY_CONFIG,

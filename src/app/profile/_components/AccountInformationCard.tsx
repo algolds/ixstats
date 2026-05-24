@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { User, CheckCircle, AlertCircle, Eye, EyeOff, Disc, Shield, MessageSquare, BookOpen, Link } from "lucide-react";
+import {
+  User,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Disc,
+  Shield,
+  MessageSquare,
+  BookOpen,
+  Link,
+} from "lucide-react";
 import { UserButton } from "~/context/auth-context";
 import type { UserResource } from "@clerk/types";
 import { api } from "~/trpc/react";
@@ -61,11 +72,13 @@ export function AccountInformationCard({
         <div className="relative">
           <div
             className={`grid grid-cols-1 gap-6 transition-all duration-500 sm:grid-cols-2 ${
-              showAccountInfo ? "opacity-100 translate-y-0" : "pointer-events-none translate-y-4 opacity-0 blur-xl"
+              showAccountInfo
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-4 opacity-0 blur-xl"
             }`}
           >
             <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <label className="mb-1 block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
                 Legal Name
               </label>
               <p className="font-semibold text-slate-900 dark:text-white">
@@ -74,7 +87,7 @@ export function AccountInformationCard({
             </div>
 
             <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <label className="mb-1 block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
                 Primary Email
               </label>
               <p className="font-semibold text-slate-900 dark:text-white">
@@ -88,12 +101,12 @@ export function AccountInformationCard({
               <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
                 <Shield className="h-5 w-5 text-slate-400" />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                 Credentials Encrypted
               </p>
-              <button 
+              <button
                 onClick={() => setShowAccountInfo(true)}
-                className="mt-2 text-[10px] font-bold uppercase tracking-widest text-indigo-600 hover:underline dark:text-indigo-400"
+                className="mt-2 text-[10px] font-bold tracking-widest text-indigo-600 uppercase hover:underline dark:text-indigo-400"
               >
                 Reveal
               </button>
@@ -104,7 +117,9 @@ export function AccountInformationCard({
         <div className="mt-8 border-t border-slate-100 pt-8 dark:border-slate-800">
           <div className="mb-4 flex items-center gap-2">
             <Link className="h-4 w-4 text-indigo-500" />
-            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white">IxnayID© </h3>
+            <h3 className="text-sm font-bold tracking-widest text-slate-900 uppercase dark:text-white">
+              IxnayID©{" "}
+            </h3>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {/* Forum Status */}
@@ -151,7 +166,9 @@ export function AccountInformationCard({
             <div className="rounded-2xl border border-slate-100 bg-white/50 p-4 dark:border-slate-800 dark:bg-slate-900/30">
               <div className="mb-2 flex items-center gap-2">
                 <Disc className="h-4 w-4 text-[#5865F2]" />
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Discord</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Discord
+                </span>
               </div>
               {ixnayStatus?.discord.linked ? (
                 <div className="space-y-1">

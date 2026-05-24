@@ -61,10 +61,10 @@ const COLOR_MAP: Record<string, { bg: string; text: string }> = {
 export function WorldStatsBar({ globalStats }: WorldStatsBarProps) {
   return (
     <Card className="px-4 py-3">
-      <div className="flex items-center gap-1.5 mb-2.5">
+      <div className="mb-2.5 flex items-center gap-1.5">
         <Globe className="h-3.5 w-3.5 text-blue-500" />
         <span className="text-xs font-semibold">World Overview</span>
-        <Badge variant="outline" className="ml-auto text-[10px] px-1.5 py-0">
+        <Badge variant="outline" className="ml-auto px-1.5 py-0 text-[10px]">
           LIVE
         </Badge>
       </div>
@@ -74,11 +74,13 @@ export function WorldStatsBar({ globalStats }: WorldStatsBarProps) {
           const colors = COLOR_MAP[stat.color]!;
           return (
             <div key={stat.key} className="flex items-center gap-2.5">
-              <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${colors.bg}`}>
+              <div
+                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${colors.bg}`}
+              >
                 <Icon className={`h-4 w-4 ${colors.text}`} />
               </div>
               <div className="min-w-0">
-                <div className="text-[11px] text-muted-foreground">{stat.label}</div>
+                <div className="text-muted-foreground text-[11px]">{stat.label}</div>
                 <div className={`text-xs font-semibold ${colors.text}`}>
                   {globalStats ? stat.format(globalStats) : "—"}
                 </div>

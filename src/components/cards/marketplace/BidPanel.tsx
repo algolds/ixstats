@@ -29,9 +29,7 @@ function formatCredits(amount: number): string {
 /**
  * Calculate bid increment suggestions
  */
-function calculateIncrements(
-  currentBid: number
-): { label: string; amount: number }[] {
+function calculateIncrements(currentBid: number): { label: string; amount: number }[] {
   return [
     { label: "+5%", amount: Math.ceil(currentBid * 1.05) },
     { label: "+10%", amount: Math.ceil(currentBid * 1.1) },
@@ -60,14 +58,7 @@ function calculateIncrements(
  * />
  */
 export const BidPanel = memo<BidPanelProps>(
-  ({
-    auction,
-    open,
-    onClose,
-    onSubmitBid,
-    userBalance = 0,
-    bidHistory = [],
-  }) => {
+  ({ auction, open, onClose, onSubmitBid, userBalance = 0, bidHistory = [] }) => {
     const [bidAmount, setBidAmount] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -122,9 +113,7 @@ export const BidPanel = memo<BidPanelProps>(
         await onSubmitBid(auction.id, bidAmount);
         onClose();
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to place bid"
-        );
+        setError(err instanceof Error ? err.message : "Failed to place bid");
       } finally {
         setIsSubmitting(false);
       }
@@ -137,7 +126,7 @@ export const BidPanel = memo<BidPanelProps>(
         <DialogOverlay />
         <DialogContent
           className={cn(
-            "fixed right-0 top-0 h-full w-full sm:max-w-md translate-x-0",
+            "fixed top-0 right-0 h-full w-full translate-x-0 sm:max-w-md",
             "data-[state=open]:animate-in data-[state=open]:slide-in-from-right",
             "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right",
             "border-l border-white/10 bg-black/95 backdrop-blur-xl",
@@ -148,10 +137,10 @@ export const BidPanel = memo<BidPanelProps>(
             {/* Header */}
             <div className="border-b border-white/10 p-4 sm:p-6">
               <div className="mb-4 flex items-start justify-between">
-                <h2 className="text-xl sm:text-2xl font-bold text-white">Place Bid</h2>
+                <h2 className="text-xl font-bold text-white sm:text-2xl">Place Bid</h2>
                 <button
                   onClick={onClose}
-                  className="text-gray-400 hover:text-white active:text-white transition-colors touch-manipulation"
+                  className="touch-manipulation text-gray-400 transition-colors hover:text-white active:text-white"
                   aria-label="Close"
                 >
                   <svg
@@ -175,19 +164,15 @@ export const BidPanel = memo<BidPanelProps>(
 
             {/* Card preview */}
             <div className="border-b border-white/10 p-4 sm:p-6">
-              <CardDisplay
-                card={auction.cardInstance}
-                size="small"
-                className="mx-auto"
-              />
+              <CardDisplay card={auction.cardInstance} size="small" className="mx-auto" />
             </div>
 
             {/* Bidding form */}
-            <div className="flex-1 space-y-4 sm:space-y-6 p-4 sm:p-6">
+            <div className="flex-1 space-y-4 p-4 sm:space-y-6 sm:p-6">
               {/* Current bid */}
               <div>
-                <p className="mb-1 text-xs sm:text-sm text-gray-400">Current Bid</p>
-                <p className="text-xl sm:text-2xl font-bold text-white">
+                <p className="mb-1 text-xs text-gray-400 sm:text-sm">Current Bid</p>
+                <p className="text-xl font-bold text-white sm:text-2xl">
                   {formatCredits(auction.currentBid)}
                 </p>
                 <p className="text-xs text-gray-400">
@@ -197,22 +182,17 @@ export const BidPanel = memo<BidPanelProps>(
 
               {/* Bid amount input */}
               <div>
-                <label className="mb-2 block text-xs sm:text-sm font-medium text-gray-300">
+                <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
                   Your Bid Amount
                 </label>
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     onClick={() => setBidAmount(Math.max(minBid, bidAmount - 10))}
-                    className="rounded-lg border border-white/20 bg-white/5 p-2 text-white hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation disabled:opacity-50"
+                    className="touch-manipulation rounded-lg border border-white/20 bg-white/5 p-2 text-white transition-colors hover:bg-white/10 active:bg-white/15 disabled:opacity-50"
                     disabled={bidAmount <= minBid}
                     aria-label="Decrease bid"
                   >
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -227,24 +207,17 @@ export const BidPanel = memo<BidPanelProps>(
                     min={minBid}
                     max={userBalance}
                     value={bidAmount}
-                    onChange={(e) =>
-                      setBidAmount(parseInt(e.target.value) || minBid)
-                    }
-                    className="flex-1 rounded-lg border border-white/20 bg-black/40 px-2 sm:px-4 py-2 sm:py-3 text-center text-lg sm:text-xl font-bold text-white focus:border-blue-500 focus:outline-none"
+                    onChange={(e) => setBidAmount(parseInt(e.target.value) || minBid)}
+                    className="flex-1 rounded-lg border border-white/20 bg-black/40 px-2 py-2 text-center text-lg font-bold text-white focus:border-blue-500 focus:outline-none sm:px-4 sm:py-3 sm:text-xl"
                   />
 
                   <button
                     onClick={() => setBidAmount(bidAmount + 10)}
-                    className="rounded-lg border border-white/20 bg-white/5 p-2 text-white hover:bg-white/10 active:bg-white/15 transition-colors touch-manipulation disabled:opacity-50"
+                    className="touch-manipulation rounded-lg border border-white/20 bg-white/5 p-2 text-white transition-colors hover:bg-white/10 active:bg-white/15 disabled:opacity-50"
                     disabled={bidAmount + 10 > userBalance}
                     aria-label="Increase bid"
                   >
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -257,15 +230,13 @@ export const BidPanel = memo<BidPanelProps>(
 
                 {/* Validation message */}
                 {!validation.valid && (
-                  <p className="mt-2 text-sm text-red-400">
-                    {validation.message}
-                  </p>
+                  <p className="mt-2 text-sm text-red-400">{validation.message}</p>
                 )}
               </div>
 
               {/* Increment suggestions */}
               <div>
-                <p className="mb-2 text-xs sm:text-sm font-medium text-gray-300">
+                <p className="mb-2 text-xs font-medium text-gray-300 sm:text-sm">
                   Quick Increments
                 </p>
                 <div className="grid grid-cols-3 gap-2">
@@ -274,10 +245,10 @@ export const BidPanel = memo<BidPanelProps>(
                       key={inc.label}
                       onClick={() => setBidAmount(inc.amount)}
                       className={cn(
-                        "rounded-lg border px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-all touch-manipulation",
+                        "touch-manipulation rounded-lg border px-2 py-1.5 text-xs font-medium transition-all sm:px-3 sm:py-2 sm:text-sm",
                         inc.amount <= userBalance
                           ? "border-white/20 bg-white/5 text-white hover:bg-white/10 active:bg-white/15"
-                          : "border-white/10 bg-white/5 text-gray-500 cursor-not-allowed opacity-50"
+                          : "cursor-not-allowed border-white/10 bg-white/5 text-gray-500 opacity-50"
                       )}
                       disabled={inc.amount > userBalance}
                     >
@@ -291,18 +262,14 @@ export const BidPanel = memo<BidPanelProps>(
               <div className="rounded-lg border border-white/10 bg-white/5 p-3 sm:p-4">
                 <div className="flex justify-between text-xs sm:text-sm">
                   <span className="text-gray-400">Your Balance</span>
-                  <span className="font-bold text-white">
-                    {formatCredits(userBalance)}
-                  </span>
+                  <span className="font-bold text-white">{formatCredits(userBalance)}</span>
                 </div>
                 <div className="mt-2 flex justify-between text-xs sm:text-sm">
                   <span className="text-gray-400">Remaining After Bid</span>
                   <span
                     className={cn(
                       "font-bold",
-                      userBalance - bidAmount >= 0
-                        ? "text-green-400"
-                        : "text-red-400"
+                      userBalance - bidAmount >= 0 ? "text-green-400" : "text-red-400"
                     )}
                   >
                     {formatCredits(userBalance - bidAmount)}
@@ -312,8 +279,7 @@ export const BidPanel = memo<BidPanelProps>(
 
               {/* Extension notice */}
               <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-400">
-                <strong>Note:</strong> Bidding in the last minute extends
-                the auction by 1 minute.
+                <strong>Note:</strong> Bidding in the last minute extends the auction by 1 minute.
               </div>
 
               {/* Error message */}
@@ -326,19 +292,12 @@ export const BidPanel = memo<BidPanelProps>(
               {/* Bid history */}
               {bidHistory.length > 0 && (
                 <div>
-                  <h3 className="mb-2 text-xs sm:text-sm font-medium text-gray-300">
-                    Recent Bids
-                  </h3>
-                  <div className="space-y-2 rounded-lg border border-white/10 bg-white/5 p-2 sm:p-3 max-h-40 sm:max-h-48 overflow-y-auto">
+                  <h3 className="mb-2 text-xs font-medium text-gray-300 sm:text-sm">Recent Bids</h3>
+                  <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-2 sm:max-h-48 sm:p-3">
                     {bidHistory.slice(0, 10).map((bid) => (
-                      <div
-                        key={bid.id}
-                        className="flex items-center justify-between text-sm"
-                      >
+                      <div key={bid.id} className="flex items-center justify-between text-sm">
                         <span className="text-gray-400">{bid.bidderName}</span>
-                        <span className="font-bold text-white">
-                          {formatCredits(bid.amount)}
-                        </span>
+                        <span className="font-bold text-white">{formatCredits(bid.amount)}</span>
                       </div>
                     ))}
                   </div>
@@ -352,10 +311,10 @@ export const BidPanel = memo<BidPanelProps>(
                 onClick={handleSubmit}
                 disabled={!validation.valid || isSubmitting}
                 className={cn(
-                  "w-full rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-bold transition-all touch-manipulation",
+                  "w-full touch-manipulation rounded-lg px-4 py-2.5 text-sm font-bold transition-all sm:px-6 sm:py-3 sm:text-base",
                   validation.valid && !isSubmitting
                     ? "bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700"
-                    : "bg-gray-500/20 text-gray-500 cursor-not-allowed"
+                    : "cursor-not-allowed bg-gray-500/20 text-gray-500"
                 )}
               >
                 {isSubmitting ? "Placing Bid..." : "Place Bid"}

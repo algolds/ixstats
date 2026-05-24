@@ -61,9 +61,7 @@ export function SectorEditor({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
       className={`rounded-lg border-2 p-4 transition-all ${
-        isSelected
-          ? "border-blue-500/50 bg-blue-500/5 dark:bg-blue-500/5"
-          : "border-border"
+        isSelected ? "border-blue-500/50 bg-blue-500/5 dark:bg-blue-500/5" : "border-border"
       }`}
     >
       {/* Header */}

@@ -52,9 +52,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
       if (!trigger) return [];
 
       // Reduce particle count on mobile for performance
-      const count = isMobile
-        ? Math.floor(particleConfig.count * 0.6)
-        : particleConfig.count;
+      const count = isMobile ? Math.floor(particleConfig.count * 0.6) : particleConfig.count;
 
       const generated: Particle[] = [];
       const angleStep = (Math.PI * 2) / count;
@@ -76,9 +74,8 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
 
         // Random color from rarity palette
         const color =
-          particleConfig.colors[
-            Math.floor(Math.random() * particleConfig.colors.length)
-          ] || "#ffffff";
+          particleConfig.colors[Math.floor(Math.random() * particleConfig.colors.length)] ||
+          "#ffffff";
 
         // Stagger delays for wave effect
         const delay = (i / count) * 0.2;

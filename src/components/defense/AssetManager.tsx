@@ -210,10 +210,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                       onClick={(e) => {
                         // Only trigger if clicking the card itself, not buttons
                         const target = e.target as HTMLElement;
-                        if (
-                          !target.closest("button") &&
-                          asset.imageUrl
-                        ) {
+                        if (!target.closest("button") && asset.imageUrl) {
                           console.log("Opening image modal for:", asset.name, asset.imageUrl);
                           setViewingImage({ url: asset.imageUrl, name: asset.name });
                         }
@@ -245,7 +242,9 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                             <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover/img:bg-black/60">
                               <div className="flex flex-col items-center gap-1 opacity-0 transition-opacity group-hover/img:opacity-100">
                                 <Image className="h-6 w-6 text-white" />
-                                <span className="text-xs font-medium text-white">View Full Size</span>
+                                <span className="text-xs font-medium text-white">
+                                  View Full Size
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -371,9 +370,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
           <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>{viewingImage.name}</DialogTitle>
-              <DialogDescription>
-                Equipment Image - Click outside to close
-              </DialogDescription>
+              <DialogDescription>Equipment Image - Click outside to close</DialogDescription>
             </DialogHeader>
             <div className="relative w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-900">
               <img
@@ -844,7 +841,7 @@ function AssetDialog({
                       e.currentTarget.style.display = "none";
                     }}
                   />
-                  <div className="absolute bottom-0 left-0 right-0 flex gap-2 bg-gradient-to-t from-black/80 to-transparent p-3">
+                  <div className="absolute right-0 bottom-0 left-0 flex gap-2 bg-gradient-to-t from-black/80 to-transparent p-3">
                     <Button
                       type="button"
                       variant="secondary"
@@ -886,16 +883,15 @@ function AssetDialog({
                   }}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <Image className="h-8 w-8 text-muted-foreground" />
+                    <Image className="text-muted-foreground h-8 w-8" />
                     <span className="text-sm font-medium">Add Equipment Image</span>
-                    <span className="text-xs text-muted-foreground">
-                      Click to enter image URL
-                    </span>
+                    <span className="text-muted-foreground text-xs">Click to enter image URL</span>
                   </div>
                 </Button>
               )}
-              <p className="text-xs text-muted-foreground">
-                Template equipment includes images automatically. Custom assets can add images from Wikimedia Commons.
+              <p className="text-muted-foreground text-xs">
+                Template equipment includes images automatically. Custom assets can add images from
+                Wikimedia Commons.
               </p>
             </div>
           </TabsContent>

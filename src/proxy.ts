@@ -91,6 +91,7 @@ function buildCSPTemplate(standalone: boolean): string {
     `connect-src 'self' https: wss: ws:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com`,
     `worker-src 'self' blob:`,
+    `media-src 'self' https://ixwiki.com data: blob:`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

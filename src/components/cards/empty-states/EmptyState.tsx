@@ -186,9 +186,7 @@ export const EmptyState = React.memo<EmptyStateProps>(
           <h3 className="mb-3 text-2xl font-bold text-white">{finalTitle}</h3>
 
           {/* Description */}
-          <p className="mb-6 text-sm leading-relaxed text-white/60">
-            {finalDescription}
-          </p>
+          <p className="mb-6 text-sm leading-relaxed text-white/60">{finalDescription}</p>
 
           {/* Action button */}
           {(onAction || finalActionHref) && (
@@ -217,48 +215,48 @@ EmptyState.displayName = "EmptyState";
 /**
  * EmptyInventory - Shorthand for inventory empty state
  */
-export const EmptyInventory: React.FC<
-  Omit<EmptyStateProps, "variant">
-> = (props) => <EmptyState variant="inventory" {...props} />;
+export const EmptyInventory: React.FC<Omit<EmptyStateProps, "variant">> = (props) => (
+  <EmptyState variant="inventory" {...props} />
+);
 
 /**
  * EmptyPacks - Shorthand for packs empty state
  */
-export const EmptyPacks: React.FC<Omit<EmptyStateProps, "variant">> = (
-  props
-) => <EmptyState variant="packs" {...props} />;
+export const EmptyPacks: React.FC<Omit<EmptyStateProps, "variant">> = (props) => (
+  <EmptyState variant="packs" {...props} />
+);
 
 /**
  * EmptyMarketplace - Shorthand for marketplace empty state
  */
-export const EmptyMarketplace: React.FC<
-  Omit<EmptyStateProps, "variant">
-> = (props) => <EmptyState variant="marketplace" {...props} />;
+export const EmptyMarketplace: React.FC<Omit<EmptyStateProps, "variant">> = (props) => (
+  <EmptyState variant="marketplace" {...props} />
+);
 
 /**
  * EmptyTrades - Shorthand for trades empty state
  */
-export const EmptyTrades: React.FC<Omit<EmptyStateProps, "variant">> = (
-  props
-) => <EmptyState variant="trades" {...props} />;
+export const EmptyTrades: React.FC<Omit<EmptyStateProps, "variant">> = (props) => (
+  <EmptyState variant="trades" {...props} />
+);
 
 /**
  * EmptyCrafting - Shorthand for crafting empty state
  */
-export const EmptyCrafting: React.FC<Omit<EmptyStateProps, "variant">> = (
-  props
-) => <EmptyState variant="crafting" {...props} />;
+export const EmptyCrafting: React.FC<Omit<EmptyStateProps, "variant">> = (props) => (
+  <EmptyState variant="crafting" {...props} />
+);
 
 /**
  * EmptyCollections - Shorthand for collections empty state
  */
-export const EmptyCollections: React.FC<
-  Omit<EmptyStateProps, "variant">
-> = (props) => <EmptyState variant="collections" {...props} />;
+export const EmptyCollections: React.FC<Omit<EmptyStateProps, "variant">> = (props) => (
+  <EmptyState variant="collections" {...props} />
+);
 
 /**
  * EmptySearch - Shorthand for search empty state
  */
-export const EmptySearch: React.FC<Omit<EmptyStateProps, "variant">> = (
-  props
-) => <EmptyState variant="search" {...props} />;
+export const EmptySearch: React.FC<Omit<EmptyStateProps, "variant">> = (props) => (
+  <EmptyState variant="search" {...props} />
+);

@@ -195,9 +195,7 @@ export function WikiSectionCard({
                           onError={(e: React.SyntheticEvent<HTMLImageElement>) =>
                             (e.currentTarget.style.display = "none")
                           }
-                          onClick={() =>
-                            window.open(`${imgBaseUrl}File:${fileName}`, "_blank")
-                          }
+                          onClick={() => window.open(`${imgBaseUrl}File:${fileName}`, "_blank")}
                         />
                       );
                     })}

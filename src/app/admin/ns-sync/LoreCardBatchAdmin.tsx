@@ -105,7 +105,9 @@ export function LoreCardBatchAdmin() {
       const allArticles: ArticlePreview[] = [];
 
       for (const source of sources) {
-        const response = await fetch(`/api/wiki/random-articles?source=${source}&count=${articlesPerSource}`);
+        const response = await fetch(
+          `/api/wiki/random-articles?source=${source}&count=${articlesPerSource}`
+        );
         if (!response.ok) throw new Error(`Failed to fetch articles from ${source}`);
 
         const data = await response.json();
@@ -145,7 +147,8 @@ export function LoreCardBatchAdmin() {
 
   const filteredArticles = useMemo(() => {
     return articles.filter((article) => {
-      if (searchQuery && !article.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (searchQuery && !article.title.toLowerCase().includes(searchQuery.toLowerCase()))
+        return false;
       if (qualityFilter > 0 && article.qualityScore < qualityFilter) return false;
       return true;
     });
@@ -155,7 +158,9 @@ export function LoreCardBatchAdmin() {
     setArticles((prev) =>
       prev.map((article) => ({
         ...article,
-        approved: filteredArticles.some((fa) => fa.title === article.title) ? true : article.approved,
+        approved: filteredArticles.some((fa) => fa.title === article.title)
+          ? true
+          : article.approved,
       }))
     );
   };
@@ -164,7 +169,9 @@ export function LoreCardBatchAdmin() {
     setArticles((prev) =>
       prev.map((article) => ({
         ...article,
-        approved: filteredArticles.some((fa) => fa.title === article.title) ? false : article.approved,
+        approved: filteredArticles.some((fa) => fa.title === article.title)
+          ? false
+          : article.approved,
       }))
     );
   };
@@ -204,7 +211,9 @@ export function LoreCardBatchAdmin() {
 
         if (response.ok) {
           setArticles((prev) =>
-            prev.map((a) => (a.title === article.title ? { ...a, generating: false, generated: true } : a))
+            prev.map((a) =>
+              a.title === article.title ? { ...a, generating: false, generated: true } : a
+            )
           );
           setGenerationResults((prev) => ({ ...prev, success: prev.success + 1 }));
         } else {
@@ -226,7 +235,11 @@ export function LoreCardBatchAdmin() {
         setArticles((prev) =>
           prev.map((a) =>
             a.title === article.title
-              ? { ...a, generating: false, error: error instanceof Error ? error.message : "Failed to generate" }
+              ? {
+                  ...a,
+                  generating: false,
+                  error: error instanceof Error ? error.message : "Failed to generate",
+                }
               : a
           )
         );
@@ -237,7 +250,10 @@ export function LoreCardBatchAdmin() {
     }
 
     setIsGenerating(false);
-    notify.success("Generation Complete", `Success: ${generationResults.success}, Failed: ${generationResults.failed}, Skipped: ${generationResults.skipped}`);
+    notify.success(
+      "Generation Complete",
+      `Success: ${generationResults.success}, Failed: ${generationResults.failed}, Skipped: ${generationResults.skipped}`
+    );
   };
 
   const approvedCount = articles.filter((a) => a.approved).length;
@@ -289,9 +305,15 @@ export function LoreCardBatchAdmin() {
               className="w-full bg-purple-500/20 text-purple-500 hover:bg-purple-500/30"
             >
               {isFetching ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Fetching...</>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Fetching...
+                </>
               ) : (
-                <><Download className="mr-2 h-4 w-4" />Fetch Articles</>
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Fetch Articles
+                </>
               )}
             </Button>
           </div>
@@ -303,9 +325,15 @@ export function LoreCardBatchAdmin() {
               className="w-full bg-green-500/20 text-green-500 hover:bg-green-500/30"
             >
               {isGenerating ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating...</>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
               ) : (
-                <><Sparkles className="mr-2 h-4 w-4" />Generate ({approvedCount})</>
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate ({approvedCount})
+                </>
               )}
             </Button>
           </div>
@@ -349,7 +377,7 @@ export function LoreCardBatchAdmin() {
               {generationProgress.current} / {generationProgress.total}
             </span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
+          <div className="bg-muted/50 h-2 w-full overflow-hidden rounded-full">
             <div
               className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
               style={{ width: `${(generationProgress.current / generationProgress.total) * 100}%` }}
@@ -389,11 +417,25 @@ export function LoreCardBatchAdmin() {
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={handleBulkApprove} disabled={isGenerating} className="flex-1">
-                <Check className="mr-2 h-4 w-4" />Approve All
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkApprove}
+                disabled={isGenerating}
+                className="flex-1"
+              >
+                <Check className="mr-2 h-4 w-4" />
+                Approve All
               </Button>
-              <Button size="sm" variant="outline" onClick={handleBulkReject} disabled={isGenerating} className="flex-1">
-                <X className="mr-2 h-4 w-4" />Reject All
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkReject}
+                disabled={isGenerating}
+                className="flex-1"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Reject All
               </Button>
             </div>
           </div>
@@ -428,7 +470,8 @@ export function LoreCardBatchAdmin() {
           <DialogHeader>
             <DialogTitle>Confirm Batch Generation</DialogTitle>
             <DialogDescription>
-              You are about to generate {approvedCount} lore cards. This process may take several minutes.
+              You are about to generate {approvedCount} lore cards. This process may take several
+              minutes.
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4">
@@ -445,9 +488,15 @@ export function LoreCardBatchAdmin() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowConfirmDialog(false)}>Cancel</Button>
-            <Button onClick={handleGenerateCards} className="bg-green-500/20 text-green-500 hover:bg-green-500/30">
-              <Sparkles className="mr-2 h-4 w-4" />Generate {approvedCount} Cards
+            <Button variant="ghost" onClick={() => setShowConfirmDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGenerateCards}
+              className="bg-green-500/20 text-green-500 hover:bg-green-500/30"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Generate {approvedCount} Cards
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -481,7 +530,9 @@ function ArticlePreviewCard({
           disabled={disabled || article.generated}
         />
         <div className="ml-3 flex-1">
-          <h3 className="text-foreground mb-1 line-clamp-2 text-sm font-semibold">{article.title}</h3>
+          <h3 className="text-foreground mb-1 line-clamp-2 text-sm font-semibold">
+            {article.title}
+          </h3>
           <div className="flex flex-wrap items-center gap-2">
             <Badge className={rarityColor}>{article.estimatedRarity}</Badge>
             <Badge variant="outline" className="text-xs">
@@ -503,7 +554,7 @@ function ArticlePreviewCard({
             <TrendingUp className="h-3 w-3 text-green-400" />
           </div>
         </div>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
+        <div className="bg-muted/50 h-1.5 w-full overflow-hidden rounded-full">
           <div
             className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
             style={{ width: `${article.qualityScore}%` }}
@@ -511,25 +562,29 @@ function ArticlePreviewCard({
         </div>
       </div>
 
-      <div className="border-t border-border pt-3">
+      <div className="border-border border-t pt-3">
         {article.generating && (
           <div className="flex items-center gap-2 text-xs text-blue-400">
-            <Loader2 className="h-3 w-3 animate-spin" /><span>Generating...</span>
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Generating...</span>
           </div>
         )}
         {article.generated && (
           <div className="flex items-center gap-2 text-xs text-green-400">
-            <CheckCircle2 className="h-3 w-3" /><span>Generated successfully</span>
+            <CheckCircle2 className="h-3 w-3" />
+            <span>Generated successfully</span>
           </div>
         )}
         {article.error && (
           <div className="flex items-center gap-2 text-xs text-red-400">
-            <XCircle className="h-3 w-3" /><span className="line-clamp-1">{article.error}</span>
+            <XCircle className="h-3 w-3" />
+            <span className="line-clamp-1">{article.error}</span>
           </div>
         )}
         {!article.generating && !article.generated && !article.error && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" /><span>{article.approved ? "Ready to generate" : "Pending approval"}</span>
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
+            <Clock className="h-3 w-3" />
+            <span>{article.approved ? "Ready to generate" : "Pending approval"}</span>
           </div>
         )}
       </div>

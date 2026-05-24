@@ -273,13 +273,10 @@ describe("BidirectionalSyncService", () => {
       const source = createTestSource();
       const target = createTestTarget();
 
-      const event = service.testCreateSyncEvent(
-        "bidirectional",
-        source,
-        target,
-        true,
-        ["change1", "change2"]
-      );
+      const event = service.testCreateSyncEvent("bidirectional", source, target, true, [
+        "change1",
+        "change2",
+      ]);
 
       expect(event.id).toMatch(/^sync_\d+_[a-z0-9]+$/);
       expect(event.timestamp).toBeInstanceOf(Date);

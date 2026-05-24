@@ -225,7 +225,7 @@ export function CountryAtGlance({
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-16 rounded bg-gray-200 dark:bg-gray-700" />
               ))}
@@ -531,18 +531,23 @@ export function CountryAtGlance({
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Government Name</p>
                     <p className="text-sm font-medium">
-                      {governmentStructure?.governmentName || country.nationalIdentity?.officialName}
+                      {governmentStructure?.governmentName ||
+                        country.nationalIdentity?.officialName}
                     </p>
                   </div>
                 </div>
               )}
-              {(governmentStructure?.governmentType || country.governmentType || country.nationalIdentity?.governmentType) && (
+              {(governmentStructure?.governmentType ||
+                country.governmentType ||
+                country.nationalIdentity?.governmentType) && (
                 <div className="flex items-start space-x-3">
                   <Crown className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-muted-foreground text-sm">Government Type</p>
                     <p className="text-sm font-medium">
-                      {governmentStructure?.governmentType || country.governmentType || country.nationalIdentity?.governmentType}
+                      {governmentStructure?.governmentType ||
+                        country.governmentType ||
+                        country.nationalIdentity?.governmentType}
                     </p>
                   </div>
                 </div>
@@ -592,7 +597,8 @@ export function CountryAtGlance({
                     <p className="text-muted-foreground text-sm">Currency</p>
                     <p className="text-sm font-medium">
                       {country.nationalIdentity.currency}
-                      {country.nationalIdentity.currencySymbol && ` (${country.nationalIdentity.currencySymbol})`}
+                      {country.nationalIdentity.currencySymbol &&
+                        ` (${country.nationalIdentity.currencySymbol})`}
                     </p>
                   </div>
                 </div>
@@ -646,7 +652,7 @@ export function CountryAtGlance({
                 <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
                   National Motto
                 </p>
-                <p className="text-muted-foreground border-l-4 border-primary/30 pl-4 text-base italic">
+                <p className="text-muted-foreground border-primary/30 border-l-4 pl-4 text-base italic">
                   &quot;{country.nationalIdentity.motto}&quot;
                 </p>
               </div>
@@ -656,13 +662,13 @@ export function CountryAtGlance({
           <Separator />
 
           {/* Economic Indicators */}
-          <motion.div 
+          <motion.div
             className="space-y-4"
             variants={containerVariants}
             initial="hidden"
             animate="show"
           >
-            <motion.h4 
+            <motion.h4
               className="text-muted-foreground flex items-center text-sm font-semibold"
               variants={itemVariants}
             >
@@ -675,16 +681,20 @@ export function CountryAtGlance({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className="bg-gradient-to-br from-emerald-50/80 to-green-50/80 dark:from-emerald-900/20 dark:to-green-900/20 hover:from-emerald-100 hover:to-green-100 dark:hover:from-emerald-900/30 dark:hover:to-green-900/30 cursor-pointer rounded-xl p-4 transition-all border border-emerald-200/50 dark:border-emerald-700/30 shadow-sm hover:shadow-md"
+                      className="cursor-pointer rounded-xl border border-emerald-200/50 bg-gradient-to-br from-emerald-50/80 to-green-50/80 p-4 shadow-sm transition-all hover:from-emerald-100 hover:to-green-100 hover:shadow-md dark:border-emerald-700/30 dark:from-emerald-900/20 dark:to-green-900/20 dark:hover:from-emerald-900/30 dark:hover:to-green-900/30"
                       onClick={() => setIsGdpPerCapitaModalOpen(true)}
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">GDP per Capita</p>
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                          GDP per Capita
+                        </p>
                         {formatted.getGrowthIconComponent(country.adjustedGdpGrowth)}
                       </div>
-                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatted.gdpPerCapita}</p>
+                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                        {formatted.gdpPerCapita}
+                      </p>
                       <p
-                        className={`text-sm mt-1 font-medium ${formatted.getGrowthColorClass(
+                        className={`mt-1 text-sm font-medium ${formatted.getGrowthColorClass(
                           country.adjustedGdpGrowth
                         )}`}
                       >
@@ -693,7 +703,9 @@ export function CountryAtGlance({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Current GDP per capita, growth capped at max rate {formatted.maxGdpGrowth}</p>
+                    <p>
+                      Current GDP per capita, growth capped at max rate {formatted.maxGdpGrowth}
+                    </p>
                     <p className="text-muted-foreground mt-1 text-xs">
                       Economic Tier: {country.economicTier}
                     </p>
@@ -707,20 +719,28 @@ export function CountryAtGlance({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className="bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30 cursor-pointer rounded-xl p-4 transition-all border border-blue-200/50 dark:border-blue-700/30 shadow-sm hover:shadow-md"
+                      className="cursor-pointer rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 p-4 shadow-sm transition-all hover:from-blue-100 hover:to-cyan-100 hover:shadow-md dark:border-blue-700/30 dark:from-blue-900/20 dark:to-cyan-900/20 dark:hover:from-blue-900/30 dark:hover:to-cyan-900/30"
                       onClick={() => setIsGdpModalOpen(true)}
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Total GDP</p>
-                        <BarChart3 className="text-blue-500 h-4 w-4" />
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                          Total GDP
+                        </p>
+                        <BarChart3 className="h-4 w-4 text-blue-500" />
                       </div>
-                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{formatted.totalGdp}</p>
-                      <p className="text-sm mt-1 text-muted-foreground">{country.economicTier} economy</p>
+                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                        {formatted.totalGdp}
+                      </p>
+                      <p className="text-muted-foreground mt-1 text-sm">
+                        {country.economicTier} economy
+                      </p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Gross domestic product (total economic output)</p>
-                    <p className="text-muted-foreground mt-1 text-xs">Population × GDP per Capita</p>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      Population × GDP per Capita
+                    </p>
                     <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
                   </TooltipContent>
                 </Tooltip>
@@ -731,13 +751,19 @@ export function CountryAtGlance({
                 <motion.div variants={itemVariants} whileHover={cardHover}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="bg-gradient-to-br from-purple-50/80 to-violet-50/80 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-4 border border-purple-200/50 dark:border-purple-700/30 shadow-sm">
+                      <div className="rounded-xl border border-purple-200/50 bg-gradient-to-br from-purple-50/80 to-violet-50/80 p-4 shadow-sm dark:border-purple-700/30 dark:from-purple-900/20 dark:to-violet-900/20">
                         <div className="mb-2 flex items-center justify-between">
-                          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">GDP Density</p>
-                          <MapPin className="text-purple-500 h-4 w-4" />
+                          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            GDP Density
+                          </p>
+                          <MapPin className="h-4 w-4 text-purple-500" />
                         </div>
-                        <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">{formatted.gdpDensity}</p>
-                        <p className="text-sm mt-1 text-muted-foreground">economic output per km²</p>
+                        <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                          {formatted.gdpDensity}
+                        </p>
+                        <p className="text-muted-foreground mt-1 text-sm">
+                          economic output per km²
+                        </p>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -752,13 +778,13 @@ export function CountryAtGlance({
           <Separator />
 
           {/* Demographics */}
-          <motion.div 
+          <motion.div
             className="space-y-4"
             variants={containerVariants}
             initial="hidden"
             animate="show"
           >
-            <motion.h4 
+            <motion.h4
               className="text-muted-foreground flex items-center text-sm font-semibold"
               variants={itemVariants}
             >
@@ -771,16 +797,20 @@ export function CountryAtGlance({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className="bg-gradient-to-br from-cyan-50/80 to-sky-50/80 dark:from-cyan-900/20 dark:to-sky-900/20 hover:from-cyan-100 hover:to-sky-100 dark:hover:from-cyan-900/30 dark:hover:to-sky-900/30 cursor-pointer rounded-xl p-4 transition-all border border-cyan-200/50 dark:border-cyan-700/30 shadow-sm hover:shadow-md"
+                      className="cursor-pointer rounded-xl border border-cyan-200/50 bg-gradient-to-br from-cyan-50/80 to-sky-50/80 p-4 shadow-sm transition-all hover:from-cyan-100 hover:to-sky-100 hover:shadow-md dark:border-cyan-700/30 dark:from-cyan-900/20 dark:to-sky-900/20 dark:hover:from-cyan-900/30 dark:hover:to-sky-900/30"
                       onClick={() => setIsPopulationModalOpen(true)}
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Population</p>
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                          Population
+                        </p>
                         {formatted.getGrowthIconComponent(country.populationGrowthRate)}
                       </div>
-                      <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">{formatted.population}</p>
+                      <p className="text-2xl font-bold text-cyan-700 dark:text-cyan-400">
+                        {formatted.population}
+                      </p>
                       <p
-                        className={`text-sm mt-1 font-medium ${formatted.getGrowthColorClass(
+                        className={`mt-1 text-sm font-medium ${formatted.getGrowthColorClass(
                           country.populationGrowthRate
                         )}`}
                       >
@@ -803,13 +833,17 @@ export function CountryAtGlance({
                 <motion.div variants={itemVariants} whileHover={cardHover}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/80 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-4 border border-amber-200/50 dark:border-amber-700/30 shadow-sm">
+                      <div className="rounded-xl border border-amber-200/50 bg-gradient-to-br from-amber-50/80 to-orange-50/80 p-4 shadow-sm dark:border-amber-700/30 dark:from-amber-900/20 dark:to-orange-900/20">
                         <div className="mb-2 flex items-center justify-between">
-                          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Pop. Density</p>
-                          <Globe className="text-amber-500 h-4 w-4" />
+                          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Pop. Density
+                          </p>
+                          <Globe className="h-4 w-4 text-amber-500" />
                         </div>
-                        <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{formatted.populationDensity}</p>
-                        <p className="text-sm mt-1 text-muted-foreground">people per km²</p>
+                        <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                          {formatted.populationDensity}
+                        </p>
+                        <p className="text-muted-foreground mt-1 text-sm">people per km²</p>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -824,13 +858,17 @@ export function CountryAtGlance({
                 <motion.div variants={itemVariants} whileHover={cardHover}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="bg-gradient-to-br from-rose-50/80 to-pink-50/80 dark:from-rose-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-rose-200/50 dark:border-rose-700/30 shadow-sm">
+                      <div className="rounded-xl border border-rose-200/50 bg-gradient-to-br from-rose-50/80 to-pink-50/80 p-4 shadow-sm dark:border-rose-700/30 dark:from-rose-900/20 dark:to-pink-900/20">
                         <div className="mb-2 flex items-center justify-between">
-                          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Land Area</p>
-                          <MapPin className="text-rose-500 h-4 w-4" />
+                          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                            Land Area
+                          </p>
+                          <MapPin className="h-4 w-4 text-rose-500" />
                         </div>
-                        <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{formatted.landArea}</p>
-                        <p className="text-sm mt-1 text-muted-foreground">{formatted.areaSqMi}</p>
+                        <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">
+                          {formatted.landArea}
+                        </p>
+                        <p className="text-muted-foreground mt-1 text-sm">{formatted.areaSqMi}</p>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -845,13 +883,13 @@ export function CountryAtGlance({
           <Separator />
 
           {/* Growth Factors & Modifiers */}
-          <motion.div 
+          <motion.div
             className="space-y-4"
             variants={containerVariants}
             initial="hidden"
             animate="show"
           >
-            <motion.h4 
+            <motion.h4
               className="text-muted-foreground flex items-center text-sm font-semibold"
               variants={itemVariants}
             >
@@ -862,13 +900,17 @@ export function CountryAtGlance({
               <motion.div variants={itemVariants} whileHover={cardHover}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="bg-gradient-to-br from-indigo-50/80 to-blue-50/80 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-xl p-4 border border-indigo-200/50 dark:border-indigo-700/30 shadow-sm">
+                    <div className="rounded-xl border border-indigo-200/50 bg-gradient-to-br from-indigo-50/80 to-blue-50/80 p-4 shadow-sm dark:border-indigo-700/30 dark:from-indigo-900/20 dark:to-blue-900/20">
                       <div className="mb-2 flex items-center justify-between">
-                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Max GDP Growth</p>
-                        <BarChart3 className="text-indigo-500 h-4 w-4" />
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                          Max GDP Growth
+                        </p>
+                        <BarChart3 className="h-4 w-4 text-indigo-500" />
                       </div>
-                      <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{formatted.maxGdpGrowth}</p>
-                      <p className="text-sm mt-1 text-muted-foreground">tier-based cap</p>
+                      <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">
+                        {formatted.maxGdpGrowth}
+                      </p>
+                      <p className="text-muted-foreground mt-1 text-sm">tier-based cap</p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -880,15 +922,17 @@ export function CountryAtGlance({
               <motion.div variants={itemVariants} whileHover={cardHover}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="bg-gradient-to-br from-teal-50/80 to-emerald-50/80 dark:from-teal-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-teal-200/50 dark:border-teal-700/30 shadow-sm">
+                    <div className="rounded-xl border border-teal-200/50 bg-gradient-to-br from-teal-50/80 to-emerald-50/80 p-4 shadow-sm dark:border-teal-700/30 dark:from-teal-900/20 dark:to-emerald-900/20">
                       <div className="mb-2 flex items-center justify-between">
-                        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Local Factor</p>
-                        <Activity className="text-teal-500 h-4 w-4" />
+                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                          Local Factor
+                        </p>
+                        <Activity className="h-4 w-4 text-teal-500" />
                       </div>
                       <p className="text-2xl font-bold text-teal-700 dark:text-teal-400">
                         {((country.localGrowthFactor - 1) * 100).toFixed(2)}%
                       </p>
-                      <p className="text-sm mt-1 text-muted-foreground">growth modifier</p>
+                      <p className="text-muted-foreground mt-1 text-sm">growth modifier</p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>

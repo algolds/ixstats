@@ -116,7 +116,7 @@ export function PipelineWizard() {
           onClick={() => setMode("quick")}
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
             mode === "quick"
-              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+              ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
               : "text-muted-foreground hover:text-foreground border border-transparent"
           }`}
         >
@@ -127,7 +127,7 @@ export function PipelineWizard() {
           onClick={() => setMode("full")}
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
             mode === "full"
-              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+              ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
               : "text-muted-foreground hover:text-foreground border border-transparent"
           }`}
         >
@@ -173,9 +173,12 @@ function QuickUpdatePanel() {
         return;
       }
 
-      const layerType = selectedLayer === "auto" ? detectLayerFromFilename(file.name) : selectedLayer;
+      const layerType =
+        selectedLayer === "auto" ? detectLayerFromFilename(file.name) : selectedLayer;
       if (!layerType) {
-        setError(`Could not detect layer type from "${file.name}". Please select a layer type manually.`);
+        setError(
+          `Could not detect layer type from "${file.name}". Please select a layer type manually.`
+        );
         return;
       }
 
@@ -196,7 +199,11 @@ function QuickUpdatePanel() {
           throw new Error(err.error || `Upload failed (${uploadRes.status})`);
         }
 
-        const uploadData = (await uploadRes.json()) as { id: string; layerType: string; fileName: string };
+        const uploadData = (await uploadRes.json()) as {
+          id: string;
+          layerType: string;
+          fileName: string;
+        };
 
         const processResult = await processMutation.mutateAsync({
           uploadId: uploadData.id,
@@ -261,7 +268,10 @@ function QuickUpdatePanel() {
         <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="text-sm">{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto text-red-400/60 hover:text-red-400">
+          <button
+            onClick={() => setError(null)}
+            className="ml-auto text-red-400/60 hover:text-red-400"
+          >
             &times;
           </button>
         </div>
@@ -270,9 +280,9 @@ function QuickUpdatePanel() {
       {stage === "select" && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-foreground">Layer:</label>
+            <label className="text-foreground text-sm font-medium">Layer:</label>
             <Select value={selectedLayer} onValueChange={(v) => setSelectedLayer(v as LayerOption)}>
-              <SelectTrigger className="w-48 border-border bg-muted/50">
+              <SelectTrigger className="border-border bg-muted/50 w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -296,12 +306,14 @@ function QuickUpdatePanel() {
                 : "border-border bg-muted/30 hover:border-border hover:bg-muted/50"
             }`}
           >
-            <FileUp className={`h-10 w-10 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`} />
+            <FileUp
+              className={`h-10 w-10 ${isDragging ? "text-blue-400" : "text-muted-foreground"}`}
+            />
             <div className="text-center">
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-foreground text-sm font-medium">
                 Drop SVG file here or click to browse
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Layer type will be auto-detected from filename
               </p>
             </div>
@@ -319,7 +331,9 @@ function QuickUpdatePanel() {
       {stage === "processing" && (
         <div className="flex flex-col items-center gap-3 py-16">
           <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-          <p className="text-sm text-muted-foreground">Processing SVG... parsing, converting, computing diff</p>
+          <p className="text-muted-foreground text-sm">
+            Processing SVG... parsing, converting, computing diff
+          </p>
         </div>
       )}
 
@@ -327,25 +341,58 @@ function QuickUpdatePanel() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-foreground">{result.fileName}</h3>
-              <p className="text-sm text-muted-foreground">
-                Layer: <Badge variant="outline" className="ml-1">{result.layerType}</Badge>
+              <h3 className="text-foreground text-lg font-semibold">{result.fileName}</h3>
+              <p className="text-muted-foreground text-sm">
+                Layer:{" "}
+                <Badge variant="outline" className="ml-1">
+                  {result.layerType}
+                </Badge>
                 {" · "}
                 {result.featureCount} features parsed
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={reset} className="border-border text-muted-foreground">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={reset}
+              className="border-border text-muted-foreground"
+            >
               <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Start Over
             </Button>
           </div>
 
           {result.diff?.summary && (
             <div className="flex flex-wrap gap-3">
-              <DiffBadge icon={Plus} label="Added" count={result.diff.summary.addedCount} color="emerald" />
-              <DiffBadge icon={Pencil} label="Modified" count={result.diff.summary.modifiedCount} color="blue" />
-              <DiffBadge icon={Minus} label="Removed" count={result.diff.summary.removedCount} color="red" />
-              <DiffBadge icon={Equal} label="Unchanged" count={result.diff.summary.unchangedCount} color="slate" />
-              <DiffBadge icon={Link2} label="Links Preserved" count={result.diff.summary.linkagesPreserved} color="amber" />
+              <DiffBadge
+                icon={Plus}
+                label="Added"
+                count={result.diff.summary.addedCount}
+                color="emerald"
+              />
+              <DiffBadge
+                icon={Pencil}
+                label="Modified"
+                count={result.diff.summary.modifiedCount}
+                color="blue"
+              />
+              <DiffBadge
+                icon={Minus}
+                label="Removed"
+                count={result.diff.summary.removedCount}
+                color="red"
+              />
+              <DiffBadge
+                icon={Equal}
+                label="Unchanged"
+                count={result.diff.summary.unchangedCount}
+                color="slate"
+              />
+              <DiffBadge
+                icon={Link2}
+                label="Links Preserved"
+                count={result.diff.summary.linkagesPreserved}
+                color="amber"
+              />
             </div>
           )}
 
@@ -364,16 +411,20 @@ function QuickUpdatePanel() {
 
           <button
             onClick={() => setDetailsExpanded(!detailsExpanded)}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-sm transition-colors"
           >
-            {detailsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            {detailsExpanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
             Feature details
           </button>
 
           {detailsExpanded && result.diff && (
-            <div className="max-h-64 overflow-y-auto rounded-lg border border-border bg-muted/50">
+            <div className="border-border bg-muted/50 max-h-64 overflow-y-auto rounded-lg border">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-muted text-left text-xs uppercase text-muted-foreground">
+                <thead className="bg-muted text-muted-foreground sticky top-0 text-left text-xs uppercase">
                   <tr>
                     <th className="px-3 py-2">Status</th>
                     <th className="px-3 py-2">Feature ID</th>
@@ -381,12 +432,22 @@ function QuickUpdatePanel() {
                     <th className="px-3 py-2">Country Link</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody className="divide-border/50 divide-y">
                   {result.diff.added.map((f) => (
-                    <DiffRow key={f.featureId} status="added" featureId={f.featureId} displayName={f.displayName} />
+                    <DiffRow
+                      key={f.featureId}
+                      status="added"
+                      featureId={f.featureId}
+                      displayName={f.displayName}
+                    />
                   ))}
                   {result.diff.modified.map((f) => (
-                    <DiffRow key={f.featureId} status="modified" featureId={f.featureId} displayName={f.displayName} />
+                    <DiffRow
+                      key={f.featureId}
+                      status="modified"
+                      featureId={f.featureId}
+                      displayName={f.displayName}
+                    />
                   ))}
                   {result.diff.removed.map((f) => (
                     <DiffRow
@@ -398,7 +459,9 @@ function QuickUpdatePanel() {
                     />
                   ))}
                   {result.diff.unchanged.slice(0, 20).map((f) => {
-                    const link = result.diff!.preservedLinkages.find((l) => l.featureId === f.featureId);
+                    const link = result.diff!.preservedLinkages.find(
+                      (l) => l.featureId === f.featureId
+                    );
                     return (
                       <DiffRow
                         key={f.featureId}
@@ -411,7 +474,10 @@ function QuickUpdatePanel() {
                   })}
                   {result.diff.unchanged.length > 20 && (
                     <tr>
-                      <td colSpan={4} className="px-3 py-2 text-center text-xs text-muted-foreground">
+                      <td
+                        colSpan={4}
+                        className="text-muted-foreground px-3 py-2 text-center text-xs"
+                      >
                         ...and {result.diff.unchanged.length - 20} more unchanged features
                       </td>
                     </tr>
@@ -424,12 +490,16 @@ function QuickUpdatePanel() {
           <div className="flex gap-3 pt-2">
             <Button
               onClick={handleCommit}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+              className="bg-emerald-600 text-white hover:bg-emerald-500"
             >
               <Upload className="mr-1.5 h-4 w-4" />
               Apply Update
             </Button>
-            <Button variant="outline" onClick={reset} className="border-border text-muted-foreground">
+            <Button
+              variant="outline"
+              onClick={reset}
+              className="border-border text-muted-foreground"
+            >
               Cancel
             </Button>
           </div>
@@ -439,7 +509,7 @@ function QuickUpdatePanel() {
       {stage === "committing" && (
         <div className="flex flex-col items-center gap-3 py-16">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
-          <p className="text-sm text-muted-foreground">Applying update... writing to database</p>
+          <p className="text-muted-foreground text-sm">Applying update... writing to database</p>
         </div>
       )}
 
@@ -447,9 +517,10 @@ function QuickUpdatePanel() {
         <div className="flex flex-col items-center gap-4 py-12">
           <CheckCircle2 className="h-12 w-12 text-emerald-400" />
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-foreground">Update Applied</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {result.featureCount} features committed to <Badge variant="outline">{result.layerType}</Badge> layer
+            <h3 className="text-foreground text-lg font-semibold">Update Applied</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {result.featureCount} features committed to{" "}
+              <Badge variant="outline">{result.layerType}</Badge> layer
             </p>
           </div>
           <Button variant="outline" onClick={reset} className="border-border text-foreground">
@@ -494,9 +565,15 @@ function FullPipelinePanel() {
       const text = await selectedFile.text();
       setSvgContent(text);
       setStep("detection");
-    } else if (selectedFile.name.endsWith(".png") || selectedFile.name.endsWith(".jpg") || selectedFile.name.endsWith(".jpeg")) {
+    } else if (
+      selectedFile.name.endsWith(".png") ||
+      selectedFile.name.endsWith(".jpg") ||
+      selectedFile.name.endsWith(".jpeg")
+    ) {
       setFileType("png");
-      setError("PNG files must first be converted to SVG. Use the color extraction tool or convert externally.");
+      setError(
+        "PNG files must first be converted to SVG. Use the color extraction tool or convert externally."
+      );
     } else {
       setError("Unsupported file type. Please upload an SVG or PNG file.");
     }
@@ -564,12 +641,11 @@ function FullPipelinePanel() {
   const currentIdx = steps.findIndex((s) => s.id === step);
 
   return (
-    <div className="rounded-xl border border-border bg-muted/30 p-6">
-      <h3 className="mb-4 text-lg font-semibold text-foreground">
-        Full Pipeline Wizard
-      </h3>
-      <p className="mb-4 text-xs text-muted-foreground">
-        Multi-step wizard for importing SVG/PNG maps with coordinate calibration. For single-layer updates, use Quick Update mode instead.
+    <div className="border-border bg-muted/30 rounded-xl border p-6">
+      <h3 className="text-foreground mb-4 text-lg font-semibold">Full Pipeline Wizard</h3>
+      <p className="text-muted-foreground mb-4 text-xs">
+        Multi-step wizard for importing SVG/PNG maps with coordinate calibration. For single-layer
+        updates, use Quick Update mode instead.
       </p>
 
       {/* Step indicator */}
@@ -593,14 +669,12 @@ function FullPipelinePanel() {
             </div>
             <span
               className={`text-xs ${
-                i === currentIdx ? "font-medium text-foreground" : "text-muted-foreground"
+                i === currentIdx ? "text-foreground font-medium" : "text-muted-foreground"
               }`}
             >
               {s.label}
             </span>
-            {i < steps.length - 1 && (
-              <div className="mx-1 h-px w-6 bg-muted" />
-            )}
+            {i < steps.length - 1 && <div className="bg-muted mx-1 h-px w-6" />}
           </div>
         ))}
       </div>
@@ -614,12 +688,10 @@ function FullPipelinePanel() {
 
       {step === "upload" && (
         <div className="flex flex-col items-center gap-4 py-8">
-          <div className="rounded-xl border-2 border-dashed border-border p-8 text-center">
-            <Upload className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="mb-2 text-sm font-medium text-foreground">
-              Drop your map file here
-            </p>
-            <p className="mb-4 text-xs text-muted-foreground">
+          <div className="border-border rounded-xl border-2 border-dashed p-8 text-center">
+            <Upload className="text-muted-foreground mx-auto mb-3 h-10 w-10" />
+            <p className="text-foreground mb-2 text-sm font-medium">Drop your map file here</p>
+            <p className="text-muted-foreground mb-4 text-xs">
               SVG files with Inkscape layers, or PNG maps with distinct country colors
             </p>
             <Button asChild>
@@ -635,7 +707,7 @@ function FullPipelinePanel() {
             </Button>
           </div>
           {file && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Selected: {file.name} ({(file.size / 1024).toFixed(0)} KB)
             </p>
           )}
@@ -644,12 +716,12 @@ function FullPipelinePanel() {
 
       {step === "detection" && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            File loaded: <span className="font-medium text-foreground">{file?.name}</span>
+          <p className="text-muted-foreground text-sm">
+            File loaded: <span className="text-foreground font-medium">{file?.name}</span>
           </p>
-          <p className="text-sm text-muted-foreground">
-            The pipeline will parse this SVG file, detect layers, convert coordinates,
-            and enrich altitude features with elevation metadata.
+          <p className="text-muted-foreground text-sm">
+            The pipeline will parse this SVG file, detect layers, convert coordinates, and enrich
+            altitude features with elevation metadata.
           </p>
           <Button onClick={handleRunPipeline} disabled={isProcessing}>
             {isProcessing ? (
@@ -664,15 +736,13 @@ function FullPipelinePanel() {
 
       {step === "preview" && pipelineResult && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-border bg-muted/50 p-4">
-            <h4 className="mb-2 text-sm font-medium text-foreground">
-              Pipeline Results
-            </h4>
+          <div className="border-border bg-muted/50 rounded-lg border p-4">
+            <h4 className="text-foreground mb-2 text-sm font-medium">Pipeline Results</h4>
             <div className="space-y-1">
               {Object.entries(pipelineResult.metadata.featureCounts).map(([layer, count]) => (
                 <div key={layer} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{layer}</span>
-                  <span className="font-medium text-foreground">{count} features</span>
+                  <span className="text-foreground font-medium">{count} features</span>
                 </div>
               ))}
             </div>
@@ -682,7 +752,9 @@ function FullPipelinePanel() {
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
               <p className="mb-1 text-xs font-medium text-amber-400">Warnings</p>
               {pipelineResult.metadata.warnings.map((w, i) => (
-                <p key={i} className="text-xs text-amber-400/80">{w}</p>
+                <p key={i} className="text-xs text-amber-400/80">
+                  {w}
+                </p>
               ))}
             </div>
           )}
@@ -691,7 +763,9 @@ function FullPipelinePanel() {
             <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
               <p className="mb-1 text-xs font-medium text-red-400">Validation Errors</p>
               {pipelineResult.validation.errors.map((e, i) => (
-                <p key={i} className="text-xs text-red-400/80">{e}</p>
+                <p key={i} className="text-xs text-red-400/80">
+                  {e}
+                </p>
               ))}
             </div>
           )}
@@ -710,15 +784,16 @@ function FullPipelinePanel() {
 
       {step === "import" && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Ready to import {Object.values(pipelineResult?.metadata.featureCounts ?? {}).reduce((a, b) => a + b, 0)} features
-            into the database. This will merge with existing map data.
+          <p className="text-muted-foreground text-sm">
+            Ready to import{" "}
+            {Object.values(pipelineResult?.metadata.featureCounts ?? {}).reduce((a, b) => a + b, 0)}{" "}
+            features into the database. This will merge with existing map data.
           </p>
           <div className="flex gap-2">
             <Button
               onClick={handleImport}
               disabled={isProcessing}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+              className="bg-emerald-600 text-white hover:bg-emerald-500"
             >
               {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -737,23 +812,21 @@ function FullPipelinePanel() {
       {step === "complete" && importResult && (
         <div className="space-y-4 py-4 text-center">
           <CheckCircle className="mx-auto h-12 w-12 text-emerald-400" />
-          <p className="text-lg font-medium text-foreground">Import Complete</p>
-          <p className="text-sm text-muted-foreground">
-            {importResult.imported} features imported successfully.
-            Shared vertex index has been rebuilt.
+          <p className="text-foreground text-lg font-medium">Import Complete</p>
+          <p className="text-muted-foreground text-sm">
+            {importResult.imported} features imported successfully. Shared vertex index has been
+            rebuilt.
           </p>
-          <Button onClick={handleReset}>
-            Import Another Map
-          </Button>
+          <Button onClick={handleReset}>Import Another Map</Button>
         </div>
       )}
 
       {pipelineResult && pipelineResult.metadata.log.length > 0 && (
         <details className="mt-4">
-          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-muted-foreground">
+          <summary className="text-muted-foreground hover:text-muted-foreground cursor-pointer text-xs">
             Pipeline Log ({pipelineResult.metadata.log.length} entries)
           </summary>
-          <pre className="mt-2 max-h-40 overflow-auto rounded border border-border bg-card p-2 text-[10px] text-muted-foreground">
+          <pre className="border-border bg-card text-muted-foreground mt-2 max-h-40 overflow-auto rounded border p-2 text-[10px]">
             {pipelineResult.metadata.log.join("\n")}
           </pre>
         </details>
@@ -784,7 +857,9 @@ function DiffBadge({
   };
 
   return (
-    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${colorMap[color] ?? colorMap.slate}`}>
+    <div
+      className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${colorMap[color] ?? colorMap.slate}`}
+    >
       <Icon className="h-4 w-4" />
       <span className="text-sm font-medium">{count}</span>
       <span className="text-xs opacity-70">{label}</span>
@@ -814,11 +889,13 @@ function DiffRow({
   return (
     <tr className="text-foreground">
       <td className="px-3 py-1.5">
-        <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.color}`}>
+        <span
+          className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${cfg.bg} ${cfg.color}`}
+        >
           {cfg.label}
         </span>
       </td>
-      <td className="px-3 py-1.5 font-mono text-xs text-muted-foreground">{featureId}</td>
+      <td className="text-muted-foreground px-3 py-1.5 font-mono text-xs">{featureId}</td>
       <td className="px-3 py-1.5 text-sm">{displayName}</td>
       <td className="px-3 py-1.5">
         {countryName ? (
@@ -827,7 +904,7 @@ function DiffRow({
             {countryName}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground/70">—</span>
+          <span className="text-muted-foreground/70 text-xs">—</span>
         )}
       </td>
     </tr>

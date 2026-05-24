@@ -55,7 +55,11 @@ export const EconomicHealthRadar = React.memo<EconomicHealthRadarProps>(
             <RadarChart data={data}>
               <PolarGrid stroke="#e5e7eb" />
               <PolarAngleAxis dataKey="indicator" tick={{ fill: "#6b7280", fontSize: 9 }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#6b7280", fontSize: 9 }} />
+              <PolarRadiusAxis
+                angle={90}
+                domain={[0, 100]}
+                tick={{ fill: "#6b7280", fontSize: 9 }}
+              />
               <Radar
                 name="Health Score"
                 dataKey="value"

@@ -5,11 +5,7 @@
 
 import React, { memo, useState, useMemo } from "react";
 import { cn } from "~/lib/utils";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "~/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import type { MarketAnalytics } from "~/types/marketplace";
 import { CardRarity } from "~/lib/card-enums";
@@ -102,10 +98,8 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
 
     // Sentiment color
     const sentimentColor = useMemo(() => {
-      if (mockAnalytics.marketSentiment.trend === "bullish")
-        return "text-green-400";
-      if (mockAnalytics.marketSentiment.trend === "bearish")
-        return "text-red-400";
+      if (mockAnalytics.marketSentiment.trend === "bullish") return "text-green-400";
+      if (mockAnalytics.marketSentiment.trend === "bearish") return "text-red-400";
       return "text-gray-400";
     }, [mockAnalytics.marketSentiment.trend]);
 
@@ -139,12 +133,10 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
           </div>
         </div>
 
-        <div className="p-4 space-y-6">
+        <div className="space-y-6 p-4">
           {/* Price history chart */}
           <div>
-            <h4 className="mb-3 text-sm font-medium text-gray-300">
-              Average Price Trend
-            </h4>
+            <h4 className="mb-3 text-sm font-medium text-gray-300">Average Price Trend</h4>
             <div className="h-48 rounded-lg border border-white/10 bg-black/20 p-4">
               <ChartContainer
                 config={{
@@ -156,11 +148,7 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
-                    <XAxis
-                      dataKey="time"
-                      stroke="rgba(255,255,255,0.2)"
-                      fontSize={10}
-                    />
+                    <XAxis dataKey="time" stroke="rgba(255,255,255,0.2)" fontSize={10} />
                     <YAxis
                       stroke="rgba(255,255,255,0.2)"
                       fontSize={10}
@@ -181,15 +169,14 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
           </div>
 
           {/* Market sentiment */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-white/10 bg-white/5 p-4">
               <p className="mb-1 text-xs text-gray-400">Market Sentiment</p>
               <p className={cn("text-2xl font-bold capitalize", sentimentColor)}>
                 {mockAnalytics.marketSentiment.trend}
               </p>
               <p className="text-xs text-gray-400">
-                {(mockAnalytics.marketSentiment.confidence * 100).toFixed(0)}%
-                confidence
+                {(mockAnalytics.marketSentiment.confidence * 100).toFixed(0)}% confidence
               </p>
             </div>
 
@@ -201,9 +188,7 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
               <p
                 className={cn(
                   "text-xs font-medium",
-                  mockAnalytics.volumeStats.volumeChange24h >= 0
-                    ? "text-green-400"
-                    : "text-red-400"
+                  mockAnalytics.volumeStats.volumeChange24h >= 0 ? "text-green-400" : "text-red-400"
                 )}
               >
                 {mockAnalytics.volumeStats.volumeChange24h >= 0 ? "+" : ""}
@@ -213,7 +198,7 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
           </div>
 
           {/* Volume stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-white/10 bg-white/5 p-3">
               <p className="text-xs text-gray-400">Total Sales</p>
               <p className="text-lg font-bold text-white">
@@ -231,12 +216,10 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
 
           {/* Trending cards */}
           <div>
-            <h4 className="mb-3 text-sm font-medium text-gray-300">
-              Trending Cards
-            </h4>
+            <h4 className="mb-3 text-sm font-medium text-gray-300">Trending Cards</h4>
             <div className="space-y-2">
               {mockAnalytics.trendingCards.length === 0 ? (
-                <p className="text-center text-sm text-gray-400 py-8">
+                <p className="py-8 text-center text-sm text-gray-400">
                   No trending cards at the moment
                 </p>
               ) : (
@@ -250,12 +233,7 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
                         {index + 1}
                       </div>
                       <div>
-                        <p
-                          className={cn(
-                            "text-sm font-medium",
-                            RARITY_COLORS[card.cardRarity]
-                          )}
-                        >
+                        <p className={cn("text-sm font-medium", RARITY_COLORS[card.cardRarity])}>
                           {card.cardTitle}
                         </p>
                         <p className="text-xs text-gray-400">
@@ -267,9 +245,7 @@ export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
                     <div
                       className={cn(
                         "text-sm font-bold",
-                        card.priceChange24h >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
+                        card.priceChange24h >= 0 ? "text-green-400" : "text-red-400"
                       )}
                     >
                       {card.priceChange24h >= 0 ? "+" : ""}

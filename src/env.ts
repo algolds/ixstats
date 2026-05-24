@@ -71,6 +71,8 @@ export const env = createEnv({
         : z.string().optional(),
     // System owner Clerk IDs (comma-separated) - loaded from env for security
     SYSTEM_OWNER_IDS: z.string().optional(),
+    // WikiOS MediaWiki Bot Username
+    WIKIOS_MEDIAWIKI_BOT_USER: z.string().optional().default("Heku@WikiOS"),
   },
 
   /**
@@ -158,6 +160,7 @@ export const env = createEnv({
     APP_URL: process.env.APP_URL,
     CRON_SECRET: process.env.CRON_SECRET,
     SYSTEM_OWNER_IDS: process.env.SYSTEM_OWNER_IDS,
+    WIKIOS_MEDIAWIKI_BOT_USER: process.env.WIKIOS_MEDIAWIKI_BOT_USER,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

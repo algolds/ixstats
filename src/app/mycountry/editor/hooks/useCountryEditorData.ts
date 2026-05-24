@@ -4,10 +4,7 @@ import {
   createDefaultEconomicInputs,
   type EconomicInputs,
 } from "~/app/builder/lib/economy-data-service";
-import {
-  type GovernmentBuilderState,
-  type GovernmentType,
-} from "~/types/government";
+import { type GovernmentBuilderState, type GovernmentType } from "~/types/government";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { CountryWithEditorFields } from "~/types/country-editor";
 import type { EditorFeedback, ValidationError } from "~/types/editor";
@@ -94,9 +91,7 @@ export function useCountryEditorData() {
       // The query returns: { ...fields, calculatedStats: { currentPopulation, currentGdpPerCapita, currentTotalGdp } }
       // NO DEFAULTS - Show actual data or 0 if missing (makes missing data obvious in prod)
       const currentPop =
-        Number(calculatedStats?.currentPopulation) ||
-        Number(typedCountry.baselinePopulation) ||
-        0;
+        Number(calculatedStats?.currentPopulation) || Number(typedCountry.baselinePopulation) || 0;
       const currentGdpPerCap =
         Number(calculatedStats?.currentGdpPerCapita) ||
         Number(typedCountry.baselineGdpPerCapita) ||
@@ -137,8 +132,7 @@ export function useCountryEditorData() {
       inputs.fiscalSystem.governmentRevenueTotal = typedCountry.governmentRevenueTotal ?? 0;
       inputs.fiscalSystem.totalDebtGDPRatio = typedCountry.totalDebtGDPRatio ?? 0;
       inputs.fiscalSystem.budgetDeficitSurplus = typedCountry.budgetDeficitSurplus ?? 0;
-      inputs.fiscalSystem.governmentBudgetGDPPercent =
-        typedCountry.governmentBudgetGDPPercent ?? 0;
+      inputs.fiscalSystem.governmentBudgetGDPPercent = typedCountry.governmentBudgetGDPPercent ?? 0;
       inputs.fiscalSystem.internalDebtGDPPercent = typedCountry.internalDebtGDPPercent ?? 0;
       inputs.fiscalSystem.externalDebtGDPPercent = typedCountry.externalDebtGDPPercent ?? 0;
       inputs.fiscalSystem.interestRates = typedCountry.interestRates ?? 0;

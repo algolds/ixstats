@@ -285,9 +285,7 @@ export class AtomicIntegrationService extends BaseBuilderService<
   /**
    * Update economic inputs based on government builder changes
    */
-  private async updateEconomicInputsFromGovernment(
-    builder: GovernmentBuilderState
-  ): Promise<void> {
+  private async updateEconomicInputsFromGovernment(builder: GovernmentBuilderState): Promise<void> {
     if (!this.state.economicInputs) return;
 
     // Calculate new government spending based on allocations
@@ -303,16 +301,12 @@ export class AtomicIntegrationService extends BaseBuilderService<
       governmentSpending: {
         ...this.state.economicInputs.governmentSpending,
         totalSpending,
-        spendingBreakdown: existingBreakdown.map(
-          (item) => {
-            const allocation = builder.budgetAllocations.find(
-              (a) => a.departmentId === item.category || a.departmentName === item.category
-            );
-            return allocation
-              ? { ...item, amount: allocation.amount || item.amount }
-              : item;
-          }
-        ),
+        spendingBreakdown: existingBreakdown.map((item) => {
+          const allocation = builder.budgetAllocations.find(
+            (a) => a.departmentId === item.category || a.departmentName === item.category
+          );
+          return allocation ? { ...item, amount: allocation.amount || item.amount } : item;
+        }),
       },
     };
 
@@ -322,15 +316,14 @@ export class AtomicIntegrationService extends BaseBuilderService<
   /**
    * Validate government structure against atomic components
    */
-  private validateGovernmentAgainstComponents(
-    builder: GovernmentBuilderState
-  ): { isValid: boolean; message: string } {
+  private validateGovernmentAgainstComponents(builder: GovernmentBuilderState): {
+    isValid: boolean;
+    message: string;
+  } {
     const requiredDepartments = this.getRequiredDepartments(this.state.selectedComponents);
     const existingDepartments = builder.departments.map((d) => d.name);
 
-    const missingDepartments = requiredDepartments.filter(
-      (d) => !existingDepartments.includes(d)
-    );
+    const missingDepartments = requiredDepartments.filter((d) => !existingDepartments.includes(d));
 
     if (missingDepartments.length > 0) {
       return {
@@ -372,9 +365,10 @@ export class AtomicIntegrationService extends BaseBuilderService<
   /**
    * Validate component combinations
    */
-  private validateComponentCombination(
-    components: ComponentType[]
-  ): { isValid: boolean; message: string } {
+  private validateComponentCombination(components: ComponentType[]): {
+    isValid: boolean;
+    message: string;
+  } {
     // Basic validation - can be extended
     if (components.length === 0) {
       return { isValid: true, message: "" };

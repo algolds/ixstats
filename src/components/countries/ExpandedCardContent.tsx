@@ -64,7 +64,9 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           {/* Header: title + location pills inline */}
           <FadeIn direction="up" delay={0.1}>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] font-semibold tracking-wide text-white/70 uppercase">Intelligence Brief</span>
+              <span className="text-[11px] font-semibold tracking-wide text-white/70 uppercase">
+                Intelligence Brief
+              </span>
               {country.continent && (
                 <span className="rounded-full border border-white/15 bg-white/10 px-2 py-px text-[10px] font-medium text-white/75">
                   {country.continent}
@@ -82,20 +84,35 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           <div className="grid grid-cols-3 gap-2">
             <FadeIn direction="up" delay={0.15} className="text-center">
               <div className="relative mx-auto w-fit">
-                <HealthRing value={economicScore} size={40} color="rgba(34, 197, 94, 0.8)" label="" />
+                <HealthRing
+                  value={economicScore}
+                  size={40}
+                  color="rgba(34, 197, 94, 0.8)"
+                  label=""
+                />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <RiMoneyDollarCircleLine className="h-3 w-3 text-green-400" />
                 </div>
               </div>
               <div className="mt-1 text-[10px] font-medium text-white/80">Economy</div>
               <div className="text-[10px] text-white/60">
-                <NumberFlowDisplay value={economicScore} format="percentage" decimalPlaces={0} className="" />
+                <NumberFlowDisplay
+                  value={economicScore}
+                  format="percentage"
+                  decimalPlaces={0}
+                  className=""
+                />
               </div>
             </FadeIn>
 
             <FadeIn direction="up" delay={0.2} className="text-center">
               <div className="relative mx-auto w-fit">
-                <HealthRing value={populationScore} size={40} color="rgba(59, 130, 246, 0.8)" label="" />
+                <HealthRing
+                  value={populationScore}
+                  size={40}
+                  color="rgba(59, 130, 246, 0.8)"
+                  label=""
+                />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <TrendingUpIcon size={14} className="text-blue-400" />
                 </div>
@@ -103,7 +120,12 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
               <div className="mt-1 text-[10px] font-medium text-white/80">Growth</div>
               <div className="text-[10px] text-white/60">
                 {country.adjustedGdpGrowth ? (
-                  <NumberFlowDisplay value={country.adjustedGdpGrowth * 100} format="percentage" decimalPlaces={1} className="" />
+                  <NumberFlowDisplay
+                    value={country.adjustedGdpGrowth * 100}
+                    format="percentage"
+                    decimalPlaces={1}
+                    className=""
+                  />
                 ) : (
                   "N/A"
                 )}
@@ -112,14 +134,24 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
             <FadeIn direction="up" delay={0.25} className="text-center">
               <div className="relative mx-auto w-fit">
-                <HealthRing value={developmentScore} size={40} color="rgba(168, 85, 247, 0.8)" label="" />
+                <HealthRing
+                  value={developmentScore}
+                  size={40}
+                  color="rgba(168, 85, 247, 0.8)"
+                  label=""
+                />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <ActivityIcon size={14} className="text-purple-400" />
                 </div>
               </div>
               <div className="mt-1 text-[10px] font-medium text-white/80">Development</div>
               <div className="text-[10px] text-white/60">
-                <NumberFlowDisplay value={developmentScore} format="percentage" decimalPlaces={0} className="" />
+                <NumberFlowDisplay
+                  value={developmentScore}
+                  format="percentage"
+                  decimalPlaces={0}
+                  className=""
+                />
               </div>
             </FadeIn>
           </div>
@@ -130,10 +162,14 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
             <FadeIn direction="left" delay={0.3} className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-white/90">
                 <RiGovernmentLine className="h-3 w-3 text-amber-400" />
-                <span className="text-[10px] font-semibold uppercase tracking-wide antialiased">Governance</span>
+                <span className="text-[10px] font-semibold tracking-wide uppercase antialiased">
+                  Governance
+                </span>
               </div>
               <div className="space-y-1 pl-0.5">
-                {country.governmentType && <DetailRow label="Govt" value={country.governmentType} />}
+                {country.governmentType && (
+                  <DetailRow label="Govt" value={country.governmentType} />
+                )}
                 {country.leader && <DetailRow label="Leader" value={country.leader} />}
                 {country.religion && <DetailRow label="Religion" value={country.religion} />}
                 {country.populationTier && (
@@ -159,7 +195,9 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
             <FadeIn direction="right" delay={0.35} className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-white/90">
                 <RiHeartPulseLine className="h-3 w-3 text-rose-400" />
-                <span className="text-[10px] font-semibold uppercase tracking-wide antialiased">Indicators</span>
+                <span className="text-[10px] font-semibold tracking-wide uppercase antialiased">
+                  Indicators
+                </span>
               </div>
               <div className="space-y-1 pl-0.5">
                 {country.unemploymentRate != null && (
@@ -169,7 +207,12 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                   <IndicatorRow label="Inflation" value={country.inflationRate * 100} suffix="%" />
                 )}
                 {country.lifeExpectancy != null && (
-                  <IndicatorRow label="Life Exp." value={country.lifeExpectancy} suffix=" yrs" decimalPlaces={0} />
+                  <IndicatorRow
+                    label="Life Exp."
+                    value={country.lifeExpectancy}
+                    suffix=" yrs"
+                    decimalPlaces={0}
+                  />
                 )}
                 {country.literacyRate != null && (
                   <IndicatorRow label="Literacy" value={country.literacyRate} suffix="%" />
@@ -188,22 +231,44 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           <FadeIn direction="up" delay={0.4}>
             <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
               {country.landArea != null && (
-                <CompactStat icon={<RiMapPin2Line className="h-2.5 w-2.5 text-orange-400" />} label="Area">
+                <CompactStat
+                  icon={<RiMapPin2Line className="h-2.5 w-2.5 text-orange-400" />}
+                  label="Area"
+                >
                   <NumberFlowDisplay value={country.landArea} suffix=" km²" className="" />
                 </CompactStat>
               )}
               {country.populationDensity != null && (
-                <CompactStat icon={<RiUserStarLine className="h-2.5 w-2.5 text-blue-400" />} label="Density">
-                  <NumberFlowDisplay value={Math.round(country.populationDensity)} suffix="/km²" className="" />
+                <CompactStat
+                  icon={<RiUserStarLine className="h-2.5 w-2.5 text-blue-400" />}
+                  label="Density"
+                >
+                  <NumberFlowDisplay
+                    value={Math.round(country.populationDensity)}
+                    suffix="/km²"
+                    className=""
+                  />
                 </CompactStat>
               )}
               {country.gdpDensity != null && (
-                <CompactStat icon={<RiBarChartLine className="h-2.5 w-2.5 text-green-400" />} label="GDP/km²">
-                  <NumberFlowDisplay value={country.gdpDensity / 1e6} prefix="$" suffix="M" decimalPlaces={1} className="" />
+                <CompactStat
+                  icon={<RiBarChartLine className="h-2.5 w-2.5 text-green-400" />}
+                  label="GDP/km²"
+                >
+                  <NumberFlowDisplay
+                    value={country.gdpDensity / 1e6}
+                    prefix="$"
+                    suffix="M"
+                    decimalPlaces={1}
+                    className=""
+                  />
                 </CompactStat>
               )}
               {country.realGDPGrowthRate != null && (
-                <CompactStat icon={<RiGlobalLine className="h-2.5 w-2.5 text-emerald-400" />} label="Growth">
+                <CompactStat
+                  icon={<RiGlobalLine className="h-2.5 w-2.5 text-emerald-400" />}
+                  label="Growth"
+                >
                   <NumberFlowDisplay
                     value={country.realGDPGrowthRate * 100}
                     format="percentage"
@@ -241,7 +306,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-1.5 text-[11px] text-white/80">
       <span className="shrink-0">{label}</span>
-      <span className="min-w-0 break-words text-right font-medium leading-tight">{value}</span>
+      <span className="min-w-0 text-right leading-tight font-medium break-words">{value}</span>
     </div>
   );
 }
@@ -261,7 +326,12 @@ function IndicatorRow({
     <div className="flex justify-between text-[11px] text-white/80">
       <span>{label}</span>
       <span className="font-medium">
-        <NumberFlowDisplay value={value} decimalPlaces={decimalPlaces} suffix={suffix} className="" />
+        <NumberFlowDisplay
+          value={value}
+          decimalPlaces={decimalPlaces}
+          suffix={suffix}
+          className=""
+        />
       </span>
     </div>
   );

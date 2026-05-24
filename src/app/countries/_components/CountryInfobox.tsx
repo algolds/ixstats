@@ -642,7 +642,9 @@ export function CountryInfobox({
           <CardDescription
             className="text-sm italic"
             // SECURITY: Sanitize wiki content to prevent XSS from external data
-            dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(infobox.native_name) }} /* native name - no wiki links */
+            dangerouslySetInnerHTML={{
+              __html: sanitizeWikiContent(infobox.native_name),
+            }} /* native name - no wiki links */
           />
         )}
       </CardHeader>

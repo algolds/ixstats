@@ -143,7 +143,9 @@ export function IxTimeVisualizer() {
     updateAccuracyStatus();
     updateSyncStatus();
     syncManager.start().catch(console.error);
-    return () => { syncManager.stop(); };
+    return () => {
+      syncManager.stop();
+    };
   }, [syncManager, updateTimeData, updateAccuracyStatus, updateSyncStatus]);
 
   // Converter logic
@@ -258,7 +260,11 @@ export function IxTimeVisualizer() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { updateTimeData(); updateAccuracyStatus(); updateSyncStatus(); }}
+              onClick={() => {
+                updateTimeData();
+                updateAccuracyStatus();
+                updateSyncStatus();
+              }}
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Refresh
@@ -277,7 +283,7 @@ export function IxTimeVisualizer() {
             <div className="font-mono text-lg font-bold text-blue-500">
               {timeData.formattedTime}
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="text-muted-foreground mt-1 text-xs">
               Game Year {timeData.currentGameYear}
             </div>
           </div>
@@ -289,9 +295,13 @@ export function IxTimeVisualizer() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-green-500">{timeData.multiplier}x</span>
-              {timeData.isPaused && <Badge variant="destructive" className="text-[10px]">PAUSED</Badge>}
+              {timeData.isPaused && (
+                <Badge variant="destructive" className="text-[10px]">
+                  PAUSED
+                </Badge>
+              )}
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="text-muted-foreground mt-1 text-xs">
               1 real day = {timeData.ixDaysPerRealDay} IxTime days
             </div>
           </div>
@@ -314,18 +324,18 @@ export function IxTimeVisualizer() {
               </Badge>
               <span className="font-mono text-sm">{accuracyStatus.accuracy.toFixed(4)}%</span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">{accuracyStatus.message}</div>
+            <div className="text-muted-foreground mt-1 text-xs">{accuracyStatus.message}</div>
           </div>
         </div>
 
         {/* Prediction row */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-border/50 bg-card/50 px-4 py-2.5 text-sm">
+        <div className="border-border/50 bg-card/50 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border px-4 py-2.5 text-sm">
           <div className="text-muted-foreground">
-            <span className="font-medium text-foreground">In 24 real hours:</span>{" "}
+            <span className="text-foreground font-medium">In 24 real hours:</span>{" "}
             {timeData.predictedIxTime24h}
           </div>
           <div className="text-muted-foreground">
-            <span className="font-medium text-foreground">IRL equivalent:</span>{" "}
+            <span className="text-foreground font-medium">IRL equivalent:</span>{" "}
             {timeData.equivalentRealDate}
           </div>
         </div>
@@ -339,23 +349,29 @@ export function IxTimeVisualizer() {
             <span className="text-sm font-medium">IRL / IxTime Date Converter</span>
           </div>
 
-          <div className="rounded-lg border border-border/50 bg-card/50 p-4">
+          <div className="border-border/50 bg-card/50 rounded-lg border p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               {/* Mode toggle */}
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Direction</Label>
+                <Label className="text-muted-foreground text-xs">Direction</Label>
                 <div className="flex gap-1">
                   <Button
                     variant={converterMode === "irl-to-ix" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => { setConverterMode("irl-to-ix"); setConverterResult(null); }}
+                    onClick={() => {
+                      setConverterMode("irl-to-ix");
+                      setConverterResult(null);
+                    }}
                   >
                     IRL → IX
                   </Button>
                   <Button
                     variant={converterMode === "ix-to-irl" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => { setConverterMode("ix-to-irl"); setConverterResult(null); }}
+                    onClick={() => {
+                      setConverterMode("ix-to-irl");
+                      setConverterResult(null);
+                    }}
                   >
                     IX → IRL
                   </Button>
@@ -364,7 +380,7 @@ export function IxTimeVisualizer() {
 
               {/* Date input */}
               <div className="flex-1 space-y-1.5">
-                <Label className="text-xs text-muted-foreground">
+                <Label className="text-muted-foreground text-xs">
                   {converterMode === "irl-to-ix" ? "Enter IRL Date" : "Enter IxTime Date"}
                 </Label>
                 <Input
@@ -383,7 +399,7 @@ export function IxTimeVisualizer() {
 
             {converterResult && (
               <div className="mt-3 rounded-md border border-blue-500/20 bg-blue-500/5 px-3 py-2">
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   {converterMode === "irl-to-ix" ? "IxTime Date:" : "IRL Date:"}
                 </span>
                 <div className="font-mono text-sm font-medium text-blue-500">{converterResult}</div>
@@ -392,10 +408,10 @@ export function IxTimeVisualizer() {
           </div>
 
           {/* Reference Milestone Table */}
-          <div className="overflow-x-auto rounded-lg border border-border/50">
+          <div className="border-border/50 overflow-x-auto rounded-lg border">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-border/50 bg-muted/30">
+                <tr className="border-border/50 bg-muted/30 border-b">
                   <th className="px-3 py-2 text-left font-medium">Milestone</th>
                   <th className="px-3 py-2 text-left font-medium">IxTime Date</th>
                   <th className="px-3 py-2 text-left font-medium">IRL Date</th>
@@ -405,10 +421,12 @@ export function IxTimeVisualizer() {
                 {dynamicMilestones.map((m, i) => (
                   <tr
                     key={i}
-                    className={`border-b border-border/30 ${m.label === "Current" ? "bg-blue-500/5 font-medium" : ""}`}
+                    className={`border-border/30 border-b ${m.label === "Current" ? "bg-blue-500/5 font-medium" : ""}`}
                   >
                     <td className="px-3 py-1.5">
-                      {m.label === "Current" && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />}
+                      {m.label === "Current" && (
+                        <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
+                      )}
                       {m.label}
                     </td>
                     <td className="px-3 py-1.5 font-mono">{m.ixDate}</td>
@@ -441,7 +459,10 @@ export function IxTimeVisualizer() {
           {/* Progress bar */}
           <div className="relative h-2 rounded-full bg-gradient-to-r from-blue-200 via-green-200 to-purple-200">
             {/* Pre-pivot progress (blue) - always full since we're past the pivot */}
-            <div className="absolute top-0 left-0 h-2 rounded-l-full bg-blue-500" style={{ width: "50%" }} />
+            <div
+              className="absolute top-0 left-0 h-2 rounded-l-full bg-blue-500"
+              style={{ width: "50%" }}
+            />
             {/* Post-pivot progress (green) */}
             {(() => {
               const pivotReal = new Date("2025-07-27T00:00:00.000Z").getTime();
@@ -474,9 +495,9 @@ export function IxTimeVisualizer() {
           >
             <span className="text-sm font-medium">Diagnostics & Testing</span>
             {showDiagnostics ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              <ChevronUp className="text-muted-foreground h-4 w-4" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="text-muted-foreground h-4 w-4" />
             )}
           </button>
 
@@ -484,19 +505,19 @@ export function IxTimeVisualizer() {
             <div className="mt-4 space-y-6">
               {/* Accuracy Section */}
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
                   <Activity className="h-3.5 w-3.5" /> Accuracy Verification
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-xl font-bold">{accuracyStatus.accuracy.toFixed(6)}%</div>
-                    <div className="text-xs text-muted-foreground">Target: ≥99.9998%</div>
+                    <div className="text-muted-foreground text-xs">Target: ≥99.9998%</div>
                   </div>
                   <div className="text-right">
                     <Badge variant={getStatusBadgeVariant(accuracyStatus.status)}>
                       {accuracyStatus.status.toUpperCase()}
                     </Badge>
-                    <div className="mt-1 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 text-xs">
                       {accuracyStatus.isAccurate ? "PASSING" : "FAILING"}
                     </div>
                   </div>
@@ -508,11 +529,11 @@ export function IxTimeVisualizer() {
 
               {/* Sync Status Section */}
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
                   <RefreshCw className="h-3.5 w-3.5" /> Sync Targets
                 </div>
                 {syncStatuses.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-muted-foreground">
+                  <div className="text-muted-foreground py-4 text-center text-xs">
                     <Timer className="mx-auto mb-1 h-5 w-5 opacity-50" />
                     No sync targets configured
                   </div>
@@ -521,7 +542,7 @@ export function IxTimeVisualizer() {
                     {syncStatuses.map((status) => (
                       <div
                         key={status.target}
-                        className="flex items-center justify-between rounded-md border border-border/50 px-3 py-2 text-xs"
+                        className="border-border/50 flex items-center justify-between rounded-md border px-3 py-2 text-xs"
                       >
                         <div className="flex items-center gap-2">
                           {status.status === "synced" ? (
@@ -534,8 +555,13 @@ export function IxTimeVisualizer() {
                           <span className="font-medium">{status.target}</span>
                         </div>
                         <div className="text-right font-mono">
-                          <span>{status.drift > 0 ? "+" : ""}{status.drift}ms</span>
-                          <span className="ml-2 text-muted-foreground">{status.accuracy.toFixed(1)}%</span>
+                          <span>
+                            {status.drift > 0 ? "+" : ""}
+                            {status.drift}ms
+                          </span>
+                          <span className="text-muted-foreground ml-2">
+                            {status.accuracy.toFixed(1)}%
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -556,11 +582,16 @@ export function IxTimeVisualizer() {
 
               {/* Simulation Section */}
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
                   <Zap className="h-3.5 w-3.5" /> Test Suite
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button onClick={runSimulation} disabled={isRunningSimulation} variant="outline" size="sm">
+                  <Button
+                    onClick={runSimulation}
+                    disabled={isRunningSimulation}
+                    variant="outline"
+                    size="sm"
+                  >
                     {isRunningSimulation ? (
                       <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                     ) : (
@@ -568,29 +599,41 @@ export function IxTimeVisualizer() {
                     )}
                     Accuracy Tests
                   </Button>
-                  <Button onClick={() => syncManager.runComprehensiveSync()} variant="outline" size="sm">
+                  <Button
+                    onClick={() => syncManager.runComprehensiveSync()}
+                    variant="outline"
+                    size="sm"
+                  >
                     <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                     Sync Verification
                   </Button>
                 </div>
 
                 {simulationResults && (
-                  <div className="rounded-lg border border-border/50 bg-card/50 p-3">
+                  <div className="border-border/50 bg-card/50 rounded-lg border p-3">
                     <div className="grid grid-cols-4 gap-3 text-center text-xs">
                       <div>
-                        <div className="text-lg font-bold text-green-500">{simulationResults.passedTests}</div>
+                        <div className="text-lg font-bold text-green-500">
+                          {simulationResults.passedTests}
+                        </div>
                         <div className="text-muted-foreground">Passed</div>
                       </div>
                       <div>
-                        <div className="text-lg font-bold text-red-500">{simulationResults.failedTests}</div>
+                        <div className="text-lg font-bold text-red-500">
+                          {simulationResults.failedTests}
+                        </div>
                         <div className="text-muted-foreground">Failed</div>
                       </div>
                       <div>
-                        <div className="text-lg font-bold">{simulationResults.overallAccuracy.toFixed(1)}%</div>
+                        <div className="text-lg font-bold">
+                          {simulationResults.overallAccuracy.toFixed(1)}%
+                        </div>
                         <div className="text-muted-foreground">Accuracy</div>
                       </div>
                       <div>
-                        <div className="text-lg font-bold">{simulationResults.averageExecutionTime.toFixed(0)}ms</div>
+                        <div className="text-lg font-bold">
+                          {simulationResults.averageExecutionTime.toFixed(0)}ms
+                        </div>
                         <div className="text-muted-foreground">Avg Time</div>
                       </div>
                     </div>

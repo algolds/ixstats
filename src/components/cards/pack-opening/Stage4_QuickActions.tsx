@@ -29,9 +29,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
   ({ cards, onAction, onComplete }) => {
     const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
     const [bulkMode, setBulkMode] = useState(false);
-    const [cardActions, setCardActions] = useState<Map<string, QuickActionType>>(
-      new Map()
-    );
+    const [cardActions, setCardActions] = useState<Map<string, QuickActionType>>(new Map());
     const service = getPackOpeningService();
 
     // Calculate estimated value
@@ -106,9 +104,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
         >
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-white">
-                Cards Received
-              </h2>
+              <h2 className="text-2xl font-bold text-white">Cards Received</h2>
               <p className="mt-1 text-sm text-white/60">
                 {cards.length} card{cards.length !== 1 ? "s" : ""}
               </p>
@@ -132,11 +128,7 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
             </button>
 
             {bulkMode && selectedCards.size > 0 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="flex gap-2"
-              >
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex gap-2">
                 <button
                   onClick={() => handleBulkAction("junk")}
                   className="rounded-lg bg-red-500/20 px-3 py-1 text-sm font-medium text-red-300 hover:bg-red-500/30"
@@ -273,10 +265,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
 
           {/* Card image */}
           <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-gradient-to-br from-white/10 to-white/5">
-            <CardHolographicCover
-              cardType={card.cardType}
-              rarity={card.rarity}
-            />
+            <CardHolographicCover cardType={card.cardType} rarity={card.rarity} />
             <div
               className="absolute inset-0 bg-cover bg-center transition-transform group-hover:scale-110"
               style={{
@@ -287,8 +276,8 @@ const CardActionItem = React.memo<CardActionItemProps>(
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
               {/* Card info */}
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <div className="text-xs font-medium uppercase tracking-wide text-white/60">
+              <div className="absolute right-0 bottom-0 left-0 p-3">
+                <div className="text-xs font-medium tracking-wide text-white/60 uppercase">
                   {card.rarity.replace("_", " ")}
                 </div>
                 <div className="mt-1 text-sm font-bold text-white">
@@ -298,7 +287,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
 
               {/* Rarity badge */}
               <div
-                className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-bold"
+                className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-bold"
                 style={{
                   backgroundColor: `${rarityColor}80`,
                   color: "white",
@@ -310,10 +299,8 @@ const CardActionItem = React.memo<CardActionItemProps>(
               {/* Bulk select indicator */}
               {bulkMode && (
                 <div
-                  className={`absolute left-2 top-2 h-6 w-6 rounded-full border-2 transition-colors ${
-                    isSelected
-                      ? "border-blue-400 bg-blue-400"
-                      : "border-white/40 bg-transparent"
+                  className={`absolute top-2 left-2 h-6 w-6 rounded-full border-2 transition-colors ${
+                    isSelected ? "border-blue-400 bg-blue-400" : "border-white/40 bg-transparent"
                   }`}
                 >
                   {isSelected && (
@@ -337,7 +324,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
               {/* Action indicator */}
               {action && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                  <div className="rounded-lg bg-white/10 px-4 py-2 text-sm font-bold uppercase text-white backdrop-blur-sm">
+                  <div className="rounded-lg bg-white/10 px-4 py-2 text-sm font-bold text-white uppercase backdrop-blur-sm">
                     {action}
                   </div>
                 </div>
@@ -379,9 +366,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
         )}
 
         {/* Estimated value */}
-        <div className="mt-1 text-center text-xs text-white/50">
-          ~{estimatedValue} IC
-        </div>
+        <div className="mt-1 text-center text-xs text-white/50">~{estimatedValue} IC</div>
       </motion.div>
     );
   }

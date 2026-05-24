@@ -12,12 +12,7 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import {
-  RiBuilding2Line,
-  RiMapPinLine,
-  RiUserLine,
-  RiLoader4Line,
-} from "react-icons/ri";
+import { RiBuilding2Line, RiMapPinLine, RiUserLine, RiLoader4Line } from "react-icons/ri";
 
 // Simple country selector for this modal
 function SimpleCountrySelector({
@@ -47,7 +42,7 @@ function SimpleCountrySelector({
           onSelect(country.id, country.name);
         }
       }}
-      className="text-foreground w-full rounded-lg border border-white/20 bg-white/10 py-3 px-4 focus:border-[--intel-gold]/50 focus:outline-none"
+      className="text-foreground w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 focus:border-[--intel-gold]/50 focus:outline-none"
     >
       <option value="">Select a country...</option>
       {countries.map((country: any) => (
@@ -98,7 +93,10 @@ export function EstablishEmbassyModal({
   // Establish embassy mutation
   const establishMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      notify.success("Embassy established successfully!", `${embassyName} is now operational in ${data.hostCountryName}`);
+      notify.success(
+        "Embassy established successfully!",
+        `${embassyName} is now operational in ${data.hostCountryName}`
+      );
       onOpenChange(false);
       resetForm();
       onSuccess?.();

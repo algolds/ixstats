@@ -159,12 +159,7 @@ export const CardSkeleton = React.memo<CardSkeletonProps>(
     return (
       <div className={cn("grid gap-4", className)}>
         {Array.from({ length: count }).map((_, index) => (
-          <SingleCardSkeleton
-            key={index}
-            size={size}
-            shimmer={shimmer}
-            delay={index * 0.05}
-          />
+          <SingleCardSkeleton key={index} size={size} shimmer={shimmer} delay={index * 0.05} />
         ))}
       </div>
     );

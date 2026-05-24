@@ -36,11 +36,15 @@ async function main() {
   const isDryRun = process.argv.includes("--dry-run");
 
   if (!inputFile) {
-    console.error("Usage: npx tsx scripts/import-world-template.ts --input <file> [--mode replace|merge] [--dry-run]");
+    console.error(
+      "Usage: npx tsx scripts/import-world-template.ts --input <file> [--mode replace|merge] [--dry-run]"
+    );
     process.exit(1);
   }
 
-  console.log(`Importing template from: ${inputFile} (mode: ${mode}${isDryRun ? ", DRY RUN" : ""})`);
+  console.log(
+    `Importing template from: ${inputFile} (mode: ${mode}${isDryRun ? ", DRY RUN" : ""})`
+  );
 
   const raw = readFileSync(inputFile, "utf-8");
   const template = JSON.parse(raw) as {

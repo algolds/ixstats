@@ -173,6 +173,26 @@ app.prepare().then(async () => {
         }
       }, { timezone: 'UTC' });
       console.log('[Cron] ✓ IxTwitter Discord sync scheduled (every hour)');
+
+      // Lorewards full sync (daily at 06:00 UTC) — runs fullSync() from lorewards-sync
+      let loreSyncRunning = false;
+      cron.default.schedule('0 6 * * *', async () => {
+        if (loreSyncRunning) {
+          console.log('[Cron] Lorewards fullSync already running, skipping this run');
+          return;
+        }
+        loreSyncRunning = true;
+        try {
+          const { fullSync } = await import('./src/lib/lorewards-sync.js');
+          await fullSync();
+          console.log('[Cron] Lorewards fullSync completed successfully');
+        } catch (error) {
+          console.error('[Cron] Lorewards fullSync failed:', error);
+        } finally {
+          loreSyncRunning = false;
+        }
+      }, { timezone: 'UTC' });
+      console.log('[Cron] ✓ Lorewards fullSync scheduled (daily at 06:00 UTC)');
     } catch (error) {
       console.error('[Cron] Failed to initialize cron jobs:', error.message);
       console.warn('[Cron] Continuing without scheduled jobs');

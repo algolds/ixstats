@@ -54,9 +54,11 @@ export function BotControlCard({
             <CardDescription>Bot controls and time synchronization</CardDescription>
           </div>
           {isAvailable ? (
-            <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Online</Badge>
+            <Badge className="border-green-500/20 bg-green-500/10 text-green-600">Online</Badge>
           ) : (
-            <Badge variant="secondary" className="bg-muted text-muted-foreground">Offline</Badge>
+            <Badge variant="secondary" className="bg-muted text-muted-foreground">
+              Offline
+            </Badge>
           )}
         </div>
       </CardHeader>
@@ -66,13 +68,14 @@ export function BotControlCard({
           <Alert className="border-amber-500/20 bg-amber-500/10">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <AlertDescription className="text-amber-600">
-              Bot has active time override. Click &quot;Clear Overrides&quot; to return to normal time flow.
+              Bot has active time override. Click &quot;Clear Overrides&quot; to return to normal
+              time flow.
             </AlertDescription>
           </Alert>
         )}
 
         {/* Status info */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
           {botStatus.botHealth.message && <span>{botStatus.botHealth.message}</span>}
           {botStatus.botStatus && <span>Speed: {botStatus.botStatus.multiplier}x</span>}
           {lastBotSync && <span>Synced: {lastBotSync.toLocaleTimeString()}</span>}
@@ -131,7 +134,7 @@ export function BotControlCard({
             size="sm"
             onClick={() => onSyncEpoch && onSyncEpoch(Date.now())}
             disabled={syncEpochPending}
-            className="bg-orange-600/10 text-orange-600 border-orange-500/20 hover:bg-orange-600/20"
+            className="border-orange-500/20 bg-orange-600/10 text-orange-600 hover:bg-orange-600/20"
           >
             {syncEpochPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
             {syncEpochPending ? "Syncing..." : "Sync Epoch"}

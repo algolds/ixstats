@@ -41,8 +41,11 @@ import { SimpleFlag } from "~/components/SimpleFlag";
 import dynamic from "next/dynamic";
 
 const CountryMapEmbed = dynamic(
-  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
-  { ssr: false, loading: () => <div className="h-44 animate-pulse rounded-xl bg-muted" /> }
+  () =>
+    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
+      default: m.CountryMapEmbed,
+    })),
+  { ssr: false, loading: () => <div className="bg-muted h-44 animate-pulse rounded-xl" /> }
 );
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
@@ -408,7 +411,7 @@ export function MyCountryCard({
 
             {/* Country Map Embed */}
             {countryData && (
-              <div className="mb-5 overflow-hidden rounded-xl border border-border/30">
+              <div className="border-border/30 mb-5 overflow-hidden rounded-xl border">
                 <CountryMapEmbed
                   countryId={countryData.id}
                   height="h-44"
@@ -417,34 +420,49 @@ export function MyCountryCard({
                   interactive={false}
                   boundsPadding={40}
                 />
-
               </div>
             )}
 
             {/* Key Metrics Grid - Always visible, clickable to navigate */}
             {countryData && (
-              <div className="mb-4 sm:mb-6 grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-                <Link href="/mycountry" className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center transition-transform hover:scale-[1.02] cursor-pointer">
-                  <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">Population</div>
-                  <div className="text-xs sm:text-sm font-bold text-blue-400">
+              <div className="mb-4 grid grid-cols-2 gap-2 sm:mb-6 sm:gap-3 lg:grid-cols-4">
+                <Link
+                  href="/mycountry"
+                  className="glass-hierarchy-child cursor-pointer rounded-lg p-2 text-center transition-transform hover:scale-[1.02] sm:p-2.5"
+                >
+                  <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">
+                    Population
+                  </div>
+                  <div className="text-xs font-bold text-blue-400 sm:text-sm">
                     {formatPopulation(countryData.currentPopulation || 0)}
                   </div>
                 </Link>
-                <Link href="/mycountry" className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center transition-transform hover:scale-[1.02] cursor-pointer">
-                  <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">GDP/Capita</div>
-                  <div className="text-xs sm:text-sm font-bold text-green-400">
+                <Link
+                  href="/mycountry"
+                  className="glass-hierarchy-child cursor-pointer rounded-lg p-2 text-center transition-transform hover:scale-[1.02] sm:p-2.5"
+                >
+                  <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">
+                    GDP/Capita
+                  </div>
+                  <div className="text-xs font-bold text-green-400 sm:text-sm">
                     {formatCurrency(countryData.currentGdpPerCapita || 0)}
                   </div>
                 </Link>
-                <Link href="/mycountry" className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center transition-transform hover:scale-[1.02] cursor-pointer">
+                <Link
+                  href="/mycountry"
+                  className="glass-hierarchy-child cursor-pointer rounded-lg p-2 text-center transition-transform hover:scale-[1.02] sm:p-2.5"
+                >
                   <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">Growth</div>
-                  <div className="text-xs sm:text-sm font-bold text-emerald-400">
+                  <div className="text-xs font-bold text-emerald-400 sm:text-sm">
                     {((countryData.adjustedGdpGrowth || 0) * 100).toFixed(1)}%
                   </div>
                 </Link>
-                <Link href="/mycountry" className="glass-hierarchy-child rounded-lg p-2 sm:p-2.5 text-center transition-transform hover:scale-[1.02] cursor-pointer">
+                <Link
+                  href="/mycountry"
+                  className="glass-hierarchy-child cursor-pointer rounded-lg p-2 text-center transition-transform hover:scale-[1.02] sm:p-2.5"
+                >
                   <div className="text-muted-foreground mb-0.5 text-[10px] sm:text-xs">Tier</div>
-                  <div className="text-xs sm:text-sm font-bold text-yellow-400">
+                  <div className="text-xs font-bold text-yellow-400 sm:text-sm">
                     {countryData.economicTier}
                   </div>
                 </Link>
@@ -468,7 +486,7 @@ export function MyCountryCard({
                         <Globe className="h-5 w-5 text-blue-400" />
                         Country Profile
                       </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {/* Location */}
                         <div className="glass-hierarchy-child rounded-lg p-2.5">
                           <div className="mb-2 flex items-center gap-2">

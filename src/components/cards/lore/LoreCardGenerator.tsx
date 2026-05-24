@@ -92,11 +92,11 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
     <div className="space-y-6">
       {/* Wiki Source Selection */}
       <div>
-        <label className="block text-sm font-medium text-white/90 mb-2">Wiki Source</label>
+        <label className="mb-2 block text-sm font-medium text-white/90">Wiki Source</label>
         <div className="flex gap-3">
           <button
             onClick={() => setSelectedWikiSource("ixwiki")}
-            className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-colors ${
+            className={`flex-1 rounded-lg px-4 py-3 font-semibold transition-colors ${
               selectedWikiSource === "ixwiki"
                 ? "bg-gold-400 text-gray-900"
                 : "glass-child text-white hover:bg-white/10"
@@ -106,7 +106,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
           </button>
           <button
             onClick={() => setSelectedWikiSource("iiwiki")}
-            className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-colors ${
+            className={`flex-1 rounded-lg px-4 py-3 font-semibold transition-colors ${
               selectedWikiSource === "iiwiki"
                 ? "bg-gold-400 text-gray-900"
                 : "glass-child text-white hover:bg-white/10"
@@ -119,7 +119,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
 
       {/* Article Search */}
       <div>
-        <label className="block text-sm font-medium text-white/90 mb-2">Search Article</label>
+        <label className="mb-2 block text-sm font-medium text-white/90">Search Article</label>
         <ArticleSearch
           wikiSource={selectedWikiSource}
           onSelect={handleArticleSelect}
@@ -129,27 +129,27 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
 
       {/* Article Preview */}
       {selectedArticle && (
-        <div className="glass-child p-4 rounded-lg">
-          <h3 className="font-semibold text-white mb-2">{selectedArticle}</h3>
+        <div className="glass-child rounded-lg p-4">
+          <h3 className="mb-2 font-semibold text-white">{selectedArticle}</h3>
 
           {loadingPreview ? (
             <div className="text-sm text-white/60">Loading preview...</div>
           ) : (
-            <div className="text-sm text-white/80 line-clamp-6">{articlePreview}</div>
+            <div className="line-clamp-6 text-sm text-white/80">{articlePreview}</div>
           )}
         </div>
       )}
 
       {/* Cost Display */}
-      <div className="glass-child p-4 rounded-lg bg-gold-500/10 border border-gold-400/20">
+      <div className="glass-child bg-gold-500/10 border-gold-400/20 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm text-white/60">Request Cost</div>
-            <div className="text-2xl font-bold text-gold-400">50 IxC</div>
+            <div className="text-gold-400 text-2xl font-bold">50 IxC</div>
           </div>
           <div className="text-right">
             <div className="text-xs text-white/60">Per lore card request</div>
-            <div className="text-xs text-white/60 mt-1">Admin approval required</div>
+            <div className="mt-1 text-xs text-white/60">Admin approval required</div>
           </div>
         </div>
       </div>
@@ -158,32 +158,32 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
       <button
         onClick={handleSubmitRequest}
         disabled={!selectedArticle || requestLoreCardMutation.isPending}
-        className="w-full glass-interactive px-6 py-4 rounded-lg font-semibold text-white hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="glass-interactive w-full rounded-lg px-6 py-4 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {requestLoreCardMutation.isPending ? "Submitting..." : "Request Lore Card (50 IxC)"}
       </button>
 
       {/* Recent Requests */}
       {myRequests.data && myRequests.data.requests.length > 0 && (
-        <div className="glass-child p-4 rounded-lg">
-          <h3 className="font-semibold text-white mb-3">Your Recent Requests</h3>
+        <div className="glass-child rounded-lg p-4">
+          <h3 className="mb-3 font-semibold text-white">Your Recent Requests</h3>
 
           <div className="space-y-2">
             {myRequests.data.requests.map((request: any) => (
               <div
                 key={request.id}
-                className="glass-child p-3 rounded-lg flex items-center justify-between"
+                className="glass-child flex items-center justify-between rounded-lg p-3"
               >
                 <div className="flex-1">
-                  <div className="font-medium text-white text-sm">{request.articleTitle}</div>
-                  <div className="text-xs text-white/60 mt-1">
+                  <div className="text-sm font-medium text-white">{request.articleTitle}</div>
+                  <div className="mt-1 text-xs text-white/60">
                     {request.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
                   </div>
                 </div>
 
                 <div className="text-right">
                   <div
-                    className={`text-xs font-semibold px-2 py-1 rounded ${
+                    className={`rounded px-2 py-1 text-xs font-semibold ${
                       request.status === "PENDING"
                         ? "bg-yellow-500/20 text-yellow-400"
                         : request.status === "APPROVED"
@@ -195,7 +195,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
                   >
                     {request.status}
                   </div>
-                  <div className="text-xs text-white/60 mt-1">
+                  <div className="mt-1 text-xs text-white/60">
                     {new Date(request.requestedAt).toLocaleDateString()}
                   </div>
                 </div>
@@ -204,8 +204,8 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
           </div>
 
           {myRequests.data.total > 5 && (
-            <div className="text-center mt-3">
-              <button className="text-sm text-gold-400 hover:text-gold-300">
+            <div className="mt-3 text-center">
+              <button className="text-gold-400 hover:text-gold-300 text-sm">
                 View all ({myRequests.data.total} total)
               </button>
             </div>

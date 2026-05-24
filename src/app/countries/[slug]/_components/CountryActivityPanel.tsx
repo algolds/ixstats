@@ -63,7 +63,15 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
   const unifiedFeed = useMemo(() => {
     const items: Array<{
       id: string;
-      type: "post" | "economic" | "diplomatic" | "achievement" | "social" | "event" | "milestone" | "meta";
+      type:
+        | "post"
+        | "economic"
+        | "diplomatic"
+        | "achievement"
+        | "social"
+        | "event"
+        | "milestone"
+        | "meta";
       source: string;
       title: string;
       description: string;
@@ -154,15 +162,21 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
 
     // Apply filter
     if (filter === "all") return items;
-    if (filter === "posts") return items.filter((i) => i.type === "post" || i.source === "thinkpages");
+    if (filter === "posts")
+      return items.filter((i) => i.type === "post" || i.source === "thinkpages");
     if (filter === "economic") return items.filter((i) => i.type === "economic");
     if (filter === "diplomatic") return items.filter((i) => i.type === "diplomatic");
-    if (filter === "milestones") return items.filter((i) => i.type === "milestone" || i.type === "achievement");
+    if (filter === "milestones")
+      return items.filter((i) => i.type === "milestone" || i.type === "achievement");
     if (filter === "events") return items.filter((i) => i.type === "event");
     return items;
   }, [activityData, thinkpagesFeed, liveEvents, milestones, filter]);
 
-  const filterOptions: Array<{ value: ActivityFilter; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  const filterOptions: Array<{
+    value: ActivityFilter;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
     { value: "all", label: "All", icon: Activity },
     { value: "posts", label: "Posts", icon: Rss },
     { value: "economic", label: "Economic", icon: TrendingUp },
@@ -212,11 +226,29 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
   const getSourceBadge = (source: string) => {
     switch (source) {
       case "thinkpages":
-        return <Badge variant="outline" className="text-xs">ThinkPages</Badge>;
+        return (
+          <Badge variant="outline" className="text-xs">
+            ThinkPages
+          </Badge>
+        );
       case "live-events":
-        return <Badge variant="outline" className="border-orange-200 text-xs text-orange-600 dark:border-orange-800 dark:text-orange-400">Event</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="border-orange-200 text-xs text-orange-600 dark:border-orange-800 dark:text-orange-400"
+          >
+            Event
+          </Badge>
+        );
       case "milestones":
-        return <Badge variant="outline" className="border-yellow-200 text-xs text-yellow-600 dark:border-yellow-800 dark:text-yellow-400">Milestone</Badge>;
+        return (
+          <Badge
+            variant="outline"
+            className="border-yellow-200 text-xs text-yellow-600 dark:border-yellow-800 dark:text-yellow-400"
+          >
+            Milestone
+          </Badge>
+        );
       default:
         return null;
     }
@@ -302,7 +334,9 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                       idx < unifiedFeed.length - 1 ? "border-border/50 border-b" : ""
                     }`}
                   >
-                    <div className={`mt-2 h-2 w-2 flex-shrink-0 rounded-full ${getItemDotColor(item.type, item.source)}`} />
+                    <div
+                      className={`mt-2 h-2 w-2 flex-shrink-0 rounded-full ${getItemDotColor(item.type, item.source)}`}
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -409,7 +443,10 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">Milestones</span>
                 <span className="text-sm font-semibold">
-                  {unifiedFeed.filter((i) => i.type === "milestone" || i.type === "achievement").length}
+                  {
+                    unifiedFeed.filter((i) => i.type === "milestone" || i.type === "achievement")
+                      .length
+                  }
                 </span>
               </div>
             </CardContent>

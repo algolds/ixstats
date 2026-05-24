@@ -50,8 +50,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
     { id: countryId ?? "" },
     { enabled: !!countryId }
   );
-  const { data: ixTimeData, isLoading: ixTimeLoading } =
-    api.system.getCurrentIxTime.useQuery();
+  const { data: ixTimeData, isLoading: ixTimeLoading } = api.system.getCurrentIxTime.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   const currentIxTime =
@@ -293,10 +292,7 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
                       : " Detailed strategic data is available to country owners."}
                   </span>
                   {isOwnCountry && (
-                    <Link
-                      href={"/mycountry"}
-                      className="ml-2 text-blue-500 hover:underline"
-                    >
+                    <Link href={"/mycountry"} className="ml-2 text-blue-500 hover:underline">
                       Go to Dashboard →
                     </Link>
                   )}

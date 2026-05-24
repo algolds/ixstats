@@ -351,9 +351,7 @@ export function AtomicImpactPreview({
               <div>✓ Exceptional system effectiveness - ideal configuration</div>
             )}
             {synergyCount > conflictCount && <div>✓ Positive synergies outweigh conflicts</div>}
-            {conflictCount > 0 && (
-              <div>⚠ Component conflicts detected - consider alternatives</div>
-            )}
+            {conflictCount > 0 && <div>⚠ Component conflicts detected - consider alternatives</div>}
             {selectedComponents.length < 5 && (
               <div>💡 Add more components for comprehensive governance</div>
             )}

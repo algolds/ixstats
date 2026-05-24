@@ -54,7 +54,9 @@ export function PopulateSection() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-white/80">Lakes</p>
-            <p className="text-xs text-white/40">Place inland water bodies in low-elevation areas</p>
+            <p className="text-xs text-white/40">
+              Place inland water bodies in low-elevation areas
+            </p>
           </div>
           <button
             onClick={() => updateParams({ hasLakes: !params.hasLakes })}

@@ -36,6 +36,15 @@ export function withBasePath(path: string): string {
   // If we're in the browser, check if the app is actually mounted at BASE_PATH
   // In dev, sometimes NEXT_PUBLIC_BASE_PATH is in .env but the dev server runs at root
   if (typeof window !== "undefined" && BASE_PATH) {
+    // If the current host looks like the standalone maps domain (eg. maps.example.com),
+    // prefer root links so links like `/blurbs/...` point to the maps host.
+    try {
+      const host = window.location.hostname || "";
+      if (host.startsWith("maps.")) {
+        return normalizedPath;
+      }
+    } catch {}
+
     if (!window.location.pathname.startsWith(BASE_PATH)) {
       return normalizedPath; // App is running at root, don't prepend
     }

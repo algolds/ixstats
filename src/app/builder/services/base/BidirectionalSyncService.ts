@@ -82,7 +82,7 @@ export abstract class BidirectionalSyncService<
   TRecommendation extends SyncRecommendation,
   TImpact extends SyncImpact,
   TSource = unknown,
-  TTarget = unknown
+  TTarget = unknown,
 > extends BaseBuilderService<TState, SyncEvent<TSource, TTarget>> {
   protected syncHistory: SyncEvent<TSource, TTarget>[] = [];
   protected maxHistorySize = 100;
@@ -243,8 +243,7 @@ export abstract class BidirectionalSyncService<
 
       return updatedTarget;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown sync error";
+      const errorMessage = error instanceof Error ? error.message : "Unknown sync error";
 
       // Record failed sync event
       const syncEvent = this.createSyncEvent(

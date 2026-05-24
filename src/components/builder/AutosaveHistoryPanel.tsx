@@ -29,7 +29,7 @@ function StatCard({ label, value, icon, className }: StatCardProps) {
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="text-muted-foreground text-sm">{label}</p>
             <p className="text-2xl font-bold">
               {value !== null && value !== undefined ? value : "-"}
             </p>
@@ -80,17 +80,13 @@ function AutosaveItem({ autosave }: AutosaveItemProps) {
           )}
           <div>
             <span className="font-medium">{getSectionName(autosave.action)}</span>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <Clock className="h-3 w-3" />
               <span>{formatDistanceToNow(new Date(autosave.timestamp))} ago</span>
             </div>
           </div>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setShowDetails(!showDetails)}
-        >
+        <Button size="sm" variant="ghost" onClick={() => setShowDetails(!showDetails)}>
           {showDetails ? "Hide" : "View"} Details
         </Button>
       </div>
@@ -157,7 +153,7 @@ export function AutosaveHistoryPanel({
   // Filter autosaves by section on the client side
   const filteredAutosaves =
     selectedSection === "all"
-      ? historyData?.autosaves ?? []
+      ? (historyData?.autosaves ?? [])
       : (historyData?.autosaves ?? []).filter((autosave) => {
           const sectionFilter = getSectionFilter(selectedSection);
           return sectionFilter ? autosave.action.includes(sectionFilter) : true;
@@ -183,7 +179,7 @@ export function AutosaveHistoryPanel({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -210,11 +206,7 @@ export function AutosaveHistoryPanel({
                   : "border-red-200 dark:border-red-800"
             }
           />
-          <StatCard
-            label="Last Save"
-            value={lastSaveText}
-            icon={<Clock className="h-5 w-5" />}
-          />
+          <StatCard label="Last Save" value={lastSaveText} icon={<Clock className="h-5 w-5" />} />
         </div>
 
         {/* Section Breakdown (if stats available) */}
@@ -259,11 +251,11 @@ export function AutosaveHistoryPanel({
         <div className="space-y-3">
           {statsLoading || historyLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
             </div>
           ) : filteredAutosaves.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <AlertCircle className="mb-2 h-12 w-12 text-muted-foreground" />
+              <AlertCircle className="text-muted-foreground mb-2 h-12 w-12" />
               <p className="text-muted-foreground">
                 {selectedSection === "all"
                   ? "No autosaves found"

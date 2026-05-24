@@ -23,9 +23,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-import type {
-  BidirectionalTaxSyncState,
-} from "../../services/BidirectionalTaxSyncService";
+import type { BidirectionalTaxSyncState } from "../../services/BidirectionalTaxSyncService";
 
 interface BidirectionalTaxSyncDisplayProps {
   syncState?: BidirectionalTaxSyncState;

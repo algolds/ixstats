@@ -90,28 +90,18 @@ export default async function ForumCardsPage({
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           {user.country?.flag && (
-<img
-              src={user.country.flag}
-              alt={user.country.name ?? ""}
-              style={styles.flag}
-            />
+            <img src={user.country.flag} alt={user.country.name ?? ""} style={styles.flag} />
           )}
           <div>
-            <h1 style={styles.title}>
-              {user.forumUsername}&apos;s Collection
-            </h1>
+            <h1 style={styles.title}>{user.forumUsername}&apos;s Collection</h1>
             <p style={styles.subtitle}>
               {user.country?.name ?? "Unknown Nation"} · Collector Lvl {user.collectorLevel}
             </p>
           </div>
         </div>
         <div style={styles.headerRight}>
-          <span style={styles.statBadge}>
-            {sorted.length} cards
-          </span>
-          <span style={styles.statBadge}>
-            {formatValue(totalValue)}
-          </span>
+          <span style={styles.statBadge}>{sorted.length} cards</span>
+          <span style={styles.statBadge}>{formatValue(totalValue)}</span>
         </div>
       </div>
 
@@ -121,11 +111,7 @@ export default async function ForumCardsPage({
       {/* Card Grid */}
       <div style={styles.grid}>
         {sorted.map((o) => (
-          <ForumMiniCard
-            key={o.id}
-            card={o.cards}
-            serialNumber={o.serialNumber}
-          />
+          <ForumMiniCard key={o.id} card={o.cards} serialNumber={o.serialNumber} />
         ))}
       </div>
 
@@ -133,13 +119,8 @@ export default async function ForumCardsPage({
       <div style={styles.footer}>
         <span>
           Powered by{" "}
-          <a
-          href={withBasePath("/")}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={styles.link}
-        >
-          IxStats
+          <a href={withBasePath("/")} target="_blank" rel="noopener noreferrer" style={styles.link}>
+            IxStats
           </a>
         </span>
         <a

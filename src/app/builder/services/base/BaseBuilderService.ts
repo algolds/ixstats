@@ -114,10 +114,7 @@ export abstract class BaseBuilderService<TState, TEvent = unknown> {
       try {
         listener(newState);
       } catch (error) {
-        console.error(
-          `[${this.constructor.name}] Error in listener callback:`,
-          error
-        );
+        console.error(`[${this.constructor.name}] Error in listener callback:`, error);
       }
     });
   }

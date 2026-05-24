@@ -6,13 +6,7 @@ import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { formatDistanceToNow } from "date-fns";
-import {
-  Zap,
-  Vote,
-  AlertTriangle,
-  FileText,
-  Calendar,
-} from "lucide-react";
+import { Zap, Vote, AlertTriangle, FileText, Calendar } from "lucide-react";
 
 const EVENT_CONFIG = {
   intervention: { icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10 border-amber-500/20" },
@@ -61,7 +55,7 @@ export function UpcomingEventsWidget() {
         )}
       </div>
 
-      <div className="glass-card-child space-y-2 rounded-xl border border-border/50 p-4">
+      <div className="glass-card-child border-border/50 space-y-2 rounded-xl border p-4">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3 py-2">
@@ -84,7 +78,7 @@ export function UpcomingEventsWidget() {
             return (
               <div
                 key={`${event.type}-${event.id}`}
-                className="flex items-start gap-3 rounded-lg border border-border/20 p-2.5 transition-colors hover:bg-muted/20"
+                className="border-border/20 hover:bg-muted/20 flex items-start gap-3 rounded-lg border p-2.5 transition-colors"
               >
                 <div className={`rounded-lg border p-1.5 ${config.bg}`}>
                   <Icon className={`h-4 w-4 ${config.color}`} />

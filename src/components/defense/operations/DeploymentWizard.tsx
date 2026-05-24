@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Crosshair,
-  Shield,
-  Anchor,
-  Swords,
-  GraduationCap,
-  AlertTriangle,
-} from "lucide-react";
+import { Crosshair, Shield, Anchor, Swords, GraduationCap, AlertTriangle } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -39,11 +32,36 @@ interface DeploymentWizardProps {
 }
 
 const OP_TYPES = [
-  { value: "peacekeeping", label: "Peacekeeping", icon: Shield, description: "Stabilize a region, improve relations" },
-  { value: "defense_pact", label: "Defense Pact", icon: Crosshair, description: "Deploy forces to defend an ally" },
-  { value: "blockade", label: "Naval Blockade", icon: Anchor, description: "Block enemy ports, high cost" },
-  { value: "intervention", label: "Military Intervention", icon: Swords, description: "Direct military action" },
-  { value: "training", label: "Training Exercise", icon: GraduationCap, description: "Improve readiness" },
+  {
+    value: "peacekeeping",
+    label: "Peacekeeping",
+    icon: Shield,
+    description: "Stabilize a region, improve relations",
+  },
+  {
+    value: "defense_pact",
+    label: "Defense Pact",
+    icon: Crosshair,
+    description: "Deploy forces to defend an ally",
+  },
+  {
+    value: "blockade",
+    label: "Naval Blockade",
+    icon: Anchor,
+    description: "Block enemy ports, high cost",
+  },
+  {
+    value: "intervention",
+    label: "Military Intervention",
+    icon: Swords,
+    description: "Direct military action",
+  },
+  {
+    value: "training",
+    label: "Training Exercise",
+    icon: GraduationCap,
+    description: "Improve readiness",
+  },
 ] as const;
 
 export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps) {
@@ -79,7 +97,8 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
   };
 
   const handleDeploy = () => {
-    const targetName = targetCountries.find((c) => c.id === targetCountryId)?.name ?? targetCountryId;
+    const targetName =
+      targetCountries.find((c) => c.id === targetCountryId)?.name ?? targetCountryId;
     saveAction("deployment", {
       name,
       operationType,
@@ -103,9 +122,14 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
   const allAssets = branches?.flatMap((b) => b.assets ?? []) ?? [];
 
   const targetCountries = relationships
-    ? [...new Map(
-        relationships.map((r) => [r.targetCountryId, { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId }])
-      ).values()]
+    ? [
+        ...new Map(
+          relationships.map((r) => [
+            r.targetCountryId,
+            { id: r.targetCountryId, name: r.targetCountry ?? r.targetCountryId },
+          ])
+        ).values(),
+      ]
     : [];
 
   // Cost estimate
@@ -137,7 +161,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
           Deploy Forces
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Deploy Military Forces</DialogTitle>
           <DialogDescription>
@@ -219,12 +243,12 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
           {allUnits.length > 0 && (
             <div>
               <Label>Deploy Units ({selectedUnitIds.length} selected)</Label>
-              <div className="grid grid-cols-2 gap-2 mt-1 max-h-32 overflow-y-auto">
+              <div className="mt-1 grid max-h-32 grid-cols-2 gap-2 overflow-y-auto">
                 {allUnits.map((unit) => (
                   <button
                     key={unit.id}
                     onClick={() => toggleUnit(unit.id)}
-                    className={`text-left text-xs p-2 rounded-lg border transition-colors ${
+                    className={`rounded-lg border p-2 text-left text-xs transition-colors ${
                       selectedUnitIds.includes(unit.id)
                         ? "border-red-500 bg-red-500/10"
                         : "border-muted hover:border-red-500/50"
@@ -244,21 +268,19 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
           {allAssets.length > 0 && (
             <div>
               <Label>Deploy Assets ({selectedAssetIds.length} selected)</Label>
-              <div className="grid grid-cols-2 gap-2 mt-1 max-h-32 overflow-y-auto">
+              <div className="mt-1 grid max-h-32 grid-cols-2 gap-2 overflow-y-auto">
                 {allAssets.map((asset) => (
                   <button
                     key={asset.id}
                     onClick={() => toggleAsset(asset.id)}
-                    className={`text-left text-xs p-2 rounded-lg border transition-colors ${
+                    className={`rounded-lg border p-2 text-left text-xs transition-colors ${
                       selectedAssetIds.includes(asset.id)
                         ? "border-red-500 bg-red-500/10"
                         : "border-muted hover:border-red-500/50"
                     }`}
                   >
                     <span className="font-medium">{asset.name}</span>
-                    <span className="text-muted-foreground block">
-                      Qty: {asset.quantity ?? 0}
-                    </span>
+                    <span className="text-muted-foreground block">Qty: {asset.quantity ?? 0}</span>
                   </button>
                 ))}
               </div>
@@ -267,7 +289,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
 
           {/* Cost preview */}
           <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-red-500" />
               <span className="text-sm font-medium">Cost Estimate</span>
             </div>
@@ -283,11 +305,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
           </div>
 
-          <Button
-            onClick={handleDeploy}
-            disabled={!name}
-            className="w-full"
-          >
+          <Button onClick={handleDeploy} disabled={!name} className="w-full">
             Launch Operation
           </Button>
         </div>

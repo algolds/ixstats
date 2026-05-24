@@ -1,6 +1,19 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Search, Loader2, X, CheckCircle, ChevronDown, ExternalLink, Globe, Users, DollarSign, MapPin, Building, Filter } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  X,
+  CheckCircle,
+  ChevronDown,
+  ExternalLink,
+  Globe,
+  Users,
+  DollarSign,
+  MapPin,
+  Building,
+  Filter,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
@@ -216,12 +229,22 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
           break;
       }
     },
-    [displayedResults, focusedIndex, previewingCountry, searchTerm, handleSelectResult, showCategories]
+    [
+      displayedResults,
+      focusedIndex,
+      previewingCountry,
+      searchTerm,
+      handleSelectResult,
+      showCategories,
+    ]
   );
 
   const handleCountrySelect = useCallback(
     (result: SearchResult) => {
-      if (categoryFilter.toLowerCase() === "countries" || categoryFilter.toLowerCase() === "nations") {
+      if (
+        categoryFilter.toLowerCase() === "countries" ||
+        categoryFilter.toLowerCase() === "nations"
+      ) {
         setPreviewingCountry(result);
       } else {
         handleSelectResult(result);
@@ -320,7 +343,11 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             )}
             <CheckCircle className="h-4 w-4 text-green-500" />
             <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-              Parsed {(parsedData?.common_name as string) || (parsedData?.official_name as string) || selectedResult?.title || "country"}
+              Parsed{" "}
+              {(parsedData?.common_name as string) ||
+                (parsedData?.official_name as string) ||
+                selectedResult?.title ||
+                "country"}
             </span>
           </motion.div>
         )}
@@ -337,9 +364,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             )}
             style={{
               backgroundColor: "var(--color-bg-surface)/80",
-              borderColor: isExpanded
-                ? "rgba(59, 130, 246, 0.3)"
-                : "var(--color-border-primary)",
+              borderColor: isExpanded ? "rgba(59, 130, 246, 0.3)" : "var(--color-border-primary)",
             }}
             onClick={!isExpanded ? handleExpand : undefined}
           >
@@ -351,7 +376,10 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-3 px-4 py-2.5"
               >
-                <Search className="h-4 w-4 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
+                <Search
+                  className="h-4 w-4 flex-shrink-0"
+                  style={{ color: "var(--color-text-muted)" }}
+                />
                 <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                   Search {selectedSite.displayName}...
                 </span>
@@ -375,7 +403,10 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 transition={{ duration: 0.15 }}
               >
                 {/* Search Input Row */}
-                <div className="flex items-center gap-2 border-b px-3 py-2.5" style={{ borderColor: "var(--color-border-primary)" }}>
+                <div
+                  className="flex items-center gap-2 border-b px-3 py-2.5"
+                  style={{ borderColor: "var(--color-border-primary)" }}
+                >
                   {/* Category Filter Icon */}
                   <button
                     onClick={(e) => {
@@ -395,11 +426,20 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
                   {/* Search Icon */}
                   {isSearching ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
-                      <Loader2 className="h-4 w-4 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Loader2
+                        className="h-4 w-4 flex-shrink-0"
+                        style={{ color: "var(--color-text-muted)" }}
+                      />
                     </motion.div>
                   ) : (
-                    <Search className="h-4 w-4 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
+                    <Search
+                      className="h-4 w-4 flex-shrink-0"
+                      style={{ color: "var(--color-text-muted)" }}
+                    />
                   )}
 
                   {/* Search Input */}
@@ -410,7 +450,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onFocus={() => setShowResults(true)}
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    className="placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
                     style={{ color: "var(--color-text-primary)" }}
                   />
 
@@ -422,7 +462,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                         setSearchTerm("");
                         inputRef.current?.focus();
                       }}
-                      className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full transition-colors hover:bg-accent"
+                      className="hover:bg-accent flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full transition-colors"
                     >
                       <X className="h-3 w-3" style={{ color: "var(--color-text-muted)" }} />
                     </button>
@@ -454,7 +494,10 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       style={{ borderColor: "var(--color-border-primary)" }}
                     >
                       <div className="px-3 py-3">
-                        <div className="mb-2 text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
+                        <div
+                          className="mb-2 text-xs font-medium"
+                          style={{ color: "var(--color-text-muted)" }}
+                        >
                           Category: {categoryFilter}
                         </div>
                         <div className="flex flex-wrap gap-1.5">
@@ -472,8 +515,8 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                               className={cn(
                                 "rounded-md border px-2.5 py-1 text-xs font-medium transition-all",
                                 categoryFilter === cat
-                                  ? "border-blue-400/50 bg-blue-500/15 text-foreground"
-                                  : "border-border/50 bg-transparent text-muted-foreground hover:border-blue-400/30"
+                                  ? "text-foreground border-blue-400/50 bg-blue-500/15"
+                                  : "border-border/50 text-muted-foreground bg-transparent hover:border-blue-400/30"
                               )}
                             >
                               {cat}
@@ -487,216 +530,288 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
                 {/* Content Area — inline scroll, hides on blur */}
                 {showResults && (
-                <div className="scrollbar-thin relative max-h-56 overflow-y-auto">
-                  {/* Searching Status */}
-                  {isSearching && searchTerm.trim() && displayedResults.length === 0 && (
-                    <div className="flex items-center justify-center gap-3 py-8">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                      >
-                        <Loader2 className="h-5 w-5" style={{ color: "var(--color-text-muted)" }} />
-                      </motion.div>
-                      <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                        Searching {categoryFilter} on {selectedSite.displayName}...
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Error Status */}
-                  {error && (
-                    <div className="px-4 py-6 text-center">
-                      <p className="text-sm text-red-400">{error}</p>
-                    </div>
-                  )}
-
-                  {/* No Results */}
-                  {!isSearching && searchTerm.trim() && displayedResults.length === 0 && !error && (
-                    <div className="px-4 py-8 text-center">
-                      <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                        No results found for "{searchTerm}"
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Results List */}
-                  {displayedResults.length > 0 && (
-                    <div className="p-3">
-                      <div className="space-y-2">
-                        {displayedResults.map((result, index) => (
-                          <div
-                            key={index}
-                            ref={(el) => {
-                              resultRefs.current[index] = el;
-                            }}
-                          >
-                            <SearchResultItemInline
-                              result={result}
-                              index={index}
-                              isSelected={selectedResult?.title === result.title}
-                              isFocused={focusedIndex === index}
-                              onSelect={() => handleCountrySelect(result)}
-                              onFocus={() => setFocusedIndex(index)}
-                              categoryFilter={categoryFilter}
-                              formatNumber={formatNumber}
-                            />
-                          </div>
-                        ))}
+                  <div className="relative max-h-56 scrollbar-thin overflow-y-auto">
+                    {/* Searching Status */}
+                    {isSearching && searchTerm.trim() && displayedResults.length === 0 && (
+                      <div className="flex items-center justify-center gap-3 py-8">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Loader2
+                            className="h-5 w-5"
+                            style={{ color: "var(--color-text-muted)" }}
+                          />
+                        </motion.div>
+                        <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+                          Searching {categoryFilter} on {selectedSite.displayName}...
+                        </span>
                       </div>
+                    )}
 
-                      {hasMoreResults && (
-                        <div className="mt-4 text-center">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              loadMoreResults();
-                            }}
-                            className="rounded-lg border px-4 py-2 text-sm transition-colors hover:bg-accent/50"
-                            style={{
-                              borderColor: "var(--color-border-primary)",
-                              color: "var(--color-text-muted)",
-                            }}
-                          >
-                            Load more ({displayedResults.length} of {displayedResults.length + (hasMoreResults ? 10 : 0)})
-                          </button>
+                    {/* Error Status */}
+                    {error && (
+                      <div className="px-4 py-6 text-center">
+                        <p className="text-sm text-red-400">{error}</p>
+                      </div>
+                    )}
+
+                    {/* No Results */}
+                    {!isSearching &&
+                      searchTerm.trim() &&
+                      displayedResults.length === 0 &&
+                      !error && (
+                        <div className="px-4 py-8 text-center">
+                          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+                            No results found for "{searchTerm}"
+                          </p>
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  {/* Country Preview Overlay */}
-                  <AnimatePresence>
-                    {previewingCountry && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        className="scrollbar-thin absolute inset-0 z-10 overflow-y-auto bg-background/95 backdrop-blur-md"
-                      >
-                        <div className="p-4">
-                          <button
-                            onClick={handleCancelPreview}
-                            className="mb-4 flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent/50"
-                            style={{
-                              borderColor: "var(--color-border-primary)",
-                              color: "var(--color-text-primary)",
-                            }}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                            Back to results
-                          </button>
-
-                          <div className="mb-4 flex items-center gap-3">
-                            {previewingCountry.flagUrl && !previewImgError ? (
-                              <img
-                                src={previewingCountry.flagUrl}
-                                alt="Flag"
-                                className="h-8 w-12 rounded border object-cover shadow-sm"
-                                style={{ borderColor: "var(--color-border-primary)" }}
-                                referrerPolicy="no-referrer"
-                                onError={() => setPreviewImgError(true)}
+                    {/* Results List */}
+                    {displayedResults.length > 0 && (
+                      <div className="p-3">
+                        <div className="space-y-2">
+                          {displayedResults.map((result, index) => (
+                            <div
+                              key={index}
+                              ref={(el) => {
+                                resultRefs.current[index] = el;
+                              }}
+                            >
+                              <SearchResultItemInline
+                                result={result}
+                                index={index}
+                                isSelected={selectedResult?.title === result.title}
+                                isFocused={focusedIndex === index}
+                                onSelect={() => handleCountrySelect(result)}
+                                onFocus={() => setFocusedIndex(index)}
+                                categoryFilter={categoryFilter}
+                                formatNumber={formatNumber}
                               />
-                            ) : (
-                              <div
-                                className="flex h-8 w-12 items-center justify-center rounded border"
-                                style={{ borderColor: "var(--color-border-primary)" }}
-                              >
-                                <Globe className="h-5 w-5" style={{ color: "var(--color-text-muted)" }} />
-                              </div>
-                            )}
-                            <div>
-                              <h3 className="text-lg font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                                {previewingCountry.title}
-                              </h3>
-                              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                                Country Preview
-                              </p>
                             </div>
+                          ))}
+                        </div>
+
+                        {hasMoreResults && (
+                          <div className="mt-4 text-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                loadMoreResults();
+                              }}
+                              className="hover:bg-accent/50 rounded-lg border px-4 py-2 text-sm transition-colors"
+                              style={{
+                                borderColor: "var(--color-border-primary)",
+                                color: "var(--color-text-muted)",
+                              }}
+                            >
+                              Load more ({displayedResults.length} of{" "}
+                              {displayedResults.length + (hasMoreResults ? 10 : 0)})
+                            </button>
                           </div>
+                        )}
+                      </div>
+                    )}
 
-                          {(previewingCountry.population || previewingCountry.gdpPerCapita || previewingCountry.capital || previewingCountry.government) && (
-                            <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-                              {previewingCountry.population && (
-                                <div className="rounded-lg border p-3" style={{ borderColor: "var(--color-border-primary)" }}>
-                                  <div className="mb-1 flex items-center gap-1.5">
-                                    <Users className="h-3 w-3" style={{ color: "var(--color-info)" }} />
-                                    <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>Population</span>
-                                  </div>
-                                  <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                                    {formatNumber(previewingCountry.population, 0)}
-                                  </p>
-                                </div>
-                              )}
-                              {previewingCountry.gdpPerCapita && (
-                                <div className="rounded-lg border p-3" style={{ borderColor: "var(--color-border-primary)" }}>
-                                  <div className="mb-1 flex items-center gap-1.5">
-                                    <DollarSign className="h-3 w-3" style={{ color: "var(--color-success)" }} />
-                                    <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>GDP/Capita</span>
-                                  </div>
-                                  <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                                    ${formatNumber(previewingCountry.gdpPerCapita)}
-                                  </p>
-                                </div>
-                              )}
-                              {previewingCountry.capital && (
-                                <div className="rounded-lg border p-3" style={{ borderColor: "var(--color-border-primary)" }}>
-                                  <div className="mb-1 flex items-center gap-1.5">
-                                    <MapPin className="h-3 w-3" style={{ color: "var(--color-error)" }} />
-                                    <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>Capital</span>
-                                  </div>
-                                  <p
-                                    className="truncate text-sm font-semibold"
-                                    style={{ color: "var(--color-text-primary)" }}
-                                    dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(previewingCountry.capital) }}
-                                  />
-                                </div>
-                              )}
-                              {previewingCountry.government && (
-                                <div className="rounded-lg border p-3" style={{ borderColor: "var(--color-border-primary)" }}>
-                                  <div className="mb-1 flex items-center gap-1.5">
-                                    <Building className="h-3 w-3" style={{ color: "var(--color-brand-secondary)" }} />
-                                    <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>Government</span>
-                                  </div>
-                                  <p
-                                    className="truncate text-sm font-semibold"
-                                    style={{ color: "var(--color-text-primary)" }}
-                                    dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(previewingCountry.government) }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          <p
-                            className="mb-4 text-sm leading-relaxed"
-                            style={{ color: "var(--color-text-secondary)" }}
-                            dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(previewingCountry.snippet) }}
-                          />
-
-                          <div className="flex gap-3">
+                    {/* Country Preview Overlay */}
+                    <AnimatePresence>
+                      {previewingCountry && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                          className="bg-background/95 absolute inset-0 z-10 scrollbar-thin overflow-y-auto backdrop-blur-md"
+                        >
+                          <div className="p-4">
                             <button
                               onClick={handleCancelPreview}
-                              className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent/50"
+                              className="hover:bg-accent/50 mb-4 flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
                               style={{
                                 borderColor: "var(--color-border-primary)",
                                 color: "var(--color-text-primary)",
                               }}
                             >
-                              Cancel
+                              <X className="h-3.5 w-3.5" />
+                              Back to results
                             </button>
-                            <button
-                              onClick={handleContinueWithPreview}
-                              className="flex-1 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600"
-                            >
-                              Import Country
-                            </button>
+
+                            <div className="mb-4 flex items-center gap-3">
+                              {previewingCountry.flagUrl && !previewImgError ? (
+                                <img
+                                  src={previewingCountry.flagUrl}
+                                  alt="Flag"
+                                  className="h-8 w-12 rounded border object-cover shadow-sm"
+                                  style={{ borderColor: "var(--color-border-primary)" }}
+                                  referrerPolicy="no-referrer"
+                                  onError={() => setPreviewImgError(true)}
+                                />
+                              ) : (
+                                <div
+                                  className="flex h-8 w-12 items-center justify-center rounded border"
+                                  style={{ borderColor: "var(--color-border-primary)" }}
+                                >
+                                  <Globe
+                                    className="h-5 w-5"
+                                    style={{ color: "var(--color-text-muted)" }}
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <h3
+                                  className="text-lg font-semibold"
+                                  style={{ color: "var(--color-text-primary)" }}
+                                >
+                                  {previewingCountry.title}
+                                </h3>
+                                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                                  Country Preview
+                                </p>
+                              </div>
+                            </div>
+
+                            {(previewingCountry.population ||
+                              previewingCountry.gdpPerCapita ||
+                              previewingCountry.capital ||
+                              previewingCountry.government) && (
+                              <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+                                {previewingCountry.population && (
+                                  <div
+                                    className="rounded-lg border p-3"
+                                    style={{ borderColor: "var(--color-border-primary)" }}
+                                  >
+                                    <div className="mb-1 flex items-center gap-1.5">
+                                      <Users
+                                        className="h-3 w-3"
+                                        style={{ color: "var(--color-info)" }}
+                                      />
+                                      <span
+                                        className="text-xs"
+                                        style={{ color: "var(--color-text-muted)" }}
+                                      >
+                                        Population
+                                      </span>
+                                    </div>
+                                    <p
+                                      className="text-sm font-semibold"
+                                      style={{ color: "var(--color-text-primary)" }}
+                                    >
+                                      {formatNumber(previewingCountry.population, 0)}
+                                    </p>
+                                  </div>
+                                )}
+                                {previewingCountry.gdpPerCapita && (
+                                  <div
+                                    className="rounded-lg border p-3"
+                                    style={{ borderColor: "var(--color-border-primary)" }}
+                                  >
+                                    <div className="mb-1 flex items-center gap-1.5">
+                                      <DollarSign
+                                        className="h-3 w-3"
+                                        style={{ color: "var(--color-success)" }}
+                                      />
+                                      <span
+                                        className="text-xs"
+                                        style={{ color: "var(--color-text-muted)" }}
+                                      >
+                                        GDP/Capita
+                                      </span>
+                                    </div>
+                                    <p
+                                      className="text-sm font-semibold"
+                                      style={{ color: "var(--color-text-primary)" }}
+                                    >
+                                      ${formatNumber(previewingCountry.gdpPerCapita)}
+                                    </p>
+                                  </div>
+                                )}
+                                {previewingCountry.capital && (
+                                  <div
+                                    className="rounded-lg border p-3"
+                                    style={{ borderColor: "var(--color-border-primary)" }}
+                                  >
+                                    <div className="mb-1 flex items-center gap-1.5">
+                                      <MapPin
+                                        className="h-3 w-3"
+                                        style={{ color: "var(--color-error)" }}
+                                      />
+                                      <span
+                                        className="text-xs"
+                                        style={{ color: "var(--color-text-muted)" }}
+                                      >
+                                        Capital
+                                      </span>
+                                    </div>
+                                    <p
+                                      className="truncate text-sm font-semibold"
+                                      style={{ color: "var(--color-text-primary)" }}
+                                      dangerouslySetInnerHTML={{
+                                        __html: sanitizeWikiContent(previewingCountry.capital),
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                                {previewingCountry.government && (
+                                  <div
+                                    className="rounded-lg border p-3"
+                                    style={{ borderColor: "var(--color-border-primary)" }}
+                                  >
+                                    <div className="mb-1 flex items-center gap-1.5">
+                                      <Building
+                                        className="h-3 w-3"
+                                        style={{ color: "var(--color-brand-secondary)" }}
+                                      />
+                                      <span
+                                        className="text-xs"
+                                        style={{ color: "var(--color-text-muted)" }}
+                                      >
+                                        Government
+                                      </span>
+                                    </div>
+                                    <p
+                                      className="truncate text-sm font-semibold"
+                                      style={{ color: "var(--color-text-primary)" }}
+                                      dangerouslySetInnerHTML={{
+                                        __html: sanitizeWikiContent(previewingCountry.government),
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            <p
+                              className="mb-4 text-sm leading-relaxed"
+                              style={{ color: "var(--color-text-secondary)" }}
+                              dangerouslySetInnerHTML={{
+                                __html: sanitizeWikiContent(previewingCountry.snippet),
+                              }}
+                            />
+
+                            <div className="flex gap-3">
+                              <button
+                                onClick={handleCancelPreview}
+                                className="hover:bg-accent/50 flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
+                                style={{
+                                  borderColor: "var(--color-border-primary)",
+                                  color: "var(--color-text-primary)",
+                                }}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleContinueWithPreview}
+                                className="flex-1 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-600"
+                              >
+                                Import Country
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 )}
               </motion.div>
             )}
@@ -771,16 +886,26 @@ function SearchResultItemInline({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center justify-between gap-2">
-          <h4 className="truncate text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+          <h4
+            className="truncate text-sm font-medium"
+            style={{ color: "var(--color-text-primary)" }}
+          >
             {result.title}
           </h4>
-          <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100" style={{ color: "var(--color-text-muted)" }} />
+          <ExternalLink
+            className="h-3 w-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+            style={{ color: "var(--color-text-muted)" }}
+          />
         </div>
 
         {/* Country info or snippet */}
-        {(categoryFilter.toLowerCase() === "countries" || categoryFilter.toLowerCase() === "nations") &&
+        {(categoryFilter.toLowerCase() === "countries" ||
+          categoryFilter.toLowerCase() === "nations") &&
         (result.population || result.gdpPerCapita || result.capital || result.government) ? (
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs" style={{ color: "var(--color-text-muted)" }}>
+          <div
+            className="flex flex-wrap gap-x-3 gap-y-1 text-xs"
+            style={{ color: "var(--color-text-muted)" }}
+          >
             {result.population && (
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" style={{ color: "var(--color-info)" }} />
@@ -789,8 +914,8 @@ function SearchResultItemInline({
             )}
             {result.gdpPerCapita && (
               <span className="flex items-center gap-1">
-                <DollarSign className="h-3 w-3" style={{ color: "var(--color-success)" }} />
-                ${formatNumber(result.gdpPerCapita)}
+                <DollarSign className="h-3 w-3" style={{ color: "var(--color-success)" }} />$
+                {formatNumber(result.gdpPerCapita)}
               </span>
             )}
             {result.capital && (

@@ -149,7 +149,8 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT";
+      const inInput =
+        target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT";
 
       if (e.key === "Tab" && !e.ctrlKey && !inInput) {
         e.preventDefault();
@@ -232,7 +233,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
             placeholder="Search countries by name, tier, continent, region..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring h-10 w-full rounded-lg border pl-10 pr-10 text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
+            className="bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring h-10 w-full rounded-lg border pr-10 pl-10 text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
           />
           {searchInput && (
             <button

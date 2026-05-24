@@ -63,7 +63,7 @@ export const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
   const total = data?.total ?? 0;
 
   return (
-    <CometCard className="p-6 space-y-4" glassDepth="child">
+    <CometCard className="space-y-4 p-6" glassDepth="child">
       {/* Header */}
       <div className="space-y-4">
         <h3 className="text-xl font-black text-white">Recipes</h3>
@@ -75,21 +75,21 @@ export const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className={cn(
-            "w-full px-4 py-2 rounded-lg",
-            "bg-white/10 border border-white/20",
+            "w-full rounded-lg px-4 py-2",
+            "border border-white/20 bg-white/10",
             "text-white placeholder:text-white/40",
-            "focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            "focus:ring-2 focus:ring-purple-500/50 focus:outline-none"
           )}
         />
 
         {/* Filters */}
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {(["ALL", "UNLOCKED", "LOCKED", "COMPLETED"] as RecipeFilter[]).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                "px-3 py-1 rounded-full text-sm font-semibold transition-colors",
+                "rounded-full px-3 py-1 text-sm font-semibold transition-colors",
                 filter === f
                   ? "bg-purple-500 text-white"
                   : "bg-white/10 text-white/70 hover:bg-white/20"
@@ -101,17 +101,17 @@ export const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
         </div>
 
         {/* Count */}
-        <div className="text-white/60 text-sm">
+        <div className="text-sm text-white/60">
           {total} recipe{total !== 1 ? "s" : ""} found
         </div>
       </div>
 
       {/* Recipe list */}
-      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+      <div className="max-h-[600px] space-y-3 overflow-y-auto pr-2">
         {isLoading ? (
-          <div className="text-center py-8 text-white/60">Loading recipes...</div>
+          <div className="py-8 text-center text-white/60">Loading recipes...</div>
         ) : recipes.length === 0 ? (
-          <div className="text-center py-8 text-white/60">No recipes found</div>
+          <div className="py-8 text-center text-white/60">No recipes found</div>
         ) : (
           recipes.map((recipe: any) => {
             const rarityConfig = getRarityConfig(recipe.resultRarity as any);
@@ -125,36 +125,32 @@ export const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
               >
                 <CometCard
                   className={cn(
-                    "p-4 cursor-pointer transition-all",
-                    isSelected
-                      ? "ring-2 ring-purple-500 bg-purple-500/10"
-                      : "hover:bg-white/5"
+                    "cursor-pointer p-4 transition-all",
+                    isSelected ? "bg-purple-500/10 ring-2 ring-purple-500" : "hover:bg-white/5"
                   )}
                   glassDepth="interactive"
                 >
                   <div className="space-y-2">
                     {/* Recipe header */}
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-white font-bold truncate">
-                          {recipe.name}
-                        </h4>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate font-bold text-white">{recipe.name}</h4>
                         {recipe.description && (
-                          <p className="text-white/60 text-xs line-clamp-2 mt-1">
+                          <p className="mt-1 line-clamp-2 text-xs text-white/60">
                             {recipe.description}
                           </p>
                         )}
                       </div>
 
                       {/* Status badges */}
-                      <div className="flex flex-col gap-1 items-end">
+                      <div className="flex flex-col items-end gap-1">
                         {!recipe.isUnlocked && (
-                          <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold">
+                          <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-300">
                             Locked
                           </span>
                         )}
                         {recipe.isCompleted && (
-                          <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 text-xs font-semibold">
+                          <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-semibold text-green-300">
                             ✓ {recipe.completedCount}x
                           </span>
                         )}
@@ -163,12 +159,12 @@ export const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
 
                     {/* Recipe details */}
                     <div className="flex items-center gap-3 text-xs">
-                      <div className="px-2 py-0.5 rounded bg-white/10 text-white/80">
+                      <div className="rounded bg-white/10 px-2 py-0.5 text-white/80">
                         {recipe.recipeType}
                       </div>
                       <div
                         className={cn(
-                          "px-2 py-0.5 rounded font-semibold",
+                          "rounded px-2 py-0.5 font-semibold",
                           rarityConfig.borderColor.replace("border-", "bg-"),
                           "bg-opacity-20",
                           rarityConfig.color
@@ -187,30 +183,28 @@ export const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
                     {/* Costs and rewards */}
                     <div className="flex items-center justify-between text-xs">
                       <div className="text-white/70">
-                        <span className="text-yellow-400 font-semibold">
+                        <span className="font-semibold text-yellow-400">
                           {recipe.ixCreditsCost.toLocaleString()}
                         </span>{" "}
                         IxCredits
                       </div>
                       <div className="text-white/70">
-                        <span className="text-blue-400 font-semibold">
-                          +{recipe.collectorXP}
-                        </span>{" "}
+                        <span className="font-semibold text-blue-400">+{recipe.collectorXP}</span>{" "}
                         XP
                       </div>
                     </div>
 
                     {/* Success rate */}
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
                         <motion.div
                           className={cn(
                             "h-full rounded-full",
                             recipe.successRate >= 80
                               ? "bg-green-500"
                               : recipe.successRate >= 50
-                              ? "bg-yellow-500"
-                              : "bg-orange-500"
+                                ? "bg-yellow-500"
+                                : "bg-orange-500"
                           )}
                           initial={{ width: 0 }}
                           animate={{ width: `${recipe.successRate}%` }}
@@ -223,8 +217,8 @@ export const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
                           recipe.successRate >= 80
                             ? "text-green-400"
                             : recipe.successRate >= 50
-                            ? "text-yellow-400"
-                            : "text-orange-400"
+                              ? "text-yellow-400"
+                              : "text-orange-400"
                         )}
                       >
                         {recipe.successRate.toFixed(0)}%

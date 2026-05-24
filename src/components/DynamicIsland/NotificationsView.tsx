@@ -33,15 +33,24 @@ function getNotificationIcon(notification: any): React.ComponentType<{ className
   const cat = notification.category;
   if (cat) {
     const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-      economic: TrendingUp, diplomatic: Globe, social: Users,
-      security: AlertTriangle, governance: Building2, achievement: CheckCircle,
-      crisis: AlertCircle, opportunity: TrendingUp, military: AlertTriangle,
+      economic: TrendingUp,
+      diplomatic: Globe,
+      social: Users,
+      security: AlertTriangle,
+      governance: Building2,
+      achievement: CheckCircle,
+      crisis: AlertCircle,
+      opportunity: TrendingUp,
+      military: AlertTriangle,
       wiki: BookOpen,
     };
     return iconMap[cat] ?? Bell;
   }
   const typeMap: Record<string, React.ComponentType<{ className?: string }>> = {
-    info: Info, warning: AlertTriangle, success: CheckCircle, error: AlertCircle,
+    info: Info,
+    warning: AlertTriangle,
+    success: CheckCircle,
+    error: AlertCircle,
   };
   return typeMap[notification.type] ?? Bell;
 }
@@ -154,7 +163,9 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="text-foreground flex min-w-0 items-center gap-3 text-xl font-bold">
           <BellRing className="h-6 w-6 flex-shrink-0 text-blue-400" />
-          <span className="truncate">{isExecutiveMode ? "Intelligence Center" : "Notification Center"}</span>
+          <span className="truncate">
+            {isExecutiveMode ? "Intelligence Center" : "Notification Center"}
+          </span>
           {totalUnreadCount > 0 && (
             <Badge className="bg-destructive text-foreground flex-shrink-0 rounded-full px-2 py-1 text-sm">
               {totalUnreadCount}
@@ -179,7 +190,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                 }
               }}
               disabled={markAllAsReadMutation.isPending}
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 px-3 py-2 text-xs flex-shrink-0"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex-shrink-0 px-3 py-2 text-xs"
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               Mark all read
@@ -187,7 +198,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
           )}
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 backdrop-blur-sm transition-all hover:bg-white/20 hover:text-white hover:scale-110 active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 backdrop-blur-sm transition-all hover:scale-110 hover:bg-white/20 hover:text-white active:scale-95"
             aria-label="Close notifications"
           >
             <X className="h-4 w-4" />
@@ -316,153 +327,157 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                 const isCollapsed = collapsedGroups.has(groupKey);
 
                 return (
-                <div key={groupKey} className="space-y-2">
-                  {/* Collapsible Group Header */}
-                  <button
-                    onClick={() => toggleGroup(groupKey)}
-                    className="flex w-full items-center justify-between px-1 py-0.5 rounded hover:bg-accent/10 transition-colors"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <motion.div
-                        animate={{ rotate: isCollapsed ? 0 : 90 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
-                      </motion.div>
-                      <h4 className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
-                        {group.title}
-                      </h4>
-                    </div>
-                    <Badge variant="secondary" className="bg-muted/40 px-1.5 py-0.5 text-[10px]">
-                      {group.notifications.length}
-                    </Badge>
-                  </button>
-
-                  {/* Grouped Notifications with swipe-to-dismiss */}
-                  <AnimatePresence>
-                    {!isCollapsed && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="space-y-2 overflow-hidden"
-                      >
-                    {group.notifications.map((notification: any, index: number) => {
-                      const isEnhancedNotification = notification.source === "enhanced";
-                      const isExecutiveNotification = notification.source === "executive";
-                      const IconComponent = getNotificationIcon(notification);
-                      const colors = getPriorityColors(notification);
-                      const itemKey = notification.id
-                        ? `${notification.source}-${notification.id}`
-                        : `${notification.source}-fallback-${index}`;
-
-                      return (
+                  <div key={groupKey} className="space-y-2">
+                    {/* Collapsible Group Header */}
+                    <button
+                      onClick={() => toggleGroup(groupKey)}
+                      className="hover:bg-accent/10 flex w-full items-center justify-between rounded px-1 py-0.5 transition-colors"
+                    >
+                      <div className="flex items-center gap-1.5">
                         <motion.div
-                          key={itemKey}
-                          layout
-                          initial={{ opacity: 0, x: 0 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -200, transition: { duration: 0.2 } }}
-                          drag="x"
-                          dragConstraints={{ left: 0, right: 0 }}
-                          dragElastic={0.3}
-                          onDragEnd={(_e, info) => {
-                            if (Math.abs(info.offset.x) > 100 || Math.abs(info.velocity.x) > 500) {
-                              // Swipe to dismiss — mark as read
-                              if (isEnhancedNotification) {
-                                markEnhancedAsRead(notification.id);
-                                recordEngagement(notification.id, "dismiss");
-                              } else if (isExecutiveNotification) {
-                                markExecutiveAsRead(notification.id);
-                              } else if (user?.id) {
-                                markAsReadMutation.mutate({
-                                  notificationId: notification.id,
-                                  userId: user.id,
-                                });
-                              }
-                            }
-                          }}
-                          className={`hover:bg-accent/50 cursor-pointer rounded-lg border p-3 transition-colors ${
-                            notification.status === "read" || notification.read
-                              ? "bg-muted/20 border-muted/40"
-                              : "bg-muted/30 border-muted/60 shadow-sm"
-                          }`}
-                          onClick={() => {
-                            const isRead = notification.status === "read" || notification.read;
-                            if (!isRead) {
-                              if (isEnhancedNotification) {
-                                markEnhancedAsRead(notification.id);
-                                recordEngagement(notification.id, "read");
-                              } else if (isExecutiveNotification) {
-                                markExecutiveAsRead(notification.id);
-                              } else if (user?.id) {
-                                markAsReadMutation.mutate({
-                                  notificationId: notification.id,
-                                  userId: user.id,
-                                });
-                              }
-                            }
-                            if ("href" in notification && notification.href) {
-                              window.location.href = createAbsoluteUrl(notification.href);
-                            }
-                            if (isEnhancedNotification) {
-                              recordEngagement(notification.id, "click");
-                            }
-                          }}
+                          animate={{ rotate: isCollapsed ? 0 : 90 }}
+                          transition={{ duration: 0.15 }}
                         >
-                          <div className="flex items-start gap-4">
-                            <div className={`flex-shrink-0 rounded-lg p-2 ${colors.bg}`}>
-                              <IconComponent className={`h-5 w-5 ${colors.text}`} />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="text-foreground text-base font-medium break-words">
-                                  {notification.title}
-                                </div>
-                                {!(notification.status === "read" || notification.read) && (
-                                  <div className="bg-primary mt-1 h-3 w-3 flex-shrink-0 rounded-full" />
-                                )}
-                              </div>
-                              {(notification.description || notification.message) && (
-                                <div className="text-muted-foreground mt-2 text-sm leading-relaxed break-words">
-                                  {notification.description || notification.message}
-                                </div>
-                              )}
-                              <div className="mt-3 flex items-center justify-between">
-                                <div className="text-muted-foreground/70 text-xs">
-                                  {isEnhancedNotification
-                                    ? `${new Date(notification.timestamp).toLocaleString()} • Smart Alert`
-                                    : isExecutiveNotification
-                                      ? `${new Date(notification.timestamp).toLocaleString()} • ${notification.source}`
-                                      : new Date(notification.createdAt).toLocaleString()}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {(isEnhancedNotification || isExecutiveNotification) && (
-                                    <Badge
-                                      variant="secondary"
-                                      className={`px-2 py-0 text-xs ${getPriorityBadgeClass(notification)}`}
-                                    >
-                                      {notification.priority ?? notification.severity}
-                                    </Badge>
-                                  )}
-                                  {notification.href && (
-                                    <div className="text-primary flex items-center gap-1 text-xs">
-                                      <span>View details</span>
-                                      <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                          <ChevronRight className="text-muted-foreground/50 h-3 w-3" />
                         </motion.div>
-                      );
-                    })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                        <h4 className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
+                          {group.title}
+                        </h4>
+                      </div>
+                      <Badge variant="secondary" className="bg-muted/40 px-1.5 py-0.5 text-[10px]">
+                        {group.notifications.length}
+                      </Badge>
+                    </button>
+
+                    {/* Grouped Notifications with swipe-to-dismiss */}
+                    <AnimatePresence>
+                      {!isCollapsed && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="space-y-2 overflow-hidden"
+                        >
+                          {group.notifications.map((notification: any, index: number) => {
+                            const isEnhancedNotification = notification.source === "enhanced";
+                            const isExecutiveNotification = notification.source === "executive";
+                            const IconComponent = getNotificationIcon(notification);
+                            const colors = getPriorityColors(notification);
+                            const itemKey = notification.id
+                              ? `${notification.source}-${notification.id}`
+                              : `${notification.source}-fallback-${index}`;
+
+                            return (
+                              <motion.div
+                                key={itemKey}
+                                layout
+                                initial={{ opacity: 0, x: 0 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -200, transition: { duration: 0.2 } }}
+                                drag="x"
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={0.3}
+                                onDragEnd={(_e, info) => {
+                                  if (
+                                    Math.abs(info.offset.x) > 100 ||
+                                    Math.abs(info.velocity.x) > 500
+                                  ) {
+                                    // Swipe to dismiss — mark as read
+                                    if (isEnhancedNotification) {
+                                      markEnhancedAsRead(notification.id);
+                                      recordEngagement(notification.id, "dismiss");
+                                    } else if (isExecutiveNotification) {
+                                      markExecutiveAsRead(notification.id);
+                                    } else if (user?.id) {
+                                      markAsReadMutation.mutate({
+                                        notificationId: notification.id,
+                                        userId: user.id,
+                                      });
+                                    }
+                                  }
+                                }}
+                                className={`hover:bg-accent/50 cursor-pointer rounded-lg border p-3 transition-colors ${
+                                  notification.status === "read" || notification.read
+                                    ? "bg-muted/20 border-muted/40"
+                                    : "bg-muted/30 border-muted/60 shadow-sm"
+                                }`}
+                                onClick={() => {
+                                  const isRead =
+                                    notification.status === "read" || notification.read;
+                                  if (!isRead) {
+                                    if (isEnhancedNotification) {
+                                      markEnhancedAsRead(notification.id);
+                                      recordEngagement(notification.id, "read");
+                                    } else if (isExecutiveNotification) {
+                                      markExecutiveAsRead(notification.id);
+                                    } else if (user?.id) {
+                                      markAsReadMutation.mutate({
+                                        notificationId: notification.id,
+                                        userId: user.id,
+                                      });
+                                    }
+                                  }
+                                  if ("href" in notification && notification.href) {
+                                    window.location.href = createAbsoluteUrl(notification.href);
+                                  }
+                                  if (isEnhancedNotification) {
+                                    recordEngagement(notification.id, "click");
+                                  }
+                                }}
+                              >
+                                <div className="flex items-start gap-4">
+                                  <div className={`flex-shrink-0 rounded-lg p-2 ${colors.bg}`}>
+                                    <IconComponent className={`h-5 w-5 ${colors.text}`} />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="text-foreground text-base font-medium break-words">
+                                        {notification.title}
+                                      </div>
+                                      {!(notification.status === "read" || notification.read) && (
+                                        <div className="bg-primary mt-1 h-3 w-3 flex-shrink-0 rounded-full" />
+                                      )}
+                                    </div>
+                                    {(notification.description || notification.message) && (
+                                      <div className="text-muted-foreground mt-2 text-sm leading-relaxed break-words">
+                                        {notification.description || notification.message}
+                                      </div>
+                                    )}
+                                    <div className="mt-3 flex items-center justify-between">
+                                      <div className="text-muted-foreground/70 text-xs">
+                                        {isEnhancedNotification
+                                          ? `${new Date(notification.timestamp).toLocaleString()} • Smart Alert`
+                                          : isExecutiveNotification
+                                            ? `${new Date(notification.timestamp).toLocaleString()} • ${notification.source}`
+                                            : new Date(notification.createdAt).toLocaleString()}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {(isEnhancedNotification || isExecutiveNotification) && (
+                                          <Badge
+                                            variant="secondary"
+                                            className={`px-2 py-0 text-xs ${getPriorityBadgeClass(notification)}`}
+                                          >
+                                            {notification.priority ?? notification.severity}
+                                          </Badge>
+                                        )}
+                                        {notification.href && (
+                                          <div className="text-primary flex items-center gap-1 text-xs">
+                                            <span>View details</span>
+                                            <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 );
               })}
             </div>

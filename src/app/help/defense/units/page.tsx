@@ -23,7 +23,9 @@ export default function DefenseUnitsArticle() {
         <Section title="Where to Manage Units">
           <InfoBox title="Tools">
             <ul className="list-disc space-y-1 pl-6">
-              <li>Go to <strong>MyCountry &rarr; Defense</strong> to manage your units.</li>
+              <li>
+                Go to <strong>MyCountry &rarr; Defense</strong> to manage your units.
+              </li>
               <li>Use the unit editor to adjust composition, equipment, and readiness.</li>
               <li>Track maintenance schedules and upgrade paths from the unit dashboard.</li>
             </ul>
@@ -44,12 +46,22 @@ export default function DefenseUnitsArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Wrench className="inline h-4 w-4" />{" "}
-              <Link href="/help/defense/equipment" className="text-blue-600 hover:underline dark:text-blue-400">Equipment Catalog</Link>{" "}
+              <Link
+                href="/help/defense/equipment"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Equipment Catalog
+              </Link>{" "}
               — browse 500+ equipment items.
             </li>
             <li>
               <ClipboardList className="inline h-4 w-4" />{" "}
-              <Link href="/help/defense/customization" className="text-blue-600 hover:underline dark:text-blue-400">Force Customization</Link>{" "}
+              <Link
+                href="/help/defense/customization"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Force Customization
+              </Link>{" "}
               — tailoring modules to mission needs.
             </li>
           </ul>

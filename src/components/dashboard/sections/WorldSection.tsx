@@ -1,11 +1,24 @@
 "use client";
 
 import { motion } from "motion/react";
-import { AlertTriangle, Shield, Globe, Trophy, Clock, TrendingUp, DollarSign, Users, BarChart3 } from "lucide-react";
+import {
+  AlertTriangle,
+  Shield,
+  Globe,
+  Trophy,
+  Clock,
+  TrendingUp,
+  DollarSign,
+  Users,
+  BarChart3,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { MetricCardGrid } from "~/components/mycountry/primitives/tabs/MetricCardGrid";
-import { staggerContainer, staggerItem } from "~/components/mycountry/primitives/tabs/TabMotionConfig";
+import {
+  staggerContainer,
+  staggerItem,
+} from "~/components/mycountry/primitives/tabs/TabMotionConfig";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
@@ -13,10 +26,26 @@ import { cn } from "~/lib/utils";
 import { WorldStatsBar } from "~/components/dashboard/WorldStatsBar";
 
 const SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  critical: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30" },
-  high: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", border: "border-orange-500/30" },
-  medium: { bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400", border: "border-yellow-500/30" },
-  low: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30" },
+  critical: {
+    bg: "bg-red-500/10",
+    text: "text-red-600 dark:text-red-400",
+    border: "border-red-500/30",
+  },
+  high: {
+    bg: "bg-orange-500/10",
+    text: "text-orange-600 dark:text-orange-400",
+    border: "border-orange-500/30",
+  },
+  medium: {
+    bg: "bg-yellow-500/10",
+    text: "text-yellow-600 dark:text-yellow-400",
+    border: "border-yellow-500/30",
+  },
+  low: {
+    bg: "bg-blue-500/10",
+    text: "text-blue-600 dark:text-blue-400",
+    border: "border-blue-500/30",
+  },
 };
 
 /**
@@ -108,8 +137,8 @@ export function WorldSection() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[10px] px-1.5 py-0",
-                    crises.length > 0 ? "border-red-500/30 text-red-500" : "",
+                    "px-1.5 py-0 text-[10px]",
+                    crises.length > 0 ? "border-red-500/30 text-red-500" : ""
                   )}
                 >
                   {crises.length} active
@@ -117,11 +146,13 @@ export function WorldSection() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
+              <div className="max-h-[350px] space-y-2.5 overflow-y-auto pr-1">
                 {crises.length === 0 && (
                   <div className="py-8 text-center">
-                    <Shield className="mx-auto h-8 w-8 text-emerald-500/50 mb-2" />
-                    <p className="text-xs text-muted-foreground">No active crises — the world is at peace</p>
+                    <Shield className="mx-auto mb-2 h-8 w-8 text-emerald-500/50" />
+                    <p className="text-muted-foreground text-xs">
+                      No active crises — the world is at peace
+                    </p>
                   </div>
                 )}
                 {crises.map((crisis) => {
@@ -130,25 +161,36 @@ export function WorldSection() {
                     <div
                       key={crisis.id}
                       className={cn(
-                        "rounded-lg border p-3 transition-colors hover:bg-muted/30",
-                        severity.border,
+                        "hover:bg-muted/30 rounded-lg border p-3 transition-colors",
+                        severity.border
                       )}
                     >
                       <div className="flex items-start gap-2.5">
-                        <div className={cn("mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full", severity.bg)}>
+                        <div
+                          className={cn(
+                            "mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
+                            severity.bg
+                          )}
+                        >
                           <AlertTriangle className={cn("h-3 w-3", severity.text)} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <Badge className={cn("text-[9px] px-1 py-0 uppercase font-bold", severity.bg, severity.text)}>
+                          <div className="mb-0.5 flex items-center gap-2">
+                            <Badge
+                              className={cn(
+                                "px-1 py-0 text-[9px] font-bold uppercase",
+                                severity.bg,
+                                severity.text
+                              )}
+                            >
                               {crisis.severity}
                             </Badge>
-                            <Badge variant="outline" className="text-[9px] px-1 py-0">
+                            <Badge variant="outline" className="px-1 py-0 text-[9px]">
                               {crisis.category ?? crisis.type}
                             </Badge>
                           </div>
-                          <p className="text-xs font-medium mt-1">{crisis.description}</p>
-                          <div className="mt-1.5 flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <p className="mt-1 text-xs font-medium">{crisis.description}</p>
+                          <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-[10px]">
                             <span className="flex items-center gap-1">
                               <Clock className="h-2.5 w-2.5" />
                               {new Date(crisis.timestamp).toLocaleDateString()}
@@ -174,17 +216,27 @@ export function WorldSection() {
             <CardContent className="pt-0">
               <div className="space-y-1.5">
                 {leaders.length === 0 && (
-                  <p className="text-xs text-muted-foreground py-8 text-center">No diplomatic data available</p>
+                  <p className="text-muted-foreground py-8 text-center text-xs">
+                    No diplomatic data available
+                  </p>
                 )}
                 {leaders.slice(0, 10).map((entry, i) => (
                   <div
                     key={entry.countryId}
-                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/30 transition-colors"
+                    className="hover:bg-muted/30 flex items-center gap-3 rounded-md px-2 py-2 transition-colors"
                   >
-                    <span className={cn(
-                      "w-5 text-center text-xs font-bold",
-                      i === 0 ? "text-amber-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-orange-600" : "text-muted-foreground",
-                    )}>
+                    <span
+                      className={cn(
+                        "w-5 text-center text-xs font-bold",
+                        i === 0
+                          ? "text-amber-500"
+                          : i === 1
+                            ? "text-gray-400"
+                            : i === 2
+                              ? "text-orange-600"
+                              : "text-muted-foreground"
+                      )}
+                    >
                       {i + 1}
                     </span>
                     <UnifiedCountryFlag
@@ -192,12 +244,12 @@ export function WorldSection() {
                       size="sm"
                       className="h-5 w-5 flex-shrink-0"
                     />
-                    <span className="text-xs font-medium truncate flex-1">{entry.countryName}</span>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[11px] font-semibold text-foreground">
+                    <span className="flex-1 truncate text-xs font-medium">{entry.countryName}</span>
+                    <div className="flex flex-shrink-0 items-center gap-2">
+                      <span className="text-foreground text-[11px] font-semibold">
                         {Math.round(entry.totalInfluence).toLocaleString()}
                       </span>
-                      <Badge variant="outline" className="text-[9px] px-1 py-0">
+                      <Badge variant="outline" className="px-1 py-0 text-[9px]">
                         {entry.activeEmbassies} embassies
                       </Badge>
                     </div>
@@ -233,7 +285,8 @@ export function WorldSection() {
               icon: TrendingUp,
               trend: globalStats?.globalGrowthRate
                 ? {
-                    direction: globalStats.globalGrowthRate > 0 ? "up" as const : "down" as const,
+                    direction:
+                      globalStats.globalGrowthRate > 0 ? ("up" as const) : ("down" as const),
                     value: Math.abs(globalStats.globalGrowthRate * 100),
                   }
                 : undefined,
@@ -242,9 +295,7 @@ export function WorldSection() {
             {
               id: "avg-gdp-capita",
               title: "Avg GDP/Capita",
-              value: globalStats
-                ? formatCurrency(globalStats.averageGdpPerCapita ?? 0)
-                : "—",
+              value: globalStats ? formatCurrency(globalStats.averageGdpPerCapita ?? 0) : "—",
               icon: BarChart3,
               description: "Cross-nation average",
             },
@@ -272,35 +323,51 @@ export function WorldSection() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-1">
-                <div className="flex items-center gap-3 px-2 py-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="text-muted-foreground flex items-center gap-3 px-2 py-1 text-[10px] font-medium tracking-wider uppercase">
                   <span className="w-5">#</span>
                   <span className="flex-1">Country</span>
                   <span className="w-20 text-right">GDP/Cap</span>
-                  <span className="w-16 text-right hidden sm:block">Tier</span>
+                  <span className="hidden w-16 text-right sm:block">Tier</span>
                 </div>
                 {gdpLeaders.map((country, i) => (
                   <div
                     key={country.id}
-                    className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/30 transition-colors"
+                    className="hover:bg-muted/30 flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors"
                   >
-                    <span className={cn(
-                      "w-5 text-center text-xs font-bold",
-                      i === 0 ? "text-amber-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-orange-600" : "text-muted-foreground",
-                    )}>
+                    <span
+                      className={cn(
+                        "w-5 text-center text-xs font-bold",
+                        i === 0
+                          ? "text-amber-500"
+                          : i === 1
+                            ? "text-gray-400"
+                            : i === 2
+                              ? "text-orange-600"
+                              : "text-muted-foreground"
+                      )}
+                    >
                       {i + 1}
                     </span>
-                    <UnifiedCountryFlag countryName={country.name} size="sm" className="h-5 w-5 flex-shrink-0" />
-                    <span className="text-xs font-medium truncate flex-1">{country.name}</span>
+                    <UnifiedCountryFlag
+                      countryName={country.name}
+                      size="sm"
+                      className="h-5 w-5 flex-shrink-0"
+                    />
+                    <span className="flex-1 truncate text-xs font-medium">{country.name}</span>
                     <span className="w-20 text-right text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(country.currentGdpPerCapita)}
                     </span>
-                    <span className="w-16 text-right hidden sm:block">
-                      <Badge variant="outline" className="text-[9px] px-1 py-0">{country.economicTier}</Badge>
+                    <span className="hidden w-16 text-right sm:block">
+                      <Badge variant="outline" className="px-1 py-0 text-[9px]">
+                        {country.economicTier}
+                      </Badge>
                     </span>
                   </div>
                 ))}
                 {gdpLeaders.length === 0 && (
-                  <p className="text-xs text-muted-foreground py-8 text-center">No data available</p>
+                  <p className="text-muted-foreground py-8 text-center text-xs">
+                    No data available
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -316,41 +383,60 @@ export function WorldSection() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-1">
-                <div className="flex items-center gap-3 px-2 py-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="text-muted-foreground flex items-center gap-3 px-2 py-1 text-[10px] font-medium tracking-wider uppercase">
                   <span className="w-5">#</span>
                   <span className="flex-1">Country</span>
                   <span className="w-20 text-right">Population</span>
-                  <span className="w-16 text-right hidden sm:block">Growth</span>
+                  <span className="hidden w-16 text-right sm:block">Growth</span>
                 </div>
                 {popLeaders.map((country, i) => (
                   <div
                     key={country.id}
-                    className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-muted/30 transition-colors"
+                    className="hover:bg-muted/30 flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors"
                   >
-                    <span className={cn(
-                      "w-5 text-center text-xs font-bold",
-                      i === 0 ? "text-amber-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-orange-600" : "text-muted-foreground",
-                    )}>
+                    <span
+                      className={cn(
+                        "w-5 text-center text-xs font-bold",
+                        i === 0
+                          ? "text-amber-500"
+                          : i === 1
+                            ? "text-gray-400"
+                            : i === 2
+                              ? "text-orange-600"
+                              : "text-muted-foreground"
+                      )}
+                    >
                       {i + 1}
                     </span>
-                    <UnifiedCountryFlag countryName={country.name} size="sm" className="h-5 w-5 flex-shrink-0" />
-                    <span className="text-xs font-medium truncate flex-1">{country.name}</span>
+                    <UnifiedCountryFlag
+                      countryName={country.name}
+                      size="sm"
+                      className="h-5 w-5 flex-shrink-0"
+                    />
+                    <span className="flex-1 truncate text-xs font-medium">{country.name}</span>
                     <span className="w-20 text-right text-xs font-semibold text-blue-600 dark:text-blue-400">
                       {formatPopulation(country.currentPopulation)}
                     </span>
-                    <span className="w-16 text-right hidden sm:block">
-                      <span className={cn(
-                        "text-[11px] font-medium",
-                        (country.populationGrowthRate ?? 0) > 0 ? "text-emerald-500" :
-                        (country.populationGrowthRate ?? 0) < 0 ? "text-red-500" : "text-muted-foreground",
-                      )}>
+                    <span className="hidden w-16 text-right sm:block">
+                      <span
+                        className={cn(
+                          "text-[11px] font-medium",
+                          (country.populationGrowthRate ?? 0) > 0
+                            ? "text-emerald-500"
+                            : (country.populationGrowthRate ?? 0) < 0
+                              ? "text-red-500"
+                              : "text-muted-foreground"
+                        )}
+                      >
                         {((country.populationGrowthRate ?? 0) * 100).toFixed(2)}%
                       </span>
                     </span>
                   </div>
                 ))}
                 {popLeaders.length === 0 && (
-                  <p className="text-xs text-muted-foreground py-8 text-center">No data available</p>
+                  <p className="text-muted-foreground py-8 text-center text-xs">
+                    No data available
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -362,15 +448,18 @@ export function WorldSection() {
       {globalStats?.economicTierDistribution && (
         <motion.div variants={staggerItem}>
           <Card className="px-4 py-3">
-            <div className="flex items-center gap-1.5 mb-2.5">
+            <div className="mb-2.5 flex items-center gap-1.5">
               <Globe className="h-3.5 w-3.5 text-emerald-500" />
               <span className="text-xs font-semibold">Economic Tier Distribution</span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               {Object.entries(globalStats.economicTierDistribution).map(([tier, count]) => (
-                <div key={tier} className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2.5 py-1.5">
+                <div
+                  key={tier}
+                  className="bg-muted/50 flex items-center gap-1.5 rounded-md px-2.5 py-1.5"
+                >
                   <span className="text-xs font-medium">{tier}</span>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold">
+                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-bold">
                     {count as number}
                   </Badge>
                 </div>

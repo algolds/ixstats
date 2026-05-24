@@ -150,7 +150,10 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   const cancelExchangeMutation = api.diplomatic.cancelCulturalExchange.useMutation({
     onSuccess: (data) => {
       const penalties = data.penalties;
-      notify.success("Exchange cancelled", `Reputation: ${penalties.reputationLoss}, Relations: ${penalties.relationshipPenalty}%`);
+      notify.success(
+        "Exchange cancelled",
+        `Reputation: ${penalties.reputationLoss}, Relations: ${penalties.relationshipPenalty}%`
+      );
       setShowDetailsModal(false);
       setSelectedExchange(null);
       refetchExchanges();
@@ -163,7 +166,10 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
   // Share to ThinkPages mutation
   const shareToThinkPagesMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
-      notify.success("Shared to ThinkPages!", "Your cultural exchange is now visible on the global feed");
+      notify.success(
+        "Shared to ThinkPages!",
+        "Your cultural exchange is now visible on the global feed"
+      );
     },
     onError: (error) => {
       notify.error(`Failed to share: ${error.message}`);

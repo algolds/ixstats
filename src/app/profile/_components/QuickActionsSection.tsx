@@ -22,7 +22,7 @@ export function QuickActionsSection({
           </div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-white">Quick Access</h3>
         </div>
-        
+
         <div className="space-y-2">
           <Link
             href={"/dashboard"}

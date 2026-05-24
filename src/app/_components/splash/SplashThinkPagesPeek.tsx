@@ -69,7 +69,7 @@ export function SplashThinkPagesPeek() {
           <li key={post.id}>
             <div
               className={cn(
-                "rounded-xl border p-3 transition-colors hover:bg-muted/30",
+                "hover:bg-muted/30 rounded-xl border p-3 transition-colors",
                 splashGold.border
               )}
             >
@@ -78,16 +78,16 @@ export function SplashThinkPagesPeek() {
                   href={`/thinkpages/post/${post.id}`}
                   className="relative flex shrink-0 flex-col items-center gap-1"
                 >
-                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                  <div className="border-border bg-muted relative h-10 w-10 shrink-0 overflow-hidden rounded-md border">
                     {flag ? (
                       <img src={flag} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center text-[10px] font-medium text-muted-foreground">
+                      <span className="text-muted-foreground flex h-full w-full items-center justify-center text-[10px] font-medium">
                         TP
                       </span>
                     )}
                   </div>
-                  <Avatar className="h-7 w-7 border border-border">
+                  <Avatar className="border-border h-7 w-7 border">
                     <AvatarImage src={profileUrl ?? undefined} alt="" />
                     <AvatarFallback className="text-[9px] font-semibold">
                       {displayName
@@ -114,7 +114,7 @@ export function SplashThinkPagesPeek() {
                     </p>
                   </Link>
 
-                  <div className="text-muted-foreground [&_a]:break-all [&_a]:text-blue-600 hover:[&_a]:underline dark:[&_a]:text-blue-400 [&_img]:my-1 [&_img]:max-h-40 [&_img]:w-auto [&_img]:max-w-full [&_img]:rounded-md [&_p]:my-1 [&_p]:first:mt-0 [&_svg]:inline-block [&_svg]:h-4 [&_svg]:w-4 [&_svg]:align-[-0.125em] max-h-44 overflow-hidden text-sm leading-relaxed">
+                  <div className="text-muted-foreground max-h-44 overflow-hidden text-sm leading-relaxed [&_a]:break-all [&_a]:text-blue-600 hover:[&_a]:underline dark:[&_a]:text-blue-400 [&_img]:my-1 [&_img]:max-h-40 [&_img]:w-auto [&_img]:max-w-full [&_img]:rounded-md [&_p]:my-1 [&_p]:first:mt-0 [&_svg]:inline-block [&_svg]:h-4 [&_svg]:w-4 [&_svg]:align-[-0.125em]">
                     <WikiHtmlContent html={htmlBody} className="break-words" />
                   </div>
 

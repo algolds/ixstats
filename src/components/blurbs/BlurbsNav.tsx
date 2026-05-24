@@ -22,7 +22,10 @@ export function BlurbsNav() {
       {NAV_ITEMS.map((item) => {
         const isActive =
           item.href === "/blurbs"
-            ? stripped === "/blurbs" || (stripped.startsWith("/blurbs/") && stripped !== "/blurbs/mine" && stripped !== "/blurbs/submit")
+            ? stripped === "/blurbs" ||
+              (stripped.startsWith("/blurbs/") &&
+                stripped !== "/blurbs/mine" &&
+                stripped !== "/blurbs/submit")
             : stripped === item.href;
 
         return (
@@ -32,8 +35,8 @@ export function BlurbsNav() {
             className={cn(
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
               isActive
-                ? "bg-white/10 text-foreground"
-                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                ? "text-foreground bg-white/10"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
             )}
           >
             <item.icon className="h-3.5 w-3.5" />

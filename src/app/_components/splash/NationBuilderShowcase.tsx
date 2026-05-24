@@ -28,35 +28,33 @@ const STEP_ICONS: Record<(typeof BUILD_STEPS)[number], typeof Crown> = {
 };
 
 /** Per-step icon tiles: distinct hues + hover motion (scale / lift / tilt). */
-const STEP_ICON_STYLES: Record<
-  (typeof BUILD_STEPS)[number],
-  { box: string; hoverRotate: number }
-> = {
-  foundation: {
-    box: "border-violet-400/50 bg-gradient-to-br from-violet-500 to-purple-800 shadow-md shadow-violet-500/20",
-    hoverRotate: -10,
-  },
-  identity: {
-    box: "border-sky-400/50 bg-gradient-to-br from-sky-500 to-blue-800 shadow-md shadow-sky-500/20",
-    hoverRotate: 10,
-  },
-  government: {
-    box: "border-indigo-400/50 bg-gradient-to-br from-indigo-500 to-slate-900 shadow-md shadow-indigo-500/20",
-    hoverRotate: -8,
-  },
-  economics: {
-    box: "border-emerald-400/50 bg-gradient-to-br from-emerald-500 to-teal-800 shadow-md shadow-emerald-500/20",
-    hoverRotate: 8,
-  },
-  preview: {
-    box: "border-rose-400/50 bg-gradient-to-br from-rose-500 to-orange-800 shadow-md shadow-rose-500/20",
-    hoverRotate: -6,
-  },
-  import: {
-    box: "border-blue-400/50 bg-gradient-to-br from-blue-500 to-slate-900 shadow-md shadow-blue-500/20",
-    hoverRotate: 12,
-  },
-};
+const STEP_ICON_STYLES: Record<(typeof BUILD_STEPS)[number], { box: string; hoverRotate: number }> =
+  {
+    foundation: {
+      box: "border-violet-400/50 bg-gradient-to-br from-violet-500 to-purple-800 shadow-md shadow-violet-500/20",
+      hoverRotate: -10,
+    },
+    identity: {
+      box: "border-sky-400/50 bg-gradient-to-br from-sky-500 to-blue-800 shadow-md shadow-sky-500/20",
+      hoverRotate: 10,
+    },
+    government: {
+      box: "border-indigo-400/50 bg-gradient-to-br from-indigo-500 to-slate-900 shadow-md shadow-indigo-500/20",
+      hoverRotate: -8,
+    },
+    economics: {
+      box: "border-emerald-400/50 bg-gradient-to-br from-emerald-500 to-teal-800 shadow-md shadow-emerald-500/20",
+      hoverRotate: 8,
+    },
+    preview: {
+      box: "border-rose-400/50 bg-gradient-to-br from-rose-500 to-orange-800 shadow-md shadow-rose-500/20",
+      hoverRotate: -6,
+    },
+    import: {
+      box: "border-blue-400/50 bg-gradient-to-br from-blue-500 to-slate-900 shadow-md shadow-blue-500/20",
+      hoverRotate: 12,
+    },
+  };
 
 export function NationBuilderShowcase() {
   return (
@@ -66,7 +64,9 @@ export function NationBuilderShowcase() {
       transition={{ duration: 0.7 }}
       className="mx-auto mb-16 max-w-7xl md:mb-20"
     >
-      <div className={`glass-hierarchy-parent relative overflow-hidden p-5 md:p-8 ${splashGold.panel}`}>
+      <div
+        className={`glass-hierarchy-parent relative overflow-hidden p-5 md:p-8 ${splashGold.panel}`}
+      >
         <div className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-amber-500/5 to-transparent dark:from-amber-400/5" />
 
         <div className="relative z-10">
@@ -81,10 +81,13 @@ export function NationBuilderShowcase() {
               </motion.div>
               <div>
                 <Badge className={`mb-2 ${splashGold.badge}`}>MyCountry © Builder</Badge>
-                <h2 className={`text-2xl font-bold md:text-4xl ${splashGold.headline}`}>Begin at the blueprint</h2>
+                <h2 className={`text-2xl font-bold md:text-4xl ${splashGold.headline}`}>
+                  Begin at the blueprint
+                </h2>
                 <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-relaxed md:text-base">
-                  Geography, identity, institutions, economy — then a clean preview before you enter the world. Publish
-                  when it feels right; your command surface unlocks the moment you&apos;re ready to lead.
+                  Geography, identity, institutions, economy — then a clean preview before you enter
+                  the world. Publish when it feels right; your command surface unlocks the moment
+                  you&apos;re ready to lead.
                 </p>
               </div>
             </div>
@@ -100,7 +103,9 @@ export function NationBuilderShowcase() {
             </div>
           </div>
 
-          <div className={`mb-6 flex flex-wrap items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-muted-foreground ${splashGold.subtlePanel}`}>
+          <div
+            className={`text-muted-foreground mb-6 flex flex-wrap items-center gap-2 rounded-xl px-3 py-2.5 text-sm ${splashGold.subtlePanel}`}
+          >
             <motion.span
               animate={{ opacity: [0.7, 1, 0.7] }}
               transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
@@ -108,13 +113,16 @@ export function NationBuilderShowcase() {
               <Lock className={`inline h-4 w-4 ${splashGold.text}`} aria-hidden />
             </motion.span>
             <span>
-              Sign in to save. Until then, click through — nothing&apos;s locked behind mystery; it&apos;s just waiting
-              for your account.
+              Sign in to save. Until then, click through — nothing&apos;s locked behind mystery;
+              it&apos;s just waiting for your account.
             </span>
           </div>
 
           <div className="relative">
-            <div className={`absolute top-9 right-0 left-0 hidden h-px md:left-4 md:block ${splashGold.divider}`} aria-hidden />
+            <div
+              className={`absolute top-9 right-0 left-0 hidden h-px md:left-4 md:block ${splashGold.divider}`}
+              aria-hidden
+            />
             <ol className="relative grid grid-cols-1 gap-4 md:grid-cols-5 md:gap-2">
               {BUILD_STEPS.map((section, i) => {
                 const theme = BUILDER_THEME[section as BuilderSection];
@@ -132,7 +140,7 @@ export function NationBuilderShowcase() {
                 return (
                   <li key={section} className="relative">
                     <motion.div
-                      className={`glass-hierarchy-child flex h-full flex-col rounded-xl border bg-card/40 p-3 text-left md:p-4 ${splashGold.border} dark:bg-card/20`}
+                      className={`glass-hierarchy-child bg-card/40 flex h-full flex-col rounded-xl border p-3 text-left md:p-4 ${splashGold.border} dark:bg-card/20`}
                       initial="rest"
                       whileHover="hover"
                       variants={{ rest: {}, hover: {} }}
@@ -147,8 +155,12 @@ export function NationBuilderShowcase() {
                       <span className="text-muted-foreground mb-0.5 text-[10px] font-medium tracking-wider uppercase">
                         Step {i + 1}
                       </span>
-                      <span className={`text-sm font-semibold ${splashGold.text}`}>{theme.flavorTitle}</span>
-                      <span className="text-muted-foreground mt-1 text-xs leading-snug">{theme.flavorSubtitle}</span>
+                      <span className={`text-sm font-semibold ${splashGold.text}`}>
+                        {theme.flavorTitle}
+                      </span>
+                      <span className="text-muted-foreground mt-1 text-xs leading-snug">
+                        {theme.flavorSubtitle}
+                      </span>
                     </motion.div>
                   </li>
                 );
@@ -156,9 +168,10 @@ export function NationBuilderShowcase() {
             </ol>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3 text-xs text-muted-foreground md:text-sm">
+          <div className="text-muted-foreground mt-6 flex flex-wrap gap-3 text-xs md:text-sm">
             <span className={`rounded-lg px-3 py-1.5 ${splashGold.subtlePanel}`}>
-              Optional: <strong className={`font-medium ${splashGold.text}`}>IxWiki import</strong> before foundation
+              Optional: <strong className={`font-medium ${splashGold.text}`}>IxWiki import</strong>{" "}
+              before foundation
             </span>
             <Link
               href="/help/gameplay/country-building"

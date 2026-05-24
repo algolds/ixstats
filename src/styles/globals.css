@@ -47,27 +47,39 @@
 
 /* Glow text effects for popover numbers and percentages */
 .glow-text {
-  text-shadow: 0 0 8px currentColor, 0 0 16px currentColor, 0 0 24px currentColor;
+  text-shadow:
+    0 0 8px currentColor,
+    0 0 16px currentColor,
+    0 0 24px currentColor;
   animation: glow-pulse 2s ease-in-out infinite;
 }
 
 @keyframes glow-pulse {
-  0%, 100% {
-    text-shadow: 0 0 8px currentColor, 0 0 16px currentColor, 0 0 24px currentColor;
+  0%,
+  100% {
+    text-shadow:
+      0 0 8px currentColor,
+      0 0 16px currentColor,
+      0 0 24px currentColor;
     opacity: 1;
   }
   50% {
-    text-shadow: 0 0 12px currentColor, 0 0 24px currentColor, 0 0 36px currentColor;
+    text-shadow:
+      0 0 12px currentColor,
+      0 0 24px currentColor,
+      0 0 36px currentColor;
     opacity: 0.8;
   }
 }
 
 /* Shimmer effect for important numbers */
 .shimmer-text {
-  background: linear-gradient(90deg, 
-    currentColor 0%, 
-    rgba(255, 255, 255, 0.8) 50%, 
-    currentColor 100%);
+  background: linear-gradient(
+    90deg,
+    currentColor 0%,
+    rgba(255, 255, 255, 0.8) 50%,
+    currentColor 100%
+  );
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
@@ -101,55 +113,83 @@
 
 :root {
   /* Vault Primary Colors */
-  --vault-gold-start: #FFD700;
-  --vault-gold-end: #FF8C00;
-  --vault-purple-start: #9333EA;
-  --vault-purple-end: #EC4899;
-  --vault-cyan-start: #06B6D4;
-  --vault-cyan-end: #3B82F6;
-  --vault-orange: #F97316;
-  --vault-red: #F87171;
+  --vault-gold-start: #ffd700;
+  --vault-gold-end: #ff8c00;
+  --vault-purple-start: #9333ea;
+  --vault-purple-end: #ec4899;
+  --vault-cyan-start: #06b6d4;
+  --vault-cyan-end: #3b82f6;
+  --vault-orange: #f97316;
+  --vault-red: #f87171;
 
   /* Vault Extended Palette */
-  --vault-purple-400: #C084FC;
-  --vault-purple-500: #A855F7;
-  --vault-purple-600: #9333EA;
-  --vault-gold-400: #FCD34D;
-  --vault-gold-500: #FBBF24;
-  --vault-gold-600: #F59E0B;
-  --vault-cyan-400: #22D3EE;
-  --vault-cyan-500: #06B6D4;
-  --vault-blue-400: #60A5FA;
-  --vault-blue-500: #3B82F6;
+  --vault-purple-400: #c084fc;
+  --vault-purple-500: #a855f7;
+  --vault-purple-600: #9333ea;
+  --vault-gold-400: #fcd34d;
+  --vault-gold-500: #fbbf24;
+  --vault-gold-600: #f59e0b;
+  --vault-cyan-400: #22d3ee;
+  --vault-cyan-500: #06b6d4;
+  --vault-blue-400: #60a5fa;
+  --vault-blue-500: #3b82f6;
 
   /* Metallic Colors */
-  --vault-metal-light: #94A3B8;
-  --vault-metal-dark: #1E293B;
+  --vault-metal-light: #94a3b8;
+  --vault-metal-dark: #1e293b;
   --vault-metal-border: #334155;
-  --vault-chrome: linear-gradient(135deg, #B4B4B4 0%, #E0E0E0 50%, #A8A8A8 100%);
-  --vault-steel: linear-gradient(135deg, #475569 0%, #64748B 50%, #475569 100%);
+  --vault-chrome: linear-gradient(135deg, #b4b4b4 0%, #e0e0e0 50%, #a8a8a8 100%);
+  --vault-steel: linear-gradient(135deg, #475569 0%, #64748b 50%, #475569 100%);
 
   /* Holographic Rainbow Colors */
-  --vault-holo-1: #FF00FF;
-  --vault-holo-2: #00FFFF;
-  --vault-holo-3: #FFFF00;
-  --vault-holo-4: #FF6B6B;
-  --vault-holo-5: #4ECDC4;
+  --vault-holo-1: #ff00ff;
+  --vault-holo-2: #00ffff;
+  --vault-holo-3: #ffff00;
+  --vault-holo-4: #ff6b6b;
+  --vault-holo-5: #4ecdc4;
 
   /* Card Rarity Colors */
-  --vault-rarity-common: #60A5FA;      /* blue-400 */
-  --vault-rarity-uncommon: #4ADE80;    /* green-400 */
-  --vault-rarity-rare: #A855F7;        /* purple-400 */
-  --vault-rarity-ultra-rare: #C084FC;  /* purple-500 */
-  --vault-rarity-epic: #FBBF24;        /* gold-400 */
-  --vault-rarity-legendary: #FFD700;   /* gold with animated gradient */
+  --vault-rarity-common: #60a5fa; /* blue-400 */
+  --vault-rarity-uncommon: #4ade80; /* green-400 */
+  --vault-rarity-rare: #a855f7; /* purple-400 */
+  --vault-rarity-ultra-rare: #c084fc; /* purple-500 */
+  --vault-rarity-epic: #fbbf24; /* gold-400 */
+  --vault-rarity-legendary: #ffd700; /* gold with animated gradient */
 
   /* Vault Gradients */
-  --vault-gradient-primary: linear-gradient(135deg, var(--vault-purple-start) 0%, var(--vault-purple-end) 50%, var(--vault-gold-start) 100%);
-  --vault-gradient-secondary: linear-gradient(135deg, var(--vault-gold-start) 0%, var(--vault-gold-end) 100%);
-  --vault-gradient-rare: linear-gradient(135deg, var(--vault-cyan-start) 0%, var(--vault-cyan-end) 50%, var(--vault-purple-start) 100%);
-  --vault-gradient-holographic: linear-gradient(135deg, var(--vault-holo-1) 0%, var(--vault-holo-2) 25%, var(--vault-holo-3) 50%, var(--vault-holo-4) 75%, var(--vault-holo-5) 100%);
-  --vault-gradient-legendary: linear-gradient(135deg, #FFD700 0%, #FFA500 25%, #FFD700 50%, #FFA500 75%, #FFD700 100%);
+  --vault-gradient-primary: linear-gradient(
+    135deg,
+    var(--vault-purple-start) 0%,
+    var(--vault-purple-end) 50%,
+    var(--vault-gold-start) 100%
+  );
+  --vault-gradient-secondary: linear-gradient(
+    135deg,
+    var(--vault-gold-start) 0%,
+    var(--vault-gold-end) 100%
+  );
+  --vault-gradient-rare: linear-gradient(
+    135deg,
+    var(--vault-cyan-start) 0%,
+    var(--vault-cyan-end) 50%,
+    var(--vault-purple-start) 100%
+  );
+  --vault-gradient-holographic: linear-gradient(
+    135deg,
+    var(--vault-holo-1) 0%,
+    var(--vault-holo-2) 25%,
+    var(--vault-holo-3) 50%,
+    var(--vault-holo-4) 75%,
+    var(--vault-holo-5) 100%
+  );
+  --vault-gradient-legendary: linear-gradient(
+    135deg,
+    #ffd700 0%,
+    #ffa500 25%,
+    #ffd700 50%,
+    #ffa500 75%,
+    #ffd700 100%
+  );
 
   /* Vault Shadows */
   --vault-shadow-gold: 0 4px 20px rgba(255, 215, 0, 0.3);
@@ -167,12 +207,12 @@
 
 .dark {
   /* Enhanced vault colors for dark mode */
-  --vault-gold-start: #FCD34D;
-  --vault-gold-end: #FB923C;
-  --vault-purple-start: #A855F7;
-  --vault-purple-end: #F472B6;
-  --vault-cyan-start: #22D3EE;
-  --vault-cyan-end: #60A5FA;
+  --vault-gold-start: #fcd34d;
+  --vault-gold-end: #fb923c;
+  --vault-purple-start: #a855f7;
+  --vault-purple-end: #f472b6;
+  --vault-cyan-start: #22d3ee;
+  --vault-cyan-end: #60a5fa;
 }
 
 /* ==========================================
@@ -213,7 +253,9 @@
 }
 
 .vault-glow-holographic:hover {
-  box-shadow: 0 12px 48px rgba(147, 51, 234, 0.6), 0 0 96px rgba(255, 215, 0, 0.3);
+  box-shadow:
+    0 12px 48px rgba(147, 51, 234, 0.6),
+    0 0 96px rgba(255, 215, 0, 0.3);
 }
 
 /* Card Variant Classes */
@@ -229,8 +271,7 @@
   backdrop-filter: blur(16px);
   border: 2px solid transparent;
   background-image:
-    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-    var(--vault-gradient-holographic);
+    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), var(--vault-gradient-holographic);
   background-origin: border-box;
   background-clip: padding-box, border-box;
   animation: vault-holographic-spin 3s linear infinite;
@@ -245,7 +286,7 @@
 }
 
 .vault-card-premium::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -263,7 +304,7 @@
 }
 
 .vault-card-secure::after {
-  content: '🔒';
+  content: "🔒";
   position: absolute;
   bottom: 8px;
   right: 8px;
@@ -335,7 +376,8 @@
 }
 
 @keyframes vault-legendary-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 4px 20px rgba(255, 215, 0, 0.5),
       0 0 40px rgba(255, 165, 0, 0.3);
@@ -373,52 +415,72 @@
 /* Dashboard section branding - color-specific glows */
 .dashboard-section-mycountry {
   border: 1px solid rgba(202, 138, 4, 0.3);
-  box-shadow: 0 0 20px rgba(202, 138, 4, 0.15), 0 4px 12px rgba(202, 138, 4, 0.1);
+  box-shadow:
+    0 0 20px rgba(202, 138, 4, 0.15),
+    0 4px 12px rgba(202, 138, 4, 0.1);
   transition: box-shadow 0.3s ease;
 }
 
 .dashboard-section-mycountry:hover {
-  box-shadow: 0 0 30px rgba(202, 138, 4, 0.25), 0 6px 20px rgba(202, 138, 4, 0.15);
+  box-shadow:
+    0 0 30px rgba(202, 138, 4, 0.25),
+    0 6px 20px rgba(202, 138, 4, 0.15);
 }
 
 .dashboard-section-vault {
   border: 1px solid rgba(147, 51, 234, 0.3);
-  box-shadow: 0 0 20px rgba(147, 51, 234, 0.15), 0 4px 12px rgba(255, 215, 0, 0.1);
+  box-shadow:
+    0 0 20px rgba(147, 51, 234, 0.15),
+    0 4px 12px rgba(255, 215, 0, 0.1);
   transition: box-shadow 0.3s ease;
 }
 
 .dashboard-section-vault:hover {
-  box-shadow: 0 0 30px rgba(147, 51, 234, 0.25), 0 6px 20px rgba(255, 215, 0, 0.15);
+  box-shadow:
+    0 0 30px rgba(147, 51, 234, 0.25),
+    0 6px 20px rgba(255, 215, 0, 0.15);
 }
 
 .dashboard-section-global {
   border: 1px solid rgba(37, 99, 235, 0.3);
-  box-shadow: 0 0 20px rgba(37, 99, 235, 0.15), 0 4px 12px rgba(37, 99, 235, 0.1);
+  box-shadow:
+    0 0 20px rgba(37, 99, 235, 0.15),
+    0 4px 12px rgba(37, 99, 235, 0.1);
   transition: box-shadow 0.3s ease;
 }
 
 .dashboard-section-global:hover {
-  box-shadow: 0 0 30px rgba(37, 99, 235, 0.25), 0 6px 20px rgba(37, 99, 235, 0.15);
+  box-shadow:
+    0 0 30px rgba(37, 99, 235, 0.25),
+    0 6px 20px rgba(37, 99, 235, 0.15);
 }
 
 .dashboard-section-eci {
   border: 1px solid rgba(79, 70, 229, 0.3);
-  box-shadow: 0 0 20px rgba(79, 70, 229, 0.15), 0 4px 12px rgba(79, 70, 229, 0.1);
+  box-shadow:
+    0 0 20px rgba(79, 70, 229, 0.15),
+    0 4px 12px rgba(79, 70, 229, 0.1);
   transition: box-shadow 0.3s ease;
 }
 
 .dashboard-section-eci:hover {
-  box-shadow: 0 0 30px rgba(79, 70, 229, 0.25), 0 6px 20px rgba(79, 70, 229, 0.15);
+  box-shadow:
+    0 0 30px rgba(79, 70, 229, 0.25),
+    0 6px 20px rgba(79, 70, 229, 0.15);
 }
 
 .dashboard-section-sdi {
   border: 1px solid rgba(220, 38, 38, 0.3);
-  box-shadow: 0 0 20px rgba(220, 38, 38, 0.15), 0 4px 12px rgba(220, 38, 38, 0.1);
+  box-shadow:
+    0 0 20px rgba(220, 38, 38, 0.15),
+    0 4px 12px rgba(220, 38, 38, 0.1);
   transition: box-shadow 0.3s ease;
 }
 
 .dashboard-section-sdi:hover {
-  box-shadow: 0 0 30px rgba(220, 38, 38, 0.25), 0 6px 20px rgba(220, 38, 38, 0.15);
+  box-shadow:
+    0 0 30px rgba(220, 38, 38, 0.25),
+    0 6px 20px rgba(220, 38, 38, 0.15);
 }
 
 /* Rainbow animation for I'm Feeling Lucky button */
@@ -433,7 +495,8 @@
 
 /* Subtle rainbow animation for I'm Feeling Lucky button */
 @keyframes rainbow-subtle {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   25% {
@@ -478,67 +541,73 @@
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
   @keyframes marquee {
-  from {
-    transform: translateX(0);
+    from {
+      transform: translateX(0);
     }
-  to {
-    transform: translateX(calc(-100% - var(--gap)));
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
     }
   }
   @keyframes marquee-vertical {
-  from {
-    transform: translateY(0);
+    from {
+      transform: translateY(0);
     }
-  to {
-    transform: translateY(calc(-100% - var(--gap)));
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
     }
   }
-  --animate-shiny-text: shiny-text 8s infinite
-;
+  --animate-shiny-text: shiny-text 8s infinite;
   @keyframes shiny-text {
-  0%, 90%, 100% {
-    background-position: calc(-100% - var(--shiny-width)) 0;
+    0%,
+    90%,
+    100% {
+      background-position: calc(-100% - var(--shiny-width)) 0;
     }
-  30%, 60% {
-    background-position: calc(100% + var(--shiny-width)) 0;
+    30%,
+    60% {
+      background-position: calc(100% + var(--shiny-width)) 0;
     }
   }
   @keyframes marquee {
-  from {
-    transform: translateX(0);
+    from {
+      transform: translateX(0);
     }
-  to {
-    transform: translateX(calc(-100% - var(--gap)));
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
     }
   }
   @keyframes marquee-vertical {
-  from {
-    transform: translateY(0);
+    from {
+      transform: translateY(0);
     }
-  to {
-    transform: translateY(calc(-100% - var(--gap)));
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
     }
   }
   @keyframes shiny-text {
-  0%, 90%, 100% {
-    background-position: calc(-100% - var(--shiny-width)) 0;
+    0%,
+    90%,
+    100% {
+      background-position: calc(-100% - var(--shiny-width)) 0;
     }
-  30%, 60% {
-    background-position: calc(100% + var(--shiny-width)) 0;
+    30%,
+    60% {
+      background-position: calc(100% + var(--shiny-width)) 0;
     }
   }
   --animate-shine: shine var(--duration) infinite linear;
   @keyframes shine {
-  0% {
-    background-position: 0% 0%;
+    0% {
+      background-position: 0% 0%;
     }
-  50% {
-    background-position: 100% 100%;
+    50% {
+      background-position: 100% 100%;
     }
-  to {
-    background-position: 0% 0%;
+    to {
+      background-position: 0% 0%;
     }
-  }}
+  }
+}
 
 @layer base {
   body {
@@ -581,9 +650,13 @@
 /* Ensure ALL dropdown and popover components ALWAYS appear on top */
 [data-radix-select-content],
 [data-radix-dropdown-menu-content],
-[data-radix-popover-content],
-[data-radix-tooltip-content] {
+[data-radix-popover-content] {
   z-index: var(--z-popover) !important;
+  position: fixed !important;
+}
+
+[data-radix-tooltip-content] {
+  z-index: var(--z-tooltip) !important;
   position: fixed !important;
 }
 
@@ -595,14 +668,17 @@
 
 /* Radix Portal elements (where most dropdowns render) */
 [data-radix-portal] {
-  z-index: var(--z-popover) !important;
+  z-index: unset !important;
 }
 
 /* Specific Tailwind/Radix components by attribute selectors */
 [data-state="open"][role="menu"],
 [data-state="open"][role="listbox"],
 [data-state="open"][role="combobox"],
-[data-side="top"], [data-side="bottom"], [data-side="left"], [data-side="right"] {
+[data-side="top"],
+[data-side="bottom"],
+[data-side="left"],
+[data-side="right"] {
   z-index: var(--z-popover) !important;
 }
 
@@ -637,23 +713,24 @@
 
 /* For Webkit browsers (Chrome, Safari) */
 .hide-scrollbar::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 /* For IE, Edge and Firefox */
 .hide-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
-::view-transition-old(root), ::view-transition-new(root) {
-    animation: none;
-    mix-blend-mode: normal;
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 /* Ripple effect for flag on hover */
 .group:hover .ripple-effect::after {
-  content: '';
+  content: "";
   position: absolute;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.7); /* White ripple */
@@ -718,7 +795,9 @@
   line-height: 1.3;
   background: #fff;
   color: #1a1a1a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
   pointer-events: none;
   white-space: nowrap;
   display: flex;
@@ -743,7 +822,9 @@
 .dark .ixmap-feature-tooltip .maplibregl-popup-content {
   background: #1f2937;
   color: #f3f4f6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .dark .ixmap-feature-tooltip .maplibregl-popup-tip {
   border-top-color: #1f2937;
@@ -759,7 +840,7 @@
 
 /* Position Sonner list containers below the Dynamic Island */
 [data-sonner-toaster].dynamic-island-toaster {
-  z-index: var(--z-toast, 50000) !important;
+  z-index: var(--z-toast, 100050) !important;
 }
 
 @media (min-width: 1024px) {
@@ -783,7 +864,10 @@
   box-shadow: none !important;
   padding: 0 !important;
   width: 100% !important;
-  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms cubic-bezier(0.16, 1, 0.3, 1), height 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition:
+    transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 300ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* Custom entrance state: emerges directly from behind the Dynamic Island */
@@ -791,5 +875,3 @@
   transform: translateY(-30px) scale(0.8) !important;
   opacity: 0 !important;
 }
-
-

@@ -45,7 +45,7 @@ import {
   stripConflictingStyles,
 } from "~/lib/wikios/html-transformer";
 import { computeWikitextDiff } from "~/lib/wikios/wikitext-diff";
-import { getCsrfToken, invalidateCsrfToken } from "~/lib/wikios/csrf-cache";
+import { getUserSessionAndToken, invalidateCsrfToken } from "~/lib/wikios/csrf-cache";
 import {
   fetchTemplateData,
   getTemplatePreview as renderTemplatePreview,
@@ -512,7 +512,7 @@ export const wikiosRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const { wikitext } = await htmlToWikitext(input.html, input.title);
-      return saveToMediaWiki(input.title, wikitext, input.summary, input.minor, ctx.userId, input.basetimestamp);
+      return saveToMediaWiki(input.title, wikitext, input.summary, input.minor, ctx, input.basetimestamp);
     }),
 
   /**
@@ -529,7 +529,7 @@ export const wikiosRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      return saveToMediaWiki(input.title, input.wikitext, input.summary, input.minor, ctx.userId, input.basetimestamp);
+      return saveToMediaWiki(input.title, input.wikitext, input.summary, input.minor, ctx, input.basetimestamp);
     }),
 
   // ---------------------------------------------------------------------------
@@ -615,14 +615,14 @@ export const wikiosRouter = createTRPCRouter({
             name: input.name,
             description: td.description ?? null,
             category,
-            templateData: td as unknown as Record<string, unknown>,
+            templateData: td as any,
             paramCount,
             lastSynced: new Date(),
           },
           update: {
             description: td.description ?? null,
             category,
-            templateData: td as unknown as Record<string, unknown>,
+            templateData: td as any,
             paramCount,
             lastSynced: new Date(),
           },
@@ -632,7 +632,7 @@ export const wikiosRouter = createTRPCRouter({
           name: input.name,
           description: td.description ?? null,
           category,
-          templateData: td as unknown as Record<string, unknown>,
+          templateData: td as any,
           paramCount,
         };
       }
@@ -683,14 +683,14 @@ export const wikiosRouter = createTRPCRouter({
             name,
             description: td.description ?? null,
             category,
-            templateData: td as unknown as Record<string, unknown>,
+            templateData: td as any,
             paramCount: Object.keys(td.params).length,
             lastSynced: new Date(),
           },
           update: {
             description: td.description ?? null,
             category,
-            templateData: td as unknown as Record<string, unknown>,
+            templateData: td as any,
             paramCount: Object.keys(td.params).length,
             lastSynced: new Date(),
           },
@@ -987,7 +987,7 @@ export const wikiosRouter = createTRPCRouter({
       if (!oldRev) throw new Error("Target revision not found");
 
       const summary = input.summary ?? `Reverted to revision ${input.revid}`;
-      return saveToMediaWiki(input.title, oldRev.wikitext, summary, false, ctx.userId);
+      return saveToMediaWiki(input.title, oldRev.wikitext, summary, false, ctx);
     }),
 
   /**
@@ -1010,7 +1010,7 @@ export const wikiosRouter = createTRPCRouter({
       if (!oldContent) throw new Error("Could not fetch target revision content");
 
       const summary = `Rolled back edits by ${lastEditor} to revision ${targetRev.revid}`;
-      return saveToMediaWiki(input.title, oldContent.wikitext, summary, false, ctx.userId);
+      return saveToMediaWiki(input.title, oldContent.wikitext, summary, false, ctx);
     }),
 
   // ---------------------------------------------------------------------------
@@ -1063,17 +1063,7 @@ export const wikiosRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-      const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
-      if (!botToken) throw new Error("WIKIOS_MEDIAWIKI_BOT_TOKEN is not configured");
-
-      const tokenRes = await fetch(`${apiBase}?action=query&meta=tokens&format=json`, {
-        headers: { Authorization: `Bearer ${botToken}` },
-      });
-      const tokenData = (await tokenRes.json()) as {
-        query?: { tokens?: { csrftoken?: string } };
-      };
-      const csrfToken = tokenData.query?.tokens?.csrftoken;
-      if (!csrfToken) throw new Error("Failed to obtain CSRF token");
+      const { cookies, csrfToken } = await getUserSessionAndToken(ctx);
 
       const talkTitle = input.title.startsWith("Talk:") ? input.title : `Talk:${input.title}`;
       // Sign the content with ~~~~ (MediaWiki auto-replaces with username + timestamp)
@@ -1085,7 +1075,7 @@ export const wikiosRouter = createTRPCRouter({
         section: "new",
         sectiontitle: input.sectionTitle,
         text: signedContent,
-        summary: `/* ${input.sectionTitle} */ new section (via WikiOS by ${ctx.userId ?? "anonymous"})`,
+        summary: `/* ${input.sectionTitle} */ new section (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
         token: csrfToken,
         format: "json",
       });
@@ -1094,7 +1084,7 @@ export const wikiosRouter = createTRPCRouter({
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Bearer ${botToken}`,
+          Cookie: cookies.join("; "),
         },
         body: editParams.toString(),
       });
@@ -1125,9 +1115,6 @@ export const wikiosRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-      const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
-      if (!botToken) throw new Error("WIKIOS_MEDIAWIKI_BOT_TOKEN is not configured");
-
       const talkTitle = input.title.startsWith("Talk:") ? input.title : `Talk:${input.title}`;
 
       // Get current section content
@@ -1143,14 +1130,7 @@ export const wikiosRouter = createTRPCRouter({
       if (sectionData.error) throw new Error(`Failed to fetch section: ${sectionData.error.info}`);
       const currentText = sectionData.parse?.wikitext ?? "";
 
-      const tokenRes = await fetch(`${apiBase}?action=query&meta=tokens&format=json`, {
-        headers: { Authorization: `Bearer ${botToken}` },
-      });
-      const tokenData = (await tokenRes.json()) as {
-        query?: { tokens?: { csrftoken?: string } };
-      };
-      const csrfToken = tokenData.query?.tokens?.csrftoken;
-      if (!csrfToken) throw new Error("Failed to obtain CSRF token");
+      const { cookies, csrfToken } = await getUserSessionAndToken(ctx);
 
       const signedContent = `${input.content}\n\n~~~~`;
       const newText = `${currentText.trimEnd()}\n\n${signedContent}`;
@@ -1160,7 +1140,7 @@ export const wikiosRouter = createTRPCRouter({
         title: talkTitle,
         section: String(input.sectionIndex),
         text: newText,
-        summary: `Reply (via WikiOS by ${ctx.userId ?? "anonymous"})`,
+        summary: `Reply (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
         token: csrfToken,
         format: "json",
       });
@@ -1169,7 +1149,7 @@ export const wikiosRouter = createTRPCRouter({
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Bearer ${botToken}`,
+          Cookie: cookies.join("; "),
         },
         body: editParams.toString(),
       });
@@ -1232,8 +1212,6 @@ export const wikiosRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-      const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
-      if (!botToken) throw new Error("WIKIOS_MEDIAWIKI_BOT_TOKEN is not configured");
 
       // Validate file size (10MB max)
       const fileBuffer = Buffer.from(input.fileBase64, "base64");
@@ -1241,21 +1219,13 @@ export const wikiosRouter = createTRPCRouter({
         throw new Error("File size exceeds 10MB limit");
       }
 
-      // Get CSRF token
-      const tokenRes = await fetch(`${apiBase}?action=query&meta=tokens&format=json`, {
-        headers: { Authorization: `Bearer ${botToken}` },
-      });
-      const tokenData = (await tokenRes.json()) as {
-        query?: { tokens?: { csrftoken?: string } };
-      };
-      const csrfToken = tokenData.query?.tokens?.csrftoken;
-      if (!csrfToken) throw new Error("Failed to obtain CSRF token");
+      const { cookies, csrfToken } = await getUserSessionAndToken(ctx);
 
       // Build multipart form data
       const formData = new FormData();
       formData.append("action", "upload");
       formData.append("filename", input.filename);
-      formData.append("comment", `${input.comment} (via WikiOS by ${ctx.userId ?? "anonymous"})`);
+      formData.append("comment", `${input.comment} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`);
       formData.append("text", input.description);
       formData.append("token", csrfToken);
       formData.append("format", "json");
@@ -1268,7 +1238,9 @@ export const wikiosRouter = createTRPCRouter({
 
       const uploadRes = await fetch(apiBase, {
         method: "POST",
-        headers: { Authorization: `Bearer ${botToken}` },
+        headers: {
+          Cookie: cookies.join("; "),
+        },
         body: formData,
       });
 
@@ -1426,7 +1398,7 @@ export const wikiosRouter = createTRPCRouter({
   watchPage: protectedProcedure
     .input(z.object({ pageTitle: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.userId;
+      const userId = ctx.auth.userId;
       // Find or create the "Watchlist" stash
       let watchlistStash = await ctx.db.loreStash.findFirst({
         where: { userId, name: "Watchlist" },
@@ -1451,7 +1423,7 @@ export const wikiosRouter = createTRPCRouter({
   unwatchPage: protectedProcedure
     .input(z.object({ pageTitle: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.userId;
+      const userId = ctx.auth.userId;
       const watchlistStash = await ctx.db.loreStash.findFirst({
         where: { userId, name: "Watchlist" },
       });
@@ -1467,7 +1439,7 @@ export const wikiosRouter = createTRPCRouter({
    */
   getWatchlist: protectedProcedure
     .query(async ({ ctx }) => {
-      const userId = ctx.userId;
+      const userId = ctx.auth.userId;
       const watchlistStash = await ctx.db.loreStash.findFirst({
         where: { userId, name: "Watchlist" },
         include: { items: { orderBy: { savedAt: "desc" }, take: 100 } },
@@ -1481,7 +1453,7 @@ export const wikiosRouter = createTRPCRouter({
   isPageWatched: protectedProcedure
     .input(z.object({ pageTitle: z.string() }))
     .query(async ({ ctx, input }) => {
-      const userId = ctx.userId;
+      const userId = ctx.auth.userId;
       const watchlistStash = await ctx.db.loreStash.findFirst({
         where: { userId, name: "Watchlist" },
       });
@@ -1509,25 +1481,20 @@ async function saveToMediaWiki(
   wikitext: string,
   summary: string,
   minor: boolean,
-  userId: string | null | undefined,
+  ctx: any,
   basetimestamp?: string,
 ): Promise<{ success: boolean; revisionId: number | null; editConflict?: boolean }> {
   const apiBase = process.env.WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php";
-  const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
 
-  if (!botToken) {
-    throw new Error("WIKIOS_MEDIAWIKI_BOT_TOKEN is not configured");
-  }
-
-  // Get cached CSRF token (10 min cache, retry on badtoken)
-  const csrfToken = await getCsrfToken();
+  // Get session cookies and CSRF token from the user context
+  const { cookies, csrfToken } = await getUserSessionAndToken(ctx);
 
   // Edit
   const editParams = new URLSearchParams({
     action: "edit",
     title,
     text: wikitext,
-    summary: `${summary} (via WikiOS by ${userId ?? "anonymous"})`,
+    summary: `${summary} (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
     token: csrfToken,
     format: "json",
   });
@@ -1541,7 +1508,7 @@ async function saveToMediaWiki(
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Bearer ${botToken}`,
+      Cookie: cookies.join("; "),
     },
     body: editParams.toString(),
   });
@@ -1564,7 +1531,9 @@ async function saveToMediaWiki(
   invalidateCache(title);
 
   // Notify stash owners about the edit (non-blocking)
-  notifyStashOwners(title, userId, editData.edit?.newrevid ?? null).catch((err: unknown) => { console.error("[WikiOS] Background op failed:", (err as Error).message); });
+  notifyStashOwners(title, ctx.auth?.userId, editData.edit?.newrevid ?? null).catch((err: unknown) => {
+    console.error("[WikiOS] Background op failed:", (err as Error).message);
+  });
 
   return {
     success: editData.edit?.result === "Success",

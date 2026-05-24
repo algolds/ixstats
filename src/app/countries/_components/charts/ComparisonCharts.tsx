@@ -19,15 +19,7 @@ import {
   Radar,
   Cell,
 } from "recharts";
-import {
-  Users,
-  DollarSign,
-  TrendingUp,
-  BarChart3,
-  Target,
-  Layers,
-  Minus,
-} from "lucide-react";
+import { Users, DollarSign, TrendingUp, BarChart3, Target, Layers, Minus } from "lucide-react";
 import { useTheme } from "~/context/theme-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -237,7 +229,13 @@ export function ComparisonCharts({
         component: (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-            <XAxis dataKey="name" tick={{ fontSize: 10, fill: chartTheme.text }} angle={-20} textAnchor="end" height={60} />
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 10, fill: chartTheme.text }}
+              angle={-20}
+              textAnchor="end"
+              height={60}
+            />
             <YAxis
               tick={{ fontSize: 10, fill: chartTheme.text }}
               label={{ value: "Population (M)", angle: -90, style: { fontSize: 10 } }}
@@ -257,7 +255,13 @@ export function ComparisonCharts({
         component: (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-            <XAxis dataKey="name" tick={{ fontSize: 10, fill: chartTheme.text }} angle={-20} textAnchor="end" height={60} />
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 10, fill: chartTheme.text }}
+              angle={-20}
+              textAnchor="end"
+              height={60}
+            />
             <YAxis
               yAxisId="left"
               orientation="left"
@@ -283,7 +287,13 @@ export function ComparisonCharts({
         component: (
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-            <XAxis dataKey="name" tick={{ fontSize: 10, fill: chartTheme.text }} angle={-20} textAnchor="end" height={60} />
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 10, fill: chartTheme.text }}
+              angle={-20}
+              textAnchor="end"
+              height={60}
+            />
             <YAxis
               tick={{ fontSize: 10, fill: chartTheme.text }}
               label={{ value: "Growth Rate (%)", angle: -90, style: { fontSize: 10 } }}
@@ -487,7 +497,7 @@ export function ComparisonCharts({
             </div>
           </div>
         ) : (
-          <div className="h-[300px] sm:h-[350px] lg:h-96 w-full">
+          <div className="h-[300px] w-full sm:h-[350px] lg:h-96">
             <ResponsiveContainer width="100%" height="100%">
               {currentConfig.component}
             </ResponsiveContainer>

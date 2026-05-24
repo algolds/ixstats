@@ -117,10 +117,7 @@ export function PostCard({
   });
 
   // Stash thread (replaces XenForo bookmarks — uses LoreStash system)
-  const stashQuery = api.forum.isThreadStashed.useQuery(
-    { threadId },
-    { staleTime: 30_000 }
-  );
+  const stashQuery = api.forum.isThreadStashed.useQuery({ threadId }, { staleTime: 30_000 });
   const stashMutation = api.forum.stashThread.useMutation({
     onMutate: () => setIsBookmarked(true),
     onSuccess: () => utils.forum.isThreadStashed.invalidate({ threadId }),
@@ -149,7 +146,10 @@ export function PostCard({
   }, [onQuote, authorName, contentHtml]);
 
   return (
-    <article className={`glass-forum-post forum-post-card ${isFirstPost ? "glass-forum-post-op" : ""}`} id={`post-${postId}`}>
+    <article
+      className={`glass-forum-post forum-post-card ${isFirstPost ? "glass-forum-post-op" : ""}`}
+      id={`post-${postId}`}
+    >
       {/* Author sidebar (desktop only) */}
       <div className="forum-post-author">
         <Link href={withBasePath(`/forum/members/${authorId}`)}>
@@ -162,7 +162,7 @@ export function PostCard({
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="forum-post-avatar flex items-center justify-center bg-orange-500/10 text-lg font-semibold text-orange-400 border-orange-500/20">
+            <div className="forum-post-avatar flex items-center justify-center border-orange-500/20 bg-orange-500/10 text-lg font-semibold text-orange-400">
               {authorName.charAt(0).toUpperCase()}
             </div>
           )}
@@ -170,9 +170,7 @@ export function PostCard({
         <Link href={withBasePath(`/forum/members/${authorId}`)} className="forum-post-username">
           {authorName}
         </Link>
-        {authorTitle && (
-          <span className="forum-post-user-title">{authorTitle}</span>
-        )}
+        {authorTitle && <span className="forum-post-user-title">{authorTitle}</span>}
         <div className="forum-post-user-stats">
           <div>Posts: {authorMessageCount.toLocaleString()}</div>
           <div>Reactions: {authorReactionScore.toLocaleString()}</div>
@@ -187,13 +185,22 @@ export function PostCard({
           {/* Mobile-only inline author */}
           <div className="flex items-center gap-2 md:hidden">
             {authorAvatar ? (
-              <img src={authorAvatar} alt="" className="h-6 w-6 rounded-full" loading="lazy" referrerPolicy="no-referrer" />
+              <img
+                src={authorAvatar}
+                alt=""
+                className="h-6 w-6 rounded-full"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
             ) : (
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500/10 text-[10px] font-medium text-orange-400">
                 {authorName.charAt(0).toUpperCase()}
               </div>
             )}
-            <Link href={withBasePath(`/forum/members/${authorId}`)} className="text-xs font-medium text-[var(--forum-text)]">
+            <Link
+              href={withBasePath(`/forum/members/${authorId}`)}
+              className="text-xs font-medium text-[var(--forum-text)]"
+            >
               {authorName}
             </Link>
           </div>
@@ -218,10 +225,7 @@ export function PostCard({
               >
                 {editMutation.isPending ? "Saving..." : "Save"}
               </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="forum-action-btn text-xs"
-              >
+              <button onClick={() => setIsEditing(false)} className="forum-action-btn text-xs">
                 Cancel
               </button>
             </div>
@@ -230,15 +234,12 @@ export function PostCard({
             )}
           </div>
         ) : (
-          <div
-            className="forum-post-content"
-            dangerouslySetInnerHTML={{ __html: contentHtml }}
-          />
+          <div className="forum-post-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
         )}
 
         {/* Delete confirmation */}
         {showDeleteConfirm && (
-          <div className="mt-2 flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
+          <div className="mt-2 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2">
             <span className="text-xs text-red-400">Delete this post?</span>
             <button
               onClick={() => deleteMutation.mutate({ postId })}
@@ -299,10 +300,7 @@ export function PostCard({
         <div className="forum-reactions">
           <button
             onClick={handleReact}
-            className={cn(
-              "forum-reaction-btn",
-              hasReacted && "forum-reaction-btn-active"
-            )}
+            className={cn("forum-reaction-btn", hasReacted && "forum-reaction-btn-active")}
             title="Like"
           >
             <Heart className={cn("h-3.5 w-3.5", hasReacted && "fill-current")} />
@@ -334,7 +332,10 @@ export function PostCard({
             {isOwnPost && (
               <>
                 <button
-                  onClick={() => { setEditMessage(""); setIsEditing(true); }}
+                  onClick={() => {
+                    setEditMessage("");
+                    setIsEditing(true);
+                  }}
                   className="forum-action-btn"
                   title="Edit"
                 >

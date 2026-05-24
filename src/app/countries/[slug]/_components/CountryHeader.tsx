@@ -5,18 +5,26 @@ import dynamic from "next/dynamic";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
-import { Users, TrendingUp, MapPin, Activity, Globe, Camera, Check, Image as ImageIcon, Flag, Sparkles, Palette } from "lucide-react";
+  Users,
+  TrendingUp,
+  MapPin,
+  Activity,
+  Globe,
+  Camera,
+  Check,
+  Image as ImageIcon,
+  Flag,
+  Sparkles,
+  Palette,
+} from "lucide-react";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { cn } from "~/lib/utils";
 import type { BannerMode } from "../_hooks/useCountryPageState";
 
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
 
@@ -44,11 +52,31 @@ interface CountryHeaderProps {
   onBannerModeChange: (mode: BannerMode, customUrl?: string) => void;
 }
 
-const bannerOptions: Array<{ mode: BannerMode; label: string; description: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { mode: "dynamic", label: "Dynamic Image", description: "Contextual photo from Unsplash", icon: Sparkles },
-  { mode: "flag", label: "Country Flag", description: "Use your national flag as banner", icon: Flag },
+const bannerOptions: Array<{
+  mode: BannerMode;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  {
+    mode: "dynamic",
+    label: "Dynamic Image",
+    description: "Contextual photo from Unsplash",
+    icon: Sparkles,
+  },
+  {
+    mode: "flag",
+    label: "Country Flag",
+    description: "Use your national flag as banner",
+    icon: Flag,
+  },
   { mode: "gradient", label: "Gradient", description: "Clean gradient background", icon: Palette },
-  { mode: "custom", label: "Image Repository", description: "Choose from media library", icon: ImageIcon },
+  {
+    mode: "custom",
+    label: "Image Repository",
+    description: "Choose from media library",
+    icon: ImageIcon,
+  },
 ];
 
 export function CountryHeader({
@@ -104,10 +132,12 @@ export function CountryHeader({
     <>
       <div className="relative">
         {/* Banner image area */}
-        <div className={cn(
-          "relative h-64 w-full overflow-hidden md:h-80 lg:h-96",
-          !hasImage && "bg-gradient-to-br from-primary/10 via-muted/30 to-accent/10"
-        )}>
+        <div
+          className={cn(
+            "relative h-64 w-full overflow-hidden md:h-80 lg:h-96",
+            !hasImage && "from-primary/10 via-muted/30 to-accent/10 bg-gradient-to-br"
+          )}
+        >
           {/* Background Image */}
           {hasImage ? (
             <div
@@ -120,12 +150,12 @@ export function CountryHeader({
               <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/80" />
             </div>
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/80" />
+            <div className="to-background/80 absolute inset-0 bg-gradient-to-b from-transparent via-transparent" />
           )}
 
           {/* Frosted glass bar behind content for readability */}
           {hasImage && (
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-black/40 backdrop-blur-md md:h-36 [mask-image:linear-gradient(to_bottom,transparent,black_30%)]" />
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-black/40 [mask-image:linear-gradient(to_bottom,transparent,black_30%)] backdrop-blur-md md:h-36" />
           )}
 
           {/* Country Header Content */}
@@ -148,12 +178,14 @@ export function CountryHeader({
 
               {/* Country Name and Basic Info */}
               <div className="min-w-0 flex-1">
-                <h1 className={cn(
-                  "mb-1 text-3xl font-bold md:text-4xl lg:text-5xl",
-                  hasImage
-                    ? "text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.5)]"
-                    : "text-foreground"
-                )}>
+                <h1
+                  className={cn(
+                    "mb-1 text-3xl font-bold md:text-4xl lg:text-5xl",
+                    hasImage
+                      ? "text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.5)]"
+                      : "text-foreground"
+                  )}
+                >
                   {country.name.replace(/_/g, " ")}
                 </h1>
                 <div className="mb-2 flex flex-wrap items-center gap-2 md:gap-3">
@@ -188,12 +220,14 @@ export function CountryHeader({
                   </Badge>
 
                   {country.landArea && (
-                    <Badge className={cn(
-                      "font-semibold",
-                      hasImage
-                        ? "border-purple-400/30 bg-purple-600/85 text-white backdrop-blur-md"
-                        : "border-purple-200 bg-purple-100 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-200"
-                    )}>
+                    <Badge
+                      className={cn(
+                        "font-semibold",
+                        hasImage
+                          ? "border-purple-400/30 bg-purple-600/85 text-white backdrop-blur-md"
+                          : "border-purple-200 bg-purple-100 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/20 dark:text-purple-200"
+                      )}
+                    >
                       <MapPin className="mr-1.5 h-3 w-3" />
                       {country.landArea.toLocaleString()} km²
                     </Badge>
@@ -239,9 +273,10 @@ export function CountryHeader({
                   onClick={onCountryActionsClick}
                   className={cn(
                     "shadow-lg",
-                    !isOwnCountry && (hasImage
-                      ? "border-white/30 bg-white/95 text-foreground backdrop-blur-md hover:bg-white dark:bg-gray-900/95 dark:hover:bg-gray-900"
-                      : "")
+                    !isOwnCountry &&
+                      (hasImage
+                        ? "text-foreground border-white/30 bg-white/95 backdrop-blur-md hover:bg-white dark:bg-gray-900/95 dark:hover:bg-gray-900"
+                        : "")
                   )}
                 >
                   <Users className="mr-2 h-4 w-4" />
@@ -257,22 +292,28 @@ export function CountryHeader({
 
         {/* Banner Change Button (owner-only) - outside overflow-hidden */}
         {isOwnCountry && (
-          <div className="absolute right-4 top-4 z-20">
+          <div className="absolute top-4 right-4 z-20">
             <Popover open={showBannerPicker} onOpenChange={setShowBannerPicker}>
               <PopoverTrigger
                 className={cn(
                   "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium shadow-lg backdrop-blur-md transition-colors",
                   hasImage
                     ? "border border-white/20 bg-black/50 text-white hover:bg-black/70"
-                    : "border border-border bg-background/80 text-foreground hover:bg-muted"
+                    : "border-border bg-background/80 text-foreground hover:bg-muted border"
                 )}
               >
                 <Camera className="h-3.5 w-3.5" />
                 <span className="hidden text-xs sm:inline">Change Banner</span>
               </PopoverTrigger>
-              <PopoverContent align="end" sideOffset={8} className="glass-off z-[100011] w-72 rounded-xl border border-border bg-white p-2 shadow-2xl dark:bg-zinc-900">
+              <PopoverContent
+                align="end"
+                sideOffset={8}
+                className="glass-off border-border z-[100011] w-72 rounded-xl border bg-white p-2 shadow-2xl dark:bg-zinc-900"
+              >
                 <div className="space-y-1">
-                  <p className="text-muted-foreground px-2 py-1.5 text-xs font-semibold">Banner Style</p>
+                  <p className="text-muted-foreground px-2 py-1.5 text-xs font-semibold">
+                    Banner Style
+                  </p>
                   {bannerOptions.map((option) => {
                     const Icon = option.icon;
                     const isActive = bannerMode === option.mode;
@@ -283,9 +324,7 @@ export function CountryHeader({
                         onClick={() => handleModeSelect(option.mode)}
                         className={cn(
                           "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-                          isActive
-                            ? "bg-primary/10 text-primary"
-                            : "text-foreground hover:bg-muted"
+                          isActive ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
                         )}
                       >
                         <Icon className="h-4 w-4 flex-shrink-0" />

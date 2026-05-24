@@ -39,8 +39,14 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
   useEffect(() => {
     if (data?.thread) {
       setForumPage(
-        { id: data.thread.threadId, title: data.thread.title, forumName: data.thread.forumName ?? "Forum" },
-        data.thread.nodeId ? { id: data.thread.nodeId, title: data.thread.forumName ?? "Forum" } : null
+        {
+          id: data.thread.threadId,
+          title: data.thread.title,
+          forumName: data.thread.forumName ?? "Forum",
+        },
+        data.thread.nodeId
+          ? { id: data.thread.nodeId, title: data.thread.forumName ?? "Forum" }
+          : null
       );
     }
   }, [data?.thread, setForumPage]);

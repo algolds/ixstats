@@ -101,19 +101,67 @@ interface ContextualMenuDefinition {
 
 // ── Nav item color config (ShineBorder hex + icon glow/hover classes) ──
 const NAV_COLORS: Record<string, { shine: string[]; glow: string; hover: string }> = {
-  "MyCountry®": { shine: ["#f59e0b", "#eab308", "#fbbf24"], glow: "text-amber-400", hover: "group-hover:text-amber-400" },
-  "ThinkPages": { shine: ["#3b82f6", "#1d4ed8", "#60a5fa"], glow: "text-blue-400", hover: "group-hover:text-blue-400" },
-  "Dashboard": { shine: ["#10b981", "#059669", "#34d399"], glow: "text-emerald-400", hover: "group-hover:text-emerald-400" },
-  "Feed": { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400", hover: "group-hover:text-purple-400" },
-  "Explore": { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400", hover: "group-hover:text-purple-400" },
-  "Countries": { shine: ["#8b5cf6", "#7c3aed", "#a78bfa"], glow: "text-purple-400", hover: "group-hover:text-purple-400" },
-  "Intelligence": { shine: ["#6366f1", "#4f46e5", "#818cf8"], glow: "text-indigo-400", hover: "group-hover:text-indigo-400" },
-  "Admin": { shine: ["#ef4444", "#dc2626", "#f87171"], glow: "text-red-400", hover: "group-hover:text-red-400" },
-  "Cards": { shine: ["#06b6d4", "#0891b2", "#22d3ee"], glow: "text-cyan-400", hover: "group-hover:text-cyan-400" },
-  "Help": { shine: ["#fb923c", "#f97316", "#fdba74"], glow: "text-orange-400", hover: "group-hover:text-orange-400" },
-  "Forum": { shine: ["#f97316", "#ea580c", "#fb923c"], glow: "text-orange-400", hover: "group-hover:text-orange-400" },
+  "MyCountry®": {
+    shine: ["#f59e0b", "#eab308", "#fbbf24"],
+    glow: "text-amber-400",
+    hover: "group-hover:text-amber-400",
+  },
+  ThinkPages: {
+    shine: ["#3b82f6", "#1d4ed8", "#60a5fa"],
+    glow: "text-blue-400",
+    hover: "group-hover:text-blue-400",
+  },
+  Dashboard: {
+    shine: ["#10b981", "#059669", "#34d399"],
+    glow: "text-emerald-400",
+    hover: "group-hover:text-emerald-400",
+  },
+  Feed: {
+    shine: ["#8b5cf6", "#7c3aed", "#a78bfa"],
+    glow: "text-purple-400",
+    hover: "group-hover:text-purple-400",
+  },
+  Explore: {
+    shine: ["#8b5cf6", "#7c3aed", "#a78bfa"],
+    glow: "text-purple-400",
+    hover: "group-hover:text-purple-400",
+  },
+  Countries: {
+    shine: ["#8b5cf6", "#7c3aed", "#a78bfa"],
+    glow: "text-purple-400",
+    hover: "group-hover:text-purple-400",
+  },
+  Intelligence: {
+    shine: ["#6366f1", "#4f46e5", "#818cf8"],
+    glow: "text-indigo-400",
+    hover: "group-hover:text-indigo-400",
+  },
+  Admin: {
+    shine: ["#ef4444", "#dc2626", "#f87171"],
+    glow: "text-red-400",
+    hover: "group-hover:text-red-400",
+  },
+  Cards: {
+    shine: ["#06b6d4", "#0891b2", "#22d3ee"],
+    glow: "text-cyan-400",
+    hover: "group-hover:text-cyan-400",
+  },
+  Help: {
+    shine: ["#fb923c", "#f97316", "#fdba74"],
+    glow: "text-orange-400",
+    hover: "group-hover:text-orange-400",
+  },
+  Forum: {
+    shine: ["#f97316", "#ea580c", "#fb923c"],
+    glow: "text-orange-400",
+    hover: "group-hover:text-orange-400",
+  },
 };
-const DEFAULT_NAV = { shine: ["#3b82f6", "#8b5cf6", "#06b6d4"], glow: "text-blue-400", hover: "group-hover:text-blue-400" };
+const DEFAULT_NAV = {
+  shine: ["#3b82f6", "#8b5cf6", "#06b6d4"],
+  glow: "text-blue-400",
+  hover: "group-hover:text-blue-400",
+};
 
 const contextualMenus: Record<string, ContextualMenuDefinition> = {
   dashboard: {
@@ -265,7 +313,8 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
             name: "Social Feed",
             href: "/thinkpages",
             icon: Rss,
-            description: "Public declarations, diplomatic announcements, and intelligence broadcasts.",
+            description:
+              "Public declarations, diplomatic announcements, and intelligence broadcasts.",
           },
           {
             name: "ThinkTanks",
@@ -502,7 +551,10 @@ function getContextKey(path: string): keyof typeof contextualMenus {
 export function Navigation() {
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "/");
-  const isWikiPage = normalizedPathname.startsWith("/w/") || normalizedPathname.startsWith("/w/special/") || normalizedPathname.startsWith("/blurbs");
+  const isWikiPage =
+    normalizedPathname.startsWith("/w/") ||
+    normalizedPathname.startsWith("/w/special/") ||
+    normalizedPathname.startsWith("/blurbs");
   const { user, isLoaded } = useUser();
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const [scrollY, setScrollY] = useState(0);
@@ -624,7 +676,6 @@ export function Navigation() {
       }
     };
   }, []);
-
 
   const navigationItems: NavigationItem[] = useMemo(() => {
     const items: NavigationItem[] = [
@@ -753,7 +804,6 @@ export function Navigation() {
   // Debug logging for navigation visibility
   // Navigation rendering logic follows
 
-
   // Filter visible navigation items based on user state and admin settings
   const visibleNavItems = navigationItems
     .filter((item) => {
@@ -816,10 +866,13 @@ export function Navigation() {
 
   return (
     <>
-      <nav className={`navigation-bar relative z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${isWikiPage
-          ? "bg-[var(--wikios-bg)] border-[var(--wikios-border)] shadow-lg"
-          : "from-background/95 via-secondary/95 to-background/95 border-border bg-gradient-to-r shadow-2xl"
-        }`}>
+      <nav
+        className={`navigation-bar relative z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-300 ${
+          isWikiPage
+            ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-lg"
+            : "from-background/95 via-secondary/95 to-background/95 border-border bg-gradient-to-r shadow-2xl"
+        }`}
+      >
         {!isWikiPage && (
           <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
         )}
@@ -912,7 +965,8 @@ export function Navigation() {
                             <div className="relative">
                               <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
                                 <Icon
-                                  className={`h-4 w-4 ${item.name === "MyCountry®"
+                                  className={`h-4 w-4 ${
+                                    item.name === "MyCountry®"
                                       ? "text-amber-400"
                                       : item.name === "ThinkPages"
                                         ? "text-blue-400"
@@ -931,11 +985,12 @@ export function Navigation() {
                                                     : item.name === "Help"
                                                       ? "text-orange-400"
                                                       : "text-blue-400"
-                                    }`}
+                                  }`}
                                 />
                               </div>
                               <Icon
-                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${item.name === "MyCountry®"
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
+                                  item.name === "MyCountry®"
                                     ? "group-hover:text-amber-400"
                                     : item.name === "ThinkPages"
                                       ? "group-hover:text-blue-400"
@@ -952,7 +1007,7 @@ export function Navigation() {
                                                 : item.name === "Help"
                                                   ? "group-hover:text-orange-400"
                                                   : "group-hover:text-blue-400"
-                                  }`}
+                                }`}
                                 aria-hidden="true"
                               />
                             </div>
@@ -980,14 +1035,16 @@ export function Navigation() {
                             </div>
                             <div className="relative">
                               <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
-                                <Icon className={`h-4 w-4 ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).glow}`} />
+                                <Icon
+                                  className={`h-4 w-4 ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).glow}`}
+                                />
                               </div>
                               <Icon
                                 className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).hover}`}
                                 aria-hidden="true"
                               />
                             </div>
-                            <span className="relative hidden overflow-hidden lg:block text-sm xl:text-base whitespace-nowrap">
+                            <span className="relative hidden overflow-hidden text-sm whitespace-nowrap lg:block xl:text-base">
                               <span className="transition-opacity duration-300 group-hover:opacity-0">
                                 {item.name}
                               </span>
@@ -1005,7 +1062,7 @@ export function Navigation() {
             </div>
 
             {/* Desktop Command Palette */}
-            <div className="absolute top-1/2 left-1/2 z-[var(--z-command)] -translate-x-1/2 -translate-y-1/2 transform max-w-[400px]">
+            <div className="absolute top-1/2 left-1/2 z-[var(--z-command)] max-w-[400px] -translate-x-1/2 -translate-y-1/2 transform">
               <div className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 opacity-60 blur-3xl" />
               {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
             </div>
@@ -1066,7 +1123,7 @@ export function Navigation() {
                                         <div className="relative">
                                           <SubIcon className="text-muted-foreground h-4 w-4" />
                                           {isMessages && messageUnreadCount > 0 && (
-                                            <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
+                                            <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] font-bold text-white">
                                               {messageUnreadCount > 9 ? "9+" : messageUnreadCount}
                                             </span>
                                           )}
@@ -1109,7 +1166,8 @@ export function Navigation() {
                             <div className="relative">
                               <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
                                 <Icon
-                                  className={`h-4 w-4 ${item.name === "MyCountry®"
+                                  className={`h-4 w-4 ${
+                                    item.name === "MyCountry®"
                                       ? "text-amber-400"
                                       : item.name === "ThinkPages"
                                         ? "text-blue-400"
@@ -1128,11 +1186,12 @@ export function Navigation() {
                                                     : item.name === "Help"
                                                       ? "text-orange-400"
                                                       : "text-blue-400"
-                                    }`}
+                                  }`}
                                 />
                               </div>
                               <Icon
-                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${item.name === "MyCountry®"
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
+                                  item.name === "MyCountry®"
                                     ? "group-hover:text-amber-400"
                                     : item.name === "ThinkPages"
                                       ? "group-hover:text-blue-400"
@@ -1149,7 +1208,7 @@ export function Navigation() {
                                                 : item.name === "Help"
                                                   ? "group-hover:text-orange-400"
                                                   : "group-hover:text-blue-400"
-                                  }`}
+                                }`}
                                 aria-hidden="true"
                               />
                             </div>
@@ -1177,14 +1236,16 @@ export function Navigation() {
                             </div>
                             <div className="relative">
                               <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
-                                <Icon className={`h-4 w-4 ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).glow}`} />
+                                <Icon
+                                  className={`h-4 w-4 ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).glow}`}
+                                />
                               </div>
                               <Icon
                                 className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${(NAV_COLORS[item.name] ?? DEFAULT_NAV).hover}`}
                                 aria-hidden="true"
                               />
                             </div>
-                            <span className="relative hidden overflow-hidden lg:block text-sm xl:text-base whitespace-nowrap">
+                            <span className="relative hidden overflow-hidden text-sm whitespace-nowrap lg:block xl:text-base">
                               <span className="transition-opacity duration-300 group-hover:opacity-0">
                                 {item.name}
                               </span>
@@ -1204,17 +1265,17 @@ export function Navigation() {
 
           {/* Mobile Title Bar */}
           <div className="flex h-14 w-full items-center justify-between py-2 lg:hidden">
-            <div className="flex flex-col min-w-0 flex-1 pr-3">
-              <span className="text-muted-foreground/80 text-[10px] sm:text-[11px] tracking-wide uppercase">
+            <div className="flex min-w-0 flex-1 flex-col pr-3">
+              <span className="text-muted-foreground/80 text-[10px] tracking-wide uppercase sm:text-[11px]">
                 IxStats
               </span>
-              <span className="text-foreground line-clamp-1 text-sm sm:text-base font-semibold">
+              <span className="text-foreground line-clamp-1 text-sm font-semibold sm:text-base">
                 {contextMenu.title}
               </span>
             </div>
             <button
               type="button"
-              className="border-border/60 bg-background/80 text-foreground inline-flex items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur flex-shrink-0 min-h-[44px] min-w-[44px]"
+              className="border-border/60 bg-background/80 text-foreground inline-flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-expanded={mobileMenuOpen}
               aria-controls="ixstats-mobile-navigation"
@@ -1245,27 +1306,29 @@ export function Navigation() {
               id="ixstats-mobile-navigation"
               role="dialog"
               aria-modal="true"
-              className="border-border/40 bg-background/98 absolute top-0 left-0 h-full w-[min(90vw,360px)] max-w-full overflow-y-auto border-r px-4 sm:px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-2xl backdrop-blur-xl"
+              className="border-border/40 bg-background/98 absolute top-0 left-0 h-full w-[min(90vw,360px)] max-w-full overflow-y-auto border-r px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-2xl backdrop-blur-xl sm:px-5"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "tween", duration: 0.28 }}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1 min-w-0 flex-1">
-                  <p className="text-muted-foreground/80 text-[10px] sm:text-[11px] tracking-wide uppercase">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-muted-foreground/80 text-[10px] tracking-wide uppercase sm:text-[11px]">
                     Currently viewing
                   </p>
-                  <h2 className="text-foreground text-base sm:text-lg font-semibold break-words">{contextMenu.title}</h2>
+                  <h2 className="text-foreground text-base font-semibold break-words sm:text-lg">
+                    {contextMenu.title}
+                  </h2>
                   {contextMenu.description && (
-                    <p className="text-muted-foreground text-xs sm:text-sm leading-snug break-words">
+                    <p className="text-muted-foreground text-xs leading-snug break-words sm:text-sm">
                       {contextMenu.description}
                     </p>
                   )}
                 </div>
                 <button
                   type="button"
-                  className="border-border/50 text-muted-foreground hover:border-foreground/40 hover:text-foreground rounded-full border p-2 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px]"
+                  className="border-border/50 text-muted-foreground hover:border-foreground/40 hover:text-foreground min-h-[44px] min-w-[44px] flex-shrink-0 rounded-full border p-2 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                   aria-label="Close navigation menu"
                 >
@@ -1274,14 +1337,14 @@ export function Navigation() {
               </div>
 
               {/* Mobile Authentication Section */}
-              <div className="mt-6 pb-5 border-b border-border/40">
-                <div className="flex items-center gap-2 mb-3">
-                  <User className="h-3.5 w-3.5 text-muted-foreground/70" />
+              <div className="border-border/40 mt-6 border-b pb-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <User className="text-muted-foreground/70 h-3.5 w-3.5" />
                   <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                     Account
                   </p>
                 </div>
-                <div className="bg-accent/5 rounded-xl p-3 border border-border/30">
+                <div className="bg-accent/5 border-border/30 rounded-xl border p-3">
                   <UserProfileMenu
                     user={user}
                     userProfile={userProfile}
@@ -1294,8 +1357,8 @@ export function Navigation() {
 
               <div className="mt-6 space-y-5">
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Compass className="h-3.5 w-3.5 text-muted-foreground/70" />
+                  <div className="mb-3 flex items-center gap-2">
+                    <Compass className="text-muted-foreground/70 h-3.5 w-3.5" />
                     <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                       Global navigation
                     </p>
@@ -1312,11 +1375,13 @@ export function Navigation() {
                             className="border-border/50 bg-card/60 rounded-2xl border px-3 py-3 shadow-sm"
                           >
                             <div className="flex items-center gap-3">
-                              <span className="bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0">
+                              <span className="bg-primary/10 text-primary flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl">
                                 <Icon className="h-5 w-5" />
                               </span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-foreground text-sm font-semibold break-words">{item.name}</p>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-foreground text-sm font-semibold break-words">
+                                  {item.name}
+                                </p>
                                 <p className="text-muted-foreground text-xs break-words">
                                   Select a lab to jump in.
                                 </p>
@@ -1329,10 +1394,10 @@ export function Navigation() {
                                   <Link
                                     key={subItem.name}
                                     href={subItem.href}
-                                    className="text-muted-foreground hover:border-border/60 hover:text-foreground flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm transition-colors min-h-[44px]"
+                                    className="text-muted-foreground hover:border-border/60 hover:text-foreground flex min-h-[44px] items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm transition-colors"
                                     onClick={() => setMobileMenuOpen(false)}
                                   >
-                                    <span className="bg-muted/50 flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0">
+                                    <span className="bg-muted/50 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg">
                                       <SubIcon className="h-4 w-4" />
                                     </span>
                                     <span className="flex-1 break-words">{subItem.name}</span>
@@ -1349,21 +1414,25 @@ export function Navigation() {
                           key={item.name}
                           href={item.href}
                           onClick={() => setMobileMenuOpen(false)}
-                          className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[60px] ${current
+                          className={`flex min-h-[60px] items-center gap-3 rounded-2xl border px-3 py-3 transition-colors ${
+                            current
                               ? "border-primary/40 bg-primary/10 text-foreground shadow-sm"
                               : "border-border/40 text-muted-foreground hover:border-border hover:bg-accent/10 hover:text-foreground"
-                            }`}
+                          }`}
                         >
                           <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0 ${current
+                            className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${
+                              current
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted/60 text-foreground"
-                              }`}
+                            }`}
                           >
                             <Icon className="h-5 w-5" />
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm leading-snug font-semibold break-words">{item.name}</p>
+                            <p className="text-sm leading-snug font-semibold break-words">
+                              {item.name}
+                            </p>
                             {item.description && (
                               <p className="text-muted-foreground text-xs leading-tight break-words">
                                 {item.description}
@@ -1371,7 +1440,7 @@ export function Navigation() {
                             )}
                           </div>
                           {current && (
-                            <span className="text-primary text-[10px] sm:text-[11px] font-semibold tracking-wide uppercase flex-shrink-0">
+                            <span className="text-primary flex-shrink-0 text-[10px] font-semibold tracking-wide uppercase sm:text-[11px]">
                               Active
                             </span>
                           )}
@@ -1382,13 +1451,13 @@ export function Navigation() {
                 </div>
 
                 {/* Section Divider */}
-                <div className="border-t border-border/40 pt-5">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+                <div className="border-border/40 border-t pt-5">
+                  <div className="mb-1 flex items-center gap-2">
+                    <div className="via-border/60 h-px flex-1 bg-gradient-to-r from-transparent to-transparent" />
                     <span className="text-muted-foreground/60 text-[10px] font-semibold tracking-wider uppercase">
                       Context Menu
                     </span>
-                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+                    <div className="via-border/60 h-px flex-1 bg-gradient-to-r from-transparent to-transparent" />
                   </div>
                 </div>
 
@@ -1410,19 +1479,23 @@ export function Navigation() {
                             key={item.name}
                             href={item.href}
                             onClick={() => setMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 rounded-2xl border px-3 py-3 transition-colors min-h-[56px] ${active
+                            className={`flex min-h-[56px] items-center gap-3 rounded-2xl border px-3 py-3 transition-colors ${
+                              active
                                 ? "border-primary/40 bg-primary/10 text-foreground shadow-sm"
                                 : "border-border/40 text-muted-foreground hover:border-border hover:bg-accent/10 hover:text-foreground"
-                              }`}
+                            }`}
                           >
                             <span
-                              className={`flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0 ${active ? "bg-primary text-primary-foreground" : "bg-muted/60"
-                                }`}
+                              className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${
+                                active ? "bg-primary text-primary-foreground" : "bg-muted/60"
+                              }`}
                             >
                               <Icon className="h-4 w-4" />
                             </span>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm leading-snug font-medium break-words">{item.name}</p>
+                              <p className="text-sm leading-snug font-medium break-words">
+                                {item.name}
+                              </p>
                               {item.description && (
                                 <p className="text-muted-foreground text-xs leading-tight break-words">
                                   {item.description}
@@ -1440,14 +1513,15 @@ export function Navigation() {
               {/* Footer */}
               <div className="mt-8 space-y-3">
                 <div className="border-border/60 bg-muted/40 text-muted-foreground rounded-2xl border border-dashed px-4 py-3 text-xs leading-relaxed">
-                  <span className="font-semibold">💡 Smart Navigation:</span> This menu adapts to your current page. Use it for rapid jumps across IxStats systems.
+                  <span className="font-semibold">💡 Smart Navigation:</span> This menu adapts to
+                  your current page. Use it for rapid jumps across IxStats systems.
                 </div>
 
                 {/* Close Button for easier mobile UX */}
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full rounded-xl bg-accent/20 hover:bg-accent/30 text-foreground font-medium px-4 py-3 text-sm transition-colors border border-border/40 min-h-[50px]"
+                  className="bg-accent/20 hover:bg-accent/30 text-foreground border-border/40 min-h-[50px] w-full rounded-xl border px-4 py-3 text-sm font-medium transition-colors"
                 >
                   Close Menu
                 </button>
@@ -1459,8 +1533,9 @@ export function Navigation() {
 
       {!isMobile && (
         <div
-          className={`fixed z-[var(--z-command)] will-change-transform ${isSticky ? "opacity-100" : "pointer-events-none opacity-0"
-            }`}
+          className={`fixed z-[var(--z-command)] will-change-transform ${
+            isSticky ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
           style={{
             top: isSticky ? "8px" : "64px",
             left: "50%",

@@ -48,7 +48,7 @@ export function NationsSection() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm font-medium text-white/80">Minimum Countries</label>
-            <span className="text-sm font-mono text-white/60">{min}</span>
+            <span className="font-mono text-sm text-white/60">{min}</span>
           </div>
           <input
             type="range"
@@ -67,7 +67,7 @@ export function NationsSection() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label className="text-sm font-medium text-white/80">Maximum Countries</label>
-            <span className="text-sm font-mono text-white/60">{max}</span>
+            <span className="font-mono text-sm text-white/60">{max}</span>
           </div>
           <input
             type="range"
@@ -132,9 +132,7 @@ export function NationsSection() {
                 );
               })}
             </div>
-            <p className="mt-2 text-xs text-white/30">
-              Select none to use all families randomly.
-            </p>
+            <p className="mt-2 text-xs text-white/30">Select none to use all families randomly.</p>
           </div>
         )}
       </div>

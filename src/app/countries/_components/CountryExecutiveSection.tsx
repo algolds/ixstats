@@ -35,7 +35,10 @@ interface CabinetMeeting {
   // Add other fields as needed
 }
 
-export function CountryExecutiveSection({ countryId, userId: _userId }: CountryExecutiveSectionProps) {
+export function CountryExecutiveSection({
+  countryId,
+  userId: _userId,
+}: CountryExecutiveSectionProps) {
   const [showDefenseModal, setShowDefenseModal] = React.useState(false);
 
   // Get unified intelligence data for this country
@@ -373,7 +376,7 @@ export function CountryExecutiveSection({ countryId, userId: _userId }: CountryE
                 variant="outline"
                 className="h-auto w-full justify-start px-3 py-2 text-left transition-all duration-200 hover:scale-105"
                 size="sm"
-                onClick={() => window.location.href = "/mycountry/executive"}
+                onClick={() => (window.location.href = "/mycountry/executive")}
               >
                 <FileText className="mr-2 h-4 w-4 flex-shrink-0" />
                 <span className="truncate">Create Policy</span>

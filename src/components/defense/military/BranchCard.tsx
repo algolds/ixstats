@@ -70,9 +70,7 @@ export const BranchCard = React.memo(function BranchCard({
                 <Badge variant="outline">{config?.label ?? branch.branchType}</Badge>
               </div>
               {branch.motto && (
-                <p className="text-muted-foreground text-sm italic">
-                  &ldquo;{branch.motto}&rdquo;
-                </p>
+                <p className="text-muted-foreground text-sm italic">&ldquo;{branch.motto}&rdquo;</p>
               )}
             </div>
           </div>

@@ -71,7 +71,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
   return (
     <nav className="relative flex items-center" aria-label="Builder steps">
       {/* Background track */}
-      <div className="flex w-full items-center gap-0 rounded-xl border border-border/60 bg-card/40 p-1 backdrop-blur-lg dark:bg-card/30">
+      <div className="border-border/60 bg-card/40 dark:bg-card/30 flex w-full items-center gap-0 rounded-xl border p-1 backdrop-blur-lg">
         {HEADER_NAV_STEPS.map((step, index) => {
           const Icon = STEP_ICONS[step.id] ?? Globe;
           const active = isStepActive(step);
@@ -88,7 +88,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                     "hidden h-px w-3 flex-shrink-0 transition-colors duration-300 sm:block lg:w-5",
                     completed || isStepCompleted(HEADER_NAV_STEPS[index - 1]!)
                       ? "bg-emerald-500/50"
-                      : "bg-border/40",
+                      : "bg-border/40"
                   )}
                 />
               )}
@@ -102,7 +102,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                     ? "text-white shadow-md"
                     : accessible
                       ? "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                      : "cursor-not-allowed text-muted-foreground/30",
+                      : "text-muted-foreground/30 cursor-not-allowed"
                 )}
                 aria-current={active ? "step" : undefined}
                 aria-label={`Step ${step.stepNumber}: ${step.label}`}
@@ -114,7 +114,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                     className={cn(
                       "absolute inset-0 rounded-lg bg-gradient-to-r shadow-md",
                       theme.gradient,
-                      theme.activeGlow,
+                      theme.activeGlow
                     )}
                     transition={{
                       type: "spring",
@@ -137,9 +137,7 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                     <span
                       className={cn(
                         "flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
-                        active
-                          ? "bg-white/20 text-white"
-                          : "bg-muted text-muted-foreground",
+                        active ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
                       )}
                     >
                       {step.stepNumber}
@@ -151,15 +149,15 @@ export const BuilderStepNav = React.memo(function BuilderStepNav({
                     size={14}
                     className={cn(
                       "flex-shrink-0 transition-transform duration-150",
-                      !active && accessible && "group-hover:scale-110",
+                      !active && accessible && "group-hover:scale-110"
                     )}
                   />
 
                   {/* Label — visible only when active */}
                   <div
                     className={cn(
-                      "overflow-hidden transition-all duration-300 ease-in-out flex items-center",
-                      active ? "max-w-[200px] opacity-100 ml-1 sm:ml-2" : "max-w-0 opacity-0 ml-0"
+                      "flex items-center overflow-hidden transition-all duration-300 ease-in-out",
+                      active ? "ml-1 max-w-[200px] opacity-100 sm:ml-2" : "ml-0 max-w-0 opacity-0"
                     )}
                   >
                     <span className="whitespace-nowrap">

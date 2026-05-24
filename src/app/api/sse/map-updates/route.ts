@@ -31,9 +31,7 @@ export async function GET(request: Request) {
       const unsubscribe = mapUpdateBus.subscribe((event) => {
         if (closed) return;
         const data = JSON.stringify(event);
-        controller.enqueue(
-          encoder.encode(`event: map_data_changed\ndata: ${data}\n\n`)
-        );
+        controller.enqueue(encoder.encode(`event: map_data_changed\ndata: ${data}\n\n`));
       });
 
       // Keep-alive: send comment every 15s to prevent connection timeout
@@ -48,7 +46,11 @@ export async function GET(request: Request) {
         closed = true;
         clearInterval(keepalive);
         unsubscribe();
-        try { controller.close(); } catch { /* already closed */ }
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
       };
 
       // Store cleanup on the stream for abort signal

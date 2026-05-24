@@ -30,7 +30,10 @@ export default function TraditionalGovernmentArticle() {
             </li>
             <li>
               You can mix these traditional selections with{" "}
-              <Link href="/help/government/atomic" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/government/atomic"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Atomic Components
               </Link>{" "}
               to build unique hybrid governments that go beyond the standard archetypes.
@@ -41,9 +44,7 @@ export default function TraditionalGovernmentArticle() {
         <Section title="Setting Up Your Government">
           <InfoBox title="How to Use the Builder">
             <ol className="list-decimal space-y-1 pl-6">
-              <li>
-                Open the Country Builder and navigate to the Government step.
-              </li>
+              <li>Open the Country Builder and navigate to the Government step.</li>
               <li>
                 Set your government type, leadership titles, and descriptions for each branch.
               </li>
@@ -51,9 +52,7 @@ export default function TraditionalGovernmentArticle() {
                 Fill in optional details like your national motto or founding events to make your
                 country richer — these also sync with your IxWiki page if you have one.
               </li>
-              <li>
-                Use the Review step to preview everything before saving.
-              </li>
+              <li>Use the Review step to preview everything before saving.</li>
             </ol>
           </InfoBox>
         </Section>
@@ -81,20 +80,29 @@ export default function TraditionalGovernmentArticle() {
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <Gavel className="inline h-4 w-4" />{" "}
-              <Link href="/help/government/atomic" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/government/atomic"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Atomic Government System
               </Link>{" "}
               — combine traditional structures with granular components for deeper mechanics.
             </li>
             <li>
               <Users className="inline h-4 w-4" />{" "}
-              <Link href="/help/government/components" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/government/components"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Government Components Guide
               </Link>{" "}
               — explore every component you can add to your government.
             </li>
             <li>
-              <Link href="/help/gameplay/country-building" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/gameplay/country-building"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Country Building Guide
               </Link>{" "}
               — see how government fits into the full country creation process.

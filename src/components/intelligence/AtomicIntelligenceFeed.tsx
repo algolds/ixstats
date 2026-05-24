@@ -427,7 +427,11 @@ export function AtomicIntelligenceFeed({
 
                         <div className="mt-3 flex items-center justify-between">
                           <div className="text-muted-foreground text-xs">
-                            <IxTimeDate date={item.timestamp} format="datetime" accentColor="indigo" />
+                            <IxTimeDate
+                              date={item.timestamp}
+                              format="datetime"
+                              accentColor="indigo"
+                            />
                           </div>
 
                           {item.actionable && (

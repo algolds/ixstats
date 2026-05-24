@@ -81,13 +81,8 @@ function buildSectionUrl(section: BuilderSection): string {
 function BuilderRouterInner() {
   const { user } = useUser();
   const router = useRouter();
-  const {
-    builderState,
-    setBuilderState,
-    clearDraft,
-    lastSaved,
-    isAutoSaving,
-  } = useBuilderContext();
+  const { builderState, setBuilderState, clearDraft, lastSaved, isAutoSaving } =
+    useBuilderContext();
 
   // Initialize section from URL - default to foundation
   const [activeSection, setActiveSection] = useState<BuilderSection>(getSectionFromUrl);
@@ -110,7 +105,7 @@ function BuilderRouterInner() {
 
   // Advanced mode state
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
-  
+
   // Manual save state
   const [isManualSaving, setIsManualSaving] = useState(false);
 
@@ -194,11 +189,14 @@ function BuilderRouterInner() {
   }, [activeSection]);
 
   // Handle import completion
-  const handleImportComplete = useCallback((data: any) => {
-    // Import data is stored in localStorage by ImportSection
-    // Navigate to identity to continue building
-    handleNavigate("identity");
-  }, [handleNavigate]);
+  const handleImportComplete = useCallback(
+    (data: any) => {
+      // Import data is stored in localStorage by ImportSection
+      // Navigate to identity to continue building
+      handleNavigate("identity");
+    },
+    [handleNavigate]
+  );
 
   // Manual save handler
   const handleManualSave = useCallback(async () => {
@@ -206,7 +204,7 @@ function BuilderRouterInner() {
     try {
       // Trigger a sync - the context handles the actual save
       // For now just wait a bit to show the save indicator
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } finally {
       setIsManualSaving(false);
     }
@@ -214,8 +212,8 @@ function BuilderRouterInner() {
 
   // Toggle advanced mode
   const handleToggleAdvanced = useCallback(() => {
-    setIsAdvancedMode(prev => !prev);
-    setBuilderState(prev => ({ ...prev, showAdvancedMode: !prev.showAdvancedMode }));
+    setIsAdvancedMode((prev) => !prev);
+    setBuilderState((prev) => ({ ...prev, showAdvancedMode: !prev.showAdvancedMode }));
   }, [setBuilderState]);
 
   // Auth guard - using MyCountry gold theme
@@ -241,7 +239,9 @@ function BuilderRouterInner() {
               <Button
                 onClick={() => router.push(createUrl("/sign-in"))}
                 size="lg"
-                className={cn("w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700")}
+                className={cn(
+                  "w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700"
+                )}
               >
                 <UnlockIcon className="mr-2 h-4 w-4" />
                 Sign In to Continue
@@ -315,9 +315,7 @@ function BuilderRouterInner() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <Suspense fallback={<SectionSkeleton />}>
-              {renderSection()}
-            </Suspense>
+            <Suspense fallback={<SectionSkeleton />}>{renderSection()}</Suspense>
           </motion.div>
         </AnimatePresence>
       </BuilderSidebarLayout>

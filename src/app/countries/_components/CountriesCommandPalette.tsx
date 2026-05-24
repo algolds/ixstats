@@ -86,7 +86,12 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                     className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -106,7 +111,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
 
                 {/* Sort — pill selector */}
                 <div>
-                  <p className="text-muted-foreground mb-2 text-[11px] font-semibold uppercase tracking-wide">
+                  <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
                     Sort by
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -129,7 +134,7 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
 
                 {/* Filter — pill selector */}
                 <div>
-                  <p className="text-muted-foreground mb-2 text-[11px] font-semibold uppercase tracking-wide">
+                  <p className="text-muted-foreground mb-2 text-[11px] font-semibold tracking-wide uppercase">
                     Filter
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -158,7 +163,9 @@ export const CountriesCommandPalette: React.FC<CountriesCommandPaletteProps> = (
                   >
                     <RiShuffleLine className="h-4 w-4" />
                     <span>Reshuffle</span>
-                    <kbd className="text-muted-foreground bg-background rounded px-1.5 py-0.5 text-[10px]">R</kbd>
+                    <kbd className="text-muted-foreground bg-background rounded px-1.5 py-0.5 text-[10px]">
+                      R
+                    </kbd>
                   </button>
 
                   <RainbowButton

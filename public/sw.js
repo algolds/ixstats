@@ -43,11 +43,7 @@ self.addEventListener("activate", (event) => {
       return Promise.all(
         cacheNames
           .filter((name) => {
-            return (
-              name !== CACHE_NAME &&
-              name !== RUNTIME_CACHE &&
-              name !== IMAGE_CACHE
-            );
+            return name !== CACHE_NAME && name !== RUNTIME_CACHE && name !== IMAGE_CACHE;
           })
           .map((name) => {
             console.log("[ServiceWorker] Deleting old cache:", name);
@@ -72,10 +68,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Skip Chrome extensions and external domains
-  if (
-    !url.protocol.startsWith("http") ||
-    url.origin !== self.location.origin
-  ) {
+  if (!url.protocol.startsWith("http") || url.origin !== self.location.origin) {
     return;
   }
 
@@ -227,7 +220,5 @@ self.addEventListener("push", (event) => {
  */
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(
-    clients.openWindow(event.notification.data || "/")
-  );
+  event.waitUntil(clients.openWindow(event.notification.data || "/"));
 });

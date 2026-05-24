@@ -11,10 +11,7 @@ import { AuthProvider } from "~/context/auth-context";
 import { Navigation } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
-import {
-  ChunkLoadErrorBoundary,
-  ChunkLoadErrorHandler,
-} from "~/components/ChunkLoadErrorBoundary";
+import { ChunkLoadErrorBoundary, ChunkLoadErrorHandler } from "~/components/ChunkLoadErrorBoundary";
 // ToasterProvider removed — all toasts now route through Dynamic Island
 import { IxTimeProvider } from "~/contexts/IxTimeContext";
 import { ExecutiveNotificationProvider } from "~/contexts/ExecutiveNotificationContext";
@@ -27,16 +24,15 @@ import { isStandaloneRequest } from "~/lib/standalone-detection";
 import { MapPrefetcher } from "~/app/_components/MapPrefetcher";
 import { GlobalLinkTooltipProvider } from "~/components/wiki/GlobalLinkTooltipProvider";
 
-
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
 
 // Check if Clerk is configured with valid keys
 const isClerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-    process.env.CLERK_SECRET_KEY &&
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_") &&
-    process.env.CLERK_SECRET_KEY.startsWith("sk_")
+  process.env.CLERK_SECRET_KEY &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_") &&
+  process.env.CLERK_SECRET_KEY.startsWith("sk_")
 );
 
 export const metadata: Metadata = {
@@ -61,33 +57,33 @@ const RootLayout = async ({ children }: Readonly<{ children: React.ReactNode }>)
   const AppContent = () => (
     <TRPCReactProvider>
       <GlobalLinkTooltipProvider>
-      <ThemeProvider>
-        <IxTimeProvider>
-          <ExecutiveNotificationProvider>
-            <ToastProvider>
-              <NotificationBadgeProvider>
-                <GlobalNotificationSystem>
-                  <WebGLErrorHandler />
-                  <MapPrefetcher />
-                  {isStandalone ? (
-                    <div className="flex min-h-screen flex-col">
-                      <Navigation />
-                      <main className="flex-1">{children}</main>
-                    </div>
-                  ) : (
-                    <div className="flex min-h-screen flex-col">
-                      <Navigation />
-                      {/* <GlobalActivityMarquee /> */}
-                      <SetupRedirect />
-                      <main className="flex-1">{children}</main>
-                    </div>
-                  )}
-                </GlobalNotificationSystem>
-              </NotificationBadgeProvider>
-            </ToastProvider>
-          </ExecutiveNotificationProvider>
-        </IxTimeProvider>
-      </ThemeProvider>
+        <ThemeProvider>
+          <IxTimeProvider>
+            <ExecutiveNotificationProvider>
+              <ToastProvider>
+                <NotificationBadgeProvider>
+                  <GlobalNotificationSystem>
+                    <WebGLErrorHandler />
+                    <MapPrefetcher />
+                    {isStandalone ? (
+                      <div className="flex min-h-screen flex-col">
+                        <Navigation />
+                        <main className="flex-1">{children}</main>
+                      </div>
+                    ) : (
+                      <div className="flex min-h-screen flex-col">
+                        <Navigation />
+                        {/* <GlobalActivityMarquee /> */}
+                        <SetupRedirect />
+                        <main className="flex-1">{children}</main>
+                      </div>
+                    )}
+                  </GlobalNotificationSystem>
+                </NotificationBadgeProvider>
+              </ToastProvider>
+            </ExecutiveNotificationProvider>
+          </IxTimeProvider>
+        </ThemeProvider>
       </GlobalLinkTooltipProvider>
     </TRPCReactProvider>
   );

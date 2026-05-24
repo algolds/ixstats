@@ -6,14 +6,7 @@ import { RARITY_INLINE_COLORS } from "~/modules/forum";
 import { styles } from "./widget-styles";
 
 // Display order: LEGENDARY → COMMON (highest first)
-const RARITY_ORDER = [
-  "LEGENDARY",
-  "EPIC",
-  "ULTRA_RARE",
-  "RARE",
-  "UNCOMMON",
-  "COMMON",
-] as const;
+const RARITY_ORDER = ["LEGENDARY", "EPIC", "ULTRA_RARE", "RARE", "UNCOMMON", "COMMON"] as const;
 
 interface ForumRarityBarProps {
   rarityCounts: Record<string, number>;
@@ -45,7 +38,16 @@ export function ForumRarityBar({ rarityCounts, totalCards }: ForumRarityBarProps
           );
         })}
       </div>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 12, fontSize: 11, color: "#9ca3af" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          flexWrap: "wrap",
+          marginBottom: 12,
+          fontSize: 11,
+          color: "#9ca3af",
+        }}
+      >
         {RARITY_ORDER.map((rarity) => {
           const count = rarityCounts[rarity] ?? 0;
           if (count === 0) return null;

@@ -94,7 +94,7 @@ export function ThinkPagesSettingsCard({
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
-            <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <label className="mb-2 block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Engagement Cadence
             </label>
             {isEditing ? (
@@ -109,12 +109,14 @@ export function ThinkPagesSettingsCard({
                 </SelectContent>
               </Select>
             ) : (
-              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">{postingFrequency}</p>
+              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">
+                {postingFrequency}
+              </p>
             )}
           </div>
 
           <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
-            <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <label className="mb-2 block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Ideological Pivot
             </label>
             {isEditing ? (
@@ -129,12 +131,14 @@ export function ThinkPagesSettingsCard({
                 </SelectContent>
               </Select>
             ) : (
-              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">{politicalLean}</p>
+              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">
+                {politicalLean}
+              </p>
             )}
           </div>
 
           <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
-            <label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <label className="mb-2 block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Output Modality
             </label>
             {isEditing ? (
@@ -149,14 +153,17 @@ export function ThinkPagesSettingsCard({
                 </SelectContent>
               </Select>
             ) : (
-              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">{personality}</p>
+              <p className="text-sm font-bold text-slate-900 capitalize dark:text-white">
+                {personality}
+              </p>
             )}
           </div>
         </div>
 
         <div className="mt-6 rounded-2xl bg-purple-500/5 p-4 dark:bg-purple-500/10">
           <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            Your Thinkpages persona dictates how our autonomous systems generate content on your behalf. These settings influence public perception across the Ixnay network.
+            Your Thinkpages persona dictates how our autonomous systems generate content on your
+            behalf. These settings influence public perception across the Ixnay network.
           </p>
         </div>
       </div>

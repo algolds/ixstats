@@ -67,7 +67,7 @@ export function BuilderFooter({ onCreateCountry, isCreating = false }: BuilderFo
           className={cn(
             "min-w-[200px] bg-gradient-to-r shadow-lg transition-all",
             isCreating
-              ? "from-gray-400 to-gray-500 cursor-not-allowed opacity-90"
+              ? "cursor-not-allowed from-gray-400 to-gray-500 opacity-90"
               : "from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl"
           )}
           aria-busy={isCreating}

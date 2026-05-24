@@ -259,7 +259,10 @@ function AtomicBuilderPageInner({
       console.log("[Builder] Country created successfully:", country.name);
 
       // Show success toast
-      notify.success("Nation Created Successfully!", `Welcome to ${country.name}! Redirecting to your country dashboard...`);
+      notify.success(
+        "Nation Created Successfully!",
+        `Welcome to ${country.name}! Redirecting to your country dashboard...`
+      );
 
       // Keep submission lock active during navigation to prevent double-clicks
       setTimeout(() => {
@@ -273,9 +276,15 @@ function AtomicBuilderPageInner({
 
       // Show error toast with helpful guidance
       if (errorMessage.includes("already exists")) {
-        notify.error("Country Already Exists", "A country with this name already exists. Please choose a different name.");
+        notify.error(
+          "Country Already Exists",
+          "A country with this name already exists. Please choose a different name."
+        );
       } else if (errorMessage.includes("no assigned role")) {
-        notify.error("Account Setup Required", "Your account needs to be configured. Please sign out and sign in again, or contact support.");
+        notify.error(
+          "Account Setup Required",
+          "Your account needs to be configured. Please sign out and sign in again, or contact support."
+        );
       } else {
         notify.error("Failed to Create Nation", errorMessage);
       }
@@ -302,7 +311,10 @@ function AtomicBuilderPageInner({
     if (!builderState.economicInputs || !user) {
       const errorMsg = "Missing required data for country creation";
       setError(errorMsg);
-      notify.error("Incomplete Data", "Please complete all required fields before creating your nation.");
+      notify.error(
+        "Incomplete Data",
+        "Please complete all required fields before creating your nation."
+      );
       return;
     }
 
@@ -314,7 +326,10 @@ function AtomicBuilderPageInner({
       console.log("[Builder] Creating country:", builderState.economicInputs.countryName);
 
       // Show initial progress toast
-      notify.info("Creating Your Nation", "Setting up your country, government, and economic systems...");
+      notify.info(
+        "Creating Your Nation",
+        "Setting up your country, government, and economic systems..."
+      );
 
       await createCountryMutation.mutateAsync({
         name: builderState.economicInputs.countryName || "New Nation",
@@ -448,22 +463,31 @@ function AtomicBuilderPageInner({
 
   const currentSection = stepToSection[builderState.step];
 
-  const handleNavigateSection = useCallback((section: BuilderSection) => {
-    const sectionToStep: Record<BuilderSection, BuilderStep | undefined> = {
-      foundation: "foundation",
-      identity: "core",
-      government: "government",
-      economics: "economics",
-      preview: "preview",
-      import: undefined,
-    };
-    const targetStep = sectionToStep[section];
-    if (targetStep) {
-      setBuilderState(prev => ({ ...prev, step: targetStep }));
-    }
-  }, [setBuilderState]);
+  const handleNavigateSection = useCallback(
+    (section: BuilderSection) => {
+      const sectionToStep: Record<BuilderSection, BuilderStep | undefined> = {
+        foundation: "foundation",
+        identity: "core",
+        government: "government",
+        economics: "economics",
+        preview: "preview",
+        import: undefined,
+      };
+      const targetStep = sectionToStep[section];
+      if (targetStep) {
+        setBuilderState((prev) => ({ ...prev, step: targetStep }));
+      }
+    },
+    [setBuilderState]
+  );
 
-  const allSections = new Set<BuilderSection>(["foundation", "identity", "government", "economics", "preview"]);
+  const allSections = new Set<BuilderSection>([
+    "foundation",
+    "identity",
+    "government",
+    "economics",
+    "preview",
+  ]);
 
   return (
     <div className="space-y-6">

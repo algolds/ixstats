@@ -5,16 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import {
-  Trophy,
-  Star,
-  Medal,
-  Crown,
-  Sparkles,
-  TrendingUp,
-  Wifi,
-  WifiOff,
-} from "lucide-react";
+import { Trophy, Star, Medal, Crown, Sparkles, TrendingUp, Wifi, WifiOff } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";

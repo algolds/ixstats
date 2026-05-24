@@ -81,9 +81,7 @@ export const MarketBrowser = memo<MarketBrowserProps>(
     // UI state
     const [showFilters, setShowFilters] = useState(true);
     const [showAnalyticsPanel, setShowAnalyticsPanel] = useState(showAnalytics);
-    const [selectedAuctionId, setSelectedAuctionId] = useState<string | null>(
-      null
-    );
+    const [selectedAuctionId, setSelectedAuctionId] = useState<string | null>(null);
     const [showBidPanel, setShowBidPanel] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState(filters.searchQuery || "");
@@ -105,13 +103,16 @@ export const MarketBrowser = memo<MarketBrowserProps>(
     /**
      * Handle buyout button click
      */
-    const handleBuyout = useCallback(async (auctionId: string) => {
-      const auction = auctions.find((a) => a.id === auctionId);
-      if (!auction?.buyoutPrice) return;
+    const handleBuyout = useCallback(
+      async (auctionId: string) => {
+        const auction = auctions.find((a) => a.id === auctionId);
+        if (!auction?.buyoutPrice) return;
 
-      // TODO: Implement buyout via Agent 6's tRPC mutation
-      console.log("Buyout auction:", auctionId, auction.buyoutPrice);
-    }, [auctions]);
+        // TODO: Implement buyout via Agent 6's tRPC mutation
+        console.log("Buyout auction:", auctionId, auction.buyoutPrice);
+      },
+      [auctions]
+    );
 
     /**
      * Handle bid submission
@@ -144,8 +145,7 @@ export const MarketBrowser = memo<MarketBrowserProps>(
      */
     const handleSortChange = useCallback(
       (field: MarketSort["field"]) => {
-        const newDirection =
-          sort.field === field && sort.direction === "asc" ? "desc" : "asc";
+        const newDirection = sort.field === field && sort.direction === "asc" ? "desc" : "asc";
         setSort({ field, direction: newDirection });
       },
       [sort, setSort]
@@ -157,8 +157,8 @@ export const MarketBrowser = memo<MarketBrowserProps>(
           {/* Header */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">Card Marketplace</h1>
-              <p className="text-xs sm:text-sm text-gray-400">
+              <h1 className="text-2xl font-bold text-white sm:text-3xl">Card Marketplace</h1>
+              <p className="text-xs text-gray-400 sm:text-sm">
                 {total} active auction{total !== 1 ? "s" : ""}
               </p>
             </div>
@@ -167,7 +167,7 @@ export const MarketBrowser = memo<MarketBrowserProps>(
               <button
                 onClick={() => setShowAnalyticsPanel(!showAnalyticsPanel)}
                 className={cn(
-                  "rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all touch-manipulation",
+                  "touch-manipulation rounded-lg px-3 py-2 text-xs font-medium transition-all sm:px-4 sm:text-sm",
                   showAnalyticsPanel
                     ? "bg-blue-500 text-white"
                     : "border border-white/20 bg-white/5 text-gray-300 hover:bg-white/10 active:bg-white/15"
@@ -178,7 +178,7 @@ export const MarketBrowser = memo<MarketBrowserProps>(
 
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="rounded-lg bg-green-500 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold text-white hover:bg-green-600 active:bg-green-700 transition-all touch-manipulation"
+                className="touch-manipulation rounded-lg bg-green-500 px-3 py-2 text-xs font-bold text-white transition-all hover:bg-green-600 active:bg-green-700 sm:px-4 sm:text-sm"
               >
                 List Card
               </button>
@@ -194,18 +194,16 @@ export const MarketBrowser = memo<MarketBrowserProps>(
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Search by card name..."
-                className="w-full rounded-lg border border-white/20 bg-black/40 px-3 sm:px-4 py-2 text-sm sm:text-base text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
+                className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 transition-colors focus:border-blue-500 focus:outline-none sm:px-4 sm:text-base"
               />
             </div>
 
             {/* Sort and filter controls */}
-            <div className="flex flex-col xs:flex-row gap-2">
+            <div className="xs:flex-row flex flex-col gap-2">
               <select
                 value={sort.field}
-                onChange={(e) =>
-                  handleSortChange(e.target.value as MarketSort["field"])
-                }
-                className="flex-1 rounded-lg border border-white/20 bg-black/40 px-3 sm:px-4 py-2 text-sm sm:text-base text-white focus:border-blue-500 focus:outline-none transition-colors"
+                onChange={(e) => handleSortChange(e.target.value as MarketSort["field"])}
+                className="flex-1 rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-sm text-white transition-colors focus:border-blue-500 focus:outline-none sm:px-4 sm:text-base"
               >
                 <option value="endTime">Ending Soon</option>
                 <option value="currentBid">Price</option>
@@ -216,7 +214,7 @@ export const MarketBrowser = memo<MarketBrowserProps>(
 
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="rounded-lg border border-white/20 bg-white/5 px-3 sm:px-4 py-2 text-sm sm:text-base text-white hover:bg-white/10 active:bg-white/15 transition-all touch-manipulation lg:hidden"
+                className="touch-manipulation rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white transition-all hover:bg-white/10 active:bg-white/15 sm:px-4 sm:text-base lg:hidden"
               >
                 {showFilters ? "Hide Filters" : "Show Filters"}
               </button>
@@ -226,17 +224,8 @@ export const MarketBrowser = memo<MarketBrowserProps>(
           {/* Main content */}
           <div className="grid gap-6 lg:grid-cols-[280px_1fr] xl:grid-cols-[300px_1fr_320px]">
             {/* Filters sidebar */}
-            <aside
-              className={cn(
-                "lg:block",
-                !showFilters && "hidden"
-              )}
-            >
-              <MarketFiltersPanel
-                filters={filters}
-                onChange={setFilters}
-                collapsible={true}
-              />
+            <aside className={cn("lg:block", !showFilters && "hidden")}>
+              <MarketFiltersPanel filters={filters} onChange={setFilters} collapsible={true} />
             </aside>
 
             {/* Auction grid */}
@@ -248,11 +237,11 @@ export const MarketBrowser = memo<MarketBrowserProps>(
               )}
 
               {loading && auctions.length === 0 ? (
-                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div
                       key={i}
-                      className="h-[400px] sm:h-[500px] animate-pulse rounded-xl bg-white/5"
+                      className="h-[400px] animate-pulse rounded-xl bg-white/5 sm:h-[500px]"
                     />
                   ))}
                 </div>
@@ -271,16 +260,14 @@ export const MarketBrowser = memo<MarketBrowserProps>(
                       d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
                     />
                   </svg>
-                  <p className="text-lg font-medium text-white">
-                    No auctions found
-                  </p>
+                  <p className="text-lg font-medium text-white">No auctions found</p>
                   <p className="text-sm text-gray-400">
                     Try adjusting your filters or check back later
                   </p>
                 </div>
               ) : (
                 <>
-                  <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-2 xl:grid-cols-3">
                     {auctions.map((auction) => (
                       <AuctionCard
                         key={auction.id}
@@ -301,7 +288,7 @@ export const MarketBrowser = memo<MarketBrowserProps>(
                         className={cn(
                           "rounded-lg px-8 py-3 font-bold transition-all",
                           loading
-                            ? "bg-gray-500/20 text-gray-500 cursor-not-allowed"
+                            ? "cursor-not-allowed bg-gray-500/20 text-gray-500"
                             : "bg-white/10 text-white hover:bg-white/20"
                         )}
                       >

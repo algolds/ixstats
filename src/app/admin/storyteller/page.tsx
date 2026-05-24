@@ -11,14 +11,7 @@ import { WorldTimeline } from "./_components/WorldTimeline";
 import { ActiveInterventions } from "./_components/ActiveInterventions";
 import { StorytellerHistory } from "./_components/StorytellerHistory";
 import { SandboxMode } from "./_components/SandboxMode";
-import {
-  Gamepad2,
-  Wand2,
-  Clock,
-  Zap,
-  History,
-  FlaskConical,
-} from "lucide-react";
+import { Gamepad2, Wand2, Clock, Zap, History, FlaskConical } from "lucide-react";
 
 type StorytellerTab = "wizard" | "timeline" | "interventions" | "sandbox" | "history";
 
@@ -43,7 +36,7 @@ export default function StorytellerPage() {
       />
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 overflow-x-auto rounded-xl border border-border/50 bg-muted/20 p-1">
+      <div className="border-border/50 bg-muted/20 flex gap-1 overflow-x-auto rounded-xl border p-1">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -51,7 +44,7 @@ export default function StorytellerPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap transition-all ${
                 isActive
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/50"
@@ -65,7 +58,7 @@ export default function StorytellerPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="glass-card-child rounded-xl border border-border/50 p-6">
+      <div className="glass-card-child border-border/50 rounded-xl border p-6">
         {activeTab === "wizard" && <EventWizard />}
         {activeTab === "timeline" && <WorldTimeline />}
         {activeTab === "interventions" && <ActiveInterventions />}

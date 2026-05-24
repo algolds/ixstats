@@ -46,11 +46,7 @@ export default function ExplorePage() {
   } = useCountryComparison();
 
   // Get all countries without filtering at the API level to enable client-side filtering
-  const {
-    data: countriesResult,
-    isLoading,
-    error,
-  } = useAllCountriesData();
+  const { data: countriesResult, isLoading, error } = useAllCountriesData();
 
   const raw = countriesResult?.countries || [];
   const processed: PageCountryData[] = raw.map((c: any) => ({

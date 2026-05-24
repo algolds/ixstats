@@ -33,15 +33,11 @@ import { cn } from "~/lib/utils";
 // Economy Builder Components
 import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
 
-
 import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 // Types and Services
-import type {
-  EconomyBuilderState,
-  EconomicHealthMetrics,
-} from "~/types/economy-builder";
+import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
 import type { EconomicInputs } from "../../lib/economy-data-service";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import { economyIntegrationService } from "../../services/EconomyIntegrationService";
@@ -356,21 +352,21 @@ export function EconomyBuilderPage({
   }, [economyBuilder, economicInputs]);
 
   // Autosave hook integration
-  const { syncState: autoSyncState, syncNow, showSuccessAnimation } = useEconomyBuilderAutoSync(
-    countryId,
-    economyDataForSync,
-    {
-      enabled: !!countryId, // Only enable in edit mode
-      onSyncSuccess: () => {
-        console.log("[EconomyBuilder] Autosave successful");
-        setLastSaved(new Date());
-      },
-      onSyncError: (error) => {
-        console.error("[EconomyBuilder] Autosave failed:", error);
-        notify.error("Failed to autosave economy data");
-      },
-    }
-  );
+  const {
+    syncState: autoSyncState,
+    syncNow,
+    showSuccessAnimation,
+  } = useEconomyBuilderAutoSync(countryId, economyDataForSync, {
+    enabled: !!countryId, // Only enable in edit mode
+    onSyncSuccess: () => {
+      console.log("[EconomyBuilder] Autosave successful");
+      setLastSaved(new Date());
+    },
+    onSyncError: (error) => {
+      console.error("[EconomyBuilder] Autosave failed:", error);
+      notify.error("Failed to autosave economy data");
+    },
+  });
 
   // Register autosync with BuilderContext (if available)
   useEffect(() => {
@@ -618,7 +614,10 @@ export function EconomyBuilderPage({
     // Get GDP from economic inputs (use ref for current values)
     const currentEconomicInputs = economicInputsRef.current;
     const currentEconomyBuilder = economyBuilderRef.current;
-    const gdp = currentEconomicInputs.coreIndicators?.nominalGDP || currentEconomyBuilder.structure.totalGDP || 1;
+    const gdp =
+      currentEconomicInputs.coreIndicators?.nominalGDP ||
+      currentEconomyBuilder.structure.totalGDP ||
+      1;
 
     // Calculate metrics
     const taxBurdenRatio = gdp > 0 ? (taxRevenue / gdp) * 100 : 0;
@@ -847,11 +846,14 @@ export function EconomyBuilderPage({
 
   // Extended sync status that includes saveEconomyMutation
   // TODO: Wire this to UI sync indicator when implementing sync status display
-  const _extendedSyncStatus = useMemo(() => ({
-    isSyncing: syncStatus.isSyncing || saveEconomyMutation.isPending,
-    lastSync: syncStatus.lastSync,
-    syncError: syncStatus.syncError,
-  }), [syncStatus, saveEconomyMutation.isPending]);
+  const _extendedSyncStatus = useMemo(
+    () => ({
+      isSyncing: syncStatus.isSyncing || saveEconomyMutation.isPending,
+      lastSync: syncStatus.lastSync,
+      syncError: syncStatus.syncError,
+    }),
+    [syncStatus, saveEconomyMutation.isPending]
+  );
 
   // Validation Status - Memoized
   const validationStatus = useMemo(() => {
@@ -977,7 +979,7 @@ export function EconomyBuilderPage({
                 <Card className="border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="text-amber-500 h-5 w-5" />
+                      <DollarSign className="h-5 w-5 text-amber-500" />
                       Government Revenue Integration
                     </CardTitle>
                     <CardDescription>
@@ -985,7 +987,7 @@ export function EconomyBuilderPage({
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
                       {/* Total Government Revenue */}
                       <div className="space-y-2">
                         <Label className="text-muted-foreground text-sm">
@@ -1202,7 +1204,9 @@ export function EconomyBuilderPage({
               className="space-y-6"
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-foreground text-2xl font-semibold">Demographics & Population</h2>
+                <h2 className="text-foreground text-2xl font-semibold">
+                  Demographics & Population
+                </h2>
               </div>
               <Suspense fallback={<TabLoadingFallback />}>
                 <DemographicsPopulationTab
@@ -1223,34 +1227,34 @@ export function EconomyBuilderPage({
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.2 }}
             >
-            <TaxSystemStep
-              countryId={countryId ?? null}
-              activeTaxSystemData={activeTaxSystemData}
-              economicInputs={economicInputs}
-              economyBuilder={economyBuilder}
-              selectedComponents={selectedComponents}
-              governmentBuilderData={governmentBuilderData}
-              onDraftChange={(taxSystem) => {
-                onPersistTaxSystem?.(taxSystem);
-              }}
-              onUpdate={async (taxSystem) => {
-                await updateTaxSystemMutation.mutateAsync({
-                  countryId: countryId!,
-                  data: taxSystem,
-                  skipConflictCheck: false,
-                });
-              }}
-              onCreate={async (taxSystem) => {
-                await createTaxSystemMutation.mutateAsync({
-                  countryId: countryId!,
-                  data: taxSystem,
-                  skipConflictCheck: false,
-                });
-              }}
-              onRefetch={async () => {
-                await refetchTaxSystem();
-              }}
-            />
+              <TaxSystemStep
+                countryId={countryId ?? null}
+                activeTaxSystemData={activeTaxSystemData}
+                economicInputs={economicInputs}
+                economyBuilder={economyBuilder}
+                selectedComponents={selectedComponents}
+                governmentBuilderData={governmentBuilderData}
+                onDraftChange={(taxSystem) => {
+                  onPersistTaxSystem?.(taxSystem);
+                }}
+                onUpdate={async (taxSystem) => {
+                  await updateTaxSystemMutation.mutateAsync({
+                    countryId: countryId!,
+                    data: taxSystem,
+                    skipConflictCheck: false,
+                  });
+                }}
+                onCreate={async (taxSystem) => {
+                  await createTaxSystemMutation.mutateAsync({
+                    countryId: countryId!,
+                    data: taxSystem,
+                    skipConflictCheck: false,
+                  });
+                }}
+                onRefetch={async () => {
+                  await refetchTaxSystem();
+                }}
+              />
             </motion.div>
           )}
 

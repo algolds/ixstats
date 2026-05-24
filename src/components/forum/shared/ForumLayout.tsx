@@ -108,7 +108,7 @@ function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => voi
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search forums..."
-            className="min-w-0 flex-1 bg-transparent text-sm text-[var(--forum-text)] placeholder:text-[var(--forum-text-dim)] outline-none"
+            className="min-w-0 flex-1 bg-transparent text-sm text-[var(--forum-text)] outline-none placeholder:text-[var(--forum-text-dim)]"
             autoComplete="off"
             spellCheck={false}
           />
@@ -194,7 +194,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
         width={40}
         height={40}
         squares={[50, 40]}
-        className="fixed inset-0 z-0 opacity-25 dark:opacity-15 pointer-events-auto"
+        className="pointer-events-auto fixed inset-0 z-0 opacity-25 dark:opacity-15"
         squaresClassName="fill-slate-200/15 dark:fill-slate-700/15 stroke-slate-300/20 dark:stroke-slate-600/20 [&:hover]:fill-orange-500/30 [&:hover]:stroke-orange-500/50 transition-all duration-300"
       />
 
@@ -232,14 +232,14 @@ export function ForumLayout({ children }: ForumLayoutProps) {
               <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
             ))}
 
-            <div className="mx-auto my-1.5 h-px w-6 bg-border/50" />
+            <div className="bg-border/50 mx-auto my-1.5 h-px w-6" />
 
             {/* Community */}
             {NAV_GROUP_2.map((item) => (
               <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
             ))}
 
-            <div className="mx-auto my-1.5 h-px w-6 bg-border/50" />
+            <div className="bg-border/50 mx-auto my-1.5 h-px w-6" />
 
             {/* Search */}
             <button
@@ -251,21 +251,26 @@ export function ForumLayout({ children }: ForumLayoutProps) {
               title="Search (⌘K)"
             >
               <Search className="h-[18px] w-[18px]" />
-              <span className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-md bg-popover px-2 py-1 text-xs font-medium text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+              <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full ml-2 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                 Search (⌘K)
               </span>
             </button>
 
             {/* New Thread */}
             <RailIcon
-              item={{ id: "new-thread", href: "/forum/new-thread", icon: PenSquare, title: "New Thread" }}
+              item={{
+                id: "new-thread",
+                href: "/forum/new-thread",
+                icon: PenSquare,
+                title: "New Thread",
+              }}
               isActive={activeId === "new-thread"}
             />
 
             {/* Contextual (reply/share when in thread) */}
             {contextualItems.length > 0 && (
               <>
-                <div className="mx-auto my-1.5 h-px w-6 bg-border/50" />
+                <div className="bg-border/50 mx-auto my-1.5 h-px w-6" />
                 {contextualItems.map((item) => (
                   <RailIcon key={item.id} item={item} isActive={false} />
                 ))}
@@ -308,7 +313,7 @@ function RailIcon({ item, isActive }: { item: ForumNavItem; isActive: boolean })
       title={item.title}
     >
       <Icon className="h-[18px] w-[18px]" />
-      <span className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-md bg-popover px-2 py-1 text-xs font-medium text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+      <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full ml-2 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap opacity-0 shadow-md transition-opacity group-hover:opacity-100">
         {item.title}
       </span>
     </Link>

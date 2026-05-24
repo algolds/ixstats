@@ -9,11 +9,7 @@ import { WikiOSLayout } from "~/components/wikios/shared/WikiOSLayout";
 import { BlurbPromptDetail } from "~/components/blurbs/BlurbPromptDetail";
 import { BlurbsNav } from "~/components/blurbs/BlurbsNav";
 
-export default function BlurbDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default function BlurbDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   usePageTitle({ title: "Blurb" });
 
@@ -21,10 +17,10 @@ export default function BlurbDetailPage({
     <WikiOSLayout>
       <div className="mx-auto max-w-3xl py-6">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
             <Link
               href={withBasePath("/blurbs")}
-              className="transition-colors hover:text-foreground"
+              className="hover:text-foreground transition-colors"
             >
               Blurbs
             </Link>

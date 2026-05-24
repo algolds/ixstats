@@ -57,7 +57,9 @@ export function EconomyBuilderHeader({
     <div className="flex items-center justify-between">
       <div>
         <h1 className="text-foreground text-3xl font-bold">MyEconomy</h1>
-        <p className="text-muted-foreground mt-1">Configure your nation's economic systems and tax policies</p>
+        <p className="text-muted-foreground mt-1">
+          Configure your nation's economic systems and tax policies
+        </p>
 
         <div className="mt-2 flex items-center gap-4">
           {isLoadingConfig && (
@@ -144,17 +146,17 @@ export function EconomyBuilderHeader({
                   Getting Started
                 </h3>
                 <p className="text-muted-foreground mb-2">
-                  The Economy Builder follows a 6-step process to create a complete economic
-                  profile for your nation:
+                  The Economy Builder follows a 6-step process to create a complete economic profile
+                  for your nation:
                 </p>
                 <ol className="text-muted-foreground ml-2 list-inside list-decimal space-y-2">
                   <li>
-                    <strong>Economic Components:</strong> Select atomic components that define
-                    your economic philosophy (Free Market, Planned, etc.)
+                    <strong>Economic Components:</strong> Select atomic components that define your
+                    economic philosophy (Free Market, Planned, etc.)
                   </li>
                   <li>
-                    <strong>Economic Sectors:</strong> Set up your primary industries
-                    (Agriculture, Manufacturing, Services, etc.)
+                    <strong>Economic Sectors:</strong> Set up your primary industries (Agriculture,
+                    Manufacturing, Services, etc.)
                   </li>
                   <li>
                     <strong>Labor & Employment:</strong> Configure workforce distribution,
@@ -169,8 +171,8 @@ export function EconomyBuilderHeader({
                     categories, and policies
                   </li>
                   <li>
-                    <strong>Preview:</strong> Review all settings and save your complete
-                    economic configuration
+                    <strong>Preview:</strong> Review all settings and save your complete economic
+                    configuration
                   </li>
                 </ol>
               </div>
@@ -186,16 +188,16 @@ export function EconomyBuilderHeader({
                 </p>
                 <ul className="text-muted-foreground ml-2 list-inside list-disc space-y-2">
                   <li>
-                    <strong>Select up to 12 components</strong> that best represent your
-                    economic vision
+                    <strong>Select up to 12 components</strong> that best represent your economic
+                    vision
                   </li>
                   <li>
-                    <strong>Green badges (synergies):</strong> Components that work well
-                    together and boost effectiveness
+                    <strong>Green badges (synergies):</strong> Components that work well together
+                    and boost effectiveness
                   </li>
                   <li>
-                    <strong>Red badges (conflicts):</strong> Components that contradict and
-                    reduce efficiency
+                    <strong>Red badges (conflicts):</strong> Components that contradict and reduce
+                    efficiency
                   </li>
                   <li>
                     <strong>★ Star:</strong> Active synergy (both components selected)
@@ -216,11 +218,10 @@ export function EconomyBuilderHeader({
                   Economic Sectors
                 </h3>
                 <p className="text-muted-foreground">
-                  Define your primary, secondary, and tertiary industries. Your sector
-                  distribution affects GDP composition, employment patterns, and economic
-                  development tier (Developing → Emerging → Developed → Advanced). Balanced
-                  sectors create economic stability, while specialized economies excel in
-                  specific areas.
+                  Define your primary, secondary, and tertiary industries. Your sector distribution
+                  affects GDP composition, employment patterns, and economic development tier
+                  (Developing → Emerging → Developed → Advanced). Balanced sectors create economic
+                  stability, while specialized economies excel in specific areas.
                 </p>
               </div>
 
@@ -231,10 +232,9 @@ export function EconomyBuilderHeader({
                 </h3>
                 <p className="text-muted-foreground">
                   Set employment rates, workforce distribution across sectors, minimum wage, and
-                  working conditions. These settings interact with your economic components -
-                  for example, "Strong Labor Unions" increases worker protections but may reduce
-                  business flexibility. Balance employment metrics with your economic
-                  philosophy.
+                  working conditions. These settings interact with your economic components - for
+                  example, "Strong Labor Unions" increases worker protections but may reduce
+                  business flexibility. Balance employment metrics with your economic philosophy.
                 </p>
               </div>
 
@@ -245,9 +245,9 @@ export function EconomyBuilderHeader({
                 </h3>
                 <p className="text-muted-foreground">
                   Configure total population, age distribution, growth rates, and urbanization
-                  levels. Demographics directly influence labor supply, consumer markets, and
-                  social program costs. Aging populations require different policies than young,
-                  growing populations.
+                  levels. Demographics directly influence labor supply, consumer markets, and social
+                  program costs. Aging populations require different policies than young, growing
+                  populations.
                 </p>
               </div>
 
@@ -259,8 +259,8 @@ export function EconomyBuilderHeader({
                 <p className="text-muted-foreground">
                   The tax builder auto-populates based on your economic data (GDP, sectors,
                   employment). It recommends progressive/flat taxation based on your components,
-                  suggests brackets by income distribution, and links to government departments.
-                  Tax policy affects economic growth, inequality, and business investment.
+                  suggests brackets by income distribution, and links to government departments. Tax
+                  policy affects economic growth, inequality, and business investment.
                 </p>
               </div>
 
@@ -296,16 +296,15 @@ export function EconomyBuilderHeader({
                     Socialist, Mixed Economy) as templates, then customize
                   </li>
                   <li>
-                    <strong>Balance vs. Specialization:</strong> Diverse sectors create
-                    stability, focused sectors create competitive advantages
+                    <strong>Balance vs. Specialization:</strong> Diverse sectors create stability,
+                    focused sectors create competitive advantages
                   </li>
                   <li>
-                    <strong>Watch Conflicts:</strong> Avoid major contradictions between
-                    components
+                    <strong>Watch Conflicts:</strong> Avoid major contradictions between components
                   </li>
                   <li>
-                    <strong>Preview Before Saving:</strong> Always review the complete
-                    configuration before saving
+                    <strong>Preview Before Saving:</strong> Always review the complete configuration
+                    before saving
                   </li>
                 </ul>
               </div>

@@ -35,9 +35,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
     const [imgError, setImgError] = useState(false);
 
     // Only fetch from browser if no server-provided flag URL
-    const { flag, loading, error } = useCountryFlagRouteAware(
-      serverFlagUrl ? "" : country.name
-    );
+    const { flag, loading, error } = useCountryFlagRouteAware(serverFlagUrl ? "" : country.name);
 
     const resolvedFlagUrl = serverFlagUrl ?? flag?.flagUrl ?? null;
 

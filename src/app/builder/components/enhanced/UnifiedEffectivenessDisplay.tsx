@@ -28,9 +28,7 @@ import {
   Scale,
 } from "lucide-react";
 
-import type {
-  UnifiedEffectivenessAnalysis,
-} from "../../services/UnifiedEffectivenessCalculator";
+import type { UnifiedEffectivenessAnalysis } from "../../services/UnifiedEffectivenessCalculator";
 
 interface UnifiedEffectivenessDisplayProps {
   analysis?: UnifiedEffectivenessAnalysis;
@@ -219,7 +217,7 @@ export function UnifiedEffectivenessDisplay({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             {/* Economy Score */}
             <div className="text-center">
               <div className="mb-2 flex items-center justify-center space-x-2">

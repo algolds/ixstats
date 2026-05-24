@@ -222,10 +222,7 @@ export function NavigationSettings() {
               )}
             </div>
             <div>
-              <Label
-                htmlFor="defense-tab"
-                className="flex items-center gap-1 text-sm font-medium"
-              >
+              <Label htmlFor="defense-tab" className="flex items-center gap-1 text-sm font-medium">
                 <Shield className="text-muted-foreground h-4 w-4" />
                 Defense Tab
               </Label>

@@ -5,26 +5,17 @@ import dynamic from "next/dynamic";
 
 // Dynamic import for heavy media search modal
 const MediaSearchModal = dynamic(
-  () => import("~/components/MediaSearchModal").then(m => m.MediaSearchModal),
+  () => import("~/components/MediaSearchModal").then((m) => m.MediaSearchModal),
   { ssr: false }
 );
-import {
-  Flag,
-  Globe,
-  Landmark,
-  Heart,
-  CheckCircle,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
-import type { EconomicInputs, RealCountryData, NationalIdentityData } from "~/app/builder/lib/economy-data-service";
+import { Flag, Globe, Landmark, Heart, CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import type {
+  EconomicInputs,
+  RealCountryData,
+  NationalIdentityData,
+} from "~/app/builder/lib/economy-data-service";
 import { BuilderTabCard, type TabDefinition } from "~/app/builder/primitives/BuilderTabCard";
-import {
-  BasicInfoForm,
-  SymbolsUpload,
-  GeographyForm,
-  CultureForm,
-} from "./national-identity";
+import { BasicInfoForm, SymbolsUpload, GeographyForm, CultureForm } from "./national-identity";
 import { useNationalIdentityState } from "./national-identity/useNationalIdentityState";
 import { useBuilderContext } from "./context/BuilderStateContext";
 
@@ -177,22 +168,28 @@ export function NationalIdentitySection({
   };
 
   // Memoize callbacks to prevent unnecessary re-renders
-  const handleGovernmentTypeChange = useCallback((value: string) => {
-    setSelectedGovernmentType(value);
-    handleIdentityChange("governmentType", value);
-  }, [setSelectedGovernmentType, handleIdentityChange]);
+  const handleGovernmentTypeChange = useCallback(
+    (value: string) => {
+      setSelectedGovernmentType(value);
+      handleIdentityChange("governmentType", value);
+    },
+    [setSelectedGovernmentType, handleIdentityChange]
+  );
 
   const handleCustomOfficialNameFocus = useCallback(() => {
     setIsEditingCustomName(true);
   }, [setIsEditingCustomName]);
 
-  const handleCustomOfficialNameBlur = useCallback((value: string) => {
-    setIsEditingCustomName(false);
-    handleIdentityChange("officialName", value);
-    if (value.trim()) {
-      upsertCustomGovernmentType.mutate({ customTypeName: value.trim() });
-    }
-  }, [setIsEditingCustomName, handleIdentityChange, upsertCustomGovernmentType]);
+  const handleCustomOfficialNameBlur = useCallback(
+    (value: string) => {
+      setIsEditingCustomName(false);
+      handleIdentityChange("officialName", value);
+      if (value.trim()) {
+        upsertCustomGovernmentType.mutate({ customTypeName: value.trim() });
+      }
+    },
+    [setIsEditingCustomName, handleIdentityChange, upsertCustomGovernmentType]
+  );
 
   // Guard against null inputs (after all hooks)
   if (!inputs) {
@@ -277,9 +274,9 @@ export function NationalIdentitySection({
           )}
 
           {activeTab === "technical" && (
-            <GeographyForm 
-              identity={identity as NationalIdentityData} 
-              onIdentityChange={handleIdentityChange} 
+            <GeographyForm
+              identity={identity as NationalIdentityData}
+              onIdentityChange={handleIdentityChange}
             />
           )}
         </BuilderTabCard>

@@ -274,9 +274,7 @@ export function useBuilderState(
       const typedCountry = existingCountry as CountryWithEditorFields;
       const calculatedStats = typedCountry.calculatedStats;
       const currentPop =
-        Number(calculatedStats?.currentPopulation) ||
-        Number(typedCountry.baselinePopulation) ||
-        0;
+        Number(calculatedStats?.currentPopulation) || Number(typedCountry.baselinePopulation) || 0;
       const currentGdpPerCap =
         Number(calculatedStats?.currentGdpPerCapita) ||
         Number(typedCountry.baselineGdpPerCapita) ||
@@ -298,24 +296,18 @@ export function useBuilderState(
         typedCountry.laborForceParticipationRate ?? 0;
       inputs.laborEmployment.employmentRate = typedCountry.employmentRate ?? 0;
       inputs.laborEmployment.totalWorkforce = typedCountry.totalWorkforce ?? 0;
-      inputs.laborEmployment.averageWorkweekHours =
-        typedCountry.averageWorkweekHours ?? 0;
+      inputs.laborEmployment.averageWorkweekHours = typedCountry.averageWorkweekHours ?? 0;
       inputs.laborEmployment.minimumWage = typedCountry.minimumWage ?? 0;
-      inputs.laborEmployment.averageAnnualIncome =
-        typedCountry.averageAnnualIncome ?? 0;
+      inputs.laborEmployment.averageAnnualIncome = typedCountry.averageAnnualIncome ?? 0;
 
       // Fiscal system
       inputs.fiscalSystem.taxRevenueGDPPercent = typedCountry.taxRevenueGDPPercent ?? 0;
-      inputs.fiscalSystem.governmentRevenueTotal =
-        typedCountry.governmentRevenueTotal ?? 0;
+      inputs.fiscalSystem.governmentRevenueTotal = typedCountry.governmentRevenueTotal ?? 0;
       inputs.fiscalSystem.totalDebtGDPRatio = typedCountry.totalDebtGDPRatio ?? 0;
       inputs.fiscalSystem.budgetDeficitSurplus = typedCountry.budgetDeficitSurplus ?? 0;
-      inputs.fiscalSystem.governmentBudgetGDPPercent =
-        typedCountry.governmentBudgetGDPPercent ?? 0;
-      inputs.fiscalSystem.internalDebtGDPPercent =
-        typedCountry.internalDebtGDPPercent ?? 0;
-      inputs.fiscalSystem.externalDebtGDPPercent =
-        typedCountry.externalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.governmentBudgetGDPPercent = typedCountry.governmentBudgetGDPPercent ?? 0;
+      inputs.fiscalSystem.internalDebtGDPPercent = typedCountry.internalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.externalDebtGDPPercent = typedCountry.externalDebtGDPPercent ?? 0;
       inputs.fiscalSystem.interestRates = typedCountry.interestRates ?? 0;
       inputs.fiscalSystem.debtServiceCosts = typedCountry.debtServiceCosts ?? 0;
 
@@ -335,10 +327,8 @@ export function useBuilderState(
       inputs.incomeWealth.socialMobilityIndex = typedCountry.socialMobilityIndex ?? 0;
 
       // Government Spending
-      inputs.governmentSpending.totalSpending =
-        typedCountry.totalGovernmentSpending ?? 0;
-      inputs.governmentSpending.spendingGDPPercent =
-        typedCountry.spendingGDPPercent ?? 0;
+      inputs.governmentSpending.totalSpending = typedCountry.totalGovernmentSpending ?? 0;
+      inputs.governmentSpending.spendingGDPPercent = typedCountry.spendingGDPPercent ?? 0;
       inputs.governmentSpending.spendingPerCapita = typedCountry.spendingPerCapita ?? 0;
       inputs.governmentSpending.deficitSurplus = typedCountry.budgetDeficitSurplus ?? 0;
 
@@ -355,13 +345,11 @@ export function useBuilderState(
         largestCity: nationalIdentity?.largestCity || "",
         demonym: nationalIdentity?.demonym || "",
         currency: nationalIdentity?.currency || typedCountry.currencyName || "",
-        currencySymbol:
-          nationalIdentity?.currencySymbol || typedCountry.currencySymbol || "$",
+        currencySymbol: nationalIdentity?.currencySymbol || typedCountry.currencySymbol || "$",
         officialLanguages: nationalIdentity?.officialLanguages || "",
         nationalLanguage: nationalIdentity?.nationalLanguage || "",
         nationalAnthem: nationalIdentity?.nationalAnthem || "",
-        nationalReligion:
-          nationalIdentity?.nationalReligion || typedCountry.religion || "",
+        nationalReligion: nationalIdentity?.nationalReligion || typedCountry.religion || "",
         nationalDay: nationalIdentity?.nationalDay || "",
         callingCode: nationalIdentity?.callingCode || "",
         internetTLD: nationalIdentity?.internetTLD || "",
@@ -477,15 +465,17 @@ export function useBuilderState(
           if (parsedState.economicInputs && parsedState.economicInputs.countryName) {
             setBuilderState((prev) => {
               // Deep merge economicInputs to preserve database-loaded data
-              const mergedInputs = prev.economicInputs ? {
-                ...prev.economicInputs,
-                ...parsedState.economicInputs,
-                // Ensure nationalIdentity is merged, not replaced
-                nationalIdentity: {
-                  ...prev.economicInputs.nationalIdentity,
-                  ...parsedState.economicInputs.nationalIdentity,
-                },
-              } : parsedState.economicInputs;
+              const mergedInputs = prev.economicInputs
+                ? {
+                    ...prev.economicInputs,
+                    ...parsedState.economicInputs,
+                    // Ensure nationalIdentity is merged, not replaced
+                    nationalIdentity: {
+                      ...prev.economicInputs.nationalIdentity,
+                      ...parsedState.economicInputs.nationalIdentity,
+                    },
+                  }
+                : parsedState.economicInputs;
 
               return {
                 ...prev,
@@ -545,7 +535,8 @@ export function useBuilderState(
             if (wikiData.name) inputs.countryName = wikiData.name;
 
             // Core indicators — check all field variants from unified-wiki-parser
-            const popValue = wikiData.population ?? wikiData.population_estimate ?? wikiData.population_census;
+            const popValue =
+              wikiData.population ?? wikiData.population_estimate ?? wikiData.population_census;
             if (popValue) {
               const parsed = parseWikiNumericValue(popValue);
               if (parsed !== null) {
@@ -553,7 +544,10 @@ export function useBuilderState(
               }
             }
 
-            const gdpPcValue = wikiData.gdpPerCapita ?? wikiData.GDP_nominal_per_capita ?? wikiData.GDP_PPP_per_capita;
+            const gdpPcValue =
+              wikiData.gdpPerCapita ??
+              wikiData.GDP_nominal_per_capita ??
+              wikiData.GDP_PPP_per_capita;
             if (gdpPcValue) {
               const parsed = parseWikiNumericValue(gdpPcValue);
               if (parsed !== null) {
@@ -562,15 +556,21 @@ export function useBuilderState(
             }
 
             // Nominal GDP: prefer explicit numeric field, fall back to string parsing, then derive
-            const gdpNomValue = wikiData.gdp_nominal ?? wikiData.GDP_nominal ?? wikiData.gdp_ppp ?? wikiData.GDP_PPP;
+            const gdpNomValue =
+              wikiData.gdp_nominal ?? wikiData.GDP_nominal ?? wikiData.gdp_ppp ?? wikiData.GDP_PPP;
             if (gdpNomValue !== undefined && gdpNomValue !== null) {
               const parsed = parseWikiNumericValue(gdpNomValue);
               if (parsed !== null) {
                 inputs.coreIndicators.nominalGDP = parsed;
               }
             }
-            if (!inputs.coreIndicators.nominalGDP && inputs.coreIndicators.totalPopulation && inputs.coreIndicators.gdpPerCapita) {
-              inputs.coreIndicators.nominalGDP = inputs.coreIndicators.totalPopulation * inputs.coreIndicators.gdpPerCapita;
+            if (
+              !inputs.coreIndicators.nominalGDP &&
+              inputs.coreIndicators.totalPopulation &&
+              inputs.coreIndicators.gdpPerCapita
+            ) {
+              inputs.coreIndicators.nominalGDP =
+                inputs.coreIndicators.totalPopulation * inputs.coreIndicators.gdpPerCapita;
             }
 
             // National identity (ensure object exists)
@@ -603,37 +603,50 @@ export function useBuilderState(
 
             if (wikiData.name) inputs.nationalIdentity.countryName = wikiData.name;
             if (wikiData.official_name || wikiData.conventional_long_name) {
-              inputs.nationalIdentity.officialName = wikiData.official_name || wikiData.conventional_long_name;
+              inputs.nationalIdentity.officialName =
+                wikiData.official_name || wikiData.conventional_long_name;
             }
-            if (wikiData.government_type) inputs.nationalIdentity.governmentType = normalizeGovernmentType(wikiData.government_type);
-            if (wikiData.motto || wikiData.national_motto) inputs.nationalIdentity.motto = wikiData.motto || wikiData.national_motto;
+            if (wikiData.government_type)
+              inputs.nationalIdentity.governmentType = normalizeGovernmentType(
+                wikiData.government_type
+              );
+            if (wikiData.motto || wikiData.national_motto)
+              inputs.nationalIdentity.motto = wikiData.motto || wikiData.national_motto;
             if (wikiData.demonym) inputs.nationalIdentity.demonym = wikiData.demonym;
-            if (wikiData.national_anthem) inputs.nationalIdentity.nationalAnthem = wikiData.national_anthem;
+            if (wikiData.national_anthem)
+              inputs.nationalIdentity.nationalAnthem = wikiData.national_anthem;
             if (wikiData.religion) inputs.nationalIdentity.nationalReligion = wikiData.religion;
             if (wikiData.capital) inputs.nationalIdentity.capitalCity = wikiData.capital;
             if (wikiData.largest_city) inputs.nationalIdentity.largestCity = wikiData.largest_city;
             if (wikiData.currency) inputs.nationalIdentity.currency = wikiData.currency;
-            if (wikiData.currency_code) inputs.nationalIdentity.currencySymbol = wikiData.currency_code;
+            if (wikiData.currency_code)
+              inputs.nationalIdentity.currencySymbol = wikiData.currency_code;
             if (wikiData.languages) inputs.nationalIdentity.officialLanguages = wikiData.languages;
             if (wikiData.calling_code) inputs.nationalIdentity.callingCode = wikiData.calling_code;
             if (wikiData.internet_tld) inputs.nationalIdentity.internetTLD = wikiData.internet_tld;
             if (wikiData.time_zone) inputs.nationalIdentity.timeZone = wikiData.time_zone;
             if (wikiData.iso_code) inputs.nationalIdentity.isoCode = wikiData.iso_code;
-            if (wikiData.drives_on) inputs.nationalIdentity.drivingSide = (wikiData.drives_on.toLowerCase().includes('left') ? 'left' : 'right');
-            
+            if (wikiData.drives_on)
+              inputs.nationalIdentity.drivingSide = wikiData.drives_on
+                .toLowerCase()
+                .includes("left")
+                ? "left"
+                : "right";
+
             // Coordinates
             if (wikiData.coordinates) {
               // Very rough parsing of coordinates string for placeholder
               const coords = wikiData.coordinates.toString();
-              if (coords.includes('N') || coords.includes('S')) {
-                inputs.nationalIdentity.coordinatesLatitude = coords.split(',')[0] || coords;
-                inputs.nationalIdentity.coordinatesLongitude = coords.split(',')[1] || '';
+              if (coords.includes("N") || coords.includes("S")) {
+                inputs.nationalIdentity.coordinatesLatitude = coords.split(",")[0] || coords;
+                inputs.nationalIdentity.coordinatesLongitude = coords.split(",")[1] || "";
               }
             }
 
             // Media
             if (wikiData.flagUrl) inputs.flagUrl = wikiData.flagUrl;
-            if (wikiData.coatOfArmsUrl || wikiData.coat_of_arms) inputs.coatOfArmsUrl = wikiData.coatOfArmsUrl || wikiData.coat_of_arms;
+            if (wikiData.coatOfArmsUrl || wikiData.coat_of_arms)
+              inputs.coatOfArmsUrl = wikiData.coatOfArmsUrl || wikiData.coat_of_arms;
 
             // Prepare builder state update
             const stateUpdate: Partial<typeof builderState> = {
@@ -644,7 +657,9 @@ export function useBuilderState(
 
             // Government Structure Pre-population
             if (wikiData.government_type || wikiData.head_of_state) {
-              const govType = wikiData.government_type ? normalizeGovernmentType(wikiData.government_type) : "Other";
+              const govType = wikiData.government_type
+                ? normalizeGovernmentType(wikiData.government_type)
+                : "Other";
               stateUpdate.governmentStructure = {
                 structure: {
                   governmentName: `Government of ${wikiData.name || "the Nation"}`,
@@ -671,14 +686,29 @@ export function useBuilderState(
             const economyGdp = gdpNomValue ? parseWikiNumericValue(gdpNomValue) : null;
             if (economyPop || economyGdp) {
               const totalPop = economyPop ?? 10000000;
-              const totalGdp = economyGdp ?? (inputs.coreIndicators.totalPopulation && inputs.coreIndicators.gdpPerCapita
-                ? inputs.coreIndicators.totalPopulation * inputs.coreIndicators.gdpPerCapita
-                : 1000000000);
+              const totalGdp =
+                economyGdp ??
+                (inputs.coreIndicators.totalPopulation && inputs.coreIndicators.gdpPerCapita
+                  ? inputs.coreIndicators.totalPopulation * inputs.coreIndicators.gdpPerCapita
+                  : 1000000000);
               const gdpPerCapCalc = totalPop > 0 ? totalGdp / totalPop : 25000;
-              const economicTier = gdpPerCapCalc > 50000 ? "Advanced" : gdpPerCapCalc > 20000 ? "Developed" : gdpPerCapCalc > 5000 ? "Emerging" : "Developing";
-              const urbanization = wikiData.urbanization ? parseWikiNumericValue(String(wikiData.urbanization)) : null;
-              const lifeExp = wikiData.life_expectancy ? parseWikiNumericValue(String(wikiData.life_expectancy)) : null;
-              const literacy = wikiData.literacy_rate ? parseWikiNumericValue(String(wikiData.literacy_rate)) : null;
+              const economicTier =
+                gdpPerCapCalc > 50000
+                  ? "Advanced"
+                  : gdpPerCapCalc > 20000
+                    ? "Developed"
+                    : gdpPerCapCalc > 5000
+                      ? "Emerging"
+                      : "Developing";
+              const urbanization = wikiData.urbanization
+                ? parseWikiNumericValue(String(wikiData.urbanization))
+                : null;
+              const lifeExp = wikiData.life_expectancy
+                ? parseWikiNumericValue(String(wikiData.life_expectancy))
+                : null;
+              const literacy = wikiData.literacy_rate
+                ? parseWikiNumericValue(String(wikiData.literacy_rate))
+                : null;
 
               stateUpdate.economyBuilderState = {
                 structure: {
@@ -794,11 +824,15 @@ export function useBuilderState(
             }
 
             // Load parsed departments into government structure
-            if (wikiData._importResult?.parsedDepartments?.length > 0 && stateUpdate.governmentStructure) {
+            if (
+              wikiData._importResult?.parsedDepartments?.length > 0 &&
+              stateUpdate.governmentStructure
+            ) {
               const deptInputs = wikiData._importResult.parsedDepartments.map((d: any) => ({
                 name: d.name,
                 category: d.category,
-                description: d.description || `Government ${d.category?.toLowerCase() || ""} department`,
+                description:
+                  d.description || `Government ${d.category?.toLowerCase() || ""} department`,
                 minister: d.minister,
                 ministerTitle: "Minister",
                 headquarters: "",
@@ -991,7 +1025,9 @@ export function useBuilderState(
 
     // Update government components if changed
     if (latestRefs.current.governmentComponents.length > 0) {
-      if (!isEqual(latestRefs.current.governmentComponents, lastSentGovernmentComponentsRef.current)) {
+      if (
+        !isEqual(latestRefs.current.governmentComponents, lastSentGovernmentComponentsRef.current)
+      ) {
         lastSentGovernmentComponentsRef.current = [...latestRefs.current.governmentComponents];
         unifiedBuilderService.updateGovernmentComponents(latestRefs.current.governmentComponents);
         const suggested = unifiedBuilderService.getSuggestedEconomicComponents();
@@ -1001,7 +1037,9 @@ export function useBuilderState(
 
     // Update government structure if changed
     if (latestRefs.current.governmentStructure) {
-      if (!isEqual(latestRefs.current.governmentStructure, lastSentGovernmentStructureRef.current)) {
+      if (
+        !isEqual(latestRefs.current.governmentStructure, lastSentGovernmentStructureRef.current)
+      ) {
         lastSentGovernmentStructureRef.current = latestRefs.current.governmentStructure;
         unifiedBuilderService.updateGovernmentBuilder(latestRefs.current.governmentStructure);
       }

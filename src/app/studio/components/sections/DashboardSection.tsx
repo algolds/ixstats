@@ -46,9 +46,7 @@ export function DashboardSection() {
             🌐
           </div>
           <h3 className="text-lg font-semibold text-white">Public Realms</h3>
-          <p className="mt-1 text-sm text-white/40">
-            Browse worlds published by the community.
-          </p>
+          <p className="mt-1 text-sm text-white/40">Browse worlds published by the community.</p>
         </div>
       </div>
 

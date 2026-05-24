@@ -55,7 +55,7 @@ export function ThreadListItem({
           <img
             src={authorAvatar}
             alt={authorName}
-            className="h-9 w-9 rounded-full object-cover border border-[var(--forum-border)]"
+            className="h-9 w-9 rounded-full border border-[var(--forum-border)] object-cover"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
@@ -69,12 +69,8 @@ export function ThreadListItem({
       {/* Title + Author */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          {isSticky && (
-            <Pin className="h-3 w-3 shrink-0 text-[var(--forum-accent)]" />
-          )}
-          {!isOpen && (
-            <Lock className="h-3 w-3 shrink-0 text-[var(--forum-text-dim)]" />
-          )}
+          {isSticky && <Pin className="h-3 w-3 shrink-0 text-[var(--forum-accent)]" />}
+          {!isOpen && <Lock className="h-3 w-3 shrink-0 text-[var(--forum-text-dim)]" />}
           <Link
             href={withBasePath(`/forum/thread/${threadId}`)}
             className="forum-thread-title truncate"
@@ -103,12 +99,8 @@ export function ThreadListItem({
 
       {/* Last post */}
       <div className="hidden shrink-0 text-right md:block" style={{ minWidth: "100px" }}>
-        <div className="text-xs text-[var(--forum-text-muted)]">
-          {formatTimeAgo(lastPostDate)}
-        </div>
-        <div className="text-xs text-[var(--forum-text-dim)]">
-          by {lastPostUsername}
-        </div>
+        <div className="text-xs text-[var(--forum-text-muted)]">{formatTimeAgo(lastPostDate)}</div>
+        <div className="text-xs text-[var(--forum-text-dim)]">by {lastPostUsername}</div>
       </div>
     </div>
   );

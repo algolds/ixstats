@@ -13,17 +13,61 @@ import { EnhancedCategoryBrowser } from "~/components/wikios/categories/Enhanced
 
 // Domain categories that map to IxStats data domains
 const DOMAIN_MAP: Record<string, { color: string; metric: string; description: string }> = {
-  Economy: { color: "#22c55e", metric: "gdpPerCapita", description: "Economic systems, trade, and industry across nations" },
-  Government: { color: "#6366f1", metric: "governmentType", description: "Political systems, governance, and public administration" },
-  Military: { color: "#ef4444", metric: "populationTier", description: "Armed forces, defense, and military history" },
-  People: { color: "#ec4899", metric: "population", description: "Demographics, ethnicity, language, and society" },
-  Politics: { color: "#8b5cf6", metric: "politicalStability", description: "Elections, parties, political movements, and legislation" },
-  History: { color: "#eab308", metric: "economicTier", description: "Historical events, eras, and civilizations" },
-  Geography: { color: "#14b8a6", metric: "landArea", description: "Physical geography, regions, and natural features" },
-  Culture: { color: "#a855f7", metric: "economicTier", description: "Art, music, cuisine, traditions, and cultural heritage" },
-  Technology: { color: "#06b6d4", metric: "economicTier", description: "Innovation, science, and technological development" },
-  Companies: { color: "#f97316", metric: "economicTier", description: "Businesses, corporations, and commercial enterprises" },
-  Nature: { color: "#10b981", metric: "landArea", description: "Flora, fauna, ecosystems, and the natural world" },
+  Economy: {
+    color: "#22c55e",
+    metric: "gdpPerCapita",
+    description: "Economic systems, trade, and industry across nations",
+  },
+  Government: {
+    color: "#6366f1",
+    metric: "governmentType",
+    description: "Political systems, governance, and public administration",
+  },
+  Military: {
+    color: "#ef4444",
+    metric: "populationTier",
+    description: "Armed forces, defense, and military history",
+  },
+  People: {
+    color: "#ec4899",
+    metric: "population",
+    description: "Demographics, ethnicity, language, and society",
+  },
+  Politics: {
+    color: "#8b5cf6",
+    metric: "politicalStability",
+    description: "Elections, parties, political movements, and legislation",
+  },
+  History: {
+    color: "#eab308",
+    metric: "economicTier",
+    description: "Historical events, eras, and civilizations",
+  },
+  Geography: {
+    color: "#14b8a6",
+    metric: "landArea",
+    description: "Physical geography, regions, and natural features",
+  },
+  Culture: {
+    color: "#a855f7",
+    metric: "economicTier",
+    description: "Art, music, cuisine, traditions, and cultural heritage",
+  },
+  Technology: {
+    color: "#06b6d4",
+    metric: "economicTier",
+    description: "Innovation, science, and technological development",
+  },
+  Companies: {
+    color: "#f97316",
+    metric: "economicTier",
+    description: "Businesses, corporations, and commercial enterprises",
+  },
+  Nature: {
+    color: "#10b981",
+    metric: "landArea",
+    description: "Flora, fauna, ecosystems, and the natural world",
+  },
 };
 
 export default function CategoryPage() {
@@ -50,9 +94,7 @@ export default function CategoryPage() {
 
   const matchedCountry = useMemo(() => {
     if (!countryResults || countryResults.length === 0) return null;
-    return countryResults.find(
-      (c) => c.name?.toLowerCase() === category.toLowerCase()
-    ) ?? null;
+    return countryResults.find((c) => c.name?.toLowerCase() === category.toLowerCase()) ?? null;
   }, [countryResults, category]);
 
   const subcategories = subcatData?.members ?? [];
@@ -66,11 +108,7 @@ export default function CategoryPage() {
           <div className="wikios-loading-spinner" />
         </div>
       ) : matchedCountry ? (
-        <CountryPortal
-          country={matchedCountry}
-          subcategories={subcategories}
-          pages={pages}
-        />
+        <CountryPortal country={matchedCountry} subcategories={subcategories} pages={pages} />
       ) : domainMeta ? (
         <DomainPortal
           domain={category}
@@ -79,11 +117,7 @@ export default function CategoryPage() {
           pages={pages}
         />
       ) : (
-        <EnhancedCategoryBrowser
-          category={category}
-          subcategories={subcategories}
-          pages={pages}
-        />
+        <EnhancedCategoryBrowser category={category} subcategories={subcategories} pages={pages} />
       )}
     </WikiOSLayout>
   );

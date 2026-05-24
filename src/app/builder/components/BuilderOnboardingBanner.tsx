@@ -28,7 +28,8 @@ const SECTION_TIPS: Record<BuilderSection, { title: string; description: string 
     },
     {
       title: "Import from Wiki",
-      description: "Already have a nation on IxWiki or IIWiki? Import your data to get started faster.",
+      description:
+        "Already have a nation on IxWiki or IIWiki? Import your data to get started faster.",
     },
   ],
   identity: [
@@ -70,7 +71,8 @@ const SECTION_TIPS: Record<BuilderSection, { title: string; description: string 
     },
     {
       title: "Define Budget Priorities",
-      description: "Allocate government spending across sectors like military, education, and infrastructure.",
+      description:
+        "Allocate government spending across sectors like military, education, and infrastructure.",
     },
   ],
   preview: [
@@ -103,7 +105,11 @@ const SECTION_TIPS: Record<BuilderSection, { title: string; description: string 
   ],
 };
 
-export function BuilderOnboardingBanner({ onOpenImport, className, activeSection }: BuilderOnboardingBannerProps) {
+export function BuilderOnboardingBanner({
+  onOpenImport,
+  className,
+  activeSection,
+}: BuilderOnboardingBannerProps) {
   const [isDismissed, setIsDismissed] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -129,7 +135,7 @@ export function BuilderOnboardingBanner({ onOpenImport, className, activeSection
       <button
         onClick={handleReset}
         className={cn(
-          "mb-4 flex items-center gap-2 text-xs text-muted-foreground hover:text-amber-500 transition-colors",
+          "text-muted-foreground mb-4 flex items-center gap-2 text-xs transition-colors hover:text-amber-500",
           className
         )}
       >
@@ -157,8 +163,8 @@ export function BuilderOnboardingBanner({ onOpenImport, className, activeSection
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Getting Started Tips</h3>
-              <p className="text-xs text-muted-foreground">
+              <h3 className="text-foreground text-sm font-semibold">Getting Started Tips</h3>
+              <p className="text-muted-foreground text-xs">
                 {activeSection === "import"
                   ? "Import your nation data from a wiki"
                   : `Tips for building your ${activeSection}`}
@@ -171,7 +177,7 @@ export function BuilderOnboardingBanner({ onOpenImport, className, activeSection
                 variant="ghost"
                 size="sm"
                 onClick={onOpenImport}
-                className="text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
+                className="text-xs text-amber-600 hover:bg-amber-500/10 hover:text-amber-700"
               >
                 <Upload className="mr-1.5 h-3.5 w-3.5" />
                 Import from Wiki
@@ -181,7 +187,7 @@ export function BuilderOnboardingBanner({ onOpenImport, className, activeSection
               variant="ghost"
               size="icon"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground h-7 w-7"
             >
               {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
@@ -189,7 +195,7 @@ export function BuilderOnboardingBanner({ onOpenImport, className, activeSection
               variant="ghost"
               size="icon"
               onClick={handleDismiss}
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground h-7 w-7"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -206,7 +212,7 @@ export function BuilderOnboardingBanner({ onOpenImport, className, activeSection
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="border-t border-amber-500/20 px-4 pb-4 pt-3">
+              <div className="border-t border-amber-500/20 px-4 pt-3 pb-4">
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   {tips.map((tip, index) => (
                     <motion.div
@@ -220,9 +226,9 @@ export function BuilderOnboardingBanner({ onOpenImport, className, activeSection
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-xs font-bold text-amber-600">
                           {index + 1}
                         </div>
-                        <span className="text-xs font-medium text-foreground">{tip.title}</span>
+                        <span className="text-foreground text-xs font-medium">{tip.title}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{tip.description}</p>
+                      <p className="text-muted-foreground text-xs">{tip.description}</p>
                     </motion.div>
                   ))}
                 </div>

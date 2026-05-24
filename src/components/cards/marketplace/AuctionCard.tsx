@@ -59,20 +59,15 @@ export const AuctionCard = memo<AuctionCardProps>(
       >
         {/* Featured badge */}
         {auction.isFeatured && !hasEnded && (
-          <div className="absolute right-3 top-3 z-10 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
+          <div className="absolute top-3 right-3 z-10 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
             FEATURED
           </div>
         )}
 
         {/* Express badge */}
         {auction.isExpress && !hasEnded && (
-          <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-blue-500/20 border border-blue-500/30 px-2 py-1 text-xs font-bold text-blue-400 backdrop-blur-sm">
-            <svg
-              className="h-3 w-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/20 px-2 py-1 text-xs font-bold text-blue-400 backdrop-blur-sm">
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -86,23 +81,14 @@ export const AuctionCard = memo<AuctionCardProps>(
 
         {/* Card preview */}
         <div className="p-4">
-          <CardDisplay
-            card={auction.cardInstance}
-            size="medium"
-            showStatsOnHover={true}
-          />
+          <CardDisplay card={auction.cardInstance} size="medium" showStatsOnHover={true} />
         </div>
 
         {/* Auction info */}
         <div className="space-y-3 border-t border-white/10 p-4">
           {/* Seller info */}
           <div className="flex items-center gap-2 text-sm text-gray-400">
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -117,9 +103,7 @@ export const AuctionCard = memo<AuctionCardProps>(
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-400">Current Bid</p>
-              <p className="text-2xl font-bold text-white">
-                {formatCredits(auction.currentBid)}
-              </p>
+              <p className="text-2xl font-bold text-white">{formatCredits(auction.currentBid)}</p>
               {auction.bidCount > 0 && (
                 <p className="text-xs text-gray-400">
                   {auction.bidCount} bid{auction.bidCount !== 1 ? "s" : ""}
@@ -139,20 +123,12 @@ export const AuctionCard = memo<AuctionCardProps>(
           </div>
 
           {/* Countdown timer */}
-          <AuctionCountdown
-            endTime={auction.endTime}
-            className="w-full justify-center"
-          />
+          <AuctionCountdown endTime={auction.endTime} className="w-full justify-center" />
 
           {/* Current bidder indicator */}
           {isCurrentBidder && !hasEnded && (
-            <div className="flex items-center gap-2 rounded-lg bg-blue-500/10 border border-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400">
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+            <div className="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -166,7 +142,7 @@ export const AuctionCard = memo<AuctionCardProps>(
 
           {/* Action buttons */}
           {!hasEnded && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 onClick={() => onBid(auction.id)}
                 className={cn(
@@ -195,7 +171,7 @@ export const AuctionCard = memo<AuctionCardProps>(
 
           {/* Ended state */}
           {hasEnded && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 text-center text-sm font-medium text-red-400">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-center text-sm font-medium text-red-400">
               Auction Ended
             </div>
           )}

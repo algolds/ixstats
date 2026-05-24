@@ -41,8 +41,8 @@ interface FoundationFiltersPanelProps {
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
   "economy-size": TrendingUp,
-  "region": Globe,
-  "government": Building2,
+  region: Globe,
+  government: Building2,
 };
 
 const STORAGE_KEY = "builder_filters_panel_collapsed";
@@ -127,7 +127,7 @@ export function FoundationFiltersPanel({
     <>
       <div
         className={cn(
-          "mb-4 overflow-hidden rounded-xl border border-border bg-card/60 backdrop-blur-md transition-all duration-300",
+          "border-border bg-card/60 mb-4 overflow-hidden rounded-xl border backdrop-blur-md transition-all duration-300",
           className
         )}
       >
@@ -136,7 +136,7 @@ export function FoundationFiltersPanel({
           <div className="flex items-center justify-between gap-3 p-3">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-emerald-500" />
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-muted-foreground text-sm font-medium">
                 {hasFilters ? (
                   <>
                     Showing {filteredCount} of {totalCountries} countries
@@ -159,7 +159,7 @@ export function FoundationFiltersPanel({
                   </span>
                 ))}
                 {selectedArchetypeNames.length > 3 && (
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                  <span className="text-muted-foreground shrink-0 text-xs">
                     +{selectedArchetypeNames.length - 3} more
                   </span>
                 )}
@@ -172,7 +172,7 @@ export function FoundationFiltersPanel({
                   variant="ghost"
                   size="sm"
                   onClick={handleClearAll}
-                  className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground h-7 text-xs"
                 >
                   Clear
                 </Button>
@@ -186,12 +186,7 @@ export function FoundationFiltersPanel({
                 <Sparkles className="h-3 w-3" />
                 Start Fresh
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleToggleExpand}
-                className="h-7 w-7"
-              >
+              <Button variant="ghost" size="icon" onClick={handleToggleExpand} className="h-7 w-7">
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </div>
@@ -208,11 +203,11 @@ export function FoundationFiltersPanel({
               transition={{ duration: 0.2 }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+              <div className="border-border/50 flex items-center justify-between border-b px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-emerald-500" />
                   <span className="text-sm font-semibold">Quick Filters</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     ({filteredCount} of {totalCountries} countries)
                   </span>
                 </div>
@@ -222,7 +217,7 @@ export function FoundationFiltersPanel({
                       variant="ghost"
                       size="sm"
                       onClick={handleClearAll}
-                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground h-7 text-xs"
                     >
                       Clear All
                     </Button>
@@ -247,18 +242,14 @@ export function FoundationFiltersPanel({
                   return (
                     <div key={category.id} className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <CategoryIcon
-                          className={cn("h-4 w-4", category.color)}
-                        />
-                        <span className="text-xs font-medium text-muted-foreground">
+                        <CategoryIcon className={cn("h-4 w-4", category.color)} />
+                        <span className="text-muted-foreground text-xs font-medium">
                           {category.name}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {categoryArchetypes.map((archetype) => {
-                          const isSelected = selectedArchetypes.includes(
-                            archetype.id
-                          );
+                          const isSelected = selectedArchetypes.includes(archetype.id);
                           const Icon = archetype.icon;
 
                           return (
@@ -269,14 +260,12 @@ export function FoundationFiltersPanel({
                                 "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150",
                                 isSelected
                                   ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-                                  : "border-border bg-muted/50 text-muted-foreground hover:border-emerald-500/30 hover:bg-emerald-500/10 hover:text-foreground"
+                                  : "border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:border-emerald-500/30 hover:bg-emerald-500/10"
                               )}
                             >
                               <Icon className="h-3 w-3" />
                               {archetype.name}
-                              {isSelected && (
-                                <X className="h-3 w-3 opacity-60" />
-                              )}
+                              {isSelected && <X className="h-3 w-3 opacity-60" />}
                             </button>
                           );
                         })}
@@ -286,7 +275,7 @@ export function FoundationFiltersPanel({
                 })}
 
                 {/* Start from Scratch */}
-                <div className="border-t border-border/50 pt-4">
+                <div className="border-border/50 border-t pt-4">
                   <button
                     onClick={handleStartFromScratch}
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:from-emerald-600 hover:to-teal-600 hover:shadow-emerald-500/30"
@@ -310,16 +299,12 @@ export function FoundationFiltersPanel({
               Start with a blank slate?
             </DialogTitle>
             <DialogDescription>
-              You'll create your nation entirely from scratch with no pre-filled
-              data. You can always come back to Foundation later if you change
-              your mind.
+              You'll create your nation entirely from scratch with no pre-filled data. You can
+              always come back to Foundation later if you change your mind.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
               Cancel
             </Button>
             <Button

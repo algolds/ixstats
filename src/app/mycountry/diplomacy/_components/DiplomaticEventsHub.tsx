@@ -173,12 +173,16 @@ function EventCountdown({ expiresAt }: { expiresAt: string | Date }) {
 }
 
 // Impact preview component
-function ImpactPreview({ impact }: { impact: { relationship?: number; economic?: number; cultural?: number } }) {
+function ImpactPreview({
+  impact,
+}: {
+  impact: { relationship?: number; economic?: number; cultural?: number };
+}) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
       {impact.relationship !== undefined && (
-        <div className="text-center p-3 rounded-lg bg-muted/50">
-          <div className="flex items-center justify-center gap-1 mb-1">
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <div className="mb-1 flex items-center justify-center gap-1">
             {impact.relationship > 0 ? (
               <TrendingUp className="h-4 w-4 text-green-600" />
             ) : (
@@ -194,49 +198,43 @@ function ImpactPreview({ impact }: { impact: { relationship?: number; economic?:
               {impact.relationship}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">Relationship</p>
+          <p className="text-muted-foreground text-xs">Relationship</p>
         </div>
       )}
       {impact.economic !== undefined && (
-        <div className="text-center p-3 rounded-lg bg-muted/50">
-          <div className="flex items-center justify-center gap-1 mb-1">
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <div className="mb-1 flex items-center justify-center gap-1">
             {impact.economic > 0 ? (
               <TrendingUp className="h-4 w-4 text-green-600" />
             ) : (
               <TrendingDown className="h-4 w-4 text-red-600" />
             )}
             <span
-              className={cn(
-                "font-bold",
-                impact.economic > 0 ? "text-green-600" : "text-red-600"
-              )}
+              className={cn("font-bold", impact.economic > 0 ? "text-green-600" : "text-red-600")}
             >
               {impact.economic > 0 ? "+" : ""}
               {impact.economic}%
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">Economic</p>
+          <p className="text-muted-foreground text-xs">Economic</p>
         </div>
       )}
       {impact.cultural !== undefined && (
-        <div className="text-center p-3 rounded-lg bg-muted/50">
-          <div className="flex items-center justify-center gap-1 mb-1">
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <div className="mb-1 flex items-center justify-center gap-1">
             {impact.cultural > 0 ? (
               <TrendingUp className="h-4 w-4 text-green-600" />
             ) : (
               <TrendingDown className="h-4 w-4 text-red-600" />
             )}
             <span
-              className={cn(
-                "font-bold",
-                impact.cultural > 0 ? "text-green-600" : "text-red-600"
-              )}
+              className={cn("font-bold", impact.cultural > 0 ? "text-green-600" : "text-red-600")}
             >
               {impact.cultural > 0 ? "+" : ""}
               {impact.cultural}%
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">Cultural</p>
+          <p className="text-muted-foreground text-xs">Cultural</p>
         </div>
       )}
     </div>
@@ -250,12 +248,15 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
   const [historyFilter, setHistoryFilter] = useState<string>("all");
 
   // Fetch active scenarios
-  const { data: activeData, isLoading: activeLoading, refetch: refetchActive } =
-    api.diplomaticScenarios.getAllScenarios.useQuery({
-      isActive: true,
-      country1Id: countryId,
-      limit: 50,
-    });
+  const {
+    data: activeData,
+    isLoading: activeLoading,
+    refetch: refetchActive,
+  } = api.diplomaticScenarios.getAllScenarios.useQuery({
+    isActive: true,
+    country1Id: countryId,
+    limit: 50,
+  });
 
   // Fetch scenario history (completed/expired)
   const { data: historyData, isLoading: historyLoading } =
@@ -294,20 +295,26 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
     let selectedOption = responseOptions[0]; // Default to first option
 
     if (action === "accept") {
-      selectedOption = responseOptions.find((opt: any) =>
-        opt.label?.toLowerCase().includes("accept") ||
-        opt.label?.toLowerCase().includes("agree")
-      ) || responseOptions[0];
+      selectedOption =
+        responseOptions.find(
+          (opt: any) =>
+            opt.label?.toLowerCase().includes("accept") ||
+            opt.label?.toLowerCase().includes("agree")
+        ) || responseOptions[0];
     } else if (action === "reject") {
-      selectedOption = responseOptions.find((opt: any) =>
-        opt.label?.toLowerCase().includes("reject") ||
-        opt.label?.toLowerCase().includes("decline")
-      ) || responseOptions[1];
+      selectedOption =
+        responseOptions.find(
+          (opt: any) =>
+            opt.label?.toLowerCase().includes("reject") ||
+            opt.label?.toLowerCase().includes("decline")
+        ) || responseOptions[1];
     } else if (action === "negotiate") {
-      selectedOption = responseOptions.find((opt: any) =>
-        opt.label?.toLowerCase().includes("negotiate") ||
-        opt.label?.toLowerCase().includes("counter")
-      ) || responseOptions[2];
+      selectedOption =
+        responseOptions.find(
+          (opt: any) =>
+            opt.label?.toLowerCase().includes("negotiate") ||
+            opt.label?.toLowerCase().includes("counter")
+        ) || responseOptions[2];
     }
 
     respondMutation.mutate({
@@ -406,11 +413,14 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                 };
 
                 return (
-                  <Card key={event.id} className="glass-hierarchy-child hover:shadow-lg transition-shadow">
+                  <Card
+                    key={event.id}
+                    className="glass-hierarchy-child transition-shadow hover:shadow-lg"
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="mb-2 flex items-center gap-2">
                             <Badge className={eventConfig.color}>
                               {eventConfig.icon}
                               <span className="ml-1">{eventConfig.label}</span>
@@ -419,7 +429,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                           </div>
                           <CardTitle className="text-lg">{event.title}</CardTitle>
                           {event.country2Name && (
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-muted-foreground mt-1 text-sm">
                               with {event.country2Name}
                             </p>
                           )}
@@ -427,14 +437,14 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                      <p className="text-muted-foreground mb-4 line-clamp-3 text-sm">
                         {event.description}
                       </p>
 
                       {/* Quick Impact Preview */}
                       {event.responseOptions && event.responseOptions.length > 0 && (
                         <div className="mb-4">
-                          <p className="text-xs font-semibold mb-2">Potential Impacts:</p>
+                          <p className="mb-2 text-xs font-semibold">Potential Impacts:</p>
                           <ImpactPreview
                             impact={{
                               relationship: event.responseOptions[0]?.relationshipEffect || 0,
@@ -453,7 +463,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                           className="flex-1"
                           onClick={() => openResponseDialog(event)}
                         >
-                          <Eye className="h-4 w-4 mr-2" />
+                          <Eye className="mr-2 h-4 w-4" />
                           View & Respond
                         </Button>
                       </div>
@@ -465,11 +475,11 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
           ) : (
             <Card className="glass-hierarchy-child">
               <CardContent className="flex min-h-[300px] items-center justify-center">
-                <div className="text-center space-y-4">
+                <div className="space-y-4 text-center">
                   <CheckCircle className="mx-auto h-16 w-16 text-green-600 opacity-50" />
                   <div>
                     <h3 className="text-lg font-semibold">No Active Events</h3>
-                    <p className="text-muted-foreground text-sm mt-2">
+                    <p className="text-muted-foreground mt-2 text-sm">
                       You're all caught up! New diplomatic events will appear here.
                     </p>
                   </div>
@@ -483,7 +493,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
         <TabsContent value="history" className="space-y-4">
           {/* History Filter */}
           <div className="flex items-center gap-3">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Filter className="text-muted-foreground h-4 w-4" />
             <Select value={historyFilter} onValueChange={setHistoryFilter}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by type" />
@@ -497,15 +507,13 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                 <SelectItem value="treaty_renewal">Treaty Renewals</SelectItem>
               </SelectContent>
             </Select>
-            <Badge variant="outline">
-              {filteredHistory.length} events
-            </Badge>
+            <Badge variant="outline">{filteredHistory.length} events</Badge>
           </div>
 
           {/* History List */}
           {historyLoading ? (
             <div className="flex items-center justify-center py-12">
-              <History className="h-8 w-8 animate-pulse text-muted-foreground" />
+              <History className="text-muted-foreground h-8 w-8 animate-pulse" />
             </div>
           ) : filteredHistory.length > 0 ? (
             <div className="space-y-3">
@@ -521,7 +529,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="mb-2 flex items-center gap-2">
                             <Badge variant="outline" className={eventConfig.color}>
                               {eventConfig.icon}
                               <span className="ml-1 text-xs">{eventConfig.label}</span>
@@ -530,14 +538,14 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
                               {event.status}
                             </Badge>
                           </div>
-                          <h4 className="font-semibold text-sm">{event.title}</h4>
+                          <h4 className="text-sm font-semibold">{event.title}</h4>
                           {event.country2Name && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               with {event.country2Name}
                             </p>
                           )}
                         </div>
-                        <div className="text-right text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-right text-xs">
                           {new Date(event.updatedAt).toLocaleDateString()}
                         </div>
                       </div>
@@ -549,8 +557,8 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
           ) : (
             <Card className="glass-hierarchy-child">
               <CardContent className="flex min-h-[200px] items-center justify-center">
-                <div className="text-center space-y-2">
-                  <History className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+                <div className="space-y-2 text-center">
+                  <History className="text-muted-foreground mx-auto h-12 w-12 opacity-50" />
                   <p className="text-muted-foreground text-sm">No event history found</p>
                 </div>
               </CardContent>
@@ -576,24 +584,24 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
             <div className="space-y-6">
               {/* Event Details */}
               <div>
-                <h4 className="font-semibold mb-2">Situation</h4>
-                <p className="text-sm text-muted-foreground">{selectedEvent.description}</p>
+                <h4 className="mb-2 font-semibold">Situation</h4>
+                <p className="text-muted-foreground text-sm">{selectedEvent.description}</p>
               </div>
 
               {/* Response Options */}
               {selectedEvent.responseOptions && selectedEvent.responseOptions.length > 0 && (
                 <div>
-                  <h4 className="font-semibold mb-3">Response Options</h4>
+                  <h4 className="mb-3 font-semibold">Response Options</h4>
                   <div className="space-y-3">
                     {selectedEvent.responseOptions.map((option: any, idx: number) => (
-                      <div key={idx} className="p-4 rounded-lg border bg-muted/30">
-                        <div className="flex items-start justify-between mb-2">
+                      <div key={idx} className="bg-muted/30 rounded-lg border p-4">
+                        <div className="mb-2 flex items-start justify-between">
                           <h5 className="font-medium">{option.label || `Option ${idx + 1}`}</h5>
                           <Badge variant="outline" className="text-xs">
                             {option.difficulty || "moderate"}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3">
+                        <p className="text-muted-foreground mb-3 text-sm">
                           {option.description || "No description available"}
                         </p>
                         <ImpactPreview
@@ -624,7 +632,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
               onClick={() => handleResponse("reject")}
               disabled={respondMutation.isPending}
             >
-              <XCircle className="h-4 w-4 mr-2" />
+              <XCircle className="mr-2 h-4 w-4" />
               Reject
             </Button>
             <Button
@@ -632,7 +640,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
               onClick={() => handleResponse("negotiate")}
               disabled={respondMutation.isPending}
             >
-              <MessageSquare className="h-4 w-4 mr-2" />
+              <MessageSquare className="mr-2 h-4 w-4" />
               Negotiate
             </Button>
             <Button
@@ -640,7 +648,7 @@ export function DiplomaticEventsHub({ countryId, countryName }: DiplomaticEvents
               onClick={() => handleResponse("accept")}
               disabled={respondMutation.isPending}
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <CheckCircle className="mr-2 h-4 w-4" />
               Accept
             </Button>
           </DialogFooter>

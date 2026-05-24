@@ -231,8 +231,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
       <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
         <DialogContent
           className={cn(
-            "glass-modal max-w-[95vw] sm:max-w-4xl lg:max-w-6xl p-0",
-            "w-[98vw] max-h-[90vh] overflow-hidden"
+            "glass-modal max-w-[95vw] p-0 sm:max-w-4xl lg:max-w-6xl",
+            "max-h-[90vh] w-[98vw] overflow-hidden"
           )}
         >
           {/* Close button */}
@@ -243,12 +243,12 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
           <div className="flex h-full flex-col overflow-auto p-4 sm:p-6">
             {/* Header */}
             <DialogHeader className="mb-4">
-              <DialogTitle className="flex items-center gap-3 text-xl sm:text-2xl font-bold text-white">
+              <DialogTitle className="flex items-center gap-3 text-xl font-bold text-white sm:text-2xl">
                 <ArrowRightLeft className="h-6 w-6 text-blue-400" />
                 Create Trade Offer
               </DialogTitle>
               {recipientName && (
-                <p className="text-sm text-white/60 mt-1">Trading with {recipientName}</p>
+                <p className="mt-1 text-sm text-white/60">Trading with {recipientName}</p>
               )}
             </DialogHeader>
 
@@ -265,7 +265,12 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                         : "glass-hierarchy-child text-white/60 hover:text-white/80"
                     )}
                   >
-                    {idx + 1}. {s === "your-cards" ? "Your Cards" : s === "their-cards" ? "Their Cards" : "Review"}
+                    {idx + 1}.{" "}
+                    {s === "your-cards"
+                      ? "Your Cards"
+                      : s === "their-cards"
+                        ? "Their Cards"
+                        : "Review"}
                   </button>
                   {idx < 2 && <div className="h-0.5 w-8 bg-white/20" />}
                 </React.Fragment>
@@ -284,7 +289,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     <p className="text-sm text-white/60">Click cards to select/deselect</p>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {yourCards.map((card) => {
                       const isSelected = selectedYourCards.includes(card.id);
                       return (
@@ -294,13 +299,13 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                           whileTap={{ scale: 0.95 }}
                           onClick={() => toggleYourCard(card.id)}
                           className={cn(
-                            "relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
+                            "relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
                             isSelected
                               ? "border-blue-400 ring-2 ring-blue-400/50"
                               : "border-white/20 hover:border-white/40"
                           )}
                         >
-                          <div className="aspect-[2.5/3.5] relative">
+                          <div className="relative aspect-[2.5/3.5]">
                             <CardHolographicCover
                               cardType={card.cardType}
                               rarity={card.rarity}
@@ -313,11 +318,13 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               fill
                               className="object-cover"
                               unoptimized
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
                             />
                           </div>
                           {isSelected && (
-                            <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                            <div className="absolute inset-0 flex items-center justify-center bg-blue-500/20">
                               <div className="rounded-full bg-blue-500 p-2">
                                 <svg
                                   className="h-6 w-6 text-white"
@@ -335,16 +342,18 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               </div>
                             </div>
                           )}
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                            <p className="text-xs font-medium text-white truncate">{card.title}</p>
-                            <p className="text-xs text-white/60">{card.marketValue.toLocaleString()} credits</p>
+                          <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                            <p className="truncate text-xs font-medium text-white">{card.title}</p>
+                            <p className="text-xs text-white/60">
+                              {card.marketValue.toLocaleString()} credits
+                            </p>
                           </div>
                         </motion.div>
                       );
                     })}
                   </div>
 
-                  <div className="flex justify-between items-center pt-4">
+                  <div className="flex items-center justify-between pt-4">
                     <div className="glass-hierarchy-child rounded-lg px-4 py-2">
                       <p className="text-sm text-white/60">Total Value</p>
                       <p className="text-lg font-bold text-white">
@@ -367,18 +376,18 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                 <div className="space-y-4">
                   {!searchRecipient ? (
                     <div className="glass-hierarchy-child rounded-lg p-6 text-center">
-                      <AlertCircle className="mx-auto h-12 w-12 text-amber-400 mb-3" />
-                      <h3 className="text-lg font-semibold text-white mb-2">
+                      <AlertCircle className="mx-auto mb-3 h-12 w-12 text-amber-400" />
+                      <h3 className="mb-2 text-lg font-semibold text-white">
                         Select a Trading Partner
                       </h3>
-                      <p className="text-sm text-white/60 mb-4">
+                      <p className="mb-4 text-sm text-white/60">
                         Enter the user ID of the person you want to trade with
                       </p>
                       <Input
                         placeholder="User ID (e.g., user_abc123)"
                         value={searchRecipient}
                         onChange={(e) => setSearchRecipient(e.target.value)}
-                        className="max-w-md mx-auto"
+                        className="mx-auto max-w-md"
                       />
                     </div>
                   ) : (
@@ -390,7 +399,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                         <p className="text-sm text-white/60">Click cards to select/deselect</p>
                       </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                         {theirCards.map((card) => {
                           const isSelected = selectedTheirCards.includes(card.id);
                           return (
@@ -400,13 +409,13 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                               whileTap={{ scale: 0.95 }}
                               onClick={() => toggleTheirCard(card.id)}
                               className={cn(
-                                "relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
+                                "relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
                                 isSelected
                                   ? "border-green-400 ring-2 ring-green-400/50"
                                   : "border-white/20 hover:border-white/40"
                               )}
                             >
-                              <div className="aspect-[2.5/3.5] relative">
+                              <div className="relative aspect-[2.5/3.5]">
                                 <CardHolographicCover
                                   cardType={card.cardType}
                                   rarity={card.rarity}
@@ -419,11 +428,13 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                   fill
                                   className="object-cover"
                                   unoptimized
-                                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                  }}
                                 />
                               </div>
                               {isSelected && (
-                                <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
+                                <div className="absolute inset-0 flex items-center justify-center bg-green-500/20">
                                   <div className="rounded-full bg-green-500 p-2">
                                     <svg
                                       className="h-6 w-6 text-white"
@@ -441,16 +452,20 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                   </div>
                                 </div>
                               )}
-                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                <p className="text-xs font-medium text-white truncate">{card.title}</p>
-                                <p className="text-xs text-white/60">{card.marketValue.toLocaleString()} credits</p>
+                              <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                <p className="truncate text-xs font-medium text-white">
+                                  {card.title}
+                                </p>
+                                <p className="text-xs text-white/60">
+                                  {card.marketValue.toLocaleString()} credits
+                                </p>
                               </div>
                             </motion.div>
                           );
                         })}
                       </div>
 
-                      <div className="flex justify-between items-center pt-4">
+                      <div className="flex items-center justify-between pt-4">
                         <Button
                           onClick={() => setStep("your-cards")}
                           variant="outline"
@@ -481,7 +496,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
               {step === "review" && (
                 <div className="space-y-4">
                   {/* Trade summary */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {/* Your side */}
                     <div className="glass-hierarchy-child rounded-lg p-4">
                       <h3 className="mb-3 text-lg font-semibold text-blue-400">You Offer</h3>
@@ -500,7 +515,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                             className="w-full"
                           />
                         </div>
-                        <div className="pt-2 border-t border-white/10">
+                        <div className="border-t border-white/10 pt-2">
                           <p className="text-sm text-white/60">Total Value</p>
                           <p className="text-xl font-bold text-white">
                             {yourValue.toLocaleString()} credits
@@ -514,7 +529,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       <h3 className="mb-3 text-lg font-semibold text-green-400">You Receive</h3>
                       <div className="space-y-2">
                         <p className="text-sm text-white/80">
-                          {selectedTheirCards.length} card{selectedTheirCards.length !== 1 ? "s" : ""}
+                          {selectedTheirCards.length} card
+                          {selectedTheirCards.length !== 1 ? "s" : ""}
                         </p>
                         <div className="flex items-center gap-2">
                           <Coins className="h-4 w-4 text-amber-400" />
@@ -527,7 +543,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                             className="w-full"
                           />
                         </div>
-                        <div className="pt-2 border-t border-white/10">
+                        <div className="border-t border-white/10 pt-2">
                           <p className="text-sm text-white/60">Total Value</p>
                           <p className="text-xl font-bold text-white">
                             {theirValue.toLocaleString()} credits
@@ -548,13 +564,25 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       {fairTrade ? (
                         <>
                           <div className="rounded-full bg-green-500/20 p-2">
-                            <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            <svg
+                              className="h-5 w-5 text-green-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
                             </svg>
                           </div>
                           <div>
                             <p className="font-medium text-green-400">Fair Trade</p>
-                            <p className="text-xs text-white/60">Values are within 20% of each other</p>
+                            <p className="text-xs text-white/60">
+                              Values are within 20% of each other
+                            </p>
                           </div>
                         </>
                       ) : (
@@ -573,7 +601,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
                   {/* Message */}
                   <div className="glass-hierarchy-child rounded-lg p-4">
-                    <label className="block text-sm font-medium text-white/80 mb-2">
+                    <label className="mb-2 block text-sm font-medium text-white/80">
                       Trade Message (Optional)
                     </label>
                     <Textarea
@@ -584,13 +612,13 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       rows={3}
                       className="w-full"
                     />
-                    <p className="mt-1 text-xs text-white/40 text-right">
+                    <p className="mt-1 text-right text-xs text-white/40">
                       {message.length}/500 characters
                     </p>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex justify-between items-center pt-4">
+                  <div className="flex items-center justify-between pt-4">
                     <Button
                       onClick={() => setStep("their-cards")}
                       variant="outline"

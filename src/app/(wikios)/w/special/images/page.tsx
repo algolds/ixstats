@@ -43,7 +43,12 @@ export default function ImagesPage() {
   const [catOffset, setCatOffset] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    []
+  );
 
   const handleSearch = useCallback((val: string) => {
     setSearchQuery(val);
@@ -89,9 +94,7 @@ export default function ImagesPage() {
 
   useEffect(() => {
     if (catData?.images && isBrowseMode) {
-      setAllImages((prev) =>
-        catOffset === 0 ? catData.images : [...prev, ...catData.images]
-      );
+      setAllImages((prev) => (catOffset === 0 ? catData.images : [...prev, ...catData.images]));
     }
   }, [catData, catOffset, isBrowseMode]);
 
@@ -156,11 +159,17 @@ export default function ImagesPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search images... e.g. &quot;medieval castle&quot;, &quot;15th century portrait&quot;"
+                placeholder='Search images... e.g. "medieval castle", "15th century portrait"'
                 className="wikios-commons-search-input"
               />
               {searchQuery && (
-                <button onClick={() => { handleSearch(""); setAllImages([]); }} className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]">
+                <button
+                  onClick={() => {
+                    handleSearch("");
+                    setAllImages([]);
+                  }}
+                  className="text-[var(--wikios-text-dim)] hover:text-[var(--wikios-text)]"
+                >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
@@ -189,7 +198,12 @@ export default function ImagesPage() {
           <div className="wikios-commons-chips">
             <span className="wikios-commons-chip wikios-commons-chip--browse">
               Browsing: {browsingCategory}
-              <button onClick={() => { setBrowsingCategory(null); setAllImages([]); }}>
+              <button
+                onClick={() => {
+                  setBrowsingCategory(null);
+                  setAllImages([]);
+                }}
+              >
                 <X className="h-3 w-3" />
               </button>
             </span>
@@ -198,7 +212,9 @@ export default function ImagesPage() {
 
         {/* Main panels */}
         {tab === "commons" ? (
-          <div className={`wikios-commons-panels ${selectedImage ? "wikios-commons-panels--detail" : ""}`}>
+          <div
+            className={`wikios-commons-panels ${selectedImage ? "wikios-commons-panels--detail" : ""}`}
+          >
             <CommonsCategoryBrowser
               activeCategories={activeCategories}
               onToggleCategory={handleToggleCategory}
@@ -214,10 +230,7 @@ export default function ImagesPage() {
               totalHits={searchData?.totalHits}
             />
             {selectedImage && (
-              <CommonsDetailPanel
-                image={selectedImage}
-                onClose={() => setSelectedImage(null)}
-              />
+              <CommonsDetailPanel image={selectedImage} onClose={() => setSelectedImage(null)} />
             )}
           </div>
         ) : (

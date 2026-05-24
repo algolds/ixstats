@@ -1,6 +1,18 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Globe, Sparkles, Database, Users, DollarSign, MapPin, Building, Crown, CheckCircle2, Loader2, ArrowRight } from "lucide-react";
+import {
+  Globe,
+  Sparkles,
+  Database,
+  Users,
+  DollarSign,
+  MapPin,
+  Building,
+  Crown,
+  CheckCircle2,
+  Loader2,
+  ArrowRight,
+} from "lucide-react";
 
 interface WikiSite {
   name: string;
@@ -86,7 +98,10 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
           >
             <div className="mb-2 flex items-center gap-2">
               <Database className="h-4 w-4 text-amber-400" />
-              <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "var(--color-text-primary)" }}
+              >
                 What Gets Imported
               </span>
             </div>
@@ -98,7 +113,11 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
                 { icon: Building, label: "Government Type", color: "text-purple-400" },
                 { icon: Globe, label: "Flag / National Symbols", color: "text-cyan-400" },
               ].map(({ icon: Icon, label, color }) => (
-                <div key={label} className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
+                <div
+                  key={label}
+                  className="flex items-center gap-2 text-xs"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   <Icon className={`h-3 w-3 ${color}`} />
                   {label}
                 </div>
@@ -115,30 +134,48 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
           >
             <div className="mb-3 flex items-center gap-2">
               <ArrowRight className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "var(--color-text-primary)" }}
+              >
                 After Import
               </span>
             </div>
 
-            <div className="space-y-3.5 text-xs animate-fade-in" style={{ color: "var(--color-text-muted)" }}>
+            <div
+              className="animate-fade-in space-y-3.5 text-xs"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               <div>
-                <p className="font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>📊 World Baseline</p>
-                <p className="leading-relaxed pl-3 border-l border-emerald-500/30">
-                  Your imported Population and GDP are parsed to calculate starting GDP per Capita and establish your initial <span className="text-emerald-400 font-medium">Economic Tier</span>.
+                <p className="mb-1 font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  📊 World Baseline
+                </p>
+                <p className="border-l border-emerald-500/30 pl-3 leading-relaxed">
+                  Your imported Population and GDP are parsed to calculate starting GDP per Capita
+                  and establish your initial{" "}
+                  <span className="font-medium text-emerald-400">Economic Tier</span>.
                 </p>
               </div>
 
               <div>
-                <p className="font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>⚡ Dynamic Scaling</p>
-                <p className="leading-relaxed pl-3 border-l border-emerald-500/30">
-                  Workforce size scales from population demographics, which determines baseline industrial capacity, productiveness, and gross tax revenue.
+                <p className="mb-1 font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  ⚡ Dynamic Scaling
+                </p>
+                <p className="border-l border-emerald-500/30 pl-3 leading-relaxed">
+                  Workforce size scales from population demographics, which determines baseline
+                  industrial capacity, productiveness, and gross tax revenue.
                 </p>
               </div>
 
               <div>
-                <p className="font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>⚙️ Customizing Specifics</p>
-                <p className="leading-relaxed pl-3 border-l border-emerald-500/30">
-                  Proceed through the builder steps to customize details: set corporate/income taxes, configure public service funding under <span className="text-blue-400 font-medium">MyGovernment</span>, and select national policies.
+                <p className="mb-1 font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  ⚙️ Customizing Specifics
+                </p>
+                <p className="border-l border-emerald-500/30 pl-3 leading-relaxed">
+                  Proceed through the builder steps to customize details: set corporate/income
+                  taxes, configure public service funding under{" "}
+                  <span className="font-medium text-blue-400">MyGovernment</span>, and select
+                  national policies.
                 </p>
               </div>
             </div>
@@ -163,7 +200,10 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
           >
             <div className="mb-2 flex items-center gap-2">
               <Globe className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "var(--color-text-primary)" }}
+              >
                 Try searching
               </span>
             </div>
@@ -204,7 +244,10 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
               >
                 <Loader2 className="h-4 w-4" style={{ color: "var(--color-text-muted)" }} />
               </motion.div>
-              <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "var(--color-text-primary)" }}
+              >
                 Importing...
               </span>
             </div>
@@ -218,13 +261,19 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
                     style={{ borderColor: "var(--color-border-primary)" }}
                   />
                 ) : (
-                  <Globe className="h-5 w-5 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
+                  <Globe
+                    className="h-5 w-5 flex-shrink-0"
+                    style={{ color: "var(--color-text-muted)" }}
+                  />
                 )}
-                <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
                   {selectedResult?.title}
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-accent/30">
+              <div className="bg-accent/30 h-1.5 w-full overflow-hidden rounded-full">
                 <motion.div
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}
@@ -257,7 +306,10 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
           >
             <div className="mb-3 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "var(--color-text-primary)" }}
+              >
                 Data Extracted
               </span>
             </div>
@@ -277,11 +329,20 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
                   style={{ borderColor: "var(--color-border-primary)" }}
                 />
               ) : (
-                <Globe className="h-6 w-6 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
+                <Globe
+                  className="h-6 w-6 flex-shrink-0"
+                  style={{ color: "var(--color-text-muted)" }}
+                />
               )}
               <div>
-                <span className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
-                  {parsedData.common_name || parsedData.official_name || parsedData.conventional_long_name || selectedResult?.title}
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  {parsedData.common_name ||
+                    parsedData.official_name ||
+                    parsedData.conventional_long_name ||
+                    selectedResult?.title}
                 </span>
                 <div className="text-xs" style={{ color: "var(--color-text-muted)" }}>
                   From: {selectedSite.displayName}
@@ -291,36 +352,58 @@ export const ImportSidebar: React.FC<ImportSidebarProps> = ({
 
             <div className="space-y-1.5">
               {parsedData.population && (
-                <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
+                <div
+                  className="flex items-center gap-2 text-xs"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   <Users className="h-3 w-3 text-blue-400" />
                   Population: {String(parsedData.population)}
                 </div>
               )}
-              {(parsedData.gdpPerCapita || parsedData.GDP_nominal_per_capita || parsedData.GDP_PPP_per_capita) && (
-                <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
+              {(parsedData.gdpPerCapita ||
+                parsedData.GDP_nominal_per_capita ||
+                parsedData.GDP_PPP_per_capita) && (
+                <div
+                  className="flex items-center gap-2 text-xs"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   <DollarSign className="h-3 w-3 text-green-400" />
-                  GDP/Capita: {String(parsedData.gdpPerCapita || parsedData.GDP_nominal_per_capita || parsedData.GDP_PPP_per_capita)}
+                  GDP/Capita:{" "}
+                  {String(
+                    parsedData.gdpPerCapita ||
+                      parsedData.GDP_nominal_per_capita ||
+                      parsedData.GDP_PPP_per_capita
+                  )}
                 </div>
               )}
               {parsedData.capital && (
-                <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
+                <div
+                  className="flex items-center gap-2 text-xs"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   <MapPin className="h-3 w-3 text-red-400" />
                   Capital: {parsedData.capital}
                 </div>
               )}
               {(parsedData.government_type || parsedData.government) && (
-                <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
+                <div
+                  className="flex items-center gap-2 text-xs"
+                  style={{ color: "var(--color-text-muted)" }}
+                >
                   <Building className="h-3 w-3 text-purple-400" />
                   Govt: {parsedData.government_type || parsedData.government}
                 </div>
               )}
-              <div className="flex items-center gap-2 text-xs" style={{ color: "var(--color-text-muted)" }}>
+              <div
+                className="flex items-center gap-2 text-xs"
+                style={{ color: "var(--color-text-muted)" }}
+              >
                 <Database className="h-3 w-3 text-amber-400" />
                 {extractCount(parsedData)}/8 fields extracted
               </div>
             </div>
 
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-accent/30">
+            <div className="bg-accent/30 mt-3 h-1.5 w-full overflow-hidden rounded-full">
               <div
                 className="h-full rounded-full bg-green-500"
                 style={{ width: `${(extractCount(parsedData) / 8) * 100}%` }}

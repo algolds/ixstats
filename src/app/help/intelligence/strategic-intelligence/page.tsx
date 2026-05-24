@@ -44,7 +44,10 @@ export default function StrategicIntelligenceArticle() {
               <li>
                 <strong>Intelligence Feed:</strong> Strategic briefings appear in the intelligence
                 feed on your{" "}
-                <Link href="/mycountry/intelligence" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/mycountry/intelligence"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   Intelligence page
                 </Link>
                 , marked with priority indicators so you can distinguish them from routine updates.
@@ -57,7 +60,10 @@ export default function StrategicIntelligenceArticle() {
               <li>
                 <strong>Executive Dashboard:</strong> High-priority strategic findings surface on
                 your main{" "}
-                <Link href="/mycountry/intelligence" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/mycountry/intelligence"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   dashboard
                 </Link>{" "}
                 alongside daily metrics so you never miss a major development.
@@ -102,21 +108,30 @@ export default function StrategicIntelligenceArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Globe className="inline h-4 w-4" />{" "}
-              <Link href="/help/diplomacy/embassies" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/diplomacy/embassies"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Embassies &amp; Diplomacy
               </Link>{" "}
               -- understand how your diplomatic network shapes your strategic outlook.
             </li>
             <li>
               <Shield className="inline h-4 w-4" />{" "}
-              <Link href="/help/mycountry/defense" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/mycountry/defense"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 MyCountry Defense Guide
               </Link>{" "}
               -- coordinate defense decisions with your strategic intelligence.
             </li>
             <li>
               <LayoutDashboard className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/intelligence/dashboard"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Executive Intelligence Dashboard
               </Link>{" "}
               -- your daily starting point where strategic findings are highlighted.

@@ -245,22 +245,29 @@ export default function GovernmentComponentsPage() {
   const filteredComponents = useMemo(() => {
     if (!components) return [];
 
-    return components.components.filter((component: { name: string; description: string; type: string; metadata?: { complexity?: string } }) => {
-      const matchesSearch =
-        component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        component.description.toLowerCase().includes(searchTerm.toLowerCase());
+    return components.components.filter(
+      (component: {
+        name: string;
+        description: string;
+        type: string;
+        metadata?: { complexity?: string };
+      }) => {
+        const matchesSearch =
+          component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          component.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesCategory =
-        categoryFilter === "all" ||
-        COMPONENT_CATEGORIES[categoryFilter as keyof typeof COMPONENT_CATEGORIES]?.includes(
-          component.type
-        );
+        const matchesCategory =
+          categoryFilter === "all" ||
+          COMPONENT_CATEGORIES[categoryFilter as keyof typeof COMPONENT_CATEGORIES]?.includes(
+            component.type
+          );
 
-      const matchesComplexity =
-        complexityFilter === "all" || component.metadata?.complexity === complexityFilter;
+        const matchesComplexity =
+          complexityFilter === "all" || component.metadata?.complexity === complexityFilter;
 
-      return matchesSearch && matchesCategory && matchesComplexity;
-    });
+        return matchesSearch && matchesCategory && matchesComplexity;
+      }
+    );
   }, [components, searchTerm, categoryFilter, complexityFilter]);
 
   // Form data
@@ -375,9 +382,9 @@ export default function GovernmentComponentsPage() {
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="rounded-lg border border-border bg-card p-8 text-center shadow-lg">
+        <div className="border-border bg-card rounded-lg border p-8 text-center shadow-lg">
           <h1 className="mb-4 text-2xl font-bold text-red-600">Access Denied</h1>
-          <p className="mb-6 text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             You do not have permission to view this page.
           </p>
         </div>
@@ -436,7 +443,7 @@ export default function GovernmentComponentsPage() {
 
           {/* Category Tabs */}
           <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="mb-4">
-            <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2 scrollbar-hide">
+            <TabsList className="scrollbar-hide flex gap-2 overflow-x-auto border-b border-white/10 pb-2">
               <TabsTrigger value="all">All</TabsTrigger>
               {Object.keys(COMPONENT_CATEGORIES).map((category) => (
                 <TabsTrigger key={category} value={category}>
@@ -494,9 +501,7 @@ export default function GovernmentComponentsPage() {
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Active Components</p>
-              <p className="mt-2 text-3xl font-bold text-[--intel-gold]">
-                {stats.summary.active}
-              </p>
+              <p className="mt-2 text-3xl font-bold text-[--intel-gold]">{stats.summary.active}</p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Usage</p>
@@ -1016,7 +1021,7 @@ function AppearanceTab({
     <div className="space-y-4">
       <div>
         <label className="text-foreground mb-2 block text-sm font-medium">Color Theme</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {COLOR_OPTIONS.map((color) => (
             <button
               key={color}
@@ -1087,19 +1092,27 @@ function SynergyMatrixModal({
 
   const getSynergyIcon = (type: string) => {
     switch (type) {
-      case "strong": return "++";
-      case "moderate": return "+";
-      case "conflict": return "×";
-      default: return "";
+      case "strong":
+        return "++";
+      case "moderate":
+        return "+";
+      case "conflict":
+        return "×";
+      default:
+        return "";
     }
   };
 
   const getSynergyLabel = (type: string) => {
     switch (type) {
-      case "strong": return "Strong synergy";
-      case "moderate": return "Moderate synergy";
-      case "conflict": return "Conflict";
-      default: return "No relationship";
+      case "strong":
+        return "Strong synergy";
+      case "moderate":
+        return "Moderate synergy";
+      case "conflict":
+        return "Conflict";
+      default:
+        return "No relationship";
     }
   };
 
@@ -1116,7 +1129,9 @@ function SynergyMatrixModal({
         <div className="flex-1 overflow-auto p-4">
           <div
             className="grid gap-1"
-            style={{ gridTemplateColumns: `auto repeat(${components.length}, minmax(2.5rem, 1fr))` }}
+            style={{
+              gridTemplateColumns: `auto repeat(${components.length}, minmax(2.5rem, 1fr))`,
+            }}
           >
             {/* Header Row */}
             <div className="bg-background sticky top-0 left-0 z-20 min-h-[5rem]" />
@@ -1126,7 +1141,7 @@ function SynergyMatrixModal({
                 title={comp.name}
                 className="bg-background sticky top-0 z-10 flex min-h-[5rem] items-end border border-white/10 p-1 text-center text-xs font-medium"
               >
-                <div className="w-full origin-bottom-left -rotate-45 transform truncate whitespace-nowrap pb-1 text-left">
+                <div className="w-full origin-bottom-left -rotate-45 transform truncate pb-1 text-left whitespace-nowrap">
                   {comp.name.substring(0, 20)}
                 </div>
               </div>
@@ -1135,7 +1150,10 @@ function SynergyMatrixModal({
             {/* Matrix Rows */}
             {components.map((primary) => (
               <Fragment key={primary.id}>
-                <div title={primary.name} className="bg-background sticky left-0 z-10 border border-white/10 p-2 text-xs font-medium">
+                <div
+                  title={primary.name}
+                  className="bg-background sticky left-0 z-10 border border-white/10 p-2 text-xs font-medium"
+                >
                   {primary.name}
                 </div>
                 {components.map((secondary) => {

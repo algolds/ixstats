@@ -110,14 +110,14 @@ export function SvgProcessingDialog({
             Process SVG Upload
             <Badge variant="outline">{layerType}</Badge>
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">{fileName}</p>
+          <p className="text-muted-foreground text-sm">{fileName}</p>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Step 1: Process */}
           {!processResult && !isProcessing && (
-            <div className="rounded-lg border border-border p-6 text-center">
-              <p className="mb-4 text-sm text-foreground/80">
+            <div className="border-border rounded-lg border p-6 text-center">
+              <p className="text-foreground/80 mb-4 text-sm">
                 Click Process to extract features from the SVG and convert to GeoJSON.
               </p>
               <Button onClick={handleProcess}>
@@ -131,7 +131,7 @@ export function SvgProcessingDialog({
           {isProcessing && (
             <div className="flex items-center justify-center gap-3 py-8">
               <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-              <span className="text-sm text-foreground/80">Processing SVG...</span>
+              <span className="text-foreground/80 text-sm">Processing SVG...</span>
             </div>
           )}
 
@@ -176,7 +176,7 @@ export function SvgProcessingDialog({
                   {processResult.features.map((f) => (
                     <div
                       key={f.featureId}
-                      className="flex items-center justify-between rounded px-3 py-1.5 text-sm hover:bg-accent"
+                      className="hover:bg-accent flex items-center justify-between rounded px-3 py-1.5 text-sm"
                     >
                       <div className="flex items-center gap-2">
                         {f.countryMatch ? (
@@ -186,10 +186,11 @@ export function SvgProcessingDialog({
                         )}
                         <span className="font-medium">{f.displayName}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="text-muted-foreground flex items-center gap-3 text-xs">
                         {f.countryMatch && (
                           <Badge variant="secondary" className="text-[10px]">
-                            {f.countryMatch.matchType === "exact" ? "exact" : "fuzzy"} → {f.countryMatch.countryName}
+                            {f.countryMatch.matchType === "exact" ? "exact" : "fuzzy"} →{" "}
+                            {f.countryMatch.countryName}
                           </Badge>
                         )}
                         <span>{f.areaSqKm.toLocaleString()} km²</span>
@@ -201,19 +202,15 @@ export function SvgProcessingDialog({
 
               {/* Preview map */}
               {showPreview && (
-                <SvgPreviewMap
-                  geojson={previewData}
-                  layerType={layerType}
-                  height="300px"
-                />
+                <SvgPreviewMap geojson={previewData} layerType={layerType} height="300px" />
               )}
 
               {/* Processing log */}
-              <details className="text-xs text-muted-foreground">
-                <summary className="cursor-pointer hover:text-foreground">
+              <details className="text-muted-foreground text-xs">
+                <summary className="hover:text-foreground cursor-pointer">
                   Processing log ({processResult.log.length} entries)
                 </summary>
-                <pre className="mt-2 max-h-32 overflow-auto rounded bg-muted p-2">
+                <pre className="bg-muted mt-2 max-h-32 overflow-auto rounded p-2">
                   {processResult.log.join("\n")}
                 </pre>
               </details>

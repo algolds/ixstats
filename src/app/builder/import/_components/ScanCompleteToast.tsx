@@ -3,9 +3,19 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  CheckCircle2, AlertTriangle, X, ChevronDown, ChevronUp,
-  Building2, TrendingUp, Users, Globe, Shield, DollarSign,
-  ArrowRight, Info,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Building2,
+  TrendingUp,
+  Users,
+  Globe,
+  Shield,
+  DollarSign,
+  ArrowRight,
+  Info,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -35,19 +45,40 @@ function ConfidenceBar({ value, label }: { value: number; label: string }) {
 
   return (
     <div className="flex items-center gap-2 text-xs">
-      <div className={`h-2 w-24 rounded-full bg-muted overflow-hidden`}>
-        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${value}%` }} />
+      <div className={`bg-muted h-2 w-24 overflow-hidden rounded-full`}>
+        <div
+          className={`h-full ${color} rounded-full transition-all`}
+          style={{ width: `${value}%` }}
+        />
       </div>
       <span className="text-muted-foreground flex-1">{label}</span>
-      <span className="font-mono text-muted-foreground w-10 text-right">{value}%</span>
-      {derived && <Badge variant="outline" className="text-[10px] h-4 px-1">derived</Badge>}
+      <span className="text-muted-foreground w-10 text-right font-mono">{value}%</span>
+      {derived && (
+        <Badge variant="outline" className="h-4 px-1 text-[10px]">
+          derived
+        </Badge>
+      )}
     </div>
   );
 }
 
-export function ScanCompleteToast({ result, countryName, onProceed, onClose }: ScanCompleteToastProps) {
+export function ScanCompleteToast({
+  result,
+  countryName,
+  onProceed,
+  onClose,
+}: ScanCompleteToastProps) {
   const [expanded, setExpanded] = useState(false);
-  const { sectionCompleteness, selectedComponents, suggestedComponents, parsedDepartments, revenueSources, conflicts, warnings, overallCompleteness } = result;
+  const {
+    sectionCompleteness,
+    selectedComponents,
+    suggestedComponents,
+    parsedDepartments,
+    revenueSources,
+    conflicts,
+    warnings,
+    overallCompleteness,
+  } = result;
 
   return (
     <AnimatePresence>
@@ -55,43 +86,60 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
-        className="fixed bottom-4 right-4 z-50 max-w-md w-full"
+        className="fixed right-4 bottom-4 z-50 w-full max-w-md"
       >
-        <Card className="border-emerald-500/30 shadow-lg shadow-emerald-500/10 bg-card/95 backdrop-blur-md">
+        <Card className="bg-card/95 border-emerald-500/30 shadow-lg shadow-emerald-500/10 backdrop-blur-md">
           <CardContent className="p-4">
             {/* Header */}
-            <div className="flex items-start gap-3 mb-3">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm">LoreScanner Complete</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Parsed {Object.values(sectionCompleteness).filter(v => v >= 80).length}/{Object.keys(sectionCompleteness).length} sections for <strong>{countryName}</strong>
+            <div className="mb-3 flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold">LoreScanner Complete</h3>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  Parsed {Object.values(sectionCompleteness).filter((v) => v >= 80).length}/
+                  {Object.keys(sectionCompleteness).length} sections for{" "}
+                  <strong>{countryName}</strong>
                 </p>
               </div>
-              <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+              <button
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Quick stats */}
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="mb-3 flex flex-wrap gap-2">
               {selectedComponents.length > 0 && (
-                <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-500/30 text-xs text-emerald-600 dark:text-emerald-400"
+                >
                   {selectedComponents.length} components
                 </Badge>
               )}
               {parsedDepartments.length > 0 && (
-                <Badge variant="outline" className="text-xs border-blue-500/30 text-blue-600 dark:text-blue-400">
+                <Badge
+                  variant="outline"
+                  className="border-blue-500/30 text-xs text-blue-600 dark:text-blue-400"
+                >
                   {parsedDepartments.length} departments
                 </Badge>
               )}
               {revenueSources.length > 0 && (
-                <Badge variant="outline" className="text-xs border-amber-500/30 text-amber-600 dark:text-amber-400">
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/30 text-xs text-amber-600 dark:text-amber-400"
+                >
                   {revenueSources.length} revenue sources
                 </Badge>
               )}
               {conflicts.length > 0 && (
-                <Badge variant="outline" className="text-xs border-red-500/30 text-red-600 dark:text-red-400">
+                <Badge
+                  variant="outline"
+                  className="border-red-500/30 text-xs text-red-600 dark:text-red-400"
+                >
                   {conflicts.length} conflict{conflicts.length > 1 ? "s" : ""} resolved
                 </Badge>
               )}
@@ -100,7 +148,7 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
             {/* Expandable details */}
             <button
               onClick={() => setExpanded(!expanded)}
-              className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+              className="text-muted-foreground hover:text-foreground flex w-full items-center justify-between py-1 text-xs transition-colors"
             >
               <span>{expanded ? "Hide" : "View"} details</span>
               {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -115,18 +163,20 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="space-y-4 mt-2 pt-3 border-t border-border/50">
+                  <div className="border-border/50 mt-2 space-y-4 border-t pt-3">
                     {/* Section Completeness */}
                     <div>
-                      <h4 className="text-xs font-medium mb-2">Section Completeness</h4>
+                      <h4 className="mb-2 text-xs font-medium">Section Completeness</h4>
                       <div className="space-y-1">
                         {Object.entries(sectionCompleteness).map(([key, value]) => {
                           const Icon = sectionIcons[key] ?? Globe;
-                          const label = key.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+                          const label = key
+                            .replace(/([A-Z])/g, " $1")
+                            .replace(/^./, (s) => s.toUpperCase());
                           const isDerived = ["laborMarket", "fiscalSystem"].includes(key);
                           return (
                             <div key={key} className="flex items-center gap-2">
-                              <Icon className="h-3 w-3 text-muted-foreground" />
+                              <Icon className="text-muted-foreground h-3 w-3" />
                               <ConfidenceBar value={value} label={label} />
                             </div>
                           );
@@ -137,12 +187,25 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
                     {/* Government Components */}
                     {selectedComponents.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium mb-2">Government Components Detected</h4>
+                        <h4 className="mb-2 text-xs font-medium">Government Components Detected</h4>
                         <div className="space-y-1">
-                          {selectedComponents.map(c => (
-                            <div key={c.component} className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">{c.component.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, s => s.toUpperCase())}</span>
-                              <Badge variant="outline" className="text-[10px] h-4 px-1 border-emerald-500/30 text-emerald-600">{c.score}%</Badge>
+                          {selectedComponents.map((c) => (
+                            <div
+                              key={c.component}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <span className="text-muted-foreground">
+                                {c.component
+                                  .replace(/_/g, " ")
+                                  .toLowerCase()
+                                  .replace(/\b\w/g, (s) => s.toUpperCase())}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-emerald-500/30 px-1 text-[10px] text-emerald-600"
+                              >
+                                {c.score}%
+                              </Badge>
                             </div>
                           ))}
                         </div>
@@ -152,12 +215,25 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
                     {/* Suggested Components */}
                     {suggestedComponents.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium mb-2">Suggested (toggle to add)</h4>
+                        <h4 className="mb-2 text-xs font-medium">Suggested (toggle to add)</h4>
                         <div className="space-y-1">
-                          {suggestedComponents.map(c => (
-                            <div key={c.component} className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">{c.component.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, s => s.toUpperCase())}</span>
-                              <Badge variant="outline" className="text-[10px] h-4 px-1 border-amber-500/30 text-amber-600">{c.score}%</Badge>
+                          {suggestedComponents.map((c) => (
+                            <div
+                              key={c.component}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <span className="text-muted-foreground">
+                                {c.component
+                                  .replace(/_/g, " ")
+                                  .toLowerCase()
+                                  .replace(/\b\w/g, (s) => s.toUpperCase())}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="h-4 border-amber-500/30 px-1 text-[10px] text-amber-600"
+                              >
+                                {c.score}%
+                              </Badge>
                             </div>
                           ))}
                         </div>
@@ -167,13 +243,17 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
                     {/* Departments */}
                     {parsedDepartments.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium mb-2">Departments Found</h4>
+                        <h4 className="mb-2 text-xs font-medium">Departments Found</h4>
                         <div className="space-y-1">
-                          {parsedDepartments.map(d => (
+                          {parsedDepartments.map((d) => (
                             <div key={d.name} className="text-xs">
                               <span className="text-foreground">{d.name}</span>
                               <span className="text-muted-foreground ml-2">→ {d.category}</span>
-                              {d.minister && <span className="text-muted-foreground ml-1">(Minister: {d.minister})</span>}
+                              {d.minister && (
+                                <span className="text-muted-foreground ml-1">
+                                  (Minister: {d.minister})
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -183,12 +263,14 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
                     {/* Revenue Sources */}
                     {revenueSources.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium mb-2">Revenue Sources (≥95%)</h4>
+                        <h4 className="mb-2 text-xs font-medium">Revenue Sources (≥95%)</h4>
                         <div className="space-y-1">
-                          {revenueSources.map(r => (
+                          {revenueSources.map((r) => (
                             <div key={r.name} className="flex items-center justify-between text-xs">
                               <span className="text-foreground">{r.name}</span>
-                              <Badge variant="outline" className="text-[10px] h-4 px-1">{r.category}</Badge>
+                              <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                                {r.category}
+                              </Badge>
                             </div>
                           ))}
                         </div>
@@ -198,15 +280,19 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
                     {/* Conflicts */}
                     {conflicts.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                        <h4 className="mb-2 flex items-center gap-1 text-xs font-medium">
                           <AlertTriangle className="h-3 w-3 text-amber-500" />
                           Auto-resolved Conflicts
                         </h4>
                         <div className="space-y-1">
                           {conflicts.map((c, i) => (
-                            <div key={i} className="text-xs text-muted-foreground">
+                            <div key={i} className="text-muted-foreground text-xs">
                               {c.description}
-                              {c.resolution && <span className="block text-[10px] mt-0.5">Resolved: {c.resolution}</span>}
+                              {c.resolution && (
+                                <span className="mt-0.5 block text-[10px]">
+                                  Resolved: {c.resolution}
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -215,15 +301,21 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
 
                     {/* Warning */}
                     {warnings.length > 0 && (
-                      <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2">
+                      <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
                         <div className="flex items-start gap-2">
-                          <Info className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
-                          <div className="text-[11px] text-amber-700 dark:text-amber-400 space-y-1">
-                            <p className="font-medium">Note: Automated parsing may not be perfect.</p>
+                          <Info className="mt-0.5 h-3 w-3 flex-shrink-0 text-amber-500" />
+                          <div className="space-y-1 text-[11px] text-amber-700 dark:text-amber-400">
+                            <p className="font-medium">
+                              Note: Automated parsing may not be perfect.
+                            </p>
                             {warnings.slice(0, 2).map((w, i) => (
-                              <p key={i} className="text-muted-foreground">{w}</p>
+                              <p key={i} className="text-muted-foreground">
+                                {w}
+                              </p>
                             ))}
-                            <p className="text-muted-foreground">Review all sections in the builder before finalizing.</p>
+                            <p className="text-muted-foreground">
+                              Review all sections in the builder before finalizing.
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -234,11 +326,15 @@ export function ScanCompleteToast({ result, countryName, onProceed, onClose }: S
             </AnimatePresence>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-border/50">
-              <Button variant="outline" size="sm" onClick={onClose} className="text-xs h-8">
+            <div className="border-border/50 mt-3 flex justify-end gap-2 border-t pt-3">
+              <Button variant="outline" size="sm" onClick={onClose} className="h-8 text-xs">
                 Review Later
               </Button>
-              <Button size="sm" onClick={onProceed} className="text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white gap-1">
+              <Button
+                size="sm"
+                onClick={onProceed}
+                className="h-8 gap-1 bg-emerald-600 text-xs text-white hover:bg-emerald-700"
+              >
                 Proceed to Builder <ArrowRight className="h-3 w-3" />
               </Button>
             </div>

@@ -20,7 +20,10 @@ const VISIBILITY_ICONS: Record<string, typeof Globe> = {
 export function RealmsTab() {
   const { data: realms, isLoading, refetch } = api.studio.adminListRealms.useQuery();
   const updateMutation = api.studio.adminUpdateRealm.useMutation({
-    onSuccess: () => { refetch(); setEditingId(null); },
+    onSuccess: () => {
+      refetch();
+      setEditingId(null);
+    },
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -33,7 +36,7 @@ export function RealmsTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+      <div className="text-muted-foreground flex items-center justify-center gap-2 py-16">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span className="text-sm">Loading realms...</span>
       </div>
@@ -42,7 +45,7 @@ export function RealmsTab() {
 
   if (!realms?.length) {
     return (
-      <div className="py-16 text-center text-muted-foreground">
+      <div className="text-muted-foreground py-16 text-center">
         No realms found. The default realm should be seeded automatically.
       </div>
     );
@@ -70,19 +73,21 @@ export function RealmsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-xl border border-border/50">
+      <div className="border-border/50 overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border/50 bg-muted/30">
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Slug</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Visibility</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Countries</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">World Config</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Owner</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Updated</th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
+            <tr className="border-border/50 bg-muted/30 border-b">
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Name</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Slug</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Status</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Visibility</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Countries</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">
+                World Config
+              </th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Owner</th>
+              <th className="text-muted-foreground px-4 py-3 text-left font-medium">Updated</th>
+              <th className="text-muted-foreground px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -91,11 +96,11 @@ export function RealmsTab() {
               const VisIcon = VISIBILITY_ICONS[realm.visibility] ?? Globe;
 
               return (
-                <tr key={realm.id} className="border-b border-border/30 hover:bg-muted/20">
+                <tr key={realm.id} className="border-border/30 hover:bg-muted/20 border-b">
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <input
-                        className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
+                        className="border-border bg-background w-full rounded border px-2 py-1 text-sm"
                         value={editForm.name ?? ""}
                         onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
                       />
@@ -103,11 +108,13 @@ export function RealmsTab() {
                       <span className="font-medium">{realm.name}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{realm.slug}</td>
+                  <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
+                    {realm.slug}
+                  </td>
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <select
-                        className="rounded border border-border bg-background px-2 py-1 text-xs"
+                        className="border-border bg-background rounded border px-2 py-1 text-xs"
                         value={editForm.status}
                         onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
                       >
@@ -117,7 +124,9 @@ export function RealmsTab() {
                         <option value="archived">Archived</option>
                       </select>
                     ) : (
-                      <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[realm.status] ?? STATUS_COLORS.draft}`}>
+                      <span
+                        className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[realm.status] ?? STATUS_COLORS.draft}`}
+                      >
                         {realm.status}
                       </span>
                     )}
@@ -125,7 +134,7 @@ export function RealmsTab() {
                   <td className="px-4 py-3">
                     {isEditing ? (
                       <select
-                        className="rounded border border-border bg-background px-2 py-1 text-xs"
+                        className="border-border bg-background rounded border px-2 py-1 text-xs"
                         value={editForm.visibility}
                         onChange={(e) => setEditForm((f) => ({ ...f, visibility: e.target.value }))}
                       >
@@ -134,7 +143,7 @@ export function RealmsTab() {
                         <option value="private">Private</option>
                       </select>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
                         <VisIcon className="h-3 w-3" />
                         {realm.visibility}
                       </span>
@@ -145,13 +154,13 @@ export function RealmsTab() {
                     {realm.worldConfig ? (
                       <span className="text-xs text-emerald-500">{realm.worldConfig.name}</span>
                     ) : (
-                      <span className="text-xs text-muted-foreground/50">None</span>
+                      <span className="text-muted-foreground/50 text-xs">None</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-3 font-mono text-xs">
                     {realm.ownerId === "system" ? "system" : realm.ownerId.slice(0, 12) + "..."}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="text-muted-foreground px-4 py-3 text-xs">
                     {new Date(realm.updatedAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -162,14 +171,24 @@ export function RealmsTab() {
                           disabled={updateMutation.isPending}
                           className="rounded p-1 text-emerald-500 hover:bg-emerald-500/10"
                         >
-                          {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          {updateMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )}
                         </button>
-                        <button onClick={() => setEditingId(null)} className="rounded p-1 text-muted-foreground hover:bg-muted/50">
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="text-muted-foreground hover:bg-muted/50 rounded p-1"
+                        >
                           <X className="h-4 w-4" />
                         </button>
                       </span>
                     ) : (
-                      <button onClick={() => startEdit(realm)} className="rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground">
+                      <button
+                        onClick={() => startEdit(realm)}
+                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded p-1"
+                      >
                         <Pencil className="h-4 w-4" />
                       </button>
                     )}

@@ -42,9 +42,7 @@ export function ArticleLayout({
           <p className="text-xl text-slate-600 dark:text-slate-300">{description}</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {children}
-        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">{children}</div>
 
         <div className="mt-8 flex items-center justify-between">
           {prevLink ? (
@@ -103,9 +101,19 @@ export function Section({ title, children }: { title?: string; children: React.R
   );
 }
 
-export function ContentCard({ title, children, fullWidth }: { title?: string; children: React.ReactNode; fullWidth?: boolean }) {
+export function ContentCard({
+  title,
+  children,
+  fullWidth,
+}: {
+  title?: string;
+  children: React.ReactNode;
+  fullWidth?: boolean;
+}) {
   return (
-    <div className={`prose prose-slate dark:prose-invert prose-blue max-w-none rounded-xl border border-slate-200 bg-white p-6 backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:p-8 ${fullWidth ? "lg:col-span-2" : ""}`}>
+    <div
+      className={`prose prose-slate dark:prose-invert prose-blue max-w-none rounded-xl border border-slate-200 bg-white p-6 backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-white/5 ${fullWidth ? "lg:col-span-2" : ""}`}
+    >
       {title && <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-white">{title}</h2>}
       <div className="space-y-6">{children}</div>
     </div>

@@ -54,7 +54,7 @@ export function BotStatusBanner({
                   : "Connected, Not Ready"
                 : "Disconnected"}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {botStatus.botHealth.message}
               {botTag && ` • ${botTag}`}
             </p>
@@ -71,7 +71,7 @@ export function BotStatusBanner({
           </button>
           <button
             onClick={onRefresh}
-            className="flex items-center rounded-md bg-muted px-3 py-1 text-sm text-muted-foreground hover:bg-muted/80"
+            className="bg-muted text-muted-foreground hover:bg-muted/80 flex items-center rounded-md px-3 py-1 text-sm"
           >
             <RefreshCw className="mr-1 h-4 w-4" />
             Refresh

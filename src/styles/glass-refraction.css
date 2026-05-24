@@ -4,36 +4,37 @@
 
 /* CSS Custom Properties for Dashboard Colors */
 :root {
-  --glass-mycountry: #ca8a04;      /* yellow-600 */
-  --glass-global: #2563eb;         /* blue-600 */
-  --glass-eci: #4f46e5;           /* indigo-600 */
-  --glass-sdi: #dc2626;           /* red-600 */
-  --glass-builder: #10b981;       /* emerald-500 */
-  
+  --glass-mycountry: #ca8a04; /* yellow-600 */
+  --glass-global: #2563eb; /* blue-600 */
+  --glass-eci: #4f46e5; /* indigo-600 */
+  --glass-sdi: #dc2626; /* red-600 */
+  --glass-builder: #10b981; /* emerald-500 */
+
   /* Z-depth levels */
   --z-background: -1;
   --z-surface: 0;
   --z-floating: 100;
   --z-overlay: 1000;
   --z-navigation: 5000;
-  --z-popover: 10000;
-  --z-toast: 50000;
+  --z-popover: 100010;
+  --z-tooltip: 100020;
+  --z-toast: 100050;
   --z-backdrop: 100000;
   --z-modal: 100001;
   --z-command: 110000;
-  
+
   /* Blur intensity levels */
   --blur-subtle: 8px;
   --blur-moderate: 16px;
   --blur-prominent: 24px;
   --blur-intense: 32px;
-  
+
   /* Refraction intensity */
   --refraction-light: 0.1;
   --refraction-medium: 0.15;
   --refraction-strong: 0.25;
   --refraction-intense: 0.35;
-  
+
   /* Light mode adjustments */
   --glass-light-bg: rgba(255, 255, 255, 0.8);
   --glass-light-border: rgba(0, 0, 0, 0.1);
@@ -45,43 +46,35 @@
 [data-theme="light"] .glass-surface,
 html:not([data-theme="dark"]) .glass-hierarchy-parent,
 html:not([data-theme="dark"]) .glass-surface {
-  background: linear-gradient(135deg,
-    rgba(255, 255, 255, 0.9) 0%,
-    rgba(255, 255, 255, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
   border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.08),
     0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="light"] .glass-hierarchy-child,
 html:not([data-theme="dark"]) .glass-hierarchy-child {
-  background: linear-gradient(135deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 255, 255, 0.8) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 
+  box-shadow:
     0 2px 12px rgba(0, 0, 0, 0.06),
     0 1px 6px rgba(0, 0, 0, 0.03);
 }
 
 [data-theme="light"] .glass-hierarchy-interactive,
 html:not([data-theme="dark"]) .glass-hierarchy-interactive {
-  background: linear-gradient(135deg,
-    rgba(255, 255, 255, 0.98) 0%,
-    rgba(255, 255, 255, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.85) 100%);
   border: 1px solid rgba(0, 0, 0, 0.12);
-  box-shadow: 
+  box-shadow:
     0 1px 8px rgba(0, 0, 0, 0.05),
     0 1px 4px rgba(0, 0, 0, 0.02);
 }
 
 [data-theme="light"] .glass-hierarchy-interactive:hover,
 html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
-  background: linear-gradient(135deg,
-    rgba(255, 255, 255, 1) 0%,
-    rgba(255, 255, 255, 0.9) 100%);
-  box-shadow: 
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.9) 100%);
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.1),
     0 2px 8px rgba(0, 0, 0, 0.05);
   transform: translateY(-1px);
@@ -96,9 +89,11 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-light)) 0%, 
-    rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-light)) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -109,9 +104,11 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-surface);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-light)) 0%, 
-    rgba(255, 255, 255, 0.03) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-light)) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
 }
 
 .glass-floating {
@@ -119,12 +116,14 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-light)) 0%, 
-    rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-light)) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
     0 4px 16px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -137,10 +136,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-overlay);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-medium)) 0%, 
-    rgba(255, 255, 255, 0.08) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-medium)) 0%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  box-shadow:
     0 16px 64px rgba(0, 0, 0, 0.15),
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -157,9 +158,11 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-surface);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-light)) 0%, 
-    rgba(255, 255, 255, 0.03) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-light)) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
   transform: translateZ(0);
 }
 
@@ -168,12 +171,14 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-light)) 0%, 
-    rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-light)) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
     0 4px 16px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -187,14 +192,16 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-overlay);
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(0, 0, 0, 0.15),
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transform: translateZ(20px);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-strong)) 0%, 
-    rgba(255, 255, 255, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-strong)) 0%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
 }
 
 .glass-depth-4 {
@@ -205,10 +212,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   transform: translateZ(30px);
   backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-intense)) 0%, 
-    rgba(255, 255, 255, 0.12) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-intense)) 0%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  box-shadow:
     0 24px 96px rgba(0, 0, 0, 0.2),
     0 12px 48px rgba(0, 0, 0, 0.15),
     inset 0 2px 0 rgba(255, 255, 255, 0.5);
@@ -257,9 +266,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   position: relative;
   backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
   -webkit-backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.08) 0%, 
-    rgba(255, 255, 255, 0.03) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -268,9 +275,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   position: relative;
   backdrop-filter: blur(var(--blur-moderate)) saturate(150%);
   -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(150%);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.1) 0%, 
-    rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
 }
@@ -281,9 +286,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.15) 0%, 
-    rgba(255, 255, 255, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 0.5rem;
   cursor: pointer;
@@ -293,9 +296,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-intense)) saturate(200%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
   transform: translateY(-1px);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.2) 0%, 
-    rgba(255, 255, 255, 0.12) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.12) 100%);
   border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
@@ -306,10 +307,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-strong)) 0%, 
-    rgba(255, 255, 255, 0.12) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-strong)) 0%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  box-shadow:
     0 20px 80px rgba(0, 0, 0, 0.2),
     0 10px 40px rgba(0, 0, 0, 0.15),
     inset 0 2px 0 rgba(255, 255, 255, 0.5);
@@ -344,10 +347,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-tooltip);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-medium)) 0%, 
-    rgba(255, 255, 255, 0.08) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-medium)) 0%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  box-shadow:
     0 16px 64px rgba(0, 0, 0, 0.15),
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -359,9 +364,11 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(220%);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(135deg,
+  background: linear-gradient(
+    135deg,
     rgba(255, 255, 255, var(--refraction-intense)) 0%,
-    rgba(255, 255, 255, 0.12) 100%);
+    rgba(255, 255, 255, 0.12) 100%
+  );
   box-shadow:
     0 24px 96px rgba(0, 0, 0, 0.2),
     0 12px 48px rgba(0, 0, 0, 0.15),
@@ -379,11 +386,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
   border: 1px solid rgba(202, 138, 4, 0.3);
-  background: linear-gradient(135deg, 
-    rgba(202, 138, 4, var(--refraction-medium)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(202, 138, 4, var(--refraction-medium)) 0%,
     rgba(202, 138, 4, 0.05) 50%,
-    rgba(255, 255, 255, 0.05) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(202, 138, 4, 0.1),
     0 4px 16px rgba(202, 138, 4, 0.05),
     inset 0 1px 0 rgba(255, 215, 0, 0.3);
@@ -396,11 +405,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
   border: 1px solid rgba(37, 99, 235, 0.3);
-  background: linear-gradient(135deg, 
-    rgba(37, 99, 235, var(--refraction-medium)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, var(--refraction-medium)) 0%,
     rgba(37, 99, 235, 0.05) 50%,
-    rgba(255, 255, 255, 0.05) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(37, 99, 235, 0.1),
     0 4px 16px rgba(37, 99, 235, 0.05),
     inset 0 1px 0 rgba(59, 130, 246, 0.3);
@@ -413,11 +424,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
   border: 1px solid rgba(79, 70, 229, 0.3);
-  background: linear-gradient(135deg, 
-    rgba(79, 70, 229, var(--refraction-medium)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, var(--refraction-medium)) 0%,
     rgba(79, 70, 229, 0.05) 50%,
-    rgba(255, 255, 255, 0.05) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(79, 70, 229, 0.1),
     0 4px 16px rgba(79, 70, 229, 0.05),
     inset 0 1px 0 rgba(99, 102, 241, 0.3);
@@ -430,11 +443,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
   border: 1px solid rgba(220, 38, 38, 0.3);
-  background: linear-gradient(135deg, 
-    rgba(220, 38, 38, var(--refraction-medium)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, var(--refraction-medium)) 0%,
     rgba(220, 38, 38, 0.05) 50%,
-    rgba(255, 255, 255, 0.05) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(220, 38, 38, 0.1),
     0 4px 16px rgba(220, 38, 38, 0.05),
     inset 0 1px 0 rgba(239, 68, 68, 0.3);
@@ -447,11 +462,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  background: linear-gradient(135deg, 
-    rgba(16, 185, 129, var(--refraction-medium)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, var(--refraction-medium)) 0%,
     rgba(16, 185, 129, 0.05) 50%,
-    rgba(255, 255, 255, 0.05) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(16, 185, 129, 0.1),
     0 4px 16px rgba(16, 185, 129, 0.05),
     inset 0 1px 0 rgba(52, 211, 153, 0.3);
@@ -468,7 +485,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .glass-interactive:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(0, 0, 0, 0.15),
     0 6px 24px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -478,7 +495,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .glass-interactive:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.1),
     0 2px 8px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -486,7 +503,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 /* Color-specific hover states */
 .glass-mycountry.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(202, 138, 4, 0.2),
     0 6px 24px rgba(202, 138, 4, 0.1),
     inset 0 1px 0 rgba(255, 215, 0, 0.4);
@@ -494,7 +511,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .glass-global.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(37, 99, 235, 0.2),
     0 6px 24px rgba(37, 99, 235, 0.1),
     inset 0 1px 0 rgba(59, 130, 246, 0.4);
@@ -502,7 +519,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .glass-eci.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(79, 70, 229, 0.2),
     0 6px 24px rgba(79, 70, 229, 0.1),
     inset 0 1px 0 rgba(99, 102, 241, 0.4);
@@ -510,7 +527,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .glass-sdi.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(220, 38, 38, 0.2),
     0 6px 24px rgba(220, 38, 38, 0.1),
     inset 0 1px 0 rgba(239, 68, 68, 0.4);
@@ -518,7 +535,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .glass-builder.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(16, 185, 129, 0.2),
     0 6px 24px rgba(16, 185, 129, 0.1),
     inset 0 1px 0 rgba(52, 211, 153, 0.4);
@@ -530,37 +547,45 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
    =================================== */
 
 .glass-refraction::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, 
+  background: linear-gradient(
+    135deg,
     rgba(255, 255, 255, 0.3) 0%,
     rgba(255, 255, 255, 0.1) 25%,
     transparent 50%,
     rgba(255, 255, 255, 0.1) 75%,
-    rgba(255, 255, 255, 0.2) 100%);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: xor;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   pointer-events: none;
 }
 
 .glass-refraction::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
     rgba(255, 255, 255, 0.6) 20%,
     rgba(255, 255, 255, 0.8) 50%,
     rgba(255, 255, 255, 0.6) 80%,
-    transparent 100%);
+    transparent 100%
+  );
   border-radius: inherit;
   pointer-events: none;
 }
@@ -574,12 +599,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
     backdrop-filter: blur(var(--blur-subtle)) saturate(150%);
     -webkit-backdrop-filter: blur(var(--blur-subtle)) saturate(150%);
   }
-  
+
   .glass-floating {
     backdrop-filter: blur(var(--blur-moderate)) saturate(160%);
     -webkit-backdrop-filter: blur(var(--blur-moderate)) saturate(160%);
   }
-  
+
   .glass-overlay {
     backdrop-filter: blur(var(--blur-prominent)) saturate(170%);
     -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(170%);
@@ -598,43 +623,53 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-surface);
-  background: linear-gradient(135deg, 
-    rgba(var(--background-rgb), 0.9) 0%, 
-    rgba(var(--background-rgb), 0.8) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--background-rgb), 0.9) 0%,
+    rgba(var(--background-rgb), 0.8) 100%
+  ) !important;
 }
 
 .bg-card.glass-enhanced::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, 
+  background: linear-gradient(
+    135deg,
     rgba(255, 255, 255, 0.3) 0%,
     rgba(255, 255, 255, 0.1) 25%,
     transparent 50%,
     rgba(255, 255, 255, 0.1) 75%,
-    rgba(255, 255, 255, 0.2) 100%);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: xor;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   pointer-events: none;
 }
 
 .bg-card.glass-enhanced::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
     rgba(255, 255, 255, 0.6) 20%,
     rgba(255, 255, 255, 0.8) 50%,
     rgba(255, 255, 255, 0.6) 80%,
-    transparent 100%);
+    transparent 100%
+  );
   border-radius: inherit;
   pointer-events: none;
 }
@@ -643,12 +678,14 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 .navigation-glass {
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-light)) 0%, 
-    rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-light)) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
     0 4px 16px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -657,37 +694,45 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .navigation-glass::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, 
+  background: linear-gradient(
+    135deg,
     rgba(255, 255, 255, 0.3) 0%,
     rgba(255, 255, 255, 0.1) 25%,
     transparent 50%,
     rgba(255, 255, 255, 0.1) 75%,
-    rgba(255, 255, 255, 0.2) 100%);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: xor;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   pointer-events: none;
 }
 
 .navigation-glass::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
     rgba(255, 255, 255, 0.6) 20%,
     rgba(255, 255, 255, 0.8) 50%,
     rgba(255, 255, 255, 0.6) 80%,
-    transparent 100%);
+    transparent 100%
+  );
   border-radius: inherit;
   pointer-events: none;
 }
@@ -698,10 +743,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-overlay);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-medium)) 0%, 
-    rgba(255, 255, 255, 0.08) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-medium)) 0%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  box-shadow:
     0 16px 64px rgba(0, 0, 0, 0.15),
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
@@ -710,37 +757,45 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .command-palette-glass::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, 
+  background: linear-gradient(
+    135deg,
     rgba(255, 255, 255, 0.3) 0%,
     rgba(255, 255, 255, 0.1) 25%,
     transparent 50%,
     rgba(255, 255, 255, 0.1) 75%,
-    rgba(255, 255, 255, 0.2) 100%);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: xor;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   pointer-events: none;
 }
 
 .command-palette-glass::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
     rgba(255, 255, 255, 0.6) 20%,
     rgba(255, 255, 255, 0.8) 50%,
     rgba(255, 255, 255, 0.6) 80%,
-    transparent 100%);
+    transparent 100%
+  );
   border-radius: inherit;
   pointer-events: none;
 }
@@ -749,12 +804,14 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 .dynamic-island-glass {
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, var(--refraction-light)) 0%, 
-    rgba(255, 255, 255, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, var(--refraction-light)) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: var(--z-floating);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
     0 4px 16px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -763,37 +820,45 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .dynamic-island-glass::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, 
+  background: linear-gradient(
+    135deg,
     rgba(255, 255, 255, 0.3) 0%,
     rgba(255, 255, 255, 0.1) 25%,
     transparent 50%,
     rgba(255, 255, 255, 0.1) 75%,
-    rgba(255, 255, 255, 0.2) 100%);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    rgba(255, 255, 255, 0.2) 100%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   mask-composite: xor;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   pointer-events: none;
 }
 
 .dynamic-island-glass::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
     rgba(255, 255, 255, 0.6) 20%,
     rgba(255, 255, 255, 0.8) 50%,
     rgba(255, 255, 255, 0.6) 80%,
-    transparent 100%);
+    transparent 100%
+  );
   border-radius: inherit;
   pointer-events: none;
 }
@@ -804,11 +869,11 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .glass-interacting {
   --refraction-multiplier: 1.3;
-  
+
   backdrop-filter: blur(calc(var(--blur-moderate) * 1.2)) saturate(200%);
   -webkit-backdrop-filter: blur(calc(var(--blur-moderate) * 1.2)) saturate(200%);
-  
-  box-shadow: 
+
+  box-shadow:
     0 16px 64px rgba(0, 0, 0, 0.12),
     0 8px 32px rgba(0, 0, 0, 0.08),
     inset 0 2px 0 rgba(255, 255, 255, 0.5);
@@ -837,7 +902,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   --refraction-medium: 0.12;
   --refraction-strong: 0.18;
   --refraction-intense: 0.25;
-  
+
   border-color: rgba(0, 0, 0, 0.1);
 }
 
@@ -846,7 +911,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   --refraction-medium: 0.22;
   --refraction-strong: 0.32;
   --refraction-intense: 0.45;
-  
+
   border-color: rgba(255, 255, 255, 0.15);
 }
 
@@ -857,10 +922,10 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .glass-with-grid::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
-  background-image: 
+  background-image:
     linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 20px 20px;
@@ -886,14 +951,14 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Light mode text visibility enhancements */
 .glass-text-light {
   color: hsl(var(--foreground));
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8), 0 0 4px rgba(255, 255, 255, 0.4);
+  text-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.8),
+    0 0 4px rgba(255, 255, 255, 0.4);
 }
 
 .glass-text-contrast {
   color: hsl(var(--foreground));
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.9) 0%, 
-    rgba(255, 255, 255, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
   border-radius: 4px;
   padding: 2px 6px;
   backdrop-filter: blur(8px);
@@ -903,13 +968,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Dark mode overrides for better readability */
 .dark .glass-text-light {
   color: hsl(var(--foreground));
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.4);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    0 0 4px rgba(0, 0, 0, 0.4);
 }
 
 .dark .glass-text-contrast {
-  background: linear-gradient(135deg, 
-    rgba(0, 0, 0, 0.6) 0%, 
-    rgba(0, 0, 0, 0.4) 100%);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
 }
 
 /* Force proper text colors in glass components */
@@ -938,33 +1003,39 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Dark mode specific adaptations */
 .dark .glass-base {
   border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, calc(var(--refraction-light) * 0.6)) 0%, 
-    rgba(255, 255, 255, 0.015) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, calc(var(--refraction-light) * 0.6)) 0%,
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     0 4px 16px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .dark .glass-surface {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, calc(var(--refraction-light) * 0.5)) 0%, 
-    rgba(255, 255, 255, 0.01) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, calc(var(--refraction-light) * 0.5)) 0%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
 }
 
 .dark .glass-floating {
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(0, 0, 0, 0.4),
     0 6px 24px rgba(0, 0, 0, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .dark .glass-overlay {
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, calc(var(--refraction-medium) * 0.7)) 0%, 
-    rgba(255, 255, 255, 0.04) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, calc(var(--refraction-medium) * 0.7)) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  box-shadow:
     0 20px 80px rgba(0, 0, 0, 0.5),
     0 10px 40px rgba(0, 0, 0, 0.3),
     inset 0 2px 0 rgba(255, 255, 255, 0.25);
@@ -973,11 +1044,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Dark mode color variants */
 .dark .glass-mycountry {
   border: 1px solid rgba(202, 138, 4, 0.25);
-  background: linear-gradient(135deg, 
-    rgba(202, 138, 4, calc(var(--refraction-medium) * 0.7)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(202, 138, 4, calc(var(--refraction-medium) * 0.7)) 0%,
     rgba(202, 138, 4, 0.025) 50%,
-    rgba(255, 255, 255, 0.015) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(202, 138, 4, 0.15),
     0 4px 16px rgba(202, 138, 4, 0.08),
     inset 0 1px 0 rgba(255, 215, 0, 0.2);
@@ -985,11 +1058,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .dark .glass-global {
   border: 1px solid rgba(37, 99, 235, 0.25);
-  background: linear-gradient(135deg, 
-    rgba(37, 99, 235, calc(var(--refraction-medium) * 0.7)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, calc(var(--refraction-medium) * 0.7)) 0%,
     rgba(37, 99, 235, 0.025) 50%,
-    rgba(255, 255, 255, 0.015) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(37, 99, 235, 0.15),
     0 4px 16px rgba(37, 99, 235, 0.08),
     inset 0 1px 0 rgba(59, 130, 246, 0.2);
@@ -997,11 +1072,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .dark .glass-eci {
   border: 1px solid rgba(79, 70, 229, 0.25);
-  background: linear-gradient(135deg, 
-    rgba(79, 70, 229, calc(var(--refraction-medium) * 0.7)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, calc(var(--refraction-medium) * 0.7)) 0%,
     rgba(79, 70, 229, 0.025) 50%,
-    rgba(255, 255, 255, 0.015) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(79, 70, 229, 0.15),
     0 4px 16px rgba(79, 70, 229, 0.08),
     inset 0 1px 0 rgba(99, 102, 241, 0.2);
@@ -1009,11 +1086,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .dark .glass-sdi {
   border: 1px solid rgba(220, 38, 38, 0.25);
-  background: linear-gradient(135deg, 
-    rgba(220, 38, 38, calc(var(--refraction-medium) * 0.7)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, calc(var(--refraction-medium) * 0.7)) 0%,
     rgba(220, 38, 38, 0.025) 50%,
-    rgba(255, 255, 255, 0.015) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(220, 38, 38, 0.15),
     0 4px 16px rgba(220, 38, 38, 0.08),
     inset 0 1px 0 rgba(239, 68, 68, 0.2);
@@ -1021,11 +1100,13 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .dark .glass-builder {
   border: 1px solid rgba(16, 185, 129, 0.25);
-  background: linear-gradient(135deg, 
-    rgba(16, 185, 129, calc(var(--refraction-medium) * 0.7)) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, calc(var(--refraction-medium) * 0.7)) 0%,
     rgba(16, 185, 129, 0.025) 50%,
-    rgba(255, 255, 255, 0.015) 100%);
-  box-shadow: 
+    rgba(255, 255, 255, 0.015) 100%
+  );
+  box-shadow:
     0 8px 32px rgba(16, 185, 129, 0.15),
     0 4px 16px rgba(16, 185, 129, 0.08),
     inset 0 1px 0 rgba(52, 211, 153, 0.2);
@@ -1033,7 +1114,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 /* Dark mode interactive states */
 .dark .glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(0, 0, 0, 0.4),
     0 8px 32px rgba(0, 0, 0, 0.25),
     inset 0 2px 0 rgba(255, 255, 255, 0.3);
@@ -1042,7 +1123,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .dark .glass-mycountry.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(202, 138, 4, 0.25),
     0 8px 32px rgba(202, 138, 4, 0.15),
     inset 0 2px 0 rgba(255, 215, 0, 0.3);
@@ -1050,7 +1131,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .dark .glass-global.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(37, 99, 235, 0.25),
     0 8px 32px rgba(37, 99, 235, 0.15),
     inset 0 2px 0 rgba(59, 130, 246, 0.3);
@@ -1058,7 +1139,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .dark .glass-eci.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(79, 70, 229, 0.25),
     0 8px 32px rgba(79, 70, 229, 0.15),
     inset 0 2px 0 rgba(99, 102, 241, 0.3);
@@ -1066,7 +1147,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .dark .glass-sdi.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(220, 38, 38, 0.25),
     0 8px 32px rgba(220, 38, 38, 0.15),
     inset 0 2px 0 rgba(239, 68, 68, 0.3);
@@ -1074,7 +1155,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 }
 
 .dark .glass-builder.glass-interactive:hover {
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(16, 185, 129, 0.25),
     0 8px 32px rgba(16, 185, 129, 0.15),
     inset 0 2px 0 rgba(52, 211, 153, 0.3);
@@ -1083,29 +1164,33 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 /* Dark mode refraction effects */
 .dark .glass-refraction::before {
-  background: linear-gradient(135deg, 
+  background: linear-gradient(
+    135deg,
     rgba(255, 255, 255, 0.2) 0%,
     rgba(255, 255, 255, 0.06) 25%,
     transparent 50%,
     rgba(255, 255, 255, 0.06) 75%,
-    rgba(255, 255, 255, 0.15) 100%);
+    rgba(255, 255, 255, 0.15) 100%
+  );
 }
 
 .dark .glass-refraction::after {
-  background: linear-gradient(90deg, 
-    transparent 0%, 
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
     rgba(255, 255, 255, 0.4) 20%,
     rgba(255, 255, 255, 0.6) 50%,
     rgba(255, 255, 255, 0.4) 80%,
-    transparent 100%);
+    transparent 100%
+  );
 }
 
 /* Dark mode interaction states */
 .dark .glass-interacting {
   backdrop-filter: blur(calc(var(--blur-moderate) * 1.4)) saturate(240%);
   -webkit-backdrop-filter: blur(calc(var(--blur-moderate) * 1.4)) saturate(240%);
-  
-  box-shadow: 
+
+  box-shadow:
     0 20px 80px rgba(0, 0, 0, 0.4),
     0 10px 40px rgba(0, 0, 0, 0.25),
     inset 0 2px 0 rgba(255, 255, 255, 0.4);
@@ -1113,7 +1198,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 /* Dark mode grid integration */
 .dark .glass-with-grid::before {
-  background-image: 
+  background-image:
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
@@ -1121,10 +1206,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Dark mode contextual popover variants */
 .dark .glass-contextual-popover {
   border: 1px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, calc(var(--refraction-strong) * 0.8)) 0%, 
-    rgba(255, 255, 255, 0.06) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, calc(var(--refraction-strong) * 0.8)) 0%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  box-shadow:
     0 24px 96px rgba(0, 0, 0, 0.5),
     0 12px 48px rgba(0, 0, 0, 0.3),
     inset 0 2px 0 rgba(255, 255, 255, 0.3);
@@ -1133,7 +1220,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 .dark .glass-depth-1 .glass-contextual-popover {
   backdrop-filter: blur(calc(var(--blur-intense) + 12px)) saturate(280%);
   -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 12px)) saturate(280%);
-  box-shadow: 
+  box-shadow:
     0 28px 112px rgba(0, 0, 0, 0.6),
     0 14px 56px rgba(0, 0, 0, 0.35),
     inset 0 3px 0 rgba(255, 255, 255, 0.35);
@@ -1142,7 +1229,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 .dark .glass-depth-2 .glass-contextual-popover {
   backdrop-filter: blur(calc(var(--blur-intense) + 16px)) saturate(300%);
   -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 16px)) saturate(300%);
-  box-shadow: 
+  box-shadow:
     0 32px 128px rgba(0, 0, 0, 0.7),
     0 16px 64px rgba(0, 0, 0, 0.4),
     inset 0 3px 0 rgba(255, 255, 255, 0.4);
@@ -1151,7 +1238,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 .dark .glass-depth-3 .glass-contextual-popover {
   backdrop-filter: blur(calc(var(--blur-intense) + 20px)) saturate(320%);
   -webkit-backdrop-filter: blur(calc(var(--blur-intense) + 20px)) saturate(320%);
-  box-shadow: 
+  box-shadow:
     0 36px 144px rgba(0, 0, 0, 0.8),
     0 18px 72px rgba(0, 0, 0, 0.45),
     inset 0 4px 0 rgba(255, 255, 255, 0.45);
@@ -1160,10 +1247,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 /* Dark mode popover and modal variants */
 .dark .glass-popover {
   border: 1px solid rgba(255, 255, 255, 0.15);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, calc(var(--refraction-medium) * 0.7)) 0%, 
-    rgba(255, 255, 255, 0.04) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, calc(var(--refraction-medium) * 0.7)) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  box-shadow:
     0 20px 80px rgba(0, 0, 0, 0.4),
     0 10px 40px rgba(0, 0, 0, 0.25),
     inset 0 2px 0 rgba(255, 255, 255, 0.25);
@@ -1171,10 +1260,12 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
 
 .dark .glass-modal {
   border: 1px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, calc(var(--refraction-intense) * 0.8)) 0%, 
-    rgba(255, 255, 255, 0.06) 100%);
-  box-shadow: 
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, calc(var(--refraction-intense) * 0.8)) 0%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  box-shadow:
     0 32px 128px rgba(0, 0, 0, 0.5),
     0 16px 64px rgba(0, 0, 0, 0.3),
     inset 0 3px 0 rgba(255, 255, 255, 0.35);
@@ -1186,7 +1277,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   --refraction-medium: 0.18;
   --refraction-strong: 0.28;
   --refraction-intense: 0.35;
-  
+
   border-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -1195,7 +1286,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   --refraction-medium: 0.28;
   --refraction-strong: 0.38;
   --refraction-intense: 0.5;
-  
+
   border-color: rgba(255, 255, 255, 0.18);
 }
 
@@ -1214,7 +1305,7 @@ html:not([data-theme="dark"]) .glass-hierarchy-interactive:hover {
   .glass-interactive {
     transition: none;
   }
-  
+
   .glass-interactive:hover {
     transform: none;
   }

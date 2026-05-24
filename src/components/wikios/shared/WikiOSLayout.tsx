@@ -26,6 +26,7 @@ import { stripBasePath } from "~/lib/base-path";
 import { useWikiOSShortcuts } from "~/components/wikios/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
 import { api } from "~/trpc/react";
+import { useAuth } from "@clerk/nextjs";
 
 // ---------------------------------------------------------------------------
 // Nav items (Search removed — handled by modal)
@@ -245,6 +246,18 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
   const { articleTitle } = useWikiContext();
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const saved = localStorage.getItem("wikios-sidebar-expanded");
+      if (saved !== null) {
+        setExpanded(saved === "true");
+      }
+    } catch {}
+  }, []);
 
   // Global Cmd+K to open search
   useEffect(() => {
@@ -279,17 +292,24 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
     ? encodeURIComponent(articleTitle.replace(/ /g, "_"))
     : null;
 
+  const { isSignedIn } = useAuth();
+
   const contextualItems = slug
-    ? CONTEXTUAL_ITEMS.map((item) => {
+    ? CONTEXTUAL_ITEMS.reduce<WikiNavItem[]>((acc, item) => {
+        // Hide edit action for guests
+        if (item.id === "edit" && !isSignedIn) return acc;
         switch (item.id) {
           case "edit":
-            return { ...item, href: `/w/${slug}/edit` };
+            acc.push({ ...item, href: `/w/${slug}/edit` });
+            break;
           case "talk":
-            return { ...item, href: `/w/${slug}/talk` };
+            acc.push({ ...item, href: `/w/${slug}/talk` });
+            break;
           default:
-            return item;
+            acc.push(item);
         }
-      })
+        return acc;
+      }, [])
     : [];
 
   const getActiveId = () => {
@@ -334,26 +354,26 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
 
       <div className="flex">
         {/* Desktop: icon rail */}
-        <aside className="wikios-icon-rail no-wiki-tooltip hidden lg:flex">
-          <nav className="flex flex-col gap-1">
+        <aside className={cn("wikios-icon-rail no-wiki-tooltip hidden lg:flex", expanded ? 'expanded' : 'collapsed')}>
+          <nav className="flex flex-col gap-1 w-full">
             {/* Browse */}
             {NAV_GROUP_1.map((item) => (
-              <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
+              <RailIcon key={item.id} item={item} isActive={activeId === item.id} expanded={expanded} />
             ))}
 
             <div className="mx-auto my-1.5 h-px w-6 bg-border/50" />
 
             {/* Community */}
-            <LorewardsRailIcon isActive={activeId === "lorewards"} />
+            <LorewardsRailIcon isActive={activeId === "lorewards"} expanded={expanded} />
             {NAV_GROUP_2.map((item) => (
-              <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
+              <RailIcon key={item.id} item={item} isActive={activeId === item.id} expanded={expanded} />
             ))}
 
             <div className="mx-auto my-1.5 h-px w-6 bg-border/50" />
 
             {/* Media */}
             {NAV_GROUP_3.map((item) => (
-              <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
+              <RailIcon key={item.id} item={item} isActive={activeId === item.id} expanded={expanded} />
             ))}
 
             {/* Contextual (edit/talk) */}
@@ -361,10 +381,24 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
               <>
                 <div className="mx-auto my-1.5 h-px w-6 bg-border/50" />
                 {contextualItems.map((item) => (
-                  <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
+                  <RailIcon key={item.id} item={item} isActive={activeId === item.id} expanded={expanded} />
                 ))}
               </>
             )}
+
+            {/* expand/collapse toggle */}
+            <div className="mt-3 flex flex-1 items-end">
+              <button
+                aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+                onClick={() => {
+                  try { localStorage.setItem('wikios-sidebar-expanded', String(!expanded)); } catch {}
+                  setExpanded((v) => !v);
+                }}
+                className="mx-auto mb-2 inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background/50 text-muted-foreground hover:bg-accent/10"
+              >
+                <svg className={cn('h-4 w-4 transition-transform', expanded ? 'rotate-180' : '')} viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </div>
           </nav>
         </aside>
 
@@ -391,24 +425,55 @@ export function WikiOSLayout({ title, children }: WikiOSLayoutProps) {
 // Rail icon (desktop)
 // ---------------------------------------------------------------------------
 
-function RailIcon({ item, isActive }: { item: WikiNavItem; isActive: boolean }) {
+function RailIcon({ item, isActive, expanded }: { item: WikiNavItem; isActive: boolean; expanded?: boolean }) {
   const Icon = item.icon;
+  const baseClasses = "group relative transition-all duration-200 rounded-lg";
+  const collapsedClasses = cn(
+    baseClasses,
+    "flex h-10 w-10 items-center justify-center",
+    isActive ? "bg-blue-500/15 text-blue-400" : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+  );
+  const expandedClasses = cn(
+    baseClasses,
+    "flex h-10 w-full items-center gap-3 px-3",
+    isActive ? "bg-blue-500/10 text-blue-400" : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
+  );
+
+  // Per-item glow color mapping
+  const getGlow = (id: string) => {
+    switch (id) {
+      case "lorewards":
+        return "rgba(250, 204, 21, 0.45)"; // amber
+      case "blurbs":
+        return "rgba(139, 92, 246, 0.45)"; // purple
+      case "images":
+        return "rgba(34, 197, 94, 0.45)"; // green
+      case "recent":
+      case "random":
+      case "main":
+      default:
+        return "rgba(59, 130, 246, 0.45)"; // blue
+    }
+  };
+
   return (
     <Link
       href={withBasePath(item.href)}
-      className={cn(
-        "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
-        isActive
-          ? "bg-blue-500/15 text-blue-400"
-          : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
-      )}
-      title={item.title}
+      className={expanded ? expandedClasses : collapsedClasses}
+      title={expanded ? undefined : item.title}
     >
-      <Icon className="h-[18px] w-[18px]" />
-      {/* Tooltip label */}
-      <span className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-md bg-popover px-2 py-1 text-xs font-medium text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
-        {item.title}
-      </span>
+      <Icon
+        className={cn(expanded ? "h-4 w-4" : "h-[18px] w-[18px]")}
+        style={{ filter: `drop-shadow(0 0 8px ${getGlow(item.id)})` }}
+      />
+
+      {expanded ? (
+        <span className="ml-2 truncate text-sm font-medium text-[var(--wikios-text)]">{item.title}</span>
+      ) : (
+        <span className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-md bg-popover px-2 py-1 text-xs font-medium text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+          {item.title}
+        </span>
+      )}
     </Link>
   );
 }
@@ -440,22 +505,17 @@ function MobilePill({ item, isActive }: { item: WikiNavItem; isActive: boolean }
 // Lorewards custom icon — animated SVG on hover
 // ---------------------------------------------------------------------------
 
-function LorewardsRailIcon({ isActive }: { isActive: boolean }) {
+function LorewardsRailIcon({ isActive, expanded }: { isActive: boolean; expanded?: boolean }) {
+  const baseClasses = "group relative transition-all duration-200 rounded-lg";
+  const collapsedClasses = cn(baseClasses, "flex h-10 w-10 items-center justify-center", isActive ? "bg-amber-500/15 text-amber-400" : "text-muted-foreground hover:bg-amber-500/10 hover:text-amber-300");
+  const expandedClasses = cn(baseClasses, "flex h-10 w-full items-center gap-3 px-3", isActive ? "bg-amber-500/10 text-amber-400" : "text-muted-foreground hover:bg-amber-500/10 hover:text-amber-300");
+
   return (
-    <Link
-      href={withBasePath("/w/special/lorewards")}
-      className={cn(
-        "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
-        isActive
-          ? "bg-amber-500/15 text-amber-400"
-          : "text-muted-foreground hover:bg-amber-500/10 hover:text-amber-300"
+    <Link href={withBasePath("/w/special/lorewards")} className={expanded ? expandedClasses : collapsedClasses} title={expanded ? undefined : "Lorewards"}>
+      <LorewardsIcon size={expanded ? 14 : 18} />
+      {expanded ? <span className="ml-2 truncate text-sm font-medium text-[var(--wikios-text)]">Lorewards</span> : (
+        <span className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-md bg-popover px-2 py-1 text-xs font-medium text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">Lorewards</span>
       )}
-      title="Lorewards"
-    >
-      <LorewardsIcon size={18} />
-      <span className="pointer-events-none absolute left-full ml-2 whitespace-nowrap rounded-md bg-popover px-2 py-1 text-xs font-medium text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100">
-        Lorewards
-      </span>
     </Link>
   );
 }

@@ -1,9 +1,9 @@
 /**
  * Builder Theme System
- * 
+ *
  * Unified theming for the MyCountry Builder system.
  * Follows the same structure as src/lib/mycountry-theme.ts for consistency.
- * 
+ *
  * Primary Builder Identity: Amber/Gold (matches MyCountry executive/overview theme)
  * Each section has unique accents while maintaining overall builder identity.
  */
@@ -19,7 +19,7 @@ export type BuilderSection =
   | "import";
 
 export type BuilderTabTheme =
-  | "builder"      // Overall builder theme
+  | "builder" // Overall builder theme
   | "foundation"
   | "identity"
   | "government"
@@ -99,10 +99,10 @@ export function sectionToHeaderNavStep(section: BuilderSection): HeaderNavStep |
  * Global builder accent colors - used for overall builder identity
  */
 export const BUILDER_ACCENT = {
-  primary: "#f59e0b",    // amber-500
-  secondary: "#eab308",  // yellow-500
-  tertiary: "#fbbf24",   // amber-400
-  accent: "#f59e0b",     // amber-500
+  primary: "#f59e0b", // amber-500
+  secondary: "#eab308", // yellow-500
+  tertiary: "#fbbf24", // amber-400
+  accent: "#f59e0b", // amber-500
   gradient: "from-amber-500 to-yellow-500",
   activeGlow: "shadow-amber-500/30",
   border: "border-amber-500/20",
@@ -229,60 +229,60 @@ export const BUILDER_THEME = BUILDER_SECTION_THEMES;
  */
 export const BuilderTabColors = {
   builder: {
-    primary: "#b45309",    // Amber-700
-    secondary: "#f59e0b",  // Amber-500
-    accent: "#fbbf24",     // Amber-400
+    primary: "#b45309", // Amber-700
+    secondary: "#f59e0b", // Amber-500
+    accent: "#fbbf24", // Amber-400
     background: "rgba(245, 158, 11, 0.08)",
     glow: "rgba(245, 158, 11, 0.3)",
-    icon: "#92400e",       // Amber-800
+    icon: "#92400e", // Amber-800
   },
   foundation: {
-    primary: "#b45309",    // Amber-700
-    secondary: "#f59e0b",  // Amber-500
-    accent: "#fbbf24",     // Amber-400
+    primary: "#b45309", // Amber-700
+    secondary: "#f59e0b", // Amber-500
+    accent: "#fbbf24", // Amber-400
     background: "rgba(245, 158, 11, 0.08)",
     glow: "rgba(245, 158, 11, 0.3)",
-    icon: "#92400e",       // Amber-800
+    icon: "#92400e", // Amber-800
   },
   identity: {
-    primary: "#0d9488",    // Teal-600
-    secondary: "#14b8a6",  // Teal-500
-    accent: "#2dd4bf",     // Teal-400
+    primary: "#0d9488", // Teal-600
+    secondary: "#14b8a6", // Teal-500
+    accent: "#2dd4bf", // Teal-400
     background: "rgba(20, 184, 166, 0.08)",
     glow: "rgba(20, 184, 166, 0.3)",
-    icon: "#0f766e",       // Teal-700
+    icon: "#0f766e", // Teal-700
   },
   government: {
-    primary: "#0891b2",    // Cyan-600
-    secondary: "#06b6d4",  // Cyan-500
-    accent: "#22d3ee",     // Cyan-400
+    primary: "#0891b2", // Cyan-600
+    secondary: "#06b6d4", // Cyan-500
+    accent: "#22d3ee", // Cyan-400
     background: "rgba(6, 182, 212, 0.08)",
     glow: "rgba(6, 182, 212, 0.3)",
-    icon: "#0e7490",       // Cyan-700
+    icon: "#0e7490", // Cyan-700
   },
   economics: {
-    primary: "#16a34a",    // Green-600
-    secondary: "#22c55e",  // Green-500
-    accent: "#4ade80",     // Green-400
+    primary: "#16a34a", // Green-600
+    secondary: "#22c55e", // Green-500
+    accent: "#4ade80", // Green-400
     background: "rgba(34, 197, 94, 0.08)",
     glow: "rgba(34, 197, 94, 0.3)",
-    icon: "#15803d",       // Green-700
+    icon: "#15803d", // Green-700
   },
   preview: {
-    primary: "#f59e0b",    // Amber-500
-    secondary: "#fbbf24",  // Amber-400
-    accent: "#fcd34d",     // Amber-300
+    primary: "#f59e0b", // Amber-500
+    secondary: "#fbbf24", // Amber-400
+    accent: "#fcd34d", // Amber-300
     background: "rgba(251, 191, 36, 0.08)",
     glow: "rgba(251, 191, 36, 0.3)",
-    icon: "#b45309",       // Amber-700
+    icon: "#b45309", // Amber-700
   },
   import: {
-    primary: "#3b82f6",    // Blue-500
-    secondary: "#60a5fa",  // Blue-400
-    accent: "#93c5fd",     // Blue-300
+    primary: "#3b82f6", // Blue-500
+    secondary: "#60a5fa", // Blue-400
+    accent: "#93c5fd", // Blue-300
     background: "rgba(59, 130, 246, 0.08)",
     glow: "rgba(59, 130, 246, 0.3)",
-    icon: "#1d4ed8",       // Blue-700
+    icon: "#1d4ed8", // Blue-700
   },
 } as const;
 

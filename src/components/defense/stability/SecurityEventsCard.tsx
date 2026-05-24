@@ -62,9 +62,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                       </Badge>
                       <h5 className="text-sm font-medium">{event.title}</h5>
                     </div>
-                    <p className="text-muted-foreground mb-3 text-sm">
-                      {event.description}
-                    </p>
+                    <p className="text-muted-foreground mb-3 text-sm">{event.description}</p>
 
                     <div className="grid grid-cols-3 gap-3 text-xs">
                       {event.casualties > 0 && (

@@ -29,7 +29,9 @@ export const StepIndicator = React.memo(function StepIndicator({
   // In edit mode, foundation step is excluded
   const steps = useMemo(() => {
     const availableSteps = getStepsForMode(mode);
-    return availableSteps.map(step => [step, stepConfig[step]] as [BuilderStep, (typeof stepConfig)[BuilderStep]]);
+    return availableSteps.map(
+      (step) => [step, stepConfig[step]] as [BuilderStep, (typeof stepConfig)[BuilderStep]]
+    );
   }, [mode]);
 
   const currentIndex = useMemo(
@@ -101,7 +103,8 @@ export const StepIndicator = React.memo(function StepIndicator({
             const isCompleted = completedSteps.includes(step);
             const isCurrent = currentStep === step;
             // In edit mode, can navigate to any step
-            const isAccessible = mode === "edit" || index <= currentIndex || completedSteps.includes(step);
+            const isAccessible =
+              mode === "edit" || index <= currentIndex || completedSteps.includes(step);
             const Icon = config.icon;
 
             return (

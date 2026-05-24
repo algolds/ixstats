@@ -49,7 +49,10 @@ export function PolicyPresetSelector({
     onApplyPreset([...preset.policies]);
     handleOpenChange(false);
 
-    notify.success(`Applied ${preset.name} policy preset`, `${preset.policies.length} policies selected`);
+    notify.success(
+      `Applied ${preset.name} policy preset`,
+      `${preset.policies.length} policies selected`
+    );
   };
 
   return (

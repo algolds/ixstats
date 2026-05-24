@@ -3,15 +3,7 @@
 
 import React from "react";
 
-
-import {
-  DollarSign,
-  Users,
-  TrendingUp,
-  BarChart3,
-  Globe,
-  Coins,
-} from "lucide-react";
+import { DollarSign, Users, TrendingUp, BarChart3, Globe, Coins } from "lucide-react";
 import type { CoreEconomicIndicators, RealCountryData } from "../lib/economy-data-service";
 // Import the original getEconomicTier with an alias if needed, or ensure the local one is distinct
 import { getTierStyle } from "~/lib/theme-utils";

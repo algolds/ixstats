@@ -29,7 +29,14 @@ export interface SearchResult {
 }
 
 // View modes
-export type ViewMode = "compact" | "search" | "notifications" | "settings" | "mycountry" | "cycling" | "wiki";
+export type ViewMode =
+  | "compact"
+  | "search"
+  | "notifications"
+  | "settings"
+  | "mycountry"
+  | "cycling"
+  | "wiki";
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
 export type TimeDisplayMode = "time" | "date" | "both";
 

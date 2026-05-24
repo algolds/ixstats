@@ -7,7 +7,10 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 
-const GRADIENT_CLASSES: Record<string, { border: string; headerBg: string; iconBg: string; statBg: string }> = {
+const GRADIENT_CLASSES: Record<
+  string,
+  { border: string; headerBg: string; iconBg: string; statBg: string }
+> = {
   amber: {
     border: "border-amber-500/25",
     headerBg: "bg-gradient-to-r from-amber-500/8 to-yellow-500/5",
@@ -88,30 +91,32 @@ export const CommandPanel = React.memo(function CommandPanel({
   const hasChildren = React.Children.count(children) > 0;
 
   return (
-    <div className={cn(
-      "glass-hierarchy-child rounded-xl border overflow-hidden flex flex-col",
-      theme.border,
-      className,
-    )}>
+    <div
+      className={cn(
+        "glass-hierarchy-child flex flex-col overflow-hidden rounded-xl border",
+        theme.border,
+        className
+      )}
+    >
       {/* Gradient header */}
       <div className={cn("px-3.5 py-3", theme.headerBg)}>
         <div className="flex items-center gap-2.5">
-          <div className={cn("rounded-lg p-1.5 flex-shrink-0", theme.iconBg)}>
+          <div className={cn("flex-shrink-0 rounded-lg p-1.5", theme.iconBg)}>
             <Icon size={14} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold truncate">{title}</h3>
+            <h3 className="truncate text-sm font-semibold">{title}</h3>
           </div>
         </div>
 
         {/* Stat chips */}
         {stats && stats.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-2">
+          <div className="mt-2 flex items-center gap-1.5">
             {stats.map((stat) => (
               <Badge
                 key={stat.label}
                 variant="secondary"
-                className={cn("text-[10px] px-1.5 py-0.5 font-medium", theme.statBg)}
+                className={cn("px-1.5 py-0.5 text-[10px] font-medium", theme.statBg)}
               >
                 {stat.value} {stat.label}
               </Badge>
@@ -123,27 +128,27 @@ export const CommandPanel = React.memo(function CommandPanel({
       {/* Content items */}
       <div className="flex-1 px-1.5 py-1.5">
         {hasChildren ? (
-          <div className="divide-y divide-border/30">
-            {children}
-          </div>
+          <div className="divide-border/30 divide-y">{children}</div>
         ) : (
           <div className="flex flex-col items-center justify-center py-6 text-center">
-            {EmptyIcon && <EmptyIcon className="h-6 w-6 text-muted-foreground/40 mb-2" />}
-            <p className="text-xs text-muted-foreground">{emptyMessage ?? "No items"}</p>
+            {EmptyIcon && <EmptyIcon className="text-muted-foreground/40 mb-2 h-6 w-6" />}
+            <p className="text-muted-foreground text-xs">{emptyMessage ?? "No items"}</p>
           </div>
         )}
       </div>
 
       {/* Footer: View All + CTA */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 border-t border-border/30 bg-muted/20">
+      <div className="border-border/30 bg-muted/20 flex items-center justify-between border-t px-3.5 py-2.5">
         {footerLabel && onFooter ? (
           <button
             onClick={onFooter}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs transition-colors"
           >
             {footerLabel}
             {totalCount != null && totalCount > 0 && (
-              <Badge variant="secondary" className="text-[9px] px-1 py-0 ml-0.5">{totalCount}</Badge>
+              <Badge variant="secondary" className="ml-0.5 px-1 py-0 text-[9px]">
+                {totalCount}
+              </Badge>
             )}
             <ChevronRight className="h-3 w-3" />
           </button>
@@ -151,12 +156,7 @@ export const CommandPanel = React.memo(function CommandPanel({
           <div />
         )}
         {ctaLabel && onCta && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onCta}
-            className="gap-1 text-xs h-7 px-2.5"
-          >
+          <Button size="sm" variant="outline" onClick={onCta} className="h-7 gap-1 px-2.5 text-xs">
             <Plus className="h-3 w-3" />
             {ctaLabel}
           </Button>

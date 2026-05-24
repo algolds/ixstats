@@ -23,12 +23,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogClose,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { RarityBadge } from "./RarityBadge";
 import { Card3DViewer } from "./Card3DViewer";
@@ -109,10 +104,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
     // Memoize formatted stats
     const stats = useMemo(() => (card ? formatCardStats(card) : null), [card]);
-    const rarityConfig = useMemo(
-      () => (card ? getRarityConfig(card.rarity) : null),
-      [card]
-    );
+    const rarityConfig = useMemo(() => (card ? getRarityConfig(card.rarity) : null), [card]);
     const comparisonStats = useMemo(
       () => (comparisonCard ? formatCardStats(comparisonCard) : null),
       [comparisonCard]
@@ -124,7 +116,8 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
       const metaUrl = (card.metadata as Record<string, unknown>)?.wikiUrl as string | undefined;
       if (metaUrl) return metaUrl;
       if (card.wikiSource && card.wikiArticleTitle) {
-        const base = card.wikiSource === "ixwiki" ? "https://ixwiki.com/wiki" : "https://iiwiki.com/wiki";
+        const base =
+          card.wikiSource === "ixwiki" ? "https://ixwiki.com/wiki" : "https://iiwiki.com/wiki";
         return `${base}/${encodeURIComponent(card.wikiArticleTitle)}`;
       }
       return card.wikiUrl;
@@ -158,18 +151,18 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
           showCloseButton={false}
           className={cn(
             // Glass modal styling without position conflicts
-            "backdrop-blur-xl bg-gradient-to-br from-white/20 to-white/5",
+            "bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl",
             "border-2 border-white/20 shadow-2xl",
-            "max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-5xl p-0",
+            "max-w-[95vw] p-0 sm:max-w-2xl md:max-w-3xl lg:max-w-5xl",
             // Responsive sizing
-            "w-[98vw] sm:w-[95vw] max-h-[90vh] overflow-hidden"
+            "max-h-[90vh] w-[98vw] overflow-hidden sm:w-[95vw]"
           )}
         >
           {/* Header with actions */}
-          <div className="relative border-b border-white/10 bg-black/40 backdrop-blur-md px-4 sm:px-6 py-3 sm:py-4">
+          <div className="relative border-b border-white/10 bg-black/40 px-4 py-3 backdrop-blur-md sm:px-6 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <DialogTitle className="text-lg sm:text-xl font-bold text-white">
+                <DialogTitle className="text-lg font-bold text-white sm:text-xl">
                   {card.title}
                 </DialogTitle>
                 <RarityBadge rarity={card.rarity} size="medium" animated />
@@ -201,12 +194,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
             </div>
 
             {/* Card metadata */}
-            <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/70 mt-2">
+            <div className="mt-2 flex items-center gap-2 text-xs text-white/70 sm:gap-3 sm:text-sm">
               {card.country && (
                 <span className="flex items-center gap-1">
-                  {card.country.flag && (
-                    <span className="text-base">{card.country.flag}</span>
-                  )}
+                  {card.country.flag && <span className="text-base">{card.country.flag}</span>}
                   {card.country.name}
                 </span>
               )}
@@ -224,68 +215,68 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="flex flex-col h-full max-h-[calc(90vh-120px)]"
+            className="flex h-full max-h-[calc(90vh-120px)] flex-col"
           >
-            <TabsList className="glass-hierarchy-child mx-4 sm:mx-6 mt-4 gap-1 sm:gap-2 justify-start overflow-x-auto flex-nowrap">
+            <TabsList className="glass-hierarchy-child mx-4 mt-4 flex-nowrap justify-start gap-1 overflow-x-auto sm:mx-6 sm:gap-2">
               <TabsTrigger
                 value="overview"
                 className={cn(
-                  "rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                  "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                   activeTab === "overview"
                     ? "glass-hierarchy-interactive text-white"
                     : "text-white/60 hover:text-white/80"
                 )}
               >
-                <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                <Info className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Overview
               </TabsTrigger>
               <TabsTrigger
                 value="3d-view"
                 className={cn(
-                  "rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                  "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                   activeTab === "3d-view"
                     ? "glass-hierarchy-interactive text-white"
                     : "text-white/60 hover:text-white/80"
                 )}
               >
-                <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                <Sparkles className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 3D View
               </TabsTrigger>
               <TabsTrigger
                 value="market"
                 className={cn(
-                  "rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                  "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                   activeTab === "market"
                     ? "glass-hierarchy-interactive text-white"
                     : "text-white/60 hover:text-white/80"
                 )}
               >
-                <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                <BarChart3 className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Market
               </TabsTrigger>
               <TabsTrigger
                 value="stats"
                 className={cn(
-                  "rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                  "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                   activeTab === "stats"
                     ? "glass-hierarchy-interactive text-white"
                     : "text-white/60 hover:text-white/80"
                 )}
               >
-                <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                <Star className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Stats
               </TabsTrigger>
               {card.cardType === "LORE" && (
                 <TabsTrigger
                   value="lore"
                   className={cn(
-                    "rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                    "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                     activeTab === "lore"
                       ? "glass-hierarchy-interactive text-white"
                       : "text-white/60 hover:text-white/80"
                   )}
                 >
-                  <ScrollText className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5" />
+                  <ScrollText className="mr-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   Lore
                 </TabsTrigger>
               )}
@@ -293,7 +284,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                 <TabsTrigger
                   value="compare"
                   className={cn(
-                    "rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap",
+                    "rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all sm:px-4 sm:text-sm",
                     activeTab === "compare"
                       ? "glass-hierarchy-interactive text-white"
                       : "text-white/60 hover:text-white/80"
@@ -305,10 +296,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
             </TabsList>
 
             {/* Tab content */}
-            <div className="flex-1 overflow-auto px-4 sm:px-6 py-4">
+            <div className="flex-1 overflow-auto px-4 py-4 sm:px-6">
               {/* Overview Tab */}
               <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
                   {/* Left: Card image */}
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -325,7 +316,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           borderRadius: "1rem",
                         }}
                       />
-                      <div className="relative w-full h-[300px] sm:h-[400px]">
+                      <div className="relative h-[300px] w-full sm:h-[400px]">
                         <CardHolographicCover
                           cardType={card.cardType}
                           rarity={card.rarity}
@@ -340,13 +331,15 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           priority
                           sizes="(max-width: 768px) 90vw, 400px"
                           unoptimized
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
                         />
                       </div>
                       {/* Rarity glow */}
                       <div
                         className={cn(
-                          "absolute inset-0 rounded-2xl z-20 pointer-events-none",
+                          "pointer-events-none absolute inset-0 z-20 rounded-2xl",
                           rarityConfig.glowColor,
                           rarityConfig.glowIntensity
                         )}
@@ -387,7 +380,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {/* Description */}
                     {card.description && (
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h3 className="text-sm font-semibold text-white mb-2">Description</h3>
+                        <h3 className="mb-2 text-sm font-semibold text-white">Description</h3>
                         <p className="text-sm text-white/80">{card.description}</p>
                       </div>
                     )}
@@ -415,9 +408,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                       <div className="glass-hierarchy-child rounded-lg p-3">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-white/70">Enhancement Level</span>
-                          <span className="font-bold text-amber-400">
-                            Level {card.level}
-                          </span>
+                          <span className="font-bold text-amber-400">Level {card.level}</span>
                         </div>
                       </div>
                     )}
@@ -452,7 +443,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                         <button
                           onClick={() => onViewCollection(card.countryId!)}
                           className={cn(
-                            "glass-hierarchy-interactive rounded-lg px-4 py-3 col-span-2",
+                            "glass-hierarchy-interactive col-span-2 rounded-lg px-4 py-3",
                             "text-sm font-semibold text-white",
                             "transition-all hover:scale-105"
                           )}
@@ -466,7 +457,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
               </TabsContent>
 
               {/* 3D View Tab */}
-              <TabsContent value="3d-view" className="flex items-center justify-center min-h-[500px]">
+              <TabsContent
+                value="3d-view"
+                className="flex min-h-[500px] items-center justify-center"
+              >
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -480,13 +474,9 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     enableDragRotation={true}
                     enableMouseTracking={true}
                   />
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-white/70">
-                      Drag to rotate • Click to flip
-                    </p>
-                    <p className="text-xs text-white/50">
-                      Experience the card in interactive 3D
-                    </p>
+                  <div className="space-y-2 text-center">
+                    <p className="text-sm text-white/70">Drag to rotate • Click to flip</p>
+                    <p className="text-xs text-white/50">Experience the card in interactive 3D</p>
                   </div>
                 </motion.div>
               </TabsContent>
@@ -499,43 +489,41 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   transition={{ duration: 0.3 }}
                 >
                   <div className="glass-hierarchy-child rounded-lg p-6">
-                    <h3 className="mb-4 text-lg font-semibold text-white flex items-center gap-2">
+                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
                       <BarChart3 className="h-5 w-5" />
                       Market History
                     </h3>
 
                     {/* Market stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="mb-6 grid grid-cols-3 gap-4">
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="text-xs text-white/60 mb-1">Current Value</p>
+                        <p className="mb-1 text-xs text-white/60">Current Value</p>
                         <p className={cn("text-2xl font-bold", rarityConfig.color)}>
                           {formatMarketValue(card.marketValue)}
                         </p>
                       </div>
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="text-xs text-white/60 mb-1">Total Supply</p>
+                        <p className="mb-1 text-xs text-white/60">Total Supply</p>
                         <p className="text-2xl font-bold text-white">
                           {card.totalSupply.toLocaleString()}
                         </p>
                       </div>
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <p className="text-xs text-white/60 mb-1">Last Trade</p>
+                        <p className="mb-1 text-xs text-white/60">Last Trade</p>
                         <p className="text-sm font-semibold text-white">
-                          {card.lastTrade
-                            ? new Date(card.lastTrade).toLocaleDateString()
-                            : "Never"}
+                          {card.lastTrade ? new Date(card.lastTrade).toLocaleDateString() : "Never"}
                         </p>
                       </div>
                     </div>
 
                     {/* Placeholder chart */}
-                    <div className="flex h-64 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                    <div className="flex h-64 items-center justify-center rounded-lg border border-white/10 bg-white/5">
                       <div className="text-center">
-                        <BarChart3 className="h-12 w-12 text-white/20 mx-auto mb-3" />
+                        <BarChart3 className="mx-auto mb-3 h-12 w-12 text-white/20" />
                         <p className="text-sm text-white/40">
                           Market chart will display trade history
                         </p>
-                        <p className="text-xs text-white/30 mt-2">
+                        <p className="mt-2 text-xs text-white/30">
                           Coming soon: Price trends, volume analysis
                         </p>
                       </div>
@@ -552,7 +540,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   transition={{ duration: 0.3 }}
                   className="glass-hierarchy-child rounded-lg p-6"
                 >
-                  <h3 className="mb-6 text-lg font-semibold text-white flex items-center gap-2">
+                  <h3 className="mb-6 flex items-center gap-2 text-lg font-semibold text-white">
                     <Star className="h-5 w-5" />
                     Detailed Statistics
                   </h3>
@@ -572,7 +560,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                         {/* Progress bar */}
                         <div className="h-3 w-full overflow-hidden rounded-full bg-white/10">
                           <motion.div
-                            className={cn("h-full rounded-full", stat.color.replace("text-", "bg-"))}
+                            className={cn(
+                              "h-full rounded-full",
+                              stat.color.replace("text-", "bg-")
+                            )}
                             initial={{ width: 0 }}
                             animate={{ width: `${stat.value}%` }}
                             transition={{ duration: 0.8, delay: 0.2 }}
@@ -600,25 +591,25 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     transition={{ duration: 0.3 }}
                   >
                     {/* Wiki source + category badges */}
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
                       <span
                         className={cn(
-                          "px-3 py-1 rounded-md font-bold text-sm border",
+                          "rounded-md border px-3 py-1 text-sm font-bold",
                           card.wikiSource === "ixwiki"
-                            ? "bg-blue-600/80 text-white border-blue-400/50"
+                            ? "border-blue-400/50 bg-blue-600/80 text-white"
                             : card.wikiSource === "iiwiki"
-                            ? "bg-green-600/80 text-white border-green-400/50"
-                            : "bg-gray-600/80 text-white border-gray-400/50"
+                              ? "border-green-400/50 bg-green-600/80 text-white"
+                              : "border-gray-400/50 bg-gray-600/80 text-white"
                         )}
                       >
                         {card.wikiSource === "ixwiki"
                           ? "IxWiki"
                           : card.wikiSource === "iiwiki"
-                          ? "IIWiki"
-                          : "Wiki"}
+                            ? "IIWiki"
+                            : "Wiki"}
                       </span>
                       {(card.metadata as Record<string, unknown>)?.category && (
-                        <span className="px-3 py-1 rounded-md text-sm bg-purple-600/50 text-purple-200 border border-purple-400/30">
+                        <span className="rounded-md border border-purple-400/30 bg-purple-600/50 px-3 py-1 text-sm text-purple-200">
                           {String((card.metadata as Record<string, unknown>).category)}
                         </span>
                       )}
@@ -630,26 +621,24 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     {/* Lore-specific historical metrics */}
                     {(() => {
                       const meta = card.metadata as Record<string, any> | undefined;
-                      const loreStats = meta?.loreStats as { historicalSignificance?: number; culturalImpact?: number } | undefined;
+                      const loreStats = meta?.loreStats as
+                        | { historicalSignificance?: number; culturalImpact?: number }
+                        | undefined;
                       if (!loreStats) return null;
                       return (
-                        <div className="glass-hierarchy-child rounded-lg p-4 mb-4">
-                          <h4 className="text-sm font-semibold text-white mb-3">
+                        <div className="glass-hierarchy-child mb-4 rounded-lg p-4">
+                          <h4 className="mb-3 text-sm font-semibold text-white">
                             Historical Metrics
                           </h4>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <div className="text-xs text-white/60">
-                                Historical Significance
-                              </div>
+                              <div className="text-xs text-white/60">Historical Significance</div>
                               <div className="text-xl font-bold text-amber-400">
                                 {loreStats.historicalSignificance ?? 0}/100
                               </div>
                             </div>
                             <div>
-                              <div className="text-xs text-white/60">
-                                Cultural Impact
-                              </div>
+                              <div className="text-xs text-white/60">Cultural Impact</div>
                               <div className="text-xl font-bold text-purple-400">
                                 {loreStats.culturalImpact ?? 0}/100
                               </div>
@@ -657,8 +646,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                           </div>
                           {meta?.qualityScore != null && (
                             <div className="mt-3 text-xs text-white/50">
-                              Article Quality Score:{" "}
-                              {Math.round(Number(meta.qualityScore))}/100
+                              Article Quality Score: {Math.round(Number(meta.qualityScore))}/100
                             </div>
                           )}
                         </div>
@@ -666,9 +654,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     })()}
 
                     {/* Forum discussions */}
-                    <LoreForumSection
-                      articleTitle={card.wikiArticleTitle || card.title}
-                    />
+                    <LoreForumSection articleTitle={card.wikiArticleTitle || card.title} />
                   </motion.div>
                 </TabsContent>
               )}
@@ -681,10 +667,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       {/* Original card */}
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h4 className="text-sm font-semibold text-white mb-4">{card.title}</h4>
+                        <h4 className="mb-4 text-sm font-semibold text-white">{card.title}</h4>
                         <div className="space-y-3">
                           {Object.entries(stats).map(([key, stat]) => (
                             <div key={key}>
@@ -699,7 +685,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
                       {/* Comparison card */}
                       <div className="glass-hierarchy-child rounded-lg p-4">
-                        <h4 className="text-sm font-semibold text-white mb-4">
+                        <h4 className="mb-4 text-sm font-semibold text-white">
                           {comparisonCard.title}
                         </h4>
                         <div className="space-y-3">

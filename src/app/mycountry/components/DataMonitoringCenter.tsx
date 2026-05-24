@@ -24,8 +24,6 @@ import { getDatabaseIntegrationService } from "../services/DatabaseIntegrationSe
 import { useDataSync } from "../hooks/useDataSync";
 import { useRealTimeIntelligence } from "~/hooks/useRealTimeIntelligence";
 
-
-
 interface DataMonitoringCenterProps {
   countryId: string;
   isVisible: boolean;

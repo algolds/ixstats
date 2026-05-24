@@ -16,8 +16,12 @@ import {
   highlightActiveLineGutter,
   drawSelection,
   rectangularSelection,
+  Decoration,
+  DecorationSet,
+  ViewPlugin,
+  ViewUpdate,
 } from "@codemirror/view";
-import { EditorState } from "@codemirror/state";
+import { EditorState, RangeSetBuilder } from "@codemirror/state";
 import {
   defaultKeymap,
   history,
@@ -26,7 +30,6 @@ import {
   undo,
   redo,
 } from "@codemirror/commands";
-import { html } from "@codemirror/lang-html";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
   syntaxHighlighting,
@@ -65,6 +68,174 @@ import {
   FileCode,
   Type,
 } from "lucide-react";
+
+const headingDeco = Decoration.mark({ class: "cm-wikitext-heading" });
+const listDeco = Decoration.mark({ class: "cm-wikitext-list" });
+const boldDeco = Decoration.mark({ class: "cm-wikitext-bold" });
+const italicDeco = Decoration.mark({ class: "cm-wikitext-italic" });
+const linkDeco = Decoration.mark({ class: "cm-wikitext-link" });
+const extlinkDeco = Decoration.mark({ class: "cm-wikitext-extlink" });
+const templateDeco = Decoration.mark({ class: "cm-wikitext-template" });
+const refDeco = Decoration.mark({ class: "cm-wikitext-ref" });
+
+const wikitextHighlightPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = this.buildDecorations(view);
+    }
+
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = this.buildDecorations(update.view);
+      }
+    }
+
+    buildDecorations(view: EditorView): DecorationSet {
+      const builder = new RangeSetBuilder<Decoration>();
+
+      for (const { from, to } of view.visibleRanges) {
+        let pos = from;
+        while (pos < to) {
+          const line = view.state.doc.lineAt(pos);
+          const lineText = line.text;
+          const lineFrom = line.from;
+          const lineTo = line.to;
+
+          const matches: { from: number; to: number; deco: Decoration }[] = [];
+
+          // 1. Headings
+          const headingMatch = /^(={1,6})\s*(.+?)\s*\1\s*$/.exec(lineText);
+          if (headingMatch) {
+            matches.push({ from: lineFrom, to: lineTo, deco: headingDeco });
+          } else {
+            // 2. Lists
+            const listMatch = /^([\*#\:\;]+)/.exec(lineText);
+            if (listMatch) {
+              matches.push({
+                from: lineFrom,
+                to: lineFrom + listMatch[1]!.length,
+                deco: listDeco,
+              });
+            }
+          }
+
+          // 3. Bold: '''text'''
+          const boldRegex = /'''([^'\n]+?)'''/g;
+          let m;
+          while ((m = boldRegex.exec(lineText)) !== null) {
+            matches.push({
+              from: lineFrom + m.index,
+              to: lineFrom + m.index + m[0].length,
+              deco: boldDeco,
+            });
+          }
+
+          // 4. Italic: ''text''
+          const italicRegex = /''([^'\n]+?)''/g;
+          while ((m = italicRegex.exec(lineText)) !== null) {
+            const start = m.index;
+            const end = m.index + m[0].length;
+            const isBoldStart = start > 0 && lineText[start - 1] === "'";
+            const isBoldEnd = end < lineText.length && lineText[end] === "'";
+            if (!isBoldStart && !isBoldEnd) {
+              matches.push({
+                from: lineFrom + start,
+                to: lineFrom + end,
+                deco: italicDeco,
+              });
+            }
+          }
+
+          // 5. Wiki Links: [[Page]] or [[Page|Title]]
+          const wikiLinkRegex = /\[\[([^\]\n]+?)\]\]/g;
+          while ((m = wikiLinkRegex.exec(lineText)) !== null) {
+            matches.push({
+              from: lineFrom + m.index,
+              to: lineFrom + m.index + m[0].length,
+              deco: linkDeco,
+            });
+          }
+
+          // 6. External Links: [URL Title] or [URL]
+          const extLinkRegex = /\[([^\[\]\n]+?)\]/g;
+          while ((m = extLinkRegex.exec(lineText)) !== null) {
+            const start = m.index;
+            const end = m.index + m[0].length;
+            const isWikiStart = start > 0 && lineText[start - 1] === "[";
+            const isWikiEnd = end < lineText.length && lineText[end] === "]";
+            if (!isWikiStart && !isWikiEnd) {
+              matches.push({
+                from: lineFrom + start,
+                to: lineFrom + end,
+                deco: extlinkDeco,
+              });
+            }
+          }
+
+          // 7. Templates: {{template}}
+          const templateRegex = /\{\{([^\}\n]+?)\}\}/g;
+          while ((m = templateRegex.exec(lineText)) !== null) {
+            matches.push({
+              from: lineFrom + m.index,
+              to: lineFrom + m.index + m[0].length,
+              deco: templateDeco,
+            });
+          }
+
+          // 8. References: <ref>...</ref>
+          const refRegex = /<ref[^>]*>|<\/ref>/gi;
+          while ((m = refRegex.exec(lineText)) !== null) {
+            matches.push({
+              from: lineFrom + m.index,
+              to: lineFrom + m.index + m[0].length,
+              deco: refDeco,
+            });
+          }
+
+          // Sort matches
+          matches.sort((a, b) => {
+            if (a.from !== b.from) return a.from - b.from;
+            return b.to - a.to;
+          });
+
+          // Resolve overlaps/nesting
+          const activeRanges: typeof matches = [];
+          const validMatches: typeof matches = [];
+
+          for (const match of matches) {
+            while (activeRanges.length > 0 && activeRanges[activeRanges.length - 1]!.to <= match.from) {
+              activeRanges.pop();
+            }
+            if (activeRanges.length > 0) {
+              const parent = activeRanges[activeRanges.length - 1]!;
+              if (match.to > parent.to) {
+                match.to = parent.to;
+              }
+            }
+            if (match.from < match.to) {
+              validMatches.push(match);
+              activeRanges.push(match);
+            }
+          }
+
+          // Add to builder
+          for (const match of validMatches) {
+            builder.add(match.from, match.to, match.deco);
+          }
+
+          pos = line.to + 1;
+        }
+      }
+
+      return builder.finish();
+    }
+  },
+  {
+    decorations: (v) => v.decorations,
+  }
+);
 
 interface WikiSourceEditorProps {
   initialWikitext: string;
@@ -133,7 +304,7 @@ export function WikiSourceEditor({
         highlightActiveLine(),
         highlightSelectionMatches(),
         syntaxHighlighting(defaultHighlightStyle),
-        html(),
+        wikitextHighlightPlugin,
         oneDark,
         keymap.of([
           ...defaultKeymap,
@@ -186,6 +357,37 @@ export function WikiSourceEditor({
           ".cm-searchMatch": {
             background: "rgba(234, 179, 8, 0.25)",
             outline: "1px solid rgba(234, 179, 8, 0.5)",
+          },
+          ".cm-wikitext-heading": {
+            color: "#9ece6a",
+            fontWeight: "bold",
+          },
+          ".cm-wikitext-list": {
+            color: "#ff007f",
+            fontWeight: "bold",
+          },
+          ".cm-wikitext-bold": {
+            color: "#e0af68",
+            fontWeight: "bold",
+          },
+          ".cm-wikitext-italic": {
+            color: "#a9b1d6",
+            fontStyle: "italic",
+          },
+          ".cm-wikitext-link": {
+            color: "#7aa2f7",
+            textDecoration: "underline",
+          },
+          ".cm-wikitext-extlink": {
+            color: "#0db9d7",
+            textDecoration: "underline",
+            fontStyle: "italic",
+          },
+          ".cm-wikitext-template": {
+            color: "#bb9af7",
+          },
+          ".cm-wikitext-ref": {
+            color: "#f7768e",
           },
         }),
       ],

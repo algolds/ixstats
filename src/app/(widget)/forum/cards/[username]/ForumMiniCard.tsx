@@ -42,18 +42,14 @@ export function ForumMiniCard({
         boxShadow: colors.glow,
       }}
     >
-
-      <img
-        src={artworkUrl}
-        alt={card.title}
-        style={styles.cardImage}
-        loading="lazy"
-      />
+      <img src={artworkUrl} alt={card.title} style={styles.cardImage} loading="lazy" />
       <div style={styles.cardInfo}>
-        <p style={{
-          ...styles.cardTitle,
-          fontSize: compact ? 10 : 12,
-        }}>
+        <p
+          style={{
+            ...styles.cardTitle,
+            fontSize: compact ? 10 : 12,
+          }}
+        >
           {card.title}
         </p>
         <div style={styles.cardMeta}>
@@ -67,14 +63,10 @@ export function ForumMiniCard({
             />
             {colors.label}
           </span>
-          {!compact && (
-            <span>{formatValue(card.marketValue)}</span>
-          )}
+          {!compact && <span>{formatValue(card.marketValue)}</span>}
         </div>
         {serialNumber != null && !compact && (
-          <div style={{ fontSize: 9, color: "#6b7280", marginTop: 2 }}>
-            #{serialNumber}
-          </div>
+          <div style={{ fontSize: 9, color: "#6b7280", marginTop: 2 }}>#{serialNumber}</div>
         )}
       </div>
     </a>

@@ -42,11 +42,7 @@ function normalizeLng(lng: number): number {
 
 function normalizeCoords(coords: unknown): unknown {
   if (!Array.isArray(coords)) return coords;
-  if (
-    coords.length >= 2 &&
-    typeof coords[0] === "number" &&
-    typeof coords[1] === "number"
-  ) {
+  if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
     return [normalizeLng(coords[0] as number), coords[1], ...coords.slice(2)];
   }
   return coords.map((c) => normalizeCoords(c));
@@ -65,11 +61,7 @@ function extractPositions(coords: unknown): Position[] {
   const positions: Position[] = [];
   function scan(c: unknown): void {
     if (!Array.isArray(c)) return;
-    if (
-      c.length >= 2 &&
-      typeof c[0] === "number" &&
-      typeof c[1] === "number"
-    ) {
+    if (c.length >= 2 && typeof c[0] === "number" && typeof c[1] === "number") {
       positions.push({ lng: c[0] as number, lat: c[1] as number });
       return;
     }
@@ -79,9 +71,7 @@ function extractPositions(coords: unknown): Position[] {
   return positions;
 }
 
-function calculateCentroid(
-  geometry: { coordinates: unknown }
-): [number, number] | null {
+function calculateCentroid(geometry: { coordinates: unknown }): [number, number] | null {
   const positions = extractPositions(geometry.coordinates);
   if (positions.length === 0) return null;
   const sumLng = positions.reduce((s, p) => s + p.lng, 0);
@@ -89,9 +79,9 @@ function calculateCentroid(
   return [sumLng / positions.length, sumLat / positions.length];
 }
 
-function calculateBBox(
-  geometry: { coordinates: unknown }
-): [number, number, number, number] | null {
+function calculateBBox(geometry: {
+  coordinates: unknown;
+}): [number, number, number, number] | null {
   const positions = extractPositions(geometry.coordinates);
   if (positions.length === 0) return null;
   let minLng = Infinity,
@@ -108,16 +98,13 @@ function calculateBBox(
 }
 
 // Approximate area calculation using the Shoelace formula on the first ring
-function calculateApproxAreaSqKm(
-  geometry: { type: string; coordinates: unknown }
-): number | null {
+function calculateApproxAreaSqKm(geometry: { type: string; coordinates: unknown }): number | null {
   const positions = extractPositions(geometry.coordinates);
   if (positions.length < 3) return null;
 
   // Very rough: use latitude-corrected Shoelace formula
   // 1 degree lat ≈ 111 km, 1 degree lng ≈ 111 * cos(lat) km
-  const midLat =
-    positions.reduce((s, p) => s + p.lat, 0) / positions.length;
+  const midLat = positions.reduce((s, p) => s + p.lat, 0) / positions.length;
   const cosLat = Math.cos((midLat * Math.PI) / 180);
 
   let area = 0;
@@ -154,9 +141,7 @@ function normalizeForMatching(name: string): string {
 // ──────────────────────────────────────────────
 
 async function main() {
-  console.log(
-    `${isDryRun ? "[DRY RUN] " : ""}Seeding map data from GeoJSON files...`
-  );
+  console.log(`${isDryRun ? "[DRY RUN] " : ""}Seeding map data from GeoJSON files...`);
 
   // Load all countries for name matching
   const countries = await prisma.country.findMany({
@@ -199,17 +184,14 @@ async function main() {
       }>;
     };
 
-    console.log(
-      `Processing ${layerType}: ${fc.features.length} features`
-    );
+    console.log(`Processing ${layerType}: ${fc.features.length} features`);
 
     let layerCreated = 0;
     let layerLinked = 0;
 
     for (let i = 0; i < fc.features.length; i++) {
       const feature = fc.features[i];
-      const featureId =
-        (feature.properties?.id as string) || `${layerType}-${i}`;
+      const featureId = (feature.properties?.id as string) || `${layerType}-${i}`;
       const displayName = (feature.properties?.displayName as string) || featureIdToName(featureId);
 
       // Normalize geometry
@@ -248,9 +230,7 @@ async function main() {
             properties: (feature.properties || {}) as object,
             countryId,
             areaSqKm,
-            centroid: centroid
-              ? { type: "Point", coordinates: centroid }
-              : undefined,
+            centroid: centroid ? { type: "Point", coordinates: centroid } : undefined,
             boundingBox: bbox || undefined,
           },
           update: {
@@ -259,9 +239,7 @@ async function main() {
             countryId,
             displayName,
             areaSqKm,
-            centroid: centroid
-              ? { type: "Point", coordinates: centroid }
-              : undefined,
+            centroid: centroid ? { type: "Point", coordinates: centroid } : undefined,
             boundingBox: bbox || undefined,
           },
         });
@@ -312,9 +290,7 @@ async function main() {
   console.log("Summary:");
   console.log(`  Total features seeded: ${totalCreated}`);
   console.log(`  Political features linked to countries: ${totalLinked}`);
-  console.log(
-    `  Unmatched political features: ${unmatched.length}`
-  );
+  console.log(`  Unmatched political features: ${unmatched.length}`);
 
   if (unmatched.length > 0) {
     console.log("\nUnmatched features (no Country record found):");

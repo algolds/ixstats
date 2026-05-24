@@ -226,19 +226,13 @@ export function useAtomicGovernmentIntegration(
     }
 
     // Update government builder if changed
-    if (
-      governmentBuilder &&
-      !isEqual(governmentBuilder, lastSentGovernmentBuilderRef.current)
-    ) {
+    if (governmentBuilder && !isEqual(governmentBuilder, lastSentGovernmentBuilderRef.current)) {
       lastSentGovernmentBuilderRef.current = governmentBuilder;
       atomicIntegrationService.updateGovernmentBuilder(governmentBuilder);
     }
 
     // Update economic inputs if changed
-    if (
-      economicInputs &&
-      !isEqual(economicInputs, lastSentEconomicInputsRef.current)
-    ) {
+    if (economicInputs && !isEqual(economicInputs, lastSentEconomicInputsRef.current)) {
       lastSentEconomicInputsRef.current = economicInputs;
       atomicIntegrationService.updateEconomicInputs(economicInputs);
     }

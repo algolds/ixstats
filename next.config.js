@@ -69,11 +69,11 @@ const config = {
       // NOTE: lucide-react removed from here — optimizePackageImports was
       // incorrectly dropping Link2 and other icons. Next.js production builds
       // still tree-shake unused lucide icons automatically.
-      "recharts",              // 8MB charting library
-      "react-icons/ri",        // 2500+ Remix Icons barrel
-      "react-icons/fa",        // FontAwesome barrel
-      "react-icons/fa6",       // FontAwesome 6 barrel
-      "react-icons/gi",        // Game Icons barrel
+      "recharts", // 8MB charting library
+      "react-icons/ri", // 2500+ Remix Icons barrel
+      "react-icons/fa", // FontAwesome barrel
+      "react-icons/fa6", // FontAwesome 6 barrel
+      "react-icons/gi", // Game Icons barrel
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
       "@radix-ui/react-tabs",

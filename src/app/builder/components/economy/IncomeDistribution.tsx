@@ -1,14 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  DollarSign,
-  TrendingUp,
-  Users,
-  PieChart,
-  BarChart3,
-  AlertCircle,
-} from "lucide-react";
+import { DollarSign, TrendingUp, Users, PieChart, BarChart3, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";

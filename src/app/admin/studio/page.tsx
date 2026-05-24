@@ -46,26 +46,52 @@ export default function AdminStudioPage() {
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Realms" value={stats?.realmCount} sub={`${stats?.activeRealmCount ?? 0} active`} isLoading={isLoading} color="violet" />
-        <StatCard label="World Configs" value={stats?.worldConfigCount} isLoading={isLoading} color="blue" />
-        <StatCard label="Countries" value={stats?.countryCount} isLoading={isLoading} color="emerald" />
-        <StatCard label="Users" value={stats?.userCount} sub={`${stats?.templateCount ?? 0} templates`} isLoading={isLoading} color="amber" />
+        <StatCard
+          label="Realms"
+          value={stats?.realmCount}
+          sub={`${stats?.activeRealmCount ?? 0} active`}
+          isLoading={isLoading}
+          color="violet"
+        />
+        <StatCard
+          label="World Configs"
+          value={stats?.worldConfigCount}
+          isLoading={isLoading}
+          color="blue"
+        />
+        <StatCard
+          label="Countries"
+          value={stats?.countryCount}
+          isLoading={isLoading}
+          color="emerald"
+        />
+        <StatCard
+          label="Users"
+          value={stats?.userCount}
+          sub={`${stats?.templateCount ?? 0} templates`}
+          isLoading={isLoading}
+          color="amber"
+        />
       </div>
 
       {/* Realm breakdown */}
       {stats?.realmBreakdown && stats.realmBreakdown.length > 0 && (
-        <div className="rounded-xl border border-border/50 bg-card/50 p-4">
-          <h3 className="mb-3 text-sm font-medium text-muted-foreground">Realm Breakdown</h3>
+        <div className="border-border/50 bg-card/50 rounded-xl border p-4">
+          <h3 className="text-muted-foreground mb-3 text-sm font-medium">Realm Breakdown</h3>
           <div className="flex flex-wrap gap-3">
             {stats.realmBreakdown.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-1.5"
+                className="border-border/50 bg-muted/30 flex items-center gap-2 rounded-lg border px-3 py-1.5"
               >
-                <div className={`h-2 w-2 rounded-full ${r.status === "active" ? "bg-green-500" : r.status === "draft" ? "bg-yellow-500" : "bg-gray-400"}`} />
+                <div
+                  className={`h-2 w-2 rounded-full ${r.status === "active" ? "bg-green-500" : r.status === "draft" ? "bg-yellow-500" : "bg-gray-400"}`}
+                />
                 <span className="text-sm font-medium">{r.name}</span>
-                <span className="text-xs text-muted-foreground">{r._count.countries} countries</span>
-                <span className="text-xs text-muted-foreground/60">{r.visibility}</span>
+                <span className="text-muted-foreground text-xs">
+                  {r._count.countries} countries
+                </span>
+                <span className="text-muted-foreground/60 text-xs">{r.visibility}</span>
               </div>
             ))}
           </div>
@@ -73,16 +99,16 @@ export default function AdminStudioPage() {
       )}
 
       {/* Tab navigation */}
-      <div className="border-b border-border">
+      <div className="border-border border-b">
         <nav className="-mb-px flex gap-4 overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
+              className={`border-b-2 px-1 pb-3 text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id
                   ? "border-violet-500 text-violet-500"
-                  : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
+                  : "text-muted-foreground hover:border-border hover:text-foreground border-transparent"
               }`}
             >
               {tab.label}
@@ -122,13 +148,13 @@ function StatCard({
 
   return (
     <div className={`rounded-xl border bg-gradient-to-br p-4 ${colorMap[color] || colorMap.blue}`}>
-      <span className="text-xs font-medium uppercase text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-xs font-medium uppercase">{label}</span>
       {isLoading ? (
         <Skeleton className="mt-1 h-8 w-20" />
       ) : (
         <>
-          <div className="mt-1 text-2xl font-bold text-foreground">{value ?? "—"}</div>
-          {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
+          <div className="text-foreground mt-1 text-2xl font-bold">{value ?? "—"}</div>
+          {sub && <span className="text-muted-foreground text-xs">{sub}</span>}
         </>
       )}
     </div>

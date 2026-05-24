@@ -28,7 +28,10 @@ interface ForumContextState {
   /** Recently visited threads (from sessionStorage, newest first) */
   recentThreads: ForumThread[];
   /** Set the current forum page state */
-  setForumPage: (thread: (ForumThread & { forumName: string }) | null, forum: ForumInfo | null) => void;
+  setForumPage: (
+    thread: (ForumThread & { forumName: string }) | null,
+    forum: ForumInfo | null
+  ) => void;
   /** Update unread alerts count */
   setUnreadAlerts: (count: number) => void;
   /** Clear forum page state (when leaving forum) */
@@ -47,7 +50,9 @@ const ForumContext = createContext<ForumContextState>({
 });
 
 export function ForumContextProvider({ children }: { children: ReactNode }) {
-  const [currentThread, setCurrentThread] = useState<(ForumThread & { forumName: string }) | null>(null);
+  const [currentThread, setCurrentThread] = useState<(ForumThread & { forumName: string }) | null>(
+    null
+  );
   const [currentForum, setCurrentForum] = useState<ForumInfo | null>(null);
   const [unreadAlerts, setUnreadAlerts] = useState(0);
   const [recentThreads, setRecentThreads] = useState<ForumThread[]>([]);
@@ -57,7 +62,9 @@ export function ForumContextProvider({ children }: { children: ReactNode }) {
     try {
       const stored = sessionStorage.getItem("forum:recentThreads");
       if (stored) setRecentThreads(JSON.parse(stored));
-    } catch { /* SSR or private browsing */ }
+    } catch {
+      /* SSR or private browsing */
+    }
   }, []);
 
   const setForumPage = useCallback(
@@ -74,7 +81,9 @@ export function ForumContextProvider({ children }: { children: ReactNode }) {
             sessionStorage.setItem("forum:recentThreads", JSON.stringify(next));
             return next;
           });
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
     },
     []

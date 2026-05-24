@@ -80,22 +80,22 @@ export function SplashLiveFeed() {
           Happening now
         </h2>
         <p className="text-muted-foreground mx-auto mt-1 max-w-lg text-sm leading-relaxed">
-          Real updates, same stream as your dashboard—ThinkPages, wiki edits, achievements, forum, and public notices.
+          Real updates, same stream as your dashboard—ThinkPages, wiki edits, achievements, forum,
+          and public notices.
         </p>
       </div>
 
       {isLoading || !mounted ? (
-        <div className={`mx-auto h-14 max-w-4xl animate-pulse rounded-xl ${splashGold.subtlePanel}`} />
+        <div
+          className={`mx-auto h-14 max-w-4xl animate-pulse rounded-xl ${splashGold.subtlePanel}`}
+        />
       ) : (
         <div
           className={`overflow-hidden rounded-xl border bg-amber-500/[0.02] dark:bg-amber-950/15 ${splashGold.border} ${splashGold.darkBorder}`}
         >
-          <Marquee pauseOnHover className="[--duration:220s] py-3">
+          <Marquee pauseOnHover className="py-3 [--duration:220s]">
             {loopItems.map((item, idx) => {
-              const Icon =
-                item.source === "wiki"
-                  ? BookOpen
-                  : typeIcon[item.type] ?? Activity;
+              const Icon = item.source === "wiki" ? BookOpen : (typeIcon[item.type] ?? Activity);
               const kind = feedKindLabel({ source: item.source, type: item.type });
               return (
                 <div
@@ -105,7 +105,7 @@ export function SplashLiveFeed() {
                   <motion.div
                     className={`relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden md:h-10 md:w-10 ${
                       item.countryFlag
-                        ? "rounded-md border border-amber-500/25 bg-muted dark:border-amber-400/20"
+                        ? "bg-muted rounded-md border border-amber-500/25 dark:border-amber-400/20"
                         : splashGold.iconWrapSm
                     }`}
                     animate={{ y: [0, -2, 0] }}
@@ -126,10 +126,10 @@ export function SplashLiveFeed() {
                     )}
                   </motion.div>
                   <div className="min-w-0 text-left">
-                    <p className="text-muted-foreground mb-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                    <p className="text-muted-foreground mb-0.5 text-[10px] font-semibold tracking-wide uppercase">
                       {kind}
                     </p>
-                    <p className="text-foreground line-clamp-2 text-xs font-medium leading-snug sm:text-sm">
+                    <p className="text-foreground line-clamp-2 text-xs leading-snug font-medium sm:text-sm">
                       {item.title || "Activity"}
                     </p>
                     <p className="text-muted-foreground mt-0.5 text-[10px] tabular-nums sm:text-xs">

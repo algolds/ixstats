@@ -92,7 +92,9 @@ async function main() {
 
   console.log("\n✅ Final Database State:");
   console.log(`  - Countries with NationalIdentity: ${finalIdentityCount}/${countries.length}`);
-  console.log(`  - Countries with GovernmentStructure: ${finalGovernmentCount}/${countries.length}`);
+  console.log(
+    `  - Countries with GovernmentStructure: ${finalGovernmentCount}/${countries.length}`
+  );
 
   if (finalIdentityCount === countries.length && finalGovernmentCount === countries.length) {
     console.log("\n🎉 SUCCESS: All countries have complete baseline data!");

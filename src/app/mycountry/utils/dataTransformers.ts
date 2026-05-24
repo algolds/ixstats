@@ -1,10 +1,7 @@
 // Data transformers to convert existing country data to intelligence format
 // Optimized for performance and type safety
 
-import type {
-  VitalityIntelligence,
-  ExecutiveIntelligence,
-} from "../types/intelligence";
+import type { VitalityIntelligence, ExecutiveIntelligence } from "../types/intelligence";
 import type { StandardTrend } from "~/types/base";
 import {
   calculateTrend,

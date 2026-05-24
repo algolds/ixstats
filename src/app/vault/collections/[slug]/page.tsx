@@ -45,7 +45,7 @@ import type { CardInstance } from "~/types/cards-display";
 
 // Dynamic import for heavy 3D viewer
 const Card3DViewer = dynamic(
-  () => import("~/components/cards/display/Card3DViewer").then(m => m.Card3DViewer),
+  () => import("~/components/cards/display/Card3DViewer").then((m) => m.Card3DViewer),
   { ssr: false }
 );
 
@@ -107,9 +107,7 @@ export default function CollectionDetailPage() {
         <Card className="glass-hierarchy-child max-w-md">
           <CardContent className="p-8 text-center">
             <p className="mb-4 text-lg font-semibold text-white">Collection not found</p>
-            <Button onClick={() => router.push("/vault/collections")}>
-              Back to Collections
-            </Button>
+            <Button onClick={() => router.push("/vault/collections")}>Back to Collections</Button>
           </CardContent>
         </Card>
       </div>
@@ -193,19 +191,17 @@ export default function CollectionDetailPage() {
       {/* Collection header with stats */}
       <Card className="glass-hierarchy-parent">
         <CardHeader>
-          <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
+          <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
             <div className="flex-1">
               <div className="mb-2 flex items-center gap-3">
-                <CardTitle className="text-2xl sm:text-3xl text-white">
-                  {collection.name}
-                </CardTitle>
+                <CardTitle className="text-2xl text-white sm:text-3xl">{collection.name}</CardTitle>
                 {collection.isPublic ? (
                   <Globe className="h-5 w-5 text-blue-400" />
                 ) : (
-                  <Lock className="h-5 w-5 text-gold-400" />
+                  <Lock className="text-gold-400 h-5 w-5" />
                 )}
               </div>
-              <p className="text-sm sm:text-base text-white/70">
+              <p className="text-sm text-white/70 sm:text-base">
                 {collection.description || "No description"}
               </p>
             </div>
@@ -250,24 +246,24 @@ export default function CollectionDetailPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
               <p className="mb-1 text-xs text-white/60">Card Count</p>
-              <p className="text-xl sm:text-2xl font-bold text-white">{stats.cardCount}</p>
+              <p className="text-xl font-bold text-white sm:text-2xl">{stats.cardCount}</p>
             </div>
             <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
               <p className="mb-1 text-xs text-white/60">Total Value</p>
-              <p className="text-xl sm:text-2xl font-bold text-green-400">
+              <p className="text-xl font-bold text-green-400 sm:text-2xl">
                 {stats.totalValue.toLocaleString()} IxC
               </p>
             </div>
             <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
               <p className="mb-1 text-xs text-white/60">Likes</p>
-              <p className="text-xl sm:text-2xl font-bold text-pink-400">{stats.likes}</p>
+              <p className="text-xl font-bold text-pink-400 sm:text-2xl">{stats.likes}</p>
             </div>
             <div className="glass-hierarchy-child rounded-lg p-3 sm:p-4">
               <p className="mb-1 text-xs text-white/60">Comments</p>
-              <p className="text-xl sm:text-2xl font-bold text-blue-400">{stats.comments}</p>
+              <p className="text-xl font-bold text-blue-400 sm:text-2xl">{stats.comments}</p>
             </div>
           </div>
         </CardContent>
@@ -285,7 +281,7 @@ export default function CollectionDetailPage() {
                 : "text-white/60 hover:text-white/80"
             )}
           >
-            <Grid3x3 className="h-4 w-4 mr-2" />
+            <Grid3x3 className="mr-2 h-4 w-4" />
             Grid View
           </TabsTrigger>
           <TabsTrigger
@@ -297,7 +293,7 @@ export default function CollectionDetailPage() {
                 : "text-white/60 hover:text-white/80"
             )}
           >
-            <Sparkles className="h-4 w-4 mr-2" />
+            <Sparkles className="mr-2 h-4 w-4" />
             3D Carousel
           </TabsTrigger>
           <TabsTrigger
@@ -309,7 +305,7 @@ export default function CollectionDetailPage() {
                 : "text-white/60 hover:text-white/80"
             )}
           >
-            <MessageCircle className="h-4 w-4 mr-2" />
+            <MessageCircle className="mr-2 h-4 w-4" />
             Comments ({stats.comments})
           </TabsTrigger>
         </TabsList>
@@ -318,9 +314,7 @@ export default function CollectionDetailPage() {
         <TabsContent value="grid">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl font-bold text-white">
-                Cards in Collection
-              </h2>
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Cards in Collection</h2>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="glass-hierarchy-child">
                   <Filter className="mr-2 h-4 w-4" />
@@ -328,7 +322,7 @@ export default function CollectionDetailPage() {
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-gold-500 to-orange-500 text-black"
+                  className="from-gold-500 bg-gradient-to-r to-orange-500 text-black"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Cards
@@ -341,9 +335,7 @@ export default function CollectionDetailPage() {
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Grid3x3 className="mb-4 h-16 w-16 text-white/20" />
                 <p className="mb-2 text-lg font-semibold text-white">CardGrid Component</p>
-                <p className="text-sm text-white/60">
-                  Card grid will display collection cards
-                </p>
+                <p className="text-sm text-white/60">Card grid will display collection cards</p>
                 <p className="mt-2 text-xs text-white/50">
                   Filter: {cardFilter || "none"} • Cards: {cards.length}
                 </p>
@@ -359,17 +351,17 @@ export default function CollectionDetailPage() {
             animate={{ opacity: 1, y: 0 }}
             className="glass-hierarchy-parent rounded-lg p-6 sm:p-8"
           >
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 text-center">
+            <h2 className="mb-6 text-center text-xl font-bold text-white sm:text-2xl">
               3D Card Showcase
             </h2>
 
             {cards.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16">
-                <Sparkles className="h-16 w-16 text-white/20 mb-4" />
-                <p className="text-white/70 mb-2">No cards in this collection yet</p>
+                <Sparkles className="mb-4 h-16 w-16 text-white/20" />
+                <p className="mb-2 text-white/70">No cards in this collection yet</p>
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-gold-500 to-orange-500 text-black mt-4"
+                  className="from-gold-500 mt-4 bg-gradient-to-r to-orange-500 text-black"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Your First Card
@@ -420,8 +412,8 @@ export default function CollectionDetailPage() {
                 </div>
 
                 {/* Card info */}
-                <div className="glass-hierarchy-child rounded-lg p-4 max-w-md text-center">
-                  <h3 className="text-lg font-bold text-white mb-2">
+                <div className="glass-hierarchy-child max-w-md rounded-lg p-4 text-center">
+                  <h3 className="mb-2 text-lg font-bold text-white">
                     {cards[currentCarouselIndex]?.title}
                   </h3>
                   <p className="text-sm text-white/70">
@@ -439,7 +431,7 @@ export default function CollectionDetailPage() {
             {/* Add comment */}
             <Card className="glass-hierarchy-child">
               <CardContent className="p-4">
-                <h3 className="text-lg font-semibold text-white mb-3">Add a Comment</h3>
+                <h3 className="mb-3 text-lg font-semibold text-white">Add a Comment</h3>
                 <div className="flex gap-2">
                   <Input
                     placeholder="Share your thoughts..."
@@ -456,9 +448,7 @@ export default function CollectionDetailPage() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-xs text-white/50 mt-2">
-                  {commentText.length}/500 characters
-                </p>
+                <p className="mt-2 text-xs text-white/50">{commentText.length}/500 characters</p>
               </CardContent>
             </Card>
 
@@ -470,7 +460,7 @@ export default function CollectionDetailPage() {
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="mb-2 flex items-center gap-2">
                             <span className="text-sm font-semibold text-white">
                               {comment.userId}
                             </span>
@@ -488,11 +478,9 @@ export default function CollectionDetailPage() {
             ) : (
               <Card className="glass-hierarchy-child">
                 <CardContent className="p-12 text-center">
-                  <MessageCircle className="h-12 w-12 text-white/20 mx-auto mb-3" />
+                  <MessageCircle className="mx-auto mb-3 h-12 w-12 text-white/20" />
                   <p className="text-white/70">No comments yet</p>
-                  <p className="text-sm text-white/50 mt-1">
-                    Be the first to share your thoughts!
-                  </p>
+                  <p className="mt-1 text-sm text-white/50">Be the first to share your thoughts!</p>
                 </CardContent>
               </Card>
             )}
@@ -505,9 +493,7 @@ export default function CollectionDetailPage() {
         <DialogContent className="glass-hierarchy-modal">
           <DialogHeader>
             <DialogTitle>Edit Collection</DialogTitle>
-            <DialogDescription>
-              Update your collection details
-            </DialogDescription>
+            <DialogDescription>Update your collection details</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -544,15 +530,11 @@ export default function CollectionDetailPage() {
               <Button
                 onClick={handleSaveEdit}
                 disabled={!editName}
-                className="flex-1 bg-gradient-to-r from-gold-500 to-orange-500 text-black"
+                className="from-gold-500 flex-1 bg-gradient-to-r to-orange-500 text-black"
               >
                 Save Changes
               </Button>
-              <Button
-                onClick={() => setEditModalOpen(false)}
-                variant="outline"
-                className="flex-1"
-              >
+              <Button onClick={() => setEditModalOpen(false)} variant="outline" className="flex-1">
                 Cancel
               </Button>
             </div>
@@ -566,23 +548,15 @@ export default function CollectionDetailPage() {
           <DialogHeader>
             <DialogTitle>Delete Collection</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this collection? This action cannot
-              be undone. Cards in this collection will not be deleted.
+              Are you sure you want to delete this collection? This action cannot be undone. Cards
+              in this collection will not be deleted.
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2">
-            <Button
-              onClick={handleDelete}
-              variant="destructive"
-              className="flex-1"
-            >
+            <Button onClick={handleDelete} variant="destructive" className="flex-1">
               Delete Collection
             </Button>
-            <Button
-              onClick={() => setDeleteModalOpen(false)}
-              variant="outline"
-              className="flex-1"
-            >
+            <Button onClick={() => setDeleteModalOpen(false)} variant="outline" className="flex-1">
               Cancel
             </Button>
           </div>

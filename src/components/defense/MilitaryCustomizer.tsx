@@ -44,8 +44,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
       {branches && branches.length > 0 ? (
         <div className="space-y-4">
           {branches.map((branch) => {
-            const config =
-              BRANCH_CONFIGS[branch.branchType as keyof typeof BRANCH_CONFIGS];
+            const config = BRANCH_CONFIGS[branch.branchType as keyof typeof BRANCH_CONFIGS];
 
             return (
               <BranchCard

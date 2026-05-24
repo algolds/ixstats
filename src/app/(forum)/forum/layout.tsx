@@ -17,16 +17,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ForumRootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ForumRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ForumContextProvider>
-      <div className="forum-root min-h-screen">
-        {children}
-      </div>
+      <div className="forum-root min-h-screen">{children}</div>
     </ForumContextProvider>
   );
 }

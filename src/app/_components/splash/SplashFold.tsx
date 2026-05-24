@@ -103,16 +103,19 @@ export function SplashFold() {
       className="mx-auto mb-16 max-w-7xl md:mb-20"
     >
       <div className="mb-8 text-center">
-        <h2 className={`mb-2 text-3xl font-bold tracking-tight md:text-4xl ${splashGold.headline}`}>There&apos;s more in the box</h2>
+        <h2 className={`mb-2 text-3xl font-bold tracking-tight md:text-4xl ${splashGold.headline}`}>
+          There&apos;s more in the box
+        </h2>
         <p className="text-muted-foreground mx-auto max-w-2xl leading-relaxed">
-          Lore feeds, component labs, diplomacy tools, Discord — slide in when you&apos;re past the opening act.
+          Lore feeds, component labs, diplomacy tools, Discord — slide in when you&apos;re past the
+          opening act.
         </p>
       </div>
 
       <Tabs defaultValue="thinkpages" className="w-full">
         <div className="mb-6 overflow-x-auto pb-2">
           <TabsList
-            className={`inline-flex min-w-full flex-wrap justify-center gap-1 rounded-xl border bg-amber-500/[0.06] p-1 dark:bg-amber-950/40 md:min-w-0 ${splashGold.border} ${splashGold.darkBorder}`}
+            className={`inline-flex min-w-full flex-wrap justify-center gap-1 rounded-xl border bg-amber-500/[0.06] p-1 md:min-w-0 dark:bg-amber-950/40 ${splashGold.border} ${splashGold.darkBorder}`}
           >
             <TabsTrigger value="thinkpages" className="text-xs md:text-sm">
               ThinkPages
@@ -133,7 +136,9 @@ export function SplashFold() {
         </div>
 
         <TabsContent value="thinkpages">
-          <div className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}>
+          <div
+            className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
+          >
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -146,16 +151,17 @@ export function SplashFold() {
               </div>
 
               <p className="text-muted-foreground mb-8 max-w-3xl text-base md:text-lg">
-                Your nation isn&apos;t a spreadsheet—it&apos;s a society. Create voices from leaders to
-                protesters; each shapes your story and feeds the feed.
+                Your nation isn&apos;t a spreadsheet—it&apos;s a society. Create voices from leaders
+                to protesters; each shapes your story and feeds the feed.
               </p>
 
               <SplashThinkPagesPeek />
 
-              <div className="rounded-xl border border-border bg-muted/40 p-4">
+              <div className="border-border bg-muted/40 rounded-xl border p-4">
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  <strong className="text-foreground font-medium">Roleplay with depth:</strong> opposition
-                  parties, news beats, protests — worldbuilding becomes interactive storytelling.
+                  <strong className="text-foreground font-medium">Roleplay with depth:</strong>{" "}
+                  opposition parties, news beats, protests — worldbuilding becomes interactive
+                  storytelling.
                 </p>
               </div>
             </div>
@@ -169,22 +175,29 @@ export function SplashFold() {
                 Atomic components, full system
               </h3>
               <p className="text-muted-foreground mx-auto max-w-3xl">
-                {atomicCounts.total} live components spanning governance, policy, and administration. Mix them, and the
-                engine computes synergies, tradeoffs, and downstream pressure across your nation.
+                {atomicCounts.total} live components spanning governance, policy, and
+                administration. Mix them, and the engine computes synergies, tradeoffs, and
+                downstream pressure across your nation.
               </p>
             </div>
 
             <div className="mx-auto grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="glass-hierarchy-child rounded-xl border border-border p-4 text-center">
-                <div className="text-foreground mb-1 text-3xl font-bold">{atomicCounts.government}</div>
+              <div className="glass-hierarchy-child border-border rounded-xl border p-4 text-center">
+                <div className="text-foreground mb-1 text-3xl font-bold">
+                  {atomicCounts.government}
+                </div>
                 <div className="text-muted-foreground text-sm">Government &amp; legitimacy</div>
               </div>
-              <div className="glass-hierarchy-child rounded-xl border border-border p-4 text-center">
-                <div className="text-foreground mb-1 text-3xl font-bold">{atomicCounts.economicSocial}</div>
+              <div className="glass-hierarchy-child border-border rounded-xl border p-4 text-center">
+                <div className="text-foreground mb-1 text-3xl font-bold">
+                  {atomicCounts.economicSocial}
+                </div>
                 <div className="text-muted-foreground text-sm">Economic &amp; social policy</div>
               </div>
-              <div className="glass-hierarchy-child rounded-xl border border-border p-4 text-center">
-                <div className="text-foreground mb-1 text-3xl font-bold">{atomicCounts.administration}</div>
+              <div className="glass-hierarchy-child border-border rounded-xl border p-4 text-center">
+                <div className="text-foreground mb-1 text-3xl font-bold">
+                  {atomicCounts.administration}
+                </div>
                 <div className="text-muted-foreground text-sm">Administration &amp; systems</div>
               </div>
             </div>
@@ -198,18 +211,20 @@ export function SplashFold() {
                   return (
                     <Card
                       key={`${component.id}-${idx}`}
-                      className="glass-hierarchy-child border-border w-80 flex-shrink-0 border transition-colors hover:bg-muted/30"
+                      className="glass-hierarchy-child border-border hover:bg-muted/30 w-80 flex-shrink-0 border transition-colors"
                     >
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-lg border border-border">
+                          <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                             <Blocks className="text-foreground h-5 w-5" />
                           </div>
                           <CardTitle className="text-base">{component.name}</CardTitle>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-2">
-                        <p className="text-muted-foreground line-clamp-2 text-xs">{component.description}</p>
+                        <p className="text-muted-foreground line-clamp-2 text-xs">
+                          {component.description}
+                        </p>
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="secondary" className="text-xs">
                             {component.effectiveness}% effective
@@ -223,26 +238,25 @@ export function SplashFold() {
                   );
                 })}
               </Marquee>
-
             </div>
 
             <div className="mx-auto max-w-4xl space-y-4">
-              <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+              <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  <strong className="text-foreground font-medium">Interactions:</strong> Components combine
-                  for synergy — or clash for story tension.
+                  <strong className="text-foreground font-medium">Interactions:</strong> Components
+                  combine for synergy — or clash for story tension.
                 </p>
               </div>
-              <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+              <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  <strong className="text-foreground font-medium">Economy:</strong> Policy mixes change GDP,
-                  employment, and welfare trajectories over time.
+                  <strong className="text-foreground font-medium">Economy:</strong> Policy mixes
+                  change GDP, employment, and welfare trajectories over time.
                 </p>
               </div>
-              <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+              <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  <strong className="text-foreground font-medium">Systems:</strong> Governance, taxes, and
-                  social outcomes interact in one model.
+                  <strong className="text-foreground font-medium">Systems:</strong> Governance,
+                  taxes, and social outcomes interact in one model.
                 </p>
               </div>
             </div>
@@ -250,7 +264,9 @@ export function SplashFold() {
         </TabsContent>
 
         <TabsContent value="world">
-          <div className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}>
+          <div
+            className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
+          >
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -258,49 +274,55 @@ export function SplashFold() {
                 </div>
                 <div>
                   <h3 className="text-foreground text-2xl font-bold md:text-4xl">Shared world</h3>
-                  <p className="text-muted-foreground text-lg md:text-xl">Players move, systems answer</p>
+                  <p className="text-muted-foreground text-lg md:text-xl">
+                    Players move, systems answer
+                  </p>
                 </div>
               </div>
 
               <p className="text-muted-foreground mb-8 max-w-3xl text-base md:text-lg">
-                Your actions route through one shared clock. Policy edits, issue responses, diplomacy, and posting all
-                echo through connected systems, so every player push creates visible world response.
+                Your actions route through one shared clock. Policy edits, issue responses,
+                diplomacy, and posting all echo through connected systems, so every player push
+                creates visible world response.
               </p>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-lg border border-border">
+                    <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <Activity className="text-foreground h-6 w-6" />
                     </div>
                     <h4 className="text-base font-semibold">Shared timeline</h4>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    Deadlines, events, and responses resolve on one timeline, so players stay synchronized by design.
+                    Deadlines, events, and responses resolve on one timeline, so players stay
+                    synchronized by design.
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-lg border border-border">
+                    <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <TrendingUp className="text-foreground h-6 w-6" />
                     </div>
                     <h4 className="text-base font-semibold">Growing nations</h4>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    National issues and policies feed economic and social systems with measurable consequences.
+                    National issues and policies feed economic and social systems with measurable
+                    consequences.
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-lg border border-border">
+                    <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <Network className="text-foreground h-6 w-6" />
                     </div>
                     <h4 className="text-base font-semibold">Impact</h4>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    Trade, elections, missions, and feed activity propagate between nations in near real time.
+                    Trade, elections, missions, and feed activity propagate between nations in near
+                    real time.
                   </p>
                 </div>
               </div>
@@ -309,7 +331,9 @@ export function SplashFold() {
         </TabsContent>
 
         <TabsContent value="diplomacy">
-          <div className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}>
+          <div
+            className={`glass-hierarchy-parent rounded-2xl border p-6 md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
+          >
             <div className="relative z-10">
               <div className="mb-6 flex items-center gap-4">
                 <div className={`h-14 w-14 ${splashGold.iconWrap}`}>
@@ -317,19 +341,22 @@ export function SplashFold() {
                 </div>
                 <div>
                   <h3 className="text-foreground text-2xl font-bold md:text-4xl">Diplomacy</h3>
-                  <p className="text-muted-foreground text-lg md:text-xl">Relations &amp; outreach</p>
+                  <p className="text-muted-foreground text-lg md:text-xl">
+                    Relations &amp; outreach
+                  </p>
                 </div>
               </div>
 
               <p className="text-muted-foreground mb-8 max-w-3xl text-base md:text-lg">
-                Embassies, missions, alliances, and foreign policy — built for long-running arcs from your{" "}
-                <strong className="text-foreground font-medium">MyCountry</strong> diplomacy workspace.
+                Embassies, missions, alliances, and foreign policy — built for long-running arcs
+                from your <strong className="text-foreground font-medium">MyCountry</strong>{" "}
+                diplomacy workspace.
               </p>
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-lg border border-border">
+                    <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <Building2 className="text-foreground h-6 w-6" />
                     </div>
                     <h4 className="text-base font-semibold">Embassies &amp; missions</h4>
@@ -339,9 +366,9 @@ export function SplashFold() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-lg border border-border">
+                    <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <MessageSquare className="text-foreground h-6 w-6" />
                     </div>
                     <h4 className="text-base font-semibold">Private communications</h4>
@@ -351,9 +378,9 @@ export function SplashFold() {
                   </p>
                 </div>
 
-                <div className="glass-hierarchy-child rounded-xl border border-border p-4">
+                <div className="glass-hierarchy-child border-border rounded-xl border p-4">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-lg border border-border">
+                    <div className="bg-muted border-border flex h-10 w-10 items-center justify-center rounded-lg border">
                       <Network className="text-foreground h-6 w-6" />
                     </div>
                     <h4 className="text-base font-semibold">Relationships</h4>
@@ -369,10 +396,15 @@ export function SplashFold() {
 
         <TabsContent value="community">
           <div className="space-y-8">
-            <div className={`glass-hierarchy-parent mx-auto max-w-4xl rounded-2xl border p-6 text-center md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}>
-              <h3 className={`mb-4 text-2xl font-bold md:text-4xl ${splashGold.headline}`}>Community</h3>
+            <div
+              className={`glass-hierarchy-parent mx-auto max-w-4xl rounded-2xl border p-6 text-center md:p-8 ${splashGold.border} ${splashGold.darkBorder}`}
+            >
+              <h3 className={`mb-4 text-2xl font-bold md:text-4xl ${splashGold.headline}`}>
+                Community
+              </h3>
               <p className="text-muted-foreground mx-auto mb-6 max-w-2xl text-base leading-relaxed md:text-lg">
-                Patch notes, feature chat, and other players building the world alongside your MyCountry arc.
+                Patch notes, feature chat, and other players building the world alongside your
+                MyCountry arc.
               </p>
               <a href="https://discord.gg/mgXAEYdqkd" target="_blank" rel="noopener noreferrer">
                 <Button
@@ -386,7 +418,9 @@ export function SplashFold() {
               </a>
             </div>
 
-            <div className={`glass-hierarchy-child mx-auto max-w-4xl rounded-xl border p-5 text-center md:p-6 ${splashGold.subtlePanel}`}>
+            <div
+              className={`glass-hierarchy-child mx-auto max-w-4xl rounded-xl border p-5 text-center md:p-6 ${splashGold.subtlePanel}`}
+            >
               <p className="text-muted-foreground text-sm md:text-base">
                 Import collectible decks through{" "}
                 <Link href="/vault/import" className={splashGold.link}>

@@ -329,7 +329,7 @@ export function LaborEmployment({
 
         {/* Overview Tab */}
         {view === "overview" && (
-          <motion.div 
+          <motion.div
             className="space-y-6"
             variants={containerVariants}
             initial="hidden"
@@ -342,13 +342,17 @@ export function LaborEmployment({
                 const progress = metric.reverse
                   ? Math.max(0, 100 - (metric.value / metric.target) * 100)
                   : Math.min(100, (metric.value / metric.target) * 100);
-                
+
                 const cardColors = [
                   "from-red-50/80 to-rose-50/80 dark:from-red-900/20 dark:to-rose-900/20 border-red-200/50 dark:border-red-700/30",
                   "from-emerald-50/80 to-green-50/80 dark:from-emerald-900/20 dark:to-green-900/20 border-emerald-200/50 dark:border-emerald-700/30",
                   "from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200/50 dark:border-blue-700/30",
                 ];
-                const textColors = ["text-red-700 dark:text-red-400", "text-emerald-700 dark:text-emerald-400", "text-blue-700 dark:text-blue-400"];
+                const textColors = [
+                  "text-red-700 dark:text-red-400",
+                  "text-emerald-700 dark:text-emerald-400",
+                  "text-blue-700 dark:text-blue-400",
+                ];
 
                 return (
                   <motion.div key={metric.field} variants={itemVariants} whileHover={cardHover}>
@@ -414,25 +418,29 @@ export function LaborEmployment({
             {/* Additional Key Metrics */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <motion.div variants={itemVariants} whileHover={cardHover}>
-                <Card className="bg-gradient-to-br from-amber-50/80 to-yellow-50/80 dark:from-amber-900/20 dark:to-yellow-900/20 border border-amber-200/50 dark:border-amber-700/30 shadow-sm h-full">
+                <Card className="h-full border border-amber-200/50 bg-gradient-to-br from-amber-50/80 to-yellow-50/80 shadow-sm dark:border-amber-700/30 dark:from-amber-900/20 dark:to-yellow-900/20">
                   <CardContent className="p-4 text-center">
                     <Clock className="mx-auto mb-2 h-6 w-6 text-amber-600" />
-                    <div className="text-xl font-bold text-amber-700 dark:text-amber-400">{laborData.averageWorkweekHours}h</div>
+                    <div className="text-xl font-bold text-amber-700 dark:text-amber-400">
+                      {laborData.averageWorkweekHours}h
+                    </div>
                     <div className="text-muted-foreground text-xs">Avg Work Week</div>
                   </CardContent>
                 </Card>
               </motion.div>
               <motion.div variants={itemVariants} whileHover={cardHover}>
-                <Card className="bg-gradient-to-br from-green-50/80 to-emerald-50/80 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200/50 dark:border-green-700/30 shadow-sm h-full">
+                <Card className="h-full border border-green-200/50 bg-gradient-to-br from-green-50/80 to-emerald-50/80 shadow-sm dark:border-green-700/30 dark:from-green-900/20 dark:to-emerald-900/20">
                   <CardContent className="p-4 text-center">
                     <TrendingUp className="mx-auto mb-2 h-6 w-6 text-green-600" />
-                    <div className="text-xl font-bold text-green-700 dark:text-green-400">{formatCurrency(laborData.minimumWage)}</div>
+                    <div className="text-xl font-bold text-green-700 dark:text-green-400">
+                      {formatCurrency(laborData.minimumWage)}
+                    </div>
                     <div className="text-muted-foreground text-xs">Minimum Wage</div>
                   </CardContent>
                 </Card>
               </motion.div>
               <motion.div variants={itemVariants} whileHover={cardHover}>
-                <Card className="bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200/50 dark:border-blue-700/30 shadow-sm h-full">
+                <Card className="h-full border border-blue-200/50 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 shadow-sm dark:border-blue-700/30 dark:from-blue-900/20 dark:to-cyan-900/20">
                   <CardContent className="p-4 text-center">
                     <TrendingUp className="mx-auto mb-2 h-6 w-6 text-blue-600" />
                     <div className="text-xl font-bold text-blue-700 dark:text-blue-400">
@@ -443,7 +451,7 @@ export function LaborEmployment({
                 </Card>
               </motion.div>
               <motion.div variants={itemVariants} whileHover={cardHover}>
-                <Card className="bg-gradient-to-br from-purple-50/80 to-violet-50/80 dark:from-purple-900/20 dark:to-violet-900/20 border border-purple-200/50 dark:border-purple-700/30 shadow-sm h-full">
+                <Card className="h-full border border-purple-200/50 bg-gradient-to-br from-purple-50/80 to-violet-50/80 shadow-sm dark:border-purple-700/30 dark:from-purple-900/20 dark:to-violet-900/20">
                   <CardContent className="p-4 text-center">
                     <Users className="mx-auto mb-2 h-6 w-6 text-purple-600" />
                     <div className="text-xl font-bold text-purple-700 dark:text-purple-400">
@@ -457,9 +465,11 @@ export function LaborEmployment({
 
             {showComparison && referenceCountry && (
               <motion.div variants={itemVariants}>
-                <Card className="bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-900/20 dark:to-gray-900/20 border border-slate-200/50 dark:border-slate-700/30 shadow-sm">
+                <Card className="border border-slate-200/50 bg-gradient-to-br from-slate-50/80 to-gray-50/80 shadow-sm dark:border-slate-700/30 dark:from-slate-900/20 dark:to-gray-900/20">
                   <CardHeader>
-                    <CardTitle className="text-sm">Comparison with {referenceCountry.name}</CardTitle>
+                    <CardTitle className="text-sm">
+                      Comparison with {referenceCountry.name}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">

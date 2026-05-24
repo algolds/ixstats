@@ -115,30 +115,31 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                 <Icon className="h-3.5 w-3.5 flex-shrink-0 text-red-500" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{op.name}</span>
-                    <Badge
-                      variant="outline"
-                      className={STATUS_COLORS[op.status] ?? ""}
-                    >
+                    <span className="text-sm font-medium">{op.name}</span>
+                    <Badge variant="outline" className={STATUS_COLORS[op.status] ?? ""}>
                       {op.status}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground text-xs mt-1">
+                  <p className="text-muted-foreground mt-1 text-xs">
                     {op.operationType.replace("_", " ")}
                     {op.targetCountry && (
-                      <> — Target: <span className="font-medium text-foreground">{op.targetCountry.name}</span></>
+                      <>
+                        {" "}
+                        — Target:{" "}
+                        <span className="text-foreground font-medium">{op.targetCountry.name}</span>
+                      </>
                     )}
                   </p>
                   {op.description && (
-                    <p className="text-muted-foreground text-xs mt-1">{op.description}</p>
+                    <p className="text-muted-foreground mt-1 text-xs">{op.description}</p>
                   )}
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 {/* Stats */}
-                <div className="text-right text-xs space-y-1">
-                  <div className="flex items-center gap-1 text-muted-foreground">
+                <div className="space-y-1 text-right text-xs">
+                  <div className="text-muted-foreground flex items-center gap-1">
                     <Users className="h-3 w-3" />
                     {op.personnelDeployed.toLocaleString()}
                   </div>
@@ -147,7 +148,7 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                     {formatCurrency(op.dailyCost)}/day
                   </div>
                   {op.gdpDrain > 0 && (
-                    <span className="text-red-500 text-[10px]">
+                    <span className="text-[10px] text-red-500">
                       {(op.gdpDrain * 100).toFixed(3)}% GDP drain
                     </span>
                   )}
@@ -165,8 +166,8 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
                       <AlertDialogHeader>
                         <AlertDialogTitle>End Operation?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will recall all deployed forces and end the operation.
-                          Unit readiness will partially recover.
+                          This will recall all deployed forces and end the operation. Unit readiness
+                          will partially recover.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -195,12 +196,10 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
 
             {/* Deployment count */}
             {op.deployments && op.deployments.length > 0 && (
-              <div className="mt-2 text-xs text-muted-foreground">
+              <div className="text-muted-foreground mt-2 text-xs">
                 {op.deployments.filter((d) => d.status === "deployed").length} active deployments
                 {op.casualties > 0 && (
-                  <span className="text-red-500 ml-2">
-                    {op.casualties} casualties
-                  </span>
+                  <span className="ml-2 text-red-500">{op.casualties} casualties</span>
                 )}
               </div>
             )}

@@ -2,16 +2,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  Scale,
-  Users,
-  Info,
-  ArrowUpRight,
-  Layers,
-  Eye,
-  Pencil,
-  HelpCircle,
-} from "lucide-react";
+import { Scale, Users, Info, ArrowUpRight, Layers, Eye, Pencil, HelpCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Label } from "~/components/ui/label";
@@ -491,7 +482,11 @@ export function IncomeWealthDistribution({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                        <RechartsTooltip
+                          formatter={(value) =>
+                            value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                          }
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -524,7 +519,11 @@ export function IncomeWealthDistribution({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                        <RechartsTooltip
+                          formatter={(value) =>
+                            value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                          }
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -658,7 +657,11 @@ export function IncomeWealthDistribution({
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="decile" />
                           <YAxis />
-                          <RechartsTooltip formatter={(value) => value !== undefined ? formatCurrency(Number(value)) : ''} />
+                          <RechartsTooltip
+                            formatter={(value) =>
+                              value !== undefined ? formatCurrency(Number(value)) : ""
+                            }
+                          />
                           <Area
                             type="monotone"
                             dataKey="income"
@@ -703,7 +706,11 @@ export function IncomeWealthDistribution({
                               position: "insideLeft",
                             }}
                           />
-                          <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                          <RechartsTooltip
+                            formatter={(value) =>
+                              value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                            }
+                          />
                           <Line
                             data={[
                               { x: 0, y: 0 },
@@ -833,7 +840,7 @@ export function IncomeWealthDistribution({
                     </div>
 
                     {/* Mobility Factors */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="rounded-lg border p-3">
                         <h5 className="mb-2 text-sm font-medium">Contributing Factors</h5>
                         <div className="space-y-2">
@@ -937,7 +944,7 @@ export function IncomeWealthDistribution({
                           </div>
 
                           {editMode ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                               <div>
                                 <Label className="text-xs">Population %</Label>
                                 <Input

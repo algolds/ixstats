@@ -72,28 +72,31 @@ export function ReplyComposer({
     [handleSubmit]
   );
 
-  const insertBBCode = useCallback((tag: string, placeholder?: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
+  const insertBBCode = useCallback(
+    (tag: string, placeholder?: string) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = message.slice(start, end);
-    const content = selected || placeholder || "";
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = message.slice(start, end);
+      const content = selected || placeholder || "";
 
-    const before = message.slice(0, start);
-    const after = message.slice(end);
-    const insert = `[${tag}]${content}[/${tag}]`;
+      const before = message.slice(0, start);
+      const after = message.slice(end);
+      const insert = `[${tag}]${content}[/${tag}]`;
 
-    setMessage(before + insert + after);
+      setMessage(before + insert + after);
 
-    // Set cursor position after tag
-    setTimeout(() => {
-      const newPos = start + tag.length + 2 + content.length;
-      textarea.setSelectionRange(newPos, newPos);
-      textarea.focus();
-    }, 0);
-  }, [message]);
+      // Set cursor position after tag
+      setTimeout(() => {
+        const newPos = start + tag.length + 2 + content.length;
+        textarea.setSelectionRange(newPos, newPos);
+        textarea.focus();
+      }, 0);
+    },
+    [message]
+  );
 
   return (
     <div className={cn("forum-composer", isExpanded && "forum-composer-expanded")}>
@@ -116,18 +119,10 @@ export function ReplyComposer({
 
       {isExpanded && (
         <div className="forum-composer-toolbar">
-          <button
-            onClick={() => insertBBCode("b")}
-            className="forum-action-btn"
-            title="Bold"
-          >
+          <button onClick={() => insertBBCode("b")} className="forum-action-btn" title="Bold">
             <Bold className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => insertBBCode("i")}
-            className="forum-action-btn"
-            title="Italic"
-          >
+          <button onClick={() => insertBBCode("i")} className="forum-action-btn" title="Italic">
             <Italic className="h-4 w-4" />
           </button>
           <button
@@ -144,18 +139,10 @@ export function ReplyComposer({
           >
             <ImageIcon className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => insertBBCode("quote")}
-            className="forum-action-btn"
-            title="Quote"
-          >
+          <button onClick={() => insertBBCode("quote")} className="forum-action-btn" title="Quote">
             <Quote className="h-4 w-4" />
           </button>
-          <button
-            onClick={() => insertBBCode("code")}
-            className="forum-action-btn"
-            title="Code"
-          >
+          <button onClick={() => insertBBCode("code")} className="forum-action-btn" title="Code">
             <Code className="h-4 w-4" />
           </button>
 

@@ -85,16 +85,14 @@ export function ClimateSection() {
             </div>
             <div className="rounded-lg border border-white/5 bg-white/5 p-4">
               <p className="text-xs text-white/40">Biomes</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-300">
-                {stats?.biomeCount ?? 18}
-              </p>
+              <p className="mt-1 text-2xl font-bold text-emerald-300">{stats?.biomeCount ?? 18}</p>
               <p className="mt-1 text-xs text-white/30">Distinct biome regions</p>
             </div>
           </div>
         ) : (
           <p className="text-sm text-white/50">
-            Simple mode generates basic climate bands based on latitude. Switch to full
-            simulation for detailed Trewartha zones, ocean currents, and rain shadow effects.
+            Simple mode generates basic climate bands based on latitude. Switch to full simulation
+            for detailed Trewartha zones, ocean currents, and rain shadow effects.
           </p>
         )}
       </div>

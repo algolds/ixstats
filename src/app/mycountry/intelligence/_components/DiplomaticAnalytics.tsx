@@ -64,11 +64,11 @@ export function DiplomaticAnalytics({ countryId }: DiplomaticAnalyticsProps) {
     return (
       <Card className="glass-hierarchy-child">
         <CardContent className="flex min-h-[300px] items-center justify-center">
-          <div className="text-center space-y-4">
-            <Globe className="mx-auto h-16 w-16 text-muted-foreground opacity-50" />
+          <div className="space-y-4 text-center">
+            <Globe className="text-muted-foreground mx-auto h-16 w-16 opacity-50" />
             <div>
               <h3 className="text-lg font-semibold">No Diplomatic Relations</h3>
-              <p className="text-muted-foreground text-sm mt-2">
+              <p className="text-muted-foreground mt-2 text-sm">
                 Establish embassies and build relationships to unlock analytics
               </p>
             </div>
@@ -83,24 +83,39 @@ export function DiplomaticAnalytics({ countryId }: DiplomaticAnalyticsProps) {
       {overviewStats && <OverviewStats stats={overviewStats} />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
-          <TabsTrigger value="trends" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+        <TabsList className="grid w-full grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-5">
+          <TabsTrigger
+            value="trends"
+            className="flex items-center gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+          >
             <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Trends</span>
           </TabsTrigger>
-          <TabsTrigger value="growth" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+          <TabsTrigger
+            value="growth"
+            className="flex items-center gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+          >
             <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Growth</span>
           </TabsTrigger>
-          <TabsTrigger value="network" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+          <TabsTrigger
+            value="network"
+            className="flex items-center gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+          >
             <Network className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Network</span>
           </TabsTrigger>
-          <TabsTrigger value="distribution" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+          <TabsTrigger
+            value="distribution"
+            className="flex items-center gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+          >
             <PieChartIcon className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Distrib</span>
           </TabsTrigger>
-          <TabsTrigger value="timeline" className="flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3">
+          <TabsTrigger
+            value="timeline"
+            className="flex items-center gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+          >
             <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Timeline</span>
           </TabsTrigger>

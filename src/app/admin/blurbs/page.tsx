@@ -51,9 +51,7 @@ function CreatePromptForm({ onDone }: { onDone: () => void }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <label className="text-muted-foreground mb-1 block text-xs font-medium">
-            Title
-          </label>
+          <label className="text-muted-foreground mb-1 block text-xs font-medium">Title</label>
           <Input
             value={title}
             onChange={(e) => {
@@ -67,23 +65,19 @@ function CreatePromptForm({ onDone }: { onDone: () => void }) {
           />
         </div>
         <div>
-          <label className="text-muted-foreground mb-1 block text-xs font-medium">
-            Question
-          </label>
+          <label className="text-muted-foreground mb-1 block text-xs font-medium">Question</label>
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="What kind of clothes are popular in your country?"
             maxLength={500}
             rows={3}
-            className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="border-input bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
           />
           <span className="text-muted-foreground text-xs">{question.length}/500</span>
         </div>
         <div>
-          <label className="text-muted-foreground mb-1 block text-xs font-medium">
-            Slug
-          </label>
+          <label className="text-muted-foreground mb-1 block text-xs font-medium">Slug</label>
           <Input
             value={slug}
             onChange={(e) => setSlug(e.target.value.replace(/[^a-z0-9-]/g, ""))}
@@ -117,12 +111,7 @@ function CreatePromptForm({ onDone }: { onDone: () => void }) {
                 status: publishNow ? "ACTIVE" : "DRAFT",
               })
             }
-            disabled={
-              !title.trim() ||
-              !question.trim() ||
-              !slug.trim() ||
-              createMutation.isPending
-            }
+            disabled={!title.trim() || !question.trim() || !slug.trim() || createMutation.isPending}
           >
             {createMutation.isPending ? "Creating..." : "Create Prompt"}
           </Button>
@@ -182,9 +171,7 @@ function PromptManagementSection() {
                 size="sm"
                 className="text-xs"
                 onClick={() =>
-                  setStatusFilter(
-                    s as "DRAFT" | "ACTIVE" | "CLOSED" | "ARCHIVED" | undefined
-                  )
+                  setStatusFilter(s as "DRAFT" | "ACTIVE" | "CLOSED" | "ARCHIVED" | undefined)
                 }
               >
                 {s ?? "All"}
@@ -194,16 +181,10 @@ function PromptManagementSection() {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading && (
-          <p className="text-muted-foreground py-4 text-center text-sm">
-            Loading...
-          </p>
-        )}
+        {isLoading && <p className="text-muted-foreground py-4 text-center text-sm">Loading...</p>}
 
         {!isLoading && (!prompts || prompts.length === 0) && (
-          <p className="text-muted-foreground py-4 text-center text-sm">
-            No prompts found.
-          </p>
+          <p className="text-muted-foreground py-4 text-center text-sm">No prompts found.</p>
         )}
 
         <div className="space-y-2">
@@ -211,28 +192,24 @@ function PromptManagementSection() {
             const config = STATUS_CONFIG[prompt.status];
             const StatusIcon = config.icon;
             return (
-              <div
-                key={prompt.id}
-                className="flex items-center gap-3 rounded-lg border p-3"
-              >
+              <div key={prompt.id} className="flex items-center gap-3 rounded-lg border p-3">
                 <StatusIcon className="text-muted-foreground h-4 w-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium truncate">
-                      {prompt.title}
-                    </span>
-                    <Badge variant={config.variant} className="text-[10px] shrink-0">
+                    <span className="truncate text-sm font-medium">{prompt.title}</span>
+                    <Badge variant={config.variant} className="shrink-0 text-[10px]">
                       {config.label}
                     </Badge>
                     {prompt.featured && (
-                      <Badge variant="outline" className="border-amber-500/30 text-[10px] text-amber-400 shrink-0">
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 border-amber-500/30 text-[10px] text-amber-400"
+                      >
                         Featured
                       </Badge>
                     )}
                   </div>
-                  <p className="text-muted-foreground truncate text-xs">
-                    {prompt.question}
-                  </p>
+                  <p className="text-muted-foreground truncate text-xs">{prompt.question}</p>
                 </div>
                 <div className="text-muted-foreground shrink-0 text-xs">
                   {prompt._count.responses} responses
@@ -380,15 +357,11 @@ function ResponseModerationSection() {
         )}
 
         {selectedPromptId && responsesLoading && (
-          <p className="text-muted-foreground py-4 text-center text-sm">
-            Loading...
-          </p>
+          <p className="text-muted-foreground py-4 text-center text-sm">Loading...</p>
         )}
 
         {selectedPromptId && !responsesLoading && responses.length === 0 && (
-          <p className="text-muted-foreground py-4 text-center text-sm">
-            No responses yet.
-          </p>
+          <p className="text-muted-foreground py-4 text-center text-sm">No responses yet.</p>
         )}
 
         <div className="space-y-2">
@@ -408,9 +381,7 @@ function ResponseModerationSection() {
                       className="h-3.5 w-5 rounded-sm object-cover"
                     />
                   )}
-                  <span className="text-sm font-medium">
-                    {r.country?.name ?? "Unknown"}
-                  </span>
+                  <span className="text-sm font-medium">{r.country?.name ?? "Unknown"}</span>
                   {r.featured && (
                     <Badge
                       variant="outline"
@@ -440,9 +411,7 @@ function ResponseModerationSection() {
                   )}
                 </Button>
               </div>
-              <p className="text-muted-foreground whitespace-pre-wrap text-sm">
-                {r.content}
-              </p>
+              <p className="text-muted-foreground text-sm whitespace-pre-wrap">{r.content}</p>
               <p className="text-muted-foreground/50 mt-1 text-xs">
                 {new Date(r.createdAt).toLocaleDateString()}
               </p>
@@ -529,9 +498,7 @@ export default function AdminBlurbsPage() {
 
       <BlurbStatsSummary />
 
-      {showCreate && (
-        <CreatePromptForm onDone={() => setShowCreate(false)} />
-      )}
+      {showCreate && <CreatePromptForm onDone={() => setShowCreate(false)} />}
 
       <PromptManagementSection />
 

@@ -21,9 +21,7 @@ export default function MyCountryOverviewArticle() {
         </Section>
 
         <Section title="Vitality Rings">
-          <p>
-            Four animated rings at the top of the page show overall health scores (0-100):
-          </p>
+          <p>Four animated rings at the top of the page show overall health scores (0-100):</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
               <strong>Economic Health:</strong> GDP growth, debt ratio, trade balance, and sector
@@ -38,8 +36,8 @@ export default function MyCountryOverviewArticle() {
               network, and international standing.
             </li>
             <li>
-              <strong>Defense Readiness:</strong> Military readiness, equipment maintenance, security
-              score, and threat assessment.
+              <strong>Defense Readiness:</strong> Military readiness, equipment maintenance,
+              security score, and threat assessment.
             </li>
           </ul>
         </Section>
@@ -76,8 +74,8 @@ export default function MyCountryOverviewArticle() {
         <Section title="Sector Breakdown">
           <p>
             Below the metrics grid, sector breakdown cards show the distribution of your economy
-            across primary, secondary, and tertiary sectors, along with government spending allocation
-            across categories like education, healthcare, defense, and infrastructure.
+            across primary, secondary, and tertiary sectors, along with government spending
+            allocation across categories like education, healthcare, defense, and infrastructure.
           </p>
         </Section>
 
@@ -85,26 +83,49 @@ export default function MyCountryOverviewArticle() {
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <Activity className="inline h-4 w-4 text-amber-500" />{" "}
-              <strong>National Issues Banner:</strong> Shows pending issue count with urgency coloring.
-              Click to navigate to the Executive section.
+              <strong>National Issues Banner:</strong> Shows pending issue count with urgency
+              coloring. Click to navigate to the Executive section.
             </li>
             <li>
-              <BarChart3 className="inline h-4 w-4 text-cyan-500" />{" "}
-              <strong>Vault Widget:</strong> Displays your IxCredits balance and vault level.
+              <BarChart3 className="inline h-4 w-4 text-cyan-500" /> <strong>Vault Widget:</strong>{" "}
+              Displays your IxCredits balance and vault level.
             </li>
             <li>
-              <Target className="inline h-4 w-4 text-purple-500" />{" "}
-              <strong>Quick Actions:</strong> Shortcuts to frequently used features across all
-              MyCountry sections.
+              <Target className="inline h-4 w-4 text-purple-500" /> <strong>Quick Actions:</strong>{" "}
+              Shortcuts to frequently used features across all MyCountry sections.
             </li>
           </ul>
         </Section>
 
         <InfoBox title="Related Documentation">
           <ul className="list-disc space-y-1 pl-6">
-            <li><Link href="/help/mycountry/executive" className="text-blue-600 hover:underline dark:text-blue-400">Executive Command Center</Link>{" "} — Executive command and decision-making</li>
-            <li><Link href="/help/economy/tiers" className="text-blue-600 hover:underline dark:text-blue-400">Economic Tiers</Link>{" "} — Economic tier system and growth modeling</li>
-            <li><Link href="/help/vault/ixcredits" className="text-blue-600 hover:underline dark:text-blue-400">IxCredits Economy</Link>{" "} — IxCredits economy</li>
+            <li>
+              <Link
+                href="/help/mycountry/executive"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Executive Command Center
+              </Link>{" "}
+              — Executive command and decision-making
+            </li>
+            <li>
+              <Link
+                href="/help/economy/tiers"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Economic Tiers
+              </Link>{" "}
+              — Economic tier system and growth modeling
+            </li>
+            <li>
+              <Link
+                href="/help/vault/ixcredits"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                IxCredits Economy
+              </Link>{" "}
+              — IxCredits economy
+            </li>
           </ul>
         </InfoBox>
       </ContentCard>

@@ -5,14 +5,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import {
-  Trophy,
-  TrendingUp,
-  Users,
-  Globe,
-  Crown,
-  Medal,
-} from "lucide-react";
+import { Trophy, TrendingUp, Users, Globe, Crown, Medal } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
@@ -30,7 +23,10 @@ export default function LeaderboardsPage() {
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Get all countries for leaderboards
-  const { data: allCountries, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
+  const { data: allCountries, isLoading: countriesLoading } = api.countries.getAll.useQuery(
+    undefined,
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   // Get achievements leaderboard
   const { data: achievementsLeaderboard, isLoading: achievementsLoading } =
@@ -112,7 +108,8 @@ export default function LeaderboardsPage() {
   }, [selectedMetric, allCountries, achievementsLeaderboard, diplomaticLeaderboard]);
 
   const userRank = useMemo(
-    () => leaderboardData.findIndex((item: { id: string }) => item.id === userProfile?.countryId) + 1,
+    () =>
+      leaderboardData.findIndex((item: { id: string }) => item.id === userProfile?.countryId) + 1,
     [leaderboardData, userProfile?.countryId]
   );
 

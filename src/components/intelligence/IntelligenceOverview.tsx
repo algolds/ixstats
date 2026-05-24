@@ -3,14 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Shield,
-  Globe,
-  AlertTriangle,
-  BarChart3,
-  Send,
-  TrendingUp,
-} from "lucide-react";
+import { Shield, Globe, AlertTriangle, BarChart3, Send, TrendingUp } from "lucide-react";
 import { api } from "~/trpc/react";
 import { DiplomaticHealthRing } from "~/components/diplomatic/DiplomaticHealthRing";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
@@ -21,7 +14,11 @@ interface IntelligenceOverviewProps {
   onTabChange?: (tab: string) => void;
 }
 
-export function IntelligenceOverview({ countryId, countryName, onTabChange }: IntelligenceOverviewProps) {
+export function IntelligenceOverview({
+  countryId,
+  countryName,
+  onTabChange,
+}: IntelligenceOverviewProps) {
   // Fetch intelligence metrics
   const { data: defenseOverview } = api.security.getDefenseOverview.useQuery(
     { countryId },
@@ -40,7 +37,9 @@ export function IntelligenceOverview({ countryId, countryName, onTabChange }: In
   );
 
   // Calculate metrics
-  const activeEmbassies = embassies.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length;
+  const activeEmbassies = embassies.filter(
+    (e: any) => e.status === "ACTIVE" || e.status === "active"
+  ).length;
   const criticalDiplomaticEvents = recentDiplomaticChanges.filter(
     (c: any) => c.changeType === "mission_failed" || c.changeType === "relationship_change"
   ).length;
@@ -89,7 +88,10 @@ export function IntelligenceOverview({ countryId, countryName, onTabChange }: In
           const percentage = metric.max ? (metric.value / metric.max) * 100 : null;
 
           return (
-            <div key={metric.label} className={`glass-hierarchy-child rounded-lg p-2.5 ${metric.bgColor}`}>
+            <div
+              key={metric.label}
+              className={`glass-hierarchy-child rounded-lg p-2.5 ${metric.bgColor}`}
+            >
               <div className="flex items-center gap-1.5">
                 <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${metric.color}`} />
                 <span className="text-muted-foreground text-xs font-medium">{metric.label}</span>
@@ -113,19 +115,39 @@ export function IntelligenceOverview({ countryId, countryName, onTabChange }: In
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onTabChange?.("economic")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => onTabChange?.("economic")}
+        >
           <BarChart3 className="h-3.5 w-3.5" />
           Economic Analytics
         </Button>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onTabChange?.("diplomatic")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => onTabChange?.("diplomatic")}
+        >
           <Globe className="h-3.5 w-3.5" />
           Diplomatic Network
         </Button>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onTabChange?.("policy")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => onTabChange?.("policy")}
+        >
           <Send className="h-3.5 w-3.5" />
           Policy Analysis
         </Button>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onTabChange?.("forecasting")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => onTabChange?.("forecasting")}
+        >
           <TrendingUp className="h-3.5 w-3.5" />
           Forecasting
         </Button>
@@ -179,9 +201,7 @@ export function IntelligenceOverview({ countryId, countryName, onTabChange }: In
                           Requires immediate diplomatic attention
                         </p>
                       </div>
-                      <Badge variant="destructive">
-                        {criticalDiplomaticEvents}
-                      </Badge>
+                      <Badge variant="destructive">{criticalDiplomaticEvents}</Badge>
                     </div>
                   </div>
                 )}

@@ -35,7 +35,9 @@ export async function GET(
         const cached = await externalApiCache.get<{ url: string }>(cacheOptions);
         if (cached?.data?.url) {
           directUrl = cached.data.url;
-          console.log(`[AltHistory Proxy] Cache HIT for Special:FilePath resolution of ${filename} -> ${directUrl}`);
+          console.log(
+            `[AltHistory Proxy] Cache HIT for Special:FilePath resolution of ${filename} -> ${directUrl}`
+          );
         }
       } catch (cacheErr) {
         console.error("[AltHistory Proxy] Error reading resolution cache:", cacheErr);
@@ -69,7 +71,7 @@ export async function GET(
               headers: {
                 "User-Agent": "IxStats-Builder",
                 "Api-User-Agent": "IxStats-Builder",
-                "Accept": "application/json, text/html, */*",
+                Accept: "application/json, text/html, */*",
                 "Accept-Language": "en-US,en;q=0.9",
               },
               signal: abortController.signal,
@@ -78,19 +80,23 @@ export async function GET(
             clearTimeout(timeoutId);
 
             if (apiResponse.ok) {
-              const data = await apiResponse.json() as any;
+              const data = (await apiResponse.json()) as any;
               const pages = data.query?.pages ?? {};
               const page = Object.values(pages)[0] as any;
               directUrl = page?.imageinfo?.[0]?.url;
               if (directUrl) {
-                console.log(`[AltHistory Proxy] Cache MISS. Resolved Special:FilePath for ${filename} -> ${directUrl}. Caching...`);
+                console.log(
+                  `[AltHistory Proxy] Cache MISS. Resolved Special:FilePath for ${filename} -> ${directUrl}. Caching...`
+                );
                 await externalApiCache.set(cacheOptions, { url: directUrl });
               }
               break;
             }
 
             if (apiResponse.status === 403 && attempt < maxRetries) {
-              console.warn(`[AltHistory Proxy] API returned 403 for ${filename}, retrying (${attempt + 1}/${maxRetries})...`);
+              console.warn(
+                `[AltHistory Proxy] API returned 403 for ${filename}, retrying (${attempt + 1}/${maxRetries})...`
+              );
               await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
               continue;
             }
@@ -98,11 +104,17 @@ export async function GET(
             break;
           } catch (apiErr) {
             if (attempt < maxRetries) {
-              console.warn(`[AltHistory Proxy] API error for ${filename}, retrying (${attempt + 1}/${maxRetries}):`, apiErr);
+              console.warn(
+                `[AltHistory Proxy] API error for ${filename}, retrying (${attempt + 1}/${maxRetries}):`,
+                apiErr
+              );
               await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
               continue;
             }
-            console.error("[AltHistory Proxy] Error resolving Special:FilePath via api.php after max retries:", apiErr);
+            console.error(
+              "[AltHistory Proxy] Error resolving Special:FilePath via api.php after max retries:",
+              apiErr
+            );
           }
         }
       }
@@ -127,13 +139,15 @@ export async function GET(
               },
             });
           } else {
-            console.warn(`[AltHistory Proxy] Image fetch via wsrv.nl failed with status ${imageResponse.status}. Falling back to direct fetch.`);
-            
+            console.warn(
+              `[AltHistory Proxy] Image fetch via wsrv.nl failed with status ${imageResponse.status}. Falling back to direct fetch.`
+            );
+
             const directResp = await fetch(directUrl, {
               headers: { "User-Agent": "IxStats-Builder" },
               signal: AbortSignal.timeout(15000),
             });
-            
+
             if (directResp.ok) {
               const contentType = directResp.headers.get("Content-Type") || "image/png";
               const arrayBuffer = await directResp.arrayBuffer();
@@ -145,7 +159,7 @@ export async function GET(
                 },
               });
             }
-            
+
             return new NextResponse(null, { status: 502 });
           }
         } catch (imgErr) {

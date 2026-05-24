@@ -574,9 +574,9 @@ export default function DiplomaticScenariosPage() {
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="rounded-lg border border-border bg-card p-8 text-center shadow-lg">
+        <div className="border-border bg-card rounded-lg border p-8 text-center shadow-lg">
           <h1 className="mb-4 text-2xl font-bold text-red-600">Access Denied</h1>
-          <p className="mb-6 text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             You do not have permission to view this page.
           </p>
         </div>
@@ -956,8 +956,8 @@ function ScenarioCard({
       {/* Scenario Info */}
       <div className="mb-3 space-y-2 text-xs">
         <div>
-          <span className="text-muted-foreground block mb-1">Countries:</span>
-          <div className="flex items-center gap-2 text-foreground font-medium">
+          <span className="text-muted-foreground mb-1 block">Countries:</span>
+          <div className="text-foreground flex items-center gap-2 font-medium">
             {scenario.country1?.flagUrl && (
               <img
                 src={scenario.country1.flagUrl}
@@ -967,7 +967,7 @@ function ScenarioCard({
             )}
             <span className="truncate">{scenario.country1?.name || scenario.country1Id}</span>
           </div>
-          <div className="flex items-center gap-2 text-foreground font-medium mt-1">
+          <div className="text-foreground mt-1 flex items-center gap-2 font-medium">
             {scenario.country2?.flagUrl && (
               <img
                 src={scenario.country2.flagUrl}
@@ -1017,9 +1017,7 @@ function ScenarioCard({
           <div className="space-y-1 text-xs">
             {scenario.country1 && (
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground truncate">
-                  {scenario.country1.name}
-                </span>
+                <span className="text-muted-foreground truncate">{scenario.country1.name}</span>
                 <span className="text-foreground ml-2 shrink-0">
                   {scenario.country1.economicTier || "N/A"} • {scenario.country1.continent || "N/A"}
                 </span>
@@ -1027,9 +1025,7 @@ function ScenarioCard({
             )}
             {scenario.country2 && (
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground truncate">
-                  {scenario.country2.name}
-                </span>
+                <span className="text-muted-foreground truncate">{scenario.country2.name}</span>
                 <span className="text-foreground ml-2 shrink-0">
                   {scenario.country2.economicTier || "N/A"} • {scenario.country2.continent || "N/A"}
                 </span>
@@ -1298,7 +1294,7 @@ function GeneralTab({
               </div>
               <div className="max-h-[300px] overflow-y-auto">
                 {filteredCountries1.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
+                  <div className="text-muted-foreground py-6 text-center text-sm">
                     No countries found
                   </div>
                 ) : (
@@ -1313,7 +1309,7 @@ function GeneralTab({
                           />
                         )}
                         <span className="flex-1 truncate">{country.name}</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           {country.economicTier || "N/A"}
                         </span>
                       </div>
@@ -1363,7 +1359,7 @@ function GeneralTab({
               </div>
               <div className="max-h-[300px] overflow-y-auto">
                 {filteredCountries2.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
+                  <div className="text-muted-foreground py-6 text-center text-sm">
                     No countries found
                   </div>
                 ) : (
@@ -1378,7 +1374,7 @@ function GeneralTab({
                           />
                         )}
                         <span className="flex-1 truncate">{country.name}</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           {country.economicTier || "N/A"}
                         </span>
                       </div>
@@ -1433,7 +1429,7 @@ function GeneralTab({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <label className="text-foreground mb-2 block text-sm font-medium">Difficulty</label>
           <Select
@@ -1645,7 +1641,7 @@ function ChoicesTab({
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <label className="text-foreground mb-2 block text-sm font-medium">
                   Skill Required
@@ -1768,7 +1764,7 @@ function MetadataTab({
 }) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <label className="text-foreground mb-2 block text-sm font-medium">
             Cultural Impact: {formData.culturalImpact}

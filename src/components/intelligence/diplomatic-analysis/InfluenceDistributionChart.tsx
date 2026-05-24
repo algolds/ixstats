@@ -12,13 +12,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { PieChart as PieChartIcon } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import type { InfluenceEntry } from "~/hooks/useDiplomaticAnalytics";
 import { COLORS, STATUS_COLORS } from "~/hooks/useDiplomaticAnalytics";
 
@@ -40,7 +34,7 @@ export const InfluenceDistributionChart = React.memo<InfluenceDistributionChartP
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ResponsiveContainer width="100%" height={250} className="sm:h-[300px] lg:h-[350px]">
               <PieChart>
                 <Pie
@@ -48,9 +42,7 @@ export const InfluenceDistributionChart = React.memo<InfluenceDistributionChartP
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
-                  }
+                  label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -79,23 +71,23 @@ export const InfluenceDistributionChart = React.memo<InfluenceDistributionChartP
               {data.map((item) => (
                 <div
                   key={item.name}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  className="bg-muted/50 flex items-center justify-between rounded-lg p-3"
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-4 h-4 rounded-full"
+                      className="h-4 w-4 rounded-full"
                       style={{
                         backgroundColor: STATUS_COLORS[item.name] || "#6b7280",
                       }}
                     />
                     <div>
                       <p className="font-medium capitalize">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">{item.count} countries</p>
+                      <p className="text-muted-foreground text-sm">{item.count} countries</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">{item.value.toFixed(0)}</p>
-                    <p className="text-xs text-muted-foreground">influence points</p>
+                    <p className="text-muted-foreground text-xs">influence points</p>
                   </div>
                 </div>
               ))}
@@ -104,7 +96,7 @@ export const InfluenceDistributionChart = React.memo<InfluenceDistributionChartP
         </CardContent>
       </Card>
     );
-  },
+  }
 );
 
 InfluenceDistributionChart.displayName = "InfluenceDistributionChart";

@@ -206,7 +206,7 @@ export function CountryGrid({
           >
             <button
               onClick={toggleAutoScroll}
-              className="flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-xs text-emerald-400 backdrop-blur-sm border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors"
+              className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-3 py-1 text-xs text-emerald-400 backdrop-blur-sm transition-colors hover:bg-emerald-500/30"
             >
               {isAutoScrolling ? (
                 <>
@@ -227,7 +227,7 @@ export function CountryGrid({
       {/* Main Grid Container */}
       <div
         ref={scrollContainerRef}
-        className="scrollbar-none relative max-h-[70vh] overflow-y-auto rounded-xl"
+        className="relative max-h-[70vh] scrollbar-none overflow-y-auto rounded-xl"
         data-country-grid="true"
         onScroll={handleScroll}
         style={{
@@ -273,46 +273,46 @@ export function CountryGrid({
             <p className="text-[var(--color-text-muted)]">No countries match your criteria</p>
             <button
               onClick={onClearFilters}
-              className="mt-4 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+              className="mt-4 text-sm text-emerald-400 transition-colors hover:text-emerald-300"
             >
               Clear filters
             </button>
           </motion.div>
         ) : (
           <CountriesFocusGridModularBuilder
-              countries={infiniteCountries}
-              visibleCount={infiniteCountries.length}
-              onCardHoverChange={(countryId: string | null) => {
-                if (countryId) {
-                  const originalId =
-                    infiniteCountries.find((c) => c.id === countryId)?.originalId || countryId;
-                  const hovered = countries.find((c) => c.countryCode === originalId);
-                  onCountryHover(hovered || null);
-                } else {
-                  onCountryHover(null);
-                }
-              }}
-              onCountryClick={(countryId: string) => {
+            countries={infiniteCountries}
+            visibleCount={infiniteCountries.length}
+            onCardHoverChange={(countryId: string | null) => {
+              if (countryId) {
                 const originalId =
                   infiniteCountries.find((c) => c.id === countryId)?.originalId || countryId;
-                const selected = filteredCountries.find((c) => c.countryCode === originalId);
-                if (selected) {
-                  onCountryClick(selected);
-                }
-              }}
-              isLoading={false}
-              hasMore={false}
-              onLoadMore={() => {}}
-              searchInput={searchTerm}
-              filterBy={selectedArchetype}
-              onClearFilters={onClearFilters}
-              cardSize="small"
-              scrollPosition={scrollPositionRef.current}
-              softSelectedCountryId={softSelectedCountryId}
-              parallaxOffsets={[]}
-              isAutoScrolling={isAutoScrolling && !isPaused}
-              flagUrls={flagUrls}
-            />
+                const hovered = countries.find((c) => c.countryCode === originalId);
+                onCountryHover(hovered || null);
+              } else {
+                onCountryHover(null);
+              }
+            }}
+            onCountryClick={(countryId: string) => {
+              const originalId =
+                infiniteCountries.find((c) => c.id === countryId)?.originalId || countryId;
+              const selected = filteredCountries.find((c) => c.countryCode === originalId);
+              if (selected) {
+                onCountryClick(selected);
+              }
+            }}
+            isLoading={false}
+            hasMore={false}
+            onLoadMore={() => {}}
+            searchInput={searchTerm}
+            filterBy={selectedArchetype}
+            onClearFilters={onClearFilters}
+            cardSize="small"
+            scrollPosition={scrollPositionRef.current}
+            softSelectedCountryId={softSelectedCountryId}
+            parallaxOffsets={[]}
+            isAutoScrolling={isAutoScrolling && !isPaused}
+            flagUrls={flagUrls}
+          />
         )}
       </div>
 

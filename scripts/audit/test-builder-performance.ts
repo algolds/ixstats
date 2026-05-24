@@ -36,12 +36,7 @@ const THRESHOLDS = {
   SYNERGY_JOIN_QUERY: 150, // Should be fast with FK indexes
 };
 
-function logResult(
-  operation: string,
-  durationMs: number,
-  threshold: number,
-  details: string
-) {
+function logResult(operation: string, durationMs: number, threshold: number, details: string) {
   const passed = durationMs <= threshold;
   results.push({ operation, durationMs, passed, threshold, details });
   const status = passed ? "✅ PASS" : "⚠️ SLOW";
@@ -417,7 +412,9 @@ async function main() {
     results.forEach((r) => {
       const status = r.passed ? "✅" : "⚠️";
       const ratio = ((r.durationMs / r.threshold) * 100).toFixed(0);
-      console.log(`${status} ${r.operation}: ${r.durationMs}ms (${ratio}% of ${r.threshold}ms limit)`);
+      console.log(
+        `${status} ${r.operation}: ${r.durationMs}ms (${ratio}% of ${r.threshold}ms limit)`
+      );
     });
 
     console.log();

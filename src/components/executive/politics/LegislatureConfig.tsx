@@ -59,13 +59,13 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   function handleSave() {
     const clampedSeats = Math.max(10, Math.min(1000, Number(formData.totalSeats) || 10));
     const clampedTerm = Math.max(1, Math.min(10, Number(formData.termLength) || 4));
-    
+
     setFormData({ ...formData, totalSeats: clampedSeats, termLength: clampedTerm });
-    configureLegislature.mutate({ 
-      countryId, 
+    configureLegislature.mutate({
+      countryId,
       ...formData,
       totalSeats: clampedSeats,
-      termLength: clampedTerm
+      termLength: clampedTerm,
     });
   }
 
@@ -99,7 +99,9 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 value={formData.chamberType}
                 onValueChange={(v) => setFormData({ ...formData, chamberType: v as any })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unicameral">Unicameral (Single chamber)</SelectItem>
                   <SelectItem value="bicameral">Bicameral (Two chambers)</SelectItem>
@@ -118,7 +120,7 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 value={formData.totalSeats}
                 onChange={(e) => setFormData({ ...formData, totalSeats: e.target.value })}
               />
-              <p className="mt-1 text-[10px] text-muted-foreground">10-1000 seats</p>
+              <p className="text-muted-foreground mt-1 text-[10px]">10-1000 seats</p>
             </div>
             <div>
               <Label>Electoral System</Label>
@@ -126,7 +128,9 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 value={formData.electoralSystem}
                 onValueChange={(v) => setFormData({ ...formData, electoralSystem: v as any })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="proportional">Proportional (D&apos;Hondt)</SelectItem>
                   <SelectItem value="fptp">First Past the Post</SelectItem>
@@ -150,13 +154,17 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
                 value={formData.electionCycle}
                 onValueChange={(v) => setFormData({ ...formData, electionCycle: v as any })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="fixed">Fixed Term</SelectItem>
                   <SelectItem value="variable">Variable (snap elections)</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="mt-1 text-[10px] text-muted-foreground">Fixed = strict schedule; Variable = parliament may dissolve early</p>
+              <p className="text-muted-foreground mt-1 text-[10px]">
+                Fixed = strict schedule; Variable = parliament may dissolve early
+              </p>
             </div>
           </div>
 

@@ -36,7 +36,9 @@ try {
   for (const [handle, info] of sorted) {
     const topUser = [...info.users.entries()].sort((a, b) => b[1] - a[1])[0];
     const multiUser = info.users.size > 1 ? ` (${info.users.size} users)` : "";
-    console.log(`@${handle.padEnd(35)} ${info.total.toString().padStart(4)} posts${multiUser} → ${topUser![0]}`);
+    console.log(
+      `@${handle.padEnd(35)} ${info.total.toString().padStart(4)} posts${multiUser} → ${topUser![0]}`
+    );
   }
 } catch (error: any) {
   console.error("Failed:", error.message);

@@ -86,7 +86,10 @@ export function ActionDialog({
 
         // Show completion toast and close dialog
         if (updated.status === "completed" && actionItem.status !== "completed") {
-          notify.success("Action Completed!", `${recommendation.title} has been successfully completed.`);
+          notify.success(
+            "Action Completed!",
+            `${recommendation.title} has been successfully completed.`
+          );
           setTimeout(() => onOpenChange(false), 2000);
         }
       }
@@ -113,7 +116,10 @@ export function ActionDialog({
       // Confirm and start the action
       actionQueueManager.confirmAction(item.id);
 
-      notify.success("Action Queued", "The action has been added to your action queue and will begin processing.");
+      notify.success(
+        "Action Queued",
+        "The action has been added to your action queue and will begin processing."
+      );
 
       // Switch to monitor view
       setView("monitor");
@@ -140,7 +146,10 @@ export function ActionDialog({
         notify.info("Action Resumed", "The action has been resumed and will continue processing.");
       }
     } catch (error) {
-      notify.error("Error", error instanceof Error ? error.message : "Failed to pause/resume action");
+      notify.error(
+        "Error",
+        error instanceof Error ? error.message : "Failed to pause/resume action"
+      );
     }
   };
 
@@ -427,23 +436,41 @@ export function ActionDialog({
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Started</span>
                         <span>
-                          {actionItem.startedAt
-                            ? <IxTimeDate date={actionItem.startedAt} format="datetime" accentColor="indigo" />
-                            : "Not yet"}
+                          {actionItem.startedAt ? (
+                            <IxTimeDate
+                              date={actionItem.startedAt}
+                              format="datetime"
+                              accentColor="indigo"
+                            />
+                          ) : (
+                            "Not yet"
+                          )}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Est. Completion</span>
                         <span>
-                          {actionItem.estimatedCompletionAt
-                            ? <IxTimeDate date={actionItem.estimatedCompletionAt} format="datetime" accentColor="indigo" />
-                            : "Unknown"}
+                          {actionItem.estimatedCompletionAt ? (
+                            <IxTimeDate
+                              date={actionItem.estimatedCompletionAt}
+                              format="datetime"
+                              accentColor="indigo"
+                            />
+                          ) : (
+                            "Unknown"
+                          )}
                         </span>
                       </div>
                       {actionItem.completedAt && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Completed</span>
-                          <span><IxTimeDate date={actionItem.completedAt} format="datetime" accentColor="indigo" /></span>
+                          <span>
+                            <IxTimeDate
+                              date={actionItem.completedAt}
+                              format="datetime"
+                              accentColor="indigo"
+                            />
+                          </span>
                         </div>
                       )}
                     </div>

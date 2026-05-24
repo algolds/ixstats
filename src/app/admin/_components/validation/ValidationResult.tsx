@@ -29,11 +29,11 @@ export const ValidationResult = React.memo(function ValidationResult({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-md px-3 py-2 transition-colors hover:bg-white/5">
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex min-w-0 items-center gap-2.5">
         <StatusIcon status={check.status} />
-        <span className="text-foreground text-sm font-medium truncate">{check.name}</span>
+        <span className="text-foreground truncate text-sm font-medium">{check.name}</span>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex shrink-0 items-center gap-2">
         <span className="text-muted-foreground text-xs">{check.details}</span>
         {check.count !== undefined && (
           <Badge variant="outline" className="text-xs tabular-nums">

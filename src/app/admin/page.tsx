@@ -23,6 +23,7 @@ import {
   Database,
   Activity,
   Wallet,
+  Package,
 } from "lucide-react";
 
 const QUICK_ACTIONS = [
@@ -55,10 +56,10 @@ const QUICK_ACTIONS = [
     color: "amber",
   },
   {
-    icon: Wallet,
-    label: "Vault & Credits",
-    description: "Manage Credits & Personal Vaults",
-    href: "/admin/vault",
+    icon: Package,
+    label: "Card Management",
+    description: "Sync, Packs, Lore & Vaults",
+    href: "/admin/cards",
     color: "amber",
   },
   {
@@ -183,7 +184,7 @@ export default function AdminDashboardPage() {
             <Link
               key={action.label}
               href={action.href}
-              className="glass-card-child group rounded-xl border border-border/50 p-4 transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:shadow-md"
+              className="glass-card-child group border-border/50 hover:border-primary/30 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-md"
             >
               <div className="flex items-center gap-3">
                 <div className="bg-primary/10 border-primary/20 group-hover:bg-primary/20 rounded-lg border p-2 transition-colors">
@@ -208,7 +209,7 @@ export default function AdminDashboardPage() {
         {/* Recent Admin Activity */}
         <div>
           <h2 className="text-foreground mb-3 text-lg font-semibold">System Status</h2>
-          <div className="glass-card-child space-y-3 rounded-xl border border-border/50 p-4">
+          <div className="glass-card-child border-border/50 space-y-3 rounded-xl border p-4">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-sm">Active Interventions</span>
               <span className="text-foreground font-mono text-sm font-medium">

@@ -40,13 +40,8 @@ export async function GET(request: NextRequest) {
 
     // In production, CRON_SECRET is mandatory
     if (isProduction && !cronSecret) {
-      console.error(
-        "[SECURITY] CRON_SECRET not configured in production - cron endpoint disabled"
-      );
-      return NextResponse.json(
-        { error: "Cron endpoint not configured" },
-        { status: 503 }
-      );
+      console.error("[SECURITY] CRON_SECRET not configured in production - cron endpoint disabled");
+      return NextResponse.json({ error: "Cron endpoint not configured" }, { status: 503 });
     }
 
     // Require valid Bearer token if CRON_SECRET is set

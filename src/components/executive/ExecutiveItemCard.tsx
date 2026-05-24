@@ -85,54 +85,65 @@ export const ExecutiveItemCard = React.memo(function ExecutiveItemCard({
   const content = (
     <div
       className={cn(
-        "rounded-lg border border-border/60 border-l-[3px] p-3 transition-all duration-150",
+        "border-border/60 rounded-lg border border-l-[3px] p-3 transition-all duration-150",
         borderClass,
-        isClickable && "cursor-pointer hover:bg-muted/30 hover:shadow-sm hover:border-border",
-        className,
+        isClickable && "hover:bg-muted/30 hover:border-border cursor-pointer hover:shadow-sm",
+        className
       )}
       onClick={onClick}
       role={isClickable ? "button" : undefined}
       tabIndex={isClickable ? 0 : undefined}
-      onKeyDown={isClickable ? (e) => { if (e.key === "Enter") onClick?.(); } : undefined}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.key === "Enter") onClick?.();
+            }
+          : undefined
+      }
     >
       {/* Header row: icon + title + badges */}
       <div className="flex items-start gap-2.5">
         <div className="mt-0.5 flex-shrink-0">
-          <Icon className="h-4 w-4 text-muted-foreground" />
+          <Icon className="text-muted-foreground h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-sm font-medium truncate">{title}</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="truncate text-sm font-medium">{title}</span>
             {isLocal && (
-              <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/40 text-amber-600 dark:text-amber-400">
+              <Badge
+                variant="outline"
+                className="border-amber-500/40 px-1 py-0 text-[9px] text-amber-600 dark:text-amber-400"
+              >
                 LOCAL
               </Badge>
             )}
             {badges?.map((badge, i) => (
-              <Badge key={i} variant="secondary" className={cn("text-[9px] px-1.5 py-0", badge.colorClass)}>
+              <Badge
+                key={i}
+                variant="secondary"
+                className={cn("px-1.5 py-0 text-[9px]", badge.colorClass)}
+              >
                 {badge.label}
               </Badge>
             ))}
           </div>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-muted-foreground mt-0.5 text-xs">{subtitle}</p>}
           {description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>
+            <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{description}</p>
           )}
         </div>
       </div>
 
       {/* Metrics + action row */}
       {(metrics && metrics.length > 0) || actionLabel ? (
-        <div className="mt-2.5 flex items-center justify-between gap-2 pt-2 border-t border-border/40">
+        <div className="border-border/40 mt-2.5 flex items-center justify-between gap-2 border-t pt-2">
           {metrics && metrics.length > 0 && (
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-wrap items-center gap-3">
               {metrics.map((metric, i) => (
-                <div key={i} className="flex items-center gap-1 text-xs text-muted-foreground">
+                <div key={i} className="text-muted-foreground flex items-center gap-1 text-xs">
                   <metric.icon className="h-3 w-3" />
                   <span>{metric.label}:</span>
-                  <span className="font-medium text-foreground">{metric.value}</span>
+                  <span className="text-foreground font-medium">{metric.value}</span>
                 </div>
               ))}
             </div>
@@ -141,8 +152,11 @@ export const ExecutiveItemCard = React.memo(function ExecutiveItemCard({
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 px-2 text-xs flex-shrink-0"
-              onClick={(e) => { e.stopPropagation(); onAction(e); }}
+              className="h-6 flex-shrink-0 px-2 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(e);
+              }}
             >
               {actionLabel}
             </Button>

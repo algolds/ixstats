@@ -3,10 +3,22 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  X, MapPin, Users, TrendingUp, Building2, Shield,
-  Languages, Coins, Globe, Ruler,
-  Phone, Flag, ChevronDown, ChevronRight,
-  Landmark, PieChart,
+  X,
+  MapPin,
+  Users,
+  TrendingUp,
+  Building2,
+  Shield,
+  Languages,
+  Coins,
+  Globe,
+  Ruler,
+  Phone,
+  Flag,
+  ChevronDown,
+  ChevronRight,
+  Landmark,
+  PieChart,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
@@ -58,14 +70,22 @@ const formatArea = (km2: number | undefined): string => {
   return `${km2.toLocaleString()} km² (${sqMi.toLocaleString(undefined, { maximumFractionDigits: 0 })} mi²)`;
 };
 
-const StatField = ({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value?: string }) => {
+const StatField = ({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value?: string;
+}) => {
   if (!value) return null;
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
-      <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+    <div className="border-border/50 bg-muted/20 flex items-center gap-3 rounded-lg border p-3">
+      <Icon className="text-muted-foreground h-4 w-4 flex-shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-sm font-medium truncate">{value}</p>
+        <p className="text-muted-foreground text-xs">{label}</p>
+        <p className="truncate text-sm font-medium">{value}</p>
       </div>
     </div>
   );
@@ -114,7 +134,10 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
         { label: "Government Type", value: country.governmentType },
         { label: country.leaderTitle || "Leader", value: country.leaderName },
         { label: "Capital", value: country.capital },
-        { label: "Largest City", value: country.largestCity !== country.capital ? country.largestCity : undefined },
+        {
+          label: "Largest City",
+          value: country.largestCity !== country.capital ? country.largestCity : undefined,
+        },
       ],
     },
     {
@@ -132,12 +155,29 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
       id: "demographics",
       title: "Demographics",
       icon: Users,
-      hasData: !!(country.population || country.lifeExpectancy || country.literacyRate || country.urbanization),
+      hasData: !!(
+        country.population ||
+        country.lifeExpectancy ||
+        country.literacyRate ||
+        country.urbanization
+      ),
       fields: [
-        { label: "Population", value: country.population ? formatNumber(country.population) : undefined },
-        { label: "Life Expectancy", value: country.lifeExpectancy ? `${country.lifeExpectancy} years` : undefined },
-        { label: "Literacy Rate", value: country.literacyRate ? `${country.literacyRate}%` : undefined },
-        { label: "Urbanization", value: country.urbanization ? `${country.urbanization}%` : undefined },
+        {
+          label: "Population",
+          value: country.population ? formatNumber(country.population) : undefined,
+        },
+        {
+          label: "Life Expectancy",
+          value: country.lifeExpectancy ? `${country.lifeExpectancy} years` : undefined,
+        },
+        {
+          label: "Literacy Rate",
+          value: country.literacyRate ? `${country.literacyRate}%` : undefined,
+        },
+        {
+          label: "Urbanization",
+          value: country.urbanization ? `${country.urbanization}%` : undefined,
+        },
       ],
     },
     {
@@ -157,14 +197,20 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
       hasData: !!(country.callingCode || country.internetTld || country.languages),
       fields: [
         { label: "Languages", value: country.languages },
-        { label: "Calling Code", value: country.callingCode ? `+${country.callingCode}` : undefined },
-        { label: "Internet TLD", value: country.internetTld ? `.${country.internetTld}` : undefined },
+        {
+          label: "Calling Code",
+          value: country.callingCode ? `+${country.callingCode}` : undefined,
+        },
+        {
+          label: "Internet TLD",
+          value: country.internetTld ? `.${country.internetTld}` : undefined,
+        },
       ],
     },
-  ].filter(s => s.hasData);
+  ].filter((s) => s.hasData);
 
   const toggleSection = (id: string) => {
-    setExpandedSection(prev => prev === id ? null : id);
+    setExpandedSection((prev) => (prev === id ? null : id));
   };
 
   return (
@@ -173,7 +219,7 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -181,11 +227,11 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="w-full max-w-2xl rounded-2xl border border-border/50 bg-card/95 shadow-2xl backdrop-blur-md overflow-hidden max-h-[85vh] flex flex-col"
+          className="border-border/50 bg-card/95 flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-md"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header with flag */}
-          <div className="relative h-36 overflow-hidden flex-shrink-0">
+          <div className="relative h-36 flex-shrink-0 overflow-hidden">
             {showFlag ? (
               <img
                 src={country.flagUrl}
@@ -197,11 +243,11 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/30 to-purple-600/30" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-transparent" />
+            <div className="from-card via-card/80 absolute inset-0 bg-gradient-to-t to-transparent" />
 
             <button
               onClick={onClose}
-              className="absolute top-3 right-3 rounded-full bg-black/40 p-1.5 text-white/80 hover:bg-black/60 hover:text-white transition-colors"
+              className="absolute top-3 right-3 rounded-full bg-black/40 p-1.5 text-white/80 transition-colors hover:bg-black/60 hover:text-white"
             >
               <X className="h-4 w-4" />
             </button>
@@ -219,47 +265,61 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
           </div>
 
           {/* Quick stats row */}
-          <div className="px-5 pt-4 flex-shrink-0">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="flex-shrink-0 px-5 pt-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <StatField icon={MapPin} label="Capital" value={country.capital} />
               <StatField icon={Building2} label="Government" value={country.governmentType} />
-              <StatField icon={Users} label="Population" value={country.population ? formatNumber(country.population) : undefined} />
+              <StatField
+                icon={Users}
+                label="Population"
+                value={country.population ? formatNumber(country.population) : undefined}
+              />
               <StatField icon={TrendingUp} label="GDP" value={country.gdp} />
-              <StatField icon={Shield} label={country.leaderTitle || "Leader"} value={country.leaderName} />
+              <StatField
+                icon={Shield}
+                label={country.leaderTitle || "Leader"}
+                value={country.leaderName}
+              />
               <StatField icon={Coins} label="Currency" value={country.currency} />
               <StatField icon={Languages} label="Languages" value={country.languages} />
-              <StatField icon={Ruler} label="Area" value={country.areaKm2 ? formatArea(country.areaKm2) : undefined} />
+              <StatField
+                icon={Ruler}
+                label="Area"
+                value={country.areaKm2 ? formatArea(country.areaKm2) : undefined}
+              />
             </div>
           </div>
 
           {/* Section toggle cards */}
-          <div className="px-5 py-4 space-y-2 overflow-y-auto flex-1">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Builder Sections</h3>
+          <div className="flex-1 space-y-2 overflow-y-auto px-5 py-4">
+            <h3 className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+              Builder Sections
+            </h3>
             {sections.map((section) => {
               const isExpanded = expandedSection === section.id;
               const Icon = section.icon;
-              const populatedFields = section.fields.filter(f => f.value);
+              const populatedFields = section.fields.filter((f) => f.value);
 
               return (
                 <div
                   key={section.id}
-                  className="rounded-lg border border-border/50 overflow-hidden transition-colors"
+                  className="border-border/50 overflow-hidden rounded-lg border transition-colors"
                 >
                   <button
                     onClick={() => toggleSection(section.id)}
-                    className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors"
+                    className="hover:bg-muted/30 flex w-full items-center justify-between p-3 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <Icon className="text-muted-foreground h-4 w-4" />
                       <span className="text-sm font-medium">{section.title}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {populatedFields.length} field{populatedFields.length !== 1 ? "s" : ""}
                       </span>
                     </div>
                     {isExpanded ? (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      <ChevronDown className="text-muted-foreground h-4 w-4" />
                     ) : (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      <ChevronRight className="text-muted-foreground h-4 w-4" />
                     )}
                   </button>
                   <AnimatePresence>
@@ -271,14 +331,16 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="px-3 pb-3 pt-1 border-t border-border/30">
+                        <div className="border-border/30 border-t px-3 pt-1 pb-3">
                           <div className="grid grid-cols-2 gap-2">
-                            {section.fields.filter(f => f.value).map((field, i) => (
-                              <div key={i} className="rounded-md bg-muted/20 p-2">
-                                <p className="text-[10px] text-muted-foreground">{field.label}</p>
-                                <p className="text-xs font-medium truncate">{field.value}</p>
-                              </div>
-                            ))}
+                            {section.fields
+                              .filter((f) => f.value)
+                              .map((field, i) => (
+                                <div key={i} className="bg-muted/20 rounded-md p-2">
+                                  <p className="text-muted-foreground text-[10px]">{field.label}</p>
+                                  <p className="truncate text-xs font-medium">{field.value}</p>
+                                </div>
+                              ))}
                           </div>
                         </div>
                       </motion.div>
@@ -290,11 +352,11 @@ export function CountryStatsModal({ country, onClose, onImport }: CountryStatsMo
           </div>
 
           {/* Actions */}
-          <div className="px-5 pb-5 pt-2 flex gap-2 flex-shrink-0">
+          <div className="flex flex-shrink-0 gap-2 px-5 pt-2 pb-5">
             <Button variant="outline" onClick={onClose} className="flex-1">
               Close
             </Button>
-            <Button onClick={onImport} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={onImport} className="flex-1 bg-blue-600 text-white hover:bg-blue-700">
               Import to Builder
             </Button>
           </div>

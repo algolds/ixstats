@@ -354,26 +354,22 @@ const LiveDiplomaticFeedComponent: React.FC<LiveDiplomaticFeedProps> = ({
       </AnimatePresence>
 
       {/* Event Feed */}
-      <div className="scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-[--intel-gold]/30">
+      <div className="scrollbar-thin scrollbar-thumb-[--intel-gold]/30 scrollbar-track-white/10">
         {filteredEvents.length > 0 ? (
           <Virtuoso
             style={{ height: "24rem" }}
             data={filteredEvents}
             overscan={100}
             itemContent={(index, update) => (
-              <div className="pb-3">
-                {renderEvent(update, index)}
-              </div>
+              <div className="pb-3">{renderEvent(update, index)}</div>
             )}
           />
         ) : (
-            <div className="py-8 text-center text-[--intel-silver]">
-              <RiNotification3Line className="mx-auto mb-4 w-12 opacity-50" />
-              <p>No diplomatic events to display</p>
-              {!state.isConnected && (
-                <p className="mt-2 text-xs">Connect to receive live updates</p>
-              )}
-            </div>
+          <div className="py-8 text-center text-[--intel-silver]">
+            <RiNotification3Line className="mx-auto mb-4 w-12 opacity-50" />
+            <p>No diplomatic events to display</p>
+            {!state.isConnected && <p className="mt-2 text-xs">Connect to receive live updates</p>}
+          </div>
         )}
       </div>
 

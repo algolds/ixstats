@@ -27,11 +27,7 @@ function formatCredits(amount: number): string {
 /**
  * Calculate auction fees
  */
-function calculateFees(
-  salePrice: number,
-  isExpress: boolean,
-  isFeatured: boolean
-): AuctionFees {
+function calculateFees(salePrice: number, isExpress: boolean, isFeatured: boolean): AuctionFees {
   const listingFee = 5; // Flat fee
   const successFee = salePrice > 100 ? salePrice * 0.1 : 0; // 10% on sales >100 IxC
   const expressFee = isExpress ? 10 : 0;
@@ -143,9 +139,7 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
         await onCreateAuction(input);
         onClose();
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to create auction"
-        );
+        setError(err instanceof Error ? err.message : "Failed to create auction");
       } finally {
         setIsSubmitting(false);
       }
@@ -154,24 +148,24 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
     return (
       <Dialog open={open} onOpenChange={onClose}>
         <DialogOverlay />
-        <DialogContent className="glass-modal max-w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-2xl w-[98vw] sm:w-[95vw] max-h-[90vh] overflow-y-auto">
-          <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+        <DialogContent className="glass-modal max-h-[90vh] w-[98vw] max-w-[95vw] overflow-y-auto sm:w-[95vw] sm:max-w-md md:max-w-lg lg:max-w-2xl">
+          <div className="space-y-4 p-4 sm:space-y-6 sm:p-6">
             {/* Header */}
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">Create Auction</h2>
-              <p className="text-xs sm:text-sm text-gray-400">
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Create Auction</h2>
+              <p className="text-xs text-gray-400 sm:text-sm">
                 List your card for auction on the marketplace
               </p>
             </div>
 
             {/* Card selection */}
             <div>
-              <label className="mb-2 block text-xs sm:text-sm font-medium text-gray-300">
+              <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
                 Select Card
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 max-h-64 overflow-y-auto rounded-lg border border-white/10 bg-black/20 p-2 sm:p-4">
+              <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-white/10 bg-black/20 p-2 sm:grid-cols-2 sm:gap-4 sm:p-4 lg:grid-cols-3">
                 {availableCards.length === 0 ? (
-                  <p className="col-span-2 lg:col-span-3 text-center text-xs sm:text-sm text-gray-400 py-4 sm:py-8">
+                  <p className="col-span-2 py-4 text-center text-xs text-gray-400 sm:py-8 sm:text-sm lg:col-span-3">
                     No cards available to list
                   </p>
                 ) : (
@@ -186,11 +180,7 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
                           : "border-white/10 hover:border-white/30"
                       )}
                     >
-                      <CardDisplay
-                        card={card}
-                        size="small"
-                        showStatsOnHover={false}
-                      />
+                      <CardDisplay card={card} size="small" showStatsOnHover={false} />
                     </button>
                   ))
                 )}
@@ -198,60 +188,54 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
             </div>
 
             {/* Pricing */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
               <div>
-                <label className="mb-2 block text-xs sm:text-sm font-medium text-gray-300">
+                <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
                   Starting Price (IxC) *
                 </label>
                 <input
                   type="number"
                   min={1}
                   value={startingPrice}
-                  onChange={(e) =>
-                    setStartingPrice(parseInt(e.target.value) || 1)
-                  }
-                  className="w-full rounded-lg border border-white/20 bg-black/40 px-3 sm:px-4 py-2 text-sm sm:text-base text-white focus:border-blue-500 focus:outline-none"
+                  onChange={(e) => setStartingPrice(parseInt(e.target.value) || 1)}
+                  className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none sm:px-4 sm:text-base"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-xs sm:text-sm font-medium text-gray-300">
+                <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
                   Buyout Price (IxC)
                 </label>
                 <input
                   type="number"
                   min={startingPrice + 1}
                   value={buyoutPrice || ""}
-                  onChange={(e) =>
-                    setBuyoutPrice(
-                      e.target.value ? parseInt(e.target.value) : null
-                    )
-                  }
+                  onChange={(e) => setBuyoutPrice(e.target.value ? parseInt(e.target.value) : null)}
                   placeholder="Optional"
-                  className="w-full rounded-lg border border-white/20 bg-black/40 px-3 sm:px-4 py-2 text-sm sm:text-base text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none sm:px-4 sm:text-base"
                 />
               </div>
             </div>
 
             {/* Duration */}
             <div>
-              <label className="mb-2 block text-xs sm:text-sm font-medium text-gray-300">
+              <label className="mb-2 block text-xs font-medium text-gray-300 sm:text-sm">
                 Duration
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <button
                   onClick={() => {
                     setDuration(60);
                     setIsExpress(false);
                   }}
                   className={cn(
-                    "rounded-lg border p-2 sm:p-3 text-left transition-all",
+                    "rounded-lg border p-2 text-left transition-all sm:p-3",
                     duration === 60
                       ? "border-blue-500 bg-blue-500/10"
                       : "border-white/10 bg-white/5 hover:bg-white/10"
                   )}
                 >
-                  <p className="text-sm sm:text-base font-bold text-white">Standard (60 min)</p>
+                  <p className="text-sm font-bold text-white sm:text-base">Standard (60 min)</p>
                   <p className="text-xs text-gray-400">No extra fee</p>
                 </button>
 
@@ -261,13 +245,13 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
                     setIsExpress(true);
                   }}
                   className={cn(
-                    "rounded-lg border p-2 sm:p-3 text-left transition-all",
+                    "rounded-lg border p-2 text-left transition-all sm:p-3",
                     duration === 30
                       ? "border-blue-500 bg-blue-500/10"
                       : "border-white/10 bg-white/5 hover:bg-white/10"
                   )}
                 >
-                  <p className="text-sm sm:text-base font-bold text-white">Express (30 min)</p>
+                  <p className="text-sm font-bold text-white sm:text-base">Express (30 min)</p>
                   <p className="text-xs text-gray-400">+10 IxC fee</p>
                 </button>
               </div>
@@ -275,22 +259,22 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
 
             {/* Options */}
             <div className="space-y-2">
-              <label className="flex items-start gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-start gap-2">
                 <input
                   type="checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="h-4 w-4 mt-0.5 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-2 focus:ring-blue-500 flex-shrink-0"
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-xs sm:text-sm text-gray-300">
+                <span className="text-xs text-gray-300 sm:text-sm">
                   Featured Listing (+25 IxC) - Highlighted in marketplace
                 </span>
               </label>
             </div>
 
             {/* Fee breakdown */}
-            <div className="rounded-lg border border-white/10 bg-white/5 p-3 sm:p-4 space-y-2">
-              <h4 className="text-xs sm:text-sm font-medium text-gray-300">Fee Breakdown</h4>
+            <div className="space-y-2 rounded-lg border border-white/10 bg-white/5 p-3 sm:p-4">
+              <h4 className="text-xs font-medium text-gray-300 sm:text-sm">Fee Breakdown</h4>
               <div className="space-y-1 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Listing Fee</span>
@@ -313,9 +297,7 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
                   <span className="text-white">{formatCredits(fees.totalFee)}</span>
                 </div>
                 {fees.successFee > 0 && (
-                  <p className="text-xs text-gray-400">
-                    + 10% commission on sales over 100 IxC
-                  </p>
+                  <p className="text-xs text-gray-400">+ 10% commission on sales over 100 IxC</p>
                 )}
               </div>
             </div>
@@ -323,20 +305,15 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
             {/* Preview */}
             {selectedCard && (
               <div className="rounded-lg border border-white/10 bg-white/5 p-3 sm:p-4">
-                <h4 className="mb-3 text-xs sm:text-sm font-medium text-gray-300">Preview</h4>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                  <div className="w-24 sm:w-auto mx-auto sm:mx-0">
-                    <CardDisplay
-                      card={selectedCard}
-                      size="small"
-                    />
+                <h4 className="mb-3 text-xs font-medium text-gray-300 sm:text-sm">Preview</h4>
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="mx-auto w-24 sm:mx-0 sm:w-auto">
+                    <CardDisplay card={selectedCard} size="small" />
                   </div>
-                  <div className="flex-1 w-full space-y-2 text-xs sm:text-sm">
+                  <div className="w-full flex-1 space-y-2 text-xs sm:text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Starting Bid</span>
-                      <span className="font-bold text-white">
-                        {formatCredits(startingPrice)}
-                      </span>
+                      <span className="font-bold text-white">{formatCredits(startingPrice)}</span>
                     </div>
                     {buyoutPrice && (
                       <div className="flex justify-between">
@@ -357,23 +334,23 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
 
             {/* Validation error */}
             {!validation.valid && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-2 sm:p-3 text-xs sm:text-sm text-red-400">
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-400 sm:p-3 sm:text-sm">
                 {validation.message}
               </div>
             )}
 
             {/* Submission error */}
             {error && (
-              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-2 sm:p-3 text-xs sm:text-sm text-red-400">
+              <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-xs text-red-400 sm:p-3 sm:text-sm">
                 {error}
               </div>
             )}
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-bold text-white hover:bg-white/10 transition-all"
+                className="flex-1 rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-white/10 sm:px-6 sm:py-3 sm:text-base"
               >
                 Cancel
               </button>
@@ -381,10 +358,10 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
                 onClick={handleSubmit}
                 disabled={!validation.valid || isSubmitting}
                 className={cn(
-                  "flex-1 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-bold transition-all",
+                  "flex-1 rounded-lg px-4 py-2.5 text-sm font-bold transition-all sm:px-6 sm:py-3 sm:text-base",
                   validation.valid && !isSubmitting
                     ? "bg-blue-500 text-white hover:bg-blue-600"
-                    : "bg-gray-500/20 text-gray-500 cursor-not-allowed"
+                    : "cursor-not-allowed bg-gray-500/20 text-gray-500"
                 )}
               >
                 {isSubmitting ? "Creating..." : "Create Auction"}

@@ -229,7 +229,7 @@ export function EventWizard({ onCreated }: EventWizardProps) {
                 s.number === step
                   ? "bg-primary text-primary-foreground"
                   : s.number < step
-                    ? "bg-primary/20 text-primary cursor-pointer hover:bg-primary/30"
+                    ? "bg-primary/20 text-primary hover:bg-primary/30 cursor-pointer"
                     : "bg-muted text-muted-foreground"
               }`}
             >
@@ -276,11 +276,7 @@ export function EventWizard({ onCreated }: EventWizardProps) {
         )}
 
         {step === 4 && (
-          <Step4Preview
-            form={form}
-            simulation={simulation.data}
-            isLoading={simulation.isLoading}
-          />
+          <Step4Preview form={form} simulation={simulation.data} isLoading={simulation.isLoading} />
         )}
 
         {step === 5 && (
@@ -293,30 +289,19 @@ export function EventWizard({ onCreated }: EventWizardProps) {
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between border-t border-border/30 pt-4">
-        <Button
-          variant="outline"
-          onClick={() => setStep((s) => s - 1)}
-          disabled={step === 1}
-        >
+      <div className="border-border/30 flex items-center justify-between border-t pt-4">
+        <Button variant="outline" onClick={() => setStep((s) => s - 1)} disabled={step === 1}>
           <ChevronLeft className="mr-1 h-4 w-4" />
           Back
         </Button>
 
         {step < 5 ? (
-          <Button
-            onClick={() => setStep((s) => s + 1)}
-            disabled={!canProceed()}
-          >
+          <Button onClick={() => setStep((s) => s + 1)} disabled={!canProceed()}>
             Next
             <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         ) : (
-          <Button
-            onClick={handleSubmit}
-            disabled={createEvent.isPending}
-            className="bg-primary"
-          >
+          <Button onClick={handleSubmit} disabled={createEvent.isPending} className="bg-primary">
             {createEvent.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -415,17 +400,14 @@ function Step2Scope({
       </div>
 
       {scope === "targeted" ? (
-        <CountrySelector
-          selectedIds={selectedIds}
-          onSelectionChange={onSelectionChange}
-        />
+        <CountrySelector selectedIds={selectedIds} onSelectionChange={onSelectionChange} />
       ) : (
         <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-6 text-center">
           <Globe className="mx-auto mb-2 h-8 w-8 text-blue-500" />
           <p className="text-foreground font-medium">Global Event</p>
           <p className="text-muted-foreground text-sm">
-            All countries will be affected. Countries will be automatically
-            selected when the event is created.
+            All countries will be affected. Countries will be automatically selected when the event
+            is created.
           </p>
         </div>
       )}
@@ -447,14 +429,18 @@ function Step3Parameters({
   return (
     <div>
       <h3 className="text-foreground mb-1 text-lg font-semibold">Event Parameters</h3>
-      <p className="text-muted-foreground mb-4 text-sm">Configure the details and severity of this event.</p>
+      <p className="text-muted-foreground mb-4 text-sm">
+        Configure the details and severity of this event.
+      </p>
 
       <div className="space-y-5">
         {/* Event Name */}
         <div>
           <Label>Event Name</Label>
           <div className="relative mt-1">
-            <Icon className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${selectedType?.color ?? "text-muted-foreground"}`} />
+            <Icon
+              className={`absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 ${selectedType?.color ?? "text-muted-foreground"}`}
+            />
             <Input
               value={form.name}
               onChange={(e) => onChange({ name: e.target.value })}
@@ -490,12 +476,8 @@ function Step3Parameters({
                     : "border-green-500/30 text-green-600"
               }
             >
-              {form.severity >= 0.8
-                ? "Critical"
-                : form.severity >= 0.5
-                  ? "Moderate"
-                  : "Minor"}{" "}
-              ({(form.severity * 100).toFixed(0)}%)
+              {form.severity >= 0.8 ? "Critical" : form.severity >= 0.5 ? "Moderate" : "Minor"} (
+              {(form.severity * 100).toFixed(0)}%)
             </Badge>
           </div>
           <Slider
@@ -505,7 +487,7 @@ function Step3Parameters({
             max={1}
             step={0.05}
           />
-          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
             <span>Minor</span>
             <span>Moderate</span>
             <span>Critical</span>
@@ -516,7 +498,9 @@ function Step3Parameters({
         <div>
           <div className="mb-2 flex items-center justify-between">
             <Label>Duration (IxTime years)</Label>
-            <span className="text-foreground text-sm font-medium">{form.duration} year{form.duration !== 1 ? "s" : ""}</span>
+            <span className="text-foreground text-sm font-medium">
+              {form.duration} year{form.duration !== 1 ? "s" : ""}
+            </span>
           </div>
           <Slider
             value={[form.duration]}
@@ -532,7 +516,9 @@ function Step3Parameters({
           <div className="mb-2 flex items-center justify-between">
             <Label>Delay Start (days from now)</Label>
             <span className="text-foreground text-sm font-medium">
-              {form.delayDays === 0 ? "Immediate" : `${form.delayDays} day${form.delayDays !== 1 ? "s" : ""}`}
+              {form.delayDays === 0
+                ? "Immediate"
+                : `${form.delayDays} day${form.delayDays !== 1 ? "s" : ""}`}
             </span>
           </div>
           <Slider
@@ -554,27 +540,29 @@ function Step4Preview({
   isLoading,
 }: {
   form: WizardFormState;
-  simulation: {
-    projectedImpacts: Array<{
-      countryId: string;
-      countryName: string;
-      countryFlag: string | null;
-      economicTier: string;
-      current: { gdp: number; population: number; growthRate: number | null };
-      projected: { gdpChange: number; populationChange: number; stabilityChange: number };
-    }>;
-    summary: {
-      totalCountriesAffected: number;
-      avgGdpChange: number;
-      totalGdpAtRisk: number;
-    };
-  } | undefined;
+  simulation:
+    | {
+        projectedImpacts: Array<{
+          countryId: string;
+          countryName: string;
+          countryFlag: string | null;
+          economicTier: string;
+          current: { gdp: number; population: number; growthRate: number | null };
+          projected: { gdpChange: number; populationChange: number; stabilityChange: number };
+        }>;
+        summary: {
+          totalCountriesAffected: number;
+          avgGdpChange: number;
+          totalGdpAtRisk: number;
+        };
+      }
+    | undefined;
   isLoading: boolean;
 }) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="text-primary h-8 w-8 animate-spin" />
         <p className="text-muted-foreground mt-3 text-sm">Simulating impact...</p>
       </div>
     );
@@ -609,26 +597,24 @@ function Step4Preview({
 
       {/* Summary */}
       <div className="mb-4 grid grid-cols-3 gap-3">
-        <div className="rounded-lg border border-border/50 p-3 text-center">
+        <div className="border-border/50 rounded-lg border p-3 text-center">
           <div className="text-muted-foreground text-xs">Countries</div>
           <div className="text-foreground text-lg font-bold">
             {simulation.summary.totalCountriesAffected}
           </div>
         </div>
-        <div className="rounded-lg border border-border/50 p-3 text-center">
+        <div className="border-border/50 rounded-lg border p-3 text-center">
           <div className="text-muted-foreground text-xs">Avg GDP Change</div>
           <div
             className={`text-lg font-bold ${
-              simulation.summary.avgGdpChange < 0
-                ? "text-red-500"
-                : "text-green-500"
+              simulation.summary.avgGdpChange < 0 ? "text-red-500" : "text-green-500"
             }`}
           >
             {simulation.summary.avgGdpChange >= 0 ? "+" : ""}
             {(simulation.summary.avgGdpChange * 100).toFixed(1)}%
           </div>
         </div>
-        <div className="rounded-lg border border-border/50 p-3 text-center">
+        <div className="border-border/50 rounded-lg border p-3 text-center">
           <div className="text-muted-foreground text-xs">GDP at Risk</div>
           <div className="text-foreground text-lg font-bold">
             {fmtBig(simulation.summary.totalGdpAtRisk)}
@@ -637,10 +623,10 @@ function Step4Preview({
       </div>
 
       {/* Country breakdown */}
-      <ScrollArea className="h-[260px] rounded-lg border border-border/50">
+      <ScrollArea className="border-border/50 h-[260px] rounded-lg border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border/50 bg-muted/30">
+            <tr className="border-border/50 bg-muted/30 border-b">
               <th className="px-3 py-2 text-left font-medium">Country</th>
               <th className="px-3 py-2 text-left font-medium">Tier</th>
               <th className="px-3 py-2 text-right font-medium">GDP Change</th>
@@ -650,22 +636,28 @@ function Step4Preview({
           </thead>
           <tbody>
             {simulation.projectedImpacts.map((p) => (
-              <tr key={p.countryId} className="border-b border-border/20">
+              <tr key={p.countryId} className="border-border/20 border-b">
                 <td className="px-3 py-2 font-medium">{p.countryName}</td>
                 <td className="px-3 py-2">
                   <Badge variant="outline" className="text-xs">
                     {p.economicTier}
                   </Badge>
                 </td>
-                <td className={`px-3 py-2 text-right font-mono text-xs ${p.projected.gdpChange < 0 ? "text-red-500" : "text-green-500"}`}>
+                <td
+                  className={`px-3 py-2 text-right font-mono text-xs ${p.projected.gdpChange < 0 ? "text-red-500" : "text-green-500"}`}
+                >
                   {p.projected.gdpChange >= 0 ? "+" : ""}
                   {(p.projected.gdpChange * 100).toFixed(1)}%
                 </td>
-                <td className={`px-3 py-2 text-right font-mono text-xs ${p.projected.populationChange < 0 ? "text-red-500" : "text-green-500"}`}>
+                <td
+                  className={`px-3 py-2 text-right font-mono text-xs ${p.projected.populationChange < 0 ? "text-red-500" : "text-green-500"}`}
+                >
                   {p.projected.populationChange >= 0 ? "+" : ""}
                   {(p.projected.populationChange * 100).toFixed(2)}%
                 </td>
-                <td className={`px-3 py-2 text-right font-mono text-xs ${p.projected.stabilityChange < 0 ? "text-red-500" : "text-green-500"}`}>
+                <td
+                  className={`px-3 py-2 text-right font-mono text-xs ${p.projected.stabilityChange < 0 ? "text-red-500" : "text-green-500"}`}
+                >
                   {p.projected.stabilityChange >= 0 ? "+" : ""}
                   {p.projected.stabilityChange.toFixed(0)}
                 </td>
@@ -712,10 +704,16 @@ function Step5Confirm({
 
         <div className="grid grid-cols-2 gap-4">
           <SummaryItem label="Severity" value={`${(form.severity * 100).toFixed(0)}%`} />
-          <SummaryItem label="Duration" value={`${form.duration} year${form.duration !== 1 ? "s" : ""}`} />
+          <SummaryItem
+            label="Duration"
+            value={`${form.duration} year${form.duration !== 1 ? "s" : ""}`}
+          />
           <SummaryItem label="Scope" value={form.scope === "global" ? "Global" : "Targeted"} />
           <SummaryItem label="Countries" value={`${form.affectedCountryIds.length}`} />
-          <SummaryItem label="Start" value={form.delayDays === 0 ? "Immediate" : `${form.delayDays} day delay`} />
+          <SummaryItem
+            label="Start"
+            value={form.delayDays === 0 ? "Immediate" : `${form.delayDays} day delay`}
+          />
           <SummaryItem label="Effects" value="Auto-generated" />
         </div>
 
@@ -733,8 +731,8 @@ function Step5Confirm({
             <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-500" />
             <p className="text-muted-foreground text-xs">
               This will create storyteller effects for {form.affectedCountryIds.length} countries
-              and immediately affect their economic calculations. This action can be
-              reversed by deactivating the event.
+              and immediately affect their economic calculations. This action can be reversed by
+              deactivating the event.
             </p>
           </div>
         </div>
@@ -745,7 +743,7 @@ function Step5Confirm({
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border/30 p-3">
+    <div className="border-border/30 rounded-lg border p-3">
       <div className="text-muted-foreground text-xs">{label}</div>
       <div className="text-foreground text-sm font-medium">{value}</div>
     </div>

@@ -33,10 +33,8 @@ export const WikiSourceSelector: React.FC<WikiSourceSelectorProps> = ({
   return (
     <div className="mb-4">
       <div className="mb-2 flex items-center gap-2">
-        <span className="text-sm font-medium text-foreground">Wiki Source</span>
-        <span className="text-xs text-muted-foreground">
-          Import from any worldbuilding wiki
-        </span>
+        <span className="text-foreground text-sm font-medium">Wiki Source</span>
+        <span className="text-muted-foreground text-xs">Import from any worldbuilding wiki</span>
       </div>
       <div className="flex items-center gap-1.5">
         {wikiSites.map((site) => {
@@ -68,11 +66,9 @@ export const WikiSourceSelector: React.FC<WikiSourceSelectorProps> = ({
             </button>
           );
         })}
-        <span className="ml-1 text-xs text-muted-foreground">
+        <span className="text-muted-foreground ml-1 text-xs">
           <IconSwap>
-            <IconSwapItem key={selectedSite.name}>
-              {selectedSite.displayName}
-            </IconSwapItem>
+            <IconSwapItem key={selectedSite.name}>{selectedSite.displayName}</IconSwapItem>
           </IconSwap>
         </span>
       </div>

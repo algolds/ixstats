@@ -23,7 +23,9 @@ export default function DefenseOverviewArticle() {
         <Section title="What You See">
           <InfoBox title="Key Dashboards">
             <ul className="list-disc space-y-1 pl-6">
-              <li>Defense tab in <strong>MyCountry &rarr; Defense</strong>.</li>
+              <li>
+                Defense tab in <strong>MyCountry &rarr; Defense</strong>.
+              </li>
               <li>Readiness gauges, module cards, and crisis queues.</li>
               <li>Real-time security alerts and notification feeds.</li>
             </ul>
@@ -46,12 +48,22 @@ export default function DefenseOverviewArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Crosshair className="inline h-4 w-4" />{" "}
-              <Link href="/help/defense/units" className="text-blue-600 hover:underline dark:text-blue-400">Military Units & Assets</Link>{" "}
+              <Link
+                href="/help/defense/units"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Military Units & Assets
+              </Link>{" "}
               — asset and capability management.
             </li>
             <li>
               <Siren className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/alerts" className="text-blue-600 hover:underline dark:text-blue-400">Alerts & Notifications</Link>{" "}
+              <Link
+                href="/help/intelligence/alerts"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Alerts & Notifications
+              </Link>{" "}
               — alert triage workflow.
             </li>
           </ul>

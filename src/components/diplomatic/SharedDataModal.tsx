@@ -564,11 +564,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                   <Link
                                     href={`/vault/market?nation=${encodeURIComponent(embassy.hostCountryId || "")}`}
                                   >
-                                    <Button
-                                      className="w-full"
-                                      variant="outline"
-                                      size="sm"
-                                    >
+                                    <Button className="w-full" variant="outline" size="sm">
                                       <CreditCard className="mr-2 h-4 w-4" />
                                       Trade Cards
                                     </Button>
@@ -615,11 +611,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                   <Link
                                     href={`/vault/market?nation=${encodeURIComponent(embassy.guestCountryId || "")}`}
                                   >
-                                    <Button
-                                      className="w-full"
-                                      variant="outline"
-                                      size="sm"
-                                    >
+                                    <Button className="w-full" variant="outline" size="sm">
                                       <CreditCard className="mr-2 h-4 w-4" />
                                       Trade Cards
                                     </Button>

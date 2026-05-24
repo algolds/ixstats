@@ -159,7 +159,8 @@ export function CardPacksAdmin() {
   const stats = useMemo(() => {
     const total = packs.length;
     const active = packs.filter((p) => p.isActive).length;
-    const avgPrice = total > 0 ? Math.round(packs.reduce((s, p) => s + p.priceCredits, 0) / total) : 0;
+    const avgPrice =
+      total > 0 ? Math.round(packs.reduce((s, p) => s + p.priceCredits, 0) / total) : 0;
     const totalCards = packs.reduce((s, p) => s + p.cardCount, 0);
     return { total, active, avgPrice, totalCards };
   }, [packs]);
@@ -238,7 +239,7 @@ export function CardPacksAdmin() {
               placeholder="Search packs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
+              className="w-64 pl-10"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -247,7 +248,10 @@ export function CardPacksAdmin() {
               checked={showInactive}
               onCheckedChange={(v) => setShowInactive(v as boolean)}
             />
-            <label htmlFor="showInactivePacks" className="text-sm text-muted-foreground cursor-pointer">
+            <label
+              htmlFor="showInactivePacks"
+              className="text-muted-foreground cursor-pointer text-sm"
+            >
               Show inactive
             </label>
           </div>
@@ -259,13 +263,18 @@ export function CardPacksAdmin() {
         {[
           { label: "Total Packs", value: stats.total, icon: Package, color: "text-blue-400" },
           { label: "Active", value: stats.active, icon: Star, color: "text-green-400" },
-          { label: "Avg Price", value: `${stats.avgPrice} IxC`, icon: Coins, color: "text-amber-400" },
+          {
+            label: "Avg Price",
+            value: `${stats.avgPrice} IxC`,
+            icon: Coins,
+            color: "text-amber-400",
+          },
           { label: "Total Cards", value: stats.totalCards, icon: Layers, color: "text-purple-400" },
         ].map((s) => (
           <Card key={s.label} className="glass-hierarchy-child p-4">
             <div className="flex items-center gap-2">
               <s.icon className={`h-4 w-4 ${s.color}`} />
-              <p className="text-sm text-muted-foreground">{s.label}</p>
+              <p className="text-muted-foreground text-sm">{s.label}</p>
             </div>
             <p className="text-foreground mt-1 text-2xl font-bold">{s.value}</p>
           </Card>
@@ -280,7 +289,7 @@ export function CardPacksAdmin() {
         </div>
       ) : filteredPacks.length === 0 ? (
         <Card className="glass-hierarchy-parent p-12 text-center">
-          <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+          <Package className="text-muted-foreground/40 mx-auto mb-3 h-10 w-10" />
           <p className="text-muted-foreground">No packs found</p>
         </Card>
       ) : (
@@ -293,12 +302,12 @@ export function CardPacksAdmin() {
                 className={`glass-hierarchy-child border p-4 transition-all hover:border-amber-400/50 ${!pack.isActive ? "opacity-60" : ""} ${colors.border}`}
               >
                 <div className="mb-3 flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
                     {pack.artwork ? (
                       <img
                         src={pack.artwork}
                         alt={pack.name}
-                        className="h-10 w-10 shrink-0 rounded-lg border border-border object-cover"
+                        className="border-border h-10 w-10 shrink-0 rounded-lg border object-cover"
                       />
                     ) : (
                       <PackHolographicCover
@@ -319,13 +328,17 @@ export function CardPacksAdmin() {
                 </div>
 
                 {pack.description && (
-                  <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{pack.description}</p>
+                  <p className="text-muted-foreground mb-3 line-clamp-2 text-xs">
+                    {pack.description}
+                  </p>
                 )}
 
                 <div className="mb-4 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Price</span>
-                    <span className="font-semibold text-amber-400">{pack.priceCredits.toLocaleString()} IxC</span>
+                    <span className="font-semibold text-amber-400">
+                      {pack.priceCredits.toLocaleString()} IxC
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Cards</span>
@@ -339,14 +352,26 @@ export function CardPacksAdmin() {
                   )}
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Status</span>
-                    <Badge variant="outline" className={pack.isActive ? "text-green-400 border-green-400/30" : "text-red-400 border-red-400/30"}>
+                    <Badge
+                      variant="outline"
+                      className={
+                        pack.isActive
+                          ? "border-green-400/30 text-green-400"
+                          : "border-red-400/30 text-red-400"
+                      }
+                    >
                       {pack.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(pack)} className="flex-1 text-xs">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(pack)}
+                    className="flex-1 text-xs"
+                  >
                     <Pencil className="mr-1 h-3 w-3" />
                     Edit
                   </Button>
@@ -382,7 +407,9 @@ export function CardPacksAdmin() {
           <DialogHeader>
             <DialogTitle>{editingPack ? "Edit Pack" : "Create Pack"}</DialogTitle>
             <DialogDescription>
-              {editingPack ? "Modify the pack configuration" : "Configure a new card pack for the store"}
+              {editingPack
+                ? "Modify the pack configuration"
+                : "Configure a new card pack for the store"}
             </DialogDescription>
           </DialogHeader>
 
@@ -397,7 +424,9 @@ export function CardPacksAdmin() {
             </div>
 
             <div>
-              <label className="text-foreground mb-1.5 block text-sm font-medium">Description</label>
+              <label className="text-foreground mb-1.5 block text-sm font-medium">
+                Description
+              </label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -421,17 +450,21 @@ export function CardPacksAdmin() {
                   <img
                     src={formData.artwork}
                     alt="Pack artwork preview"
-                    className="h-12 w-12 rounded-lg border border-border object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    className="border-border h-12 w-12 rounded-lg border object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
                   />
-                  <span className="text-xs text-muted-foreground">Preview</span>
+                  <span className="text-muted-foreground text-xs">Preview</span>
                 </div>
               )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-foreground mb-1.5 block text-sm font-medium">Pack Type *</label>
+                <label className="text-foreground mb-1.5 block text-sm font-medium">
+                  Pack Type *
+                </label>
                 <Select
                   value={formData.packType}
                   onValueChange={(v) => setFormData({ ...formData, packType: v })}
@@ -449,29 +482,39 @@ export function CardPacksAdmin() {
                 </Select>
               </div>
               <div>
-                <label className="text-foreground mb-1.5 block text-sm font-medium">Price (IxC) *</label>
+                <label className="text-foreground mb-1.5 block text-sm font-medium">
+                  Price (IxC) *
+                </label>
                 <Input
                   type="number"
                   min={1}
                   value={formData.priceCredits}
-                  onChange={(e) => setFormData({ ...formData, priceCredits: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priceCredits: parseInt(e.target.value) || 0 })
+                  }
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-foreground mb-1.5 block text-sm font-medium">Card Count</label>
+                <label className="text-foreground mb-1.5 block text-sm font-medium">
+                  Card Count
+                </label>
                 <Input
                   type="number"
                   min={1}
                   max={20}
                   value={formData.cardCount}
-                  onChange={(e) => setFormData({ ...formData, cardCount: parseInt(e.target.value) || 5 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, cardCount: parseInt(e.target.value) || 5 })
+                  }
                 />
               </div>
               <div>
-                <label className="text-foreground mb-1.5 block text-sm font-medium">Guaranteed Rarity</label>
+                <label className="text-foreground mb-1.5 block text-sm font-medium">
+                  Guaranteed Rarity
+                </label>
                 <Select
                   value={formData.guaranteedRarity}
                   onValueChange={(v) => setFormData({ ...formData, guaranteedRarity: v })}
@@ -515,10 +558,19 @@ export function CardPacksAdmin() {
             </Button>
             <Button
               onClick={editingPack ? handleUpdate : handleCreate}
-              disabled={!formData.name || formData.priceCredits <= 0 || createMutation.isPending || updateMutation.isPending}
+              disabled={
+                !formData.name ||
+                formData.priceCredits <= 0 ||
+                createMutation.isPending ||
+                updateMutation.isPending
+              }
               className="bg-amber-400/20 text-amber-400 hover:bg-amber-400/30"
             >
-              {(createMutation.isPending || updateMutation.isPending) ? "Saving..." : editingPack ? "Update Pack" : "Create Pack"}
+              {createMutation.isPending || updateMutation.isPending
+                ? "Saving..."
+                : editingPack
+                  ? "Update Pack"
+                  : "Create Pack"}
             </Button>
           </DialogFooter>
         </DialogContent>

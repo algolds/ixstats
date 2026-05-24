@@ -103,6 +103,9 @@ export const listProcedures = {
             povertyRate: true,
             totalDebtGDPRatio: true,
             realGDPGrowthRate: true,
+            wikiPageTitle: true,
+            wikiSource: true,
+            wikiLastSynced: true,
             centroid: true,
             boundingBox: true,
             nationalIdentity: {
@@ -110,8 +113,8 @@ export const listProcedures = {
                 officialName: true,
                 capitalCity: true,
                 currency: true,
-              }
-            }
+              },
+            },
           },
         }),
         ctx.db.country.count({ where }),
@@ -119,29 +122,33 @@ export const listProcedures = {
 
       const countries = rawCountries.map((country: any) => {
         const boundingBox = country.boundingBox as any;
-        const bounds = boundingBox && Array.isArray(boundingBox) && boundingBox.length === 4
-          ? {
-              minLat: boundingBox[0],
-              minLng: boundingBox[1],
-              maxLat: boundingBox[2],
-              maxLng: boundingBox[3],
-            }
-          : boundingBox?.minLng !== undefined
-          ? {
-              minLat: boundingBox.minLat,
-              minLng: boundingBox.minLng,
-              maxLat: boundingBox.maxLat,
-              maxLng: boundingBox.maxLng,
-            }
-          : {};
+        const bounds =
+          boundingBox && Array.isArray(boundingBox) && boundingBox.length === 4
+            ? {
+                minLat: boundingBox[0],
+                minLng: boundingBox[1],
+                maxLat: boundingBox[2],
+                maxLng: boundingBox[3],
+              }
+            : boundingBox?.minLng !== undefined
+              ? {
+                  minLat: boundingBox.minLat,
+                  minLng: boundingBox.minLng,
+                  maxLat: boundingBox.maxLat,
+                  maxLng: boundingBox.maxLng,
+                }
+              : {};
 
         const centroid = country.centroid as any;
-        const centerCoords = centroid?.coordinates && Array.isArray(centroid.coordinates) && centroid.coordinates.length === 2
-          ? {
-              centerLng: centroid.coordinates[0],
-              centerLat: centroid.coordinates[1],
-            }
-          : {};
+        const centerCoords =
+          centroid?.coordinates &&
+          Array.isArray(centroid.coordinates) &&
+          centroid.coordinates.length === 2
+            ? {
+                centerLng: centroid.coordinates[0],
+                centerLat: centroid.coordinates[1],
+              }
+            : {};
 
         return {
           ...country,
@@ -274,10 +281,7 @@ export const listProcedures = {
     .query(async ({ ctx, input }) => {
       const countries = await ctx.db.country.findMany({
         where: { isDemo: false },
-        orderBy: [
-          { currentPopulation: "desc" },
-          { currentGdpPerCapita: "desc" },
-        ],
+        orderBy: [{ currentPopulation: "desc" }, { currentGdpPerCapita: "desc" }],
         take: input.limit,
         select: { name: true, currentPopulation: true, currentGdpPerCapita: true },
       });

@@ -58,7 +58,8 @@ const helpSections: HelpSection[] = [
       {
         id: "gameplay-overview",
         title: "Gameplay Overview",
-        description: "How the simulation, economy, diplomacy, and progression systems work together",
+        description:
+          "How the simulation, economy, diplomacy, and progression systems work together",
         path: "/help/getting-started/gameplay-overview",
         tags: ["basics", "gameplay", "overview", "simulation"],
       },
@@ -612,7 +613,6 @@ export default function HelpPage() {
               Help & Documentation
             </h1>
           </div>
-         
         </div>
       </div>
 
@@ -751,7 +751,9 @@ export default function HelpPage() {
             <Coins className="h-8 w-8 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
             <div>
               <div className="font-semibold text-slate-900 dark:text-white">Cards & Vault</div>
-              <div className="text-sm text-slate-700 dark:text-slate-300">IxCredits & collecting</div>
+              <div className="text-sm text-slate-700 dark:text-slate-300">
+                IxCredits & collecting
+              </div>
             </div>
           </Link>
 

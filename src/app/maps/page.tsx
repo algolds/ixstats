@@ -38,11 +38,7 @@ export default function WorldMapPage() {
   const isEmbed = searchParams.get("embed") === "true";
 
   usePageTitle({
-    title: isEmbed
-      ? "IxWorld"
-      : isStandalone
-        ? "IxWorld Map"
-        : "World Map",
+    title: isEmbed ? "IxWorld" : isStandalone ? "IxWorld Map" : "World Map",
   });
 
   // --- Country resolution: by ID or by name ---
@@ -52,7 +48,7 @@ export default function WorldMapPage() {
   // If name param provided, resolve to countryId via tRPC
   const { data: resolvedCountry } = api.countries.getByNameWithAtomic.useQuery(
     { name: countryNameParam! },
-    { enabled: !!countryNameParam && !countryIdParam },
+    { enabled: !!countryNameParam && !countryIdParam }
   );
 
   const initialCountryId = countryIdParam || resolvedCountry?.id || undefined;
@@ -61,32 +57,25 @@ export default function WorldMapPage() {
   const initialLat = searchParams.get("lat") ? parseFloat(searchParams.get("lat")!) : undefined;
   const initialLng = searchParams.get("lng") ? parseFloat(searchParams.get("lng")!) : undefined;
   const initialZoom = searchParams.get("zoom") ? parseFloat(searchParams.get("zoom")!) : undefined;
-  const initialCenter = (initialLng !== undefined && initialLat !== undefined && !isNaN(initialLng) && !isNaN(initialLat))
-    ? [initialLng, initialLat] as [number, number]
-    : undefined;
+  const initialCenter =
+    initialLng !== undefined && initialLat !== undefined && !isNaN(initialLng) && !isNaN(initialLat)
+      ? ([initialLng, initialLat] as [number, number])
+      : undefined;
 
   // --- Layer selection via URL ---
   const layerParam = searchParams.get("layer") as MapLayerType | null;
   const initialLayers = layerParam
-    ? ["background", "political", layerParam] as MapLayerType[]
+    ? (["background", "political", layerParam] as MapLayerType[])
     : undefined;
 
-  const [selectedCountry, setSelectedCountry] =
-    useState<SelectedCountry | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<SelectedCountry | null>(null);
 
-  const handleCountrySelect = useCallback(
-    (country: SelectedCountry | null) => {
-      setSelectedCountry(country);
-    },
-    []
-  );
+  const handleCountrySelect = useCallback((country: SelectedCountry | null) => {
+    setSelectedCountry(country);
+  }, []);
 
   // In embed mode: hide navigation, controls, use full viewport
-  const containerClass = isEmbed
-    ? "h-dvh w-dvw"
-    : isStandalone
-      ? "h-dvh"
-      : "h-[calc(100dvh-64px)]";
+  const containerClass = isEmbed ? "h-dvh w-dvw" : isStandalone ? "h-dvh" : "h-[calc(100dvh-64px)]";
 
   return (
     <div className={`relative ${containerClass}`}>

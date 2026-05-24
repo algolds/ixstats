@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { Link2, Scale, AlertTriangle, Sparkles } from "lucide-react";
-import { ArticleLayout, Section, InfoBox, WarningBox, ContentCard } from "../../_components/ArticleLayout";
+import {
+  ArticleLayout,
+  Section,
+  InfoBox,
+  WarningBox,
+  ContentCard,
+} from "../../_components/ArticleLayout";
 
 export default function ComponentSynergyArticle() {
   return (
@@ -14,10 +20,10 @@ export default function ComponentSynergyArticle() {
       <ContentCard>
         <Section title="How Synergies Work">
           <p className="mb-3 text-sm text-neutral-600 dark:text-neutral-400">
-            Every government component you choose carries traits that interact with other components in
-            your setup. When two components complement each other, you earn a <strong>synergy bonus</strong> that
-            boosts your overall effectiveness score. When they clash, you get a <strong>conflict penalty</strong> that
-            lowers it.
+            Every government component you choose carries traits that interact with other components
+            in your setup. When two components complement each other, you earn a{" "}
+            <strong>synergy bonus</strong> that boosts your overall effectiveness score. When they
+            clash, you get a <strong>conflict penalty</strong> that lowers it.
           </p>
           <ul className="list-disc space-y-2 pl-6">
             <li>
@@ -40,7 +46,10 @@ export default function ComponentSynergyArticle() {
             <ol className="list-decimal space-y-1 pl-6">
               <li>
                 Open the{" "}
-                <Link href="/help/government/components" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/help/government/components"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   Government Components
                 </Link>{" "}
                 section of the builder and start selecting your components.
@@ -81,19 +90,28 @@ export default function ComponentSynergyArticle() {
         <Section title="Learn More">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <Link href="/help/government/atomic" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/government/atomic"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Atomic Government System
               </Link>{" "}
               — understand the building blocks that power synergies.
             </li>
             <li>
-              <Link href="/help/government/components" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/government/components"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Government Components Guide
               </Link>{" "}
               — browse every available component and its traits.
             </li>
             <li>
-              <Link href="/help/gameplay/country-building" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/gameplay/country-building"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Country Building Guide
               </Link>{" "}
               — see how government choices fit into the bigger picture of creating your nation.

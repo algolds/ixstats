@@ -75,9 +75,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
     onFlip,
   }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [currentSide, setCurrentSide] = useState<"front" | "back">(
-      initialSide
-    );
+    const [currentSide, setCurrentSide] = useState<"front" | "back">(initialSide);
     const [isDragging, setIsDragging] = useState(false);
 
     // Motion values for 3D rotation
@@ -123,10 +121,8 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
 
-      const rotateYValue =
-        ((x - centerX) / centerX) * 25 * rotationSensitivity;
-      const rotateXValue =
-        -((y - centerY) / centerY) * 25 * rotationSensitivity;
+      const rotateYValue = ((x - centerX) / centerX) * 25 * rotationSensitivity;
+      const rotateXValue = -((y - centerY) / centerY) * 25 * rotationSensitivity;
 
       if (isDragging || enableMouseTracking) {
         rotateX.set(rotateXValue);
@@ -196,12 +192,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
 
     return (
       <div
-        className={cn(
-          "relative",
-          containerSizes[size],
-          enableFlip && "cursor-pointer",
-          className
-        )}
+        className={cn("relative", containerSizes[size], enableFlip && "cursor-pointer", className)}
         style={{
           perspective: "1000px",
         }}
@@ -286,7 +277,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
         {/* Flip indicator (subtle) */}
         {enableFlip && !isDragging && (
           <motion.div
-            className="pointer-events-none absolute bottom-2 right-2 z-10 rounded-full bg-black/60 p-2 backdrop-blur-sm"
+            className="pointer-events-none absolute right-2 bottom-2 z-10 rounded-full bg-black/60 p-2 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.6 }}
             whileHover={{ opacity: 1 }}
@@ -310,7 +301,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
         {/* Rotation controls hint (mobile) */}
         {enableDragRotation && !performanceMode && (
           <motion.div
-            className="pointer-events-none absolute left-2 top-2 z-10 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm"
+            className="pointer-events-none absolute top-2 left-2 z-10 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: isDragging ? 0 : 0.5 }}
             transition={{ delay: 0.5 }}
@@ -325,9 +316,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
             className="pointer-events-none absolute inset-0 -z-10 blur-2xl"
             style={{
               background: `radial-gradient(circle at 50% 50%, ${
-                currentSide === "front"
-                  ? "rgba(147, 51, 234, 0.2)"
-                  : "rgba(59, 130, 246, 0.2)"
+                currentSide === "front" ? "rgba(147, 51, 234, 0.2)" : "rgba(59, 130, 246, 0.2)"
               }, transparent 70%)`,
             }}
           />

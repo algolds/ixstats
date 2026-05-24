@@ -7,7 +7,6 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
-
 import {
   Globe,
   TrendingUp,
@@ -65,7 +64,7 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
     const archetype = archetypes.find(
       (a) => a.id === archetypeId || (a as any).key === archetypeId
     );
-    setSelectedArchetype(archetype as EconomicArchetype ?? null);
+    setSelectedArchetype((archetype as EconomicArchetype) ?? null);
   };
 
   const handleApplyArchetype = () => {
@@ -663,7 +662,9 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              {archetypes.map((archetype) => renderArchetypeCard(archetype as EconomicArchetype, true))}
+              {archetypes.map((archetype) =>
+                renderArchetypeCard(archetype as EconomicArchetype, true)
+              )}
             </div>
           )}
         </TabsContent>

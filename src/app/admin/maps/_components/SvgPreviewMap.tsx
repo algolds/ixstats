@@ -85,7 +85,11 @@ export function SvgPreviewMap({
       for (const feature of geojson.features) {
         const addCoords = (coords: unknown): void => {
           if (!Array.isArray(coords)) return;
-          if (coords.length >= 2 && typeof coords[0] === "number" && typeof coords[1] === "number") {
+          if (
+            coords.length >= 2 &&
+            typeof coords[0] === "number" &&
+            typeof coords[1] === "number"
+          ) {
             const lng = Math.max(-180, Math.min(180, coords[0] as number));
             const lat = Math.max(-90, Math.min(90, coords[1] as number));
             bounds.extend([lng, lat]);
@@ -122,7 +126,7 @@ export function SvgPreviewMap({
   return (
     <div
       ref={containerRef}
-      className={`w-full rounded-lg border border-border ${className}`}
+      className={`border-border w-full rounded-lg border ${className}`}
       style={{ height }}
     />
   );

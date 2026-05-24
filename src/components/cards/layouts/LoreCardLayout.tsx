@@ -146,8 +146,8 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
       size === "small" || size === "sm"
         ? "h-[179px]"
         : size === "medium" || size === "md"
-        ? "h-[269px]"
-        : "h-[358px]";
+          ? "h-[269px]"
+          : "h-[358px]";
 
     return (
       <CometCard
@@ -176,11 +176,7 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
           onHoverStart={handleMouseEnter}
           onHoverEnd={handleMouseLeave}
           onClick={handleClick}
-          whileHover={
-            !performanceMode
-              ? { scale: 1.02, transition: { duration: 0.2 } }
-              : undefined
-          }
+          whileHover={!performanceMode ? { scale: 1.02, transition: { duration: 0.2 } } : undefined}
         >
           {/* Card artwork */}
           <div
@@ -190,8 +186,8 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
                 size === "small" || size === "sm"
                   ? "179px"
                   : size === "medium" || size === "md"
-                  ? "269px"
-                  : "358px",
+                    ? "269px"
+                    : "358px",
             }}
           >
             {!imageError ? (
@@ -205,8 +201,8 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
                   size === "small" || size === "sm"
                     ? "128px"
                     : size === "medium" || size === "md"
-                    ? "192px"
-                    : "256px"
+                      ? "192px"
+                      : "256px"
                 }
                 onError={() => setImageError(true)}
                 unoptimized
@@ -223,14 +219,14 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
             {/* Metallic gradient overlay for premium feel */}
             {!performanceMode && (
               <div
-                className="absolute inset-0 mix-blend-overlay opacity-10"
+                className="absolute inset-0 opacity-10 mix-blend-overlay"
                 style={{
                   background: getMetallicGradient(
                     card.rarity === "LEGENDARY"
                       ? "gold"
                       : card.rarity === "EPIC"
-                      ? "purple"
-                      : "silver"
+                        ? "purple"
+                        : "silver"
                   ),
                 }}
               />
@@ -253,10 +249,7 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
 
             {/* Rarity glow effect */}
             <motion.div
-              className={cn(
-                "absolute inset-0 rounded-2xl",
-                getRarityGlow(card.rarity)
-              )}
+              className={cn("absolute inset-0 rounded-2xl", getRarityGlow(card.rarity))}
               initial={{ opacity: 0 }}
               animate={{ opacity: isHovered ? 0.5 : 0.2 }}
               transition={{ duration: 0.3 }}
@@ -271,23 +264,19 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
             >
               <div
                 className={cn(
-                  "px-3 py-1 rounded-md font-bold backdrop-blur-md border",
+                  "rounded-md border px-3 py-1 font-bold backdrop-blur-md",
                   fonts.type,
                   wikiSource === "ixwiki"
-                    ? "bg-blue-600/80 text-white border-blue-400/50"
+                    ? "border-blue-400/50 bg-blue-600/80 text-white"
                     : wikiSource === "iiwiki"
-                    ? "bg-green-600/80 text-white border-green-400/50"
-                    : "bg-gray-600/80 text-white border-gray-400/50"
+                      ? "border-green-400/50 bg-green-600/80 text-white"
+                      : "border-gray-400/50 bg-gray-600/80 text-white"
                 )}
                 style={{
                   textShadow: "0 1px 2px rgba(0,0,0,0.8)",
                 }}
               >
-                {wikiSource === "ixwiki"
-                  ? "IxWiki"
-                  : wikiSource === "iiwiki"
-                  ? "IIWiki"
-                  : "Wiki"}
+                {wikiSource === "ixwiki" ? "IxWiki" : wikiSource === "iiwiki" ? "IIWiki" : "Wiki"}
               </div>
             </motion.div>
           </div>
@@ -305,11 +294,10 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
                 className={cn(
                   "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
                   fonts.type,
-                  "text-white border border-white/20"
+                  "border border-white/20 text-white"
                 )}
                 style={{
-                  textShadow:
-                    "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
                 }}
               >
                 {getCardTypeLabel(card.cardType)}
@@ -320,26 +308,19 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
             <div className="space-y-1">
               {/* Card title with embossed effect */}
               <motion.h3
-                className={cn(
-                  "font-black text-white line-clamp-2 tracking-wide",
-                  fonts.title
-                )}
+                className={cn("line-clamp-2 font-black tracking-wide text-white", fonts.title)}
                 style={{
                   textShadow: getEmbossedTextShadow(
                     card.rarity === "LEGENDARY"
                       ? "gold"
                       : card.rarity === "EPIC"
-                      ? "purple"
-                      : "silver"
+                        ? "purple"
+                        : "silver"
                   ),
                   WebkitTextStroke: "0.5px rgba(0,0,0,0.8)",
                   textRendering: "geometricPrecision",
                 }}
-                animate={
-                  !performanceMode && isHovered
-                    ? { scale: [1, 1.02, 1] }
-                    : {}
-                }
+                animate={!performanceMode && isHovered ? { scale: [1, 1.02, 1] } : {}}
                 transition={{ duration: 0.4 }}
               >
                 {card.title}
@@ -348,7 +329,7 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
               {/* Wiki article title (if different from card title) */}
               {wikiArticleTitle && wikiArticleTitle !== card.title && (
                 <p
-                  className={cn("text-white/90 font-semibold italic", fonts.type)}
+                  className={cn("font-semibold text-white/90 italic", fonts.type)}
                   style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8)" }}
                 >
                   "{wikiArticleTitle}"
@@ -359,23 +340,17 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
               <div
                 className={cn(
                   "flex items-center justify-between rounded-lg px-2 py-1",
-                  "bg-black/70 backdrop-blur-md border border-white/10",
+                  "border border-white/10 bg-black/70 backdrop-blur-md",
                   fonts.type
                 )}
               >
-                <span className="text-white/80 font-medium">
-                  Season {card.season}
-                </span>
+                <span className="font-medium text-white/80">Season {card.season}</span>
                 <motion.span
                   className={cn("font-black", rarityConfig.color)}
                   style={{
                     textShadow: `0 0 10px ${rarityConfig.color.includes("yellow") ? "rgba(234, 179, 8, 0.8)" : "rgba(147, 51, 234, 0.8)"}`,
                   }}
-                  animate={
-                    !performanceMode && isHovered
-                      ? { scale: [1, 1.1, 1] }
-                      : {}
-                  }
+                  animate={!performanceMode && isHovered ? { scale: [1, 1.1, 1] } : {}}
                   transition={{ duration: 0.5 }}
                 >
                   {formatMarketValue(card.marketValue)}
@@ -392,7 +367,7 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
                     transition={{ duration: 0.2 }}
                     className={cn(
                       "rounded-lg p-3",
-                      "bg-black/85 backdrop-blur-xl border border-purple-400/30",
+                      "border border-purple-400/30 bg-black/85 backdrop-blur-xl",
                       fonts.lore,
                       "max-h-32 overflow-y-auto"
                     )}
@@ -401,19 +376,23 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
                         "0 4px 20px rgba(147, 51, 234, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
                     }}
                   >
-                    <div className="text-white/90 leading-relaxed line-clamp-6">
+                    <div className="line-clamp-6 leading-relaxed text-white/90">
                       {loreDescription}
                     </div>
                     {wikiUrl && (
                       <WikiLinkPreview
-                        title={wikiArticleTitle || wikiUrl.split("/wiki/").pop()?.replace(/_/g, " ") || ""}
+                        title={
+                          wikiArticleTitle ||
+                          wikiUrl.split("/wiki/").pop()?.replace(/_/g, " ") ||
+                          ""
+                        }
                         wiki={card.wikiSource as "ixwiki" | "iiwiki" | undefined}
                       >
                         <a
                           href={wikiUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block mt-2 text-purple-400 hover:text-purple-300 underline text-[9px]"
+                          className="mt-2 block text-[9px] text-purple-400 underline hover:text-purple-300"
                           onClick={(e) => e.stopPropagation()}
                         >
                           View on Wiki →
@@ -429,13 +408,11 @@ export const LoreCardLayout = React.memo<LoreCardLayoutProps>(
                 <div
                   className={cn(
                     "flex items-center justify-center rounded-lg px-2 py-1",
-                    "bg-purple-900/40 backdrop-blur-md border border-purple-400/20",
+                    "border border-purple-400/20 bg-purple-900/40 backdrop-blur-md",
                     fonts.stats
                   )}
                 >
-                  <span className="text-purple-300 font-medium">
-                    📚 Historical Record
-                  </span>
+                  <span className="font-medium text-purple-300">📚 Historical Record</span>
                 </div>
               )}
             </div>

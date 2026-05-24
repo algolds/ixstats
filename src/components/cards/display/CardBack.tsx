@@ -90,14 +90,7 @@ export const CardBack = React.memo<CardBackProps>(
       : "from-gray-700 to-gray-900";
 
     return (
-      <div
-        className={cn(
-          width,
-          height,
-          "relative overflow-hidden rounded-2xl",
-          className
-        )}
-      >
+      <div className={cn(width, height, "relative overflow-hidden rounded-2xl", className)}>
         {/* Base background layer */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-slate-900 to-gray-950">
           {/* Radial gradient for depth */}
@@ -105,12 +98,7 @@ export const CardBack = React.memo<CardBackProps>(
         </div>
 
         {/* Rarity accent gradient (subtle) - static */}
-        <div
-          className={cn(
-            "absolute inset-0 bg-gradient-to-br opacity-20",
-            accentGradient
-          )}
-        />
+        <div className={cn("absolute inset-0 bg-gradient-to-br opacity-20", accentGradient)} />
 
         {/* Static light rays - no animation to reduce CPU usage */}
         {!performanceMode && (
@@ -118,7 +106,7 @@ export const CardBack = React.memo<CardBackProps>(
             {lightRays.slice(0, 4).map((ray, index) => (
               <div
                 key={index}
-                className="absolute left-1/2 top-1/2 w-1 origin-left bg-gradient-to-r from-white/5 to-transparent"
+                className="absolute top-1/2 left-1/2 w-1 origin-left bg-gradient-to-r from-white/5 to-transparent"
                 style={{
                   height: `${ray.length}%`,
                   transform: `rotate(${ray.angle}deg)`,
@@ -138,8 +126,8 @@ export const CardBack = React.memo<CardBackProps>(
                 pattern === "rainbow-shimmer"
                   ? getRainbowHolographicGradient(45, true)
                   : pattern === "cosmic"
-                  ? "radial-gradient(circle at 50% 50%, rgba(147,51,234,0.3), rgba(236,72,153,0.2), rgba(59,130,246,0.1))"
-                  : getMetallicGradient("silver"),
+                    ? "radial-gradient(circle at 50% 50%, rgba(147,51,234,0.3), rgba(236,72,153,0.2), rgba(59,130,246,0.1))"
+                    : getMetallicGradient("silver"),
               backgroundSize: "200% 200%",
             }}
             animate={{
@@ -176,7 +164,7 @@ export const CardBack = React.memo<CardBackProps>(
                 }}
               >
                 {/* Logo glow effect - static for cards at rest */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 blur-xl opacity-40" />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/30 to-purple-500/30 opacity-40 blur-xl" />
 
                 {/* IxStats logo text */}
                 <div className="relative z-10 flex flex-col items-center">
@@ -186,15 +174,14 @@ export const CardBack = React.memo<CardBackProps>(
                       size === "large"
                         ? "text-4xl"
                         : size === "medium" || size === "md"
-                        ? "text-2xl"
-                        : "text-xl"
+                          ? "text-2xl"
+                          : "text-xl"
                     )}
                     style={{
                       textShadow:
                         "0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(147, 51, 234, 0.6), 0 2px 4px rgba(0,0,0,0.8)",
                       WebkitTextStroke: "1px rgba(255,255,255,0.3)",
-                      background:
-                        "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)",
+                      background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%)",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
                       backgroundClip: "text",
@@ -208,8 +195,8 @@ export const CardBack = React.memo<CardBackProps>(
                       size === "large"
                         ? "text-sm"
                         : size === "medium" || size === "md"
-                        ? "text-xs"
-                        : "text-[10px]"
+                          ? "text-xs"
+                          : "text-[10px]"
                     )}
                     style={{
                       textShadow: "0 1px 2px rgba(0,0,0,0.8)",
@@ -219,41 +206,39 @@ export const CardBack = React.memo<CardBackProps>(
                   </motion.div>
 
                   {/* Rarity indicator (subtle) */}
-                  {showRarityVariation &&
-                    rarity !== "COMMON" &&
-                    rarity !== "UNCOMMON" && (
-                      <motion.div
-                        className={cn(
-                          "mt-2 rounded-full px-2 py-0.5 text-[8px] font-bold backdrop-blur-sm",
-                          borderConfig.glow
-                        )}
-                        style={{
-                          background: `linear-gradient(135deg, ${accentGradient})`,
-                          border: "1px solid rgba(255,255,255,0.2)",
-                        }}
-                        animate={
-                          !performanceMode
-                            ? {
-                                opacity: [0.6, 0.9, 0.6],
-                              }
-                            : undefined
-                        }
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                      >
-                        {rarity.replace("_", " ")}
-                      </motion.div>
-                    )}
+                  {showRarityVariation && rarity !== "COMMON" && rarity !== "UNCOMMON" && (
+                    <motion.div
+                      className={cn(
+                        "mt-2 rounded-full px-2 py-0.5 text-[8px] font-bold backdrop-blur-sm",
+                        borderConfig.glow
+                      )}
+                      style={{
+                        background: `linear-gradient(135deg, ${accentGradient})`,
+                        border: "1px solid rgba(255,255,255,0.2)",
+                      }}
+                      animate={
+                        !performanceMode
+                          ? {
+                              opacity: [0.6, 0.9, 0.6],
+                            }
+                          : undefined
+                      }
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      {rarity.replace("_", " ")}
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* Decorative corner accents */}
-                <div className="absolute -left-8 -top-8 h-6 w-6 border-l-2 border-t-2 border-white/20" />
-                <div className="absolute -right-8 -top-8 h-6 w-6 border-r-2 border-t-2 border-white/20" />
+                <div className="absolute -top-8 -left-8 h-6 w-6 border-t-2 border-l-2 border-white/20" />
+                <div className="absolute -top-8 -right-8 h-6 w-6 border-t-2 border-r-2 border-white/20" />
                 <div className="absolute -bottom-8 -left-8 h-6 w-6 border-b-2 border-l-2 border-white/20" />
-                <div className="absolute -bottom-8 -right-8 h-6 w-6 border-b-2 border-r-2 border-white/20" />
+                <div className="absolute -right-8 -bottom-8 h-6 w-6 border-r-2 border-b-2 border-white/20" />
               </motion.div>
             </div>
           </div>

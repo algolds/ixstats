@@ -14,10 +14,10 @@ export default function IntelligenceSystemOverviewArticle() {
       <ContentCard>
         <Section title="What the Intelligence System Does for You">
           <p className="mb-4">
-            Running a nation means juggling many moving pieces at once. Your intelligence system
-            is designed to pull all of that information together so you can see the big picture
-            without switching between dozens of screens. It continuously monitors every aspect of
-            your nation and presents the most important findings in a unified, easy-to-navigate
+            Running a nation means juggling many moving pieces at once. Your intelligence system is
+            designed to pull all of that information together so you can see the big picture without
+            switching between dozens of screens. It continuously monitors every aspect of your
+            nation and presents the most important findings in a unified, easy-to-navigate
             interface.
           </p>
           <p className="mb-4">
@@ -59,8 +59,8 @@ export default function IntelligenceSystemOverviewArticle() {
             </p>
             <ul className="list-disc space-y-1 pl-6">
               <li>
-                <strong>Dashboard:</strong> Your executive overview with vitality scores,
-                hot issues, and action items.
+                <strong>Dashboard:</strong> Your executive overview with vitality scores, hot
+                issues, and action items.
               </li>
               <li>
                 <strong>Economic:</strong> Detailed GDP and sector analytics with trend charts.
@@ -97,13 +97,13 @@ export default function IntelligenceSystemOverviewArticle() {
               follow the alert to its source for full context and recommended actions.
             </li>
             <li>
-              <strong>Cross-reference domains:</strong> The real power of unified intelligence
-              is seeing how economic, diplomatic, and defense factors connect. A diplomatic
-              breakdown might explain an economic dip -- or vice versa.
+              <strong>Cross-reference domains:</strong> The real power of unified intelligence is
+              seeing how economic, diplomatic, and defense factors connect. A diplomatic breakdown
+              might explain an economic dip -- or vice versa.
             </li>
             <li>
-              <strong>Track over time:</strong> Use historical data and ThinkPages posts to build
-              a record of how events unfolded and how your responses worked out.
+              <strong>Track over time:</strong> Use historical data and ThinkPages posts to build a
+              record of how events unfolded and how your responses worked out.
             </li>
           </ul>
         </Section>
@@ -112,28 +112,40 @@ export default function IntelligenceSystemOverviewArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <LayoutDashboard className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/intelligence/dashboard"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Executive Intelligence Dashboard
               </Link>{" "}
               -- your daily starting point for nation management.
             </li>
             <li>
               <GaugeCircle className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/metrics" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/intelligence/metrics"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Key Metrics &amp; Indicators
               </Link>{" "}
               -- understand what each score means and how to act on it.
             </li>
             <li>
               <BellRing className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/alerts" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/intelligence/alerts"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Alerts &amp; Notifications
               </Link>{" "}
               -- manage the warnings and updates your intelligence system sends you.
             </li>
             <li>
               <Compass className="inline h-4 w-4" />{" "}
-              <Link href="/help/mycountry/intelligence" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/mycountry/intelligence"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 MyCountry Intelligence Guide
               </Link>{" "}
               -- step-by-step guide to the full Intelligence section.

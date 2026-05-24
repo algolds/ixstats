@@ -22,8 +22,6 @@ import { Highlighter } from "@/components/magicui/highlighter";
 import { Globe } from "~/components/magicui/globe";
 import { getOptimalTextStyling } from "~/lib/flag-color-analysis";
 
-
-
 interface CountrySelectorHeaderProps {
   softSelectedCountry: RealCountryData | null;
   onBackToIntro?: () => void;
@@ -97,10 +95,10 @@ export function CountrySelectorHeader({
       style={
         softSelectedCountry && flag?.flagUrl
           ? {
-            backgroundImage: `url('${flag.flagUrl}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }
+              backgroundImage: `url('${flag.flagUrl}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }
           : undefined
       }
     >
@@ -149,20 +147,20 @@ export function CountrySelectorHeader({
                 </p>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-4 text-center w-full">
+              <div className="flex w-full flex-col items-center justify-center gap-4 text-center">
                 <motion.div
                   className="flex justify-center"
                   style={{
                     filter: logoBlur,
                     opacity: logoOpacity,
-                    scale: logoScale
+                    scale: logoScale,
                   }}
                 >
                   <PreText className="flex justify-center">
                     <MyCountryLogo size="xl" animated />
                   </PreText>
                 </motion.div>
-                <div className="space-y-2 max-w-md mx-auto">
+                <div className="mx-auto max-w-md space-y-2">
                   <TextAnimate
                     animation="blurIn"
                     by="word"

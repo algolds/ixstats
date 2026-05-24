@@ -134,10 +134,16 @@ export function PartyManager({ countryId }: PartyManagerProps) {
             <Users className="h-4 w-4 text-amber-600" />
             Political Parties
           </span>
-          <Dialog open={dialogOpen} onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) { setEditingParty(null); resetForm(); }
-          }}>
+          <Dialog
+            open={dialogOpen}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) {
+                setEditingParty(null);
+                resetForm();
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1">
                 <Plus className="h-3 w-3" /> Add Party
@@ -145,9 +151,7 @@ export function PartyManager({ countryId }: PartyManagerProps) {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>
-                  {editingParty ? "Edit Party" : "Create Political Party"}
-                </DialogTitle>
+                <DialogTitle>{editingParty ? "Edit Party" : "Create Political Party"}</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -175,16 +179,22 @@ export function PartyManager({ countryId }: PartyManagerProps) {
                     <Select
                       value={formData.ideology}
                       onValueChange={(v) => {
-                        const ideologyColor = IDEOLOGY_OPTIONS.find((o) => o.value === v)?.color ?? "#6366f1";
+                        const ideologyColor =
+                          IDEOLOGY_OPTIONS.find((o) => o.value === v)?.color ?? "#6366f1";
                         setFormData({ ...formData, ideology: v, color: ideologyColor });
                       }}
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {IDEOLOGY_OPTIONS.map((o) => (
                           <SelectItem key={o.value} value={o.value}>
                             <span className="flex items-center gap-2">
-                              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: o.color }} />
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: o.color }}
+                              />
                               {o.label}
                             </span>
                           </SelectItem>
@@ -226,7 +236,9 @@ export function PartyManager({ countryId }: PartyManagerProps) {
                       min={1}
                       max={80}
                       value={formData.baseSupport}
-                      onChange={(e) => setFormData({ ...formData, baseSupport: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, baseSupport: Number(e.target.value) })
+                      }
                       className="mt-2 w-full"
                     />
                   </div>
@@ -246,16 +258,18 @@ export function PartyManager({ countryId }: PartyManagerProps) {
       </CardHeader>
       <CardContent>
         {parties.length === 0 ? (
-          <div className="py-6 text-center text-muted-foreground">
+          <div className="text-muted-foreground py-6 text-center">
             <Users className="mx-auto mb-3 h-8 w-8 opacity-50" />
-            <p className="text-sm">No political parties yet. Create your first party to get started.</p>
+            <p className="text-sm">
+              No political parties yet. Create your first party to get started.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
             {parties.map((party: any) => (
               <div
                 key={party.id}
-                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/30"
+                className="hover:bg-muted/30 flex items-center justify-between rounded-lg border p-3 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -266,10 +280,10 @@ export function PartyManager({ countryId }: PartyManagerProps) {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{party.name}</span>
                       {party.shortName && (
-                        <span className="text-xs text-muted-foreground">({party.shortName})</span>
+                        <span className="text-muted-foreground text-xs">({party.shortName})</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-2 text-xs">
                       <Badge variant="outline" className="text-[10px]">
                         {ideologyLabel(party.ideology)}
                       </Badge>
@@ -280,7 +294,7 @@ export function PartyManager({ countryId }: PartyManagerProps) {
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <div className="text-sm font-semibold">{party.currentSupport.toFixed(1)}%</div>
-                    <div className="text-[10px] text-muted-foreground">support</div>
+                    <div className="text-muted-foreground text-[10px]">support</div>
                   </div>
                   <Button
                     variant="ghost"

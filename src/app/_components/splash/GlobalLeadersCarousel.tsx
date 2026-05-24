@@ -29,11 +29,7 @@ function CountryCarouselCard({
   );
 }
 
-export function GlobalLeadersCarousel({
-  countries,
-}: {
-  countries: Record<string, unknown>[];
-}) {
+export function GlobalLeadersCarousel({ countries }: { countries: Record<string, unknown>[] }) {
   const carouselCards = useMemo(() => {
     return countries.map((country, idx) => (
       <CountryCarouselCard key={String(country.id ?? idx)} country={country} index={idx} />

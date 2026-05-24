@@ -28,9 +28,7 @@ import {
   Scale,
 } from "lucide-react";
 
-import type {
-  BidirectionalGovernmentSyncState,
-} from "../../services/BidirectionalGovernmentSyncService";
+import type { BidirectionalGovernmentSyncState } from "../../services/BidirectionalGovernmentSyncService";
 import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { ATOMIC_COMPONENTS } from "~/components/government/atoms/AtomicGovernmentComponents";
 

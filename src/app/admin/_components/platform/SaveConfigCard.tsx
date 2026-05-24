@@ -17,7 +17,7 @@ export function SaveConfigCard({ lastUpdate, onSaveConfig, savePending }: SaveCo
     <Card className="glass-card-parent border-emerald-500/20">
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <p className="text-sm font-medium text-foreground">Save Configuration</p>
+          <p className="text-foreground text-sm font-medium">Save Configuration</p>
           {lastUpdate && (
             <Badge variant="outline" className="gap-1 text-xs">
               <Check className="h-3 w-3 text-green-500" />

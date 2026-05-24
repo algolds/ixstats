@@ -520,7 +520,6 @@ export const StepRenderer = memo(function StepRenderer({
   if (builderState.step === "government" && builderState.economicInputs) {
     return (
       <div className="space-y-6">
-
         <Tabs
           value={builderState.activeGovernmentTab}
           onValueChange={(tab) => handleTabChange("government", tab)}
@@ -580,7 +579,7 @@ export const StepRenderer = memo(function StepRenderer({
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="max-h-[75vh] overflow-y-auto rounded-xl border bg-card/50 p-1 shadow-sm">
+              <div className="bg-card/50 max-h-[75vh] overflow-y-auto rounded-xl border p-1 shadow-sm">
                 <GovernmentBuilder
                   initialData={builderState.governmentStructure}
                   onChange={onGovernmentStructureChange}

@@ -20,7 +20,7 @@ export function BlurbCountryGallery({ countryId }: { countryId: string }) {
 
   if (isLoading) {
     return (
-      <div className="text-center py-8 text-[var(--wikios-text-dim)] text-sm">
+      <div className="py-8 text-center text-sm text-[var(--wikios-text-dim)]">
         Loading blurbs...
       </div>
     );
@@ -28,7 +28,7 @@ export function BlurbCountryGallery({ countryId }: { countryId: string }) {
 
   if (responses.length === 0) {
     return (
-      <div className="text-center py-8 text-[var(--wikios-text-dim)] text-sm">
+      <div className="py-8 text-center text-sm text-[var(--wikios-text-dim)]">
         No blurbs yet for this country.
       </div>
     );
@@ -42,18 +42,16 @@ export function BlurbCountryGallery({ countryId }: { countryId: string }) {
           href={withBasePath(`/blurbs/${r.prompt.slug}`)}
           className="glass-hierarchy-child block rounded-xl border border-white/10 p-4 transition-colors hover:border-white/20"
         >
-          <p className="text-xs font-medium text-[var(--wikios-text-dim)] mb-1">
-            {r.prompt.title}
-          </p>
-          <p className="text-[var(--wikios-text-muted)] text-sm whitespace-pre-wrap line-clamp-4">
+          <p className="mb-1 text-xs font-medium text-[var(--wikios-text-dim)]">{r.prompt.title}</p>
+          <p className="line-clamp-4 text-sm whitespace-pre-wrap text-[var(--wikios-text-muted)]">
             {r.content}
           </p>
           {r.prompt.question && (
-            <p className="text-[var(--wikios-text-dim)] text-xs mt-2 italic">
+            <p className="mt-2 text-xs text-[var(--wikios-text-dim)] italic">
               &ldquo;{r.prompt.question}&rdquo;
             </p>
           )}
-          <p className="text-[var(--wikios-text-dim)] text-xs mt-1">
+          <p className="mt-1 text-xs text-[var(--wikios-text-dim)]">
             {new Date(r.createdAt).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -64,7 +62,7 @@ export function BlurbCountryGallery({ countryId }: { countryId: string }) {
       ))}
 
       {hasNextPage && (
-        <div className="text-center pt-2">
+        <div className="pt-2 text-center">
           <Button
             variant="ghost"
             size="sm"

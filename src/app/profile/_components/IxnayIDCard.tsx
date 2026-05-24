@@ -43,7 +43,9 @@ function ServiceRow({
 }: ServiceRowProps) {
   return (
     <div className="glass-hierarchy-child group relative flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/30 p-4 transition-all duration-300 hover:bg-white/50 dark:border-slate-700/50 dark:bg-slate-800/20 dark:hover:bg-slate-800/40">
-      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-inner ${color}`}>
+      <div
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-inner ${color}`}
+      >
         {icon}
       </div>
       <div className="min-w-0 flex-1">
@@ -66,7 +68,9 @@ function ServiceRow({
             )}
           </p>
         ) : (
-          <p className="mt-0.5 text-xs font-medium text-slate-400 dark:text-slate-500">Awaiting connection...</p>
+          <p className="mt-0.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+            Awaiting connection...
+          </p>
         )}
         {extra}
       </div>
@@ -77,7 +81,11 @@ function ServiceRow({
             disabled={isUnlinking}
             className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-red-600 transition-all hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
           >
-            {isUnlinking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink className="h-3.5 w-3.5" />}
+            {isUnlinking ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Unlink className="h-3.5 w-3.5" />
+            )}
             Sever
           </button>
         ) : (
@@ -86,7 +94,11 @@ function ServiceRow({
             disabled={isLinking}
             className="glass-interactive flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700"
           >
-            {isLinking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+            {isLinking ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Link2 className="h-3.5 w-3.5" />
+            )}
             Connect
           </button>
         )}
@@ -111,7 +123,9 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
 
   // Lookup previews
   const [forumLookup, setForumLookup] = useState<string | null>(null);
-  const [wikiLookup, setWikiLookup] = useState<{ username: string; editCount: number } | null>(null);
+  const [wikiLookup, setWikiLookup] = useState<{ username: string; editCount: number } | null>(
+    null
+  );
 
   // Mutations
   const linkForum = api.ixnayid.linkForum.useMutation({
@@ -208,7 +222,10 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
   }
 
   return (
-    <div id="ixnayid-card" className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl">
+    <div
+      id="ixnayid-card"
+      className="glass-surface glass-refraction overflow-hidden rounded-3xl p-1 transition-all duration-500 hover:shadow-2xl"
+    >
       <div className="rounded-[calc(1.5rem-1px)] bg-white/40 p-6 dark:bg-slate-900/40">
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -216,7 +233,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">IxnayID©</h2>
             </div>
           </div>
-          <div className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+          <div className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold tracking-widest text-slate-500 uppercase dark:bg-slate-800 dark:text-slate-400">
             Secure Layer Active
           </div>
         </div>
@@ -236,150 +253,173 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
             isUnlinking={unlinkForum.isPending}
           />
 
-        {/* Forum input */}
-        {showForumInput && !status?.forum.linked && (
-          <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={forumInput}
-                onChange={(e) => { setForumInput(e.target.value); setForumLookup(null); }}
-                placeholder="Forum username..."
-                className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                onKeyDown={(e) => e.key === "Enter" && handleForumLookup()}
-              />
-              <button
-                onClick={handleForumLookup}
-                disabled={!forumInput.trim() || forumLookupQuery.isFetching}
-                className="flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-              >
-                {forumLookupQuery.isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
-                Look up
-              </button>
-            </div>
-            {forumLookup && (
-              <div className="flex items-center justify-between rounded-md bg-green-50 px-3 py-2 dark:bg-green-900/20">
-                <span className="text-xs text-green-700 dark:text-green-400">
-                  Found: <strong>{forumLookup}</strong>
-                </span>
+          {/* Forum input */}
+          {showForumInput && !status?.forum.linked && (
+            <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={forumInput}
+                  onChange={(e) => {
+                    setForumInput(e.target.value);
+                    setForumLookup(null);
+                  }}
+                  placeholder="Forum username..."
+                  className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  onKeyDown={(e) => e.key === "Enter" && handleForumLookup()}
+                />
                 <button
-                  onClick={() => linkForum.mutate({ forumUsername: forumLookup })}
-                  disabled={linkForum.isPending}
-                  className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                  onClick={handleForumLookup}
+                  disabled={!forumInput.trim() || forumLookupQuery.isFetching}
+                  className="flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
                 >
-                  {linkForum.isPending ? "Linking..." : "Confirm Link"}
+                  {forumLookupQuery.isFetching ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Search className="h-3 w-3" />
+                  )}
+                  Look up
                 </button>
               </div>
-            )}
-            {forumLookupQuery.isError && (
-              <p className="text-xs text-red-500">User not found. Check the username and try again.</p>
-            )}
-            {linkForum.error && (
-              <p className="text-xs text-red-500">{linkForum.error.message}</p>
-            )}
-            <button
-              onClick={() => { setShowForumInput(false); setForumInput(""); setForumLookup(null); }}
-              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-
-        {/* Wiki */}
-        <ServiceRow
-          name="Global Wiki"
-          icon={<BookOpen className="h-6 w-6 text-blue-500" />}
-          color="bg-blue-100 dark:bg-blue-900/30"
-          linked={status?.wiki.linked ?? false}
-          username={status?.wiki.username ?? null}
-          lastSync={status?.wiki.lastSync ?? null}
-          onLink={() => setShowWikiInput(true)}
-          onUnlink={() => unlinkWiki.mutate()}
-          isLinking={linkWiki.isPending}
-          isUnlinking={unlinkWiki.isPending}
-        />
-
-        {/* Wiki input */}
-        {showWikiInput && !status?.wiki.linked && (
-          <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={wikiInput}
-                onChange={(e) => { setWikiInput(e.target.value); setWikiLookup(null); }}
-                placeholder="Wiki username..."
-                className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                onKeyDown={(e) => e.key === "Enter" && handleWikiLookup()}
-              />
-              <button
-                onClick={handleWikiLookup}
-                disabled={!wikiInput.trim() || wikiLookupQuery.isFetching}
-                className="flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
-              >
-                {wikiLookupQuery.isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
-                Look up
-              </button>
-            </div>
-            {wikiLookup && (
-              <div className="flex items-center justify-between rounded-md bg-green-50 px-3 py-2 dark:bg-green-900/20">
-                <span className="text-xs text-green-700 dark:text-green-400">
-                  Found: <strong>{wikiLookup.username}</strong> ({wikiLookup.editCount.toLocaleString()} edits)
-                </span>
-                <button
-                  onClick={() => linkWiki.mutate({ wikiUsername: wikiLookup.username })}
-                  disabled={linkWiki.isPending}
-                  className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-                >
-                  {linkWiki.isPending ? "Linking..." : "Confirm Link"}
-                </button>
-              </div>
-            )}
-            {wikiLookupQuery.isError && (
-              <p className="text-xs text-red-500">User not found. Check the username and try again.</p>
-            )}
-            {linkWiki.error && (
-              <p className="text-xs text-red-500">{linkWiki.error.message}</p>
-            )}
-            <button
-              onClick={() => { setShowWikiInput(false); setWikiInput(""); setWikiLookup(null); }}
-              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-
-        {/* Discord */}
-        <ServiceRow
-          name="Discord Global"
-          icon={<FaDiscord className="h-6 w-6 text-[#5865F2]" />}
-          color="bg-indigo-100 dark:bg-indigo-900/30"
-          linked={status?.discord.linked ?? false}
-          username={status?.discord.username ?? null}
-          lastSync={status?.discord.lastSync ?? null}
-          onLink={() => linkDiscord.mutate()}
-          onUnlink={() => unlinkDiscord.mutate()}
-          isLinking={linkDiscord.isPending}
-          isUnlinking={unlinkDiscord.isPending}
-          extra={
-            linkDiscord.error ? (
-              <p className="mt-1 text-xs text-red-500">
-                {linkDiscord.error.message}
-                {linkDiscord.error.message.includes("account settings") && (
-                  <a
-                    href="https://accounts.ixwiki.com/user"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-1 inline-flex items-center gap-0.5 text-indigo-500 hover:underline"
+              {forumLookup && (
+                <div className="flex items-center justify-between rounded-md bg-green-50 px-3 py-2 dark:bg-green-900/20">
+                  <span className="text-xs text-green-700 dark:text-green-400">
+                    Found: <strong>{forumLookup}</strong>
+                  </span>
+                  <button
+                    onClick={() => linkForum.mutate({ forumUsername: forumLookup })}
+                    disabled={linkForum.isPending}
+                    className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
                   >
-                    Open account settings <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </p>
-            ) : undefined
-          }
-        />
+                    {linkForum.isPending ? "Linking..." : "Confirm Link"}
+                  </button>
+                </div>
+              )}
+              {forumLookupQuery.isError && (
+                <p className="text-xs text-red-500">
+                  User not found. Check the username and try again.
+                </p>
+              )}
+              {linkForum.error && <p className="text-xs text-red-500">{linkForum.error.message}</p>}
+              <button
+                onClick={() => {
+                  setShowForumInput(false);
+                  setForumInput("");
+                  setForumLookup(null);
+                }}
+                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Wiki */}
+          <ServiceRow
+            name="Global Wiki"
+            icon={<BookOpen className="h-6 w-6 text-blue-500" />}
+            color="bg-blue-100 dark:bg-blue-900/30"
+            linked={status?.wiki.linked ?? false}
+            username={status?.wiki.username ?? null}
+            lastSync={status?.wiki.lastSync ?? null}
+            onLink={() => setShowWikiInput(true)}
+            onUnlink={() => unlinkWiki.mutate()}
+            isLinking={linkWiki.isPending}
+            isUnlinking={unlinkWiki.isPending}
+          />
+
+          {/* Wiki input */}
+          {showWikiInput && !status?.wiki.linked && (
+            <div className="ml-14 space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-700">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={wikiInput}
+                  onChange={(e) => {
+                    setWikiInput(e.target.value);
+                    setWikiLookup(null);
+                  }}
+                  placeholder="Wiki username..."
+                  className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  onKeyDown={(e) => e.key === "Enter" && handleWikiLookup()}
+                />
+                <button
+                  onClick={handleWikiLookup}
+                  disabled={!wikiInput.trim() || wikiLookupQuery.isFetching}
+                  className="flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
+                >
+                  {wikiLookupQuery.isFetching ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Search className="h-3 w-3" />
+                  )}
+                  Look up
+                </button>
+              </div>
+              {wikiLookup && (
+                <div className="flex items-center justify-between rounded-md bg-green-50 px-3 py-2 dark:bg-green-900/20">
+                  <span className="text-xs text-green-700 dark:text-green-400">
+                    Found: <strong>{wikiLookup.username}</strong> (
+                    {wikiLookup.editCount.toLocaleString()} edits)
+                  </span>
+                  <button
+                    onClick={() => linkWiki.mutate({ wikiUsername: wikiLookup.username })}
+                    disabled={linkWiki.isPending}
+                    className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                  >
+                    {linkWiki.isPending ? "Linking..." : "Confirm Link"}
+                  </button>
+                </div>
+              )}
+              {wikiLookupQuery.isError && (
+                <p className="text-xs text-red-500">
+                  User not found. Check the username and try again.
+                </p>
+              )}
+              {linkWiki.error && <p className="text-xs text-red-500">{linkWiki.error.message}</p>}
+              <button
+                onClick={() => {
+                  setShowWikiInput(false);
+                  setWikiInput("");
+                  setWikiLookup(null);
+                }}
+                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Discord */}
+          <ServiceRow
+            name="Discord Global"
+            icon={<FaDiscord className="h-6 w-6 text-[#5865F2]" />}
+            color="bg-indigo-100 dark:bg-indigo-900/30"
+            linked={status?.discord.linked ?? false}
+            username={status?.discord.username ?? null}
+            lastSync={status?.discord.lastSync ?? null}
+            onLink={() => linkDiscord.mutate()}
+            onUnlink={() => unlinkDiscord.mutate()}
+            isLinking={linkDiscord.isPending}
+            isUnlinking={unlinkDiscord.isPending}
+            extra={
+              linkDiscord.error ? (
+                <p className="mt-1 text-xs text-red-500">
+                  {linkDiscord.error.message}
+                  {linkDiscord.error.message.includes("account settings") && (
+                    <a
+                      href="https://accounts.ixwiki.com/user"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-1 inline-flex items-center gap-0.5 text-indigo-500 hover:underline"
+                    >
+                      Open account settings <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </p>
+              ) : undefined
+            }
+          />
         </div>
       </div>
     </div>

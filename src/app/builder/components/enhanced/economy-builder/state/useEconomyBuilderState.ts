@@ -221,10 +221,7 @@ export function useEconomyBuilderState(
         setEconomyBuilder(state.economyBuilder);
       }
       // Phase 3 optimization: Replaced JSON.stringify with isEqual
-      if (
-        state.economicInputs &&
-        !isEqual(state.economicInputs, economicInputs)
-      ) {
+      if (state.economicInputs && !isEqual(state.economicInputs, economicInputs)) {
         onEconomicInputsChange(state.economicInputs);
       }
     });

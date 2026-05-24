@@ -68,19 +68,19 @@ function CommandPaletteContent({
     let newSize: string;
     if (isOnWikiPage) {
       if (isSticky && isCollapsed) {
-        newSize = SIZE_PRESETS.WIKI_COMPACT;   // 170x32 — compact wiki pill
+        newSize = SIZE_PRESETS.WIKI_COMPACT; // 170x32 — compact wiki pill
       } else if (isSticky) {
-        newSize = SIZE_PRESETS.COMPACT;         // 200x36 — hover state
+        newSize = SIZE_PRESETS.COMPACT; // 200x36 — hover state
       } else {
-        newSize = SIZE_PRESETS.WIKI_INLINE;     // 280x38 — inline wiki pill
+        newSize = SIZE_PRESETS.WIKI_INLINE; // 280x38 — inline wiki pill
       }
     } else {
       if (isSticky && isCollapsed) {
-        newSize = SIZE_PRESETS.COMPACT;          // 200x36 pill
+        newSize = SIZE_PRESETS.COMPACT; // 200x36 pill
       } else if (isSticky && !isCollapsed) {
-        newSize = SIZE_PRESETS.COMPACT_LONG;     // 320x40 pill (hover state)
+        newSize = SIZE_PRESETS.COMPACT_LONG; // 320x40 pill (hover state)
       } else {
-        newSize = SIZE_PRESETS.COMPACT_TALL;     // 360x44 pill (inline in navbar)
+        newSize = SIZE_PRESETS.COMPACT_TALL; // 360x44 pill (inline in navbar)
       }
     }
     setSize(newSize);
@@ -216,7 +216,6 @@ function CommandPaletteContent({
           countriesData={countriesData}
         />
       )}
-
     </>
   );
 }

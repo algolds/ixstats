@@ -30,12 +30,14 @@ export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
   );
 
   const targetCountries = relationships
-    ? [...new Map(
-        relationships.map((r) => {
-          const id = r.targetCountryId;
-          return [id, { id, name: r.targetCountryName ?? id, flag: r.targetCountryFlag ?? null }];
-        })
-      ).values()]
+    ? [
+        ...new Map(
+          relationships.map((r) => {
+            const id = r.targetCountryId;
+            return [id, { id, name: r.targetCountryName ?? id, flag: r.targetCountryFlag ?? null }];
+          })
+        ).values(),
+      ]
     : [];
 
   const formatCurrency = (val: number) => {
@@ -57,7 +59,12 @@ export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
             {targetCountries.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 <span className="flex items-center gap-1.5">
-                  <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" showTooltip={false} />
+                  <UnifiedCountryFlag
+                    countryName={c.name}
+                    flagUrl={c.flag}
+                    size="xs"
+                    showTooltip={false}
+                  />
                   {c.name}
                 </span>
               </SelectItem>
@@ -88,7 +95,7 @@ export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
           {/* Exports comparison */}
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-lg border p-3">
-              <p className="text-muted-foreground text-xs mb-1">
+              <p className="text-muted-foreground mb-1 text-xs">
                 Your exports → {trade.country2?.name ?? "Partner"}
               </p>
               <p className="text-lg font-semibold">
@@ -98,7 +105,7 @@ export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
               </p>
             </div>
             <div className="rounded-lg border p-3">
-              <p className="text-muted-foreground text-xs mb-1">
+              <p className="text-muted-foreground mb-1 text-xs">
                 Imports from {trade.country2?.name ?? "Partner"}
               </p>
               <p className="text-lg font-semibold">
@@ -117,7 +124,9 @@ export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
             return (
               <div
                 className={`flex items-center justify-between rounded-lg border p-3 ${
-                  isSurplus ? "border-green-500/20 bg-green-500/5" : "border-red-500/20 bg-red-500/5"
+                  isSurplus
+                    ? "border-green-500/20 bg-green-500/5"
+                    : "border-red-500/20 bg-red-500/5"
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -130,9 +139,7 @@ export function TradeImpactChart({ countryId }: TradeImpactChartProps) {
                     Trade {isSurplus ? "Surplus" : "Deficit"}
                   </span>
                 </div>
-                <span
-                  className={`font-semibold ${isSurplus ? "text-green-500" : "text-red-500"}`}
-                >
+                <span className={`font-semibold ${isSurplus ? "text-green-500" : "text-red-500"}`}>
                   {isSurplus ? "+" : ""}
                   {formatCurrency(balance)}
                 </span>

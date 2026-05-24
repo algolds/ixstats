@@ -18,19 +18,19 @@ export interface WikiRevenueAttributes {
 const revenueCategoryKeywords: Record<string, ParsedRevenueSource["category"]> = {
   "income tax": "Direct Tax",
   "personal income tax": "Direct Tax",
-  "paye": "Direct Tax",
+  paye: "Direct Tax",
   "payroll tax": "Direct Tax",
   "corporate tax": "Direct Tax",
   "company tax": "Direct Tax",
   "business tax": "Direct Tax",
   "profits tax": "Direct Tax",
-  "vat": "Indirect Tax",
+  vat: "Indirect Tax",
   "value-added tax": "Indirect Tax",
   "sales tax": "Indirect Tax",
-  "gst": "Indirect Tax",
+  gst: "Indirect Tax",
   "goods and services tax": "Indirect Tax",
-  "customs": "Indirect Tax",
-  "tariffs": "Indirect Tax",
+  customs: "Indirect Tax",
+  tariffs: "Indirect Tax",
   "import duties": "Indirect Tax",
   "export duties": "Indirect Tax",
   "trade taxes": "Indirect Tax",
@@ -38,7 +38,7 @@ const revenueCategoryKeywords: Record<string, ParsedRevenueSource["category"]> =
   "land tax": "Direct Tax",
   "real estate tax": "Direct Tax",
   "stamp duty": "Direct Tax",
-  "excise": "Indirect Tax",
+  excise: "Indirect Tax",
   "sin tax": "Indirect Tax",
   "fuel tax": "Indirect Tax",
   "carbon tax": "Indirect Tax",
@@ -48,30 +48,32 @@ const revenueCategoryKeywords: Record<string, ParsedRevenueSource["category"]> =
   "inheritance tax": "Direct Tax",
   "estate tax": "Direct Tax",
   "gift tax": "Direct Tax",
-  "fees": "Fees and Fines",
-  "licenses": "Fees and Fines",
-  "fines": "Fees and Fines",
-  "penalties": "Fees and Fines",
+  fees: "Fees and Fines",
+  licenses: "Fees and Fines",
+  fines: "Fees and Fines",
+  penalties: "Fees and Fines",
   "registration fees": "Fees and Fines",
   "oil revenue": "Non-Tax Revenue",
   "resource revenue": "Non-Tax Revenue",
   "sovereign wealth": "Non-Tax Revenue",
   "natural resource": "Non-Tax Revenue",
-  "privatization": "Non-Tax Revenue",
+  privatization: "Non-Tax Revenue",
   "state asset sales": "Non-Tax Revenue",
   "dividends from state enterprises": "Non-Tax Revenue",
   "tourism revenue": "Non-Tax Revenue",
-  "remittances": "Non-Tax Revenue",
+  remittances: "Non-Tax Revenue",
   "foreign aid": "Non-Tax Revenue",
 };
 
 const revenuePatterns = [
   {
-    regex: /(?:primary|main|principal)\s+(?:sources?\s+)?(?:of\s+)?(?:government\s+)?revenue\s+(?:are|is|include)\s+(.+?)\./gi,
+    regex:
+      /(?:primary|main|principal)\s+(?:sources?\s+)?(?:of\s+)?(?:government\s+)?revenue\s+(?:are|is|include)\s+(.+?)\./gi,
     confidence: 95,
   },
   {
-    regex: /government\s+revenue\s+(?:comes|derived|obtained)\s+(?:mainly|primarily)\s+from\s+(.+?)\./gi,
+    regex:
+      /government\s+revenue\s+(?:comes|derived|obtained)\s+(?:mainly|primarily)\s+from\s+(.+?)\./gi,
     confidence: 95,
   },
   {
@@ -79,12 +81,18 @@ const revenuePatterns = [
     confidence: 96,
   },
   {
-    regex: /revenue\s+(?:is|was)\s+(?:generated|derived|obtained)\s+(?:primarily|mainly)\s+(?:through|from)\s+(.+?)\./gi,
+    regex:
+      /revenue\s+(?:is|was)\s+(?:generated|derived|obtained)\s+(?:primarily|mainly)\s+(?:through|from)\s+(.+?)\./gi,
     confidence: 95,
   },
 ];
 
-function extractEvidence(content: string, matchIndex: number, matchLength: number, contextChars = 80): string {
+function extractEvidence(
+  content: string,
+  matchIndex: number,
+  matchLength: number,
+  contextChars = 80
+): string {
   const start = Math.max(0, matchIndex - contextChars);
   const end = Math.min(content.length, matchIndex + matchLength + contextChars);
   let snippet = content.slice(start, end).replace(/\n/g, " ").trim();
@@ -113,7 +121,9 @@ function parseRevenueList(raw: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-export function parseRevenueSources(pages: { title: string; content: string }[]): WikiRevenueAttributes {
+export function parseRevenueSources(
+  pages: { title: string; content: string }[]
+): WikiRevenueAttributes {
   const combinedContent = pages.map((p) => p.content).join("\n\n");
   const sources: ParsedRevenueSource[] = [];
   const seenNames = new Set<string>();

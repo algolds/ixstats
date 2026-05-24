@@ -33,7 +33,15 @@ interface CalculationModule {
   id: string;
   name: string;
   description: string;
-  category: "economic" | "demographic" | "stability" | "governance" | "synergy" | "military" | "diplomatic" | "tax";
+  category:
+    | "economic"
+    | "demographic"
+    | "stability"
+    | "governance"
+    | "synergy"
+    | "military"
+    | "diplomatic"
+    | "tax";
   formula: string;
   variables: Record<string, number | string | string[]>;
   constants: Record<string, number>;
@@ -776,7 +784,7 @@ export function CalculationEditor() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -1178,7 +1186,7 @@ export function CalculationEditor() {
                   <p className="text-muted-foreground">
                     Select a calculation module to view details
                   </p>
-                  <p className="text-muted-foreground text-sm mt-1">
+                  <p className="text-muted-foreground mt-1 text-sm">
                     {modules.length} formulas available
                   </p>
                 </div>

@@ -497,7 +497,7 @@ export function IntegrationTestingDisplay({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
                   <div>
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm font-medium">Economy-Government</span>
@@ -578,7 +578,7 @@ export function IntegrationTestingDisplay({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-blue-600">
                         {formatDuration(integrationReport.performanceMetrics.averageTestTime)}

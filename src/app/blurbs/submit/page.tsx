@@ -32,7 +32,7 @@ function SubmitPromptForm() {
         <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
           <CheckCircle className="h-10 w-10 text-emerald-400" />
           <h3 className="text-base font-semibold">Prompt Submitted</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Your prompt has been submitted for review. An admin will publish it once approved.
           </p>
           <div className="flex gap-2">
@@ -51,24 +51,22 @@ function SubmitPromptForm() {
   return (
     <div className="space-y-4">
       <Card className="glass-hierarchy-child">
-        <CardContent className="p-5 space-y-4">
+        <CardContent className="space-y-4 p-5">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              Title
-            </label>
+            <label className="text-muted-foreground mb-1.5 block text-xs font-medium">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder='e.g. "Topic Tuesday: Fashion"'
               maxLength={200}
-              className="w-full rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-2 text-sm text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:outline-none focus:border-[var(--wikios-accent)]"
+              className="w-full rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-2 text-sm text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)] focus:outline-none"
             />
-            <span className="text-[10px] text-muted-foreground">{title.length}/200</span>
+            <span className="text-muted-foreground text-[10px]">{title.length}/200</span>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            <label className="text-muted-foreground mb-1.5 block text-xs font-medium">
               Question
             </label>
             <textarea
@@ -77,13 +75,13 @@ function SubmitPromptForm() {
               placeholder="What would you like the community to share about their countries?"
               maxLength={500}
               rows={4}
-              className="w-full rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-2 text-sm text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:outline-none focus:border-[var(--wikios-accent)] resize-none"
+              className="w-full resize-none rounded-lg border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-3 py-2 text-sm text-[var(--wikios-text)] placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)] focus:outline-none"
             />
-            <span className="text-[10px] text-muted-foreground">{question.length}/500</span>
+            <span className="text-muted-foreground text-[10px]">{question.length}/500</span>
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <Badge variant="outline" className="text-[10px] text-muted-foreground">
+            <Badge variant="outline" className="text-muted-foreground text-[10px]">
               Submitted as draft for admin review
             </Badge>
             <Button
@@ -102,8 +100,8 @@ function SubmitPromptForm() {
       </Card>
 
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
-        <h3 className="text-xs font-semibold text-muted-foreground mb-2">Tips for good prompts</h3>
-        <ul className="space-y-1.5 text-xs text-muted-foreground">
+        <h3 className="text-muted-foreground mb-2 text-xs font-semibold">Tips for good prompts</h3>
+        <ul className="text-muted-foreground space-y-1.5 text-xs">
           <li>Ask about culture, daily life, history, or unique aspects of a nation</li>
           <li>Keep questions open-ended so every country can answer</li>
           <li>Avoid yes/no questions &mdash; encourage storytelling</li>
@@ -136,9 +134,9 @@ export default function SubmitBlurbPage() {
         ) : (
           <Card className="glass-hierarchy-child">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
-              <User className="h-10 w-10 text-muted-foreground" />
+              <User className="text-muted-foreground h-10 w-10" />
               <h3 className="text-base font-semibold">Sign In Required</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Sign in to submit a prompt suggestion.
               </p>
               <Link href={withBasePath("/setup")}>

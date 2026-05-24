@@ -41,7 +41,9 @@ interface UseEconomyBuilderSyncReturn {
   economyBuilderRef: React.MutableRefObject<EconomyBuilderState>;
   economicInputsRef: React.MutableRefObject<EconomicInputs>;
   onEconomicInputsChangeRef: React.MutableRefObject<(inputs: EconomicInputs) => void>;
-  persistEconomyBuilderRef: React.MutableRefObject<((builder: EconomyBuilderState) => void) | undefined>;
+  persistEconomyBuilderRef: React.MutableRefObject<
+    ((builder: EconomyBuilderState) => void) | undefined
+  >;
   // Sync status
   syncStatus: SyncStatus;
   // Sync mutations
@@ -173,8 +175,7 @@ export function useEconomyBuilderSync({
   // SYNC STATUS TRACKING (based on mutation states)
   // ============================================================
   useEffect(() => {
-    const isAnyMutationLoading =
-      syncGovernmentMutation.isPending || syncTaxMutation.isPending;
+    const isAnyMutationLoading = syncGovernmentMutation.isPending || syncTaxMutation.isPending;
 
     setSyncStatus((prev) => ({
       ...prev,

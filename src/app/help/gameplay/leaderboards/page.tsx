@@ -14,22 +14,22 @@ export default function LeaderboardsArticle() {
       <ContentCard>
         <Section title="Leaderboard Categories">
           <p>
-            The leaderboard system ranks all nations across five competitive metrics. Access
-            the Leaderboards page from the main navigation.
+            The leaderboard system ranks all nations across five competitive metrics. Access the
+            Leaderboards page from the main navigation.
           </p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>
-              <TrendingUp className="inline h-4 w-4 text-emerald-500" />{" "}
-              <strong>Total GDP:</strong> Absolute economic output — larger nations with higher
-              populations and productivity rank higher
+              <TrendingUp className="inline h-4 w-4 text-emerald-500" /> <strong>Total GDP:</strong>{" "}
+              Absolute economic output — larger nations with higher populations and productivity
+              rank higher
             </li>
             <li>
-              <strong>GDP Per Capita:</strong> Economic output per person — measures prosperity
-              and economic efficiency regardless of population size
+              <strong>GDP Per Capita:</strong> Economic output per person — measures prosperity and
+              economic efficiency regardless of population size
             </li>
             <li>
-              <Users className="inline h-4 w-4 text-blue-500" />{" "}
-              <strong>Population:</strong> Total population count across all demographics
+              <Users className="inline h-4 w-4 text-blue-500" /> <strong>Population:</strong> Total
+              population count across all demographics
             </li>
             <li>
               <strong>Achievements:</strong> Total achievement score based on number and rarity of
@@ -59,16 +59,14 @@ export default function LeaderboardsArticle() {
       <ContentCard>
         <Section title="Dashboard Integration">
           <p>
-            Leaderboard highlights also appear on the main Dashboard, showing your current rank
-            and nearby competitors in each category. This provides at-a-glance competitive context
+            Leaderboard highlights also appear on the main Dashboard, showing your current rank and
+            nearby competitors in each category. This provides at-a-glance competitive context
             without navigating to the full leaderboard page.
           </p>
         </Section>
 
         <Section title="Competitive Gameplay">
-          <p>
-            Leaderboards drive competitive gameplay by providing clear goals:
-          </p>
+          <p>Leaderboards drive competitive gameplay by providing clear goals:</p>
           <ul className="mt-2 list-disc space-y-2 pl-6">
             <li>Track your nation&apos;s progress relative to others over time</li>
             <li>Identify areas where your nation excels or needs improvement</li>
@@ -79,8 +77,24 @@ export default function LeaderboardsArticle() {
 
         <InfoBox title="Related Documentation">
           <ul className="list-disc space-y-1 pl-6">
-            <li><Link href="/help/gameplay/achievements" className="text-blue-600 hover:underline dark:text-blue-400">Achievements &amp; Progression</Link> — Achievement system and rewards</li>
-            <li><Link href="/help/economy/tiers" className="text-blue-600 hover:underline dark:text-blue-400">Economic Tiers</Link> — Economic tier system affecting GDP rankings</li>
+            <li>
+              <Link
+                href="/help/gameplay/achievements"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Achievements &amp; Progression
+              </Link>{" "}
+              — Achievement system and rewards
+            </li>
+            <li>
+              <Link
+                href="/help/economy/tiers"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Economic Tiers
+              </Link>{" "}
+              — Economic tier system affecting GDP rankings
+            </li>
           </ul>
         </InfoBox>
       </ContentCard>

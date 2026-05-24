@@ -46,8 +46,12 @@ const getSeverityIconColor = (severity: CrisisEvent["severity"]) => {
 export function CrisisIndicator({ crises, variant = "compact", onClick }: CrisisIndicatorProps) {
   const activeCrises = crises.filter((c) => c.status !== "resolved" && c.status !== "standby");
   const criticalCrises = activeCrises.filter((c) => c.severity === "critical");
-  const highestSeverity = criticalCrises.length > 0 ? "critical" :
-    activeCrises.find((c) => c.severity === "high") ? "high" : "medium";
+  const highestSeverity =
+    criticalCrises.length > 0
+      ? "critical"
+      : activeCrises.find((c) => c.severity === "high")
+        ? "high"
+        : "medium";
 
   if (variant === "compact") {
     if (activeCrises.length === 0) {
@@ -69,7 +73,7 @@ export function CrisisIndicator({ crises, variant = "compact", onClick }: Crisis
         {activeCrises.length > 1 && (
           <Badge
             variant="destructive"
-            className="absolute -right-1 -top-1 h-4 w-4 p-0 text-[10px] font-bold"
+            className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] font-bold"
           >
             {activeCrises.length}
           </Badge>
@@ -86,19 +90,17 @@ export function CrisisIndicator({ crises, variant = "compact", onClick }: Crisis
             <Shield className="h-4 w-4" />
             <span className="font-medium">All Clear</span>
           </div>
-          <p className="mt-1 text-xs text-green-600 dark:text-green-400">
-            No active crisis events
-          </p>
+          <p className="mt-1 text-xs text-green-600 dark:text-green-400">No active crisis events</p>
         </div>
       ) : (
         <>
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-foreground">Crisis Monitor</h4>
+            <h4 className="text-foreground text-sm font-semibold">Crisis Monitor</h4>
             <Badge variant="outline" className="text-xs">
               {activeCrises.length} Active
             </Badge>
           </div>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div className="max-h-64 space-y-2 overflow-y-auto">
             {activeCrises.slice(0, 5).map((crisis) => (
               <div
                 key={crisis.id}
@@ -108,25 +110,28 @@ export function CrisisIndicator({ crises, variant = "compact", onClick }: Crisis
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-foreground truncate">
+                      <span className="text-foreground truncate text-sm font-semibold">
                         {crisis.title}
                       </span>
                     </div>
                     {crisis.description && (
-                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                      <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
                         {crisis.description}
                       </p>
                     )}
-                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-2 flex items-center gap-2 text-xs">
                       <Activity className="h-3 w-3" />
                       <span>{new Date(crisis.timestamp).toLocaleString()}</span>
                     </div>
                   </div>
                   <Badge
                     variant="outline"
-                    className={cn("text-xs whitespace-nowrap", getSeverityIconColor(crisis.severity))}
+                    className={cn(
+                      "text-xs whitespace-nowrap",
+                      getSeverityIconColor(crisis.severity)
+                    )}
                   >
                     {crisis.severity.toUpperCase()}
                   </Badge>
@@ -135,7 +140,7 @@ export function CrisisIndicator({ crises, variant = "compact", onClick }: Crisis
             ))}
           </div>
           {activeCrises.length > 5 && (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-center text-xs">
               ...and {activeCrises.length - 5} more crisis events
             </p>
           )}

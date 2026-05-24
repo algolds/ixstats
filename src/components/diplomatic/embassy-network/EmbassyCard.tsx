@@ -188,17 +188,13 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
         {/* Quick Actions (owners only) */}
         {isOwner && (
-          <div className="border-t pt-3 space-y-2">
+          <div className="space-y-2 border-t pt-3">
             <Link
               href={`/vault/market?nation=${encodeURIComponent(embassy.hostCountry)}`}
               onClick={(e) => e.stopPropagation()}
               className="block"
             >
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
+              <Button variant="outline" size="sm" className="w-full">
                 <CreditCard className="mr-2 h-3.5 w-3.5" />
                 Trade Cards with {embassy.hostCountry}
               </Button>

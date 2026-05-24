@@ -6,7 +6,13 @@ import { Bell, Calendar, FileText } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useIssueCount, useNationalIssues } from "~/hooks/useNationalIssues";
 import { useLocalActions } from "~/hooks/useLocalActions";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "~/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
 import { IxTime } from "~/lib/ixtime";
 import { CommandPanel, type PanelStat } from "./CommandPanel";
 import { CommandPanelItem, type PanelItemBadge } from "./CommandPanelItem";
@@ -17,7 +23,8 @@ const IssuesInbox = dynamic(
   { ssr: false }
 );
 const MeetingsAndDecisionsPanel = dynamic(
-  () => import("./MeetingsAndDecisionsPanel").then((m) => ({ default: m.MeetingsAndDecisionsPanel })),
+  () =>
+    import("./MeetingsAndDecisionsPanel").then((m) => ({ default: m.MeetingsAndDecisionsPanel })),
   { ssr: false }
 );
 const PoliciesAndStrategyPanel = dynamic(
@@ -25,7 +32,10 @@ const PoliciesAndStrategyPanel = dynamic(
   { ssr: false }
 );
 const MeetingScheduler = dynamic(
-  () => import("~/components/quickactions/MeetingScheduler").then((m) => ({ default: m.MeetingScheduler })),
+  () =>
+    import("~/components/quickactions/MeetingScheduler").then((m) => ({
+      default: m.MeetingScheduler,
+    })),
   { ssr: false }
 );
 const PolicyCreatorSheet = dynamic(
@@ -47,10 +57,22 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 const SEVERITY_BADGES: Record<string, PanelItemBadge> = {
-  critical: { label: "CRITICAL", colorClass: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400" },
-  high: { label: "HIGH", colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400" },
-  medium: { label: "MED", colorClass: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400" },
-  low: { label: "LOW", colorClass: "bg-slate-100 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400" },
+  critical: {
+    label: "CRITICAL",
+    colorClass: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
+  },
+  high: {
+    label: "HIGH",
+    colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
+  },
+  medium: {
+    label: "MED",
+    colorClass: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400",
+  },
+  low: {
+    label: "LOW",
+    colorClass: "bg-slate-100 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400",
+  },
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -77,7 +99,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
   // ── Meetings data ──
   const { data: serverMeetings = [], refetch: refetchMeetings } = api.meetings.getMeetings.useQuery(
     { countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
   const { getActions } = useLocalActions(countryId);
 
@@ -99,7 +121,10 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
     const now = new Date();
     const upcoming = meetings
       .filter((m: any) => new Date(m.scheduledDate) >= now && m.status === "scheduled")
-      .sort((a: any, b: any) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
+      );
 
     const actions: any[] = [];
     meetings.forEach((m: any) => {
@@ -118,7 +143,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
   // ── Policies data ──
   const { data: serverPolicies = [], refetch: refetchPolicies } = api.policies.getPolicies.useQuery(
     { countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   const policies = useMemo(() => {
@@ -134,10 +159,13 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
     return [...serverPolicies, ...localPolicies];
   }, [serverPolicies, getActions]);
 
-  const { activePolicies, draftPolicies } = useMemo(() => ({
-    activePolicies: policies.filter((p: any) => p.status === "active"),
-    draftPolicies: policies.filter((p: any) => p.status === "draft"),
-  }), [policies]);
+  const { activePolicies, draftPolicies } = useMemo(
+    () => ({
+      activePolicies: policies.filter((p: any) => p.status === "active"),
+      draftPolicies: policies.filter((p: any) => p.status === "draft"),
+    }),
+    [policies]
+  );
 
   // ── Computed stats ──
   const overdueCount = actionItems.filter((a) => a.isOverdue).length;
@@ -183,7 +211,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
   return (
     <>
       {/* War Room Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
         {/* ── ISSUES COMMAND ── */}
         <CommandPanel
           title="Issues Command"
@@ -236,8 +264,21 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
               title={meeting.title}
               subtitle={`${meeting.attendances?.length ?? 0} attendees · ${meeting.decisions?.length ?? 0} decisions`}
               trailingText={formatMeetingDate(meeting.scheduledDate)}
-              trailingColor={formatMeetingDate(meeting.scheduledDate) === "Today" ? "text-blue-600 font-semibold" : undefined}
-              badges={meeting._isLocal ? [{ label: "LOCAL", colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30" }] : []}
+              trailingColor={
+                formatMeetingDate(meeting.scheduledDate) === "Today"
+                  ? "text-blue-600 font-semibold"
+                  : undefined
+              }
+              badges={
+                meeting._isLocal
+                  ? [
+                      {
+                        label: "LOCAL",
+                        colorClass: "bg-amber-100 text-amber-700 dark:bg-amber-950/30",
+                      },
+                    ]
+                  : []
+              }
             />
           ))}
           {actionItems.slice(0, 3 - Math.min(upcomingMeetings.length, 2)).map((action: any) => (
@@ -247,7 +288,21 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
               title={action.title}
               subtitle={`From: ${action.meetingTitle}`}
               pulse={action.isOverdue}
-              badges={action.isOverdue ? [{ label: "OVERDUE", colorClass: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400" }] : [{ label: "PENDING", colorClass: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30" }]}
+              badges={
+                action.isOverdue
+                  ? [
+                      {
+                        label: "OVERDUE",
+                        colorClass: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
+                      },
+                    ]
+                  : [
+                      {
+                        label: "PENDING",
+                        colorClass: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30",
+                      },
+                    ]
+              }
             />
           ))}
         </CommandPanel>
@@ -273,7 +328,13 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
               accentColor={PRIORITY_COLORS[policy.priority?.toLowerCase()] ?? "indigo"}
               title={policy.name ?? policy.title ?? "Untitled"}
               subtitle={(policy.category ?? policy.policyType ?? "general").toUpperCase()}
-              badges={[{ label: "ACTIVE", colorClass: "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400" }]}
+              badges={[
+                {
+                  label: "ACTIVE",
+                  colorClass:
+                    "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400",
+                },
+              ]}
             />
           ))}
           {draftPolicies.slice(0, Math.max(0, 4 - activePolicies.length)).map((policy: any) => (
@@ -282,7 +343,13 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
               accentColor="slate"
               title={policy.name ?? policy.title ?? "Untitled"}
               subtitle={(policy.category ?? policy.policyType ?? "general").toUpperCase()}
-              badges={[{ label: "DRAFT", colorClass: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400" }]}
+              badges={[
+                {
+                  label: "DRAFT",
+                  colorClass:
+                    "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400",
+                },
+              ]}
             />
           ))}
         </CommandPanel>
@@ -290,7 +357,7 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
 
       {/* ── Drill-Down Sheets ── */}
       <Sheet open={activeSheet === "issues"} onOpenChange={(open) => !open && setActiveSheet(null)}>
-        <SheetContent side="right" className="sm:max-w-lg w-full overflow-y-auto">
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>All National Issues</SheetTitle>
             <SheetDescription>Complete issues inbox with response actions</SheetDescription>
@@ -301,8 +368,11 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={activeSheet === "decisions"} onOpenChange={(open) => !open && setActiveSheet(null)}>
-        <SheetContent side="right" className="sm:max-w-lg w-full overflow-y-auto">
+      <Sheet
+        open={activeSheet === "decisions"}
+        onOpenChange={(open) => !open && setActiveSheet(null)}
+      >
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>Meetings & Decisions</SheetTitle>
             <SheetDescription>All meetings, decisions, and action items</SheetDescription>
@@ -313,8 +383,11 @@ export function ExecutiveWarRoom({ countryId }: ExecutiveWarRoomProps) {
         </SheetContent>
       </Sheet>
 
-      <Sheet open={activeSheet === "policies"} onOpenChange={(open) => !open && setActiveSheet(null)}>
-        <SheetContent side="right" className="sm:max-w-lg w-full overflow-y-auto">
+      <Sheet
+        open={activeSheet === "policies"}
+        onOpenChange={(open) => !open && setActiveSheet(null)}
+      >
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
           <SheetHeader>
             <SheetTitle>All Policies</SheetTitle>
             <SheetDescription>Active, draft, and archived policies</SheetDescription>

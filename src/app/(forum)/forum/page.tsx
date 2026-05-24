@@ -23,9 +23,7 @@ export default function ForumIndexPage() {
   const sortParam = searchParams.get("sort");
 
   const viewMode: ViewMode =
-    sortParam === "trending" ? "trending" :
-    sortParam === "new" ? "new" :
-    "categories";
+    sortParam === "trending" ? "trending" : sortParam === "new" ? "new" : "categories";
 
   const [page, setPage] = useState(1);
 
@@ -45,7 +43,8 @@ export default function ForumIndexPage() {
   });
 
   // Thread feed data (for trending/new modes)
-  const threadOrder = viewMode === "trending" ? "reply_count" as const : "last_post_date" as const;
+  const threadOrder =
+    viewMode === "trending" ? ("reply_count" as const) : ("last_post_date" as const);
   const { data: threadsData, isLoading: threadsLoading } = api.forum.getRecentThreads.useQuery(
     { order: threadOrder, limit: 25, page },
     { staleTime: 30_000, enabled: viewMode !== "categories" }
@@ -72,7 +71,7 @@ export default function ForumIndexPage() {
     <ForumLayout>
       {/* Header — only shown for trending/new feed views */}
       {viewMode !== "categories" && (
-        <div className="mb-6 max-w-4xl mx-auto">
+        <div className="mx-auto mb-6 max-w-4xl">
           <h1 className="text-2xl font-bold text-[var(--forum-text)]">
             {viewMode === "trending" ? "Trending Threads" : "New Posts"}
           </h1>
@@ -170,7 +169,7 @@ export default function ForumIndexPage() {
           })}
 
           {orphanForums.length > 0 && (
-            <div className="glass-forum-parent overflow-hidden p-1 space-y-0.5">
+            <div className="glass-forum-parent space-y-0.5 overflow-hidden p-1">
               {orphanForums.map((forum) => (
                 <ForumCategoryCard
                   key={forum.nodeId}

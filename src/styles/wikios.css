@@ -105,6 +105,44 @@
   flex-shrink: 0;
   border-right: 1px solid var(--wikios-border);
   z-index: 1;
+  transition: width 0.18s ease, padding 0.18s ease, align-items 0.18s ease;
+}
+
+.wikios-icon-rail.expanded {
+  width: 220px;
+  padding-left: 12px;
+  padding-right: 12px;
+  align-items: flex-start;
+  transition: width 0.18s ease, padding 0.18s ease, align-items 0.18s ease;
+}
+
+.wikios-icon-rail.collapsed {
+  width: 56px;
+  align-items: center;
+  transition: width 0.18s ease, padding 0.18s ease, align-items 0.18s ease;
+}
+
+/* Expanded rail item appearance */
+.wikios-icon-rail.expanded a {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.wikios-icon-rail.expanded a:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.wikios-icon-rail.expanded a svg {
+  flex-shrink: 0;
+}
+
+.wikios-icon-rail.expanded .group {
+  width: 100%;
 }
 
 /* Mobile horizontal nav */

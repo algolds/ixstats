@@ -131,7 +131,10 @@ export function NotificationsAdmin() {
 
   const deleteAllNotificationsMutation = api.notifications.deleteAllNotifications.useMutation({
     onSuccess: (data) => {
-      notify.success("All notifications deleted", `${data.count} notifications removed from database.`);
+      notify.success(
+        "All notifications deleted",
+        `${data.count} notifications removed from database.`
+      );
       void refetchNotifications();
       void refetchStats();
       // Also clear local store
@@ -638,10 +641,16 @@ export function NotificationsAdmin() {
               <Button
                 variant="outline"
                 size="sm"
-                className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                className="text-red-500 hover:bg-red-500/10 hover:text-red-600"
                 onClick={() => {
-                  if (confirm("Are you sure you want to delete ALL notifications from the database? This cannot be undone.")) {
-                    deleteAllNotificationsMutation.mutate({ adminUserId: userId || "system-admin" });
+                  if (
+                    confirm(
+                      "Are you sure you want to delete ALL notifications from the database? This cannot be undone."
+                    )
+                  ) {
+                    deleteAllNotificationsMutation.mutate({
+                      adminUserId: userId || "system-admin",
+                    });
                   }
                 }}
                 disabled={deleteAllNotificationsMutation.isPending}

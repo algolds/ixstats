@@ -9,15 +9,13 @@ interface StudioSectionHeroProps {
   progress?: number;
 }
 
-export function StudioSectionHero({
-  section,
-  realmName,
-  progress,
-}: StudioSectionHeroProps) {
+export function StudioSectionHero({ section, realmName, progress }: StudioSectionHeroProps) {
   const theme = SECTION_THEMES[section];
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-r ${theme.gradient} px-6 py-8 lg:px-8 lg:py-10`}>
+    <div
+      className={`relative overflow-hidden bg-gradient-to-r ${theme.gradient} px-6 py-8 lg:px-8 lg:py-10`}
+    >
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
         <div
@@ -30,7 +28,7 @@ export function StudioSectionHero({
       </div>
 
       <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="mb-2 flex items-center gap-3">
           <span className="text-3xl">{theme.icon}</span>
           <div>
             <h2 className="text-2xl font-bold text-white">{theme.label}</h2>
@@ -39,20 +37,20 @@ export function StudioSectionHero({
         </div>
 
         {realmName && (
-          <p className="text-sm text-white/50 mt-2">
-            Editing: <span className="text-white/80 font-medium">{realmName}</span>
+          <p className="mt-2 text-sm text-white/50">
+            Editing: <span className="font-medium text-white/80">{realmName}</span>
           </p>
         )}
 
         {progress !== undefined && (
           <div className="mt-4 max-w-md">
-            <div className="flex justify-between text-xs text-white/50 mb-1">
+            <div className="mb-1 flex justify-between text-xs text-white/50">
               <span>Progress</span>
               <span>{Math.round(progress)}%</span>
             </div>
-            <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full bg-white/40 rounded-full transition-all duration-500"
+                className="h-full rounded-full bg-white/40 transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>

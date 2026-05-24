@@ -108,9 +108,7 @@ async function downloadFile(url: string, destPath: string): Promise<number> {
 /**
  * Resolve wiki filenames to actual image URLs via MediaWiki API (batch)
  */
-async function resolveWikiFileUrls(
-  filenames: string[]
-): Promise<Map<string, string>> {
+async function resolveWikiFileUrls(filenames: string[]): Promise<Map<string, string>> {
   const result = new Map<string, string>();
 
   // Build a lookup from normalized wiki title → original input filename
@@ -123,9 +121,7 @@ async function resolveWikiFileUrls(
 
   for (let i = 0; i < filenames.length; i += BATCH_SIZE) {
     const batch = filenames.slice(i, i + BATCH_SIZE);
-    const titles = batch
-      .map((f) => `File:${f.replace(/ /g, "_")}`)
-      .join("|");
+    const titles = batch.map((f) => `File:${f.replace(/ /g, "_")}`).join("|");
 
     try {
       const data = await fetchJson(
@@ -137,8 +133,7 @@ async function resolveWikiFileUrls(
           if (page.imageinfo?.[0]?.url) {
             // Map back to original input filename
             const wikiTitle = page.title.replace("File:", "");
-            const originalFilename =
-              normalizedToOriginal.get(wikiTitle.toLowerCase()) || wikiTitle;
+            const originalFilename = normalizedToOriginal.get(wikiTitle.toLowerCase()) || wikiTitle;
             result.set(originalFilename, page.imageinfo[0].url);
           }
         }
@@ -168,10 +163,7 @@ async function scrapeWikiFlag(countryName: string): Promise<string | null> {
     const page = data?.query?.pages?.[0];
     if (!page || page.missing) return null;
 
-    const content =
-      page.revisions?.[0]?.slots?.main?.content ||
-      page.revisions?.[0]?.content ||
-      "";
+    const content = page.revisions?.[0]?.slots?.main?.content || page.revisions?.[0]?.content || "";
 
     // Look for flag in infobox - common patterns:
     // |image_flag = FlagName.png
@@ -296,9 +288,7 @@ async function main() {
   for (const country of countriesWithFlags) {
     if (!country.flag) continue;
     const filename = country.flag.trim();
-    const localKey = normalizeFileName(
-      path.basename(filename, getExtension(filename))
-    );
+    const localKey = normalizeFileName(path.basename(filename, getExtension(filename)));
     const localFile = `${localKey}${getExtension(filename)}`;
     const localPath = path.join(FLAGS_DIR, localFile);
 
@@ -346,9 +336,7 @@ async function main() {
       const dbPath = `/flags/${localFile}`;
 
       if (dryRun) {
-        console.log(
-          `  [DRY] ${primaryCountry.name}: ${filename} → ${localFile}`
-        );
+        console.log(`  [DRY] ${primaryCountry.name}: ${filename} → ${localFile}`);
         stats.downloaded++;
       } else {
         try {
@@ -375,10 +363,7 @@ async function main() {
           );
           stats.downloaded++;
         } catch (err) {
-          console.error(
-            `  ✗ ${primaryCountry.name}: failed to download ${filename}:`,
-            err
-          );
+          console.error(`  ✗ ${primaryCountry.name}: failed to download ${filename}:`, err);
           stats.failed++;
         }
       }
@@ -429,9 +414,7 @@ async function main() {
                   });
                   stats.dbUpdated++;
                 }
-                console.log(
-                  `  ✓ ${countries[0]!.name}: found as "${variant}" → ${localFile}`
-                );
+                console.log(`  ✓ ${countries[0]!.name}: found as "${variant}" → ${localFile}`);
                 stats.downloaded++;
                 found = true;
                 break;
@@ -464,10 +447,7 @@ async function main() {
   const countriesWithoutFlags = await prisma.country.findMany({
     where: {
       ...whereClause,
-      OR: [
-        { flag: null },
-        { flag: "" },
-      ],
+      OR: [{ flag: null }, { flag: "" }],
     },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
@@ -497,9 +477,7 @@ async function main() {
   for (const country of toScrape) {
     // Skip if already has a local flag file
     const localKey = normalizeFileName(country.name);
-    const existingFiles = fs
-      .readdirSync(FLAGS_DIR)
-      .filter((f) => f.startsWith(localKey + "."));
+    const existingFiles = fs.readdirSync(FLAGS_DIR).filter((f) => f.startsWith(localKey + "."));
 
     if (!force && existingFiles.length > 0 && metadata.flags[localKey]) {
       const localFile = existingFiles[0]!;
@@ -542,9 +520,7 @@ async function main() {
 
     const url = urlMap.values().next().value;
     if (!url) {
-      console.warn(
-        `  ⚠ ${country.name}: found "${flagFilename}" in infobox but can't resolve URL`
-      );
+      console.warn(`  ⚠ ${country.name}: found "${flagFilename}" in infobox but can't resolve URL`);
       stats.failed++;
       continue;
     }
@@ -555,9 +531,7 @@ async function main() {
     const dbPath = `/flags/${localFile}`;
 
     if (dryRun) {
-      console.log(
-        `  [DRY] ${country.name}: "${flagFilename}" → ${localFile}`
-      );
+      console.log(`  [DRY] ${country.name}: "${flagFilename}" → ${localFile}`);
       stats.downloaded++;
     } else {
       try {
@@ -581,10 +555,7 @@ async function main() {
         );
         stats.downloaded++;
       } catch (err) {
-        console.error(
-          `  ✗ ${country.name}: download failed for "${flagFilename}":`,
-          err
-        );
+        console.error(`  ✗ ${country.name}: download failed for "${flagFilename}":`, err);
         stats.failed++;
       }
     }

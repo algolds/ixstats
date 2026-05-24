@@ -166,8 +166,8 @@ export const CardDisplay = React.memo<CardDisplayProps>(
       size === "small" || size === "sm"
         ? "h-[179px]" // 128px * 3.5/2.5 = 179px
         : size === "medium" || size === "md"
-        ? "h-[269px]" // 192px * 3.5/2.5 = 269px
-        : "h-[358px]"; // 256px * 3.5/2.5 = 358px
+          ? "h-[269px]" // 192px * 3.5/2.5 = 269px
+          : "h-[358px]"; // 256px * 3.5/2.5 = 358px
 
     return (
       <CometCard
@@ -200,7 +200,10 @@ export const CardDisplay = React.memo<CardDisplayProps>(
           )}
           style={{
             borderImage: borderConfig.animated
-              ? `linear-gradient(135deg, ${borderConfig.gradient.split(" ").map((c) => `var(--tw-gradient-${c})`).join(", ")}) 1`
+              ? `linear-gradient(135deg, ${borderConfig.gradient
+                  .split(" ")
+                  .map((c) => `var(--tw-gradient-${c})`)
+                  .join(", ")}) 1`
               : undefined,
             borderImageSlice: borderConfig.animated ? 1 : undefined,
           }}
@@ -224,8 +227,8 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 size === "small" || size === "sm"
                   ? "179px"
                   : size === "medium" || size === "md"
-                  ? "269px"
-                  : "358px",
+                    ? "269px"
+                    : "358px",
             }}
           >
             {!imageError ? (
@@ -239,8 +242,8 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                   size === "small" || size === "sm"
                     ? "128px"
                     : size === "medium" || size === "md"
-                    ? "192px"
-                    : "256px"
+                      ? "192px"
+                      : "256px"
                 }
                 onError={() => setImageError(true)}
                 unoptimized // NS images may not support Next.js optimization
@@ -257,14 +260,14 @@ export const CardDisplay = React.memo<CardDisplayProps>(
             {/* Metallic gradient overlay for premium feel */}
             {!performanceMode && (
               <div
-                className="absolute inset-0 mix-blend-overlay opacity-10"
+                className="absolute inset-0 opacity-10 mix-blend-overlay"
                 style={{
                   background: getMetallicGradient(
                     card.rarity === "LEGENDARY"
                       ? "gold"
                       : card.rarity === "EPIC"
-                      ? "purple"
-                      : "silver"
+                        ? "purple"
+                        : "silver"
                   ),
                 }}
               />
@@ -287,10 +290,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
             {/* Rarity glow effect (enhanced) */}
             <motion.div
-              className={cn(
-                "absolute inset-0 rounded-2xl",
-                getRarityGlow(card.rarity)
-              )}
+              className={cn("absolute inset-0 rounded-2xl", getRarityGlow(card.rarity))}
               initial={{ opacity: 0 }}
               animate={{ opacity: isHovered ? 0.5 : 0.2 }}
               transition={{ duration: 0.3 }}
@@ -311,11 +311,10 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                   className={cn(
                     "rounded-md bg-black/60 px-2 py-0.5 font-bold backdrop-blur-md",
                     fonts.type,
-                    "text-white border border-white/20"
+                    "border border-white/20 text-white"
                   )}
                   style={{
-                    textShadow:
-                      "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.8), 0 0 10px rgba(255,255,255,0.3)",
                   }}
                 >
                   {getCardTypeLabel(card.cardType)}
@@ -327,17 +326,14 @@ export const CardDisplay = React.memo<CardDisplayProps>(
             <div className="space-y-1">
               {/* Card title with embossed effect */}
               <motion.h3
-                className={cn(
-                  "font-black text-white line-clamp-2 tracking-wide",
-                  fonts.title
-                )}
+                className={cn("line-clamp-2 font-black tracking-wide text-white", fonts.title)}
                 style={{
                   textShadow: getEmbossedTextShadow(
                     card.rarity === "LEGENDARY"
                       ? "gold"
                       : card.rarity === "EPIC"
-                      ? "purple"
-                      : "silver"
+                        ? "purple"
+                        : "silver"
                   ),
                   WebkitTextStroke: "0.5px rgba(0,0,0,0.8)",
                   textRendering: "geometricPrecision",
@@ -357,10 +353,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               {/* Country name (if available) with premium styling */}
               {card.country && (
                 <p
-                  className={cn(
-                    "text-white/90 font-semibold",
-                    fonts.type
-                  )}
+                  className={cn("font-semibold text-white/90", fonts.type)}
                   style={{
                     textShadow: "0 1px 2px rgba(0,0,0,0.8)",
                   }}
@@ -373,13 +366,11 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               <div
                 className={cn(
                   "flex items-center justify-between rounded-lg px-2 py-1",
-                  "bg-black/70 backdrop-blur-md border border-white/10",
+                  "border border-white/10 bg-black/70 backdrop-blur-md",
                   fonts.type
                 )}
               >
-                <span className="text-white/80 font-medium">
-                  Season {card.season}
-                </span>
+                <span className="font-medium text-white/80">Season {card.season}</span>
                 <motion.span
                   className={cn("font-black", rarityConfig.color)}
                   style={{
@@ -399,24 +390,37 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               </div>
 
               {/* Stat bars — always visible compact indicator */}
-              {(stats.economic.value > 0 || stats.diplomatic.value > 0 || stats.military.value > 0 || stats.social.value > 0) && (
-                <div className="flex gap-1 rounded-lg bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1.5">
+              {(stats.economic.value > 0 ||
+                stats.diplomatic.value > 0 ||
+                stats.military.value > 0 ||
+                stats.social.value > 0) && (
+                <div className="flex gap-1 rounded-lg border border-white/10 bg-black/70 px-2 py-1.5 backdrop-blur-md">
                   {Object.entries(stats).map(([key, stat]) => (
                     <div key={key} className="flex-1 space-y-0.5">
-                      <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{
                             width: `${stat.value}%`,
                             backgroundColor:
-                              key === "economic" ? "#22c55e" :
-                              key === "diplomatic" ? "#3b82f6" :
-                              key === "military" ? "#ef4444" : "#a855f7",
+                              key === "economic"
+                                ? "#22c55e"
+                                : key === "diplomatic"
+                                  ? "#3b82f6"
+                                  : key === "military"
+                                    ? "#ef4444"
+                                    : "#a855f7",
                           }}
                         />
                       </div>
-                      <div className="text-center text-[7px] font-bold text-white/50 leading-none">
-                        {key === "economic" ? "ECO" : key === "diplomatic" ? "DIP" : key === "military" ? "MIL" : "SOC"}
+                      <div className="text-center text-[7px] leading-none font-bold text-white/50">
+                        {key === "economic"
+                          ? "ECO"
+                          : key === "diplomatic"
+                            ? "DIP"
+                            : key === "military"
+                              ? "MIL"
+                              : "SOC"}
                       </div>
                     </div>
                   ))}
@@ -432,23 +436,17 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     className={cn(
-                      "grid grid-cols-1 xs:grid-cols-2 gap-1 rounded-lg p-2",
-                      "bg-black/80 backdrop-blur-xl border border-white/20",
+                      "xs:grid-cols-2 grid grid-cols-1 gap-1 rounded-lg p-2",
+                      "border border-white/20 bg-black/80 backdrop-blur-xl",
                       fonts.stats
                     )}
                     style={{
-                      boxShadow:
-                        "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
                     }}
                   >
                     {Object.entries(stats).map(([key, stat]) => (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between px-1"
-                      >
-                        <span className="text-white/70 font-medium">
-                          {stat.label}
-                        </span>
+                      <div key={key} className="flex items-center justify-between px-1">
+                        <span className="font-medium text-white/70">{stat.label}</span>
                         <span
                           className={cn("font-black", stat.color)}
                           style={{

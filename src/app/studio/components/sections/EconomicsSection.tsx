@@ -30,9 +30,9 @@ export function EconomicsSection() {
       <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
         <h2 className="mb-3 text-lg font-semibold text-white">Auto-Population</h2>
         <p className="text-sm leading-relaxed text-white/60">
-          Each nation will receive generated economic data based on its geographic
-          properties: land area, coastline access, climate zones, natural resources,
-          and proximity to trade routes. The following data points will be computed:
+          Each nation will receive generated economic data based on its geographic properties: land
+          area, coastline access, climate zones, natural resources, and proximity to trade routes.
+          The following data points will be computed:
         </p>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {[
@@ -66,7 +66,7 @@ export function EconomicsSection() {
               className={`flex items-center justify-between rounded-lg border p-3 ${tier.color}`}
             >
               <span className="text-sm font-medium text-white/80">{tier.label}</span>
-              <span className="text-sm font-mono text-white/60">{tier.pct}</span>
+              <span className="font-mono text-sm text-white/60">{tier.pct}</span>
             </div>
           ))}
         </div>

@@ -53,9 +53,7 @@ export default async function ForumProfileWidget({
     },
   });
 
-  const sorted = ownerships.sort(
-    (a, b) => rarityRank(b.cards.rarity) - rarityRank(a.cards.rarity)
-  );
+  const sorted = ownerships.sort((a, b) => rarityRank(b.cards.rarity) - rarityRank(a.cards.rarity));
   const top = sorted.slice(0, PROFILE_CARD_LIMIT);
   const allCards = sorted.map((o) => o.cards);
   const totalValue = allCards.reduce((sum, c) => sum + c.marketValue, 0);
@@ -69,30 +67,29 @@ export default async function ForumProfileWidget({
     );
   }
 
-  const showcaseUrl = withBasePath(`/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`);
+  const showcaseUrl = withBasePath(
+    `/forum/cards/${encodeURIComponent(user.forumUsername ?? decodedName)}`
+  );
 
   return (
     <div style={{ padding: 12 }}>
       {/* Compact Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {user.country?.flag && (
-<img src={user.country.flag} alt="" style={styles.flag} />
-          )}
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#f3f4f6" }}>
-            IxCards
-          </span>
-          <span style={{ fontSize: 12, color: "#9ca3af" }}>
-            Lvl {user.collectorLevel}
-          </span>
+          {user.country?.flag && <img src={user.country.flag} alt="" style={styles.flag} />}
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#f3f4f6" }}>IxCards</span>
+          <span style={{ fontSize: 12, color: "#9ca3af" }}>Lvl {user.collectorLevel}</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <span style={{ ...styles.statBadge, fontSize: 11 }}>
-            {sorted.length} cards
-          </span>
-          <span style={{ ...styles.statBadge, fontSize: 11 }}>
-            {formatValue(totalValue)}
-          </span>
+          <span style={{ ...styles.statBadge, fontSize: 11 }}>{sorted.length} cards</span>
+          <span style={{ ...styles.statBadge, fontSize: 11 }}>{formatValue(totalValue)}</span>
         </div>
       </div>
 

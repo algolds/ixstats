@@ -21,11 +21,7 @@ import {
   Info,
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import {
-  getImpactColor,
-  getImpactBgColor,
-  type ImpactLevel,
-} from "~/lib/change-impact-calculator";
+import { getImpactColor, getImpactBgColor, type ImpactLevel } from "~/lib/change-impact-calculator";
 import { formatDistanceToNow, format } from "date-fns";
 
 interface ScheduledChangesPanelProps {

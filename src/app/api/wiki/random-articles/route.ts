@@ -22,10 +22,7 @@ export async function GET(request: Request) {
     }
 
     if (count < 10 || count > 100) {
-      return NextResponse.json(
-        { error: "Count must be between 10 and 100" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Count must be between 10 and 100" }, { status: 400 });
     }
 
     const articles = await wikiLoreCardGenerator.fetchRandomArticles(count, source);
@@ -37,9 +34,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("[Random Articles API] Error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch random articles" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch random articles" }, { status: 500 });
   }
 }

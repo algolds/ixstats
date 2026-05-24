@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { BarChart2 } from "lucide-react";
 import { api } from "~/trpc/react";
 
@@ -81,13 +75,13 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
   const getValue = (key: string): number => {
     if (!govStructure) return 0;
     const map: Record<string, number> = {
-      politicalStability:     Math.round((govStructure.politicalStability ?? 0.5) * 100),
-      democracyIndex:         Math.round(govStructure.democracyIndex ?? 50),
-      politicalPolarization:  Math.round(govStructure.politicalPolarization ?? 30),
-      governmentEffectiveness:Math.round(govStructure.governmentEffectiveness ?? 50),
-      ruleOfLaw:              Math.round(govStructure.ruleOfLaw ?? 50),
-      corruptionIndex:        Math.round(govStructure.corruptionIndex ?? 30),
-      electionCycle:          govStructure.electionCycle ?? 4,
+      politicalStability: Math.round((govStructure.politicalStability ?? 0.5) * 100),
+      democracyIndex: Math.round(govStructure.democracyIndex ?? 50),
+      politicalPolarization: Math.round(govStructure.politicalPolarization ?? 30),
+      governmentEffectiveness: Math.round(govStructure.governmentEffectiveness ?? 50),
+      ruleOfLaw: Math.round(govStructure.ruleOfLaw ?? 50),
+      corruptionIndex: Math.round(govStructure.corruptionIndex ?? 30),
+      electionCycle: govStructure.electionCycle ?? 4,
     };
     return map[key] ?? 0;
   };
@@ -105,11 +99,11 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-center py-6 text-sm">
             Loading metrics…
           </div>
         ) : !govStructure ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
+          <p className="text-muted-foreground py-4 text-center text-sm">
             No government structure configured yet.
           </p>
         ) : (
@@ -125,14 +119,14 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
                     </span>
                   </div>
                   {!metric.isYears && (
-                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                       <div
                         className={`h-full rounded-full transition-all ${barColor(value, !!metric.invertedScale)}`}
                         style={{ width: `${value}%` }}
                       />
                     </div>
                   )}
-                  <p className="text-[10px] text-muted-foreground leading-tight">
+                  <p className="text-muted-foreground text-[10px] leading-tight">
                     {metric.description}
                   </p>
                 </div>

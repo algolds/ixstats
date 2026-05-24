@@ -43,44 +43,41 @@ export function CountryDiplomaticPanel({
   const [showAllRelationships, setShowAllRelationships] = useState(false);
   const [showAllEmbassies, setShowAllEmbassies] = useState(false);
 
-  const { data: embassies = [], isLoading: embassiesLoading } = api.diplomatic.getEmbassies.useQuery(
-    { countryId: country.id },
-    { enabled: !!country.id },
-  );
+  const { data: embassies = [], isLoading: embassiesLoading } =
+    api.diplomatic.getEmbassies.useQuery({ countryId: country.id }, { enabled: !!country.id });
 
-  const { data: relationships = [], isLoading: relationsLoading } = api.diplomatic.getRelationships.useQuery(
-    { countryId: country.id },
-    { enabled: !!country.id },
-  );
+  const { data: relationships = [], isLoading: relationsLoading } =
+    api.diplomatic.getRelationships.useQuery({ countryId: country.id }, { enabled: !!country.id });
 
-  const { data: alliances = [], isLoading: alliancesLoading } = api.diplomatic.getAlliances.useQuery(
-    { countryId: country.id },
-    { enabled: !!country.id },
-  );
+  const { data: alliances = [], isLoading: alliancesLoading } =
+    api.diplomatic.getAlliances.useQuery({ countryId: country.id }, { enabled: !!country.id });
 
   // Metrics
   const activeEmbassies = useMemo(
     () => embassies.filter((e: any) => e.status === "ACTIVE" || e.status === "active").length,
-    [embassies],
+    [embassies]
   );
   const totalRelationships = relationships.length;
   const strongRelationships = useMemo(
     () => relationships.filter((r: any) => (r.strength ?? 0) >= 70).length,
-    [relationships],
+    [relationships]
   );
   const allianceCount = alliances.length;
   const avgStrength = useMemo(
     () =>
       totalRelationships > 0
-        ? Math.round(relationships.reduce((sum: number, r: any) => sum + (r.strength ?? 0), 0) / totalRelationships)
+        ? Math.round(
+            relationships.reduce((sum: number, r: any) => sum + (r.strength ?? 0), 0) /
+              totalRelationships
+          )
         : 0,
-    [relationships, totalRelationships],
+    [relationships, totalRelationships]
   );
 
   // Sort relationships by strength
   const sortedRelationships = useMemo(
     () => [...relationships].sort((a: any, b: any) => (b.strength ?? 0) - (a.strength ?? 0)),
-    [relationships],
+    [relationships]
   );
 
   const displayedRelationships = showAllRelationships
@@ -92,11 +89,36 @@ export function CountryDiplomaticPanel({
   const isLoading = embassiesLoading || relationsLoading || alliancesLoading;
 
   const metrics = [
-    { label: "Embassies", value: activeEmbassies, icon: Building2, color: "text-cyan-600 bg-cyan-500/10" },
-    { label: "Relations", value: totalRelationships, icon: Handshake, color: "text-blue-600 bg-blue-500/10" },
-    { label: "Alliances", value: allianceCount, icon: Users, color: "text-purple-600 bg-purple-500/10" },
-    { label: "Strong Ties", value: strongRelationships, icon: Sparkles, color: "text-emerald-600 bg-emerald-500/10" },
-    { label: "Avg Strength", value: `${avgStrength}%`, icon: Globe, color: "text-pink-600 bg-pink-500/10" },
+    {
+      label: "Embassies",
+      value: activeEmbassies,
+      icon: Building2,
+      color: "text-cyan-600 bg-cyan-500/10",
+    },
+    {
+      label: "Relations",
+      value: totalRelationships,
+      icon: Handshake,
+      color: "text-blue-600 bg-blue-500/10",
+    },
+    {
+      label: "Alliances",
+      value: allianceCount,
+      icon: Users,
+      color: "text-purple-600 bg-purple-500/10",
+    },
+    {
+      label: "Strong Ties",
+      value: strongRelationships,
+      icon: Sparkles,
+      color: "text-emerald-600 bg-emerald-500/10",
+    },
+    {
+      label: "Avg Strength",
+      value: `${avgStrength}%`,
+      icon: Globe,
+      color: "text-pink-600 bg-pink-500/10",
+    },
   ];
 
   const getStrengthColor = (strength: number) => {
@@ -160,7 +182,7 @@ export function CountryDiplomaticPanel({
           return (
             <div
               key={metric.label}
-              className="rounded-xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm"
+              className="border-border/50 bg-card/80 rounded-xl border p-4 backdrop-blur-sm"
             >
               <div className="flex items-center gap-2">
                 <div className={`rounded-lg p-1.5 ${metric.color}`}>
@@ -200,7 +222,7 @@ export function CountryDiplomaticPanel({
                   return (
                     <div
                       key={relation.id}
-                      className="rounded-lg border border-border/40 bg-muted/30 p-3 transition-all hover:bg-muted/50"
+                      className="border-border/40 bg-muted/30 hover:bg-muted/50 rounded-lg border p-3 transition-all"
                     >
                       <div className="flex items-center gap-3">
                         <UnifiedCountryFlag
@@ -213,7 +235,11 @@ export function CountryDiplomaticPanel({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <span className="truncate text-sm font-semibold">
-                              {(relation.targetCountryName ?? relation.targetCountry ?? "Unknown").replace(/_/g, " ")}
+                              {(
+                                relation.targetCountryName ??
+                                relation.targetCountry ??
+                                "Unknown"
+                              ).replace(/_/g, " ")}
                             </span>
                             <div className="flex items-center gap-2">
                               <Badge
@@ -297,13 +323,18 @@ export function CountryDiplomaticPanel({
                 {displayedEmbassies.map((embassy: any) => (
                   <div
                     key={embassy.id}
-                    className="rounded-lg border border-border/40 bg-muted/30 p-3 transition-all hover:bg-muted/50"
+                    className="border-border/40 bg-muted/30 hover:bg-muted/50 rounded-lg border p-3 transition-all"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <Building2 className="h-4 w-4 flex-shrink-0 text-cyan-500" />
                         <span className="truncate text-sm font-semibold">
-                          {(embassy.country || embassy.hostCountry || embassy.name || "Embassy").replace(/_/g, " ")}
+                          {(
+                            embassy.country ||
+                            embassy.hostCountry ||
+                            embassy.name ||
+                            "Embassy"
+                          ).replace(/_/g, " ")}
                         </span>
                       </div>
                       <Badge
@@ -363,9 +394,7 @@ export function CountryDiplomaticPanel({
             <Shield className="h-5 w-5 text-purple-500" />
             Alliances & Blocs
           </CardTitle>
-          <CardDescription>
-            International organizations and alliance memberships
-          </CardDescription>
+          <CardDescription>International organizations and alliance memberships</CardDescription>
         </CardHeader>
         <CardContent>
           {alliancesLoading ? (

@@ -123,7 +123,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     if (!trade) {
       return (
         <div className="glass-hierarchy-child rounded-lg p-8 text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-amber-400 mb-3" />
+          <AlertCircle className="mx-auto mb-3 h-12 w-12 text-amber-400" />
           <p className="text-white/80">Trade not found</p>
         </div>
       );
@@ -146,15 +146,15 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
       <div className="space-y-4">
         {/* Header */}
         <div className="glass-hierarchy-child rounded-lg p-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
                 <ArrowRightLeft className="h-5 w-5 text-blue-400" />
                 Trade with {tradePartner.country?.name || "Unknown"}
               </h3>
               {trade.message && (
                 <div className="mt-2 flex items-start gap-2 text-sm text-white/70">
-                  <MessageSquare className="h-4 w-4 mt-0.5" />
+                  <MessageSquare className="mt-0.5 h-4 w-4" />
                   <p>{trade.message}</p>
                 </div>
               )}
@@ -162,10 +162,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-white/60" />
               <span
-                className={cn(
-                  "text-sm font-medium",
-                  isExpired ? "text-red-400" : "text-white/80"
-                )}
+                className={cn("text-sm font-medium", isExpired ? "text-red-400" : "text-white/80")}
               >
                 {timeRemaining}
               </span>
@@ -174,7 +171,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
         </div>
 
         {/* Trade display */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Your side */}
           <div className="glass-hierarchy-child rounded-lg p-4">
             <h4 className="mb-3 text-base font-semibold text-blue-400">
@@ -182,13 +179,13 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
             </h4>
 
             {/* Cards */}
-            <div className="space-y-3 mb-4">
+            <div className="mb-4 space-y-3">
               {yourCards.map((ownership: any) => (
                 <div
                   key={ownership.id}
-                  className="flex items-center gap-3 glass-hierarchy-interactive rounded-lg p-2"
+                  className="glass-hierarchy-interactive flex items-center gap-3 rounded-lg p-2"
                 >
-                  <div className="relative h-16 w-12 rounded overflow-hidden flex-shrink-0">
+                  <div className="relative h-16 w-12 flex-shrink-0 overflow-hidden rounded">
                     <CardHolographicCover
                       cardType={ownership.cards.cardType || "NATION"}
                       rarity={ownership.cards.rarity || "COMMON"}
@@ -200,15 +197,18 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                       fill
                       className="object-cover"
                       unoptimized
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white text-sm truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-white">
                       {ownership.cards.title}
                     </p>
                     <p className="text-xs text-white/60">
-                      {ownership.cards.rarity} • {ownership.cards.marketValue?.toLocaleString()} credits
+                      {ownership.cards.rarity} • {ownership.cards.marketValue?.toLocaleString()}{" "}
+                      credits
                     </p>
                   </div>
                 </div>
@@ -217,7 +217,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
             {/* Credits */}
             {yourCredits > 0 && (
-              <div className="flex items-center gap-2 mb-3 glass-hierarchy-interactive rounded-lg p-3">
+              <div className="glass-hierarchy-interactive mb-3 flex items-center gap-2 rounded-lg p-3">
                 <Coins className="h-5 w-5 text-amber-400" />
                 <span className="font-semibold text-white">
                   +{yourCredits.toLocaleString()} IxCredits
@@ -226,11 +226,9 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
             )}
 
             {/* Total value */}
-            <div className="pt-3 border-t border-white/10">
+            <div className="border-t border-white/10 pt-3">
               <p className="text-sm text-white/60">Total Value</p>
-              <p className="text-xl font-bold text-white">
-                {yourValue.toLocaleString()} credits
-              </p>
+              <p className="text-xl font-bold text-white">{yourValue.toLocaleString()} credits</p>
             </div>
           </div>
 
@@ -241,13 +239,13 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
             </h4>
 
             {/* Cards */}
-            <div className="space-y-3 mb-4">
+            <div className="mb-4 space-y-3">
               {theirCards.map((ownership: any) => (
                 <div
                   key={ownership.id}
-                  className="flex items-center gap-3 glass-hierarchy-interactive rounded-lg p-2"
+                  className="glass-hierarchy-interactive flex items-center gap-3 rounded-lg p-2"
                 >
-                  <div className="relative h-16 w-12 rounded overflow-hidden flex-shrink-0">
+                  <div className="relative h-16 w-12 flex-shrink-0 overflow-hidden rounded">
                     <CardHolographicCover
                       cardType={ownership.cards.cardType || "NATION"}
                       rarity={ownership.cards.rarity || "COMMON"}
@@ -259,15 +257,18 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                       fill
                       className="object-cover"
                       unoptimized
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white text-sm truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-white">
                       {ownership.cards.title}
                     </p>
                     <p className="text-xs text-white/60">
-                      {ownership.cards.rarity} • {ownership.cards.marketValue?.toLocaleString()} credits
+                      {ownership.cards.rarity} • {ownership.cards.marketValue?.toLocaleString()}{" "}
+                      credits
                     </p>
                   </div>
                 </div>
@@ -276,7 +277,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
             {/* Credits */}
             {theirCredits > 0 && (
-              <div className="flex items-center gap-2 mb-3 glass-hierarchy-interactive rounded-lg p-3">
+              <div className="glass-hierarchy-interactive mb-3 flex items-center gap-2 rounded-lg p-3">
                 <Coins className="h-5 w-5 text-amber-400" />
                 <span className="font-semibold text-white">
                   +{theirCredits.toLocaleString()} IxCredits
@@ -285,11 +286,9 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
             )}
 
             {/* Total value */}
-            <div className="pt-3 border-t border-white/10">
+            <div className="border-t border-white/10 pt-3">
               <p className="text-sm text-white/60">Total Value</p>
-              <p className="text-xl font-bold text-white">
-                {theirValue.toLocaleString()} credits
-              </p>
+              <p className="text-xl font-bold text-white">{theirValue.toLocaleString()} credits</p>
             </div>
           </div>
         </div>
@@ -298,7 +297,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
         {trade.status === "PENDING" && !isExpired && (
           <div className="glass-hierarchy-child rounded-lg p-4">
             {isRecipient ? (
-              <div className="flex flex-wrap gap-3 justify-end">
+              <div className="flex flex-wrap justify-end gap-3">
                 <Button
                   onClick={() =>
                     respondToTrade.mutate({
@@ -360,7 +359,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
         {/* Expired warning */}
         {isExpired && trade.status === "PENDING" && (
-          <div className="glass-hierarchy-child rounded-lg p-4 border border-amber-400/30">
+          <div className="glass-hierarchy-child rounded-lg border border-amber-400/30 p-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-amber-400" />
               <div>

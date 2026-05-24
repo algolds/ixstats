@@ -39,12 +39,15 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
     }
   }, [value, onSave, fieldName]);
 
-  const handleValueChange = useCallback((newValue: string) => {
-    onChange(newValue);
-    if (onSave && newValue.trim()) {
-      onSave(fieldName, newValue.trim());
-    }
-  }, [onChange, onSave, fieldName]);
+  const handleValueChange = useCallback(
+    (newValue: string) => {
+      onChange(newValue);
+      if (onSave && newValue.trim()) {
+        onSave(fieldName, newValue.trim());
+      }
+    },
+    [onChange, onSave, fieldName]
+  );
 
   const availableCurrencies = getAvailableCurrencies();
   const currencyInfo = getCurrencyInfo(value);

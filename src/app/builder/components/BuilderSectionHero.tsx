@@ -20,7 +20,11 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { SectionHeaderBackground } from "~/components/mycountry/primitives/SectionHeaderBackground";
 import { motion } from "motion/react";
-import { BUILDER_SECTION_THEMES, HEADER_NAV_STEPS, type BuilderSection } from "../lib/builder-theme";
+import {
+  BUILDER_SECTION_THEMES,
+  HEADER_NAV_STEPS,
+  type BuilderSection,
+} from "../lib/builder-theme";
 import { AutosaveHistoryPanel } from "~/components/builder/AutosaveHistoryPanel";
 import { BuilderContextualHelp } from "./BuilderContextualHelp";
 import { BuilderStepNav } from "./BuilderStepNav";
@@ -100,12 +104,13 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
       transition={{ duration: 0.5 }}
     >
       <SectionHeaderBackground context="hero">
-        <div className={`glass-hierarchy-parent rounded-xl border ${theme.border} p-3 sm:p-4 transition-all duration-300`}>
-
+        <div
+          className={`glass-hierarchy-parent rounded-xl border ${theme.border} p-3 transition-all duration-300 sm:p-4`}
+        >
           {/* Inline Step Navigation */}
           {showStepNav && onNavigate && (
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar p-1 -m-1">
-              <div className="flex-1 min-w-0">
+            <div className="no-scrollbar -m-1 flex items-center gap-2 overflow-x-auto p-1">
+              <div className="min-w-0 flex-1">
                 <BuilderStepNav
                   activeSection={section}
                   onNavigate={onNavigate}
@@ -115,10 +120,10 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
               </div>
 
               {/* Actions moved to nav bar */}
-              <div className="flex items-center gap-1 flex-shrink-0 bg-card/40 backdrop-blur-lg border border-border/60 rounded-xl px-2 h-[42px]">
+              <div className="bg-card/40 border-border/60 flex h-[42px] flex-shrink-0 items-center gap-1 rounded-xl border px-2 backdrop-blur-lg">
                 {/* Autosave indicator */}
                 {lastSaved && (
-                  <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground mr-2 border-r border-border/60 pr-3">
+                  <div className="text-muted-foreground border-border/60 mr-2 hidden items-center gap-2 border-r pr-3 text-xs lg:flex">
                     <div
                       className={cn(
                         "h-2 w-2 rounded-full",
@@ -138,7 +143,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                     size="sm"
                     onClick={onManualSave}
                     disabled={isSaving}
-                    className="h-8 gap-1.5 text-xs hover:bg-muted/60"
+                    className="hover:bg-muted/60 h-8 gap-1.5 text-xs"
                   >
                     {isSaving ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -155,7 +160,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowHistory(true)}
-                    className="h-8 gap-1.5 text-xs hover:bg-muted/60"
+                    className="hover:bg-muted/60 h-8 gap-1.5 text-xs"
                   >
                     <History className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">History</span>
@@ -169,7 +174,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                     size="sm"
                     onClick={onToggleAdvanced}
                     className={cn(
-                      "h-8 gap-1.5 text-xs hover:bg-muted/60",
+                      "hover:bg-muted/60 h-8 gap-1.5 text-xs",
                       isAdvancedMode && "bg-muted"
                     )}
                   >
@@ -186,7 +191,7 @@ export const BuilderSectionHero = React.memo(function BuilderSectionHero({
                     variant="ghost"
                     size="sm"
                     onClick={onClearDraft}
-                    className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 gap-1.5 text-xs"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Clear</span>

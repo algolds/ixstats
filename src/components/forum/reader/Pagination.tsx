@@ -20,11 +20,7 @@ export function ForumPagination({ currentPage, lastPage, onPageChange }: Paginat
   const delta = 2;
 
   for (let i = 1; i <= lastPage; i++) {
-    if (
-      i === 1 ||
-      i === lastPage ||
-      (i >= currentPage - delta && i <= currentPage + delta)
-    ) {
+    if (i === 1 || i === lastPage || (i >= currentPage - delta && i <= currentPage + delta)) {
       pages.push(i);
     } else if (pages[pages.length - 1] !== "ellipsis") {
       pages.push("ellipsis");

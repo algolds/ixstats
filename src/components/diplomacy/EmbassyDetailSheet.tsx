@@ -1,13 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -35,7 +29,15 @@ interface EmbassyDetailSheetProps {
   onEmbassyChanged?: () => void;
 }
 
-function InfoRow({ label, value, icon: Icon }: { label: string; value: string | React.ReactNode; icon?: typeof Building2 }) {
+function InfoRow({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | React.ReactNode;
+  icon?: typeof Building2;
+}) {
   return (
     <div className="flex items-start justify-between gap-2">
       <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
@@ -47,7 +49,17 @@ function InfoRow({ label, value, icon: Icon }: { label: string; value: string | 
   );
 }
 
-function StatBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+function StatBar({
+  label,
+  value,
+  max,
+  color,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+}) {
   const pct = Math.min(100, (value / max) * 100);
   return (
     <div>
@@ -55,8 +67,11 @@ function StatBar({ label, value, max, color }: { label: string; value: number; m
         <span className="text-muted-foreground">{label}</span>
         <span className="font-medium">{value}</span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, backgroundColor: color }} />
+      <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
       </div>
     </div>
   );
@@ -73,7 +88,7 @@ export function EmbassyDetailSheet({
 
   const { data: embassy, isLoading } = api.diplomatic.getEmbassyDetails.useQuery(
     { embassyId: embassyId! },
-    { enabled: !!embassyId },
+    { enabled: !!embassyId }
   );
 
   const closeMutation = api.diplomatic.closeEmbassy.useMutation({
@@ -89,14 +104,36 @@ export function EmbassyDetailSheet({
 
   const getStatusBadge = (status: string | undefined) => {
     const s = status?.toLowerCase() ?? "active";
-    if (s === "active") return <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30"><CheckCircle className="mr-1 h-3 w-3" />Active</Badge>;
-    if (s === "closed") return <Badge className="bg-red-100 text-red-700 dark:bg-red-950/30"><XCircle className="mr-1 h-3 w-3" />Closed</Badge>;
-    if (s === "under_construction") return <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30"><Clock className="mr-1 h-3 w-3" />Building</Badge>;
+    if (s === "active")
+      return (
+        <Badge className="bg-green-100 text-green-700 dark:bg-green-950/30">
+          <CheckCircle className="mr-1 h-3 w-3" />
+          Active
+        </Badge>
+      );
+    if (s === "closed")
+      return (
+        <Badge className="bg-red-100 text-red-700 dark:bg-red-950/30">
+          <XCircle className="mr-1 h-3 w-3" />
+          Closed
+        </Badge>
+      );
+    if (s === "under_construction")
+      return (
+        <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30">
+          <Clock className="mr-1 h-3 w-3" />
+          Building
+        </Badge>
+      );
     return <Badge variant="outline">{s}</Badge>;
   };
 
   const getLevelBadge = (level: number | undefined) => {
-    const labels: Record<number, string> = { 1: "Consulate", 2: "Standard Embassy", 3: "Grand Embassy" };
+    const labels: Record<number, string> = {
+      1: "Consulate",
+      2: "Standard Embassy",
+      3: "Grand Embassy",
+    };
     const colors: Record<number, string> = {
       1: "bg-blue-50 text-blue-700 dark:bg-blue-950/20",
       2: "bg-cyan-50 text-cyan-700 dark:bg-cyan-950/20",
@@ -114,13 +151,18 @@ export function EmbassyDetailSheet({
   const activeMissions = missions.filter((m: any) => m.status === "active");
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <SheetContent className="flex flex-col p-0 sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-start gap-2">
             <Building2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-cyan-500" />
             <span className="line-clamp-2">
-              {isLoading ? "Loading..." : embassy?.name ?? "Embassy Not Found"}
+              {isLoading ? "Loading..." : (embassy?.name ?? "Embassy Not Found")}
             </span>
           </SheetTitle>
           {embassy && (
@@ -142,12 +184,32 @@ export function EmbassyDetailSheet({
             <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
               {/* Countries Info */}
               <div className="space-y-2">
-                <InfoRow label="Host Country" value={(embassy as any).hostCountryName ?? embassy.hostCountryId} icon={MapPin} />
-                <InfoRow label="Guest Country" value={(embassy as any).guestCountryName ?? embassy.guestCountryId} icon={Building2} />
-                {embassy.ambassadorName && <InfoRow label="Ambassador" value={embassy.ambassadorName} icon={User} />}
-                {embassy.location && <InfoRow label="Location" value={embassy.location} icon={MapPin} />}
-                <InfoRow label="Staff" value={`${embassy.staffCount ?? 0} personnel`} icon={Users} />
-                <InfoRow label="Budget" value={`$${(embassy.budget ?? 0).toLocaleString()}/mo`} icon={DollarSign} />
+                <InfoRow
+                  label="Host Country"
+                  value={(embassy as any).hostCountryName ?? embassy.hostCountryId}
+                  icon={MapPin}
+                />
+                <InfoRow
+                  label="Guest Country"
+                  value={(embassy as any).guestCountryName ?? embassy.guestCountryId}
+                  icon={Building2}
+                />
+                {embassy.ambassadorName && (
+                  <InfoRow label="Ambassador" value={embassy.ambassadorName} icon={User} />
+                )}
+                {embassy.location && (
+                  <InfoRow label="Location" value={embassy.location} icon={MapPin} />
+                )}
+                <InfoRow
+                  label="Staff"
+                  value={`${embassy.staffCount ?? 0} personnel`}
+                  icon={Users}
+                />
+                <InfoRow
+                  label="Budget"
+                  value={`$${(embassy.budget ?? 0).toLocaleString()}/mo`}
+                  icon={DollarSign}
+                />
               </div>
 
               <Separator />
@@ -159,10 +221,30 @@ export function EmbassyDetailSheet({
                   Performance
                 </h4>
                 <div className="space-y-2.5">
-                  <StatBar label="Effectiveness" value={embassy.effectiveness ?? 0} max={100} color="#06b6d4" />
-                  <StatBar label="Influence" value={embassy.influence ?? 0} max={100} color="#3b82f6" />
-                  <StatBar label="Reputation" value={embassy.reputation ?? 0} max={100} color="#a855f7" />
-                  <StatBar label="Experience" value={embassy.experience ?? 0} max={1000} color="#22c55e" />
+                  <StatBar
+                    label="Effectiveness"
+                    value={embassy.effectiveness ?? 0}
+                    max={100}
+                    color="#06b6d4"
+                  />
+                  <StatBar
+                    label="Influence"
+                    value={embassy.influence ?? 0}
+                    max={100}
+                    color="#3b82f6"
+                  />
+                  <StatBar
+                    label="Reputation"
+                    value={embassy.reputation ?? 0}
+                    max={100}
+                    color="#a855f7"
+                  />
+                  <StatBar
+                    label="Experience"
+                    value={embassy.experience ?? 0}
+                    max={1000}
+                    color="#22c55e"
+                  />
                 </div>
               </div>
 
@@ -177,20 +259,27 @@ export function EmbassyDetailSheet({
                     </h4>
                     <div className="space-y-2">
                       {activeMissions.map((m: any) => (
-                        <div key={m.id} className="rounded-md border border-border/40 bg-muted/30 p-2 text-xs">
+                        <div
+                          key={m.id}
+                          className="border-border/40 bg-muted/30 rounded-md border p-2 text-xs"
+                        >
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{m.name}</span>
-                            <Badge variant="outline" className="text-[10px]">{m.type}</Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              {m.type}
+                            </Badge>
                           </div>
                           {m.progress != null && (
                             <div className="mt-1.5">
-                              <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                              <div className="bg-muted h-1 w-full overflow-hidden rounded-full">
                                 <div
                                   className="h-full rounded-full bg-cyan-500 transition-all"
                                   style={{ width: `${m.progress}%` }}
                                 />
                               </div>
-                              <span className="text-muted-foreground mt-0.5 block text-[10px]">{m.progress}% complete</span>
+                              <span className="text-muted-foreground mt-0.5 block text-[10px]">
+                                {m.progress}% complete
+                              </span>
                             </div>
                           )}
                         </div>
@@ -222,12 +311,7 @@ export function EmbassyDetailSheet({
               </Button>
               {embassy.status === "active" && (
                 <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    disabled
-                  >
+                  <Button size="sm" variant="outline" className="gap-1.5" disabled>
                     <ArrowUpCircle className="h-3 w-3" />
                     Upgrade (Coming Soon)
                   </Button>

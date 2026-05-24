@@ -14,15 +14,12 @@ import { Skeleton } from "~/components/ui/skeleton";
 export function CountryAssigner() {
   const [filter, setFilter] = useState<"all" | "linked" | "unlinked">("all");
   const [search, setSearch] = useState("");
-  const [assigningFeatureId, setAssigningFeatureId] = useState<string | null>(
-    null
-  );
+  const [assigningFeatureId, setAssigningFeatureId] = useState<string | null>(null);
   const [selectedCountryId, setSelectedCountryId] = useState("");
 
   const utils = api.useUtils();
 
-  const { data: features, isLoading: featuresLoading } =
-    api.geo.listCountries.useQuery();
+  const { data: features, isLoading: featuresLoading } = api.geo.listCountries.useQuery();
 
   // Get all countries from the database for the assignment dropdown
   const { data: dbCountries } = api.countries.getAll.useQuery(undefined, {
@@ -68,12 +65,8 @@ export function CountryAssigner() {
   const availableCountries = useMemo(() => {
     const countries = dbCountries?.countries;
     if (!countries || !features) return [];
-    const assignedCountryIds = new Set(
-      features.filter((f) => f.countryId).map((f) => f.countryId)
-    );
-    return countries.filter(
-      (c: { id: string; name: string }) => !assignedCountryIds.has(c.id)
-    );
+    const assignedCountryIds = new Set(features.filter((f) => f.countryId).map((f) => f.countryId));
+    return countries.filter((c: { id: string; name: string }) => !assignedCountryIds.has(c.id));
   }, [dbCountries, features]);
 
   const handleAssign = (featureId: string) => {
@@ -106,64 +99,47 @@ export function CountryAssigner() {
           placeholder="Search features..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-blue-500 focus:outline-none"
+          className="border-border bg-background text-foreground rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
         />
-        <div className="flex rounded-lg border border-border">
+        <div className="border-border flex rounded-lg border">
           {(["all", "linked", "unlinked"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                filter === f
-                  ? "bg-blue-500 text-white"
-                  : "text-foreground/80 hover:bg-accent"
+                filter === f ? "bg-blue-500 text-white" : "text-foreground/80 hover:bg-accent"
               } ${f === "all" ? "rounded-l-lg" : ""} ${f === "unlinked" ? "rounded-r-lg" : ""}`}
             >
               {f}
             </button>
           ))}
         </div>
-        <span className="text-sm text-muted-foreground">
-          {filtered.length} features
-        </span>
+        <span className="text-muted-foreground text-sm">{filtered.length} features</span>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <div className="border-border overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted">
-              <th className="px-4 py-3 text-left font-medium text-foreground/80">
-                Feature
-              </th>
-              <th className="px-4 py-3 text-left font-medium text-foreground/80">
-                Status
-              </th>
-              <th className="px-4 py-3 text-left font-medium text-foreground/80">
-                Area
-              </th>
-              <th className="px-4 py-3 text-right font-medium text-foreground/80">
-                Actions
-              </th>
+            <tr className="border-border bg-muted border-b">
+              <th className="text-foreground/80 px-4 py-3 text-left font-medium">Feature</th>
+              <th className="text-foreground/80 px-4 py-3 text-left font-medium">Status</th>
+              <th className="text-foreground/80 px-4 py-3 text-left font-medium">Area</th>
+              <th className="text-foreground/80 px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((feature) => (
-              <tr
-                key={feature.featureId}
-                className="border-b border-border/50 last:border-0"
-              >
+              <tr key={feature.featureId} className="border-border/50 border-b last:border-0">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div
-                      className="h-3 w-3 rounded-sm border border-border"
+                      className="border-border h-3 w-3 rounded-sm border"
                       style={{ backgroundColor: feature.fillColor }}
                     />
                     <div>
-                      <div className="font-medium text-foreground">
-                        {feature.displayName}
-                      </div>
-                      <div className="font-mono text-xs text-muted-foreground">
+                      <div className="text-foreground font-medium">{feature.displayName}</div>
+                      <div className="text-muted-foreground font-mono text-xs">
                         {feature.featureId}
                       </div>
                     </div>
@@ -175,12 +151,12 @@ export function CountryAssigner() {
                       Linked
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
                       Unlinked
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-foreground/80">
+                <td className="text-foreground/80 px-4 py-3">
                   {feature.areaSqKm
                     ? `${Math.round(feature.areaSqKm).toLocaleString()} km²`
                     : "\u2014"}
@@ -199,7 +175,7 @@ export function CountryAssigner() {
                       <select
                         value={selectedCountryId}
                         onChange={(e) => setSelectedCountryId(e.target.value)}
-                        className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground"
+                        className="border-border bg-background text-foreground rounded border px-2 py-1 text-xs"
                       >
                         <option value="">Select country...</option>
                         {availableCountries.map((c: { id: string; name: string }) => (
@@ -210,9 +186,7 @@ export function CountryAssigner() {
                       </select>
                       <button
                         onClick={() => handleAssign(feature.featureId)}
-                        disabled={
-                          !selectedCountryId || assignMutation.isPending
-                        }
+                        disabled={!selectedCountryId || assignMutation.isPending}
                         className="rounded bg-blue-500 px-2 py-1 text-xs text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
                       >
                         {assignMutation.isPending ? "..." : "Save"}
@@ -222,7 +196,7 @@ export function CountryAssigner() {
                           setAssigningFeatureId(null);
                           setSelectedCountryId("");
                         }}
-                        className="rounded px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground rounded px-2 py-1 text-xs"
                       >
                         Cancel
                       </button>

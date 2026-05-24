@@ -6,15 +6,7 @@
 import { useState, memo, useEffect } from "react";
 import type { FC } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  TrendingUp,
-  AlertTriangle,
-  Target,
-  Brain,
-  Clock,
-  Zap,
-  BarChart3,
-} from "lucide-react";
+import { TrendingUp, AlertTriangle, Target, Brain, Clock, Zap, BarChart3 } from "lucide-react";
 import { predictiveAnalyticsEngine } from "~/lib/predictive-analytics-engine";
 import { useOptimizedIntelligenceData } from "~/hooks/useOptimizedIntelligenceData";
 import { IxTimeDate } from "~/components/ui/ix-time-date";
@@ -138,7 +130,14 @@ const ForwardLookingIntelligence: FC<ForwardLookingIntelligenceProps> = memo(
               </div>
               <div className="text-muted-foreground flex items-center gap-1 text-xs">
                 <Clock className="h-3 w-3" />
-                <span>Generated <IxTimeDate date={forwardIntelligence.generated} format="relative" accentColor="indigo" /></span>
+                <span>
+                  Generated{" "}
+                  <IxTimeDate
+                    date={forwardIntelligence.generated}
+                    format="relative"
+                    accentColor="indigo"
+                  />
+                </span>
               </div>
             </div>
 

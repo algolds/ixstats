@@ -31,7 +31,7 @@ export default function ForumStashesPage() {
 
   return (
     <ForumLayout>
-      <div className="mb-6 max-w-4xl mx-auto">
+      <div className="mx-auto mb-6 max-w-4xl">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-[var(--forum-text)]">Stashed Threads</h1>
@@ -51,7 +51,7 @@ export default function ForumStashesPage() {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {error.message}
         </div>
       )}
@@ -68,13 +68,13 @@ export default function ForumStashesPage() {
             <Link
               key={thread.id}
               href={withBasePath(thread.slug)}
-              className="glass-forum-child flex items-center gap-3 p-3 mb-0.5 group"
+              className="glass-forum-child group mb-0.5 flex items-center gap-3 p-3"
             >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-400">
                 <MessageSquare className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-[var(--forum-text)] group-hover:text-[var(--forum-accent)] transition-colors truncate">
+                <div className="truncate text-sm font-medium text-[var(--forum-text)] transition-colors group-hover:text-[var(--forum-accent)]">
                   {thread.title}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-[var(--forum-text-dim)]">
@@ -89,10 +89,8 @@ export default function ForumStashesPage() {
       ) : (
         <div className="glass-forum-parent p-8 text-center">
           <Bookmark className="mx-auto mb-3 h-10 w-10 text-[var(--forum-accent)] opacity-30" />
-          <h2 className="text-sm font-medium text-[var(--forum-text)]">
-            No stashed threads yet
-          </h2>
-          <p className="mt-2 text-xs text-[var(--forum-text-dim)] max-w-md mx-auto">
+          <h2 className="text-sm font-medium text-[var(--forum-text)]">No stashed threads yet</h2>
+          <p className="mx-auto mt-2 max-w-md text-xs text-[var(--forum-text-dim)]">
             Click the bookmark icon on any forum post to save the thread to your stash for later.
           </p>
         </div>

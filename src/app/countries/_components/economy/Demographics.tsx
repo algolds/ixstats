@@ -422,7 +422,7 @@ export function Demographics({
 
         {/* Overview Tab */}
         {view === "overview" && (
-          <motion.div 
+          <motion.div
             className="space-y-6"
             variants={containerVariants}
             initial="hidden"
@@ -436,13 +436,17 @@ export function Demographics({
                 const progress = metric.reverse
                   ? Math.max(0, 100 - (metricValue / metric.target) * 100)
                   : Math.min(100, (metricValue / metric.target) * 100);
-                
+
                 const cardColors = [
                   "from-rose-50/80 to-pink-50/80 dark:from-rose-900/20 dark:to-pink-900/20 border-rose-200/50 dark:border-rose-700/30",
                   "from-cyan-50/80 to-blue-50/80 dark:from-cyan-900/20 dark:to-blue-900/20 border-cyan-200/50 dark:border-cyan-700/30",
                   "from-violet-50/80 to-purple-50/80 dark:from-violet-900/20 dark:to-purple-900/20 border-violet-200/50 dark:border-violet-700/30",
                 ];
-                const textColors = ["text-rose-700 dark:text-rose-400", "text-cyan-700 dark:text-cyan-400", "text-violet-700 dark:text-violet-400"];
+                const textColors = [
+                  "text-rose-700 dark:text-rose-400",
+                  "text-cyan-700 dark:text-cyan-400",
+                  "text-violet-700 dark:text-violet-400",
+                ];
 
                 return (
                   <motion.div key={metric.field} variants={itemVariants} whileHover={cardHover}>
@@ -464,7 +468,9 @@ export function Demographics({
                         </div>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className={`text-2xl font-bold ${textColors[index % 3]}`}>{metric.format(metric.value)}</span>
+                            <span className={`text-2xl font-bold ${textColors[index % 3]}`}>
+                              {metric.format(metric.value)}
+                            </span>
                             {editMode ? (
                               <Input
                                 type="number"
@@ -535,7 +541,11 @@ export function Demographics({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                        <RechartsTooltip
+                          formatter={(value) =>
+                            value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                          }
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -568,7 +578,11 @@ export function Demographics({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                        <RechartsTooltip
+                          formatter={(value) =>
+                            value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                          }
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -901,7 +915,11 @@ export function Demographics({
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <RechartsTooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                          <RechartsTooltip
+                            formatter={(value) =>
+                              value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                            }
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -1010,7 +1028,11 @@ export function Demographics({
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="name" />
                           <YAxis />
-                          <RechartsTooltip formatter={(value) => value !== undefined ? formatPopulation(Number(value)) : ''} />
+                          <RechartsTooltip
+                            formatter={(value) =>
+                              value !== undefined ? formatPopulation(Number(value)) : ""
+                            }
+                          />
                           <Legend />
                           <Bar dataKey="population" name="Total Population" fill="#3b82f6" />
                           <Bar dataKey="urbanPopulation" name="Urban Population" fill="#8b5cf6" />

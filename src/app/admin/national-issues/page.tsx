@@ -23,12 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
 
 const DOMAINS = [
@@ -123,7 +118,7 @@ export default function NationalIssuesAdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="bg-background min-h-screen p-6">
       <div className="mx-auto max-w-6xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -139,20 +134,12 @@ export default function NationalIssuesAdminPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowStats(!showStats)}
-            >
-              <BarChart3 className="h-4 w-4 mr-1" />
+            <Button variant="outline" size="sm" onClick={() => setShowStats(!showStats)}>
+              <BarChart3 className="mr-1 h-4 w-4" />
               Stats
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void refetch()}
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              <RefreshCw className="mr-1 h-4 w-4" />
               Refresh
             </Button>
           </div>
@@ -161,26 +148,12 @@ export default function NationalIssuesAdminPage() {
         {/* Stats Panel */}
         {showStats && stats && (
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-            <h3 className="text-sm font-semibold mb-3">
-              Generation Stats (Last 7 Days)
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatCard
-                label="Evaluations"
-                value={stats.totalEvaluations}
-              />
-              <StatCard
-                label="Issues Generated"
-                value={stats.totalIssuesGenerated}
-              />
-              <StatCard
-                label="Avg Exec Time"
-                value={`${stats.avgExecutionTime}ms`}
-              />
-              <StatCard
-                label="Templates"
-                value={templates.length}
-              />
+            <h3 className="mb-3 text-sm font-semibold">Generation Stats (Last 7 Days)</h3>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatCard label="Evaluations" value={stats.totalEvaluations} />
+              <StatCard label="Issues Generated" value={stats.totalIssuesGenerated} />
+              <StatCard label="Avg Exec Time" value={`${stats.avgExecutionTime}ms`} />
+              <StatCard label="Templates" value={templates.length} />
             </div>
             {stats.domainStats.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -200,14 +173,11 @@ export default function NationalIssuesAdminPage() {
 
         {/* Force Generate Panel */}
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <h3 className="text-sm font-semibold mb-2">Force Generate Issue</h3>
-          <div className="flex gap-2 items-end">
+          <h3 className="mb-2 text-sm font-semibold">Force Generate Issue</h3>
+          <div className="flex items-end gap-2">
             <div className="flex-1">
-              <label className="text-xs text-muted-foreground">Country</label>
-              <Select
-                value={forceGenCountryId}
-                onValueChange={setForceGenCountryId}
-              >
+              <label className="text-muted-foreground text-xs">Country</label>
+              <Select value={forceGenCountryId} onValueChange={setForceGenCountryId}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Select country..." />
                 </SelectTrigger>
@@ -221,11 +191,8 @@ export default function NationalIssuesAdminPage() {
               </Select>
             </div>
             <div className="flex-1">
-              <label className="text-xs text-muted-foreground">Template</label>
-              <Select
-                value={forceGenTemplateId}
-                onValueChange={setForceGenTemplateId}
-              >
+              <label className="text-muted-foreground text-xs">Template</label>
+              <Select value={forceGenTemplateId} onValueChange={setForceGenTemplateId}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Select template..." />
                 </SelectTrigger>
@@ -241,11 +208,7 @@ export default function NationalIssuesAdminPage() {
             <Button
               size="sm"
               className="h-8"
-              disabled={
-                !forceGenCountryId ||
-                !forceGenTemplateId ||
-                forceGenerate.isPending
-              }
+              disabled={!forceGenCountryId || !forceGenTemplateId || forceGenerate.isPending}
               onClick={() =>
                 forceGenerate.mutate({
                   templateId: forceGenTemplateId,
@@ -253,7 +216,7 @@ export default function NationalIssuesAdminPage() {
                 })
               }
             >
-              <Play className="h-3 w-3 mr-1" />
+              <Play className="mr-1 h-3 w-3" />
               {forceGenerate.isPending ? "..." : "Generate"}
             </Button>
           </div>
@@ -265,21 +228,18 @@ export default function NationalIssuesAdminPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-3 items-center">
+        <div className="flex items-center gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               placeholder="Search templates..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-8 text-sm"
+              className="h-8 pl-9 text-sm"
             />
           </div>
-          <Select
-            value={domainFilter}
-            onValueChange={setDomainFilter}
-          >
-            <SelectTrigger className="w-40 h-8 text-xs">
+          <Select value={domainFilter} onValueChange={setDomainFilter}>
+            <SelectTrigger className="h-8 w-40 text-xs">
               <SelectValue placeholder="All domains" />
             </SelectTrigger>
             <SelectContent>
@@ -298,11 +258,9 @@ export default function NationalIssuesAdminPage() {
 
         {/* Template List */}
         {isLoading ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Loading templates...
-          </div>
+          <div className="text-muted-foreground py-8 text-center">Loading templates...</div>
         ) : templates.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-muted-foreground py-8 text-center">
             No templates found. Seed the database to get started.
           </div>
         ) : (
@@ -317,9 +275,9 @@ export default function NationalIssuesAdminPage() {
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono text-muted-foreground">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="text-muted-foreground font-mono text-xs">
                         {template.slug}
                       </span>
                       <Badge
@@ -335,26 +293,21 @@ export default function NationalIssuesAdminPage() {
                         {(template.baseSeverity as string).toUpperCase()}
                       </Badge>
                       {template.deadlineDaysBase && (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] bg-red-500/10 text-red-400"
-                        >
+                        <Badge variant="outline" className="bg-red-500/10 text-[10px] text-red-400">
                           {template.deadlineDaysBase}d deadline
                         </Badge>
                       )}
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-muted-foreground text-[10px]">
                         {(template as any)._count?.instances ?? 0} instances
                       </span>
                     </div>
-                    <h4 className="text-sm font-medium truncate">
-                      {template.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                    <h4 className="truncate text-sm font-medium">{template.title}</h4>
+                    <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
                       {template.description}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex shrink-0 items-center gap-1">
                     {forceGenCountryId && (
                       <Button
                         variant="ghost"
@@ -375,9 +328,7 @@ export default function NationalIssuesAdminPage() {
                       variant="ghost"
                       size="sm"
                       className="h-7 w-7 p-0"
-                      title={
-                        template.isActive ? "Deactivate" : "Activate"
-                      }
+                      title={template.isActive ? "Deactivate" : "Activate"}
                       onClick={() =>
                         toggleActive.mutate({
                           id: template.id,
@@ -388,7 +339,7 @@ export default function NationalIssuesAdminPage() {
                       {template.isActive ? (
                         <ToggleRight className="h-3.5 w-3.5 text-green-400" />
                       ) : (
-                        <ToggleLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                        <ToggleLeft className="text-muted-foreground h-3.5 w-3.5" />
                       )}
                     </Button>
                     <Button
@@ -397,11 +348,7 @@ export default function NationalIssuesAdminPage() {
                       className="h-7 w-7 p-0 text-red-400 hover:text-red-300"
                       title="Delete"
                       onClick={() => {
-                        if (
-                          confirm(
-                            `Delete template "${template.slug}"?`
-                          )
-                        ) {
+                        if (confirm(`Delete template "${template.slug}"?`)) {
                           deleteTemplate.mutate({ id: template.id });
                         }
                       }}
@@ -416,71 +363,50 @@ export default function NationalIssuesAdminPage() {
         )}
 
         {/* Preview Modal */}
-        <Dialog
-          open={!!previewModal}
-          onOpenChange={(open) => !open && setPreviewModal(null)}
-        >
+        <Dialog open={!!previewModal} onOpenChange={(open) => !open && setPreviewModal(null)}>
           <DialogContent className="max-w-xl">
             <DialogHeader>
               <DialogTitle>Template Preview</DialogTitle>
             </DialogHeader>
             {isPreviewLoading ? (
-              <div className="py-4 text-center text-muted-foreground">
-                Evaluating...
-              </div>
+              <div className="text-muted-foreground py-4 text-center">Evaluating...</div>
             ) : previewData ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Badge
-                    variant={
-                      previewData.triggersPassed ? "default" : "outline"
-                    }
+                    variant={previewData.triggersPassed ? "default" : "outline"}
                     className={
                       previewData.triggersPassed
                         ? "bg-green-500/20 text-green-400"
                         : "bg-red-500/20 text-red-400"
                     }
                   >
-                    Triggers:{" "}
-                    {previewData.triggersPassed ? "PASSED" : "FAILED"}
+                    Triggers: {previewData.triggersPassed ? "PASSED" : "FAILED"}
                   </Badge>
                 </div>
                 <div className="rounded-lg border border-white/10 p-3">
-                  <h4 className="font-medium text-sm mb-1">
-                    {previewData.rendered.title}
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
+                  <h4 className="mb-1 text-sm font-medium">{previewData.rendered.title}</h4>
+                  <p className="text-muted-foreground text-xs">
                     {previewData.rendered.description}
                   </p>
                   {previewData.rendered.longDescription && (
-                    <p className="text-xs text-muted-foreground mt-2 whitespace-pre-line border-l-2 border-white/10 pl-2">
+                    <p className="text-muted-foreground mt-2 border-l-2 border-white/10 pl-2 text-xs whitespace-pre-line">
                       {previewData.rendered.longDescription}
                     </p>
                   )}
                 </div>
                 <div>
-                  <h5 className="text-xs font-medium mb-1">
-                    Response Options:
-                  </h5>
+                  <h5 className="mb-1 text-xs font-medium">Response Options:</h5>
                   <div className="space-y-1.5">
-                    {previewData.rendered.responseOptions.map(
-                      (opt: any, i: number) => (
-                        <div
-                          key={i}
-                          className="rounded border border-white/10 p-2"
-                        >
-                          <span className="text-xs font-medium">
-                            {opt.label}
-                          </span>
-                          <p className="text-[10px] text-muted-foreground">
-                            {opt.description}
-                          </p>
-                        </div>
-                      )
-                    )}
+                    {previewData.rendered.responseOptions.map((opt: any, i: number) => (
+                      <div key={i} className="rounded border border-white/10 p-2">
+                        <span className="text-xs font-medium">{opt.label}</span>
+                        <p className="text-muted-foreground text-[10px]">{opt.description}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-muted-foreground text-[10px]">
                   Country: {previewData.snapshot.name} | GDP:{" "}
                   {previewData.snapshot.gdp?.toLocaleString()} | Approval:{" "}
                   {previewData.snapshot.approval}%
@@ -494,16 +420,10 @@ export default function NationalIssuesAdminPage() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
+function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg bg-white/5 border border-white/10 px-3 py-2">
-      <div className="text-xs text-muted-foreground">{label}</div>
+    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+      <div className="text-muted-foreground text-xs">{label}</div>
       <div className="text-lg font-bold">{value}</div>
     </div>
   );

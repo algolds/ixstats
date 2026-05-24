@@ -77,18 +77,21 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
   });
 
   // Handle wiki link clicks
-  const handleWikiLinkClick = useCallback((pageName: string) => {
-    console.log(`[WikiIntelligence] Wiki link clicked: ${pageName}`);
-    const source = wikiData.wikiSource ?? "ixwiki";
-    let baseUrl = "https://ixwiki.com/wiki/";
-    if (source === "iiwiki") {
-      baseUrl = "https://iiwiki.com/wiki/";
-    } else if (source === "althistory") {
-      baseUrl = "https://althistory.fandom.com/wiki/";
-    }
-    const wikiUrl = `${baseUrl}${encodeURIComponent(pageName)}`;
-    window.open(wikiUrl, "_blank", "noopener,noreferrer");
-  }, [wikiData.wikiSource]);
+  const handleWikiLinkClick = useCallback(
+    (pageName: string) => {
+      console.log(`[WikiIntelligence] Wiki link clicked: ${pageName}`);
+      const source = wikiData.wikiSource ?? "ixwiki";
+      let baseUrl = "https://ixwiki.com/wiki/";
+      if (source === "iiwiki") {
+        baseUrl = "https://iiwiki.com/wiki/";
+      } else if (source === "althistory") {
+        baseUrl = "https://althistory.fandom.com/wiki/";
+      }
+      const wikiUrl = `${baseUrl}${encodeURIComponent(pageName)}`;
+      window.open(wikiUrl, "_blank", "noopener,noreferrer");
+    },
+    [wikiData.wikiSource]
+  );
 
   // Handle settings apply
   const handleApplySettings = useCallback(async () => {

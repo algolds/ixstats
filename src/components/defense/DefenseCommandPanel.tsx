@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  Activity,
-  Users,
-  ChevronDown,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+import { Activity, Users, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { Separator } from "~/components/ui/separator";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { TabHeroBanner } from "~/components/mycountry/primitives/TabHeroBanner";
@@ -23,7 +17,7 @@ const CommandPanel = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -38,7 +32,7 @@ const StabilityPanel = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
       </div>
     ),
   }
@@ -67,7 +61,7 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
       <section className="space-y-3">
         <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
           <button
-            className="flex flex-1 items-center gap-2 transition-colors hover:bg-muted/50 rounded-md py-0.5"
+            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
             onClick={() => setBudgetExpanded(!budgetExpanded)}
           >
             <Activity className="h-4 w-4 text-red-600" />
@@ -79,13 +73,13 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
               content="Manage defense budget allocation, personnel distribution, and overall military readiness across branches."
             />
             <button
-              className="p-0.5 transition-colors hover:bg-muted/50 rounded"
+              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
               onClick={() => setBudgetExpanded(!budgetExpanded)}
             >
               {budgetExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="text-muted-foreground h-4 w-4" />
               )}
             </button>
           </div>
@@ -100,7 +94,7 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
       <section className="space-y-3">
         <div className="flex w-full items-center justify-between rounded-md px-1 py-0.5">
           <button
-            className="flex flex-1 items-center gap-2 transition-colors hover:bg-muted/50 rounded-md py-0.5"
+            className="hover:bg-muted/50 flex flex-1 items-center gap-2 rounded-md py-0.5 transition-colors"
             onClick={() => setStabilityExpanded(!stabilityExpanded)}
           >
             <Users className="h-4 w-4 text-amber-600" />
@@ -112,13 +106,13 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
               content="Monitor civil order, crime metrics, public order, and social cohesion. Respond to domestic security events."
             />
             <button
-              className="p-0.5 transition-colors hover:bg-muted/50 rounded"
+              className="hover:bg-muted/50 rounded p-0.5 transition-colors"
               onClick={() => setStabilityExpanded(!stabilityExpanded)}
             >
               {stabilityExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="text-muted-foreground h-4 w-4" />
               )}
             </button>
           </div>

@@ -22,7 +22,7 @@ export function ExpandedView({
   }
 
   return (
-    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] sm:w-[90vw] md:w-[600px] lg:max-w-4xl -translate-x-1/2 transform">
+    <div className="absolute top-full left-1/2 z-[10002] mt-2 w-[95vw] -translate-x-1/2 transform sm:w-[90vw] md:w-[600px] lg:max-w-4xl">
       <div
         className="command-palette-dropdown border-border relative mx-auto w-full overflow-hidden rounded-xl shadow-2xl dark:border-white/10"
         style={{

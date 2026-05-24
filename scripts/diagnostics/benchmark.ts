@@ -106,14 +106,9 @@ function getStatus(
 }
 
 function formatResult(result: BenchmarkResult): string {
-  const statusIcon =
-    result.status === "pass" ? "✓" : result.status === "warning" ? "⚠" : "✗";
+  const statusIcon = result.status === "pass" ? "✓" : result.status === "warning" ? "⚠" : "✗";
   const statusColor =
-    result.status === "pass"
-      ? "green"
-      : result.status === "warning"
-        ? "yellow"
-        : "red";
+    result.status === "pass" ? "green" : result.status === "warning" ? "yellow" : "red";
   const samples = result.samples ? ` (${result.samples} samples)` : "";
   return `${colors[statusColor]}${statusIcon}${colors.reset} ${result.name}: ${result.value.toFixed(2)}${result.unit} (target: ${result.target}${result.unit})${samples}`;
 }
@@ -254,9 +249,7 @@ async function runBenchmarks() {
       name: `API: ${api.name}`,
       value: apiResult.time,
       unit: "ms",
-      status: apiResult.success
-        ? getStatus(apiResult.time, TARGETS.apiResponseTime)
-        : "fail",
+      status: apiResult.success ? getStatus(apiResult.time, TARGETS.apiResponseTime) : "fail",
       target: TARGETS.apiResponseTime.target,
     });
   }
@@ -279,10 +272,7 @@ async function runBenchmarks() {
   // 4. Static Asset Loading
   // -------------------------------------------------------------------------
   log("▸ Testing Static Asset Loading...", "blue");
-  const staticAssets = [
-    `${baseUrl}/favicon.ico`,
-    `${baseUrl}/manifest.json`,
-  ];
+  const staticAssets = [`${baseUrl}/favicon.ico`, `${baseUrl}/manifest.json`];
 
   for (const asset of staticAssets) {
     const assetName = asset.split("/").pop() || "unknown";

@@ -104,10 +104,7 @@ const ICON_BG_COLORS: Record<ToastType, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────
 
-export const ToastBanner = React.memo(function ToastBanner({
-  toast,
-  onDismiss,
-}: ToastBannerProps) {
+export const ToastBanner = React.memo(function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
   const [progress, setProgress] = useState(100);
   const Icon = getIconForToast(toast.type, toast.category);
 
@@ -131,7 +128,7 @@ export const ToastBanner = React.memo(function ToastBanner({
   return (
     <div className="pointer-events-auto relative w-[95vw] select-none sm:w-[90vw] md:w-[400px]">
       <div
-        className="relative overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-2xl shadow-black/15 dark:border-white/15 dark:bg-background/90"
+        className="border-border/40 bg-background/95 dark:bg-background/90 relative overflow-hidden rounded-2xl border shadow-2xl shadow-black/15 dark:border-white/15"
         style={{
           backdropFilter: "blur(40px) saturate(180%)",
           WebkitBackdropFilter: "blur(40px) saturate(180%)",
@@ -149,11 +146,11 @@ export const ToastBanner = React.memo(function ToastBanner({
 
           {/* Text content */}
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-semibold leading-tight text-foreground/95">
+            <div className="text-foreground/95 text-[13px] leading-tight font-semibold">
               {toast.title}
             </div>
             {toast.message && (
-              <div className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-muted-foreground">
+              <div className="text-muted-foreground mt-0.5 line-clamp-2 text-[12px] leading-snug">
                 {toast.message}
               </div>
             )}
@@ -188,7 +185,7 @@ export const ToastBanner = React.memo(function ToastBanner({
               e.stopPropagation();
               onDismiss(toast.id);
             }}
-            className="mt-0.5 flex-shrink-0 rounded-full p-1 text-muted-foreground/50 transition-colors hover:bg-foreground/10 hover:text-muted-foreground"
+            className="text-muted-foreground/50 hover:bg-foreground/10 hover:text-muted-foreground mt-0.5 flex-shrink-0 rounded-full p-1 transition-colors"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -196,7 +193,7 @@ export const ToastBanner = React.memo(function ToastBanner({
 
         {/* Progress bar */}
         {!toast.persistent && (
-          <div className="h-[2px] w-full bg-foreground/5">
+          <div className="bg-foreground/5 h-[2px] w-full">
             <div
               className={`h-full ${ACCENT_COLORS[toast.type]}`}
               style={{

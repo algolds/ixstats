@@ -54,7 +54,9 @@ async function main() {
     console.log(`    baselineDate:          ${c.baselineDate.toISOString()}`);
     console.log(`    baselinePopulation:    ${Math.round(c.baselinePopulation).toLocaleString()}`);
     console.log(`    currentPopulation:     ${Math.round(c.currentPopulation).toLocaleString()}`);
-    console.log(`    projected2040Pop:      ${Math.round(c.projected2040Population).toLocaleString()}`);
+    console.log(
+      `    projected2040Pop:      ${Math.round(c.projected2040Population).toLocaleString()}`
+    );
     console.log(`    baselineGdpPerCapita:  $${c.baselineGdpPerCapita.toFixed(2)}`);
     console.log(`    currentGdpPerCapita:   $${c.currentGdpPerCapita.toFixed(2)}`);
     console.log(`    projected2040GdpPC:    $${c.projected2040GdpPerCapita.toFixed(2)}`);
@@ -118,7 +120,9 @@ async function main() {
       fixedCount++;
     }
   }
-  console.log(`  ${dryRun ? "[DRY] Would fix" : "✓ Fixed"} projected2040 fields for ${fixedCount}/${totalCountries} countries`);
+  console.log(
+    `  ${dryRun ? "[DRY] Would fix" : "✓ Fixed"} projected2040 fields for ${fixedCount}/${totalCountries} countries`
+  );
 
   // Show what the corrected state will look like
   console.log("\n─── Expected Results After Sync ───");
@@ -140,7 +144,9 @@ async function main() {
   }
 
   console.log("\n=== Done ===");
-  console.log("Next step: run `bunx tsx scripts/sync-current-stats.ts` to recalculate all current values");
+  console.log(
+    "Next step: run `bunx tsx scripts/sync-current-stats.ts` to recalculate all current values"
+  );
 
   await prisma.$disconnect();
 }

@@ -38,23 +38,38 @@ import type { EnhancedCountryProfileData, SocialActionType } from "~/types/socia
 // Dynamic imports — these are heavy tab-only components (2,257 + 902 lines) that render
 // only when their specific tab is selected. Lazy-loading saves ~300KB from initial bundle.
 const EmbassyNetworkVisualization = dynamic(
-  () => import("~/components/diplomatic/EmbassyNetworkVisualization").then((m) => ({ default: m.EmbassyNetworkVisualization })),
+  () =>
+    import("~/components/diplomatic/EmbassyNetworkVisualization").then((m) => ({
+      default: m.EmbassyNetworkVisualization,
+    })),
   { ssr: false }
 );
 const SecureCommunications = dynamic(
-  () => import("~/app/mycountry/intelligence/_components/SecureCommunications").then((m) => ({ default: m.SecureCommunications })),
+  () =>
+    import("~/app/mycountry/intelligence/_components/SecureCommunications").then((m) => ({
+      default: m.SecureCommunications,
+    })),
   { ssr: false }
 );
 const CulturalExchangeProgram = dynamic(
-  () => import("~/components/diplomatic/CulturalExchangeProgram").then((m) => ({ default: m.CulturalExchangeProgram })),
+  () =>
+    import("~/components/diplomatic/CulturalExchangeProgram").then((m) => ({
+      default: m.CulturalExchangeProgram,
+    })),
   { ssr: false }
 );
 const AchievementConstellation = dynamic(
-  () => import("~/components/achievements/AchievementConstellation").then((m) => ({ default: m.AchievementConstellation })),
+  () =>
+    import("~/components/achievements/AchievementConstellation").then((m) => ({
+      default: m.AchievementConstellation,
+    })),
   { ssr: false }
 );
 const AchievementUnlockModal = dynamic(
-  () => import("~/components/achievements/AchievementUnlockModal").then((m) => ({ default: m.AchievementUnlockModal })),
+  () =>
+    import("~/components/achievements/AchievementUnlockModal").then((m) => ({
+      default: m.AchievementUnlockModal,
+    })),
   { ssr: false }
 );
 import { LiveDiplomaticFeed } from "~/components/diplomatic/LiveDiplomaticFeed";
@@ -72,9 +87,7 @@ import {
   DynamicIslandProvider,
   SIZE_PRESETS,
 } from "~/components/ui/dynamic-island";
-import type {
-  DiplomaticAchievement,
-} from "~/types/achievement-constellation";
+import type { DiplomaticAchievement } from "~/types/achievement-constellation";
 import { ACHIEVEMENT_TEMPLATES, calculatePrestigeScore } from "~/types/achievement-constellation";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";

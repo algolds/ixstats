@@ -1,7 +1,5 @@
 /** Type guard for countries.getGlobalStats splash usage */
-export function isValidGlobalStats(
-  stats: unknown
-): stats is {
+export function isValidGlobalStats(stats: unknown): stats is {
   totalCountries: number;
   totalGdp: number;
   totalPopulation: number;

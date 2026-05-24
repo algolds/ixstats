@@ -36,8 +36,8 @@ export const EmbassyNetworkVisualization = React.memo<EmbassyNetworkVisualizatio
           {data && data.length > 0 ? (
             <EmbassyNetworkChart data={data} GlassTooltip={GlassTooltip} />
           ) : (
-            <div className="flex min-h-[400px] items-center justify-center text-muted-foreground">
-              <div className="text-center space-y-2">
+            <div className="text-muted-foreground flex min-h-[400px] items-center justify-center">
+              <div className="space-y-2 text-center">
                 <Network className="mx-auto h-12 w-12 opacity-50" />
                 <p>No embassy network data available yet</p>
               </div>
@@ -46,7 +46,7 @@ export const EmbassyNetworkVisualization = React.memo<EmbassyNetworkVisualizatio
         </CardContent>
       </Card>
     );
-  },
+  }
 );
 
 EmbassyNetworkVisualization.displayName = "EmbassyNetworkVisualization";

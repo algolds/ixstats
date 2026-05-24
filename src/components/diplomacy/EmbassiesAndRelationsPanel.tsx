@@ -26,7 +26,11 @@ import { useNetworkMetrics } from "~/hooks/useNetworkMetrics";
 import { useSharedDataModal } from "~/hooks/useSharedDataModal";
 
 // Sub-components (embassy network)
-import { NetworkOverviewCard, EmbassyGrid, EmptyState } from "~/components/diplomatic/embassy-network";
+import {
+  NetworkOverviewCard,
+  EmbassyGrid,
+  EmptyState,
+} from "~/components/diplomatic/embassy-network";
 import { SharedDataModal } from "~/components/diplomatic/SharedDataModal";
 
 // Alliance sub-component
@@ -66,34 +70,36 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   // Country data
   const { data: country } = api.countries.getByIdBasic.useQuery(
     { id: countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   // Embassy data (with synergies)
-  const { embassiesWithSynergies, isLoading: embassiesLoading, refetch: refetchEmbassies } =
-    useEmbassyNetworkData(countryId, isOwner);
+  const {
+    embassiesWithSynergies,
+    isLoading: embassiesLoading,
+    refetch: refetchEmbassies,
+  } = useEmbassyNetworkData(countryId, isOwner);
   const networkMetrics = useNetworkMetrics(embassiesWithSynergies);
 
   // Shared data modal (embassy synergy detail — legacy)
-  const { showSharedData, closeModal: closeSharedDataModal } =
-    useSharedDataModal();
+  const { showSharedData, closeModal: closeSharedDataModal } = useSharedDataModal();
 
   // Relations data
   const { data: relations } = api.diplomatic.getRelationships.useQuery(
     { countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   // Alliances data
   const { data: alliances, refetch: refetchAlliances } = api.diplomatic.getAlliances.useQuery(
     { countryId },
-    { enabled: !!countryId },
+    { enabled: !!countryId }
   );
 
   // Stats
   const stats = useMemo(() => {
     const activeEmbassies = embassiesWithSynergies.filter(
-      (e) => e.status === "ACTIVE" || e.status === "active",
+      (e) => e.status === "ACTIVE" || e.status === "active"
     ).length;
     const totalRelations = relations?.length ?? 0;
     const allianceCount = alliances?.length ?? 0;
@@ -110,7 +116,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   if (embassiesLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
       </div>
     );
   }
@@ -119,10 +125,30 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
     <div className="space-y-5">
       {/* Stats Strip */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <StatCell icon={Building2} label="Embassies" value={stats.activeEmbassies} color="text-cyan-600" />
-        <StatCell icon={Handshake} label="Relations" value={stats.totalRelations} color="text-blue-600" />
-        <StatCell icon={Users} label="Alliances" value={stats.allianceCount} color="text-purple-600" />
-        <StatCell icon={Globe} label="Avg Strength" value={`${stats.avgStrength}%`} color="text-emerald-600" />
+        <StatCell
+          icon={Building2}
+          label="Embassies"
+          value={stats.activeEmbassies}
+          color="text-cyan-600"
+        />
+        <StatCell
+          icon={Handshake}
+          label="Relations"
+          value={stats.totalRelations}
+          color="text-blue-600"
+        />
+        <StatCell
+          icon={Users}
+          label="Alliances"
+          value={stats.allianceCount}
+          color="text-purple-600"
+        />
+        <StatCell
+          icon={Globe}
+          label="Avg Strength"
+          value={`${stats.avgStrength}%`}
+          color="text-emerald-600"
+        />
       </div>
 
       {/* ─── Embassy Network ─── */}
@@ -189,8 +215,8 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         </div>
 
         {!alliances || alliances.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-6 text-center">
-            <Users className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+          <div className="border-border rounded-lg border border-dashed p-6 text-center">
+            <Users className="text-muted-foreground/40 mx-auto mb-3 h-8 w-8" />
             <p className="text-muted-foreground text-sm">
               Not a member of any alliances. Create one or wait for an invitation.
             </p>
@@ -215,7 +241,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       {/* ─── Cultural Exchanges (collapsible) ─── */}
       <section className="space-y-3">
         <button
-          className="flex w-full items-center justify-between rounded-md px-1 py-0.5 transition-colors hover:bg-muted/50"
+          className="hover:bg-muted/50 flex w-full items-center justify-between rounded-md px-1 py-0.5 transition-colors"
           onClick={() => setExchangesExpanded(!exchangesExpanded)}
         >
           <div className="flex items-center gap-2">
@@ -223,16 +249,14 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             <h3 className="text-sm font-semibold">Cultural Exchanges</h3>
           </div>
           {exchangesExpanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="text-muted-foreground h-4 w-4" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="text-muted-foreground h-4 w-4" />
           )}
         </button>
 
         {exchangesExpanded && (
-          <CulturalExchangeProgram
-            primaryCountry={{ id: countryId, name: countryName }}
-          />
+          <CulturalExchangeProgram primaryCountry={{ id: countryId, name: countryName }} />
         )}
       </section>
 
@@ -241,7 +265,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       {/* ─── Diplomatic Events (collapsible) ─── */}
       <section className="space-y-3">
         <button
-          className="flex w-full items-center justify-between rounded-md px-1 py-0.5 transition-colors hover:bg-muted/50"
+          className="hover:bg-muted/50 flex w-full items-center justify-between rounded-md px-1 py-0.5 transition-colors"
           onClick={() => setEventsExpanded(!eventsExpanded)}
         >
           <div className="flex items-center gap-2">
@@ -249,15 +273,13 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             <h3 className="text-sm font-semibold">Diplomatic Events</h3>
           </div>
           {eventsExpanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="text-muted-foreground h-4 w-4" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="text-muted-foreground h-4 w-4" />
           )}
         </button>
 
-        {eventsExpanded && (
-          <DiplomaticEventsHub countryId={countryId} countryName={countryName} />
-        )}
+        {eventsExpanded && <DiplomaticEventsHub countryId={countryId} countryName={countryName} />}
       </section>
 
       {/* ─── Sheets ─── */}
@@ -286,7 +308,11 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
       {/* Legacy shared data modal (embassy synergy detail) */}
       <AnimatePresence>
         {showSharedData && (
-          <SharedDataModal embassyId={showSharedData} onClose={closeSharedDataModal} isOwner={isOwner} />
+          <SharedDataModal
+            embassyId={showSharedData}
+            onClose={closeSharedDataModal}
+            isOwner={isOwner}
+          />
         )}
       </AnimatePresence>
     </div>

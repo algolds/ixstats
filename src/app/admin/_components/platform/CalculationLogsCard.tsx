@@ -22,7 +22,9 @@ export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsC
           <Database className="h-5 w-5" />
           Recent Calculation Logs
           {logs && logs.length > 0 && (
-            <Badge variant="secondary" className="ml-auto">{logs.length}</Badge>
+            <Badge variant="secondary" className="ml-auto">
+              {logs.length}
+            </Badge>
           )}
         </CardTitle>
       </CardHeader>
@@ -44,9 +46,11 @@ export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsC
 
         {!isLoading && !error && (!logs || logs.length === 0) && (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Clock className="mb-3 h-10 w-10 text-muted-foreground/30" />
-            <p className="text-sm font-medium text-muted-foreground">No calculation logs available</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
+            <Clock className="text-muted-foreground/30 mb-3 h-10 w-10" />
+            <p className="text-muted-foreground text-sm font-medium">
+              No calculation logs available
+            </p>
+            <p className="text-muted-foreground/70 mt-1 text-xs">
               Logs will appear here after calculations are performed
             </p>
           </div>
@@ -55,23 +59,20 @@ export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsC
         {!isLoading && !error && logs && logs.length > 0 && (
           <div className="max-h-80 space-y-2 overflow-y-auto">
             {logs.map((log) => (
-              <div
-                key={log.id}
-                className="rounded-lg border border-border/50 bg-muted/50 p-3"
-              >
+              <div key={log.id} className="border-border/50 bg-muted/50 rounded-lg border p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-green-500" />
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-foreground text-sm font-medium">
                       {log.countriesUpdated} countries updated
                     </span>
                   </div>
-                  <Badge variant="outline" className="tabular-nums text-xs">
+                  <Badge variant="outline" className="text-xs tabular-nums">
                     {log.executionTimeMs}ms
                   </Badge>
                 </div>
 
-                <div className="mt-2 grid grid-cols-1 gap-1 text-xs text-muted-foreground md:grid-cols-2">
+                <div className="text-muted-foreground mt-2 grid grid-cols-1 gap-1 text-xs md:grid-cols-2">
                   <div>
                     <span className="font-medium">Real Time:</span>{" "}
                     {new Date(log.timestamp).toLocaleString()}
@@ -82,7 +83,7 @@ export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsC
                   </div>
                 </div>
 
-                <div className="mt-1 text-xs text-muted-foreground/70">
+                <div className="text-muted-foreground/70 mt-1 text-xs">
                   Global Growth Factor: {((log.globalGrowthFactor - 1) * 100).toFixed(2)}%
                   {log.notes && <span className="ml-2">· {log.notes}</span>}
                 </div>

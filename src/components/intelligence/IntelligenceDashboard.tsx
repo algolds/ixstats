@@ -81,7 +81,10 @@ export function IntelligenceDashboard({
         max: null,
         icon: AlertTriangle,
         color: criticalDiplomaticEvents > 0 ? "text-red-600" : "text-green-600",
-        bgColor: criticalDiplomaticEvents > 0 ? "bg-red-50 dark:bg-red-950/20" : "bg-green-50 dark:bg-green-950/20",
+        bgColor:
+          criticalDiplomaticEvents > 0
+            ? "bg-red-50 dark:bg-red-950/20"
+            : "bg-green-50 dark:bg-green-950/20",
         onClick: () => onTabChange?.("reports"),
       },
       {
@@ -134,7 +137,7 @@ export function IntelligenceDashboard({
           return (
             <button
               key={metric.label}
-              className={`glass-hierarchy-child cursor-pointer rounded-lg p-2.5 text-left transition-all hover:ring-2 hover:ring-indigo-500/30 hover:shadow-sm ${metric.bgColor}`}
+              className={`glass-hierarchy-child cursor-pointer rounded-lg p-2.5 text-left transition-all hover:shadow-sm hover:ring-2 hover:ring-indigo-500/30 ${metric.bgColor}`}
               onClick={metric.onClick}
             >
               <div className="flex items-center gap-1.5">
@@ -160,11 +163,21 @@ export function IntelligenceDashboard({
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onTabChange?.("analysis")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => onTabChange?.("analysis")}
+        >
           <BarChart3 className="h-3.5 w-3.5" />
           Full Analysis
         </Button>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => onTabChange?.("reports")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => onTabChange?.("reports")}
+        >
           <FileText className="h-3.5 w-3.5" />
           Key Findings
         </Button>
@@ -195,11 +208,11 @@ export function IntelligenceDashboard({
 
             <div className="lg:col-span-2">
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border p-3 bg-muted/30">
+                <div className="bg-muted/30 rounded-lg border p-3">
                   <p className="text-muted-foreground text-xs">Active Embassies</p>
                   <p className="mt-0.5 text-lg font-bold text-blue-600">{activeEmbassies}</p>
                 </div>
-                <div className="rounded-lg border p-3 bg-muted/30">
+                <div className="bg-muted/30 rounded-lg border p-3">
                   <p className="text-muted-foreground text-xs">Recent Changes (48h)</p>
                   <p className="mt-0.5 text-lg font-bold text-cyan-600">
                     {recentDiplomaticChanges.length}

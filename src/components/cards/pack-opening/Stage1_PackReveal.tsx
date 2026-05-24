@@ -114,11 +114,7 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
                     }}
                   />
                 ) : (
-                  <PackHolographicCover
-                    packType={packType}
-                    size="lg"
-                    className="rounded-lg"
-                  />
+                  <PackHolographicCover packType={packType} size="lg" className="rounded-lg" />
                 )}
 
                 {/* Shine effect */}
@@ -184,9 +180,7 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
           >
             Tap to Open
           </motion.div>
-          <div className="mt-2 text-sm text-white/60">
-            {packType} Pack
-          </div>
+          <div className="mt-2 text-sm text-white/60">{packType} Pack</div>
         </motion.div>
       </div>
     );

@@ -52,26 +52,29 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
     [handleSubmit]
   );
 
-  const insertBBCode = useCallback((tag: string, placeholder?: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
+  const insertBBCode = useCallback(
+    (tag: string, placeholder?: string) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = message.slice(start, end);
-    const content = selected || placeholder || "";
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = message.slice(start, end);
+      const content = selected || placeholder || "";
 
-    const before = message.slice(0, start);
-    const after = message.slice(end);
+      const before = message.slice(0, start);
+      const after = message.slice(end);
 
-    setMessage(before + `[${tag}]${content}[/${tag}]` + after);
+      setMessage(before + `[${tag}]${content}[/${tag}]` + after);
 
-    setTimeout(() => {
-      const newPos = start + tag.length + 2 + content.length;
-      textarea.setSelectionRange(newPos, newPos);
-      textarea.focus();
-    }, 0);
-  }, [message]);
+      setTimeout(() => {
+        const newPos = start + tag.length + 2 + content.length;
+        textarea.setSelectionRange(newPos, newPos);
+        textarea.focus();
+      }, 0);
+    },
+    [message]
+  );
 
   // Filter to only forum nodes (not categories)
   const forumNodes = (forumsData?.forums ?? []).filter((f) => f.nodeType === "Forum");
@@ -90,7 +93,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
       </div>
 
       {createThread.error && (
-        <div className="mb-4 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+        <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           {createThread.error.message}
         </div>
       )}
@@ -124,7 +127,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter thread title..."
-          className="w-full rounded-lg border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2 text-sm text-[var(--forum-text)] outline-none focus:border-[var(--forum-accent)] placeholder:text-[var(--forum-text-dim)]"
+          className="w-full rounded-lg border border-[var(--forum-border)] bg-[var(--forum-surface)] px-3 py-2 text-sm text-[var(--forum-text)] outline-none placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
           maxLength={200}
         />
       </div>
@@ -146,17 +149,25 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-1 mb-4">
+      <div className="mb-4 flex items-center gap-1">
         <button onClick={() => insertBBCode("b")} className="forum-action-btn" title="Bold">
           <Bold className="h-4 w-4" />
         </button>
         <button onClick={() => insertBBCode("i")} className="forum-action-btn" title="Italic">
           <Italic className="h-4 w-4" />
         </button>
-        <button onClick={() => insertBBCode("url", "https://")} className="forum-action-btn" title="Link">
+        <button
+          onClick={() => insertBBCode("url", "https://")}
+          className="forum-action-btn"
+          title="Link"
+        >
           <Link2 className="h-4 w-4" />
         </button>
-        <button onClick={() => insertBBCode("img", "https://")} className="forum-action-btn" title="Image">
+        <button
+          onClick={() => insertBBCode("img", "https://")}
+          className="forum-action-btn"
+          title="Image"
+        >
           <ImageIcon className="h-4 w-4" />
         </button>
         <button onClick={() => insertBBCode("quote")} className="forum-action-btn" title="Quote">
@@ -169,9 +180,7 @@ export function ThreadComposer({ defaultForumId }: ThreadComposerProps) {
 
       {/* Submit */}
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-[var(--forum-text-dim)]">
-          ⌘+Enter to submit
-        </span>
+        <span className="text-[10px] text-[var(--forum-text-dim)]">⌘+Enter to submit</span>
         <button
           onClick={handleSubmit}
           disabled={!title.trim() || !message.trim() || !selectedForumId || createThread.isPending}

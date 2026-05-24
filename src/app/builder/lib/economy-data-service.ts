@@ -738,7 +738,6 @@ export async function parseEconomyData(): Promise<RealCountryData[]> {
   return economyData as RealCountryData[];
 }
 
-
 export function getEconomicTier(
   gdpPerCapita: number
 ): "Developing" | "Emerging" | "Developed" | "Advanced" {

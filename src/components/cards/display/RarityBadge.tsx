@@ -93,8 +93,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
           <div
             className="absolute inset-0 rounded-full opacity-30"
             style={{
-              background:
-                "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
+              background: "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
               backgroundSize: "200% 200%",
               backgroundPosition: "50% 50%",
             }}

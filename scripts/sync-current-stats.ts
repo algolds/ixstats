@@ -60,8 +60,7 @@ const prepareBaseCountryData = (country: any): BaseCountryData => ({
 
 // --- Formatting helpers ---
 
-const fmtNum = (n: number) =>
-  n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+const fmtNum = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 const fmtCurrency = (n: number) => "$" + fmtNum(n);
 
@@ -145,9 +144,7 @@ async function main() {
         populationDensity: res.newStats.populationDensity
           ? validateNumber(res.newStats.populationDensity, 1e7)
           : null,
-        gdpDensity: res.newStats.gdpDensity
-          ? validateNumber(res.newStats.gdpDensity, 1e12)
-          : null,
+        gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
       };
 
       const vitalityScores = calculateAllVitalityScores({
@@ -156,18 +153,35 @@ async function main() {
       });
 
       // Log before/after
-      const lastCalc = c.lastCalculated ? new Date(c.lastCalculated).toISOString().split("T")[0] : "never";
-      const popDelta = ((newData.currentPopulation - c.currentPopulation) / c.currentPopulation) * 100;
-      const gdpDelta = ((newData.currentGdpPerCapita - c.currentGdpPerCapita) / c.currentGdpPerCapita) * 100;
-      const totalGdpDelta = ((newData.currentTotalGdp - c.currentTotalGdp) / c.currentTotalGdp) * 100;
+      const lastCalc = c.lastCalculated
+        ? new Date(c.lastCalculated).toISOString().split("T")[0]
+        : "never";
+      const popDelta =
+        ((newData.currentPopulation - c.currentPopulation) / c.currentPopulation) * 100;
+      const gdpDelta =
+        ((newData.currentGdpPerCapita - c.currentGdpPerCapita) / c.currentGdpPerCapita) * 100;
+      const totalGdpDelta =
+        ((newData.currentTotalGdp - c.currentTotalGdp) / c.currentTotalGdp) * 100;
 
       console.log(`--- ${c.name} (last calculated: ${lastCalc}) ---`);
-      console.log(`  Population:    ${fmtNum(c.currentPopulation).padStart(16)} -> ${fmtNum(newData.currentPopulation).padStart(16)}  (${popDelta >= 0 ? "+" : ""}${popDelta.toFixed(2)}%)`);
-      console.log(`  GDP/Capita:    ${fmtCurrency(c.currentGdpPerCapita).padStart(16)} -> ${fmtCurrency(newData.currentGdpPerCapita).padStart(16)}  (${gdpDelta >= 0 ? "+" : ""}${gdpDelta.toFixed(2)}%)`);
-      console.log(`  Total GDP:     ${fmtCurrency(c.currentTotalGdp).padStart(16)} -> ${fmtCurrency(newData.currentTotalGdp).padStart(16)}  (${totalGdpDelta >= 0 ? "+" : ""}${totalGdpDelta.toFixed(2)}%)`);
-      console.log(`  Econ Tier:     ${c.economicTier.padStart(16)} -> ${newData.economicTier.padStart(16)}`);
-      console.log(`  Pop Tier:      ${c.populationTier.padStart(16)} -> ${newData.populationTier.padStart(16)}`);
-      console.log(`  Growth Rate:   ${fmtPct(c.adjustedGdpGrowth).padStart(16)} -> ${fmtPct(newData.adjustedGdpGrowth).padStart(16)}`);
+      console.log(
+        `  Population:    ${fmtNum(c.currentPopulation).padStart(16)} -> ${fmtNum(newData.currentPopulation).padStart(16)}  (${popDelta >= 0 ? "+" : ""}${popDelta.toFixed(2)}%)`
+      );
+      console.log(
+        `  GDP/Capita:    ${fmtCurrency(c.currentGdpPerCapita).padStart(16)} -> ${fmtCurrency(newData.currentGdpPerCapita).padStart(16)}  (${gdpDelta >= 0 ? "+" : ""}${gdpDelta.toFixed(2)}%)`
+      );
+      console.log(
+        `  Total GDP:     ${fmtCurrency(c.currentTotalGdp).padStart(16)} -> ${fmtCurrency(newData.currentTotalGdp).padStart(16)}  (${totalGdpDelta >= 0 ? "+" : ""}${totalGdpDelta.toFixed(2)}%)`
+      );
+      console.log(
+        `  Econ Tier:     ${c.economicTier.padStart(16)} -> ${newData.economicTier.padStart(16)}`
+      );
+      console.log(
+        `  Pop Tier:      ${c.populationTier.padStart(16)} -> ${newData.populationTier.padStart(16)}`
+      );
+      console.log(
+        `  Growth Rate:   ${fmtPct(c.adjustedGdpGrowth).padStart(16)} -> ${fmtPct(newData.adjustedGdpGrowth).padStart(16)}`
+      );
       console.log("");
 
       if (!dryRun) {
@@ -211,7 +225,9 @@ async function main() {
 
       updated++;
     } catch (error) {
-      console.error(`ERROR processing ${c.name}: ${error instanceof Error ? error.message : String(error)}`);
+      console.error(
+        `ERROR processing ${c.name}: ${error instanceof Error ? error.message : String(error)}`
+      );
       errors++;
     }
   }
@@ -238,7 +254,9 @@ async function main() {
   console.log(`Countries processed: ${updated}`);
   console.log(`Errors:              ${errors}`);
   console.log(`Execution time:      ${Date.now() - startTime}ms`);
-  console.log(`Mode:                ${dryRun ? "DRY RUN - no changes written" : "LIVE - database updated"}`);
+  console.log(
+    `Mode:                ${dryRun ? "DRY RUN - no changes written" : "LIVE - database updated"}`
+  );
 }
 
 main()

@@ -38,8 +38,11 @@ import { formatDistanceToNow } from "date-fns";
 import { createUrl } from "~/lib/url-utils";
 
 const CountryMapEmbed = dynamic(
-  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
-  { ssr: false, loading: () => <div className="h-56 animate-pulse rounded-b-xl bg-muted" /> }
+  () =>
+    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
+      default: m.CountryMapEmbed,
+    })),
+  { ssr: false, loading: () => <div className="bg-muted h-56 animate-pulse rounded-b-xl" /> }
 );
 
 interface CountryOverviewPanelProps {
@@ -144,23 +147,36 @@ export function CountryOverviewPanel({
   ];
 
   // Build government fields - first 6 are shown, rest behind "See more"
-  const primaryGovFields: Array<{ label: string; value: string; icon: React.ComponentType<{ className?: string }> }> = [];
+  const primaryGovFields: Array<{
+    label: string;
+    value: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [];
 
   const govName = governmentStructure?.governmentName || country?.nationalIdentity?.officialName;
   if (govName) primaryGovFields.push({ label: "Government", value: govName, icon: Building });
 
-  const govType = governmentStructure?.governmentType || country?.governmentType || country?.nationalIdentity?.governmentType;
+  const govType =
+    governmentStructure?.governmentType ||
+    country?.governmentType ||
+    country?.nationalIdentity?.governmentType;
   if (govType) primaryGovFields.push({ label: "Government Type", value: govType, icon: Crown });
 
   const hos = governmentStructure?.headOfState || country?.leader;
   if (hos) primaryGovFields.push({ label: "Head of State", value: hos, icon: Users });
 
-  if (governmentStructure?.headOfGovernment) primaryGovFields.push({ label: "Head of Government", value: governmentStructure.headOfGovernment, icon: Users });
+  if (governmentStructure?.headOfGovernment)
+    primaryGovFields.push({
+      label: "Head of Government",
+      value: governmentStructure.headOfGovernment,
+      icon: Users,
+    });
 
   const capital = country?.nationalIdentity?.capitalCity || wikiInfobox?.capital;
   if (capital) primaryGovFields.push({ label: "Capital", value: capital, icon: MapPin });
 
-  if (country?.religion) primaryGovFields.push({ label: "Religion", value: country.religion, icon: Heart });
+  if (country?.religion)
+    primaryGovFields.push({ label: "Religion", value: country.religion, icon: Heart });
 
   return (
     <>
@@ -205,7 +221,9 @@ export function CountryOverviewPanel({
                           onClick={() => setShowFullWikiIntro(!showFullWikiIntro)}
                           className="text-primary hover:text-primary/80 mt-1"
                         >
-                          {showFullWikiIntro ? "Show less" : `See more (${wikiIntro.length - 1} more)`}
+                          {showFullWikiIntro
+                            ? "Show less"
+                            : `See more (${wikiIntro.length - 1} more)`}
                         </Button>
                       </>
                     )}
@@ -213,8 +231,10 @@ export function CountryOverviewPanel({
                 )}
 
                 {/* At a Glance — inline stats under about */}
-                <div className="border-t border-border/50 pt-4">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">At a Glance</h4>
+                <div className="border-border/50 border-t pt-4">
+                  <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+                    At a Glance
+                  </h4>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {keyMetrics.map((metric) => {
                       const Icon = metric.icon;
@@ -224,11 +244,15 @@ export function CountryOverviewPanel({
                           type="button"
                           onClick={metric.onClick}
                           disabled={!metric.onClick}
-                          className="rounded-lg bg-muted/50 px-3 py-2.5 text-left transition-colors hover:bg-muted/80 disabled:cursor-default disabled:hover:bg-muted/50"
+                          className="bg-muted/50 hover:bg-muted/80 disabled:hover:bg-muted/50 rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-default"
                         >
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Icon className={`h-3 w-3 ${metric.color.split(" ").slice(1).join(" ")}`} />
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{metric.label}</span>
+                          <div className="mb-1 flex items-center gap-1.5">
+                            <Icon
+                              className={`h-3 w-3 ${metric.color.split(" ").slice(1).join(" ")}`}
+                            />
+                            <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                              {metric.label}
+                            </span>
                           </div>
                           <p className="text-sm font-bold">{metric.value}</p>
                         </button>
@@ -239,8 +263,10 @@ export function CountryOverviewPanel({
 
                 {/* Government fields — inline under stats */}
                 {primaryGovFields.length > 0 && (
-                  <div className="border-t border-border/50 pt-4">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Government</h4>
+                  <div className="border-border/50 border-t pt-4">
+                    <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+                      Government
+                    </h4>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {primaryGovFields.map((field) => {
                         const Icon = field.icon;
@@ -248,7 +274,9 @@ export function CountryOverviewPanel({
                           <div key={field.label} className="flex items-start gap-2.5">
                             <Icon className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                             <div>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{field.label}</p>
+                              <p className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                                {field.label}
+                              </p>
                               <p className="text-sm font-medium">{field.value}</p>
                             </div>
                           </div>
@@ -259,57 +287,104 @@ export function CountryOverviewPanel({
                 )}
 
                 {/* Country profile stats — broader at-a-glance */}
-                <div className="border-t border-border/50 pt-4">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Profile</h4>
+                <div className="border-border/50 border-t pt-4">
+                  <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+                    Profile
+                  </h4>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {[
                       { label: "Economic Tier", value: (country as any).economicTier ?? "—" },
                       { label: "Population Tier", value: (country as any).populationTier ?? "—" },
                       { label: "Continent", value: (country as any).continent ?? "—" },
-                      ...((country as any).landArea ? [{ label: "Land Area", value: `${Math.round((country as any).landArea).toLocaleString()} km²` }] : []),
-                      ...((country as any).populationDensity ? [{ label: "Pop. Density", value: `${Math.round((country as any).populationDensity).toLocaleString()}/km²` }] : []),
-                      ...((country as any).unemploymentRate ? [{ label: "Unemployment", value: formatPercent((country as any).unemploymentRate, "—", 1) }] : []),
-                      ...((country as any).inflationRate ? [{ label: "Inflation", value: formatPercent((country as any).inflationRate, "—", 1) }] : []),
-                      ...(country.nationalIdentity?.currency ? [{ label: "Currency", value: `${country.nationalIdentity.currency}${country.nationalIdentity.currencySymbol ? ` (${country.nationalIdentity.currencySymbol})` : ""}` }] : []),
-                    ].filter(s => s.value !== "—").map((stat) => (
-                      <div key={stat.label} className="rounded-lg bg-muted/50 px-3 py-2">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                        <p className="text-sm font-medium mt-0.5">{stat.value}</p>
-                      </div>
-                    ))}
+                      ...((country as any).landArea
+                        ? [
+                            {
+                              label: "Land Area",
+                              value: `${Math.round((country as any).landArea).toLocaleString()} km²`,
+                            },
+                          ]
+                        : []),
+                      ...((country as any).populationDensity
+                        ? [
+                            {
+                              label: "Pop. Density",
+                              value: `${Math.round((country as any).populationDensity).toLocaleString()}/km²`,
+                            },
+                          ]
+                        : []),
+                      ...((country as any).unemploymentRate
+                        ? [
+                            {
+                              label: "Unemployment",
+                              value: formatPercent((country as any).unemploymentRate, "—", 1),
+                            },
+                          ]
+                        : []),
+                      ...((country as any).inflationRate
+                        ? [
+                            {
+                              label: "Inflation",
+                              value: formatPercent((country as any).inflationRate, "—", 1),
+                            },
+                          ]
+                        : []),
+                      ...(country.nationalIdentity?.currency
+                        ? [
+                            {
+                              label: "Currency",
+                              value: `${country.nationalIdentity.currency}${country.nationalIdentity.currencySymbol ? ` (${country.nationalIdentity.currencySymbol})` : ""}`,
+                            },
+                          ]
+                        : []),
+                    ]
+                      .filter((s) => s.value !== "—")
+                      .map((stat) => (
+                        <div key={stat.label} className="bg-muted/50 rounded-lg px-3 py-2">
+                          <p className="text-muted-foreground text-[10px] tracking-wider uppercase">
+                            {stat.label}
+                          </p>
+                          <p className="mt-0.5 text-sm font-medium">{stat.value}</p>
+                        </div>
+                      ))}
                   </div>
                 </div>
 
                 {/* National Symbols */}
                 {wikiInfobox &&
                   (wikiInfobox.image_flag || wikiInfobox.flag || wikiInfobox.image_coat) && (
-                    <div className="border-t border-border/50 pt-4">
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">National Symbols</h4>
-                      <div className="flex gap-3 flex-wrap">
+                    <div className="border-border/50 border-t pt-4">
+                      <h4 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+                        National Symbols
+                      </h4>
+                      <div className="flex flex-wrap gap-3">
                         {(wikiInfobox.image_flag || wikiInfobox.flag) && (
-                          <div className="flex items-center gap-3 rounded-lg bg-blue-500/10 p-3 flex-1 min-w-[140px]">
+                          <div className="flex min-w-[140px] flex-1 items-center gap-3 rounded-lg bg-blue-500/10 p-3">
                             <img
                               src={`https://ixwiki.com/wiki/Special:Filepath/${wikiInfobox.image_flag || wikiInfobox.flag}`}
                               alt="National Flag"
                               className="h-10 w-16 rounded object-cover shadow-md"
-                              onError={(e) => { e.currentTarget.style.display = "none"; }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
                             />
                             <div>
-                              <p className="text-[10px] text-muted-foreground">Flag</p>
+                              <p className="text-muted-foreground text-[10px]">Flag</p>
                               <p className="text-xs font-medium">Official</p>
                             </div>
                           </div>
                         )}
                         {(wikiInfobox.image_coat || wikiInfobox.coat_of_arms) && (
-                          <div className="flex items-center gap-3 rounded-lg bg-amber-500/10 p-3 flex-1 min-w-[140px]">
+                          <div className="flex min-w-[140px] flex-1 items-center gap-3 rounded-lg bg-amber-500/10 p-3">
                             <img
                               src={`https://ixwiki.com/wiki/Special:Filepath/${wikiInfobox.image_coat || wikiInfobox.coat_of_arms}`}
                               alt="Coat of Arms"
                               className="h-10 w-10 rounded object-cover shadow-md"
-                              onError={(e) => { e.currentTarget.style.display = "none"; }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
                             />
                             <div>
-                              <p className="text-[10px] text-muted-foreground">Coat of Arms</p>
+                              <p className="text-muted-foreground text-[10px]">Coat of Arms</p>
                               <p className="text-xs font-medium">Emblem</p>
                             </div>
                           </div>
@@ -319,7 +394,7 @@ export function CountryOverviewPanel({
                   )}
 
                 {/* Wiki + explore links */}
-                <div className="border-t border-border/50 pt-4 flex items-center justify-between">
+                <div className="border-border/50 flex items-center justify-between border-t pt-4">
                   <WikiLinkPreview title={country.name}>
                     <a
                       href={`https://ixwiki.com/wiki/${country.name}`}
@@ -332,10 +407,20 @@ export function CountryOverviewPanel({
                     </a>
                   </WikiLinkPreview>
                   <div className="flex gap-1.5">
-                    <Button variant="ghost" size="sm" onClick={() => onTabChange("lore")} className="h-7 px-2 text-xs">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onTabChange("lore")}
+                      className="h-7 px-2 text-xs"
+                    >
                       Dossier
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => onTabChange("activity")} className="h-7 px-2 text-xs">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onTabChange("activity")}
+                      className="h-7 px-2 text-xs"
+                    >
                       Activity
                     </Button>
                   </div>
@@ -363,8 +448,8 @@ export function CountryOverviewPanel({
                   boundsPadding={50}
                 />
               </CardContent>
-              <div className="flex items-center justify-between border-t border-border/50 px-4 py-2">
-                <span className="text-xs text-muted-foreground">
+              <div className="border-border/50 flex items-center justify-between border-t px-4 py-2">
+                <span className="text-muted-foreground text-xs">
                   {country.currentPopulation
                     ? `${Math.round(country.currentPopulation).toLocaleString()} citizens`
                     : ""}
@@ -434,11 +519,16 @@ export function CountryOverviewPanel({
 
                       const getActivityColor = () => {
                         switch (activity.type) {
-                          case "achievement": return "bg-yellow-400";
-                          case "economic": return "bg-blue-400";
-                          case "diplomatic": return "bg-purple-400";
-                          case "social": return "bg-green-400";
-                          default: return "bg-muted-foreground";
+                          case "achievement":
+                            return "bg-yellow-400";
+                          case "economic":
+                            return "bg-blue-400";
+                          case "diplomatic":
+                            return "bg-purple-400";
+                          case "social":
+                            return "bg-green-400";
+                          default:
+                            return "bg-muted-foreground";
                         }
                       };
 
@@ -495,8 +585,8 @@ export function CountryOverviewPanel({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-6 text-center">
-                    <Activity className="h-6 w-6 text-muted-foreground/40 mb-2" />
-                    <p className="text-xs text-muted-foreground">No recent public activity</p>
+                    <Activity className="text-muted-foreground/40 mb-2 h-6 w-6" />
+                    <p className="text-muted-foreground text-xs">No recent public activity</p>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -536,4 +626,3 @@ export function CountryOverviewPanel({
     </>
   );
 }
-

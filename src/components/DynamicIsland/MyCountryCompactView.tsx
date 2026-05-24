@@ -4,15 +4,7 @@ import { DynamicContainer } from "../ui/dynamic-island";
 import { Button } from "../ui/button";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { Badge } from "../ui/badge";
-import {
-  Bell,
-  Settings,
-  TrendingUp,
-  Users,
-  Activity,
-  Crown,
-  AlertTriangle,
-} from "lucide-react";
+import { Bell, Settings, TrendingUp, Users, Activity, Crown, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import { SimpleFlag } from "../SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
@@ -99,7 +91,13 @@ function MyCountryCompactViewComponent({
     liveNotificationCount;
 
   // Active crisis events count
-  const activeCrisisCount = crisisEvents?.filter((e) => e.responseStatus === "monitoring" || e.responseStatus === "deployed" || e.responseStatus === "coordinating").length || 0;
+  const activeCrisisCount =
+    crisisEvents?.filter(
+      (e) =>
+        e.responseStatus === "monitoring" ||
+        e.responseStatus === "deployed" ||
+        e.responseStatus === "coordinating"
+    ).length || 0;
 
   // Notification peek - briefly show toast title in DI pill
   const [peekText, setPeekText] = useState<string | null>(null);
@@ -133,7 +131,8 @@ function MyCountryCompactViewComponent({
 
     const gdpPerCapita = countryData.currentGdpPerCapita || 0;
     const population = countryData.currentPopulation || 0;
-    const growth = (countryData as any).adjustedGdpGrowth || (countryData as any).currentGrowthRate || 0;
+    const growth =
+      (countryData as any).adjustedGdpGrowth || (countryData as any).currentGrowthRate || 0;
     const govEfficiency = activityRingsData?.governmentalEfficiency || 0;
 
     return [
@@ -198,7 +197,7 @@ function MyCountryCompactViewComponent({
   if (!countryData) {
     return (
       <DynamicContainer className="flex items-center justify-center px-4 py-2">
-        <div className="text-sm text-muted-foreground">Loading...</div>
+        <div className="text-muted-foreground text-sm">Loading...</div>
       </DynamicContainer>
     );
   }
@@ -229,7 +228,7 @@ function MyCountryCompactViewComponent({
           }`}
         >
           {/* Flag Background Overlay - Subtle depth hint (70% DI / 30% Flag) */}
-          <div className="absolute inset-0 overflow-hidden rounded-[46px] pointer-events-none">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[46px]">
             <SimpleFlag
               countryName={countryData.name}
               className="h-full w-full object-cover opacity-30 blur-sm"
@@ -241,182 +240,188 @@ function MyCountryCompactViewComponent({
 
           {/* Content Layer (relative to overlay) */}
           <div className="relative z-10 flex w-full items-center justify-between">
-          {/* LEFT: Flag/Home Toggle + MyCountry® badge */}
-          <div className="flex items-center gap-2">
-            {/* Flag/Home Toggle - Click to switch DI modes */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => {
-                    if (onToggleDIMode) {
-                      onToggleDIMode();
-                    }
-                  }}
-                  className={`relative flex items-center justify-center rounded-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
-                    isSticky ? "h-5 w-5" : "h-7 w-7"
-                  }`}
-                >
-                  <SimpleFlag
-                    countryName={countryData.name}
-                    className="h-full w-full rounded object-cover"
-                    showPlaceholder={false}
-                  />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <div className="flex flex-col items-center gap-1">
-                  <span className="font-semibold">{countryData.name}</span>
-                  <span className="text-xs text-muted-foreground">Click to use regular Dynamic Island</span>
-                </div>
-              </TooltipContent>
-            </Tooltip>
+            {/* LEFT: Flag/Home Toggle + MyCountry® badge */}
+            <div className="flex items-center gap-2">
+              {/* Flag/Home Toggle - Click to switch DI modes */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => {
+                      if (onToggleDIMode) {
+                        onToggleDIMode();
+                      }
+                    }}
+                    className={`relative flex items-center justify-center rounded-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
+                      isSticky ? "h-5 w-5" : "h-7 w-7"
+                    }`}
+                  >
+                    <SimpleFlag
+                      countryName={countryData.name}
+                      className="h-full w-full rounded object-cover"
+                      showPlaceholder={false}
+                    />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="font-semibold">{countryData.name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      Click to use regular Dynamic Island
+                    </span>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
 
-            {/* MyCountry® Badge */}
-            <Badge className="border-amber-400/50 bg-gradient-to-r from-amber-500/30 to-orange-500/25 text-amber-800 dark:border-amber-300/30 dark:from-amber-500/20 dark:to-orange-500/20 dark:text-amber-200 py-0">
-              <Crown className="mr-0.5 h-2.5 w-2.5" />
-              <span className="text-[9px] font-bold">MyCountry®</span>
-            </Badge>
-          </div>
+              {/* MyCountry® Badge */}
+              <Badge className="border-amber-400/50 bg-gradient-to-r from-amber-500/30 to-orange-500/25 py-0 text-amber-800 dark:border-amber-300/30 dark:from-amber-500/20 dark:to-orange-500/20 dark:text-amber-200">
+                <Crown className="mr-0.5 h-2.5 w-2.5" />
+                <span className="text-[9px] font-bold">MyCountry®</span>
+              </Badge>
+            </div>
 
-          {/* CENTER: Rotating vital with notification peek crossfade */}
-          <div className="flex flex-1 items-center justify-center overflow-hidden">
-            <AnimatePresence mode="wait">
-              {peekText ? (
-                <motion.div
-                  key="peek"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center gap-1.5 px-2 py-1"
-                >
-                  <Bell className="h-3 w-3 text-amber-400" />
-                  <span className="text-xs font-medium text-foreground/90 truncate max-w-[180px]">
-                    {peekText}
-                  </span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="vital"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={handleVitalClick}
-                        className="group flex items-center gap-1.5 rounded-md px-2 py-1 transition-all hover:bg-white/10"
-                      >
-                        <VitalIcon className={`h-3.5 w-3.5 ${currentVital?.color}`} />
-                        <span className="text-[10px] font-medium text-foreground/60">
-                          {currentVital?.label}:
+            {/* CENTER: Rotating vital with notification peek crossfade */}
+            <div className="flex flex-1 items-center justify-center overflow-hidden">
+              <AnimatePresence mode="wait">
+                {peekText ? (
+                  <motion.div
+                    key="peek"
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-1.5 px-2 py-1"
+                  >
+                    <Bell className="h-3 w-3 text-amber-400" />
+                    <span className="text-foreground/90 max-w-[180px] truncate text-xs font-medium">
+                      {peekText}
+                    </span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="vital"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={handleVitalClick}
+                          className="group flex items-center gap-1.5 rounded-md px-2 py-1 transition-all hover:bg-white/10"
+                        >
+                          <VitalIcon className={`h-3.5 w-3.5 ${currentVital?.color}`} />
+                          <span className="text-foreground/60 text-[10px] font-medium">
+                            {currentVital?.label}:
+                          </span>
+                          <span className={`text-xs font-bold ${currentVital?.color}`}>
+                            {currentVital?.value}
+                          </span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        Click to cycle through vitals
+                        <br />
+                        <span className="text-muted-foreground text-xs">
+                          Auto-rotates every 5 seconds
                         </span>
-                        <span className={`text-xs font-bold ${currentVital?.color}`}>
-                          {currentVital?.value}
-                        </span>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      Click to cycle through vitals
-                      <br />
-                      <span className="text-xs text-muted-foreground">
-                        Auto-rotates every 5 seconds
-                      </span>
-                    </TooltipContent>
-                  </Tooltip>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-          {/* RIGHT: Notifications + Crisis + Settings */}
-          <div className={`flex items-center justify-center ${isSticky ? "gap-1" : "gap-1.5"}`}>
-            {/* Notifications Bell */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onSwitchMode("notifications")}
-                  className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
-                    isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                  }`}
-                >
-                  <Bell className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`} />
-                  <AnimatePresence>
-                    {totalUnreadCount > 0 && (
-                      <motion.div
-                        key={totalUnreadCount}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                        className={`absolute flex items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-[10px] font-bold text-white shadow-lg ${
-                          isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5" : "-top-1 -right-1 h-3 w-3"
-                        }`}
-                      >
-                        {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Alerts</TooltipContent>
-            </Tooltip>
-
-            {/* Crisis Indicator */}
-            {activeCrisisCount > 0 && (
+            {/* RIGHT: Notifications + Crisis + Settings */}
+            <div className={`flex items-center justify-center ${isSticky ? "gap-1" : "gap-1.5"}`}>
+              {/* Notifications Bell */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() =>
-                      (window.location.href = createAbsoluteUrl("/mycountry/executive"))
-                    }
-                    className={`text-orange-500 hover:text-orange-600 hover:bg-orange-500/10 relative flex items-center justify-center rounded-lg transition-all ${
+                    onClick={() => onSwitchMode("notifications")}
+                    className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 relative flex items-center justify-center rounded-lg transition-all ${
                       isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                     }`}
                   >
-                    <AlertTriangle
-                      className={`animate-pulse transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                    <Bell
+                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
                     />
-                    <Badge
-                      className={`absolute flex items-center justify-center rounded-full border-0 bg-gradient-to-r from-orange-500 to-red-500 text-[10px] text-white shadow-lg ${
-                        isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0" : "-top-1 -right-1 h-3 w-3 p-0"
-                      }`}
-                    >
-                      {activeCrisisCount}
-                    </Badge>
+                    <AnimatePresence>
+                      {totalUnreadCount > 0 && (
+                        <motion.div
+                          key={totalUnreadCount}
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                          className={`absolute flex items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-[10px] font-bold text-white shadow-lg ${
+                            isSticky ? "-top-0.5 -right-0.5 h-2.5 w-2.5" : "-top-1 -right-1 h-3 w-3"
+                          }`}
+                        >
+                          {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {activeCrisisCount} Active {activeCrisisCount === 1 ? "Crisis" : "Crises"}
-                </TooltipContent>
+                <TooltipContent side="bottom">Alerts</TooltipContent>
               </Tooltip>
-            )}
 
-            {/* Settings */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onSwitchMode("settings")}
-                  className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
-                    isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                  }`}
-                >
-                  <Settings
-                    className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Settings</TooltipContent>
-            </Tooltip>
-          </div>
+              {/* Crisis Indicator */}
+              {activeCrisisCount > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        (window.location.href = createAbsoluteUrl("/mycountry/executive"))
+                      }
+                      className={`relative flex items-center justify-center rounded-lg text-orange-500 transition-all hover:bg-orange-500/10 hover:text-orange-600 ${
+                        isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
+                      }`}
+                    >
+                      <AlertTriangle
+                        className={`animate-pulse transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                      />
+                      <Badge
+                        className={`absolute flex items-center justify-center rounded-full border-0 bg-gradient-to-r from-orange-500 to-red-500 text-[10px] text-white shadow-lg ${
+                          isSticky
+                            ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
+                            : "-top-1 -right-1 h-3 w-3 p-0"
+                        }`}
+                      >
+                        {activeCrisisCount}
+                      </Badge>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {activeCrisisCount} Active {activeCrisisCount === 1 ? "Crisis" : "Crises"}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Settings */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onSwitchMode("settings")}
+                    className={`text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center justify-center rounded-lg transition-all ${
+                      isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
+                    }`}
+                  >
+                    <Settings
+                      className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Settings</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </DynamicContainer>
       </div>

@@ -45,26 +45,23 @@ export default function PlatformPage() {
   } = useAdminState();
 
   // tRPC queries
-  const {
-    data: _systemStatus,
-    refetch: refetchStatus,
-  } = api.admin.getSystemStatus.useQuery(undefined, {
-    refetchInterval: 30000,
-    refetchOnWindowFocus: false,
-  });
+  const { data: _systemStatus, refetch: refetchStatus } = api.admin.getSystemStatus.useQuery(
+    undefined,
+    {
+      refetchInterval: 30000,
+      refetchOnWindowFocus: false,
+    }
+  );
 
-  const {
-    data: botStatus,
-    refetch: refetchBotStatus,
-  } = api.admin.getBotStatus.useQuery(undefined, {
-    refetchInterval: 15000,
-    refetchOnWindowFocus: false,
-  });
+  const { data: botStatus, refetch: refetchBotStatus } = api.admin.getBotStatus.useQuery(
+    undefined,
+    {
+      refetchInterval: 15000,
+      refetchOnWindowFocus: false,
+    }
+  );
 
-  const {
-    data: configData,
-    refetch: refetchConfig,
-  } = api.admin.getConfig.useQuery();
+  const { data: configData, refetch: refetchConfig } = api.admin.getConfig.useQuery();
 
   const {
     data: calculationLogs,
@@ -94,8 +91,13 @@ export default function PlatformPage() {
         timeMultiplier: configData.timeMultiplier || 2.0,
         baseInflationRate: configData.baseInflationRate ?? 0.02,
         tierGrowthModifiers: configData.tierGrowthModifiers ?? {
-          Impoverished: 1.0, Developing: 1.0, Developed: 1.0, Healthy: 1.0,
-          Strong: 1.0, "Very Strong": 1.0, Extravagant: 1.0,
+          Impoverished: 1.0,
+          Developing: 1.0,
+          Developed: 1.0,
+          Healthy: 1.0,
+          Strong: 1.0,
+          "Very Strong": 1.0,
+          Extravagant: 1.0,
         },
         diminishingReturnsThreshold: configData.diminishingReturnsThreshold ?? 60000,
         diminishingReturnsFactor: configData.diminishingReturnsFactor ?? 0.5,
@@ -231,9 +233,7 @@ export default function PlatformPage() {
               onGlobalGrowthFactorChange={(value) =>
                 setConfig((prev) => ({ ...prev, globalGrowthFactor: value }))
               }
-              onAutoUpdateChange={(value) =>
-                setConfig((prev) => ({ ...prev, autoUpdate: value }))
-              }
+              onAutoUpdateChange={(value) => setConfig((prev) => ({ ...prev, autoUpdate: value }))}
               onBotSyncEnabledChange={(value) =>
                 setConfig((prev) => ({ ...prev, botSyncEnabled: value }))
               }

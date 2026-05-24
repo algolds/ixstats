@@ -61,8 +61,9 @@ function parseWikiMarkup(html: string): ParsedElement[] {
     .replace(/==\s*([^=]+)\s*==/g, "<h3>$1</h3>")
     .replace(/^#\s+(.+)$/gm, "<h3>$1</h3>")
     // Links: [[text]] or [url text] - convert to styled text
-    .replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) =>
-      `<span class="link-text">${label || target}</span>`
+    .replace(
+      /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
+      (_, target, label) => `<span class="link-text">${label || target}</span>`
     )
     .replace(/\[([^\s]+)\s+([^\]]+)\]/g, '<span class="link-text">$2</span>')
     // Lists: * item or - item
@@ -105,7 +106,7 @@ function parseWikiMarkup(html: string): ParsedElement[] {
             type: "heading",
             content: element.textContent || "",
             level: parseInt(tagName.charAt(1)),
-            children
+            children,
           };
         case "li":
           return { type: "listItem", content: element.textContent || "", children };
@@ -146,7 +147,7 @@ function renderElement(element: ParsedElement, index: number): React.ReactNode {
       );
     case "italic":
       return (
-        <em key={index} className="italic text-white/90">
+        <em key={index} className="text-white/90 italic">
           {element.content}
         </em>
       );
@@ -155,24 +156,17 @@ function renderElement(element: ParsedElement, index: number): React.ReactNode {
       const headingSize = level === 1 ? "text-lg" : level === 2 ? "text-base" : "text-sm";
       const className = cn("font-bold text-white/95 mb-1", headingSize);
 
-      return React.createElement(
-        `h${level}`,
-        { key: index, className },
-        element.content
-      );
+      return React.createElement(`h${level}`, { key: index, className }, element.content);
     }
     case "listItem":
       return (
-        <li key={index} className="text-white/85 text-xs ml-4 list-disc">
+        <li key={index} className="ml-4 list-disc text-xs text-white/85">
           {element.content}
         </li>
       );
     case "link":
       return (
-        <span
-          key={index}
-          className="text-cyan-400 font-medium underline decoration-cyan-400/50"
-        >
+        <span key={index} className="font-medium text-cyan-400 underline decoration-cyan-400/50">
           {element.content}
         </span>
       );
@@ -189,7 +183,10 @@ function renderElement(element: ParsedElement, index: number): React.ReactNode {
 /**
  * Truncate text content to max length
  */
-function truncateContent(elements: ParsedElement[], maxLength: number): {
+function truncateContent(
+  elements: ParsedElement[],
+  maxLength: number
+): {
   truncated: ParsedElement[];
   isTruncated: boolean;
 } {
@@ -247,7 +244,7 @@ export const LoreTextArea = React.memo<LoreTextAreaProps>(
     expandable = true,
     defaultExpanded = false,
     glassOpacity = 20,
-    className
+    className,
   }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -268,7 +265,7 @@ export const LoreTextArea = React.memo<LoreTextAreaProps>(
       <motion.div
         className={cn(
           // Glass physics background
-          "relative rounded-lg overflow-hidden",
+          "relative overflow-hidden rounded-lg",
           `bg-black/${glassOpacity}`,
           "backdrop-blur-sm",
           "border border-white/10",
@@ -297,7 +294,7 @@ export const LoreTextArea = React.memo<LoreTextAreaProps>(
           transition={{ duration: 0.3 }}
         >
           {/* Rich text content */}
-          <div className="text-xs leading-relaxed space-y-1.5">
+          <div className="space-y-1.5 text-xs leading-relaxed">
             {truncated.map((element, index) => renderElement(element, index))}
           </div>
         </motion.div>
@@ -309,9 +306,9 @@ export const LoreTextArea = React.memo<LoreTextAreaProps>(
               onClick={() => setIsExpanded(!isExpanded)}
               className={cn(
                 // Position at bottom
-                "mt-2 w-full flex items-center justify-center gap-1",
+                "mt-2 flex w-full items-center justify-center gap-1",
                 // Glass button styling
-                "rounded-md py-1.5 px-3",
+                "rounded-md px-3 py-1.5",
                 "bg-white/5 hover:bg-white/10",
                 "border border-white/10",
                 "backdrop-blur-sm",
@@ -320,7 +317,7 @@ export const LoreTextArea = React.memo<LoreTextAreaProps>(
                 // Transitions
                 "transition-all duration-200",
                 // Focus states
-                "focus:outline-none focus:ring-2 focus:ring-white/20"
+                "focus:ring-2 focus:ring-white/20 focus:outline-none"
               )}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -331,12 +328,12 @@ export const LoreTextArea = React.memo<LoreTextAreaProps>(
               {isExpanded ? (
                 <>
                   <span>Show Less</span>
-                  <ChevronUp className="w-3 h-3" />
+                  <ChevronUp className="h-3 w-3" />
                 </>
               ) : (
                 <>
                   <span>Read More</span>
-                  <ChevronDown className="w-3 h-3" />
+                  <ChevronDown className="h-3 w-3" />
                 </>
               )}
             </motion.button>
@@ -347,7 +344,7 @@ export const LoreTextArea = React.memo<LoreTextAreaProps>(
         {!isExpanded && isTruncated && (
           <motion.div
             className={cn(
-              "absolute bottom-0 left-0 right-0 h-12",
+              "absolute right-0 bottom-0 left-0 h-12",
               "bg-gradient-to-t from-black/40 to-transparent",
               "pointer-events-none"
             )}

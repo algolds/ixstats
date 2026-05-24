@@ -35,9 +35,7 @@ export function WarningPanel({ systemStatus }: WarningPanelProps) {
       <div className="flex">
         <AlertTriangle className="h-5 w-5 text-red-500" />
         <div className="ml-3">
-          <h3 className="text-sm font-medium text-red-700">
-            IxTime is currently paused
-          </h3>
+          <h3 className="text-sm font-medium text-red-700">IxTime is currently paused</h3>
           <p className="mt-1 text-sm text-red-600">
             Economic calculations and time progression have been suspended. Countries will not
             update automatically.

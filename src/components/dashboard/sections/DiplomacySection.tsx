@@ -5,16 +5,35 @@ import { AlertTriangle, Shield, Globe, Trophy, Clock, Users } from "lucide-react
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { MetricCardGrid } from "~/components/mycountry/primitives/tabs/MetricCardGrid";
-import { staggerContainer, staggerItem } from "~/components/mycountry/primitives/tabs/TabMotionConfig";
+import {
+  staggerContainer,
+  staggerItem,
+} from "~/components/mycountry/primitives/tabs/TabMotionConfig";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 
 const SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  critical: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30" },
-  high: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", border: "border-orange-500/30" },
-  medium: { bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400", border: "border-yellow-500/30" },
-  low: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30" },
+  critical: {
+    bg: "bg-red-500/10",
+    text: "text-red-600 dark:text-red-400",
+    border: "border-red-500/30",
+  },
+  high: {
+    bg: "bg-orange-500/10",
+    text: "text-orange-600 dark:text-orange-400",
+    border: "border-orange-500/30",
+  },
+  medium: {
+    bg: "bg-yellow-500/10",
+    text: "text-yellow-600 dark:text-yellow-400",
+    border: "border-yellow-500/30",
+  },
+  low: {
+    bg: "bg-blue-500/10",
+    text: "text-blue-600 dark:text-blue-400",
+    border: "border-blue-500/30",
+  },
 };
 
 export function DiplomacySection() {
@@ -89,8 +108,8 @@ export function DiplomacySection() {
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[10px] px-1.5 py-0",
-                    crises.length > 0 ? "border-red-500/30 text-red-500" : "",
+                    "px-1.5 py-0 text-[10px]",
+                    crises.length > 0 ? "border-red-500/30 text-red-500" : ""
                   )}
                 >
                   {crises.length} active
@@ -98,11 +117,13 @@ export function DiplomacySection() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="space-y-2.5 max-h-[450px] overflow-y-auto pr-1">
+              <div className="max-h-[450px] space-y-2.5 overflow-y-auto pr-1">
                 {crises.length === 0 && (
                   <div className="py-8 text-center">
-                    <Shield className="mx-auto h-8 w-8 text-emerald-500/50 mb-2" />
-                    <p className="text-xs text-muted-foreground">No active crises — the world is at peace</p>
+                    <Shield className="mx-auto mb-2 h-8 w-8 text-emerald-500/50" />
+                    <p className="text-muted-foreground text-xs">
+                      No active crises — the world is at peace
+                    </p>
                   </div>
                 )}
                 {crises.map((crisis) => {
@@ -111,35 +132,48 @@ export function DiplomacySection() {
                     <div
                       key={crisis.id}
                       className={cn(
-                        "rounded-lg border p-3 transition-colors hover:bg-muted/30",
-                        severity.border,
+                        "hover:bg-muted/30 rounded-lg border p-3 transition-colors",
+                        severity.border
                       )}
                     >
                       <div className="flex items-start gap-2.5">
-                        <div className={cn("mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full", severity.bg)}>
+                        <div
+                          className={cn(
+                            "mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
+                            severity.bg
+                          )}
+                        >
                           <AlertTriangle className={cn("h-3 w-3", severity.text)} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <Badge className={cn("text-[9px] px-1 py-0 uppercase font-bold", severity.bg, severity.text)}>
+                          <div className="mb-0.5 flex items-center gap-2">
+                            <Badge
+                              className={cn(
+                                "px-1 py-0 text-[9px] font-bold uppercase",
+                                severity.bg,
+                                severity.text
+                              )}
+                            >
                               {crisis.severity}
                             </Badge>
-                            <Badge variant="outline" className="text-[9px] px-1 py-0">
+                            <Badge variant="outline" className="px-1 py-0 text-[9px]">
                               {crisis.category ?? crisis.type}
                             </Badge>
                           </div>
-                          <p className="text-xs font-medium mt-1">{crisis.description}</p>
+                          <p className="mt-1 text-xs font-medium">{crisis.description}</p>
                           {crisis.location && (
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                            <p className="text-muted-foreground mt-0.5 text-[10px]">
                               Location: {crisis.location}
                             </p>
                           )}
-                          <div className="mt-1.5 flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-[10px]">
                             <span className="flex items-center gap-1">
                               <Clock className="h-2.5 w-2.5" />
                               {new Date(crisis.timestamp).toLocaleDateString()}
                             </span>
-                            <span className="capitalize">{crisis.responseStatus?.replace(/_/g, " ") ?? "pending"}</span>
+                            <span className="capitalize">
+                              {crisis.responseStatus?.replace(/_/g, " ") ?? "pending"}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -161,17 +195,27 @@ export function DiplomacySection() {
             <CardContent className="pt-0">
               <div className="space-y-1.5">
                 {leaders.length === 0 && (
-                  <p className="text-xs text-muted-foreground py-8 text-center">No diplomatic data available</p>
+                  <p className="text-muted-foreground py-8 text-center text-xs">
+                    No diplomatic data available
+                  </p>
                 )}
                 {leaders.slice(0, 10).map((entry, i) => (
                   <div
                     key={entry.countryId}
-                    className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/30 transition-colors"
+                    className="hover:bg-muted/30 flex items-center gap-3 rounded-md px-2 py-2 transition-colors"
                   >
-                    <span className={cn(
-                      "w-5 text-center text-xs font-bold",
-                      i === 0 ? "text-amber-500" : i === 1 ? "text-gray-400" : i === 2 ? "text-orange-600" : "text-muted-foreground",
-                    )}>
+                    <span
+                      className={cn(
+                        "w-5 text-center text-xs font-bold",
+                        i === 0
+                          ? "text-amber-500"
+                          : i === 1
+                            ? "text-gray-400"
+                            : i === 2
+                              ? "text-orange-600"
+                              : "text-muted-foreground"
+                      )}
+                    >
                       {i + 1}
                     </span>
                     <UnifiedCountryFlag
@@ -179,12 +223,12 @@ export function DiplomacySection() {
                       size="sm"
                       className="h-5 w-5 flex-shrink-0"
                     />
-                    <span className="text-xs font-medium truncate flex-1">{entry.countryName}</span>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[11px] font-semibold text-foreground">
+                    <span className="flex-1 truncate text-xs font-medium">{entry.countryName}</span>
+                    <div className="flex flex-shrink-0 items-center gap-2">
+                      <span className="text-foreground text-[11px] font-semibold">
                         {Math.round(entry.totalInfluence).toLocaleString()}
                       </span>
-                      <Badge variant="outline" className="text-[9px] px-1 py-0">
+                      <Badge variant="outline" className="px-1 py-0 text-[9px]">
                         {entry.activeEmbassies} embassies
                       </Badge>
                     </div>

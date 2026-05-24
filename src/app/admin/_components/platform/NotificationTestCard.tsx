@@ -56,7 +56,7 @@ export function NotificationTestCard() {
 
   const handleTrigger = () => {
     const parsedDuration = duration ? parseInt(duration, 10) : undefined;
-    
+
     notify.notify({
       title,
       message: message || undefined,
@@ -89,7 +89,8 @@ export function NotificationTestCard() {
       case "crisis":
         notify.notify({
           title: "Major Crisis Declared",
-          message: "A severe diplomatic crisis has broken out in Sector 4. Immediate intervention required.",
+          message:
+            "A severe diplomatic crisis has broken out in Sector 4. Immediate intervention required.",
           type: "error",
           priority: "critical",
           category: "crisis",
@@ -97,7 +98,8 @@ export function NotificationTestCard() {
           actions: [
             {
               label: "Deploy Peacekeepers",
-              onClick: () => notify.success("Crisis Addressed", "Peacekeepers deployed successfully."),
+              onClick: () =>
+                notify.success("Crisis Addressed", "Peacekeepers deployed successfully."),
             },
           ],
         });
@@ -115,7 +117,8 @@ export function NotificationTestCard() {
       case "security":
         notify.notify({
           title: "Intrusion Attempt Blocked",
-          message: "Firewall detected and neutralized a brute force attack on your intelligence database.",
+          message:
+            "Firewall detected and neutralized a brute force attack on your intelligence database.",
           type: "warning",
           priority: "high",
           category: "security",
@@ -125,7 +128,8 @@ export function NotificationTestCard() {
       case "trade":
         notify.notify({
           title: "New Trade Pact Proposal",
-          message: "Burgundie has sent a bilateral commerce treaty proposal offering +12% Tariff efficiency.",
+          message:
+            "Burgundie has sent a bilateral commerce treaty proposal offering +12% Tariff efficiency.",
           type: "info",
           priority: "medium",
           category: "economic",
@@ -151,7 +155,8 @@ export function NotificationTestCard() {
           Notification Simulator Suite
         </CardTitle>
         <CardDescription>
-          Simulate notifications and test Dynamic Island animations (scale bump, ripple, critical pulse) and Sonner toast rendering.
+          Simulate notifications and test Dynamic Island animations (scale bump, ripple, critical
+          pulse) and Sonner toast rendering.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -229,7 +234,7 @@ export function NotificationTestCard() {
                   id="notif-type"
                   value={type}
                   onChange={(e) => setType(e.target.value as ToastType)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   {TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -245,7 +250,7 @@ export function NotificationTestCard() {
                   id="notif-priority"
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as ToastPriority)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                   {PRIORITIES.map((p) => (
                     <option key={p.value} value={p.value}>
@@ -262,7 +267,7 @@ export function NotificationTestCard() {
                 id="notif-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as NotificationCategory)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>
@@ -274,11 +279,13 @@ export function NotificationTestCard() {
           </div>
 
           {/* Behavior Settings */}
-          <div className="space-y-4 rounded-lg border border-border/40 bg-card/40 p-4">
+          <div className="border-border/40 bg-card/40 space-y-4 rounded-lg border p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label className="text-sm font-medium">Persistent Alert</Label>
-                <p className="text-xs text-muted-foreground">Requires manual closing; will not auto-dismiss.</p>
+                <p className="text-muted-foreground text-xs">
+                  Requires manual closing; will not auto-dismiss.
+                </p>
               </div>
               <Switch checked={persistent} onCheckedChange={setPersistent} />
             </div>
@@ -286,7 +293,9 @@ export function NotificationTestCard() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label className="text-sm font-medium">Silent Alert</Label>
-                <p className="text-xs text-muted-foreground">Only add to notification center, suppress toast banner.</p>
+                <p className="text-muted-foreground text-xs">
+                  Only add to notification center, suppress toast banner.
+                </p>
               </div>
               <Switch checked={silent} onCheckedChange={setSilent} />
             </div>
@@ -294,7 +303,9 @@ export function NotificationTestCard() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label className="text-sm font-medium">With Action Callback</Label>
-                <p className="text-xs text-muted-foreground">Includes a clickable action button on the toast.</p>
+                <p className="text-muted-foreground text-xs">
+                  Includes a clickable action button on the toast.
+                </p>
               </div>
               <Switch checked={hasAction} onCheckedChange={setHasAction} />
             </div>
@@ -313,7 +324,11 @@ export function NotificationTestCard() {
           </div>
         </div>
 
-        <Button onClick={handleTrigger} size="lg" className="w-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600">
+        <Button
+          onClick={handleTrigger}
+          size="lg"
+          className="w-full bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+        >
           <Play className="mr-2 h-4 w-4" />
           Trigger Custom Notification
         </Button>

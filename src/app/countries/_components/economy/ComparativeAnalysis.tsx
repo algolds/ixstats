@@ -3,13 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "motion/react";
-import {
-  BarChart3,
-  Filter,
-  Download,
-  RefreshCw,
-  ChevronDown,
-} from "lucide-react";
+import { BarChart3, Filter, Download, RefreshCw, ChevronDown } from "lucide-react";
 
 // Animation variants
 const containerVariants = {
@@ -304,15 +298,10 @@ export function ComparativeAnalysis({
   };
 
   return (
-    <motion.div 
-      className="space-y-4"
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-    >
+    <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="show">
       {/* Header */}
-      <motion.div 
-        className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-cyan-50/80 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200/50 dark:border-blue-700/30"
+      <motion.div
+        className="flex flex-col items-start justify-between gap-4 rounded-xl border border-blue-200/50 bg-gradient-to-br from-blue-50/80 to-cyan-50/80 p-4 sm:flex-row sm:items-center dark:border-blue-700/30 dark:from-blue-900/20 dark:to-cyan-900/20"
         variants={itemVariants}
       >
         <div>
@@ -338,8 +327,8 @@ export function ComparativeAnalysis({
       </motion.div>
 
       {/* Filters */}
-      <motion.div 
-        className="bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-900/20 dark:to-gray-900/20 flex flex-wrap items-center gap-4 rounded-xl p-4 border border-slate-200/50 dark:border-slate-700/30"
+      <motion.div
+        className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-200/50 bg-gradient-to-br from-slate-50/80 to-gray-50/80 p-4 dark:border-slate-700/30 dark:from-slate-900/20 dark:to-gray-900/20"
         variants={itemVariants}
       >
         <div className="flex items-center gap-2">
@@ -404,467 +393,481 @@ export function ComparativeAnalysis({
 
       <motion.div variants={itemVariants}>
         <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
-        <TabsList>
-          <TabsTrigger value="scatter">Scatter Plot</TabsTrigger>
-          <TabsTrigger value="ranking">Rankings</TabsTrigger>
-          <TabsTrigger value="radar">Multi-Country</TabsTrigger>
-          <TabsTrigger value="trends">Regional Trends</TabsTrigger>
-        </TabsList>
+          <TabsList>
+            <TabsTrigger value="scatter">Scatter Plot</TabsTrigger>
+            <TabsTrigger value="ranking">Rankings</TabsTrigger>
+            <TabsTrigger value="radar">Multi-Country</TabsTrigger>
+            <TabsTrigger value="trends">Regional Trends</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="scatter" className="space-y-4">
-          {/* Metric Selectors */}
-          <div className="flex items-center gap-4">
-            <div>
-              <Label className="text-sm">X-Axis</Label>
-              <Select value={selectedMetricX} onValueChange={setSelectedMetricX}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {metrics.map((metric) => (
-                    <SelectItem key={metric.key} value={metric.key}>
-                      {metric.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-sm">Y-Axis</Label>
-              <Select value={selectedMetricY} onValueChange={setSelectedMetricY}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {metrics.map((metric) => (
-                    <SelectItem key={metric.key} value={metric.key}>
-                      {metric.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Scatter Plot */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">
-                {metrics.find((m) => m.key === selectedMetricY)?.label} vs{" "}
-                {metrics.find((m) => m.key === selectedMetricX)?.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                    <CartesianGrid />
-                    <XAxis
-                      type="number"
-                      dataKey={selectedMetricX}
-                      name={metrics.find((m) => m.key === selectedMetricX)?.label}
-                    />
-                    <YAxis
-                      type="number"
-                      dataKey={selectedMetricY}
-                      name={metrics.find((m) => m.key === selectedMetricY)?.label}
-                    />
-                    <Tooltip
-                      cursor={{ strokeDasharray: "3 3" }}
-                      content={({ active, payload }) => {
-                        if (!active || !payload || !payload.length) return null;
-                        const data = payload[0].payload;
-                        return (
-                          <div className="bg-background border-border rounded-lg border p-3 shadow-lg">
-                            <p className="mb-2 font-semibold">{data.name}</p>
-                            <div className="space-y-1 text-sm">
-                              <p className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                  {metrics.find((m) => m.key === selectedMetricX)?.label}:
-                                </span>
-                                <span className="font-medium">
-                                  {metrics
-                                    .find((m) => m.key === selectedMetricX)
-                                    ?.format(data[selectedMetricX])}
-                                </span>
-                              </p>
-                              <p className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">
-                                  {metrics.find((m) => m.key === selectedMetricY)?.label}:
-                                </span>
-                                <span className="font-medium">
-                                  {metrics
-                                    .find((m) => m.key === selectedMetricY)
-                                    ?.format(data[selectedMetricY])}
-                                </span>
-                              </p>
-                              <p className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">Region:</span>
-                                <span className="font-medium">{data.region}</span>
-                              </p>
-                              <p className="flex justify-between gap-4">
-                                <span className="text-muted-foreground">Tier:</span>
-                                <span className="font-medium">{data.tier}</span>
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      }}
-                    />
-                    <Scatter data={filteredCountries} fill="#8884d8">
-                      {filteredCountries.map((country, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={country.id === userCountry.id ? "#FF6B6B" : country.color}
-                          stroke={country.id === userCountry.id ? "#FF4757" : "none"}
-                          strokeWidth={country.id === userCountry.id ? 2 : 0}
-                        />
-                      ))}
-                    </Scatter>
-                  </ScatterChart>
-                </ResponsiveContainer>
+          <TabsContent value="scatter" className="space-y-4">
+            {/* Metric Selectors */}
+            <div className="flex items-center gap-4">
+              <div>
+                <Label className="text-sm">X-Axis</Label>
+                <Select value={selectedMetricX} onValueChange={setSelectedMetricX}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {metrics.map((metric) => (
+                      <SelectItem key={metric.key} value={metric.key}>
+                        {metric.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <div>
+                <Label className="text-sm">Y-Axis</Label>
+                <Select value={selectedMetricY} onValueChange={setSelectedMetricY}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {metrics.map((metric) => (
+                      <SelectItem key={metric.key} value={metric.key}>
+                        {metric.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        <TabsContent value="ranking" className="space-y-4">
-          {/* User Country Rankings */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">{userCountry.name} Performance Rankings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {userRankings.map((ranking, index) => (
-                  <div
-                    key={ranking.metric}
-                    className="flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="text-muted-foreground text-2xl font-bold">
-                        #{ranking.rank}
+            {/* Scatter Plot */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">
+                  {metrics.find((m) => m.key === selectedMetricY)?.label} vs{" "}
+                  {metrics.find((m) => m.key === selectedMetricX)?.label}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                      <CartesianGrid />
+                      <XAxis
+                        type="number"
+                        dataKey={selectedMetricX}
+                        name={metrics.find((m) => m.key === selectedMetricX)?.label}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey={selectedMetricY}
+                        name={metrics.find((m) => m.key === selectedMetricY)?.label}
+                      />
+                      <Tooltip
+                        cursor={{ strokeDasharray: "3 3" }}
+                        content={({ active, payload }) => {
+                          if (!active || !payload || !payload.length) return null;
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-background border-border rounded-lg border p-3 shadow-lg">
+                              <p className="mb-2 font-semibold">{data.name}</p>
+                              <div className="space-y-1 text-sm">
+                                <p className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">
+                                    {metrics.find((m) => m.key === selectedMetricX)?.label}:
+                                  </span>
+                                  <span className="font-medium">
+                                    {metrics
+                                      .find((m) => m.key === selectedMetricX)
+                                      ?.format(data[selectedMetricX])}
+                                  </span>
+                                </p>
+                                <p className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">
+                                    {metrics.find((m) => m.key === selectedMetricY)?.label}:
+                                  </span>
+                                  <span className="font-medium">
+                                    {metrics
+                                      .find((m) => m.key === selectedMetricY)
+                                      ?.format(data[selectedMetricY])}
+                                  </span>
+                                </p>
+                                <p className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">Region:</span>
+                                  <span className="font-medium">{data.region}</span>
+                                </p>
+                                <p className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">Tier:</span>
+                                  <span className="font-medium">{data.tier}</span>
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Scatter data={filteredCountries} fill="#8884d8">
+                        {filteredCountries.map((country, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={country.id === userCountry.id ? "#FF6B6B" : country.color}
+                            stroke={country.id === userCountry.id ? "#FF4757" : "none"}
+                            strokeWidth={country.id === userCountry.id ? 2 : 0}
+                          />
+                        ))}
+                      </Scatter>
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="ranking" className="space-y-4">
+            {/* User Country Rankings */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">
+                  {userCountry.name} Performance Rankings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {userRankings.map((ranking, index) => (
+                    <div
+                      key={ranking.metric}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-muted-foreground text-2xl font-bold">
+                          #{ranking.rank}
+                        </div>
+                        <div>
+                          <div className="font-medium">{ranking.metric}</div>
+                          <div className="text-muted-foreground text-sm">
+                            {ranking.format(ranking.value)}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium">{ranking.metric}</div>
-                        <div className="text-muted-foreground text-sm">
-                          {ranking.format(ranking.value)}
+                      <div className="text-right">
+                        <div className="text-sm font-medium">
+                          {ranking.percentile.toFixed(0)}th percentile
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          {ranking.rank} of {ranking.total}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium">
-                        {ranking.percentile.toFixed(0)}th percentile
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        {ranking.rank} of {ranking.total}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Top Performers */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Performers by Category</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {metrics.slice(0, 4).map((metric) => {
-                  const topCountries = [...allCountries]
-                    .sort((a, b) => (b as any)[metric.key] - (a as any)[metric.key])
-                    .slice(0, 5);
+            {/* Top Performers */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Performers by Category</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {metrics.slice(0, 4).map((metric) => {
+                    const topCountries = [...allCountries]
+                      .sort((a, b) => (b as any)[metric.key] - (a as any)[metric.key])
+                      .slice(0, 5);
 
-                  return (
-                    <div key={metric.key}>
-                      <h5 className="mb-3 font-medium">{metric.label}</h5>
-                      <div className="space-y-2">
-                        {topCountries.map((country, index) => (
-                          <div
-                            key={country.id}
-                            className={`flex items-center justify-between rounded p-2 ${
-                              country.id === userCountry.id
-                                ? "bg-primary/10 border-border-primary/20"
-                                : "bg-muted/50"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="w-4 text-sm font-medium">{index + 1}</span>
-                              <span className="text-sm">{country.name}</span>
+                    return (
+                      <div key={metric.key}>
+                        <h5 className="mb-3 font-medium">{metric.label}</h5>
+                        <div className="space-y-2">
+                          {topCountries.map((country, index) => (
+                            <div
+                              key={country.id}
+                              className={`flex items-center justify-between rounded p-2 ${
+                                country.id === userCountry.id
+                                  ? "bg-primary/10 border-border-primary/20"
+                                  : "bg-muted/50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="w-4 text-sm font-medium">{index + 1}</span>
+                                <span className="text-sm">{country.name}</span>
+                              </div>
+                              <span className="text-sm font-medium">
+                                {metric.format((country as any)[metric.key])}
+                              </span>
                             </div>
-                            <span className="text-sm font-medium">
-                              {metric.format((country as any)[metric.key])}
-                            </span>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <TabsContent value="radar" className="space-y-4">
-          {/* Country Selection for Radar */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Multi-Country Comparison</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <Label className="mb-2 block text-sm">
-                    Selected Countries ({selectedCountries.length}/5)
-                  </Label>
-                  <div className="max-h-40 space-y-2 overflow-y-auto">
-                    {allCountries.slice(0, 20).map((country) => (
-                      <div key={country.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={selectedCountries.includes(country.id)}
-                          onCheckedChange={() => handleCountryToggle(country.id)}
-                          disabled={
-                            !selectedCountries.includes(country.id) && selectedCountries.length >= 5
-                          }
-                        />
-                        <Label className="text-sm">{country.name}</Label>
-                        <Badge variant="outline" className="text-xs">
-                          {country.tier}
-                        </Badge>
-                      </div>
-                    ))}
+          <TabsContent value="radar" className="space-y-4">
+            {/* Country Selection for Radar */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">Multi-Country Comparison</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <Label className="mb-2 block text-sm">
+                      Selected Countries ({selectedCountries.length}/5)
+                    </Label>
+                    <div className="max-h-40 space-y-2 overflow-y-auto">
+                      {allCountries.slice(0, 20).map((country) => (
+                        <div key={country.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={selectedCountries.includes(country.id)}
+                            onCheckedChange={() => handleCountryToggle(country.id)}
+                            disabled={
+                              !selectedCountries.includes(country.id) &&
+                              selectedCountries.length >= 5
+                            }
+                          />
+                          <Label className="text-sm">{country.name}</Label>
+                          <Badge variant="outline" className="text-xs">
+                            {country.tier}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
+                        {allCountries
+                          .filter((c) => selectedCountries.includes(c.id))
+                          .map((country, index) => (
+                            <Radar
+                              key={country.id}
+                              name={country.name}
+                              dataKey={country.name}
+                              stroke={country.color}
+                              fill={country.color}
+                              fillOpacity={0.1}
+                              strokeWidth={2}
+                            />
+                          ))}
+                        <Tooltip />
+                      </RadarChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
-
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radarData}>
-                      <PolarGrid />
-                      <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12 }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} />
-                      {allCountries
-                        .filter((c) => selectedCountries.includes(c.id))
-                        .map((country, index) => (
-                          <Radar
-                            key={country.id}
-                            name={country.name}
-                            dataKey={country.name}
-                            stroke={country.color}
-                            fill={country.color}
-                            fillOpacity={0.1}
-                            strokeWidth={2}
-                          />
-                        ))}
-                      <Tooltip />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="trends" className="space-y-4">
-          {/* Regional Averages - Multiple Metrics */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">Regional GDP per Capita</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={regionalData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="region"
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                        tick={{ fontSize: 11 }}
-                      />
-                      <YAxis />
-                      <Tooltip
-                        formatter={(value) => [value !== undefined ? formatCurrency(Number(value)) : '', "Avg GDP per Capita"]}
-                      />
-                      <Bar dataKey="avgGdpPerCapita" fill="#3B82F6">
-                        {regionalData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.region === userCountry.region ? "#FF6B6B" : "#3B82F6"}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">Regional Growth Rates</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={regionalData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="region"
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                        tick={{ fontSize: 11 }}
-                      />
-                      <YAxis />
-                      <Tooltip
-                        formatter={(value) => [`${(Number(value ?? 0)).toFixed(4)}%`, "Avg Growth Rate"]}
-                      />
-                      <Bar dataKey="avgGrowthRate" fill="#10B981">
-                        {regionalData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.region === userCountry.region ? "#FF6B6B" : "#10B981"}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="trends" className="space-y-4">
+            {/* Regional Averages - Multiple Metrics */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Regional GDP per Capita</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={regionalData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="region"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          tick={{ fontSize: 11 }}
+                        />
+                        <YAxis />
+                        <Tooltip
+                          formatter={(value) => [
+                            value !== undefined ? formatCurrency(Number(value)) : "",
+                            "Avg GDP per Capita",
+                          ]}
+                        />
+                        <Bar dataKey="avgGdpPerCapita" fill="#3B82F6">
+                          {regionalData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.region === userCountry.region ? "#FF6B6B" : "#3B82F6"}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">Regional Unemployment</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={regionalData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="region"
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                        tick={{ fontSize: 11 }}
-                      />
-                      <YAxis />
-                      <Tooltip
-                        formatter={(value) => [`${(Number(value ?? 0)).toFixed(1)}%`, "Avg Unemployment"]}
-                      />
-                      <Bar dataKey="avgUnemployment" fill="#F59E0B">
-                        {regionalData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.region === userCountry.region ? "#FF6B6B" : "#F59E0B"}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Regional Growth Rates</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={regionalData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="region"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          tick={{ fontSize: 11 }}
+                        />
+                        <YAxis />
+                        <Tooltip
+                          formatter={(value) => [
+                            `${Number(value ?? 0).toFixed(4)}%`,
+                            "Avg Growth Rate",
+                          ]}
+                        />
+                        <Bar dataKey="avgGrowthRate" fill="#10B981">
+                          {regionalData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.region === userCountry.region ? "#FF6B6B" : "#10B981"}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">Regional Total GDP</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={regionalData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="region"
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                        tick={{ fontSize: 11 }}
-                      />
-                      <YAxis />
-                      <Tooltip
-                        formatter={(value) => [
-                          formatCurrency(Number(value ?? 0) / 1e9) + "B",
-                          "Total GDP",
-                        ]}
-                      />
-                      <Bar dataKey="totalGdp" fill="#8B5CF6">
-                        {regionalData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={entry.region === userCountry.region ? "#FF6B6B" : "#8B5CF6"}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Regional Unemployment</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={regionalData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="region"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          tick={{ fontSize: 11 }}
+                        />
+                        <YAxis />
+                        <Tooltip
+                          formatter={(value) => [
+                            `${Number(value ?? 0).toFixed(1)}%`,
+                            "Avg Unemployment",
+                          ]}
+                        />
+                        <Bar dataKey="avgUnemployment" fill="#F59E0B">
+                          {regionalData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.region === userCountry.region ? "#FF6B6B" : "#F59E0B"}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Regional Statistics */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {regionalData.map((region) => {
-              const isUserRegion = region.region === userCountry.region;
-              return (
-                <Card key={region.region} className={isUserRegion ? "ring-primary ring-2" : ""}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-semibold">{region.region}</CardTitle>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">{region.countries.length} countries</span>
-                        {isUserRegion && (
-                          <Badge variant="default" className="text-[10px]">
-                            Your Region
-                          </Badge>
-                        )}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Regional Total GDP</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={regionalData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="region"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          tick={{ fontSize: 11 }}
+                        />
+                        <YAxis />
+                        <Tooltip
+                          formatter={(value) => [
+                            formatCurrency(Number(value ?? 0) / 1e9) + "B",
+                            "Total GDP",
+                          ]}
+                        />
+                        <Bar dataKey="totalGdp" fill="#8B5CF6">
+                          {regionalData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.region === userCountry.region ? "#FF6B6B" : "#8B5CF6"}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Regional Statistics */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {regionalData.map((region) => {
+                const isUserRegion = region.region === userCountry.region;
+                return (
+                  <Card key={region.region} className={isUserRegion ? "ring-primary ring-2" : ""}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-semibold">{region.region}</CardTitle>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground text-xs">
+                            {region.countries.length} countries
+                          </span>
+                          {isUserRegion && (
+                            <Badge variant="default" className="text-[10px]">
+                              Your Region
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Avg GDP/capita:</span>
-                        <span className="font-medium">
-                          {formatCurrency(region.avgGdpPerCapita)}
-                        </span>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Avg GDP/capita:</span>
+                          <span className="font-medium">
+                            {formatCurrency(region.avgGdpPerCapita)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Avg Growth:</span>
+                          <span className="font-medium">{region.avgGrowthRate.toFixed(4)}%</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Avg Unemployment:</span>
+                          <span className="font-medium">{region.avgUnemployment.toFixed(2)}%</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Total GDP:</span>
+                          <span className="font-medium">
+                            {formatCurrency(region.totalGdp / 1e9)}B
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Population:</span>
+                          <span className="font-medium">
+                            {formatPopulation(region.totalPopulation)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Avg Growth:</span>
-                        <span className="font-medium">{region.avgGrowthRate.toFixed(4)}%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Avg Unemployment:</span>
-                        <span className="font-medium">{region.avgUnemployment.toFixed(2)}%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total GDP:</span>
-                        <span className="font-medium">
-                          {formatCurrency(region.totalGdp / 1e9)}B
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Population:</span>
-                        <span className="font-medium">
-                          {formatPopulation(region.totalPopulation)}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
         </Tabs>
       </motion.div>
     </motion.div>

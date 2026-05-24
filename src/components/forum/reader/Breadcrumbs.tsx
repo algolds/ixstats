@@ -17,18 +17,13 @@ interface ForumBreadcrumbsProps {
 }
 
 export function ForumBreadcrumbs({ items }: ForumBreadcrumbsProps) {
-  const allItems: BreadcrumbItem[] = [
-    { label: "Forums", href: "/forum" },
-    ...items,
-  ];
+  const allItems: BreadcrumbItem[] = [{ label: "Forums", href: "/forum" }, ...items];
 
   return (
     <nav className="forum-breadcrumbs" aria-label="Breadcrumb">
       {allItems.map((item, idx) => (
         <span key={idx} className="flex items-center gap-1.5">
-          {idx > 0 && (
-            <ChevronRight className="forum-breadcrumbs-separator h-3 w-3" />
-          )}
+          {idx > 0 && <ChevronRight className="forum-breadcrumbs-separator h-3 w-3" />}
           {item.href && idx < allItems.length - 1 ? (
             <Link href={withBasePath(item.href)} className="hover:text-[var(--forum-accent)]">
               {item.label}

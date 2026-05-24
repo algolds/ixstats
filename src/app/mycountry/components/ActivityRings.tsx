@@ -76,10 +76,15 @@ function ActivityRingComponent({
           whileHover={interactive ? { scale: 1.05 } : {}}
           whileTap={interactive ? { scale: 0.95 } : {}}
         >
-          <HealthRing value={ring.value} size={config.diameter} color={ring.color} label={ring.title} />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+          <HealthRing
+            value={ring.value}
+            size={config.diameter}
+            color={ring.color}
+            label={ring.title}
+          />
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
             <Icon size={config.iconSize} className="mb-0.5" style={{ color: ring.color }} />
-            <div className="text-[10px] font-bold leading-tight" style={{ color: ring.color }}>
+            <div className="text-[10px] leading-tight font-bold" style={{ color: ring.color }}>
               {ring.value}%
             </div>
           </div>

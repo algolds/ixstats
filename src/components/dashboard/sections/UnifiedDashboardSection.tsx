@@ -5,15 +5,32 @@ import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import Link from "next/link";
 import {
-  AlertTriangle, Newspaper, Users, TrendingUp, Clock, Shield,
-  Trophy, Handshake, Rss, Landmark, BookOpen, MessageCircle,
-  ExternalLink, Flame, MessageSquare, Globe, Eye,
+  AlertTriangle,
+  Newspaper,
+  Users,
+  TrendingUp,
+  Clock,
+  Shield,
+  Trophy,
+  Handshake,
+  Rss,
+  Landmark,
+  BookOpen,
+  MessageCircle,
+  ExternalLink,
+  Flame,
+  MessageSquare,
+  Globe,
+  Eye,
 } from "lucide-react";
 import { Tooltip } from "~/components/ui/tooltip-card";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { staggerContainer, staggerItem } from "~/components/mycountry/primitives/tabs/TabMotionConfig";
+import {
+  staggerContainer,
+  staggerItem,
+} from "~/components/mycountry/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
@@ -45,38 +62,127 @@ const BASE_TABS: { id: FeedTab; label: string; icon: typeof Rss }[] = [
   { id: "community", label: "Community", icon: BookOpen },
 ];
 
-const SOURCE_CONFIG: Record<string, { icon: typeof Rss; color: string; bg: string; label: string }> = {
-  activity:   { icon: Rss,           color: "text-blue-400",   bg: "bg-blue-500/10",   label: "IxStats" },
-  thinkpages: { icon: Newspaper,     color: "text-purple-400", bg: "bg-purple-500/10", label: "Social" },
-  wiki:       { icon: BookOpen,      color: "text-teal-400",   bg: "bg-teal-500/10",   label: "Wiki" },
-  forum:      { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
+const SOURCE_CONFIG: Record<
+  string,
+  { icon: typeof Rss; color: string; bg: string; label: string }
+> = {
+  activity: { icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10", label: "IxStats" },
+  thinkpages: {
+    icon: Newspaper,
+    color: "text-purple-400",
+    bg: "bg-purple-500/10",
+    label: "Social",
+  },
+  wiki: { icon: BookOpen, color: "text-teal-400", bg: "bg-teal-500/10", label: "Wiki" },
+  forum: { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
 };
 
-const CATEGORY_CONFIG: Record<string, { icon: typeof TrendingUp; bg: string; text: string; label: string; border: string }> = {
-  economic:    { icon: TrendingUp,    bg: "bg-emerald-500/10", text: "text-emerald-500", label: "Economy",     border: "text-emerald-600 border-emerald-500/30" },
-  crisis:      { icon: AlertTriangle, bg: "bg-red-500/10",     text: "text-red-500",     label: "Crisis",      border: "text-red-600 border-red-500/30" },
-  diplomatic:  { icon: Handshake,     bg: "bg-cyan-500/10",    text: "text-cyan-500",    label: "Diplomacy",   border: "text-cyan-600 border-cyan-500/30" },
-  military:    { icon: Shield,        bg: "bg-orange-500/10",  text: "text-orange-500",  label: "Security",    border: "text-orange-600 border-orange-500/30" },
-  social:      { icon: Rss,           bg: "bg-blue-500/10",    text: "text-blue-500",    label: "Social",      border: "text-blue-600 border-blue-500/30" },
-  political:   { icon: Landmark,      bg: "bg-purple-500/10",  text: "text-purple-500",  label: "Political",   border: "text-purple-600 border-purple-500/30" },
-  achievement: { icon: Trophy,        bg: "bg-amber-500/10",   text: "text-amber-500",   label: "Achievement", border: "text-amber-600 border-amber-500/30" },
-  wiki:        { icon: BookOpen,      bg: "bg-teal-500/10",    text: "text-teal-500",    label: "Wiki",        border: "text-teal-600 border-teal-500/30" },
-  forum:       { icon: MessageCircle, bg: "bg-indigo-500/10",  text: "text-indigo-500",  label: "Forum",       border: "text-indigo-600 border-indigo-500/30" },
+const CATEGORY_CONFIG: Record<
+  string,
+  { icon: typeof TrendingUp; bg: string; text: string; label: string; border: string }
+> = {
+  economic: {
+    icon: TrendingUp,
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-500",
+    label: "Economy",
+    border: "text-emerald-600 border-emerald-500/30",
+  },
+  crisis: {
+    icon: AlertTriangle,
+    bg: "bg-red-500/10",
+    text: "text-red-500",
+    label: "Crisis",
+    border: "text-red-600 border-red-500/30",
+  },
+  diplomatic: {
+    icon: Handshake,
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-500",
+    label: "Diplomacy",
+    border: "text-cyan-600 border-cyan-500/30",
+  },
+  military: {
+    icon: Shield,
+    bg: "bg-orange-500/10",
+    text: "text-orange-500",
+    label: "Security",
+    border: "text-orange-600 border-orange-500/30",
+  },
+  social: {
+    icon: Rss,
+    bg: "bg-blue-500/10",
+    text: "text-blue-500",
+    label: "Social",
+    border: "text-blue-600 border-blue-500/30",
+  },
+  political: {
+    icon: Landmark,
+    bg: "bg-purple-500/10",
+    text: "text-purple-500",
+    label: "Political",
+    border: "text-purple-600 border-purple-500/30",
+  },
+  achievement: {
+    icon: Trophy,
+    bg: "bg-amber-500/10",
+    text: "text-amber-500",
+    label: "Achievement",
+    border: "text-amber-600 border-amber-500/30",
+  },
+  wiki: {
+    icon: BookOpen,
+    bg: "bg-teal-500/10",
+    text: "text-teal-500",
+    label: "Wiki",
+    border: "text-teal-600 border-teal-500/30",
+  },
+  forum: {
+    icon: MessageCircle,
+    bg: "bg-indigo-500/10",
+    text: "text-indigo-500",
+    label: "Forum",
+    border: "text-indigo-600 border-indigo-500/30",
+  },
 };
 
-const TRENDING_SOURCE: Record<string, { icon: typeof Rss; color: string; bg: string; label: string }> = {
-  thinkpages: { icon: Newspaper,     color: "text-purple-400", bg: "bg-purple-500/10", label: "Social" },
-  forum:      { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
-  wiki:       { icon: BookOpen,      color: "text-teal-400",   bg: "bg-teal-500/10",   label: "Wiki" },
-  ixstats:    { icon: Rss,           color: "text-blue-400",   bg: "bg-blue-500/10",   label: "IxStats" },
-  crisis:     { icon: AlertTriangle, color: "text-red-400",    bg: "bg-red-500/10",    label: "Crisis" },
+const TRENDING_SOURCE: Record<
+  string,
+  { icon: typeof Rss; color: string; bg: string; label: string }
+> = {
+  thinkpages: {
+    icon: Newspaper,
+    color: "text-purple-400",
+    bg: "bg-purple-500/10",
+    label: "Social",
+  },
+  forum: { icon: MessageCircle, color: "text-indigo-400", bg: "bg-indigo-500/10", label: "Forum" },
+  wiki: { icon: BookOpen, color: "text-teal-400", bg: "bg-teal-500/10", label: "Wiki" },
+  ixstats: { icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10", label: "IxStats" },
+  crisis: { icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10", label: "Crisis" },
 };
 
 const SEVERITY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  critical: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30" },
-  high: { bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", border: "border-orange-500/30" },
-  medium: { bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400", border: "border-yellow-500/30" },
-  low: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30" },
+  critical: {
+    bg: "bg-red-500/10",
+    text: "text-red-600 dark:text-red-400",
+    border: "border-red-500/30",
+  },
+  high: {
+    bg: "bg-orange-500/10",
+    text: "text-orange-600 dark:text-orange-400",
+    border: "border-orange-500/30",
+  },
+  medium: {
+    bg: "bg-yellow-500/10",
+    text: "text-yellow-600 dark:text-yellow-400",
+    border: "border-yellow-500/30",
+  },
+  low: {
+    bg: "bg-blue-500/10",
+    text: "text-blue-600 dark:text-blue-400",
+    border: "border-blue-500/30",
+  },
 };
 
 // ─── Props ───────────────────────────────────────────────────────
@@ -94,9 +200,9 @@ interface UnifiedDashboardSectionProps {
 
 // ─── Main Component ──────────────────────────────────────────────
 
-
-
-export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDashboardSectionProps) {
+export function UnifiedDashboardSection({
+  globalStats: _globalStats,
+}: UnifiedDashboardSectionProps) {
   const { user, isSignedIn } = useUser();
   const userId = user?.id ?? "";
   const notify = useNotify();
@@ -132,10 +238,9 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
     { enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "", retry: false }
   );
   // Fetch accounts user owns for posting
-  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
   const accounts = useMemo(() => accountsData || [], [accountsData]);
 
   const { data: feedData, isLoading: feedLoading } = api.activities.getGlobalFeed.useQuery(
@@ -147,10 +252,11 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
     { refetchInterval: 30_000, staleTime: 15_000 }
   );
   const hasCountry = !!userProfile?.countryId;
-  const { data: followingData, isLoading: followingLoading } = api.activities.getFollowingFeed.useQuery(
-    { limit: 30 },
-    { enabled: hasCountry, refetchInterval: 30_000, staleTime: 15_000 }
-  );
+  const { data: followingData, isLoading: followingLoading } =
+    api.activities.getFollowingFeed.useQuery(
+      { limit: 30 },
+      { enabled: hasCountry, refetchInterval: 30_000, staleTime: 15_000 }
+    );
 
   // ── Auto-select account ──
   useEffect(() => {
@@ -181,7 +287,8 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
         const edits = editsMatch ? parseInt(editsMatch[1], 10) : 1;
         const editors = editorsMatch ? parseInt(editorsMatch[1], 10) : 1;
         const bytes = bytesMatch ? Math.abs(parseInt(bytesMatch[1], 10)) : 100;
-        baseInteraction = edits * 8 + editors * 15 + Math.min(bytes / 50, 30) + (item.isNew ? 25 : 0);
+        baseInteraction =
+          edits * 8 + editors * 15 + Math.min(bytes / 50, 30) + (item.isNew ? 25 : 0);
       } else if (source === "forum") {
         baseInteraction = replies * 4 + views * 0.1;
       } else {
@@ -196,13 +303,12 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
       return { ...item, computedScore: finalScore };
     });
 
-    return scored
-      .sort((a, b) => b.computedScore - a.computedScore)
-      .slice(0, TRENDING_LIMIT);
+    return scored.sort((a, b) => b.computedScore - a.computedScore).slice(0, TRENDING_LIMIT);
   }, [trendingData]);
 
   const isCountryDataReady =
-    userProfile && countryData &&
+    userProfile &&
+    countryData &&
     userProfile.countryId?.trim() &&
     countryData.newStats?.name?.trim();
 
@@ -219,7 +325,9 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
       const isNewPage = rc.type === "new";
       return {
         id: `wiki-rc-${rc.title}-${rc.timestamp}`,
-        type: "meta", category: "platform", source: "wiki",
+        type: "meta",
+        category: "platform",
+        source: "wiki",
         user: { id: `wiki-user-${rc.user}`, name: rc.user },
         content: {
           title: isNewPage ? `New wiki page: ${rc.title}` : `Wiki edit: ${rc.title}`,
@@ -237,7 +345,12 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
           },
         },
         engagement: { likes: 0, comments: 0, shares: 0, views: 0 },
-        timestamp: new Date(rc.timestamp?.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, "$1-$2-$3T$4:$5:$6Z") ?? 0),
+        timestamp: new Date(
+          rc.timestamp?.replace(
+            /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
+            "$1-$2-$3T$4:$5:$6Z"
+          ) ?? 0
+        ),
         priority: isNewPage ? "medium" : "low",
         visibility: "public",
       };
@@ -246,28 +359,34 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
   const filteredFeed = useMemo(() => {
     if (activeTab === "following") return followingData?.activities ?? [];
-    
+
     if (activeTab === "community") {
-      const fromFeed = (feedData?.activities ?? []).filter((a: any) => a.source === "wiki" || a.source === "forum");
+      const fromFeed = (feedData?.activities ?? []).filter(
+        (a: any) => a.source === "wiki" || a.source === "forum"
+      );
       if (fromFeed.length === 0 && wikiAsFeed.length > 0) {
         return wikiAsFeed;
       }
       const merged = [...fromFeed];
       for (const wikiItem of wikiAsFeed) {
-        if (!merged.some(m => m.id === wikiItem.id)) {
+        if (!merged.some((m) => m.id === wikiItem.id)) {
           merged.push(wikiItem);
         }
       }
-      merged.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      merged.sort(
+        (a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
       return merged.slice(0, 50);
     }
-    
+
     if (!feedData?.activities) return [];
-    
+
     const hasWiki = feedData.activities.some((a: any) => a.source === "wiki");
     if (!hasWiki && wikiAsFeed.length > 0) {
       const merged = [...feedData.activities, ...wikiAsFeed];
-      merged.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      merged.sort(
+        (a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
       return merged.slice(0, 50);
     }
     return feedData.activities;
@@ -275,18 +394,16 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
   // ── ThinkPages Action Handlers ──
 
-
-  const handleLike = useCallback(
-    (_postId: string) => {
-      // Handled globally by PostActions
-    },
-    [],
-  );
+  const handleLike = useCallback((_postId: string) => {
+    // Handled globally by PostActions
+  }, []);
 
   const handleRepost = useCallback(
     (postId: string) => {
       if (selectedAccount) {
-        const postToRepost = filteredFeed?.find((a: any) => a.source === "thinkpages" && a.rawPost?.id === postId)?.rawPost;
+        const postToRepost = filteredFeed?.find(
+          (a: any) => a.source === "thinkpages" && a.rawPost?.id === postId
+        )?.rawPost;
         if (postToRepost) {
           setRepostingPost(postToRepost);
           setIsRepostModalOpen(true);
@@ -297,7 +414,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
         notify.error("Please select an account first");
       }
     },
-    [selectedAccount, filteredFeed, notify],
+    [selectedAccount, filteredFeed, notify]
   );
 
   const handleReply = useCallback(
@@ -306,37 +423,39 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
         notify.error("Please select an account first");
       }
     },
-    [selectedAccount, notify],
+    [selectedAccount, notify]
   );
 
-  const handleShare = useCallback((_postId: string) => {
-    if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({
-        title: "ThinkPages Post",
-        text: "Check out this post on ThinkPages",
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      notify.success("Link copied to clipboard!");
-    }
-  }, [notify]);
-
-  const handleReaction = useCallback(
-    (_postId: string, _reactionType: string) => {
-      // Handled globally by PostActions
+  const handleShare = useCallback(
+    (_postId: string) => {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        navigator.share({
+          title: "ThinkPages Post",
+          text: "Check out this post on ThinkPages",
+          url: window.location.href,
+        });
+      } else {
+        navigator.clipboard.writeText(window.location.href);
+        notify.success("Link copied to clipboard!");
+      }
     },
-    [],
+    [notify]
   );
+
+  const handleReaction = useCallback((_postId: string, _reactionType: string) => {
+    // Handled globally by PostActions
+  }, []);
 
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-4 sm:space-y-6">
-      
-
-
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+      className="space-y-4 sm:space-y-6"
+    >
       {/* Feed Tab Bar */}
       <motion.div variants={staggerItem}>
-        <div className="flex gap-1 rounded-xl border border-border/50 bg-muted/30 p-1">
+        <div className="border-border/50 bg-muted/30 flex gap-1 rounded-xl border p-1">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -345,7 +464,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all cursor-pointer",
+                  "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
                   isActive
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -363,37 +482,52 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
       <motion.div variants={staggerItem}>
         <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
           {/* Feed stream (left 2/3) */}
-          <div className="lg:col-span-2 space-y-4">
-            
+          <div className="space-y-4 lg:col-span-2">
             {/* ThinkPages Composer integrated on top of the stream */}
             {activeTab !== "community" && isSignedIn && (
               <div className="mb-4">
                 {!hasCountry ? (
                   <Card className="glass-hierarchy-child border-amber-500/20 bg-amber-500/5">
-                    <CardContent className="p-4 flex items-center justify-between gap-4">
-                      <div className="flex gap-2.5 items-start">
-                        <Landmark className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <CardContent className="flex items-center justify-between gap-4 p-4">
+                      <div className="flex items-start gap-2.5">
+                        <Landmark className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
                         <div>
-                          <h4 className="text-xs font-semibold text-foreground">Country Setup Required to Post</h4>
-                          <p className="text-[11px] text-muted-foreground">Claim or create a country in the setup wizard to participate in ThinkPages discussion.</p>
+                          <h4 className="text-foreground text-xs font-semibold">
+                            Country Setup Required to Post
+                          </h4>
+                          <p className="text-muted-foreground text-[11px]">
+                            Claim or create a country in the setup wizard to participate in
+                            ThinkPages discussion.
+                          </p>
                         </div>
                       </div>
                       <Link href={"/setup"}>
-                        <Button size="sm" className="h-8 text-xs shrink-0">Setup Country</Button>
+                        <Button size="sm" className="h-8 shrink-0 text-xs">
+                          Setup Country
+                        </Button>
                       </Link>
                     </CardContent>
                   </Card>
                 ) : accounts.length === 0 ? (
                   <Card className="glass-hierarchy-child border-purple-500/20 bg-purple-500/5">
-                    <CardContent className="p-4 flex items-center justify-between gap-4">
-                      <div className="flex gap-2.5 items-start">
-                        <Newspaper className="h-5 w-5 text-purple-400 shrink-0 mt-0.5" />
+                    <CardContent className="flex items-center justify-between gap-4 p-4">
+                      <div className="flex items-start gap-2.5">
+                        <Newspaper className="mt-0.5 h-5 w-5 shrink-0 text-purple-400" />
                         <div>
-                          <h4 className="text-xs font-semibold text-foreground">Create a ThinkPages Account</h4>
-                          <p className="text-[11px] text-muted-foreground">Create an official government, media, or citizen account to publish posts to the public feed.</p>
+                          <h4 className="text-foreground text-xs font-semibold">
+                            Create a ThinkPages Account
+                          </h4>
+                          <p className="text-muted-foreground text-[11px]">
+                            Create an official government, media, or citizen account to publish
+                            posts to the public feed.
+                          </p>
                         </div>
                       </div>
-                      <Button size="sm" onClick={() => setShowAccountCreation(true)} className="h-8 text-xs shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => setShowAccountCreation(true)}
+                        className="h-8 shrink-0 text-xs"
+                      >
                         Create Account
                       </Button>
                     </CardContent>
@@ -417,13 +551,15 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                     {accounts.length > 1 && (
                       <div className="flex items-center gap-2 px-1 text-[11px]">
                         <span className="text-muted-foreground font-normal">Posting as:</span>
-                        <div className="flex items-center gap-1.5 font-medium text-foreground">
+                        <div className="text-foreground flex items-center gap-1.5 font-medium">
                           <span>@{selectedAccount.username}</span>
-                          <span className="text-[10px] text-muted-foreground font-normal">({selectedAccount.accountType})</span>
+                          <span className="text-muted-foreground text-[10px] font-normal">
+                            ({selectedAccount.accountType})
+                          </span>
                         </div>
                         <button
                           onClick={() => setIsAccountModalOpen(true)}
-                          className="text-purple-400 hover:text-purple-300 font-semibold ml-2 underline cursor-pointer text-[11px]"
+                          className="ml-2 cursor-pointer text-[11px] font-semibold text-purple-400 underline hover:text-purple-300"
                         >
                           Switch Account
                         </button>
@@ -431,7 +567,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                     )}
                   </div>
                 ) : (
-                  <div className="animate-pulse h-28 rounded-xl bg-muted/20 border border-border/50" />
+                  <div className="bg-muted/20 border-border/50 h-28 animate-pulse rounded-xl border" />
                 )}
               </div>
             )}
@@ -446,7 +582,10 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                 countryId={userProfile?.countryId || ""}
                 isOwner={hasCountry}
                 onAccountSelect={setSelectedAccount}
-                onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
+                onAccountSettings={(account: any) => {
+                  setSettingsAccount(account);
+                  setShowAccountSettings(true);
+                }}
                 onCreateAccount={() => setShowAccountCreation(true)}
                 onLike={handleLike}
                 onRepost={handleRepost}
@@ -464,7 +603,10 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                 countryId={userProfile?.countryId || ""}
                 isOwner={hasCountry}
                 onAccountSelect={setSelectedAccount}
-                onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
+                onAccountSettings={(account: any) => {
+                  setSettingsAccount(account);
+                  setShowAccountSettings(true);
+                }}
                 onCreateAccount={() => setShowAccountCreation(true)}
                 onLike={handleLike}
                 onRepost={handleRepost}
@@ -476,8 +618,7 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
           </div>
 
           {/* Sidebar (right 1/3): Community widgets */}
-          <div className="space-y-4 lg:col-span-1 md:sticky md:top-6 md:self-start">
-            
+          <div className="space-y-4 md:sticky md:top-6 md:self-start lg:col-span-1">
             {/* Trending Now — Compact */}
             <Card>
               <CardHeader className="pb-2">
@@ -489,17 +630,25 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
               <CardContent className="pt-0">
                 <div className="space-y-1">
                   {trendingItems.length === 0 && (
-                    <p className="py-6 text-center text-[11px] text-muted-foreground">No trending content</p>
+                    <p className="text-muted-foreground py-6 text-center text-[11px]">
+                      No trending content
+                    </p>
                   )}
                   {trendingItems.map((item: any) => {
                     const src = TRENDING_SOURCE[item.source as string] ?? TRENDING_SOURCE.ixstats!;
                     const SrcIcon = src.icon;
                     const W = item.url ? "a" : "div";
-                    const wp = item.url ? { href: item.url, target: "_blank", rel: "noopener noreferrer" } : {};
+                    const wp = item.url
+                      ? { href: item.url, target: "_blank", rel: "noopener noreferrer" }
+                      : {};
 
                     const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
-                    const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-                    const wikiTitle = wikiMatch ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ") : null;
+                    const forumMatch = item.url?.match(
+                      /forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/
+                    );
+                    const wikiTitle = wikiMatch
+                      ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
+                      : null;
                     const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
 
                     const isWiki = !!wikiTitle;
@@ -507,8 +656,17 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                     const wikiHref = isWiki && wikiTitle ? titleToWikiOSRoute(wikiTitle) : null;
 
                     const el = (
-                      <W key={item.id} {...(isWiki ? { href: wikiHref } : wp)} className="flex items-start gap-2 rounded-lg border border-border/30 p-2 transition-colors hover:bg-muted/40 cursor-pointer">
-                        <div className={cn("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded", isWiki ? "bg-teal-500/15" : src.bg)}>
+                      <W
+                        key={item.id}
+                        {...(isWiki ? { href: wikiHref } : wp)}
+                        className="border-border/30 hover:bg-muted/40 flex cursor-pointer items-start gap-2 rounded-lg border p-2 transition-colors"
+                      >
+                        <div
+                          className={cn(
+                            "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded",
+                            isWiki ? "bg-teal-500/15" : src.bg
+                          )}
+                        >
                           {isWiki ? (
                             <img
                               src="https://cdn.simpleicons.org/wikipedia/teal"
@@ -521,28 +679,51 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="truncate text-[11px] font-medium text-foreground">{item.title}</span>
-                            {isForum && item.url && <ExternalLink className="h-2 w-2 shrink-0 text-muted-foreground" />}
+                            <span className="text-foreground truncate text-[11px] font-medium">
+                              {item.title}
+                            </span>
+                            {isForum && item.url && (
+                              <ExternalLink className="text-muted-foreground h-2 w-2 shrink-0" />
+                            )}
                           </div>
                           {!isWiki && (
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <Badge variant="outline" className={cn("px-1 py-0 text-[8px]", src.color, "border-current/30")}>{src.label}</Badge>
+                            <div className="mt-0.5 flex items-center gap-1.5">
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "px-1 py-0 text-[8px]",
+                                  src.color,
+                                  "border-current/30"
+                                )}
+                              >
+                                {src.label}
+                              </Badge>
                             </div>
                           )}
                         </div>
                       </W>
                     );
 
-                    if (isWiki) return (
-                      <Tooltip key={item.id} content={<WikiPreviewContent title={wikiTitle!} wiki="ixwiki" />} containerClassName="block">
-                        {el}
-                      </Tooltip>
-                    );
-                    if (isForum) return (
-                      <Tooltip key={item.id} content={<ForumPreviewContent threadId={forumThreadId!} />} containerClassName="block">
-                        {el}
-                      </Tooltip>
-                    );
+                    if (isWiki)
+                      return (
+                        <Tooltip
+                          key={item.id}
+                          content={<WikiPreviewContent title={wikiTitle!} wiki="ixwiki" />}
+                          containerClassName="block"
+                        >
+                          {el}
+                        </Tooltip>
+                      );
+                    if (isForum)
+                      return (
+                        <Tooltip
+                          key={item.id}
+                          content={<ForumPreviewContent threadId={forumThreadId!} />}
+                          containerClassName="block"
+                        >
+                          {el}
+                        </Tooltip>
+                      );
                     return el;
                   })}
                 </div>
@@ -559,17 +740,23 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
             {globalStats?.economicTierDistribution && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
+                  <CardTitle className="flex items-center gap-1.5 text-xs font-semibold">
                     <Globe className="h-3.5 w-3.5 text-emerald-500" />
                     Economic Tiers
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="flex items-center gap-1 flex-wrap">
+                  <div className="flex flex-wrap items-center gap-1">
                     {Object.entries(globalStats.economicTierDistribution).map(([tier, count]) => (
-                      <div key={tier} className="flex items-center gap-1 rounded bg-muted/50 px-2 py-0.5">
+                      <div
+                        key={tier}
+                        className="bg-muted/50 flex items-center gap-1 rounded px-2 py-0.5"
+                      >
                         <span className="text-[10px] font-medium">{tier}</span>
-                        <Badge variant="secondary" className="text-[9px] px-1 py-0 font-bold bg-background text-foreground border border-border">
+                        <Badge
+                          variant="secondary"
+                          className="bg-background text-foreground border-border border px-1 py-0 text-[9px] font-bold"
+                        >
                           {count as number}
                         </Badge>
                       </div>
@@ -584,10 +771,28 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
 
       {/* Account Modals */}
       {showAccountCreation && isCountryDataReady && (
-        <AccountCreationModal countryId={countryData!.id} countryName={countryData!.name} existingAccountCount={accounts.length} isOpen={showAccountCreation} onClose={() => setShowAccountCreation(false)} onAccountCreated={() => setShowAccountCreation(false)} />
+        <AccountCreationModal
+          countryId={countryData!.id}
+          countryName={countryData!.name}
+          existingAccountCount={accounts.length}
+          isOpen={showAccountCreation}
+          onClose={() => setShowAccountCreation(false)}
+          onAccountCreated={() => setShowAccountCreation(false)}
+        />
       )}
       {showAccountSettings && settingsAccount && (
-        <AccountSettingsModal account={settingsAccount} isOpen={showAccountSettings} onClose={() => { setShowAccountSettings(false); setSettingsAccount(null); }} onAccountUpdate={() => { setShowAccountSettings(false); setSettingsAccount(null); }} />
+        <AccountSettingsModal
+          account={settingsAccount}
+          isOpen={showAccountSettings}
+          onClose={() => {
+            setShowAccountSettings(false);
+            setSettingsAccount(null);
+          }}
+          onAccountUpdate={() => {
+            setShowAccountSettings(false);
+            setSettingsAccount(null);
+          }}
+        />
       )}
 
       {/* Account Manager Modal */}
@@ -598,7 +803,10 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
         accounts={accounts}
         selectedAccount={selectedAccount}
         onAccountSelect={setSelectedAccount}
-        onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
+        onAccountSettings={(account: any) => {
+          setSettingsAccount(account);
+          setShowAccountSettings(true);
+        }}
         onCreateAccount={() => setShowAccountCreation(true)}
         isOwner={hasCountry}
       />
@@ -613,7 +821,10 @@ export function UnifiedDashboardSection({ globalStats: _globalStats }: UnifiedDa
           selectedAccount={selectedAccount}
           accounts={accounts}
           onAccountSelect={setSelectedAccount}
-          onAccountSettings={(account: any) => { setSettingsAccount(account); setShowAccountSettings(true); }}
+          onAccountSettings={(account: any) => {
+            setSettingsAccount(account);
+            setShowAccountSettings(true);
+          }}
           onCreateAccount={() => setShowAccountCreation(true)}
           isOwner={hasCountry}
           onPost={() => {
@@ -670,9 +881,9 @@ function UnifiedFeedContent({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-xl border border-border/50 bg-muted/30 p-4">
-            <div className="mb-2 h-4 w-3/4 rounded bg-muted" />
-            <div className="h-3 w-1/2 rounded bg-muted/60" />
+          <div key={i} className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-4">
+            <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
+            <div className="bg-muted/60 h-3 w-1/2 rounded" />
           </div>
         ))}
       </div>
@@ -683,9 +894,9 @@ function UnifiedFeedContent({
     return (
       <Card className="glass-hierarchy-parent">
         <CardContent className="p-8 text-center">
-          <Rss className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+          <Rss className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">No recent {label}</h3>
-          <p className="text-xs text-muted-foreground">Check back later for updates.</p>
+          <p className="text-muted-foreground text-xs">Check back later for updates.</p>
         </CardContent>
       </Card>
     );
@@ -766,9 +977,9 @@ function FollowingFeedContent({
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="animate-pulse rounded-xl border border-border/50 bg-muted/30 p-4">
-            <div className="mb-2 h-4 w-3/4 rounded bg-muted" />
-            <div className="h-3 w-1/2 rounded bg-muted/60" />
+          <div key={i} className="border-border/50 bg-muted/30 animate-pulse rounded-xl border p-4">
+            <div className="bg-muted mb-2 h-4 w-3/4 rounded" />
+            <div className="bg-muted/60 h-3 w-1/2 rounded" />
           </div>
         ))}
       </div>
@@ -778,10 +989,16 @@ function FollowingFeedContent({
     return (
       <Card className="glass-hierarchy-parent">
         <CardContent className="p-8 text-center">
-          <Users className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+          <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">Not following anyone yet</h3>
-          <p className="text-xs text-muted-foreground">Follow countries to see their activity here.</p>
-          <Link href={"/countries"}><Button size="sm" variant="outline" className="mt-3 text-xs">Explore Countries</Button></Link>
+          <p className="text-muted-foreground text-xs">
+            Follow countries to see their activity here.
+          </p>
+          <Link href={"/countries"}>
+            <Button size="sm" variant="outline" className="mt-3 text-xs">
+              Explore Countries
+            </Button>
+          </Link>
         </CardContent>
       </Card>
     );
@@ -790,9 +1007,9 @@ function FollowingFeedContent({
     return (
       <Card className="glass-hierarchy-parent">
         <CardContent className="p-8 text-center">
-          <Users className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+          <Users className="text-muted-foreground mx-auto mb-4 h-10 w-10" />
           <h3 className="mb-1 text-sm font-semibold">No recent activity</h3>
-          <p className="text-xs text-muted-foreground">Countries you follow haven't posted yet.</p>
+          <p className="text-muted-foreground text-xs">Countries you follow haven't posted yet.</p>
         </CardContent>
       </Card>
     );
@@ -846,32 +1063,36 @@ function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-        <span className="truncate text-sm font-semibold text-foreground">{title}</span>
-        <span className="ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+        <span className="text-foreground truncate text-sm font-semibold">{title}</span>
+        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </span>
       </div>
       {intro?.text ? (
-        <p className="line-clamp-4 text-xs leading-relaxed text-foreground/80">
-          {intro.text.substring(0, 300)}{intro.text.length > 300 ? "…" : ""}
+        <p className="text-foreground/80 line-clamp-4 text-xs leading-relaxed">
+          {intro.text.substring(0, 300)}
+          {intro.text.length > 300 ? "…" : ""}
         </p>
       ) : (
-        <div className="h-10 animate-pulse rounded bg-muted" />
+        <div className="bg-muted h-10 animate-pulse rounded" />
       )}
     </div>
   );
 }
 
 function ForumPreviewContent({ threadId }: { threadId: number }) {
-  const { data: thread } = api.wiki.getForumThreadPreview.useQuery({ threadId }, { staleTime: 10 * 60_000 });
+  const { data: thread } = api.wiki.getForumThreadPreview.useQuery(
+    { threadId },
+    { staleTime: 10 * 60_000 }
+  );
   if (!thread) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
-          <span className="text-sm font-medium text-foreground">Loading thread...</span>
+          <span className="text-foreground text-sm font-medium">Loading thread...</span>
         </div>
-        <div className="h-10 animate-pulse rounded bg-muted" />
+        <div className="bg-muted h-10 animate-pulse rounded" />
       </div>
     );
   }
@@ -879,7 +1100,7 @@ function ForumPreviewContent({ threadId }: { threadId: number }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <MessageSquare className="h-3.5 w-3.5 shrink-0 text-violet-500" />
-        <span className="truncate text-sm font-semibold text-foreground">{thread.title}</span>
+        <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
       </div>
       {thread.forumName && (
         <span className="inline-block rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-medium text-violet-400">
@@ -887,11 +1108,12 @@ function ForumPreviewContent({ threadId }: { threadId: number }) {
         </span>
       )}
       {thread.excerpt && (
-        <p className="line-clamp-3 text-xs leading-relaxed text-foreground/80">
-          {thread.excerpt.substring(0, 250)}{thread.excerpt.length > 250 ? "…" : ""}
+        <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
+          {thread.excerpt.substring(0, 250)}
+          {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-3 text-[10px]">
         <span className="flex items-center gap-0.5">
           <Users className="h-2.5 w-2.5" />
           {thread.author}
@@ -911,7 +1133,9 @@ function ForumPreviewContent({ threadId }: { threadId: number }) {
 
 function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
   const [seed, setSeed] = useState(0);
-  useEffect(() => { setSeed(Date.now()); }, []);
+  useEffect(() => {
+    setSeed(Date.now());
+  }, []);
   const { data: randomCountries } = api.countries.getRandomCountries.useQuery(
     { limit: 3, _seed: seed },
     { enabled: seed > 0, staleTime: 0 }
@@ -949,7 +1173,7 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
             return (
               <div
                 key={c.id}
-                className="relative flex items-center gap-2 overflow-hidden rounded-lg border border-border/30 p-2"
+                className="border-border/30 relative flex items-center gap-2 overflow-hidden rounded-lg border p-2"
                 style={
                   c.flagUrl
                     ? {
@@ -970,7 +1194,10 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
                       {c.name}
                     </Link>
                     <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="px-1 py-0 text-[8px] text-muted-foreground border-border/40">
+                      <Badge
+                        variant="outline"
+                        className="text-muted-foreground border-border/40 px-1 py-0 text-[8px]"
+                      >
                         Tier {c.economicTier}
                       </Badge>
                     </div>
@@ -980,7 +1207,7 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
                   <Button
                     size="sm"
                     variant={isFollowed ? "secondary" : "outline"}
-                    className="h-6 shrink-0 text-[9px] px-2"
+                    className="h-6 shrink-0 px-2 text-[9px]"
                     disabled={!followerCountryId || followMutation.isPending}
                     onClick={() => {
                       if (isFollowed) return;
@@ -1000,7 +1227,7 @@ function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId
         </div>
         <Link
           href={"/countries"}
-          className="mt-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+          className="text-muted-foreground hover:text-foreground mt-2 flex items-center justify-center gap-1 text-[10px] transition-colors"
         >
           <Globe className="h-3 w-3" />
           Explore all countries →
@@ -1026,18 +1253,18 @@ function BlurbOfTheDayCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="rounded-lg border border-border/30 bg-muted/20 p-2.5">
-          <p className="text-[11px] text-foreground leading-relaxed italic">
+        <div className="border-border/30 bg-muted/20 rounded-lg border p-2.5">
+          <p className="text-foreground text-[11px] leading-relaxed italic">
             &ldquo;{prompt.prompt}?&rdquo;
           </p>
         </div>
         <div className="mt-1.5 flex items-center justify-between">
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-muted-foreground text-[10px]">
             📝 {prompt._count?.responses ?? 0} responses
           </span>
           <Link
             href={createUrl(`/thinkpages?prompt=${prompt.slug ?? prompt.id}`)}
-            className="text-[10px] font-medium text-purple-500 hover:text-purple-400 transition-colors"
+            className="text-[10px] font-medium text-purple-500 transition-colors hover:text-purple-400"
           >
             Write Response →
           </Link>
@@ -1064,19 +1291,38 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
     : "";
 
   return (
-    <div className="group rounded-xl border border-border/50 bg-muted/20 p-3 transition-colors hover:bg-muted/40">
+    <div className="group border-border/50 bg-muted/20 hover:bg-muted/40 rounded-xl border p-3 transition-colors">
       <div className="flex items-start gap-3">
-        <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", config.bg)}>
+        <div
+          className={cn(
+            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+            config.bg
+          )}
+        >
           <Icon className={cn("h-4 w-4", config.color)} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            <span className="truncate text-sm font-medium text-foreground" dangerouslySetInnerHTML={{ __html: titleHtml }} />
-            <Badge variant="outline" className={cn("shrink-0 text-[10px]", config.color, "border-current/30")}>{config.label}</Badge>
+            <span
+              className="text-foreground truncate text-sm font-medium"
+              dangerouslySetInnerHTML={{ __html: titleHtml }}
+            />
+            <Badge
+              variant="outline"
+              className={cn("shrink-0 text-[10px]", config.color, "border-current/30")}
+            >
+              {config.label}
+            </Badge>
           </div>
-          <p className="text-xs text-muted-foreground whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: descHtml }} />
-          <div className="mt-1.5 flex items-center gap-3 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{formatTimeAgo(new Date(activity.timestamp))}</span>
+          <p
+            className="text-muted-foreground text-xs break-words whitespace-pre-wrap"
+            dangerouslySetInnerHTML={{ __html: descHtml }}
+          />
+          <div className="text-muted-foreground mt-1.5 flex items-center gap-3 text-[10px]">
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {formatTimeAgo(new Date(activity.timestamp))}
+            </span>
             {activity.user?.name && <span>by {activity.user.name}</span>}
             {externalUrl && <FeedExternalLink url={externalUrl} title={activity.content?.title} />}
           </div>
@@ -1090,11 +1336,23 @@ function FeedExternalLink({ url }: { url: string; title?: string }) {
   const wikiMatch = url.match(/ixwiki\.com\/wiki\/([^#?]+)/);
   const forumMatch = url.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
   const link = (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-0.5 text-muted-foreground transition-colors hover:text-foreground">
-      <ExternalLink className="h-3 w-3" />Open
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
+    >
+      <ExternalLink className="h-3 w-3" />
+      Open
     </a>
   );
-  if (wikiMatch) return <WikiLinkPreview title={decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")} wiki="ixwiki">{link}</WikiLinkPreview>;
-  if (forumMatch) return <ForumLinkPreview threadId={parseInt(forumMatch[1]!, 10)}>{link}</ForumLinkPreview>;
+  if (wikiMatch)
+    return (
+      <WikiLinkPreview title={decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")} wiki="ixwiki">
+        {link}
+      </WikiLinkPreview>
+    );
+  if (forumMatch)
+    return <ForumLinkPreview threadId={parseInt(forumMatch[1]!, 10)}>{link}</ForumLinkPreview>;
   return link;
 }

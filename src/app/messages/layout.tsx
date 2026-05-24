@@ -5,16 +5,12 @@ export const metadata = {
   description: "ThinkShare unified messaging across all IxStats systems",
 };
 
-export default function MessagesLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MessagesLayout({ children }: { children: React.ReactNode }) {
   return (
     <Suspense
       fallback={
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <div className="border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
         </div>
       }
     >

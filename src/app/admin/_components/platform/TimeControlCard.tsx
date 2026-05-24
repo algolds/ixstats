@@ -89,13 +89,19 @@ export function TimeControlCard({
         <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
           <div className="mb-1 text-xs font-medium text-blue-400">Current IxTime</div>
           <div className="font-mono text-sm font-bold text-blue-500">{formattedIxTime}</div>
-          <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-2 grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="font-medium text-foreground">1 real day</span> = {ixDaysPerRealDay} IX days
+              <span className="text-foreground font-medium">1 real day</span> = {ixDaysPerRealDay}{" "}
+              IX days
             </div>
             <div>
-              <span className="font-medium text-foreground">In 24h:</span>{" "}
-              {new Date(predictedIn24h).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} IX
+              <span className="text-foreground font-medium">In 24h:</span>{" "}
+              {new Date(predictedIn24h).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}{" "}
+              IX
             </div>
           </div>
         </div>
@@ -104,7 +110,9 @@ export function TimeControlCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label>Time Multiplier</Label>
-            <Badge variant="outline" className="tabular-nums">{timeMultiplier}x</Badge>
+            <Badge variant="outline" className="tabular-nums">
+              {timeMultiplier}x
+            </Badge>
           </div>
           <Slider
             value={[timeMultiplier]}
@@ -113,7 +121,7 @@ export function TimeControlCard({
             max={10}
             step={0.1}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex justify-between text-xs">
             <span>Paused</span>
             <span>2x (Default)</span>
             <span>4x</span>
@@ -162,13 +170,14 @@ export function TimeControlCard({
                 >
                   <Calendar className="mr-1 h-3 w-3" />
                   {year}
-                  {isPast && <span className="ml-1 text-muted-foreground">(past)</span>}
+                  {isPast && <span className="text-muted-foreground ml-1">(past)</span>}
                 </Button>
               );
             })}
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            Fills the date fields below with Jan 1 of the target year. Click &ldquo;Set IxTime&rdquo; to confirm.
+          <p className="text-muted-foreground text-[11px]">
+            Fills the date fields below with Jan 1 of the target year. Click &ldquo;Set
+            IxTime&rdquo; to confirm.
           </p>
         </div>
 
@@ -179,7 +188,9 @@ export function TimeControlCard({
           <Label className="text-sm font-medium">Set Custom IxTime</Label>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="custom-date" className="text-xs text-muted-foreground">Date</Label>
+              <Label htmlFor="custom-date" className="text-muted-foreground text-xs">
+                Date
+              </Label>
               <Input
                 id="custom-date"
                 type="date"
@@ -188,7 +199,9 @@ export function TimeControlCard({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="custom-time" className="text-xs text-muted-foreground">Time</Label>
+              <Label htmlFor="custom-time" className="text-muted-foreground text-xs">
+                Time
+              </Label>
               <Input
                 id="custom-time"
                 type="time"

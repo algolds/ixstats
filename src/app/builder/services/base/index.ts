@@ -5,11 +5,7 @@
  * to eliminate code duplication and standardize patterns.
  */
 
-export {
-  BaseBuilderService,
-  type NotifyOptions,
-  type QueueOptions,
-} from "./BaseBuilderService";
+export { BaseBuilderService, type NotifyOptions, type QueueOptions } from "./BaseBuilderService";
 
 export {
   BidirectionalSyncService,

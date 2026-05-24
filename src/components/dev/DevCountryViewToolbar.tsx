@@ -33,11 +33,10 @@ export function DevCountryViewToolbar() {
   const [selectedCountryId, setSelectedCountryId] = useState<string>("");
 
   // Fetch country list for dropdown
-  const { data: countriesData, isLoading: countriesLoading } =
-    api.countries.getSelectList.useQuery(
-      { limit: 500 },
-      { enabled: canUseDevView && isToolbarExpanded }
-    );
+  const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
+    { limit: 500 },
+    { enabled: canUseDevView && isToolbarExpanded }
+  );
 
   // Get actual country name for display
   const { data: actualCountry } = api.countries.getByIdBasic.useQuery(
@@ -71,13 +70,11 @@ export function DevCountryViewToolbar() {
       <button
         onClick={() => setToolbarExpanded(true)}
         className={cn(
-          "fixed bottom-4 right-4 z-50",
+          "fixed right-4 bottom-4 z-50",
           "flex items-center gap-2 px-3 py-2",
           "rounded-full shadow-lg",
           "transition-all duration-200 hover:scale-105",
-          isViewingOtherCountry
-            ? "bg-amber-500 text-amber-950"
-            : "bg-slate-800 text-slate-200"
+          isViewingOtherCountry ? "bg-amber-500 text-amber-950" : "bg-slate-800 text-slate-200"
         )}
       >
         <Eye className="h-4 w-4" />
@@ -93,7 +90,7 @@ export function DevCountryViewToolbar() {
   return (
     <div
       className={cn(
-        "fixed bottom-4 right-4 z-50",
+        "fixed right-4 bottom-4 z-50",
         "w-80 rounded-2xl shadow-2xl",
         "bg-white/95 dark:bg-slate-900/95",
         "backdrop-blur-xl",
@@ -197,9 +194,7 @@ export function DevCountryViewToolbar() {
         </div>
 
         {/* Dev mode notice */}
-        <div className="text-center text-xs text-slate-400">
-          Development mode only
-        </div>
+        <div className="text-center text-xs text-slate-400">Development mode only</div>
       </div>
     </div>
   );

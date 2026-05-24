@@ -20,15 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Vote,
-  Plus,
-  Play,
-  UserPlus,
-  ChevronDown,
-  ChevronUp,
-  Trophy,
-} from "lucide-react";
+import { Vote, Plus, Play, UserPlus, ChevronDown, ChevronUp, Trophy } from "lucide-react";
 import { api } from "~/trpc/react";
 import { ParliamentHemicycle } from "./ParliamentHemicycle";
 
@@ -42,7 +34,9 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
   const [selectedElection, setSelectedElection] = useState<string | null>(null);
   const [expandedElection, setExpandedElection] = useState<string | null>(null);
   const [newElectionName, setNewElectionName] = useState("");
-  const [newElectionType, setNewElectionType] = useState<"general" | "special" | "referendum">("general");
+  const [newElectionType, setNewElectionType] = useState<"general" | "special" | "referendum">(
+    "general"
+  );
   const [candidateForm, setCandidateForm] = useState({
     partyId: "",
     candidateName: "",
@@ -93,7 +87,9 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
   });
 
   const completedElections = elections.filter((e: any) => e.status === "completed");
-  const pendingElections = elections.filter((e: any) => e.status !== "completed" && e.status !== "cancelled");
+  const pendingElections = elections.filter(
+    (e: any) => e.status !== "completed" && e.status !== "cancelled"
+  );
 
   return (
     <div className="space-y-4">
@@ -150,7 +146,9 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                       value={newElectionType}
                       onValueChange={(v) => setNewElectionType(v as any)}
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="general">General Election</SelectItem>
                         <SelectItem value="special">Special Election</SelectItem>
@@ -159,11 +157,13 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                     </Select>
                   </div>
                   <Button
-                    onClick={() => scheduleElection.mutate({
-                      countryId,
-                      name: newElectionName,
-                      electionType: newElectionType,
-                    })}
+                    onClick={() =>
+                      scheduleElection.mutate({
+                        countryId,
+                        name: newElectionName,
+                        electionType: newElectionType,
+                      })
+                    }
                     disabled={!newElectionName || scheduleElection.isPending}
                     className="w-full"
                   >
@@ -183,7 +183,7 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
           {/* Pending Elections */}
           {pendingElections.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-muted-foreground">Upcoming Elections</h4>
+              <h4 className="text-muted-foreground text-sm font-medium">Upcoming Elections</h4>
               {pendingElections.map((election: any) => (
                 <div
                   key={election.id}
@@ -192,7 +192,7 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <h5 className="font-medium">{election.name}</h5>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="text-muted-foreground flex items-center gap-2 text-xs">
                         <Badge variant="outline" className="text-[10px]">
                           {election.electionType}
                         </Badge>
@@ -201,10 +201,13 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                     </div>
                     <div className="flex items-center gap-2">
                       {/* Add Candidate */}
-                      <Dialog open={candidateOpen && selectedElection === election.id} onOpenChange={(open) => {
-                        setCandidateOpen(open);
-                        if (open) setSelectedElection(election.id);
-                      }}>
+                      <Dialog
+                        open={candidateOpen && selectedElection === election.id}
+                        onOpenChange={(open) => {
+                          setCandidateOpen(open);
+                          if (open) setSelectedElection(election.id);
+                        }}
+                      >
                         <DialogTrigger asChild>
                           <Button size="sm" variant="outline" className="gap-1">
                             <UserPlus className="h-3 w-3" /> Add Candidate
@@ -219,14 +222,21 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                               <Label>Party</Label>
                               <Select
                                 value={candidateForm.partyId}
-                                onValueChange={(v) => setCandidateForm({ ...candidateForm, partyId: v })}
+                                onValueChange={(v) =>
+                                  setCandidateForm({ ...candidateForm, partyId: v })
+                                }
                               >
-                                <SelectTrigger><SelectValue placeholder="Select party" /></SelectTrigger>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select party" />
+                                </SelectTrigger>
                                 <SelectContent>
                                   {parties.map((p: any) => (
                                     <SelectItem key={p.id} value={p.id}>
                                       <span className="flex items-center gap-2">
-                                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+                                        <span
+                                          className="h-2 w-2 rounded-full"
+                                          style={{ backgroundColor: p.color }}
+                                        />
                                         {p.name}
                                       </span>
                                     </SelectItem>
@@ -238,7 +248,12 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                               <Label>Candidate Name</Label>
                               <Input
                                 value={candidateForm.candidateName}
-                                onChange={(e) => setCandidateForm({ ...candidateForm, candidateName: e.target.value })}
+                                onChange={(e) =>
+                                  setCandidateForm({
+                                    ...candidateForm,
+                                    candidateName: e.target.value,
+                                  })
+                                }
                                 placeholder="e.g. Maria Rodriguez"
                               />
                             </div>
@@ -246,28 +261,48 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                               <div>
                                 <Label>Charisma ({candidateForm.charisma})</Label>
                                 <input
-                                  type="range" min={0} max={100}
+                                  type="range"
+                                  min={0}
+                                  max={100}
                                   value={candidateForm.charisma}
-                                  onChange={(e) => setCandidateForm({ ...candidateForm, charisma: Number(e.target.value) })}
+                                  onChange={(e) =>
+                                    setCandidateForm({
+                                      ...candidateForm,
+                                      charisma: Number(e.target.value),
+                                    })
+                                  }
                                   className="w-full"
                                 />
                               </div>
                               <div>
                                 <Label>Political Capital ({candidateForm.politicalCapital})</Label>
                                 <input
-                                  type="range" min={0} max={100}
+                                  type="range"
+                                  min={0}
+                                  max={100}
                                   value={candidateForm.politicalCapital}
-                                  onChange={(e) => setCandidateForm({ ...candidateForm, politicalCapital: Number(e.target.value) })}
+                                  onChange={(e) =>
+                                    setCandidateForm({
+                                      ...candidateForm,
+                                      politicalCapital: Number(e.target.value),
+                                    })
+                                  }
                                   className="w-full"
                                 />
                               </div>
                             </div>
                             <Button
-                              onClick={() => registerCandidate.mutate({
-                                electionId: election.id,
-                                ...candidateForm,
-                              })}
-                              disabled={!candidateForm.partyId || !candidateForm.candidateName || registerCandidate.isPending}
+                              onClick={() =>
+                                registerCandidate.mutate({
+                                  electionId: election.id,
+                                  ...candidateForm,
+                                })
+                              }
+                              disabled={
+                                !candidateForm.partyId ||
+                                !candidateForm.candidateName ||
+                                registerCandidate.isPending
+                              }
                               className="w-full"
                             >
                               Register Candidate
@@ -294,9 +329,12 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                     <div className="mt-3 space-y-1">
                       {election.candidates.map((c: any) => (
                         <div key={c.id} className="flex items-center gap-2 text-sm">
-                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: c.party?.color ?? "#999" }} />
+                          <div
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: c.party?.color ?? "#999" }}
+                          />
                           <span>{c.candidateName}</span>
-                          <span className="text-xs text-muted-foreground">({c.party?.name})</span>
+                          <span className="text-muted-foreground text-xs">({c.party?.name})</span>
                         </div>
                       ))}
                     </div>
@@ -309,7 +347,7 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
           {/* Past Elections */}
           {completedElections.length > 0 && (
             <div className="mt-4 space-y-3">
-              <h4 className="text-sm font-medium text-muted-foreground">Past Elections</h4>
+              <h4 className="text-muted-foreground text-sm font-medium">Past Elections</h4>
               {completedElections.map((election: any) => {
                 const isExpanded = expandedElection === election.id;
                 const sortedResults = [...(election.results || [])].sort(
@@ -330,15 +368,23 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                           Turnout: {election.turnout?.toFixed(1)}%
                         </Badge>
                       </div>
-                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
                     </button>
 
                     {/* Winner summary (always visible) */}
                     {winner && (
-                      <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: winner.candidate?.party?.color ?? "#999" }} />
+                      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
+                        <div
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: winner.candidate?.party?.color ?? "#999" }}
+                        />
                         <span>
-                          Winner: {winner.candidate?.party?.name} — {winner.seatsWon} seats ({winner.votePercentage.toFixed(1)}%)
+                          Winner: {winner.candidate?.party?.name} — {winner.seatsWon} seats (
+                          {winner.votePercentage.toFixed(1)}%)
                         </span>
                       </div>
                     )}
@@ -352,12 +398,17 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                             <div key={r.id} className="space-y-1">
                               <div className="flex items-center justify-between text-xs">
                                 <span className="flex items-center gap-1.5">
-                                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: r.candidate?.party?.color ?? "#999" }} />
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-full"
+                                    style={{ backgroundColor: r.candidate?.party?.color ?? "#999" }}
+                                  />
                                   {r.candidate?.party?.name ?? "Unknown"}
                                 </span>
-                                <span className="font-medium">{r.seatsWon} seats ({r.votePercentage.toFixed(1)}%)</span>
+                                <span className="font-medium">
+                                  {r.seatsWon} seats ({r.votePercentage.toFixed(1)}%)
+                                </span>
                               </div>
-                              <div className="h-2 w-full rounded-full bg-muted">
+                              <div className="bg-muted h-2 w-full rounded-full">
                                 <div
                                   className="h-full rounded-full transition-all"
                                   style={{
@@ -372,10 +423,12 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
 
                         {/* Margin */}
                         {election.marginOfVictory != null && (
-                          <div className="rounded bg-muted/50 p-2 text-center text-xs text-muted-foreground">
+                          <div className="bg-muted/50 text-muted-foreground rounded p-2 text-center text-xs">
                             Margin of Victory: {election.marginOfVictory.toFixed(1)}%
                             {election.marginOfVictory < 2 && " — Very close!"}
-                            {election.marginOfVictory < 5 && election.marginOfVictory >= 2 && " — Competitive"}
+                            {election.marginOfVictory < 5 &&
+                              election.marginOfVictory >= 2 &&
+                              " — Competitive"}
                             {election.marginOfVictory >= 15 && " — Decisive victory"}
                           </div>
                         )}
@@ -389,11 +442,13 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
 
           {/* Empty state */}
           {pendingElections.length === 0 && completedElections.length === 0 && (
-            <div className="py-6 text-center text-muted-foreground">
+            <div className="text-muted-foreground py-6 text-center">
               <Vote className="mx-auto mb-3 h-8 w-8 opacity-50" />
               <p className="text-sm">No elections scheduled yet.</p>
               {!legislature && (
-                <p className="mt-1 text-xs">Configure a legislature first, then schedule elections.</p>
+                <p className="mt-1 text-xs">
+                  Configure a legislature first, then schedule elections.
+                </p>
               )}
             </div>
           )}

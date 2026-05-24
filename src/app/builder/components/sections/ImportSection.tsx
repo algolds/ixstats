@@ -81,7 +81,9 @@ const searchCache = new Map<string, SearchResult[]>();
 interface ImportSectionProps {
   onNavigate: (section: BuilderSection) => void;
   /** Called when import data is ready — populates builder state */
-  onImportComplete?: (data: ParsedCountryData & { _wikiSource: string; _wikiSourceName: string }) => void;
+  onImportComplete?: (
+    data: ParsedCountryData & { _wikiSource: string; _wikiSourceName: string }
+  ) => void;
 }
 
 // ─── Component ───
@@ -179,10 +181,16 @@ export const ImportSection = React.memo(function ImportSection({
                     const wikiIntro = d.wikiIntro as string | undefined;
                     additionalData = {
                       population: d.population ?? d.population_estimate ?? d.population_total,
-                      gdpPerCapita: d.gdpPerCapita ?? d.GDP_nominal_per_capita ?? d.GDP_PPP_per_capita,
+                      gdpPerCapita:
+                        d.gdpPerCapita ?? d.GDP_nominal_per_capita ?? d.GDP_PPP_per_capita,
                       capital: d.capital,
                       government: d.government_type ?? d.government,
-                      snippet: wikiIntro || d.conventional_long_name || d.official_name || d.common_name || result.snippet,
+                      snippet:
+                        wikiIntro ||
+                        d.conventional_long_name ||
+                        d.official_name ||
+                        d.common_name ||
+                        result.snippet,
                     };
                   }
                 } catch {
@@ -293,20 +301,27 @@ export const ImportSection = React.memo(function ImportSection({
 
       // Merge the deep scan data with the infobox data
       const finalData: ParsedCountryData = { ...parsedData };
-      
+
       if (enhancedData) {
         if (enhancedData.government) {
-          if (enhancedData.government.governmentType) finalData.government_type = enhancedData.government.governmentType;
-          if (enhancedData.government.legislature) finalData.legislature = enhancedData.government.legislature;
-          if (enhancedData.government.headOfState) finalData.head_of_state = enhancedData.government.headOfState;
-          if (enhancedData.government.headOfGovernment) finalData.head_of_government = enhancedData.government.headOfGovernment;
+          if (enhancedData.government.governmentType)
+            finalData.government_type = enhancedData.government.governmentType;
+          if (enhancedData.government.legislature)
+            finalData.legislature = enhancedData.government.legislature;
+          if (enhancedData.government.headOfState)
+            finalData.head_of_state = enhancedData.government.headOfState;
+          if (enhancedData.government.headOfGovernment)
+            finalData.head_of_government = enhancedData.government.headOfGovernment;
         }
         if (enhancedData.economy) {
-          if (enhancedData.economy.gdpNominal) (finalData as any).gdp_nominal = enhancedData.economy.gdpNominal.toString();
-          if (enhancedData.economy.gdpPerCapita) finalData.gdpPerCapita = enhancedData.economy.gdpPerCapita.toString();
+          if (enhancedData.economy.gdpNominal)
+            (finalData as any).gdp_nominal = enhancedData.economy.gdpNominal.toString();
+          if (enhancedData.economy.gdpPerCapita)
+            finalData.gdpPerCapita = enhancedData.economy.gdpPerCapita.toString();
         }
         if (enhancedData.demographics) {
-          if (enhancedData.demographics.population) finalData.population = enhancedData.demographics.population.toString();
+          if (enhancedData.demographics.population)
+            finalData.population = enhancedData.demographics.population.toString();
         }
       }
 
@@ -350,8 +365,8 @@ export const ImportSection = React.memo(function ImportSection({
         _wikiSource: selectedSite.name.toLowerCase(),
         _wikiSourceName: selectedSite.name,
         _importResult: {
-          selectedComponents: importResult.selectedComponents.map(c => c.component),
-          suggestedComponents: importResult.suggestedComponents.map(c => c.component),
+          selectedComponents: importResult.selectedComponents.map((c) => c.component),
+          suggestedComponents: importResult.suggestedComponents.map((c) => c.component),
           parsedDepartments: importResult.parsedDepartments,
           revenueSources: importResult.revenueSources,
           conflicts: importResult.conflicts,
@@ -373,7 +388,9 @@ export const ImportSection = React.memo(function ImportSection({
       // Show non-blocking toast instead of immediate navigation
       setShowScanToast(true);
     } catch (err) {
-      setError(`Failed to process wiki import: ${err instanceof Error ? err.message : "Unknown error"}`);
+      setError(
+        `Failed to process wiki import: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -461,23 +478,26 @@ export const ImportSection = React.memo(function ImportSection({
           </div>
 
           {isLoading && !parsedData && (
-            <div className="flex items-center justify-center gap-3 rounded-xl border border-border/50 bg-card/60 px-6 py-8 backdrop-blur-md">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-blue-500" />
-              <span className="text-sm text-muted-foreground">
+            <div className="border-border/50 bg-card/60 flex items-center justify-center gap-3 rounded-xl border px-6 py-8 backdrop-blur-md">
+              <div className="border-muted-foreground/30 h-5 w-5 animate-spin rounded-full border-2 border-t-blue-500" />
+              <span className="text-muted-foreground text-sm">
                 Parsing {selectedResult?.title}...
               </span>
             </div>
           )}
 
-          {!selectedResult && !parsedData && !isLoading && (selectedSite.name === "iiwiki" || selectedSite.name === "althistory") && (
-            <div className="mt-6">
-              <EligibleCountryGrid
-                site={selectedSite.name as "iiwiki" | "althistory"}
-                searchFilter={searchTerm}
-                onCountryClick={handleGridCountryClick}
-              />
-            </div>
-          )}
+          {!selectedResult &&
+            !parsedData &&
+            !isLoading &&
+            (selectedSite.name === "iiwiki" || selectedSite.name === "althistory") && (
+              <div className="mt-6">
+                <EligibleCountryGrid
+                  site={selectedSite.name as "iiwiki" | "althistory"}
+                  searchFilter={searchTerm}
+                  onCountryClick={handleGridCountryClick}
+                />
+              </div>
+            )}
 
           {parsedData && !showDeepScan && (
             <InteractiveInfoboxPreview

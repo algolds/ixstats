@@ -86,9 +86,7 @@ async function main() {
   const editTableCheck = await prisma.$queryRawUnsafe<{ count: bigint }[]>(
     "SELECT COUNT(*) as count FROM map_edit_requests"
   );
-  console.log(
-    `map_edit_requests table exists with ${editTableCheck[0]?.count} rows`
-  );
+  console.log(`map_edit_requests table exists with ${editTableCheck[0]?.count} rows`);
 
   console.log("\nDone! PostGIS triggers are set up.");
 }

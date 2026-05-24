@@ -38,16 +38,14 @@ export const SynergyAnalysisPanel = React.memo(function SynergyAnalysisPanel({
           <Zap className="h-5 w-5 text-yellow-600" />
           Component Synergy Analysis
         </CardTitle>
-        <CardDescription>
-          How your government components work together
-        </CardDescription>
+        <CardDescription>How your government components work together</CardDescription>
       </CardHeader>
       <CardContent>
         {synergyAnalysis ? (
           <div className="space-y-6">
             {/* Radar Chart */}
             <div>
-              <h4 className="font-semibold mb-4">Category Balance</h4>
+              <h4 className="mb-4 font-semibold">Category Balance</h4>
               <ResponsiveContainer width="100%" height={300} className="sm:h-[350px] lg:h-[400px]">
                 <RadarChart data={synergyAnalysis.radarData}>
                   <PolarGrid />
@@ -67,7 +65,7 @@ export const SynergyAnalysisPanel = React.memo(function SynergyAnalysisPanel({
 
             {/* Synergies */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="mb-3 flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 <h4 className="font-semibold">Positive Synergies</h4>
                 <Badge variant="secondary">{synergyAnalysis.synergies.length}</Badge>
@@ -75,12 +73,19 @@ export const SynergyAnalysisPanel = React.memo(function SynergyAnalysisPanel({
               {synergyAnalysis.synergies.length > 0 ? (
                 <div className="space-y-2">
                   {synergyAnalysis.synergies.map((synergy, idx) => (
-                    <div key={idx} className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+                    <div
+                      key={idx}
+                      className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950/20"
+                    >
                       <div className="flex items-center justify-between">
                         <div className="text-sm">
-                          <span className="font-medium">{synergy.component1.replace(/_/g, " ")}</span>
+                          <span className="font-medium">
+                            {synergy.component1.replace(/_/g, " ")}
+                          </span>
                           <span className="text-muted-foreground"> + </span>
-                          <span className="font-medium">{synergy.component2.replace(/_/g, " ")}</span>
+                          <span className="font-medium">
+                            {synergy.component2.replace(/_/g, " ")}
+                          </span>
                         </div>
                         <Badge className="bg-green-600 text-white">+{synergy.bonus}%</Badge>
                       </div>
@@ -88,26 +93,33 @@ export const SynergyAnalysisPanel = React.memo(function SynergyAnalysisPanel({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No significant synergies detected</p>
+                <p className="text-muted-foreground text-sm">No significant synergies detected</p>
               )}
             </div>
 
             {/* Conflicts */}
             {synergyAnalysis.conflicts.length > 0 && (
               <div>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="mb-3 flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-red-600" />
                   <h4 className="font-semibold">Component Conflicts</h4>
                   <Badge variant="destructive">{synergyAnalysis.conflicts.length}</Badge>
                 </div>
                 <div className="space-y-2">
                   {synergyAnalysis.conflicts.map((conflict, idx) => (
-                    <div key={idx} className="p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
+                    <div
+                      key={idx}
+                      className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/20"
+                    >
                       <div className="flex items-center justify-between">
                         <div className="text-sm">
-                          <span className="font-medium">{conflict.component1.replace(/_/g, " ")}</span>
+                          <span className="font-medium">
+                            {conflict.component1.replace(/_/g, " ")}
+                          </span>
                           <span className="text-muted-foreground"> ⚠️ </span>
-                          <span className="font-medium">{conflict.component2.replace(/_/g, " ")}</span>
+                          <span className="font-medium">
+                            {conflict.component2.replace(/_/g, " ")}
+                          </span>
                         </div>
                         <Badge variant="destructive">-{conflict.penalty}%</Badge>
                       </div>
@@ -118,8 +130,8 @@ export const SynergyAnalysisPanel = React.memo(function SynergyAnalysisPanel({
             )}
           </div>
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            <Zap className="mx-auto h-12 w-12 opacity-50 mb-4" />
+          <div className="text-muted-foreground py-12 text-center">
+            <Zap className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>No component data available for synergy analysis</p>
           </div>
         )}

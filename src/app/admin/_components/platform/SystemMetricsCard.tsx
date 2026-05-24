@@ -1,14 +1,7 @@
 // src/app/admin/_components/platform/SystemMetricsCard.tsx
 "use client";
 
-import {
-  Database,
-  Activity,
-  Globe,
-  Clock,
-  Server,
-  RefreshCw,
-} from "lucide-react";
+import { Database, Activity, Globe, Clock, Server, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -72,7 +65,11 @@ export function SystemMetricsCard() {
             label="Database"
             value={systemHealth.database.connected ? "Connected" : "Disconnected"}
             detail={`${systemHealth.database.countries} countries`}
-            icon={<Database className={`h-5 w-5 ${systemHealth.database.connected ? "text-green-500" : "text-red-500"}`} />}
+            icon={
+              <Database
+                className={`h-5 w-5 ${systemHealth.database.connected ? "text-green-500" : "text-red-500"}`}
+              />
+            }
           />
           <StatusCard
             label="Countries"
@@ -84,7 +81,11 @@ export function SystemMetricsCard() {
             label="Discord Bot"
             value={systemHealth.bot.available ? "Connected" : "Unavailable"}
             detail={systemHealth.bot.message || "No message"}
-            icon={<Globe className={`h-5 w-5 ${systemHealth.bot.available ? "text-green-500" : "text-amber-500"}`} />}
+            icon={
+              <Globe
+                className={`h-5 w-5 ${systemHealth.bot.available ? "text-green-500" : "text-amber-500"}`}
+              />
+            }
           />
           <StatusCard
             label="Calculations"
@@ -117,16 +118,16 @@ export function SystemMetricsCard() {
             <Separator />
             <div className="flex items-center justify-between text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">Last Calculation</p>
-                <p className="font-medium text-foreground">
+                <p className="text-muted-foreground text-xs">Last Calculation</p>
+                <p className="text-foreground font-medium">
                   {systemStatus.lastCalculation.countriesUpdated} countries updated
                 </p>
               </div>
               <div className="text-right">
-                <Badge variant="outline" className="tabular-nums text-xs">
+                <Badge variant="outline" className="text-xs tabular-nums">
                   {systemStatus.lastCalculation.executionTimeMs}ms
                 </Badge>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-muted-foreground mt-1 text-xs">
                   {formatDistanceToNow(new Date(systemStatus.lastCalculation.timestamp))} ago
                 </p>
               </div>
@@ -150,13 +151,13 @@ function StatusCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-border/50 bg-card/50 p-3">
+    <div className="border-border/50 bg-card/50 rounded-lg border p-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-muted-foreground text-xs">{label}</p>
         {icon}
       </div>
-      <p className="mt-1 text-lg font-bold text-foreground">{value}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground/70">{detail}</p>
+      <p className="text-foreground mt-1 text-lg font-bold">{value}</p>
+      <p className="text-muted-foreground/70 mt-0.5 text-xs">{detail}</p>
     </div>
   );
 }
@@ -172,13 +173,13 @@ function MetricItem({
 }) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-xs">{label}</p>
       {badge ? (
         <Badge variant={badge} className="mt-0.5 text-xs">
           {value}
         </Badge>
       ) : (
-        <p className="mt-0.5 text-sm font-medium text-foreground">{value}</p>
+        <p className="text-foreground mt-0.5 text-sm font-medium">{value}</p>
       )}
     </div>
   );

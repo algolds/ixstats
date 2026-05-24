@@ -31,12 +31,18 @@ function useLocalToggle(key: string, defaultValue: boolean): [boolean, () => voi
     try {
       const stored = localStorage.getItem(key);
       if (stored !== null) setValue(stored === "true");
-    } catch { /* SSR */ }
+    } catch {
+      /* SSR */
+    }
   }, [key]);
   const toggle = useCallback(() => {
     setValue((prev) => {
       const next = !prev;
-      try { localStorage.setItem(key, String(next)); } catch { /* ignore */ }
+      try {
+        localStorage.setItem(key, String(next));
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   }, [key]);
@@ -48,10 +54,17 @@ export function SettingsView({ onClose }: SettingsViewProps) {
   const { theme, effectiveTheme, setTheme, compactMode, toggleCompactMode } = useTheme();
   const pathname = usePathname();
   const normalizedPathname = stripBasePath(pathname || "");
-  const isOnWikiPage = normalizedPathname.startsWith("/w/") || normalizedPathname.startsWith("/w/special/") || normalizedPathname.startsWith("/blurbs") || false;
+  const isOnWikiPage =
+    normalizedPathname.startsWith("/w/") ||
+    normalizedPathname.startsWith("/w/special/") ||
+    normalizedPathname.startsWith("/blurbs") ||
+    false;
 
   // Wiki-specific toggles
-  const [showCiteTooltips, toggleCiteTooltips] = useLocalToggle("wikios:showCitationTooltips", true);
+  const [showCiteTooltips, toggleCiteTooltips] = useLocalToggle(
+    "wikios:showCitationTooltips",
+    true
+  );
   const [autoExpandToc, toggleAutoExpandToc] = useLocalToggle("wikios:autoExpandToc", false);
   const [openInNewTab, toggleOpenInNewTab] = useLocalToggle("wikios:openInNewTab", false);
 
@@ -87,7 +100,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
 
   const wikiUsername = user?.username
     ? user.username.charAt(0).toUpperCase() + user.username.slice(1)
-    : user?.firstName ?? "";
+    : (user?.firstName ?? "");
 
   return (
     <div className="p-4">
@@ -128,13 +141,28 @@ export function SettingsView({ onClose }: SettingsViewProps) {
               </div>
             </div>
             <div className="flex gap-1">
-              <Button size="sm" variant={theme === "light" ? "default" : "outline"} onClick={() => setTheme("light")} className="h-7 w-7 p-1.5">
+              <Button
+                size="sm"
+                variant={theme === "light" ? "default" : "outline"}
+                onClick={() => setTheme("light")}
+                className="h-7 w-7 p-1.5"
+              >
                 <Sun className="h-3 w-3" />
               </Button>
-              <Button size="sm" variant={theme === "dark" ? "default" : "outline"} onClick={() => setTheme("dark")} className="h-7 w-7 p-1.5">
+              <Button
+                size="sm"
+                variant={theme === "dark" ? "default" : "outline"}
+                onClick={() => setTheme("dark")}
+                className="h-7 w-7 p-1.5"
+              >
                 <Moon className="h-3 w-3" />
               </Button>
-              <Button size="sm" variant={theme === "system" ? "default" : "outline"} onClick={() => setTheme("system")} className="h-7 w-7 p-1.5">
+              <Button
+                size="sm"
+                variant={theme === "system" ? "default" : "outline"}
+                onClick={() => setTheme("system")}
+                className="h-7 w-7 p-1.5"
+              >
                 <Monitor className="h-3 w-3" />
               </Button>
             </div>
@@ -143,10 +171,12 @@ export function SettingsView({ onClose }: SettingsViewProps) {
           {/* Profile link */}
           <Button
             size="sm"
-            onClick={() => (window.location.href = isOnWikiPage && wikiUsername
-              ? createAbsoluteUrl(`/w/special/user/${encodeURIComponent(wikiUsername)}`)
-              : createAbsoluteUrl("/profile")
-            )}
+            onClick={() =>
+              (window.location.href =
+                isOnWikiPage && wikiUsername
+                  ? createAbsoluteUrl(`/w/special/user/${encodeURIComponent(wikiUsername)}`)
+                  : createAbsoluteUrl("/profile"))
+            }
             className="bg-card hover:bg-accent/10 border-border flex w-full items-center justify-start gap-3 rounded-lg p-3 transition-all"
           >
             <div className="flex-shrink-0 rounded bg-blue-500/20 p-1.5">
@@ -157,7 +187,9 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                 {isOnWikiPage ? "Wiki Profile" : "Profile & Settings"}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                {isOnWikiPage ? "View your contributions and awards" : "Manage your account, billing, and preferences"}
+                {isOnWikiPage
+                  ? "View your contributions and awards"
+                  : "Manage your account, billing, and preferences"}
               </div>
             </div>
             <ChevronDown className="text-muted-foreground h-4 w-4 rotate-[-90deg]" />
@@ -170,7 +202,9 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                 icon={<MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />}
                 iconBg="bg-purple-500/20"
                 label="Citation Tooltips"
-                description={showCiteTooltips ? "Hover footnotes to preview" : "Click to jump to footnote"}
+                description={
+                  showCiteTooltips ? "Hover footnotes to preview" : "Click to jump to footnote"
+                }
                 enabled={showCiteTooltips}
                 onToggle={toggleCiteTooltips}
               />
@@ -178,7 +212,11 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                 icon={<List className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />}
                 iconBg="bg-cyan-500/20"
                 label="Auto-Expand TOC"
-                description={autoExpandToc ? "Table of contents starts open" : "Table of contents starts collapsed"}
+                description={
+                  autoExpandToc
+                    ? "Table of contents starts open"
+                    : "Table of contents starts collapsed"
+                }
                 enabled={autoExpandToc}
                 onToggle={toggleAutoExpandToc}
               />
@@ -186,7 +224,9 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                 icon={<ExternalLink className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                 iconBg="bg-emerald-500/20"
                 label="Open Links in New Tab"
-                description={openInNewTab ? "Wiki links open in new tabs" : "Wiki links open in same tab"}
+                description={
+                  openInNewTab ? "Wiki links open in new tabs" : "Wiki links open in same tab"
+                }
                 enabled={openInNewTab}
                 onToggle={toggleOpenInNewTab}
               />
@@ -199,12 +239,19 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                   <Layout className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">Compact Mode</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    Compact Mode
+                  </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">
                     {compactMode ? "Enabled - Denser UI layout" : "Disabled - Standard spacing"}
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={toggleCompactMode} className="px-2 py-1 text-xs">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={toggleCompactMode}
+                  className="px-2 py-1 text-xs"
+                >
                   {compactMode ? "Disable" : "Enable"}
                 </Button>
               </div>
@@ -217,7 +264,12 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                   <div className="text-sm font-medium text-gray-900 dark:text-white">Language</div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">English</div>
                 </div>
-                <Button size="sm" variant="outline" className="cursor-not-allowed px-3 py-1 opacity-50" disabled>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="cursor-not-allowed px-3 py-1 opacity-50"
+                  disabled
+                >
                   Coming Soon
                 </Button>
               </div>
@@ -226,7 +278,12 @@ export function SettingsView({ onClose }: SettingsViewProps) {
 
           {/* Refresh */}
           <div className="pt-2">
-            <Button size="sm" variant="outline" onClick={handleRefresh} className="flex w-full items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleRefresh}
+              className="flex w-full items-center gap-2"
+            >
               <RefreshCw className="h-4 w-4" />
               <span>Refresh Data</span>
             </Button>
@@ -260,7 +317,10 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             </div>
             <Button
               size="lg"
-              onClick={() => (window.location.href = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))}
+              onClick={() =>
+                (window.location.href =
+                  process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
+              }
               className="w-full"
             >
               Sign In
@@ -294,9 +354,7 @@ function SettingsToggle({
 }) {
   return (
     <div className="bg-card hover:bg-accent/10 border-border flex items-center gap-3 rounded-lg p-3 transition-all">
-      <div className={`flex-shrink-0 rounded p-1.5 ${iconBg}`}>
-        {icon}
-      </div>
+      <div className={`flex-shrink-0 rounded p-1.5 ${iconBg}`}>{icon}</div>
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium text-gray-900 dark:text-white">{label}</div>
         <div className="text-xs text-gray-600 dark:text-gray-400">{description}</div>

@@ -14,15 +14,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "~/components/ui/sheet";
-import {
-  TrendingUp,
-  Users,
-  DollarSign,
-  Activity,
-  Clock,
-  AlertTriangle,
-  Map,
-} from "lucide-react";
+import { TrendingUp, Users, DollarSign, Activity, Clock, AlertTriangle, Map } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface CountryDetailSheetProps {
@@ -42,16 +34,14 @@ function MetricRow({
   return (
     <div className="flex items-center justify-between py-1.5">
       <span className="text-muted-foreground text-xs">{label}</span>
-      <span className={`text-sm font-medium ${color ?? "text-foreground"}`}>
-        {value ?? "N/A"}
-      </span>
+      <span className={`text-sm font-medium ${color ?? "text-foreground"}`}>{value ?? "N/A"}</span>
     </div>
   );
 }
 
 function SectionHeader({ title, icon: Icon }: { title: string; icon: typeof TrendingUp }) {
   return (
-    <div className="mb-2 mt-4 flex items-center gap-2 border-b border-border/30 pb-1">
+    <div className="border-border/30 mt-4 mb-2 flex items-center gap-2 border-b pb-1">
       <Icon className="text-primary h-4 w-4" />
       <h3 className="text-foreground text-sm font-semibold">{title}</h3>
     </div>
@@ -92,11 +82,7 @@ export function CountryDetailSheet({ countryId, onClose }: CountryDetailSheetPro
           <SheetTitle className="flex items-center gap-3">
             {country && (
               <>
-                <UnifiedCountryFlag
-                  countryName={country.name}
-                  flagUrl={country.flag}
-                  size="md"
-                />
+                <UnifiedCountryFlag countryName={country.name} flagUrl={country.flag} size="md" />
                 <span>{country.name}</span>
               </>
             )}
@@ -140,14 +126,8 @@ export function CountryDetailSheet({ countryId, onClose }: CountryDetailSheetPro
 
               {/* Population */}
               <SectionHeader title="Demographics" icon={Users} />
-              <MetricRow
-                label="Population"
-                value={fmt(country.currentPopulation, "", "", 0)}
-              />
-              <MetricRow
-                label="Pop. Growth"
-                value={fmtPct(country.populationGrowthRate)}
-              />
+              <MetricRow label="Population" value={fmt(country.currentPopulation, "", "", 0)} />
+              <MetricRow label="Pop. Growth" value={fmtPct(country.populationGrowthRate)} />
               <MetricRow label="Life Expectancy" value={fmt(country.lifeExpectancy, "", " yrs")} />
               <MetricRow
                 label="Urbanization"
@@ -168,13 +148,17 @@ export function CountryDetailSheet({ countryId, onClose }: CountryDetailSheetPro
 
               {/* Map Linkage (live check against MapLayer) */}
               <SectionHeader title="Map Linkage" icon={Map} />
-              <MapLinkageSection countryId={country.id} landArea={country.landArea} areaSqMi={country.areaSqMi} />
+              <MapLinkageSection
+                countryId={country.id}
+                landArea={country.landArea}
+                areaSqMi={country.areaSqMi}
+              />
 
               {/* Owner */}
               <SectionHeader title="Owner" icon={Users} />
               {country.users.length > 0 ? (
                 country.users.map((u) => (
-                  <div key={u.id} className="rounded-lg border border-border/30 p-2">
+                  <div key={u.id} className="border-border/30 rounded-lg border p-2">
                     <MetricRow label="Clerk ID" value={u.clerkUserId} />
                     <MetricRow label="Tier" value={u.membershipTier} />
                     <MetricRow
@@ -228,7 +212,7 @@ export function CountryDetailSheet({ countryId, onClose }: CountryDetailSheetPro
                 <>
                   <SectionHeader title="Recent Admin Actions" icon={Clock} />
                   {auditLogs.map((log) => (
-                    <div key={log.id} className="border-b border-border/20 py-2">
+                    <div key={log.id} className="border-border/20 border-b py-2">
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
                           {log.action}
@@ -253,14 +237,8 @@ export function CountryDetailSheet({ countryId, onClose }: CountryDetailSheetPro
                     : "Never"
                 }
               />
-              <MetricRow
-                label="Created"
-                value={new Date(country.createdAt).toLocaleDateString()}
-              />
-              <MetricRow
-                label="Updated"
-                value={new Date(country.updatedAt).toLocaleDateString()}
-              />
+              <MetricRow label="Created" value={new Date(country.createdAt).toLocaleDateString()} />
+              <MetricRow label="Updated" value={new Date(country.updatedAt).toLocaleDateString()} />
             </div>
           )}
         </ScrollArea>
@@ -281,7 +259,7 @@ function MapLinkageSection({
 }) {
   const { data: linkage, isLoading } = api.geo.getCountryLinkage.useQuery(
     { countryId },
-    { staleTime: 10_000 },
+    { staleTime: 10_000 }
   );
 
   if (isLoading) {
@@ -295,7 +273,7 @@ function MapLinkageSection({
     <>
       <MetricRow
         label="Map Feature"
-        value={linked ? linkage?.featureName ?? linkage?.featureId : "Not linked"}
+        value={linked ? (linkage?.featureName ?? linkage?.featureId) : "Not linked"}
         color={linked ? "text-emerald-500" : "text-amber-500"}
       />
       <MetricRow

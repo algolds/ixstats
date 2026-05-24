@@ -5,7 +5,15 @@ import { api } from "~/trpc/react";
 import { HealthRing } from "~/components/ui/health-ring";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { Activity, BarChart3, Heart, Shield, AlertTriangle, CheckCircle, GitFork } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Heart,
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  GitFork,
+} from "lucide-react";
 
 const RING_META = [
   { key: "economicVitality", label: "Economic", color: "#22c55e", icon: BarChart3 },
@@ -52,33 +60,35 @@ function CountryRingsCard({
   flagUrl?: string;
   slug?: string;
 }) {
-  const { data: activityData, isLoading: loadingA } =
-    api.countries.getActivityRingsData.useQuery({ countryId }, { enabled: !!countryId });
-  const { data: dashboardData, isLoading: loadingD } =
-    api.mycountry.getCountryDashboard.useQuery({ countryId }, { enabled: !!countryId });
+  const { data: activityData, isLoading: loadingA } = api.countries.getActivityRingsData.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
+  const { data: dashboardData, isLoading: loadingD } = api.mycountry.getCountryDashboard.useQuery(
+    { countryId },
+    { enabled: !!countryId }
+  );
 
   const loading = loadingA || loadingD;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
-      <div className="flex items-center gap-3 border-b border-border/40 bg-muted/20 px-4 py-3">
+    <div className="border-border/60 bg-card overflow-hidden rounded-xl border shadow-sm">
+      <div className="border-border/40 bg-muted/20 flex items-center gap-3 border-b px-4 py-3">
         {flagUrl && (
           <img src={flagUrl} alt="" className="h-6 w-10 rounded object-cover shadow-sm" />
         )}
         <div>
-          <span className="font-semibold text-foreground">{countryName}</span>
-          {slug && (
-            <span className="ml-2 text-[10px] text-muted-foreground">/ {slug}</span>
-          )}
+          <span className="text-foreground font-semibold">{countryName}</span>
+          {slug && <span className="text-muted-foreground ml-2 text-[10px]">/ {slug}</span>}
         </div>
-        <span className="ml-auto font-mono text-[9px] text-muted-foreground">
+        <span className="text-muted-foreground ml-auto font-mono text-[9px]">
           {countryId.slice(0, 8)}...
         </span>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground mr-2" />
+        <div className="text-muted-foreground flex items-center justify-center p-8 text-sm">
+          <div className="border-muted-foreground/30 border-t-muted-foreground mr-2 h-5 w-5 animate-spin rounded-full border-2" />
           Loading ring data...
         </div>
       ) : (
@@ -90,17 +100,17 @@ function CountryRingsCard({
             return (
               <div
                 key={ep.id}
-                className={`p-4 ${ep.id === "getActivityRingsData" ? "md:border-r md:border-border/40" : ""}`}
+                className={`p-4 ${ep.id === "getActivityRingsData" ? "md:border-border/40 md:border-r" : ""}`}
               >
                 <div className="mb-3 flex items-center gap-1.5">
                   <span className="rounded bg-blue-500/10 px-1.5 py-0.5 font-mono text-[9px] text-blue-600 dark:text-blue-400">
                     {ep.endpoint}
                   </span>
-                  <span className="text-[9px] text-muted-foreground">{ep.location}</span>
+                  <span className="text-muted-foreground text-[9px]">{ep.location}</span>
                 </div>
 
                 {!hasData ? (
-                  <div className="flex items-center gap-1.5 py-4 text-xs text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-1.5 py-4 text-xs">
                     <AlertTriangle className="h-3 w-3" />
                     No data
                   </div>
@@ -115,23 +125,21 @@ function CountryRingsCard({
                         ep.id === "getActivityRingsData" ? null : Math.abs(valA - currentVal);
 
                       return (
-                        <div key={ring.key} className="flex flex-col items-center gap-1 text-center">
+                        <div
+                          key={ring.key}
+                          className="flex flex-col items-center gap-1 text-center"
+                        >
                           <HealthRing
                             value={currentVal}
                             size={48}
                             color={ring.color}
                             label={ring.label}
                           />
-                          <span
-                            className="text-[10px] font-medium"
-                            style={{ color: ring.color }}
-                          >
+                          <span className="text-[10px] font-medium" style={{ color: ring.color }}>
                             {Math.round(currentVal)}%
                           </span>
                           {diff !== null && diff > 0 && (
-                            <span className="text-[8px] text-red-500">
-                              Δ{diff.toFixed(1)}
-                            </span>
+                            <span className="text-[8px] text-red-500">Δ{diff.toFixed(1)}</span>
                           )}
                         </div>
                       );
@@ -139,8 +147,8 @@ function CountryRingsCard({
                   </div>
                 )}
 
-                <div className="mt-2 border-t border-border/20 pt-2">
-                  <p className="text-[8px] leading-relaxed text-muted-foreground">{ep.note}</p>
+                <div className="border-border/20 mt-2 border-t pt-2">
+                  <p className="text-muted-foreground text-[8px] leading-relaxed">{ep.note}</p>
                 </div>
               </div>
             );
@@ -149,8 +157,8 @@ function CountryRingsCard({
       )}
 
       {activityData && dashboardData && (
-        <div className="border-t border-border/40 bg-muted/10 px-4 py-2">
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[9px] text-muted-foreground">
+        <div className="border-border/40 bg-muted/10 border-t px-4 py-2">
+          <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-[9px]">
             {RING_META.map((ring) => {
               const valA = activityData[ring.key as keyof typeof activityData] ?? 0;
               const valD = (dashboardData as any)?.[ring.key] ?? 0;
@@ -164,9 +172,7 @@ function CountryRingsCard({
                     <AlertTriangle className="h-2.5 w-2.5 text-amber-500" />
                   )}
                   {ring.label}: {Math.round(valA)}% vs {Math.round(valD)}%
-                  {!match && (
-                    <span className="text-red-500">(Δ{diff.toFixed(1)})</span>
-                  )}
+                  {!match && <span className="text-red-500">(Δ{diff.toFixed(1)})</span>}
                 </span>
               );
             })}
@@ -200,7 +206,13 @@ export default function RingsAuditPage() {
   const countries = useMemo(() => {
     const result: { id: string; name: string; flagUrl?: string; slug?: string }[] = [];
     const push = (data: typeof caphiriaSearch) => {
-      if (data?.[0]) result.push({ id: data[0].id, name: data[0].name, flagUrl: data[0].flagUrl, slug: data[0].slug });
+      if (data?.[0])
+        result.push({
+          id: data[0].id,
+          name: data[0].name,
+          flagUrl: data[0].flagUrl,
+          slug: data[0].slug,
+        });
     };
     push(caphiriaSearch);
     push(urceaSearch);
@@ -218,17 +230,17 @@ export default function RingsAuditPage() {
       />
 
       {/* Formula comparison */}
-      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
-        <div className="border-b border-border/40 bg-muted/20 px-4 py-2.5">
+      <div className="border-border/60 bg-card overflow-hidden rounded-xl border shadow-sm">
+        <div className="border-border/40 bg-muted/20 border-b px-4 py-2.5">
           <h3 className="text-sm font-semibold">Formula Comparison</h3>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-muted-foreground text-[10px]">
             Two endpoints compute the same 4 ring metrics but use different formulas
           </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[11px]">
             <thead>
-              <tr className="border-b border-border/40 bg-muted/10">
+              <tr className="border-border/40 bg-muted/10 border-b">
                 <th className="px-3 py-2 font-medium">Ring</th>
                 <th className="px-3 py-2 font-medium text-blue-600 dark:text-blue-400">
                   getActivityRingsData (economy.ts:344)
@@ -239,7 +251,7 @@ export default function RingsAuditPage() {
                 <th className="px-3 py-2 font-medium">DB override</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/20">
+            <tbody className="divide-border/20 divide-y">
               {(RING_META as typeof RING_META).map((ring) => (
                 <tr key={ring.key} className="hover:bg-muted/5">
                   <td className="flex items-center gap-2 px-3 py-2.5 font-medium">
@@ -250,12 +262,20 @@ export default function RingsAuditPage() {
                     {ring.label}
                   </td>
                   <td className="px-3 py-2.5 font-mono text-[9px] text-blue-600/80 dark:text-blue-400/80">
-                    {ENDPOINTS.activityRings.formulas[ring.key as keyof typeof ENDPOINTS.activityRings.formulas]}
+                    {
+                      ENDPOINTS.activityRings.formulas[
+                        ring.key as keyof typeof ENDPOINTS.activityRings.formulas
+                      ]
+                    }
                   </td>
                   <td className="px-3 py-2.5 font-mono text-[9px] text-amber-600/80 dark:text-amber-400/80">
-                    {ENDPOINTS.dashboard.formulas[ring.key as keyof typeof ENDPOINTS.dashboard.formulas]}
+                    {
+                      ENDPOINTS.dashboard.formulas[
+                        ring.key as keyof typeof ENDPOINTS.dashboard.formulas
+                      ]
+                    }
                   </td>
-                  <td className="px-3 py-2.5 text-[10px] text-muted-foreground">
+                  <td className="text-muted-foreground px-3 py-2.5 text-[10px]">
                     {ring.key === "diplomaticStanding"
                       ? "Same — identical formula"
                       : "Different — produces different values"}
@@ -271,14 +291,14 @@ export default function RingsAuditPage() {
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold">Country Comparison</h3>
-          <span className="rounded bg-muted/50 px-1.5 py-0.5 text-[9px] text-muted-foreground">
+          <span className="bg-muted/50 text-muted-foreground rounded px-1.5 py-0.5 text-[9px]">
             {countries.length} countries
           </span>
         </div>
 
         {countries.length === 0 ? (
-          <div className="flex items-center justify-center rounded-xl border border-border/60 bg-card py-12 text-sm text-muted-foreground">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground mr-2" />
+          <div className="border-border/60 bg-card text-muted-foreground flex items-center justify-center rounded-xl border py-12 text-sm">
+            <div className="border-muted-foreground/30 border-t-muted-foreground mr-2 h-5 w-5 animate-spin rounded-full border-2" />
             Searching for countries...
           </div>
         ) : (
@@ -297,8 +317,8 @@ export default function RingsAuditPage() {
       </div>
 
       {/* Component reference */}
-      <div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
-        <div className="border-b border-border/40 bg-muted/20 px-4 py-2.5">
+      <div className="border-border/60 bg-card overflow-hidden rounded-xl border shadow-sm">
+        <div className="border-border/40 bg-muted/20 border-b px-4 py-2.5">
           <h3 className="text-sm font-semibold">Ring Component Inventory</h3>
         </div>
         <div className="p-4">
@@ -359,14 +379,11 @@ export default function RingsAuditPage() {
                 sizes: "50/80px",
               },
             ].map((comp) => (
-              <div
-                key={comp.name}
-                className="rounded-lg border border-border/30 bg-muted/10 p-3"
-              >
-                <div className="mb-1 font-semibold text-foreground">{comp.name}</div>
-                <div className="mb-1 text-[9px] text-muted-foreground">{comp.path}</div>
+              <div key={comp.name} className="border-border/30 bg-muted/10 rounded-lg border p-3">
+                <div className="text-foreground mb-1 font-semibold">{comp.name}</div>
+                <div className="text-muted-foreground mb-1 text-[9px]">{comp.path}</div>
                 <div className="mb-1 text-[10px]">{comp.usage}</div>
-                <div className="text-[9px] text-muted-foreground">Sizes: {comp.sizes}</div>
+                <div className="text-muted-foreground text-[9px]">Sizes: {comp.sizes}</div>
               </div>
             ))}
           </div>

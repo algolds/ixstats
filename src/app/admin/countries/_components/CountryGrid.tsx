@@ -134,7 +134,7 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Search countries..."
             value={search}
@@ -171,10 +171,10 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border/50">
+      <div className="border-border/50 overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-muted/30 border-b border-border/50">
+            <tr className="bg-muted/30 border-border/50 border-b">
               {[
                 { field: "name" as const, label: "Country", width: "min-w-[200px]" },
                 { field: "currentTotalGdp" as const, label: "GDP", width: "min-w-[100px]" },
@@ -210,7 +210,7 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
           <tbody>
             {isLoading ? (
               Array.from({ length: 10 }).map((_, i) => (
-                <tr key={i} className="border-b border-border/30">
+                <tr key={i} className="border-border/30 border-b">
                   {Array.from({ length: 10 }).map((_, j) => (
                     <td key={j} className="px-3 py-2.5">
                       <Skeleton className="h-5 w-full" />
@@ -226,27 +226,25 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
               </tr>
             ) : (
               data?.rows.map((row) => {
-                const growthNegative =
-                  row.gdpGrowthRate != null && row.gdpGrowthRate < 0;
+                const growthNegative = row.gdpGrowthRate != null && row.gdpGrowthRate < 0;
                 return (
                   <tr
                     key={row.id}
-                    onClick={() => { setTierOpen(false); onSelectCountry(row.id); }}
-                    className={`cursor-pointer border-b border-border/30 transition-colors hover:bg-muted/20 ${
+                    onClick={() => {
+                      setTierOpen(false);
+                      onSelectCountry(row.id);
+                    }}
+                    className={`border-border/30 hover:bg-muted/20 cursor-pointer border-b transition-colors ${
                       growthNegative ? "bg-red-500/[0.03]" : ""
                     } ${!row.owner ? "opacity-75" : ""}`}
                   >
                     {/* Country Name */}
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
-                        <UnifiedCountryFlag
-                          countryName={row.name}
-                          flagUrl={row.flag}
-                          size="sm"
-                        />
+                        <UnifiedCountryFlag countryName={row.name} flagUrl={row.flag} size="sm" />
                         <span className="text-foreground font-medium">{row.name}</span>
                         {row.isDemo && (
-                          <Badge variant="outline" className="text-xs px-1 py-0">
+                          <Badge variant="outline" className="px-1 py-0 text-xs">
                             Demo
                           </Badge>
                         )}
@@ -292,9 +290,7 @@ export function CountryGrid({ onSelectCountry }: CountryGridProps) {
 
                     {/* Last Updated */}
                     <td className="text-muted-foreground px-3 py-2.5 text-xs">
-                      {row.updatedAt
-                        ? new Date(row.updatedAt).toLocaleDateString()
-                        : "Never"}
+                      {row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : "Never"}
                     </td>
 
                     {/* Map */}

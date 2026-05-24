@@ -91,9 +91,7 @@ function fixGeometry(geometry: Feature["geometry"]): Feature["geometry"] {
   if (geometry.type === "MultiPolygon") {
     return {
       ...geometry,
-      coordinates: geometry.coordinates.map((polygon) =>
-        polygon.map(fixAntimeridianRing)
-      ),
+      coordinates: geometry.coordinates.map((polygon) => polygon.map(fixAntimeridianRing)),
     };
   }
 
@@ -102,8 +100,10 @@ function fixGeometry(geometry: Feature["geometry"]): Feature["geometry"] {
 
 // ── Compute ring statistics ──────────────────────
 function ringStats(coords: Position[][]) {
-  let minLng = Infinity, maxLng = -Infinity;
-  let minLat = Infinity, maxLat = -Infinity;
+  let minLng = Infinity,
+    maxLng = -Infinity;
+  let minLat = Infinity,
+    maxLat = -Infinity;
   let totalPts = 0;
   for (const ring of coords) {
     for (const c of ring) {
@@ -164,8 +164,12 @@ function main() {
     }
     const stats = ringStats(allRings);
 
-    console.log(`  KEEP ${id}: ${allRings.length} ring(s), ${stats.totalPts} pts, fill=${fill || "default"}`);
-    console.log(`    lng: [${stats.minLng.toFixed(2)}, ${stats.maxLng.toFixed(2)}], lat: [${stats.minLat.toFixed(2)}, ${stats.maxLat.toFixed(2)}]`);
+    console.log(
+      `  KEEP ${id}: ${allRings.length} ring(s), ${stats.totalPts} pts, fill=${fill || "default"}`
+    );
+    console.log(
+      `    lng: [${stats.minLng.toFixed(2)}, ${stats.maxLng.toFixed(2)}], lat: [${stats.minLat.toFixed(2)}, ${stats.maxLat.toFixed(2)}]`
+    );
     if (stats.maxLng > 180) {
       console.log(`    ✓ Has coordinates > 180° (will be split at runtime)`);
     }

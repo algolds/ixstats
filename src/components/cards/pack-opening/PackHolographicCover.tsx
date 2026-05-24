@@ -109,14 +109,24 @@ function getHoloGradient(rarity: CardRarity): string {
 
 function getSweepSpeed(rarity: CardRarity): number {
   const speeds: Record<CardRarity, number> = {
-    COMMON: 4, UNCOMMON: 3.5, RARE: 3, ULTRA_RARE: 2.5, EPIC: 2, LEGENDARY: 1.5,
+    COMMON: 4,
+    UNCOMMON: 3.5,
+    RARE: 3,
+    ULTRA_RARE: 2.5,
+    EPIC: 2,
+    LEGENDARY: 1.5,
   };
   return speeds[rarity] ?? 4;
 }
 
 function getHoloOpacity(rarity: CardRarity): number {
   const map: Record<CardRarity, number> = {
-    COMMON: 0.15, UNCOMMON: 0.25, RARE: 0.35, ULTRA_RARE: 0.45, EPIC: 0.55, LEGENDARY: 0.7,
+    COMMON: 0.15,
+    UNCOMMON: 0.25,
+    RARE: 0.35,
+    ULTRA_RARE: 0.45,
+    EPIC: 0.55,
+    LEGENDARY: 0.7,
   };
   return map[rarity] ?? 0.15;
 }
@@ -125,7 +135,11 @@ function getHoloOpacity(rarity: CardRarity): number {
 
 const SIZE_CLASSES = { sm: "h-20", md: "h-40", lg: "h-full min-h-[320px]" } as const;
 const LABEL_SIZES = { sm: "text-[9px]", md: "text-xs", lg: "text-base" } as const;
-const STAMP_SIZES = { sm: "text-xs h-5 w-5", md: "text-lg h-8 w-8", lg: "text-3xl h-14 w-14" } as const;
+const STAMP_SIZES = {
+  sm: "text-xs h-5 w-5",
+  md: "text-lg h-8 w-8",
+  lg: "text-3xl h-14 w-14",
+} as const;
 
 // ─── Component ──────────────────────────────────────────────────
 
@@ -143,18 +157,14 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
 
     return (
       <div
-        className={cn(
-          "relative w-full overflow-hidden select-none",
-          SIZE_CLASSES[size],
-          className,
-        )}
+        className={cn("relative w-full overflow-hidden select-none", SIZE_CLASSES[size], className)}
       >
         {/* Layer 1: Base gradient */}
         <div className={cn("absolute inset-0 bg-gradient-to-br", theme.base)} />
 
         {/* Layer 2: Holographic pattern */}
         <div
-          className="absolute inset-0 pack-holo-drift"
+          className="pack-holo-drift absolute inset-0"
           style={{
             background: holoGradient,
             backgroundSize: "400% 400%",
@@ -167,9 +177,9 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
 
         {/* Layer 3: Geometric accents */}
         {showGeometry && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div
-              className="absolute pack-geo-spin"
+              className="pack-geo-spin absolute"
               style={{
                 width: "70%",
                 height: "70%",
@@ -179,7 +189,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               }}
             />
             <div
-              className="absolute pack-geo-spin"
+              className="pack-geo-spin absolute"
               style={{
                 width: "45%",
                 height: "45%",
@@ -191,7 +201,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
             />
             {(rarity === "EPIC" || rarity === "LEGENDARY") && (
               <div
-                className="absolute rounded-full animate-pulse"
+                className="absolute animate-pulse rounded-full"
                 style={{
                   width: "18%",
                   height: "18%",
@@ -204,27 +214,28 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
         )}
 
         {/* Layer 4: Foil shine sweep */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            className="absolute h-full pack-foil-sweep"
+            className="pack-foil-sweep absolute h-full"
             style={{
               width: "50%",
               top: 0,
-              background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.1) 55%, transparent 70%)",
+              background:
+                "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.1) 55%, transparent 70%)",
               animation: `foil-sweep ${sweepDuration}s ease-in-out infinite`,
             }}
           />
         </div>
 
         {/* Layer 5: Text overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-end pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-end">
           {showStamp && (
             <div
               className={cn(
                 "mb-1 flex items-center justify-center rounded-full",
                 "bg-gradient-to-br shadow-lg backdrop-blur-sm",
                 foilStamp.color,
-                STAMP_SIZES[size],
+                STAMP_SIZES[size]
               )}
               style={{ textShadow: "0 0 8px rgba(255,255,255,0.8)" }}
             >
@@ -232,12 +243,12 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
             </div>
           )}
 
-          <div className="relative w-full bg-gradient-to-t from-black/70 via-black/30 to-transparent px-2 pb-1.5 pt-4">
+          <div className="relative w-full bg-gradient-to-t from-black/70 via-black/30 to-transparent px-2 pt-4 pb-1.5">
             {packName && size !== "sm" && (
               <p
                 className={cn(
-                  "text-center font-black text-white/90 leading-tight line-clamp-1",
-                  LABEL_SIZES[size],
+                  "line-clamp-1 text-center leading-tight font-black text-white/90",
+                  LABEL_SIZES[size]
                 )}
                 style={{
                   textShadow: getEmbossedTextShadow(
@@ -250,8 +261,8 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
             )}
             <p
               className={cn(
-                "text-center font-semibold uppercase tracking-widest text-white/40",
-                size === "sm" ? "text-[7px]" : "text-[9px]",
+                "text-center font-semibold tracking-widest text-white/40 uppercase",
+                size === "sm" ? "text-[7px]" : "text-[9px]"
               )}
             >
               IxCards
@@ -260,7 +271,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
         </div>
       </div>
     );
-  },
+  }
 );
 
 PackHolographicCover.displayName = "PackHolographicCover";

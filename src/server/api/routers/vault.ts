@@ -399,6 +399,66 @@ export const vaultRouter = createTRPCRouter({
     }),
 
   /**
+   * Admin: Adjust a user's login streak (absolute delta applied)
+   */
+  adminAdjustStreak: adminProcedure
+    .input(
+      z.object({
+        targetUserId: z.string().min(1),
+        delta: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Ensure target user exists (upsert vault if missing)
+        let vault = await ctx.db.myVault.findUnique({ where: { userId: input.targetUserId } });
+        if (!vault) {
+          vault = await ctx.db.myVault.create({
+            data: { userId: input.targetUserId, credits: 0, lifetimeEarned: 0, lifetimeSpent: 0, todayEarned: 0, lastDailyReset: new Date(), loginStreak: 0, vaultLevel: 1, vaultXp: 0 },
+          });
+        }
+
+        const newStreak = Math.max(0, (vault.loginStreak ?? 0) + input.delta);
+
+        await ctx.db.myVault.update({ where: { id: vault.id }, data: { loginStreak: newStreak } });
+
+        return { success: true, newStreak };
+      } catch (error) {
+        console.error('[Vault Router] Error adjusting streak:', error);
+        throw new Error('Failed to adjust user streak');
+      }
+    }),
+
+  /**
+   * Admin: List user vault transactions
+   */
+  adminListUserTransactions: adminProcedure
+    .input(
+      z.object({
+        userId: z.string().min(1),
+        limit: z.number().min(1).max(100).optional().default(50),
+        offset: z.number().min(0).optional().default(0),
+        type: vaultTransactionTypeEnum.optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const transactions = await vaultService.getTransactionHistory(
+          input.userId,
+          ctx.db,
+          input.limit,
+          input.offset,
+          input.type as VaultTransactionType | undefined
+        );
+
+        return { transactions, count: transactions.length, hasMore: transactions.length === input.limit };
+      } catch (error) {
+        console.error('[Vault Router] Error listing user transactions:', error);
+        throw new Error('Failed to list user transactions');
+      }
+    }),
+
+  /**
    * Get user stats (totalCards, deckValue)
    */
   getUserStats: protectedProcedure.query(async ({ ctx }) => {

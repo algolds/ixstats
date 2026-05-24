@@ -114,10 +114,10 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
               className="text-center"
             >
               {/* Fusion circles */}
-              <div className="relative h-64 flex items-center justify-center">
+              <div className="relative flex h-64 items-center justify-center">
                 {/* Left circle */}
                 <motion.div
-                  className="absolute w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 opacity-50"
+                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 opacity-50"
                   animate={{
                     x: [-100, 0],
                     scale: [1, 1.2, 0.8],
@@ -131,7 +131,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
 
                 {/* Right circle */}
                 <motion.div
-                  className="absolute w-32 h-32 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 opacity-50"
+                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 opacity-50"
                   animate={{
                     x: [100, 0],
                     scale: [1, 1.2, 0.8],
@@ -145,7 +145,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
 
                 {/* Center fusion point */}
                 <motion.div
-                  className="absolute w-16 h-16 rounded-full bg-white"
+                  className="absolute h-16 w-16 rounded-full bg-white"
                   animate={{
                     scale: [0, 1.5, 1],
                     opacity: [0, 1, 0.8],
@@ -183,7 +183,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
             >
               <motion.div
                 className={cn(
-                  "text-6xl font-black mb-4",
+                  "mb-4 text-6xl font-black",
                   success ? "text-green-400" : "text-red-400"
                 )}
                 animate={{
@@ -196,7 +196,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
               >
                 {success ? "SUCCESS!" : "FAILED"}
               </motion.div>
-              <div className="text-white/70 text-xl">
+              <div className="text-xl text-white/70">
                 {success
                   ? "Your card has been crafted!"
                   : "Crafting failed. Materials were consumed."}
@@ -211,7 +211,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
               initial={{ scale: 0.8, opacity: 0, y: 50 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: -50 }}
-              className="text-center space-y-6"
+              className="space-y-6 text-center"
             >
               {success && resultCard ? (
                 <>
@@ -219,7 +219,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                   {particles.map((particle) => (
                     <motion.div
                       key={particle.id}
-                      className="absolute w-2 h-2 rounded-full bg-yellow-400"
+                      className="absolute h-2 w-2 rounded-full bg-yellow-400"
                       initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
                       animate={{
                         x: particle.x * 5,
@@ -246,11 +246,7 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                       ease: "easeInOut",
                     }}
                   >
-                    <CardDisplay
-                      card={resultCard.card}
-                      size="large"
-                      enableHolographic={true}
-                    />
+                    <CardDisplay card={resultCard.card} size="large" enableHolographic={true} />
                   </motion.div>
 
                   {/* XP badge */}
@@ -260,32 +256,21 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ delay: 0.5, type: "spring" }}
                     >
-                      <CometCard
-                        className="inline-block px-6 py-3"
-                        glassDepth="interactive"
-                      >
+                      <CometCard className="inline-block px-6 py-3" glassDepth="interactive">
                         <div className="text-sm text-white/60 uppercase">XP Gained</div>
-                        <div className="text-3xl font-black text-blue-400">
-                          +{xpGained}
-                        </div>
+                        <div className="text-3xl font-black text-blue-400">+{xpGained}</div>
                       </CometCard>
                     </motion.div>
                   )}
 
-                  <div className="text-white/60 text-sm">
-                    Click anywhere to continue
-                  </div>
+                  <div className="text-sm text-white/60">Click anywhere to continue</div>
                 </>
               ) : (
                 <>
                   {/* Failure message */}
                   <div className="text-8xl">😢</div>
-                  <div className="text-white text-xl">
-                    Better luck next time!
-                  </div>
-                  <div className="text-white/60 text-sm">
-                    Click anywhere to continue
-                  </div>
+                  <div className="text-xl text-white">Better luck next time!</div>
+                  <div className="text-sm text-white/60">Click anywhere to continue</div>
                 </>
               )}
             </motion.div>

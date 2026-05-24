@@ -16,14 +16,7 @@ import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
-import {
-  Send,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  AlertCircle,
-  CheckCircle,
-} from "lucide-react";
+import { Send, TrendingUp, TrendingDown, Activity, AlertCircle, CheckCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { SimulatedImpactData } from "~/hooks/usePolicyAnalytics";
 
@@ -127,17 +120,23 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
         </div>
 
         {/* Impact Preview */}
-        <div className="mt-6 p-6 rounded-lg border bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20">
-          <h4 className="font-semibold mb-4">Projected Impacts</h4>
+        <div className="mt-6 rounded-lg border bg-gradient-to-r from-indigo-50/50 to-purple-50/50 p-6 dark:from-indigo-950/20 dark:to-purple-950/20">
+          <h4 className="mb-4 font-semibold">Projected Impacts</h4>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Tax Revenue Change</span>
-                <span className={cn(
-                  "font-semibold flex items-center gap-1",
-                  simulatedImpact.taxRevenue > 0 ? "text-green-600" : "text-red-600"
-                )}>
-                  {simulatedImpact.taxRevenue > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                <span
+                  className={cn(
+                    "flex items-center gap-1 font-semibold",
+                    simulatedImpact.taxRevenue > 0 ? "text-green-600" : "text-red-600"
+                  )}
+                >
+                  {simulatedImpact.taxRevenue > 0 ? (
+                    <TrendingUp className="h-4 w-4" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4" />
+                  )}
                   {simulatedImpact.taxRevenue.toFixed(1)}%
                 </span>
               </div>
@@ -147,11 +146,17 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm">GDP Growth Rate</span>
-                <span className={cn(
-                  "font-semibold flex items-center gap-1",
-                  simulatedImpact.gdpGrowth > 3 ? "text-green-600" : "text-yellow-600"
-                )}>
-                  {simulatedImpact.gdpGrowth > 3 ? <TrendingUp className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
+                <span
+                  className={cn(
+                    "flex items-center gap-1 font-semibold",
+                    simulatedImpact.gdpGrowth > 3 ? "text-green-600" : "text-yellow-600"
+                  )}
+                >
+                  {simulatedImpact.gdpGrowth > 3 ? (
+                    <TrendingUp className="h-4 w-4" />
+                  ) : (
+                    <Activity className="h-4 w-4" />
+                  )}
                   {simulatedImpact.gdpGrowth.toFixed(2)}%
                 </span>
               </div>
@@ -161,16 +166,22 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Budget Balance</span>
-                <span className={cn(
-                  "font-semibold flex items-center gap-1",
-                  simulatedImpact.budgetBalance > 0 ? "text-green-600" : "text-red-600"
-                )}>
-                  {simulatedImpact.budgetBalance > 0 ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                <span
+                  className={cn(
+                    "flex items-center gap-1 font-semibold",
+                    simulatedImpact.budgetBalance > 0 ? "text-green-600" : "text-red-600"
+                  )}
+                >
+                  {simulatedImpact.budgetBalance > 0 ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4" />
+                  )}
                   {simulatedImpact.budgetBalance > 0 ? "Surplus" : "Deficit"}
                 </span>
               </div>
               <Progress
-                value={Math.min(100, Math.abs(simulatedImpact.budgetBalance) / 1000000000 * 10)}
+                value={Math.min(100, (Math.abs(simulatedImpact.budgetBalance) / 1000000000) * 10)}
                 className="h-2"
               />
             </div>
@@ -186,8 +197,8 @@ export const PolicyForecastingPanel = React.memo(function PolicyForecastingPanel
             </div>
           </div>
 
-          <Button className="w-full mt-6" variant="default">
-            <Send className="h-4 w-4 mr-2" />
+          <Button className="mt-6 w-full" variant="default">
+            <Send className="mr-2 h-4 w-4" />
             Apply Simulation
           </Button>
         </div>

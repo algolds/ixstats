@@ -11,11 +11,7 @@ export const metadata: Metadata = {
   robots: "noindex, nofollow",
 };
 
-export default function WidgetLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function WidgetLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>

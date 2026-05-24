@@ -73,9 +73,10 @@ export async function POST(request: NextRequest) {
 
     // Read file content
     const fileBuffer = await file.arrayBuffer();
-    const fileContent = ext === ".svg"
-      ? new TextDecoder().decode(fileBuffer)
-      : Buffer.from(fileBuffer).toString("base64"); // Base64 encode PNG
+    const fileContent =
+      ext === ".svg"
+        ? new TextDecoder().decode(fileBuffer)
+        : Buffer.from(fileBuffer).toString("base64"); // Base64 encode PNG
 
     // Hash for dedup check
     const fileHash = createHash("sha256").update(Buffer.from(fileBuffer)).digest("hex");

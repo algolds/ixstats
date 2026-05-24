@@ -11,16 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import {
-  MapPin,
-  Users,
-  Crown,
-  Globe,
-  ExternalLink,
-  Info,
-  Flag,
-  Building,
-} from "lucide-react";
+import { MapPin, Users, Crown, Globe, ExternalLink, Info, Flag, Building } from "lucide-react";
 import { formatPopulation } from "~/lib/chart-utils";
 import { getFlagColors } from "~/lib/flag-color-extractor";
 import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";

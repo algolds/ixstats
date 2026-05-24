@@ -22,8 +22,8 @@ export function StudioSidebarLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       {/* Mobile horizontal nav */}
-      <div className="lg:hidden sticky top-0 z-30 bg-slate-900/90 backdrop-blur-lg border-b border-white/10 px-4 py-2">
-        <div className="flex gap-2 overflow-x-auto scrollbar-none">
+      <div className="sticky top-0 z-30 border-b border-white/10 bg-slate-900/90 px-4 py-2 backdrop-blur-lg lg:hidden">
+        <div className="flex scrollbar-none gap-2 overflow-x-auto">
           <StudioSidebarNav
             activeSection={activeSection}
             onNavigate={onNavigate}
@@ -33,15 +33,13 @@ export function StudioSidebarLayout({
       </div>
 
       {/* Desktop grid layout */}
-      <div className="max-w-[1920px] mx-auto lg:grid lg:grid-cols-[280px_1fr] lg:gap-0 min-h-screen">
+      <div className="mx-auto min-h-screen max-w-[1920px] lg:grid lg:grid-cols-[280px_1fr] lg:gap-0">
         {/* Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:sticky lg:top-0 lg:h-screen border-r border-white/10 bg-slate-900/50 backdrop-blur-sm">
+        <aside className="hidden border-r border-white/10 bg-slate-900/50 backdrop-blur-sm lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
           {/* Logo */}
-          <div className="p-6 border-b border-white/10">
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              World Studio
-            </h1>
-            <p className="text-xs text-white/40 mt-1">Realm Creator</p>
+          <div className="border-b border-white/10 p-6">
+            <h1 className="text-xl font-bold tracking-tight text-white">World Studio</h1>
+            <p className="mt-1 text-xs text-white/40">Realm Creator</p>
           </div>
 
           {/* Navigation */}
@@ -54,17 +52,11 @@ export function StudioSidebarLayout({
           </div>
 
           {/* Extra sidebar content */}
-          {sidebarExtra && (
-            <div className="p-4 border-t border-white/10">
-              {sidebarExtra}
-            </div>
-          )}
+          {sidebarExtra && <div className="border-t border-white/10 p-4">{sidebarExtra}</div>}
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

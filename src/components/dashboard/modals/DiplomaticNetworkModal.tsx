@@ -25,7 +25,11 @@ interface DiplomaticNetworkModalProps {
   leaderboard: LeaderboardEntry[];
 }
 
-export function DiplomaticNetworkModal({ isOpen, onClose, leaderboard }: DiplomaticNetworkModalProps) {
+export function DiplomaticNetworkModal({
+  isOpen,
+  onClose,
+  leaderboard,
+}: DiplomaticNetworkModalProps) {
   const totalEmbassies = leaderboard.reduce((sum, e) => sum + e.activeEmbassies, 0);
   const nationsWithTies = leaderboard.filter((e) => e.activeEmbassies > 0).length;
 
@@ -41,22 +45,22 @@ export function DiplomaticNetworkModal({ isOpen, onClose, leaderboard }: Diploma
 
         {/* Summary bar */}
         <div className="flex gap-3">
-          <div className="flex-1 rounded-lg border border-border/40 bg-muted/20 p-2.5 text-center">
+          <div className="border-border/40 bg-muted/20 flex-1 rounded-lg border p-2.5 text-center">
             <div className="text-lg font-bold">{totalEmbassies}</div>
-            <div className="text-[10px] text-muted-foreground">Total Embassies</div>
+            <div className="text-muted-foreground text-[10px]">Total Embassies</div>
           </div>
-          <div className="flex-1 rounded-lg border border-border/40 bg-muted/20 p-2.5 text-center">
+          <div className="border-border/40 bg-muted/20 flex-1 rounded-lg border p-2.5 text-center">
             <div className="text-lg font-bold">{nationsWithTies}</div>
-            <div className="text-[10px] text-muted-foreground">Nations with Ties</div>
+            <div className="text-muted-foreground text-[10px]">Nations with Ties</div>
           </div>
         </div>
 
         {/* Ranked list */}
-        <div className="max-h-[400px] overflow-y-auto space-y-1.5">
+        <div className="max-h-[400px] space-y-1.5 overflow-y-auto">
           {leaderboard.length === 0 ? (
             <div className="py-8 text-center">
-              <Globe className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">No diplomatic activity yet</p>
+              <Globe className="text-muted-foreground/40 mx-auto mb-3 h-10 w-10" />
+              <p className="text-muted-foreground text-sm">No diplomatic activity yet</p>
             </div>
           ) : (
             leaderboard
@@ -64,9 +68,9 @@ export function DiplomaticNetworkModal({ isOpen, onClose, leaderboard }: Diploma
               .map((entry, i) => (
                 <div
                   key={entry.countryId}
-                  className="flex items-center gap-3 rounded-lg border border-border/40 p-2.5 transition-colors hover:bg-muted/30"
+                  className="border-border/40 hover:bg-muted/30 flex items-center gap-3 rounded-lg border p-2.5 transition-colors"
                 >
-                  <span className="w-5 text-center text-xs font-bold text-muted-foreground">
+                  <span className="text-muted-foreground w-5 text-center text-xs font-bold">
                     {i + 1}
                   </span>
                   <UnifiedCountryFlag
@@ -76,8 +80,11 @@ export function DiplomaticNetworkModal({ isOpen, onClose, leaderboard }: Diploma
                   />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{entry.countryName}</div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                      <span>{entry.activeEmbassies} {entry.activeEmbassies === 1 ? "embassy" : "embassies"}</span>
+                    <div className="text-muted-foreground flex items-center gap-2 text-[10px]">
+                      <span>
+                        {entry.activeEmbassies}{" "}
+                        {entry.activeEmbassies === 1 ? "embassy" : "embassies"}
+                      </span>
                       <span className="text-muted-foreground/40">|</span>
                       <span>Lvl {entry.averageLevel}</span>
                     </div>
@@ -85,12 +92,12 @@ export function DiplomaticNetworkModal({ isOpen, onClose, leaderboard }: Diploma
                   <Badge
                     variant="outline"
                     className={cn(
-                      "shrink-0 text-[10px] px-1.5 py-0",
+                      "shrink-0 px-1.5 py-0 text-[10px]",
                       entry.totalInfluence >= 50
-                        ? "text-cyan-600 border-cyan-500/30"
+                        ? "border-cyan-500/30 text-cyan-600"
                         : entry.totalInfluence >= 20
-                          ? "text-blue-600 border-blue-500/30"
-                          : "text-muted-foreground border-border/40",
+                          ? "border-blue-500/30 text-blue-600"
+                          : "text-muted-foreground border-border/40"
                     )}
                   >
                     {entry.totalInfluence} influence

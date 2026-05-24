@@ -15,12 +15,12 @@ export default function MilitaryEquipmentArticle() {
         <Section title="Equipment Categories">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>Ground Forces:</strong> Main battle tanks, armored vehicles, artillery systems,
-              air defense platforms, infantry weapons (500+ items).
+              <strong>Ground Forces:</strong> Main battle tanks, armored vehicles, artillery
+              systems, air defense platforms, infantry weapons (500+ items).
             </li>
             <li>
-              <strong>Naval Forces:</strong> Aircraft carriers, destroyers, submarines, patrol craft,
-              amphibious vessels, support ships.
+              <strong>Naval Forces:</strong> Aircraft carriers, destroyers, submarines, patrol
+              craft, amphibious vessels, support ships.
             </li>
             <li>
               <strong>Air Forces:</strong> Fighter jets, bombers, helicopters, transport aircraft,
@@ -49,8 +49,8 @@ export default function MilitaryEquipmentArticle() {
                 ratings, upgrade paths.
               </li>
               <li>
-                <strong>Acquisition Options:</strong> Purchase, license production, joint development,
-                leasing, donations.
+                <strong>Acquisition Options:</strong> Purchase, license production, joint
+                development, leasing, donations.
               </li>
             </ul>
           </InfoBox>
@@ -61,8 +61,8 @@ export default function MilitaryEquipmentArticle() {
         <Section title="Small Arms Equipment">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>Infantry Weapons:</strong> Rifles, carbines, designated marksman rifles, sniper
-              systems, machine guns.
+              <strong>Infantry Weapons:</strong> Rifles, carbines, designated marksman rifles,
+              sniper systems, machine guns.
             </li>
             <li>
               <strong>Crew-Served Weapons:</strong> Heavy machine guns, mortars, anti-tank guided
@@ -81,7 +81,9 @@ export default function MilitaryEquipmentArticle() {
         <Section title="How to Browse Equipment">
           <InfoBox title="Browsing & Filtering">
             <ul className="list-disc space-y-1 pl-6">
-              <li>Browse the full catalog with filters by type, origin country, era, and capabilities.</li>
+              <li>
+                Browse the full catalog with filters by type, origin country, era, and capabilities.
+              </li>
               <li>View detailed specs for any specific equipment item.</li>
               <li>Search manufacturers and production facilities.</li>
               <li>Browse infantry weapons by caliber, weight, and rate of fire.</li>
@@ -117,17 +119,32 @@ export default function MilitaryEquipmentArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <Factory className="inline h-4 w-4" />{" "}
-              <Link href="/help/admin/reference-data" className="text-blue-600 hover:underline dark:text-blue-400">Reference Data Management</Link>{" "}
+              <Link
+                href="/help/admin/reference-data"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Reference Data Management
+              </Link>{" "}
               — Managing equipment catalogs (admin).
             </li>
             <li>
               <Package className="inline h-4 w-4" />{" "}
-              <Link href="/help/defense/units" className="text-blue-600 hover:underline dark:text-blue-400">Military Units & Assets</Link>{" "}
+              <Link
+                href="/help/defense/units"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Military Units & Assets
+              </Link>{" "}
               — Assigning equipment to military units.
             </li>
             <li>
               <Crosshair className="inline h-4 w-4" />{" "}
-              <Link href="/help/defense/customization" className="text-blue-600 hover:underline dark:text-blue-400">Force Customization</Link>{" "}
+              <Link
+                href="/help/defense/customization"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Force Customization
+              </Link>{" "}
               — Tailoring your forces with the right equipment.
             </li>
           </ul>

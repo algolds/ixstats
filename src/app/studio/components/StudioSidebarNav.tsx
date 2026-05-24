@@ -25,29 +25,23 @@ export function StudioSidebarNav({
           <button
             key={sectionId}
             onClick={() => onNavigate(sectionId)}
-            className={`
-              flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all duration-200
-              ${isActive
-                ? "bg-white/10 backdrop-blur-sm border border-white/20 shadow-sm"
-                : "hover:bg-white/5 border border-transparent"
-              }
-            `}
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-200 ${
+              isActive
+                ? "border border-white/20 bg-white/10 shadow-sm backdrop-blur-sm"
+                : "border border-transparent hover:bg-white/5"
+            } `}
           >
-            <span className="text-lg shrink-0">{theme.icon}</span>
-            <div className="flex-1 min-w-0">
+            <span className="shrink-0 text-lg">{theme.icon}</span>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span
                   className={`text-sm font-medium ${isActive ? "text-white" : "text-white/70"}`}
                 >
                   {theme.label}
                 </span>
-                {isCompleted && (
-                  <span className="text-xs text-emerald-400">✓</span>
-                )}
+                {isCompleted && <span className="text-xs text-emerald-400">✓</span>}
               </div>
-              <span className="text-xs text-white/40 truncate block">
-                {theme.description}
-              </span>
+              <span className="block truncate text-xs text-white/40">{theme.description}</span>
             </div>
           </button>
         );

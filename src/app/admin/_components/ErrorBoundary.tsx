@@ -59,23 +59,19 @@ export class AdminErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
-          <div className="w-full max-w-md rounded-lg bg-card p-6 text-center shadow-lg">
+        <div className="bg-background flex min-h-screen items-center justify-center p-4">
+          <div className="bg-card w-full max-w-md rounded-lg p-6 text-center shadow-lg">
             <div className="mb-4">
               <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-red-500" />
-              <h1 className="mb-2 text-xl font-bold text-foreground">
-                Admin Dashboard Error
-              </h1>
-              <p className="mb-4 text-muted-foreground">
+              <h1 className="text-foreground mb-2 text-xl font-bold">Admin Dashboard Error</h1>
+              <p className="text-muted-foreground mb-4">
                 Something went wrong with the admin dashboard. This error has been logged.
               </p>
             </div>
 
             {this.state.error && (
               <div className="mb-6 rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-left">
-                <h3 className="mb-2 text-sm font-medium text-red-700">
-                  Error Details:
-                </h3>
+                <h3 className="mb-2 text-sm font-medium text-red-700">Error Details:</h3>
                 <p className="font-mono text-xs break-words text-red-600">
                   {this.state.error.message}
                 </p>
@@ -103,7 +99,7 @@ export class AdminErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleReload}
-                className="flex w-full items-center justify-center rounded-md bg-muted px-4 py-2 font-medium text-foreground transition-colors hover:bg-muted/80"
+                className="bg-muted text-foreground hover:bg-muted/80 flex w-full items-center justify-center rounded-md px-4 py-2 font-medium transition-colors"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Reload Page
@@ -111,15 +107,15 @@ export class AdminErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleGoHome}
-                className="flex w-full items-center justify-center rounded-md bg-muted px-4 py-2 font-medium text-foreground transition-colors hover:bg-muted/80"
+                className="bg-muted text-foreground hover:bg-muted/80 flex w-full items-center justify-center rounded-md px-4 py-2 font-medium transition-colors"
               >
                 <Home className="mr-2 h-4 w-4" />
                 Go to Homepage
               </button>
             </div>
 
-            <div className="mt-6 border-t border-border pt-4">
-              <p className="text-xs text-muted-foreground">
+            <div className="border-border mt-6 border-t pt-4">
+              <p className="text-muted-foreground text-xs">
                 If this problem persists, please contact your system administrator.
               </p>
             </div>

@@ -8,12 +8,7 @@ import { TextReveal, FadeIn } from "~/components/ui/text-reveal";
 import { formatPopulation } from "~/lib/chart-utils";
 import { UsersIcon } from "~/components/ui/users";
 import { TrendingUpIcon } from "~/components/ui/trending-up";
-import {
-  RiEyeLine,
-  RiGlobalLine,
-  RiStarLine,
-  RiMoneyDollarCircleLine,
-} from "react-icons/ri";
+import { RiEyeLine, RiGlobalLine, RiStarLine, RiMoneyDollarCircleLine } from "react-icons/ri";
 import { ExpandedCardContent } from "./ExpandedCardContent";
 
 export interface CountryCardData {
@@ -61,7 +56,16 @@ interface CountryFocusCardProps {
 }
 
 export const CountryFocusCard = React.memo<CountryFocusCardProps>(
-  ({ country, index, hovered, setHovered, expanded, setExpanded, onCountryClick, viewerCountryId }) => {
+  ({
+    country,
+    index,
+    hovered,
+    setHovered,
+    expanded,
+    setExpanded,
+    onCountryClick,
+    viewerCountryId,
+  }) => {
     const isHovered = hovered === index;
     const isExpanded = expanded === index;
     const isOtherHovered = hovered !== null && hovered !== index;
@@ -136,7 +140,9 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
         <div
           className={cn(
             "glass-floating glass-refraction glass-interactive relative overflow-hidden",
-            isExpanded ? "flex h-auto flex-col" : "h-60 md:h-96 transition-all duration-500 ease-out",
+            isExpanded
+              ? "flex h-auto flex-col"
+              : "h-60 transition-all duration-500 ease-out md:h-96",
             isOtherHovered && !isExpanded && "scale-[0.98] blur-sm"
           )}
         >
@@ -158,7 +164,11 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
           <div
             className={cn(
               "absolute inset-0 flex flex-col justify-end p-6 transition-opacity duration-300",
-              isExpanded ? "pointer-events-none opacity-0" : isHovered ? "bg-black/50 opacity-100" : "opacity-0"
+              isExpanded
+                ? "pointer-events-none opacity-0"
+                : isHovered
+                  ? "bg-black/50 opacity-100"
+                  : "opacity-0"
             )}
           >
             {/* Basic Info */}

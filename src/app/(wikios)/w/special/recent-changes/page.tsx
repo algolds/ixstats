@@ -128,7 +128,7 @@ export default function RecentChangesPage() {
         <div className="wikios-rc-toolbar">
           <div className="wikios-rc-toolbar-left">
             <Filter className="h-3.5 w-3.5 text-[var(--wikios-text-dim)]" />
-            <span className="text-[var(--wikios-text-dim)] text-xs">Range:</span>
+            <span className="text-xs text-[var(--wikios-text-dim)]">Range:</span>
             {DATE_RANGES.map((r) => (
               <button
                 key={r.label}
@@ -139,7 +139,7 @@ export default function RecentChangesPage() {
               </button>
             ))}
           </div>
-          <span className="text-[var(--wikios-text-dim)] text-xs">
+          <span className="text-xs text-[var(--wikios-text-dim)]">
             {grouped.length} pages · {filtered.length} edits
           </span>
         </div>
@@ -183,16 +183,16 @@ export default function RecentChangesPage() {
                     )}
 
                     <Link
-                      href={withBasePath(`/w/${encodeURIComponent(group.title.replace(/ /g, "_"))}`)}
+                      href={withBasePath(
+                        `/w/${encodeURIComponent(group.title.replace(/ /g, "_"))}`
+                      )}
                       className="wikios-rc-group-title"
                     >
                       {group.title}
                     </Link>
 
                     {hasMultiple && (
-                      <span className="wikios-rc-edit-count">
-                        {group.edits.length} edits
-                      </span>
+                      <span className="wikios-rc-edit-count">{group.edits.length} edits</span>
                     )}
 
                     <span className={`wikios-rc-delta ${deltaClass(group.totalDelta)}`}>
@@ -211,11 +211,15 @@ export default function RecentChangesPage() {
                         const delta = byteDelta(edit);
                         return (
                           <div key={idx} className="wikios-rc-edit">
-                            <span className={`wikios-rc-delta wikios-rc-delta--sm ${deltaClass(delta)}`}>
+                            <span
+                              className={`wikios-rc-delta wikios-rc-delta--sm ${deltaClass(delta)}`}
+                            >
                               {formatDelta(delta)}
                             </span>
                             <span className="wikios-rc-edit-user">{edit.user}</span>
-                            <span className="wikios-rc-edit-time">{formatMWTimeAgo(edit.timestamp)}</span>
+                            <span className="wikios-rc-edit-time">
+                              {formatMWTimeAgo(edit.timestamp)}
+                            </span>
                             {edit.comment && (
                               <span className="wikios-rc-edit-comment">{edit.comment}</span>
                             )}
@@ -227,9 +231,7 @@ export default function RecentChangesPage() {
 
                   {/* Single edit comment inline */}
                   {!hasMultiple && group.edits[0]?.comment && (
-                    <div className="wikios-rc-single-comment">
-                      {group.edits[0].comment}
-                    </div>
+                    <div className="wikios-rc-single-comment">{group.edits[0].comment}</div>
                   )}
                 </div>
               );
@@ -238,7 +240,7 @@ export default function RecentChangesPage() {
         )}
 
         {!isLoading && grouped.length === 0 && (
-          <p className="text-[var(--wikios-text-dim)] py-8 text-center text-sm">
+          <p className="py-8 text-center text-sm text-[var(--wikios-text-dim)]">
             No recent changes in this time range.
           </p>
         )}

@@ -8,13 +8,7 @@ import type {
   ActionableRecommendation,
   TrendingInsight,
 } from "../types/intelligence";
-import {
-  Activity,
-  DollarSign,
-  Users,
-  Building,
-  Globe,
-} from "lucide-react";
+import { Activity, DollarSign, Users, Building, Globe } from "lucide-react";
 
 // Real country data interface (from tRPC API)
 interface ApiCountryData {

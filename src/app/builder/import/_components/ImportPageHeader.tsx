@@ -53,7 +53,8 @@ export const ImportPageHeader: React.FC<ImportPageHeaderProps> = ({ onBackClick 
             <Sparkles className="h-6 w-6 text-amber-500" />
           </div>
           <p className="mt-1 text-sm" style={{ color: "var(--color-text-muted)" }}>
-            Import your country data from wiki sources or select an eligible country below to start building.
+            Import your country data from wiki sources or select an eligible country below to start
+            building.
           </p>
         </div>
       </div>

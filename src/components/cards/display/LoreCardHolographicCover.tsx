@@ -97,14 +97,24 @@ function getHoloGradient(rarity: CardRarity): string {
 
 function getHoloOpacity(rarity: CardRarity): number {
   const map: Record<CardRarity, number> = {
-    COMMON: 0.12, UNCOMMON: 0.2, RARE: 0.3, ULTRA_RARE: 0.4, EPIC: 0.5, LEGENDARY: 0.65,
+    COMMON: 0.12,
+    UNCOMMON: 0.2,
+    RARE: 0.3,
+    ULTRA_RARE: 0.4,
+    EPIC: 0.5,
+    LEGENDARY: 0.65,
   };
   return map[rarity] ?? 0.12;
 }
 
 function getSweepSpeed(rarity: CardRarity): number {
   const speeds: Record<CardRarity, number> = {
-    COMMON: 5, UNCOMMON: 4, RARE: 3.5, ULTRA_RARE: 3, EPIC: 2.5, LEGENDARY: 2,
+    COMMON: 5,
+    UNCOMMON: 4,
+    RARE: 3.5,
+    ULTRA_RARE: 3,
+    EPIC: 2.5,
+    LEGENDARY: 2,
   };
   return speeds[rarity] ?? 5;
 }
@@ -113,7 +123,8 @@ function getSweepSpeed(rarity: CardRarity): number {
 
 export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps>(
   ({ rarity: rarityStr, wikiSource, title: _title, className }) => {
-    const themeKey = wikiSource === "ixwiki" ? "ixwiki" : wikiSource === "iiwiki" ? "iiwiki" : "default";
+    const themeKey =
+      wikiSource === "ixwiki" ? "ixwiki" : wikiSource === "iiwiki" ? "iiwiki" : "default";
     const theme = LORE_THEMES[themeKey]!;
     const rarity = getEffectiveRarity(rarityStr);
     const foilStamp = getFoilStampConfig(rarity);
@@ -130,7 +141,7 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
 
         {/* Layer 2: Ink-flow pattern (lore-specific slow drift) */}
         <div
-          className="absolute inset-0 lore-ink-flow"
+          className="lore-ink-flow absolute inset-0"
           style={{
             background: `
               radial-gradient(ellipse at 30% 20%, ${theme.accent} 0%, transparent 50%),
@@ -144,7 +155,7 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
 
         {/* Layer 3: Holographic pattern */}
         <div
-          className="absolute inset-0 pack-holo-drift"
+          className="pack-holo-drift absolute inset-0"
           style={{
             background: holoGradient,
             backgroundSize: "400% 400%",
@@ -157,10 +168,10 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
 
         {/* Layer 4: Scroll / archive motifs */}
         {showMotifs && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {/* Outer scroll frame — rounded rectangle outline */}
             <div
-              className="absolute border rounded-lg pack-geo-spin"
+              className="pack-geo-spin absolute rounded-lg border"
               style={{
                 width: "60%",
                 height: "75%",
@@ -171,7 +182,7 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
             />
             {/* Inner ornamental diamond */}
             <div
-              className="absolute pack-geo-spin"
+              className="pack-geo-spin absolute"
               style={{
                 width: "35%",
                 height: "35%",
@@ -198,32 +209,33 @@ export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps
         )}
 
         {/* Layer 5: Foil shine sweep */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            className="absolute h-full pack-foil-sweep"
+            className="pack-foil-sweep absolute h-full"
             style={{
               width: "50%",
               top: 0,
-              background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 55%, transparent 70%)",
+              background:
+                "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.08) 55%, transparent 70%)",
               animation: `foil-sweep ${sweepDuration}s ease-in-out infinite`,
             }}
           />
         </div>
 
         {/* Layer 6: "Historical Archive" label at center */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="text-center space-y-1 px-4">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.25em] text-white/25">
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <div className="space-y-1 px-4 text-center">
+            <p className="text-[9px] font-semibold tracking-[0.25em] text-white/25 uppercase">
               {theme.label}
             </p>
-            <p className="text-[8px] uppercase tracking-[0.2em] text-white/15">
+            <p className="text-[8px] tracking-[0.2em] text-white/15 uppercase">
               Historical Archive
             </p>
           </div>
         </div>
       </div>
     );
-  },
+  }
 );
 
 LoreCardHolographicCover.displayName = "LoreCardHolographicCover";

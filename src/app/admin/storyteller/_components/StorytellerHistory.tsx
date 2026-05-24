@@ -51,7 +51,7 @@ export function StorytellerHistory() {
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
-        <Clock className="h-5 w-5 text-muted-foreground" />
+        <Clock className="text-muted-foreground h-5 w-5" />
         <h3 className="text-foreground text-lg font-semibold">Admin History</h3>
         <Badge variant="outline" className="text-xs">
           {logs.length} entries
@@ -60,56 +60,59 @@ export function StorytellerHistory() {
 
       <ScrollArea className="h-[500px]">
         <div className="space-y-2">
-          {logs.map((log: {
-            id: string;
-            action: string;
-            adminName: string;
-            details: string | null;
-            timestamp: Date;
-          }) => {
-            const colorClass = ACTION_COLORS[log.action] ?? "border-gray-500/30 bg-gray-500/10 text-gray-600";
-            let details: Record<string, unknown> | null = null;
-            try {
-              details = log.details ? JSON.parse(log.details) : null;
-            } catch {
-              // ignore parse errors
-            }
+          {logs.map(
+            (log: {
+              id: string;
+              action: string;
+              adminName: string;
+              details: string | null;
+              timestamp: Date;
+            }) => {
+              const colorClass =
+                ACTION_COLORS[log.action] ?? "border-gray-500/30 bg-gray-500/10 text-gray-600";
+              let details: Record<string, unknown> | null = null;
+              try {
+                details = log.details ? JSON.parse(log.details) : null;
+              } catch {
+                // ignore parse errors
+              }
 
-            return (
-              <div
-                key={log.id}
-                className="rounded-lg border border-border/30 p-3 transition-colors hover:bg-muted/10"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`text-xs ${colorClass}`}>
-                      {log.action.replace(/_/g, " ")}
-                    </Badge>
+              return (
+                <div
+                  key={log.id}
+                  className="border-border/30 hover:bg-muted/10 rounded-lg border p-3 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={`text-xs ${colorClass}`}>
+                        {log.action.replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+                    <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                      <Clock className="h-3 w-3" />
+                      {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
+                    </span>
                   </div>
-                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                    <Clock className="h-3 w-3" />
-                    {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
-                  </span>
-                </div>
-                <div className="mt-1.5 flex items-center gap-2 text-xs">
-                  <User className="text-muted-foreground h-3 w-3" />
-                  <span className="text-muted-foreground">{log.adminName}</span>
-                </div>
-                {details && (
-                  <div className="text-muted-foreground mt-1 text-xs">
-                    {Object.entries(details)
-                      .filter(([k]) => k !== "eventId" && k !== "countryId")
-                      .map(([k, v]) => (
-                        <span key={k} className="mr-3">
-                          <span className="font-medium">{k}:</span>{" "}
-                          {typeof v === "number" ? v.toLocaleString() : String(v)}
-                        </span>
-                      ))}
+                  <div className="mt-1.5 flex items-center gap-2 text-xs">
+                    <User className="text-muted-foreground h-3 w-3" />
+                    <span className="text-muted-foreground">{log.adminName}</span>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                  {details && (
+                    <div className="text-muted-foreground mt-1 text-xs">
+                      {Object.entries(details)
+                        .filter(([k]) => k !== "eventId" && k !== "countryId")
+                        .map(([k, v]) => (
+                          <span key={k} className="mr-3">
+                            <span className="font-medium">{k}:</span>{" "}
+                            {typeof v === "number" ? v.toLocaleString() : String(v)}
+                          </span>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+          )}
         </div>
       </ScrollArea>
     </div>

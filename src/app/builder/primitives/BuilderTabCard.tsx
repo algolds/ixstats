@@ -33,9 +33,16 @@ export function BuilderTabCard({
   const theme = BUILDER_SECTION_THEMES[sectionTheme];
 
   return (
-    <Card className={cn("overflow-hidden border-2 bg-card/40 backdrop-blur-sm", theme.darkBorder, theme.border, className)}>
+    <Card
+      className={cn(
+        "bg-card/40 overflow-hidden border-2 backdrop-blur-sm",
+        theme.darkBorder,
+        theme.border,
+        className
+      )}
+    >
       {/* Horizontal Tab Bar */}
-      <div className="flex w-full items-center gap-1 overflow-x-auto border-b border-border/50 bg-muted/20 p-2 scrollbar-hide sm:gap-2">
+      <div className="border-border/50 bg-muted/20 scrollbar-hide flex w-full items-center gap-1 overflow-x-auto border-b p-2 sm:gap-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -45,8 +52,10 @@ export function BuilderTabCard({
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "group relative flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                isActive ? "text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                "group relative flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                isActive
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
               <Icon
@@ -62,7 +71,10 @@ export function BuilderTabCard({
               {isActive && (
                 <motion.div
                   layoutId={`tab-indicator-${sectionTheme}`}
-                  className={cn("absolute inset-x-0 -bottom-2.5 h-0.5 bg-gradient-to-r", theme.gradient)}
+                  className={cn(
+                    "absolute inset-x-0 -bottom-2.5 h-0.5 bg-gradient-to-r",
+                    theme.gradient
+                  )}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}

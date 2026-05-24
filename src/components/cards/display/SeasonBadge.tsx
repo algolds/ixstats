@@ -36,12 +36,15 @@ function getSeasonColors(season: number): {
   textColor: string;
   glowColor: string;
 } {
-  const colors: Record<number, {
-    bgGradient: string;
-    borderColor: string;
-    textColor: string;
-    glowColor: string;
-  }> = {
+  const colors: Record<
+    number,
+    {
+      bgGradient: string;
+      borderColor: string;
+      textColor: string;
+      glowColor: string;
+    }
+  > = {
     1: {
       bgGradient: "from-blue-500 to-blue-600",
       borderColor: "border-blue-400",
@@ -97,13 +100,7 @@ function getSeasonColors(season: number): {
  * ```
  */
 export const SeasonBadge = React.memo<SeasonBadgeProps>(
-  ({
-    season,
-    size = "medium",
-    position = "top-right",
-    animated = true,
-    className,
-  }) => {
+  ({ season, size = "medium", position = "top-right", animated = true, className }) => {
     const colors = getSeasonColors(season);
 
     // Size-dependent dimensions

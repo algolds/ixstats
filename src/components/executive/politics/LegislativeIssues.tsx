@@ -27,12 +27,12 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
   }, [issueData]);
 
   return (
-    <div className="glass-hierarchy-child rounded-xl border border-border p-4 space-y-3">
+    <div className="glass-hierarchy-child border-border space-y-3 rounded-xl border p-4">
       <div className="flex items-center gap-2">
         <AlertTriangle className="h-4 w-4 text-amber-600" />
         <span className="text-sm font-semibold">Governance Issues</span>
         {governanceIssues.length > 0 && (
-          <span className="ml-auto text-xs text-amber-600 dark:text-amber-400 font-medium">
+          <span className="ml-auto text-xs font-medium text-amber-600 dark:text-amber-400">
             {governanceIssues.length} pending
           </span>
         )}
@@ -45,12 +45,14 @@ export function LegislativeIssues({ countryId }: LegislativeIssuesProps) {
               key={issue.id}
               issue={issue}
               variant="compact"
-              onView={() => { /* Respond via the main issues inbox */ }}
+              onView={() => {
+                /* Respond via the main issues inbox */
+              }}
             />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground gap-2">
+        <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-6 text-center">
           <CheckCircle2 className="h-8 w-8 text-green-500 opacity-50" />
           <p className="text-sm">No active governance issues</p>
           <p className="text-xs">Your legislative agenda is clear.</p>

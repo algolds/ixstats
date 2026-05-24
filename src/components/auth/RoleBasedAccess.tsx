@@ -103,7 +103,7 @@ export function FeatureGate({
   // Call hooks unconditionally with safe defaults (Rules of Hooks)
   const permissionCheck = useHasPermission(requiredPermission ?? "");
   const roleLevelCheck = useHasRoleLevel(requiredRoleLevel ?? Infinity);
-  
+
   // Apply the check only if the requirement was specified
   const hasPermission = requiredPermission ? permissionCheck : true;
   const hasRoleLevel = requiredRoleLevel !== undefined ? roleLevelCheck : true;

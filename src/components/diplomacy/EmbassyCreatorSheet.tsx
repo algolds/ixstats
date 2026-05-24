@@ -4,13 +4,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useLocalActions } from "~/hooks/useLocalActions";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -34,7 +28,10 @@ function CountrySelector({
   excludeCountryId: string;
   selectedCountryId: string;
 }) {
-  const { data: countriesData } = api.countries.getAll.useQuery({ limit: 200, offset: 0 }, { staleTime: 5 * 60 * 1000 });
+  const { data: countriesData } = api.countries.getAll.useQuery(
+    { limit: 200, offset: 0 },
+    { staleTime: 5 * 60 * 1000 }
+  );
 
   const countries = (countriesData?.countries ?? [])
     .filter((c: any) => c.id !== excludeCountryId)
@@ -47,11 +44,13 @@ function CountrySelector({
         const country = countries.find((c: any) => c.id === e.target.value);
         if (country) onSelect(country.id, country.name);
       }}
-      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
     >
       <option value="">Select a country...</option>
       {countries.map((c: any) => (
-        <option key={c.id} value={c.id}>{c.name}</option>
+        <option key={c.id} value={c.id}>
+          {c.name}
+        </option>
       ))}
     </select>
   );
@@ -76,7 +75,7 @@ export function EmbassyCreatorSheet({
   const { data: costData, isLoading: costLoading } =
     api.diplomatic.calculateEstablishmentCost.useQuery(
       { hostCountryId, guestCountryId: countryId },
-      { enabled: !!hostCountryId },
+      { enabled: !!hostCountryId }
     );
 
   const resetForm = () => {
@@ -95,8 +94,14 @@ export function EmbassyCreatorSheet({
   };
 
   const handleSubmit = () => {
-    if (!hostCountryId) { notify.error("Please select a host country"); return; }
-    if (!embassyName.trim()) { notify.error("Embassy name is required"); return; }
+    if (!hostCountryId) {
+      notify.error("Please select a host country");
+      return;
+    }
+    if (!embassyName.trim()) {
+      notify.error("Embassy name is required");
+      return;
+    }
 
     saveAction("embassy_established", {
       hostCountryId,
@@ -106,7 +111,10 @@ export function EmbassyCreatorSheet({
       location: location || undefined,
       ambassadorName: ambassadorName || undefined,
     });
-    notify.success("Embassy established!", `${embassyName} is now operational in ${hostCountryName}`);
+    notify.success(
+      "Embassy established!",
+      `${embassyName} is now operational in ${hostCountryName}`
+    );
     onOpenChange(false);
     resetForm();
     onCreated?.();
@@ -136,7 +144,10 @@ export function EmbassyCreatorSheet({
             />
             {hostCountryId && (
               <div className="mt-2 rounded-md border border-cyan-500/30 bg-cyan-500/10 p-2.5 text-sm">
-                Selected: <span className="font-semibold text-cyan-600 dark:text-cyan-400">{hostCountryName}</span>
+                Selected:{" "}
+                <span className="font-semibold text-cyan-600 dark:text-cyan-400">
+                  {hostCountryName}
+                </span>
               </div>
             )}
           </div>
@@ -195,12 +206,12 @@ export function EmbassyCreatorSheet({
                   Establishment Cost
                 </h4>
                 {costLoading ? (
-                  <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-2 py-4 text-sm">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Calculating...
                   </div>
                 ) : costData ? (
-                  <div className="rounded-md border border-border bg-muted/30 p-3">
+                  <div className="border-border bg-muted/30 rounded-md border p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Total</span>
                       <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
@@ -209,13 +220,15 @@ export function EmbassyCreatorSheet({
                     </div>
                     <button
                       onClick={() => setShowCostBreakdown(!showCostBreakdown)}
-                      className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground mt-1 flex items-center gap-1 text-xs"
                     >
-                      <ChevronDown className={`h-3 w-3 transition-transform ${showCostBreakdown ? "rotate-180" : ""}`} />
+                      <ChevronDown
+                        className={`h-3 w-3 transition-transform ${showCostBreakdown ? "rotate-180" : ""}`}
+                      />
                       {showCostBreakdown ? "Hide" : "Show"} breakdown
                     </button>
                     {showCostBreakdown && (
-                      <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs text-muted-foreground">
+                      <div className="border-border text-muted-foreground mt-2 space-y-1 border-t pt-2 text-xs">
                         <div className="flex justify-between">
                           <span>Base cost</span>
                           <span>${costData.baseCost.toLocaleString()}</span>
@@ -231,13 +244,15 @@ export function EmbassyCreatorSheet({
                       </div>
                     )}
                     {costData.requirements && (
-                      <div className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
-                        <p className="mb-1 font-medium text-foreground">Requirements:</p>
+                      <div className="border-border text-muted-foreground mt-2 border-t pt-2 text-xs">
+                        <p className="text-foreground mb-1 font-medium">Requirements:</p>
                         <ul className="list-inside list-disc space-y-0.5">
                           <li>Min. relationship: {costData.requirements.minimumRelationship}</li>
-                          {costData.requirements.requiredDocuments.map((doc: string, idx: number) => (
-                            <li key={idx}>{doc}</li>
-                          ))}
+                          {costData.requirements.requiredDocuments.map(
+                            (doc: string, idx: number) => (
+                              <li key={idx}>{doc}</li>
+                            )
+                          )}
                         </ul>
                       </div>
                     )}
@@ -248,13 +263,21 @@ export function EmbassyCreatorSheet({
           )}
 
           {/* Info notice */}
-          <div className="rounded-md border border-blue-500/20 bg-blue-500/5 p-2.5 text-xs text-muted-foreground">
-            Both countries will be notified of the embassy establishment. The host country can view your embassy details.
+          <div className="text-muted-foreground rounded-md border border-blue-500/20 bg-blue-500/5 p-2.5 text-xs">
+            Both countries will be notified of the embassy establishment. The host country can view
+            your embassy details.
           </div>
         </div>
 
         <SheetFooter className="border-border/50 border-t px-6 py-4">
-          <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); resetForm(); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              onOpenChange(false);
+              resetForm();
+            }}
+          >
             Cancel
           </Button>
           <Button
@@ -263,7 +286,8 @@ export function EmbassyCreatorSheet({
             onClick={handleSubmit}
             disabled={!hostCountryId || !embassyName.trim()}
           >
-            <Building2 className="h-3 w-3" />Establish Embassy
+            <Building2 className="h-3 w-3" />
+            Establish Embassy
           </Button>
         </SheetFooter>
       </SheetContent>

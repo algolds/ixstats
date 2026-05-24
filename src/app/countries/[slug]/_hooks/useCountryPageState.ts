@@ -15,7 +15,9 @@ function getBannerPref(countryId: string): { mode: BannerMode; customUrl?: strin
   try {
     const raw = localStorage.getItem(`banner-pref-${countryId}`);
     if (raw) return JSON.parse(raw) as { mode: BannerMode; customUrl?: string };
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return { mode: "dynamic" };
 }
 
@@ -23,7 +25,9 @@ function saveBannerPref(countryId: string, pref: { mode: BannerMode; customUrl?:
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(`banner-pref-${countryId}`, JSON.stringify(pref));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 interface Country {
@@ -57,7 +61,9 @@ export function useCountryPageState(country: Country | undefined) {
       enabled: !!country?.name,
       staleTime: 24 * 60 * 60_000,
       gcTime: 48 * 60 * 60_000,
-      placeholderData: richIntroCacheKey ? getWikiCache(richIntroCacheKey) ?? undefined : undefined,
+      placeholderData: richIntroCacheKey
+        ? (getWikiCache(richIntroCacheKey) ?? undefined)
+        : undefined,
     }
   );
 
@@ -67,7 +73,7 @@ export function useCountryPageState(country: Country | undefined) {
       enabled: !!country?.name,
       staleTime: 24 * 60 * 60_000,
       gcTime: 48 * 60 * 60_000,
-      placeholderData: infoboxCacheKey ? getWikiCache(infoboxCacheKey) ?? undefined : undefined,
+      placeholderData: infoboxCacheKey ? (getWikiCache(infoboxCacheKey) ?? undefined) : undefined,
     }
   );
 
@@ -104,12 +110,15 @@ export function useCountryPageState(country: Country | undefined) {
     }
   }, [country?.id]);
 
-  const setBannerMode = useCallback((mode: BannerMode, customUrl?: string) => {
-    if (!country?.id) return;
-    setBannerModeState(mode);
-    setCustomBannerUrl(customUrl);
-    saveBannerPref(country.id, { mode, customUrl });
-  }, [country?.id]);
+  const setBannerMode = useCallback(
+    (mode: BannerMode, customUrl?: string) => {
+      if (!country?.id) return;
+      setBannerModeState(mode);
+      setCustomBannerUrl(customUrl);
+      saveBannerPref(country.id, { mode, customUrl });
+    },
+    [country?.id]
+  );
 
   // Load Unsplash header image
   useEffect(() => {
@@ -133,7 +142,6 @@ export function useCountryPageState(country: Country | undefined) {
         });
     }
   }, [country, unsplashImageUrl]);
-
 
   const toggleGdpDisplay = useCallback(() => {
     setShowGdpPerCapita((prev) => !prev);

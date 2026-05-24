@@ -7,18 +7,34 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
-  BookOpen, Search, X, FileEdit, History, Shuffle, Home,
-  ChevronDown, ChevronRight, Map, Link2, Globe, Clock,
-  ExternalLink, Users,
+  BookOpen,
+  Search,
+  X,
+  FileEdit,
+  History,
+  Shuffle,
+  Home,
+  ChevronDown,
+  ChevronRight,
+  Map,
+  Link2,
+  Globe,
+  Clock,
+  ExternalLink,
+  Users,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useWikiContext } from "~/components/wikios/shared/WikiContext";
+import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { withBasePath, navigateWithBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo } from "~/lib/wikios/mediawiki-timestamp";
 
 const CountryMapEmbed = dynamic(
-  () => import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({ default: m.CountryMapEmbed })),
+  () =>
+    import("~/components/maps/widgets/CountryMapEmbed").then((m) => ({
+      default: m.CountryMapEmbed,
+    })),
   { ssr: false, loading: () => null }
 );
 
@@ -36,7 +52,8 @@ export function WikiView({ onClose }: WikiViewProps) {
   const [mapOpen, setMapOpen] = useState(true);
   const [recentOpen, setRecentOpen] = useState(false);
 
-  const isMainPage = pathname?.includes("/w/Main_Page") || pathname?.includes("/w/Main%20Page") || false;
+  const isMainPage =
+    pathname?.includes("/w/Main_Page") || pathname?.includes("/w/Main%20Page") || false;
 
   useEffect(() => {
     setTimeout(() => searchInputRef.current?.focus(), 50);
@@ -56,9 +73,7 @@ export function WikiView({ onClose }: WikiViewProps) {
 
   const matchedCountry = useMemo(() => {
     if (!countries || !articleTitle) return null;
-    return countries.find(
-      (c) => c.name?.toLowerCase() === articleTitle.toLowerCase()
-    ) ?? null;
+    return countries.find((c) => c.name?.toLowerCase() === articleTitle.toLowerCase()) ?? null;
   }, [countries, articleTitle]);
 
   // Recent changes for the feed
@@ -67,10 +82,7 @@ export function WikiView({ onClose }: WikiViewProps) {
     { staleTime: 60_000 }
   );
 
-  const visibleToc = useMemo(
-    () => tocEntries.filter((e) => e.level <= 3),
-    [tocEntries]
-  );
+  const visibleToc = useMemo(() => tocEntries.filter((e) => e.level <= 3), [tocEntries]);
 
   const handleNavigateToArticle = useCallback(
     (title: string) => {
@@ -89,6 +101,7 @@ export function WikiView({ onClose }: WikiViewProps) {
   );
 
   const slug = articleTitle ? encodeURIComponent(articleTitle.replace(/ /g, "_")) : null;
+  const { isSignedIn } = useAuth();
 
   return (
     <div className="p-4">
@@ -98,7 +111,7 @@ export function WikiView({ onClose }: WikiViewProps) {
           <BookOpen className="h-5 w-5 text-blue-400" />
           <span>Wiki</span>
           {articleTitle && (
-            <span className="text-muted-foreground ml-1 text-sm font-normal truncate max-w-[200px]">
+            <span className="text-muted-foreground ml-1 max-w-[200px] truncate text-sm font-normal">
               — {articleTitle}
             </span>
           )}
@@ -127,7 +140,10 @@ export function WikiView({ onClose }: WikiViewProps) {
             data-command-palette-search="true"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-muted-foreground hover:text-foreground"
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -137,7 +153,7 @@ export function WikiView({ onClose }: WikiViewProps) {
       {/* Search Results — full-text with snippets */}
       {searchQuery.length >= 2 && (
         <div className="border-border mb-3 border-b pb-3">
-          <div className="text-muted-foreground mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider">
+          <div className="text-muted-foreground mb-1 flex items-center justify-between text-[10px] font-semibold tracking-wider uppercase">
             <span>Results{searchData?.totalHits ? ` (${searchData.totalHits})` : ""}</span>
             {isSearching && (
               <span className="text-muted-foreground/50 animate-pulse">searching...</span>
@@ -156,7 +172,7 @@ export function WikiView({ onClose }: WikiViewProps) {
                 </span>
                 {result.snippet && (
                   <span
-                    className="text-muted-foreground mt-0.5 line-clamp-1 pl-[22px] text-[11px] [&_.searchmatch]:text-foreground [&_.searchmatch]:font-semibold"
+                    className="text-muted-foreground [&_.searchmatch]:text-foreground mt-0.5 line-clamp-1 pl-[22px] text-[11px] [&_.searchmatch]:font-semibold"
                     dangerouslySetInnerHTML={{ __html: result.snippet }}
                   />
                 )}
@@ -208,7 +224,10 @@ export function WikiView({ onClose }: WikiViewProps) {
               open={mapOpen}
               onToggle={() => setMapOpen(!mapOpen)}
             >
-              <div className="overflow-hidden rounded-lg border border-white/5" style={{ height: 180 }}>
+              <div
+                className="overflow-hidden rounded-lg border border-white/5"
+                style={{ height: 180 }}
+              >
                 <CountryMapEmbed
                   countryId={matchedCountry.id}
                   height="h-[180px]"
@@ -235,15 +254,15 @@ export function WikiView({ onClose }: WikiViewProps) {
                     onClick={() => handleNavigateToArticle(rc.title ?? "")}
                     className="text-foreground/60 hover:bg-accent/10 hover:text-foreground/90 flex w-full flex-col rounded-md px-2 py-1 text-left transition-colors"
                   >
-                    <span className="text-[13px] truncate">{rc.title}</span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="truncate text-[13px]">{rc.title}</span>
+                    <span className="text-muted-foreground text-[10px]">
                       {rc.user} · {formatMWTimeAgo(rc.timestamp)}
                     </span>
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-xs px-2">Loading...</p>
+              <p className="text-muted-foreground px-2 text-xs">Loading...</p>
             )}
           </CollapsibleSection>
 
@@ -252,21 +271,40 @@ export function WikiView({ onClose }: WikiViewProps) {
             <div className="border-border mb-3 border-b pb-3">
               <SectionHeader label="This Page" />
               <div className="space-y-0.5">
-                <QuickAction icon={<FileEdit />} label="Edit" shortcut="Tab Tab" onClick={() => {
-                  onClose();
-                  navigateWithBasePath(`/w/${slug}/edit`, router);
-                }} />
-                <QuickAction icon={<History />} label="History" onClick={() => {
-                  onClose();
-                  navigateWithBasePath(`/w/special/history/${slug}`, router);
-                }} />
-                <QuickAction icon={<Link2 />} label="What links here" onClick={() => {
-                  onClose();
-                  navigateWithBasePath(`/w/special/whatlinkshere/${slug}`, router);
-                }} />
-                <QuickAction icon={<ExternalLink />} label="View on MediaWiki" onClick={() => {
-                  window.open(`https://ixwiki.com/wiki/${slug}`, "_blank");
-                }} />
+                {isSignedIn && (
+                  <QuickAction
+                    icon={<FileEdit />}
+                    label="Edit"
+                    shortcut="Tab Tab"
+                    onClick={() => {
+                      onClose();
+                      navigateWithBasePath(`/w/${slug}/edit`, router);
+                    }}
+                  />
+                )}
+                <QuickAction
+                  icon={<History />}
+                  label="History"
+                  onClick={() => {
+                    onClose();
+                    navigateWithBasePath(`/w/special/history/${slug}`, router);
+                  }}
+                />
+                <QuickAction
+                  icon={<Link2 />}
+                  label="What links here"
+                  onClick={() => {
+                    onClose();
+                    navigateWithBasePath(`/w/special/whatlinkshere/${slug}`, router);
+                  }}
+                />
+                <QuickAction
+                  icon={<ExternalLink />}
+                  label="View on MediaWiki"
+                  onClick={() => {
+                    window.open(`https://ixwiki.com/wiki/${slug}`, "_blank");
+                  }}
+                />
               </div>
             </div>
           )}
@@ -275,23 +313,43 @@ export function WikiView({ onClose }: WikiViewProps) {
           <div>
             <SectionHeader label="Navigate" />
             <div className="space-y-0.5">
-              <QuickAction icon={<Home />} label="Main Page" onClick={() => handleNavigateToArticle("Main Page")} />
-              <QuickAction icon={<Shuffle />} label="Random Article" onClick={() => {
-                onClose();
-                navigateWithBasePath("/w/special/random", router);
-              }} />
-              <QuickAction icon={<Globe />} label="All Countries" onClick={() => {
-                onClose();
-                navigateWithBasePath("/countries", router);
-              }} />
-              <QuickAction icon={<Users />} label="ThinkPages" onClick={() => {
-                onClose();
-                navigateWithBasePath("/dashboard", router);
-              }} />
-              <QuickAction icon={<Map />} label="World Map" onClick={() => {
-                onClose();
-                navigateWithBasePath("/maps", router);
-              }} />
+              <QuickAction
+                icon={<Home />}
+                label="Main Page"
+                onClick={() => handleNavigateToArticle("Main Page")}
+              />
+              <QuickAction
+                icon={<Shuffle />}
+                label="Random Article"
+                onClick={() => {
+                  onClose();
+                  navigateWithBasePath("/w/special/random", router);
+                }}
+              />
+              <QuickAction
+                icon={<Globe />}
+                label="All Countries"
+                onClick={() => {
+                  onClose();
+                  navigateWithBasePath("/countries", router);
+                }}
+              />
+              <QuickAction
+                icon={<Users />}
+                label="ThinkPages"
+                onClick={() => {
+                  onClose();
+                  navigateWithBasePath("/dashboard", router);
+                }}
+              />
+              <QuickAction
+                icon={<Map />}
+                label="World Map"
+                onClick={() => {
+                  onClose();
+                  navigateWithBasePath("/maps", router);
+                }}
+              />
             </div>
           </div>
         </>
@@ -306,7 +364,7 @@ export function WikiView({ onClose }: WikiViewProps) {
 
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold uppercase tracking-wider">
+    <div className="text-muted-foreground mb-1.5 text-[10px] font-semibold tracking-wider uppercase">
       {label}
     </div>
   );
@@ -331,16 +389,14 @@ function CollapsibleSection({
     <div className="border-border mb-3 border-b pb-3">
       <button
         onClick={onToggle}
-        className="text-muted-foreground hover:text-foreground mb-1 flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-wider"
+        className="text-muted-foreground hover:text-foreground mb-1 flex w-full items-center justify-between text-[10px] font-semibold tracking-wider uppercase"
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           {icon}
           {label}
         </span>
-        {count !== undefined && (
-          <span className="text-muted-foreground/50">{count}</span>
-        )}
+        {count !== undefined && <span className="text-muted-foreground/50">{count}</span>}
       </button>
       {open && children}
     </div>

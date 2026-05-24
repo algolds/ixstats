@@ -17,7 +17,8 @@ export default function ForecastingArticle() {
             Your intelligence system doesn&apos;t just tell you what&apos;s happening now -- it
             looks ahead. Forecasts combine your economic trajectory, diplomatic trends, and social
             indicators to project where your nation is heading. This gives you time to act before
-            problems become crises and position yourself to take advantage of emerging opportunities.
+            problems become crises and position yourself to take advantage of emerging
+            opportunities.
           </p>
           <ul className="list-disc space-y-2 pl-6">
             <li>
@@ -41,7 +42,10 @@ export default function ForecastingArticle() {
             <ul className="list-disc space-y-1 pl-6">
               <li>
                 <strong>Intelligence Feed:</strong> The Forward-Looking section on your{" "}
-                <Link href="/mycountry/intelligence" className="text-blue-600 hover:underline dark:text-blue-400">
+                <Link
+                  href="/mycountry/intelligence"
+                  className="text-blue-600 hover:underline dark:text-blue-400"
+                >
                   Intelligence page
                 </Link>{" "}
                 highlights the most important predictions and their confidence levels.
@@ -51,8 +55,8 @@ export default function ForecastingArticle() {
                 economy section let you explore different possible futures side by side.
               </li>
               <li>
-                <strong>Policy Impact Previews:</strong> When you create or adjust policies, you&apos;ll
-                see estimated impacts on your key metrics before you commit.
+                <strong>Policy Impact Previews:</strong> When you create or adjust policies,
+                you&apos;ll see estimated impacts on your key metrics before you commit.
               </li>
             </ul>
           </InfoBox>
@@ -63,8 +67,8 @@ export default function ForecastingArticle() {
         <Section title="Turning Predictions into Action">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              <strong>Plan ahead for deficits:</strong> When forecasts predict economic downturns
-              or resource shortages, set compliance reminders and begin adjusting spending or trade
+              <strong>Plan ahead for deficits:</strong> When forecasts predict economic downturns or
+              resource shortages, set compliance reminders and begin adjusting spending or trade
               policies early.
             </li>
             <li>
@@ -78,8 +82,8 @@ export default function ForecastingArticle() {
               full picture and plan a coordinated response.
             </li>
             <li>
-              <strong>Watch for cascading effects:</strong> A diplomatic deterioration might lead
-              to trade disruptions, which could impact your economy. Forecasts help you trace these
+              <strong>Watch for cascading effects:</strong> A diplomatic deterioration might lead to
+              trade disruptions, which could impact your economy. Forecasts help you trace these
               chains before they play out.
             </li>
           </ul>
@@ -89,14 +93,20 @@ export default function ForecastingArticle() {
           <ul className="list-disc space-y-1 pl-6">
             <li>
               <CalendarClock className="inline h-4 w-4" />{" "}
-              <Link href="/help/economy/modeling" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/economy/modeling"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Economic Modeling
               </Link>{" "}
               -- explore detailed scenario planning for your economy.
             </li>
             <li>
               <LayoutDashboard className="inline h-4 w-4" />{" "}
-              <Link href="/help/intelligence/dashboard" className="text-blue-600 hover:underline dark:text-blue-400">
+              <Link
+                href="/help/intelligence/dashboard"
+                className="text-blue-600 hover:underline dark:text-blue-400"
+              >
                 Executive Intelligence Dashboard
               </Link>{" "}
               -- see forecasts alongside your current metrics in one view.

@@ -99,7 +99,7 @@ export function BuilderSidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="glass-hierarchy-child overflow-hidden rounded-xl border border-border bg-card/60 p-1.5 backdrop-blur-md">
+      <nav className="glass-hierarchy-child border-border bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
           {NAV_ITEMS.map((item) => {
             const isActive = item.id === activeSection;
@@ -118,13 +118,13 @@ export function BuilderSidebarNav({
                     ? cn("bg-gradient-to-r text-white shadow-md", item.gradient)
                     : accessible
                       ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      : "text-muted-foreground/40 cursor-not-allowed",
+                      : "text-muted-foreground/40 cursor-not-allowed"
                 )}
                 aria-current={isActive ? "page" : undefined}
               >
                 <item.icon size={14} className="flex-shrink-0" />
                 <span className="whitespace-nowrap">{item.shortTitle}</span>
-                {!accessible && <Lock className="h-3 w-3 flex-shrink-0 text-muted-foreground/40" />}
+                {!accessible && <Lock className="text-muted-foreground/40 h-3 w-3 flex-shrink-0" />}
                 {completed && isBuildStep && !isActive && (
                   <Check className="h-3 w-3 flex-shrink-0 text-emerald-500" />
                 )}
@@ -139,7 +139,7 @@ export function BuilderSidebarNav({
   /* ── Expanded desktop: icon + label sidebar ── */
   if (variant === "expanded") {
     return (
-      <nav className="flex w-full flex-col gap-1 rounded-xl border border-border bg-card/60 p-1.5 shadow-sm backdrop-blur-lg dark:bg-card/40">
+      <nav className="border-border bg-card/60 dark:bg-card/40 flex w-full flex-col gap-1 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
         {NAV_ITEMS.map((item) => {
           const isActive = item.id === activeSection;
           const accessible = isAccessible(item.id);
@@ -157,18 +157,20 @@ export function BuilderSidebarNav({
                   ? cn("bg-gradient-to-r text-white shadow-md", item.gradient, item.activeGlow)
                   : accessible
                     ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    : "text-muted-foreground/40 cursor-not-allowed",
+                    : "text-muted-foreground/40 cursor-not-allowed"
               )}
               aria-current={isActive ? "page" : undefined}
             >
               <item.icon size={16} className="flex-shrink-0" />
               <span className="truncate">{item.title}</span>
-              {!accessible && <Lock className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40" />}
+              {!accessible && (
+                <Lock className="text-muted-foreground/40 ml-auto h-3.5 w-3.5 flex-shrink-0" />
+              )}
               {completed && isBuildStep && !isActive && accessible && (
                 <Check className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-emerald-500" />
               )}
               {isBuildStep && accessible && !completed && !isActive && (
-                <span className="ml-auto text-[10px] text-muted-foreground/50">
+                <span className="text-muted-foreground/50 ml-auto text-[10px]">
                   {stepIndex(item.id) + 1}/{BUILD_STEPS.length}
                 </span>
               )}
@@ -181,7 +183,7 @@ export function BuilderSidebarNav({
 
   /* ── Desktop: icon rail with tooltip labels ── */
   return (
-    <nav className="flex flex-col gap-1.5 rounded-xl border border-border bg-card/60 p-1.5 shadow-sm backdrop-blur-lg dark:bg-card/40">
+    <nav className="border-border bg-card/60 dark:bg-card/40 flex flex-col gap-1.5 rounded-xl border p-1.5 shadow-sm backdrop-blur-lg">
       {NAV_ITEMS.map((item) => {
         const isActive = item.id === activeSection;
         const accessible = isAccessible(item.id);
@@ -193,7 +195,7 @@ export function BuilderSidebarNav({
             key={item.id}
             onClick={() => accessible && onNavigate(item.id)}
             disabled={!accessible}
-            className="outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
+            className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-label={item.title}
             aria-current={isActive ? "page" : undefined}
           >
@@ -204,32 +206,32 @@ export function BuilderSidebarNav({
                   ? cn("bg-gradient-to-br text-white shadow-md", item.gradient, item.activeGlow)
                   : accessible
                     ? "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    : "text-muted-foreground/30 cursor-not-allowed",
+                    : "text-muted-foreground/30 cursor-not-allowed"
               )}
             >
               <item.icon
                 size={18}
                 className={cn(
                   "transition-transform duration-150",
-                  !isActive && accessible && "group-hover/tip:scale-110",
+                  !isActive && accessible && "group-hover/tip:scale-110"
                 )}
               />
               {/* Completion check */}
               {completed && isBuildStep && !isActive && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-background">
+                <span className="ring-background absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 ring-2">
                   <Check className="h-2 w-2 text-white" />
                 </span>
               )}
               {/* Lock indicator */}
               {!accessible && (
-                <Lock className="absolute -bottom-0.5 -right-0.5 h-3 w-3 text-muted-foreground/50 drop-shadow" />
+                <Lock className="text-muted-foreground/50 absolute -right-0.5 -bottom-0.5 h-3 w-3 drop-shadow" />
               )}
 
               {/* Tooltip */}
-              <span className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-md bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100">
+              <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full z-50 ml-3 rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100">
                 {item.title}
                 {!accessible ? " (locked)" : ""}
-                <span className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-popover" />
+                <span className="border-r-popover absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent" />
               </span>
             </div>
           </button>

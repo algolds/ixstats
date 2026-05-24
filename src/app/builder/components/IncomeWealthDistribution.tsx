@@ -2,12 +2,7 @@
 "use client";
 
 import React, { useState, memo } from "react";
-import {
-  Users,
-  Scale,
-  ArrowUpRight,
-  Info,
-} from "lucide-react";
+import { Users, Scale, ArrowUpRight, Info } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -327,7 +322,11 @@ export const IncomeWealthDistribution = memo(function IncomeWealthDistribution({
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                    <Tooltip
+                      formatter={(value) =>
+                        value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                      }
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -355,7 +354,11 @@ export const IncomeWealthDistribution = memo(function IncomeWealthDistribution({
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                    <Tooltip
+                      formatter={(value) =>
+                        value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                      }
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -498,7 +501,11 @@ export const IncomeWealthDistribution = memo(function IncomeWealthDistribution({
                         position: "insideLeft",
                       }}
                     />
-                    <Tooltip formatter={(value) => value !== undefined ? `${Number(value).toFixed(1)}%` : ''} />
+                    <Tooltip
+                      formatter={(value) =>
+                        value !== undefined ? `${Number(value).toFixed(1)}%` : ""
+                      }
+                    />
                     <Line
                       data={equalityLine}
                       type="linear"
@@ -595,7 +602,11 @@ export const IncomeWealthDistribution = memo(function IncomeWealthDistribution({
                     <div className="mb-1 text-xs text-[var(--color-text-muted)]">Poverty Rate</div>
                     <div className="text-sm font-medium text-[var(--color-text-primary)]">
                       {incomeData.povertyRate.toFixed(1)}% (~
-                      {formatNumber(totalPopulation * (incomeData.povertyRate / 100), 0, false)}{" "}
+                      {formatNumber(
+                        totalPopulation * (incomeData.povertyRate / 100),
+                        0,
+                        false
+                      )}{" "}
                       people)
                     </div>
                   </div>

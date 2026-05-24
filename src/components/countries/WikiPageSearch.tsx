@@ -48,9 +48,7 @@ export function WikiPageSearch({ selectedPages, onPagesChange, countryName }: Wi
           wiki: "ixwiki",
         });
 
-        setSearchResults(
-          data.map((r) => ({ title: r.title, snippet: "" }))
-        );
+        setSearchResults(data.map((r) => ({ title: r.title, snippet: "" })));
       } catch (error) {
         console.error("[WikiPageSearch] Search error:", error);
         setSearchResults([]);

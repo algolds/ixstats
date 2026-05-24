@@ -75,8 +75,7 @@ function log(message: string, color: keyof typeof colors = "reset") {
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-  if (bytes < 1024 * 1024 * 1024)
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -109,9 +108,7 @@ async function getTableStats(prisma: PrismaClient): Promise<TableStats[]> {
 
   // Try to get table sizes from PostgreSQL
   try {
-    const sizeResult = await prisma.$queryRaw<
-      Array<{ table_name: string; size: bigint }>
-    >`
+    const sizeResult = await prisma.$queryRaw<Array<{ table_name: string; size: bigint }>>`
       SELECT
         relname as table_name,
         pg_total_relation_size(relid) as size
@@ -121,9 +118,7 @@ async function getTableStats(prisma: PrismaClient): Promise<TableStats[]> {
     `;
 
     for (const row of sizeResult) {
-      const existing = stats.find(
-        (s) => s.name.toLowerCase() === row.table_name.toLowerCase()
-      );
+      const existing = stats.find((s) => s.name.toLowerCase() === row.table_name.toLowerCase());
       if (existing) {
         existing.sizeBytes = Number(row.size);
       } else {
@@ -184,9 +179,7 @@ async function benchmarkQuery(
   };
 }
 
-async function runQueryBenchmarks(
-  prisma: PrismaClient
-): Promise<QueryBenchmark[]> {
+async function runQueryBenchmarks(prisma: PrismaClient): Promise<QueryBenchmark[]> {
   const benchmarks: QueryBenchmark[] = [];
 
   // Benchmark common queries
@@ -280,9 +273,7 @@ function generateRecommendations(
   }
 
   if (auditStats && auditStats.rowCount > 100000) {
-    recommendations.push(
-      "AuditLog table is large - implement log rotation or archival strategy"
-    );
+    recommendations.push("AuditLog table is large - implement log rotation or archival strategy");
   }
 
   return { recommendations, warnings };
@@ -420,10 +411,7 @@ async function runAnalysis() {
 
     // Generate recommendations
     log("\n▸ Generating recommendations...", "blue");
-    const { recommendations, warnings } = generateRecommendations(
-      tableStats,
-      benchmarks
-    );
+    const { recommendations, warnings } = generateRecommendations(tableStats, benchmarks);
 
     if (warnings.length > 0) {
       log("\n  Warnings:", "yellow");
@@ -448,17 +436,9 @@ async function runAnalysis() {
     log("  Summary", "blue");
     log("═══════════════════════════════════════════════════════════════\n", "blue");
 
-    const totalRows = tableStats.reduce(
-      (sum, t) => sum + (t.rowCount > 0 ? t.rowCount : 0),
-      0
-    );
-    const totalSize = tableStats.reduce(
-      (sum, t) => sum + (t.sizeBytes || 0),
-      0
-    );
-    const slowQueries = benchmarks.filter(
-      (b) => b.avgTime > SLOW_QUERY_THRESHOLD
-    ).length;
+    const totalRows = tableStats.reduce((sum, t) => sum + (t.rowCount > 0 ? t.rowCount : 0), 0);
+    const totalSize = tableStats.reduce((sum, t) => sum + (t.sizeBytes || 0), 0);
+    const slowQueries = benchmarks.filter((b) => b.avgTime > SLOW_QUERY_THRESHOLD).length;
 
     log(`  Tables analyzed:  ${tableStats.length}`, "reset");
     log(`  Total rows:       ${formatNumber(totalRows)}`, "reset");

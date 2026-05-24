@@ -588,7 +588,10 @@ const personalityArchetypes = [
       negotiationStyle: "Socratic dialogue, seeks mutual understanding and wisdom",
     }),
     toneMatrix: JSON.stringify({
-      hostile: { formal: "Disappointed but philosophical", casual: "Seeks understanding of conflict" },
+      hostile: {
+        formal: "Disappointed but philosophical",
+        casual: "Seeks understanding of conflict",
+      },
       tense: { formal: "Rational and measured", casual: "Thoughtful and probing" },
       neutral: { formal: "Academic and collegial", casual: "Intellectually curious" },
       friendly: { formal: "Warm and scholarly", casual: "Enthusiastic about shared ideas" },
@@ -602,16 +605,33 @@ const personalityArchetypes = [
       "Mediates conflicts through philosophical frameworks",
     ]),
     scenarioResponses: JSON.stringify({
-      alliance_proposal: { action: "negotiate", confidence: 80, reasoning: "Open to partnerships based on shared values" },
-      trade_dispute: { action: "de-escalate", confidence: 75, reasoning: "Seeks win-win solutions" },
-      cultural_exchange_offer: { action: "accept", confidence: 95, reasoning: "Highly values cultural dialogue" },
+      alliance_proposal: {
+        action: "negotiate",
+        confidence: 80,
+        reasoning: "Open to partnerships based on shared values",
+      },
+      trade_dispute: {
+        action: "de-escalate",
+        confidence: 75,
+        reasoning: "Seeks win-win solutions",
+      },
+      cultural_exchange_offer: {
+        action: "accept",
+        confidence: 95,
+        reasoning: "Highly values cultural dialogue",
+      },
     }),
     eventModifiers: JSON.stringify({
-      cultural_exchange_offer: { probabilityMultiplier: 2.5, severityAdjustment: 0, urgencyAdjustment: 10 },
+      cultural_exchange_offer: {
+        probabilityMultiplier: 2.5,
+        severityAdjustment: 0,
+        urgencyAdjustment: 10,
+      },
       alliance_offer: { probabilityMultiplier: 1.5, severityAdjustment: 0, urgencyAdjustment: 5 },
     }),
     historicalBasis: "Marcus Aurelius",
-    historicalContext: "Roman Emperor and Stoic philosopher who believed in reason, virtue, and the brotherhood of mankind.",
+    historicalContext:
+      "Roman Emperor and Stoic philosopher who believed in reason, virtue, and the brotherhood of mankind.",
   },
 
   {
@@ -657,16 +677,29 @@ const personalityArchetypes = [
       "Master of divide-and-conquer tactics",
     ]),
     scenarioResponses: JSON.stringify({
-      alliance_proposal: { action: "negotiate", confidence: 85, reasoning: "Evaluates strategic value" },
-      trade_dispute: { action: "negotiate", confidence: 80, reasoning: "Seeks advantageous resolution" },
-      sanction_threat: { action: "counter", confidence: 90, reasoning: "Responds with calculated pressure" },
+      alliance_proposal: {
+        action: "negotiate",
+        confidence: 85,
+        reasoning: "Evaluates strategic value",
+      },
+      trade_dispute: {
+        action: "negotiate",
+        confidence: 80,
+        reasoning: "Seeks advantageous resolution",
+      },
+      sanction_threat: {
+        action: "counter",
+        confidence: 90,
+        reasoning: "Responds with calculated pressure",
+      },
     }),
     eventModifiers: JSON.stringify({
       alliance_offer: { probabilityMultiplier: 1.8, severityAdjustment: 0, urgencyAdjustment: 10 },
       border_tension: { probabilityMultiplier: 1.4, severityAdjustment: 0, urgencyAdjustment: 5 },
     }),
     historicalBasis: "Otto von Bismarck",
-    historicalContext: "Prussian statesman who unified Germany through realpolitik and strategic alliances.",
+    historicalContext:
+      "Prussian statesman who unified Germany through realpolitik and strategic alliances.",
   },
 
   {
@@ -712,16 +745,33 @@ const personalityArchetypes = [
       "Creates lasting cultural legacies",
     ]),
     scenarioResponses: JSON.stringify({
-      alliance_proposal: { action: "negotiate", confidence: 75, reasoning: "Values strategic cultural partnerships" },
-      cultural_exchange_offer: { action: "accept", confidence: 90, reasoning: "Passionate about cultural prestige" },
-      trade_dispute: { action: "negotiate", confidence: 80, reasoning: "Seeks mutually beneficial solutions" },
+      alliance_proposal: {
+        action: "negotiate",
+        confidence: 75,
+        reasoning: "Values strategic cultural partnerships",
+      },
+      cultural_exchange_offer: {
+        action: "accept",
+        confidence: 90,
+        reasoning: "Passionate about cultural prestige",
+      },
+      trade_dispute: {
+        action: "negotiate",
+        confidence: 80,
+        reasoning: "Seeks mutually beneficial solutions",
+      },
     }),
     eventModifiers: JSON.stringify({
-      cultural_exchange_offer: { probabilityMultiplier: 2.2, severityAdjustment: 0, urgencyAdjustment: 15 },
+      cultural_exchange_offer: {
+        probabilityMultiplier: 2.2,
+        severityAdjustment: 0,
+        urgencyAdjustment: 15,
+      },
       trade_agreement: { probabilityMultiplier: 1.7, severityAdjustment: 0, urgencyAdjustment: 10 },
     }),
     historicalBasis: "Lorenzo de' Medici",
-    historicalContext: "Florentine statesman and patron of the arts who dominated Renaissance Italy through cultural and economic power.",
+    historicalContext:
+      "Florentine statesman and patron of the arts who dominated Renaissance Italy through cultural and economic power.",
   },
 
   {
@@ -767,16 +817,29 @@ const personalityArchetypes = [
       "Adapts tactics to exploit weaknesses",
     ]),
     scenarioResponses: JSON.stringify({
-      alliance_proposal: { action: "negotiate", confidence: 70, reasoning: "Evaluates military strategic value" },
-      border_tension: { action: "escalate", confidence: 85, reasoning: "Sees opportunity for tactical advantage" },
-      security_pact: { action: "accept", confidence: 95, reasoning: "Military cooperation highly valued" },
+      alliance_proposal: {
+        action: "negotiate",
+        confidence: 70,
+        reasoning: "Evaluates military strategic value",
+      },
+      border_tension: {
+        action: "escalate",
+        confidence: 85,
+        reasoning: "Sees opportunity for tactical advantage",
+      },
+      security_pact: {
+        action: "accept",
+        confidence: 95,
+        reasoning: "Military cooperation highly valued",
+      },
     }),
     eventModifiers: JSON.stringify({
       border_tension: { probabilityMultiplier: 1.8, severityAdjustment: 1, urgencyAdjustment: 20 },
       security_pact: { probabilityMultiplier: 2.0, severityAdjustment: 0, urgencyAdjustment: 15 },
     }),
     historicalBasis: "Erwin Rommel",
-    historicalContext: "German field marshal renowned for tactical brilliance, audacious maneuvers, and respect for military professionalism.",
+    historicalContext:
+      "German field marshal renowned for tactical brilliance, audacious maneuvers, and respect for military professionalism.",
   },
 
   {
@@ -822,16 +885,33 @@ const personalityArchetypes = [
       "Balances tradition with pragmatic reform",
     ]),
     scenarioResponses: JSON.stringify({
-      trade_agreement: { action: "accept", confidence: 85, reasoning: "Values economic modernization" },
-      cultural_exchange_offer: { action: "negotiate", confidence: 70, reasoning: "Selective cultural import" },
-      alliance_proposal: { action: "negotiate", confidence: 75, reasoning: "Strategic partnerships for development" },
+      trade_agreement: {
+        action: "accept",
+        confidence: 85,
+        reasoning: "Values economic modernization",
+      },
+      cultural_exchange_offer: {
+        action: "negotiate",
+        confidence: 70,
+        reasoning: "Selective cultural import",
+      },
+      alliance_proposal: {
+        action: "negotiate",
+        confidence: 75,
+        reasoning: "Strategic partnerships for development",
+      },
     }),
     eventModifiers: JSON.stringify({
       trade_agreement: { probabilityMultiplier: 1.9, severityAdjustment: 0, urgencyAdjustment: 15 },
-      technology_transfer: { probabilityMultiplier: 2.1, severityAdjustment: 0, urgencyAdjustment: 20 },
+      technology_transfer: {
+        probabilityMultiplier: 2.1,
+        severityAdjustment: 0,
+        urgencyAdjustment: 20,
+      },
     }),
     historicalBasis: "Peter the Great",
-    historicalContext: "Russian Tsar who forcibly modernized Russia through adoption of Western technology and centralized reform.",
+    historicalContext:
+      "Russian Tsar who forcibly modernized Russia through adoption of Western technology and centralized reform.",
   },
 
   {
@@ -877,16 +957,25 @@ const personalityArchetypes = [
       "Maintains strategic neutrality when possible",
     ]),
     scenarioResponses: JSON.stringify({
-      alliance_proposal: { action: "defer", confidence: 60, reasoning: "Cautious about permanent alliances" },
+      alliance_proposal: {
+        action: "defer",
+        confidence: 60,
+        reasoning: "Cautious about permanent alliances",
+      },
       trade_agreement: { action: "accept", confidence: 90, reasoning: "Strong economic focus" },
-      border_tension: { action: "de-escalate", confidence: 75, reasoning: "Prefers diplomatic solutions" },
+      border_tension: {
+        action: "de-escalate",
+        confidence: 75,
+        reasoning: "Prefers diplomatic solutions",
+      },
     }),
     eventModifiers: JSON.stringify({
       trade_agreement: { probabilityMultiplier: 2.0, severityAdjustment: 0, urgencyAdjustment: 15 },
       alliance_offer: { probabilityMultiplier: 0.7, severityAdjustment: 0, urgencyAdjustment: -5 },
     }),
     historicalBasis: "George Washington",
-    historicalContext: "First U.S. President who established precedents for balanced government, economic development, and strategic neutrality.",
+    historicalContext:
+      "First U.S. President who established precedents for balanced government, economic development, and strategic neutrality.",
   },
 
   {
@@ -922,7 +1011,10 @@ const personalityArchetypes = [
       tense: { formal: "Majestic displeasure", casual: "Autocratic warning" },
       neutral: { formal: "Royal courtesy", casual: "Distant grandeur" },
       friendly: { formal: "Gracious patronage", casual: "Royal favor" },
-      allied: { formal: "Alliance under French hegemony", casual: "Partnership with clear hierarchy" },
+      allied: {
+        formal: "Alliance under French hegemony",
+        casual: "Partnership with clear hierarchy",
+      },
     }),
     responsePatterns: JSON.stringify([
       "Pursues territorial expansion and glory",
@@ -932,16 +1024,37 @@ const personalityArchetypes = [
       "Uses cultural prestige as diplomatic tool",
     ]),
     scenarioResponses: JSON.stringify({
-      alliance_proposal: { action: "dominate", confidence: 85, reasoning: "Expects leadership role" },
-      border_tension: { action: "escalate", confidence: 80, reasoning: "Sees opportunity for expansion" },
-      cultural_exchange_offer: { action: "accept", confidence: 75, reasoning: "French cultural superiority" },
+      alliance_proposal: {
+        action: "dominate",
+        confidence: 85,
+        reasoning: "Expects leadership role",
+      },
+      border_tension: {
+        action: "escalate",
+        confidence: 80,
+        reasoning: "Sees opportunity for expansion",
+      },
+      cultural_exchange_offer: {
+        action: "accept",
+        confidence: 75,
+        reasoning: "French cultural superiority",
+      },
     }),
     eventModifiers: JSON.stringify({
-      territorial_claim: { probabilityMultiplier: 1.9, severityAdjustment: 1, urgencyAdjustment: 15 },
-      cultural_dominance: { probabilityMultiplier: 2.0, severityAdjustment: 0, urgencyAdjustment: 10 },
+      territorial_claim: {
+        probabilityMultiplier: 1.9,
+        severityAdjustment: 1,
+        urgencyAdjustment: 15,
+      },
+      cultural_dominance: {
+        probabilityMultiplier: 2.0,
+        severityAdjustment: 0,
+        urgencyAdjustment: 10,
+      },
     }),
     historicalBasis: "Louis XIV",
-    historicalContext: "French absolute monarch who centralized power, pursued military glory, and established French cultural dominance in Europe.",
+    historicalContext:
+      "French absolute monarch who centralized power, pursued military glory, and established French cultural dominance in Europe.",
   },
 
   {
@@ -988,15 +1101,24 @@ const personalityArchetypes = [
     ]),
     scenarioResponses: JSON.stringify({
       trade_agreement: { action: "accept", confidence: 95, reasoning: "Core national interest" },
-      alliance_proposal: { action: "negotiate", confidence: 80, reasoning: "Values commercial partnerships" },
-      border_tension: { action: "de-escalate", confidence: 85, reasoning: "Conflict disrupts trade" },
+      alliance_proposal: {
+        action: "negotiate",
+        confidence: 80,
+        reasoning: "Values commercial partnerships",
+      },
+      border_tension: {
+        action: "de-escalate",
+        confidence: 85,
+        reasoning: "Conflict disrupts trade",
+      },
     }),
     eventModifiers: JSON.stringify({
       trade_agreement: { probabilityMultiplier: 2.5, severityAdjustment: 0, urgencyAdjustment: 20 },
       commercial_hub: { probabilityMultiplier: 2.2, severityAdjustment: 0, urgencyAdjustment: 15 },
     }),
     historicalBasis: "Dutch East India Company Era",
-    historicalContext: "Dutch Golden Age characterized by global trade networks, commercial innovation, and economic supremacy through peaceful mercantilism.",
+    historicalContext:
+      "Dutch Golden Age characterized by global trade networks, commercial innovation, and economic supremacy through peaceful mercantilism.",
   },
 
   {
@@ -1030,7 +1152,10 @@ const personalityArchetypes = [
     toneMatrix: JSON.stringify({
       hostile: { formal: "Revolutionary condemnation", casual: "Passionate denunciation" },
       tense: { formal: "Ideological challenge", casual: "Revolutionary warnings" },
-      neutral: { formal: "Cautious revolutionary diplomacy", casual: "Measured revolutionary tone" },
+      neutral: {
+        formal: "Cautious revolutionary diplomacy",
+        casual: "Measured revolutionary tone",
+      },
       friendly: { formal: "Revolutionary solidarity", casual: "Passionate camaraderie" },
       allied: { formal: "Liberation coalition", casual: "Revolutionary brotherhood" },
     }),
@@ -1042,16 +1167,33 @@ const personalityArchetypes = [
       "Inspires popular revolutionary movements",
     ]),
     scenarioResponses: JSON.stringify({
-      alliance_proposal: { action: "negotiate", confidence: 70, reasoning: "Evaluates revolutionary compatibility" },
+      alliance_proposal: {
+        action: "negotiate",
+        confidence: 70,
+        reasoning: "Evaluates revolutionary compatibility",
+      },
       sanction_threat: { action: "escalate", confidence: 85, reasoning: "Revolutionary defiance" },
-      liberation_movement: { action: "support", confidence: 95, reasoning: "Core revolutionary mission" },
+      liberation_movement: {
+        action: "support",
+        confidence: 95,
+        reasoning: "Core revolutionary mission",
+      },
     }),
     eventModifiers: JSON.stringify({
-      liberation_movement: { probabilityMultiplier: 2.5, severityAdjustment: 1, urgencyAdjustment: 25 },
-      ideological_dispute: { probabilityMultiplier: 2.0, severityAdjustment: 2, urgencyAdjustment: 20 },
+      liberation_movement: {
+        probabilityMultiplier: 2.5,
+        severityAdjustment: 1,
+        urgencyAdjustment: 25,
+      },
+      ideological_dispute: {
+        probabilityMultiplier: 2.0,
+        severityAdjustment: 2,
+        urgencyAdjustment: 20,
+      },
     }),
     historicalBasis: "Simón Bolívar",
-    historicalContext: "South American revolutionary who led independence movements across multiple nations with unwavering commitment to liberation.",
+    historicalContext:
+      "South American revolutionary who led independence movements across multiple nations with unwavering commitment to liberation.",
   },
 
   {
@@ -1098,20 +1240,28 @@ const personalityArchetypes = [
     ]),
     scenarioResponses: JSON.stringify({
       trade_agreement: { action: "accept", confidence: 95, reasoning: "Core commercial interest" },
-      cultural_exchange_offer: { action: "accept", confidence: 85, reasoning: "Values cultural capital" },
-      border_tension: { action: "de-escalate", confidence: 90, reasoning: "Conflict threatens commerce" },
+      cultural_exchange_offer: {
+        action: "accept",
+        confidence: 85,
+        reasoning: "Values cultural capital",
+      },
+      border_tension: {
+        action: "de-escalate",
+        confidence: 90,
+        reasoning: "Conflict threatens commerce",
+      },
     }),
     eventModifiers: JSON.stringify({
       trade_agreement: { probabilityMultiplier: 2.3, severityAdjustment: 0, urgencyAdjustment: 18 },
       banking_network: { probabilityMultiplier: 2.5, severityAdjustment: 0, urgencyAdjustment: 20 },
     }),
     historicalBasis: "Medici Banking Dynasty",
-    historicalContext: "Florentine banking family who built power through commerce, cultural patronage, and diplomatic networks.",
+    historicalContext:
+      "Florentine banking family who built power through commerce, cultural patronage, and diplomatic networks.",
   },
 
   // Continue with 40 more diverse personalities...
   // (Due to response length limits, I'll add these in batches)
-
 ];
 
 async function seedNPCPersonalities() {

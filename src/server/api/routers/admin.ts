@@ -11,7 +11,12 @@ import {
   adminProcedure,
 } from "~/server/api/trpc";
 import { isSystemOwner } from "~/lib/system-owner-constants";
-import { CONFIG_CONSTANTS, getDefaultEconomicConfig, getEconomicConfigFromDB, invalidateConfigCache } from "~/lib/config-service";
+import {
+  CONFIG_CONSTANTS,
+  getDefaultEconomicConfig,
+  getEconomicConfigFromDB,
+  invalidateConfigCache,
+} from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
 import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
@@ -23,10 +28,8 @@ import type {
   BaseCountryData,
 } from "~/types/ixstats";
 import { generateSlug } from "~/lib/slug-utils";
-import {
-  getEconomicTierFromGdpPerCapita,
-  getPopulationTierFromPopulation,
-} from "~/types/ixstats";
+import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
+import { invalidateCache } from "~/lib/trpc-cache";
 
 // Remove unused import - we use ctx.db instead
 
@@ -179,13 +182,21 @@ export const adminRouter = createTRPCRouter({
   // Get system configuration (includes all economic control parameters)
   getConfig: adminProcedure.query(async ({ ctx }) => {
     const ALL_CONFIG_KEYS = [
-      "globalGrowthFactor", "autoUpdate", "botSyncEnabled", "timeMultiplier",
+      "globalGrowthFactor",
+      "autoUpdate",
+      "botSyncEnabled",
+      "timeMultiplier",
       "baseInflationRate",
-      "tierGrowthModifier_Impoverished", "tierGrowthModifier_Developing",
-      "tierGrowthModifier_Developed", "tierGrowthModifier_Healthy",
-      "tierGrowthModifier_Strong", "tierGrowthModifier_VeryStrong",
+      "tierGrowthModifier_Impoverished",
+      "tierGrowthModifier_Developing",
+      "tierGrowthModifier_Developed",
+      "tierGrowthModifier_Healthy",
+      "tierGrowthModifier_Strong",
+      "tierGrowthModifier_VeryStrong",
       "tierGrowthModifier_Extravagant",
-      "diminishingReturnsThreshold", "diminishingReturnsFactor", "minGrowthFloor",
+      "diminishingReturnsThreshold",
+      "diminishingReturnsFactor",
+      "minGrowthFloor",
     ];
 
     try {
@@ -231,8 +242,13 @@ export const adminRouter = createTRPCRouter({
         timeMultiplier: 2.0,
         baseInflationRate: 0.02,
         tierGrowthModifiers: {
-          Impoverished: 1.0, Developing: 1.0, Developed: 1.0, Healthy: 1.0,
-          Strong: 1.0, "Very Strong": 1.0, Extravagant: 1.0,
+          Impoverished: 1.0,
+          Developing: 1.0,
+          Developed: 1.0,
+          Healthy: 1.0,
+          Strong: 1.0,
+          "Very Strong": 1.0,
+          Extravagant: 1.0,
         },
         diminishingReturnsThreshold: 60000,
         diminishingReturnsFactor: 0.5,
@@ -267,7 +283,10 @@ export const adminRouter = createTRPCRouter({
 
         // Add optional economic control parameters
         if (input.baseInflationRate !== undefined) {
-          configUpdates.push({ key: "baseInflationRate", value: input.baseInflationRate.toString() });
+          configUpdates.push({
+            key: "baseInflationRate",
+            value: input.baseInflationRate.toString(),
+          });
         }
         if (input.tierGrowthModifiers) {
           const tierKeyMap: Record<string, string> = {
@@ -287,10 +306,16 @@ export const adminRouter = createTRPCRouter({
           }
         }
         if (input.diminishingReturnsThreshold !== undefined) {
-          configUpdates.push({ key: "diminishingReturnsThreshold", value: input.diminishingReturnsThreshold.toString() });
+          configUpdates.push({
+            key: "diminishingReturnsThreshold",
+            value: input.diminishingReturnsThreshold.toString(),
+          });
         }
         if (input.diminishingReturnsFactor !== undefined) {
-          configUpdates.push({ key: "diminishingReturnsFactor", value: input.diminishingReturnsFactor.toString() });
+          configUpdates.push({
+            key: "diminishingReturnsFactor",
+            value: input.diminishingReturnsFactor.toString(),
+          });
         }
         if (input.minGrowthFloor !== undefined) {
           configUpdates.push({ key: "minGrowthFloor", value: input.minGrowthFloor.toString() });
@@ -873,7 +898,7 @@ export const adminRouter = createTRPCRouter({
           };
 
           const initialStats = calc.initializeCountryStats(baseCountryData);
-          const effects= country.storytellerEffects.map((d) => ({
+          const effects = country.storytellerEffects.map((d) => ({
             ...d,
             ixTimeTimestamp: d.ixTimeTimestamp.getTime(),
           }));
@@ -1102,7 +1127,16 @@ export const adminRouter = createTRPCRouter({
       const settings = await ctx.db.systemConfig.findMany({
         where: {
           key: {
-            in: ["showWikiTab", "showCardsTab", "showLabsTab", "showIntelligenceTab", "showDefenseTab", "showMapsTab", "showForumTab", "showHelpTab"],
+            in: [
+              "showWikiTab",
+              "showCardsTab",
+              "showLabsTab",
+              "showIntelligenceTab",
+              "showDefenseTab",
+              "showMapsTab",
+              "showForumTab",
+              "showHelpTab",
+            ],
           },
         },
       });
@@ -1975,7 +2009,7 @@ export const adminRouter = createTRPCRouter({
           offset: z.number().min(0).optional().default(0),
         })
         .optional()
-        .default({})
+        .default({ sortBy: "name", sortOrder: "asc", limit: 100, offset: 0 })
     )
     .query(async ({ ctx, input }) => {
       const { search, sortBy, sortOrder, tierFilter, limit, offset } = input;
@@ -2045,7 +2079,9 @@ export const adminRouter = createTRPCRouter({
         ctx.db.storytellerEffect.groupBy({
           by: ["countryId"],
           where: { isActive: true },
-          _count: true,
+          _count: {
+            id: true,
+          },
         }),
       ]);
 
@@ -2053,7 +2089,7 @@ export const adminRouter = createTRPCRouter({
       const effectsLookup = new Map(
         activeStorytellerEffectsByCountry
           .filter((d) => d.countryId)
-          .map((d) => [d.countryId!, d._count])
+          .map((d) => [d.countryId!, d._count.id])
       );
 
       const rows = countries.map((c) => ({
@@ -2150,7 +2186,7 @@ export const adminRouter = createTRPCRouter({
           limit: z.number().min(1).max(50).optional().default(20),
         })
         .optional()
-        .default({})
+        .default({ limit: 20 })
     )
     .query(async ({ ctx, input }) => {
       const now = new Date();
@@ -2325,7 +2361,18 @@ export const adminRouter = createTRPCRouter({
         where: { id: input.eventId },
         include: {
           affectedCountries: {
-            include: { country: { select: { id: true, name: true, flag: true, currentTotalGdp: true, currentPopulation: true, economicTier: true } } },
+            include: {
+              country: {
+                select: {
+                  id: true,
+                  name: true,
+                  flag: true,
+                  currentTotalGdp: true,
+                  currentPopulation: true,
+                  economicTier: true,
+                },
+              },
+            },
           },
           storytellerEffects: {
             include: { country: { select: { id: true, name: true } } },
@@ -2360,9 +2407,11 @@ export const adminRouter = createTRPCRouter({
       if (!userId) throw new TRPCError({ code: "UNAUTHORIZED" });
 
       // Calculate end date from duration if not provided
-      const endsAt = input.endsAt ?? (input.duration
-        ? new Date(input.startsAt.getTime() + input.duration * 365.25 * 24 * 60 * 60 * 1000)
-        : null);
+      const endsAt =
+        input.endsAt ??
+        (input.duration
+          ? new Date(input.startsAt.getTime() + input.duration * 365.25 * 24 * 60 * 60 * 1000)
+          : null);
 
       // Create the world event
       const event = await ctx.db.worldEvent.create({
@@ -2374,7 +2423,7 @@ export const adminRouter = createTRPCRouter({
           duration: input.duration,
           startsAt: input.startsAt,
           endsAt,
-          parameters: input.parameters ?? undefined,
+          parameters: (input.parameters as any) ?? undefined,
           chainId: input.chainId,
           chainOrder: input.chainOrder,
           createdBy: userId,
@@ -2412,15 +2461,18 @@ export const adminRouter = createTRPCRouter({
       await ctx.db.adminAuditLog.create({
         data: {
           action: "CREATE_WORLD_EVENT",
-          adminId: userId,
-          adminName: ctx.user?.firstName ?? "Admin",
-          details: JSON.stringify({
+          targetType: "world_event",
+          targetId: event.id,
+          targetName: event.name,
+          changes: JSON.stringify({
             eventId: event.id,
             name: input.name,
             type: input.type,
             severity: input.severity,
             affectedCountries: input.affectedCountryIds.length,
           }),
+          adminId: userId,
+          adminName: ctx.user?.firstName ?? "Admin",
           timestamp: new Date(),
         },
       });
@@ -2447,7 +2499,7 @@ export const adminRouter = createTRPCRouter({
         where: { id: eventId },
         data: {
           ...data,
-          parameters: data.parameters ?? undefined,
+          parameters: (data.parameters as any) ?? undefined,
         },
       });
 
@@ -2510,14 +2562,21 @@ export const adminRouter = createTRPCRouter({
         const severityMultiplier = input.severity;
         // Negative events reduce GDP; positive events (peace, tech) boost it
         const isNegative = [
-          "economic_crisis", "trade_war", "natural_disaster", "pandemic",
-          "political_upheaval", "global_recession", "currency_crisis",
-          "cyber_attack", "climate_disaster", "financial_crisis",
+          "economic_crisis",
+          "trade_war",
+          "natural_disaster",
+          "pandemic",
+          "political_upheaval",
+          "global_recession",
+          "currency_crisis",
+          "cyber_attack",
+          "climate_disaster",
+          "financial_crisis",
         ].includes(input.type);
 
         const gdpImpactPct = isNegative
           ? -(severityMultiplier * 0.2) // up to -20% at max severity
-          : severityMultiplier * 0.15;  // up to +15% boost
+          : severityMultiplier * 0.15; // up to +15% boost
 
         const popImpactPct = isNegative
           ? -(severityMultiplier * 0.02) // up to -2% population impact
@@ -2558,8 +2617,13 @@ export const adminRouter = createTRPCRouter({
         projectedImpacts,
         summary: {
           totalCountriesAffected: countries.length,
-          avgGdpChange: projectedImpacts.reduce((sum, p) => sum + p.projected.gdpChange, 0) / Math.max(projectedImpacts.length, 1),
-          totalGdpAtRisk: projectedImpacts.reduce((sum, p) => sum + Math.abs(p.current.gdp * p.projected.gdpChange), 0),
+          avgGdpChange:
+            projectedImpacts.reduce((sum, p) => sum + p.projected.gdpChange, 0) /
+            Math.max(projectedImpacts.length, 1),
+          totalGdpAtRisk: projectedImpacts.reduce(
+            (sum, p) => sum + Math.abs(p.current.gdp * p.projected.gdpChange),
+            0
+          ),
         },
       };
     }),
@@ -2570,7 +2634,14 @@ export const adminRouter = createTRPCRouter({
       include: {
         events: {
           orderBy: { chainOrder: "asc" },
-          select: { id: true, name: true, type: true, severity: true, chainOrder: true, isActive: true },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            severity: true,
+            chainOrder: true,
+            isActive: true,
+          },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -2595,13 +2666,15 @@ export const adminRouter = createTRPCRouter({
   // ─── Wiki Link Management ──────────────────────────────────────────
 
   setWikiLink: adminProcedure
-    .input(z.object({
-      countryId: z.string(),
-      wikiPageTitle: z.string().nullable(),
-      wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        wikiPageTitle: z.string().nullable(),
+        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.country.update({
+      const result = await ctx.db.country.update({
         where: { id: input.countryId },
         data: {
           wikiPageTitle: input.wikiPageTitle,
@@ -2610,16 +2683,24 @@ export const adminRouter = createTRPCRouter({
         },
         select: { id: true, name: true, wikiPageTitle: true, wikiSource: true },
       });
+      await invalidateCache(["countries.getAll"]);
+      return result;
     }),
 
   bulkSetWikiLinks: adminProcedure
-    .input(z.object({
-      links: z.array(z.object({
-        countryId: z.string(),
-        wikiPageTitle: z.string(),
-        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
-      })).max(100),
-    }))
+    .input(
+      z.object({
+        links: z
+          .array(
+            z.object({
+              countryId: z.string(),
+              wikiPageTitle: z.string(),
+              wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
+            })
+          )
+          .max(100),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const results = await Promise.all(
         input.links.map((link) =>
@@ -2634,6 +2715,7 @@ export const adminRouter = createTRPCRouter({
           })
         )
       );
+      await invalidateCache(["countries.getAll"]);
       return { updated: results.length, countries: results };
     }),
 

@@ -33,7 +33,7 @@ export function DashboardPlayerWidget() {
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
-    { enabled: !!user?.id },
+    { enabled: !!user?.id }
   );
   const countryId = userProfile?.countryId || "";
   const hasCountry = !!countryId;
@@ -43,40 +43,40 @@ export function DashboardPlayerWidget() {
   const [popView, setPopView] = useState<"total" | "growth" | "density">("total");
 
   const cycleGdp = () => {
-    const order: typeof gdpView[] = ["perCapita", "total", "growth"];
+    const order: (typeof gdpView)[] = ["perCapita", "total", "growth"];
     setGdpView(order[(order.indexOf(gdpView) + 1) % order.length]);
   };
   const cyclePop = () => {
-    const order: typeof popView[] = ["total", "growth", "density"];
+    const order: (typeof popView)[] = ["total", "growth", "density"];
     setPopView(order[(order.indexOf(popView) + 1) % order.length]);
   };
 
   const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery(
     { countryId },
-    { enabled: hasCountry },
+    { enabled: hasCountry }
   );
   const { data: folderCounts } = api.messages.getFolderCounts.useQuery(
     { userId: user?.id ?? "" },
-    { enabled: !!user?.id },
+    { enabled: !!user?.id }
   );
   const { data: activeCrises } = api.crisisEvents.getActive.useQuery(
     { limit: 5 },
-    { enabled: hasCountry },
+    { enabled: hasCountry }
   );
   const { data: crisisStats } = api.crisisEvents.getStatistics.useQuery(
     { timeframe: "month" },
-    { enabled: hasCountry },
+    { enabled: hasCountry }
   );
   const { data: pendingIssues } = api.nationalIssues.getPendingCount.useQuery(
     { countryId },
-    { enabled: hasCountry },
+    { enabled: hasCountry }
   );
 
   if (!isSignedIn) return null;
 
   if (profileLoading) {
     return (
-      <div className="w-48 space-y-2.5 rounded-xl border border-border/50 bg-background/80 p-3 shadow-sm backdrop-blur-lg">
+      <div className="border-border/50 bg-background/80 w-48 space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
         <Skeleton className="h-4 w-24" />
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-4 w-28" />
@@ -94,23 +94,25 @@ export function DashboardPlayerWidget() {
     popDensity: dash.populationDensity ?? 0,
   };
 
-  const gdpDisplayValue = gdpView === "perCapita"
-    ? `$${formatCompact(stats.gdpPerCapita)}`
-    : gdpView === "total"
-    ? `$${formatCompact(stats.totalGdp)}`
-    : `${(stats.growth * 100).toFixed(2)}%`;
+  const gdpDisplayValue =
+    gdpView === "perCapita"
+      ? `$${formatCompact(stats.gdpPerCapita)}`
+      : gdpView === "total"
+        ? `$${formatCompact(stats.totalGdp)}`
+        : `${(stats.growth * 100).toFixed(2)}%`;
 
-  const gdpDisplayLabel = gdpView === "perCapita" ? "GDP/Cap"
-    : gdpView === "total" ? "Total GDP" : "Growth";
+  const gdpDisplayLabel =
+    gdpView === "perCapita" ? "GDP/Cap" : gdpView === "total" ? "Total GDP" : "Growth";
 
-  const popDisplayValue = popView === "total"
-    ? formatCompact(stats.population)
-    : popView === "growth"
-    ? `${(stats.popGrowth * 100).toFixed(2)}%`
-    : `${formatCompact(Math.round(stats.popDensity))}/mi²`;
+  const popDisplayValue =
+    popView === "total"
+      ? formatCompact(stats.population)
+      : popView === "growth"
+        ? `${(stats.popGrowth * 100).toFixed(2)}%`
+        : `${formatCompact(Math.round(stats.popDensity))}/mi²`;
 
-  const popDisplayLabel = popView === "total" ? "Population"
-    : popView === "growth" ? "Pop Growth" : "Density";
+  const popDisplayLabel =
+    popView === "total" ? "Population" : popView === "growth" ? "Pop Growth" : "Density";
 
   const msgFolders = folderCounts as Record<FolderKey, number> | undefined;
   const hasMessages = msgFolders && Object.values(msgFolders).some((c) => c > 0);
@@ -118,35 +120,42 @@ export function DashboardPlayerWidget() {
   const crisesCount = crisisStats?.activeEvents ?? 0;
 
   return (
-    <div className="w-48 space-y-2.5 rounded-xl border border-border/50 bg-background/80 p-3 shadow-sm backdrop-blur-lg">
+    <div className="border-border/50 bg-background/80 w-48 space-y-2.5 rounded-xl border p-3 shadow-sm backdrop-blur-lg">
       {/* GDP/Pop Stat Cards */}
       {dashboard && (
         <div className="grid grid-cols-2 gap-1.5">
-          <button onClick={cycleGdp} className="cursor-pointer rounded-lg bg-emerald-500/8 px-2 py-1.5 text-left transition-colors hover:bg-emerald-500/15 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20">
-            <p className="text-[8px] text-muted-foreground leading-tight">{gdpDisplayLabel}</p>
-            <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 leading-tight">{gdpDisplayValue}</p>
+          <button
+            onClick={cycleGdp}
+            className="cursor-pointer rounded-lg bg-emerald-500/8 px-2 py-1.5 text-left transition-colors hover:bg-emerald-500/15 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
+          >
+            <p className="text-muted-foreground text-[8px] leading-tight">{gdpDisplayLabel}</p>
+            <p className="text-[10px] leading-tight font-semibold text-emerald-600 dark:text-emerald-400">
+              {gdpDisplayValue}
+            </p>
           </button>
-          <button onClick={cyclePop} className="cursor-pointer rounded-lg bg-blue-500/8 px-2 py-1.5 text-left transition-colors hover:bg-blue-500/15 dark:bg-blue-500/10 dark:hover:bg-blue-500/20">
-            <p className="text-[8px] text-muted-foreground leading-tight">{popDisplayLabel}</p>
-            <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 leading-tight">{popDisplayValue}</p>
+          <button
+            onClick={cyclePop}
+            className="cursor-pointer rounded-lg bg-blue-500/8 px-2 py-1.5 text-left transition-colors hover:bg-blue-500/15 dark:bg-blue-500/10 dark:hover:bg-blue-500/20"
+          >
+            <p className="text-muted-foreground text-[8px] leading-tight">{popDisplayLabel}</p>
+            <p className="text-[10px] leading-tight font-semibold text-blue-600 dark:text-blue-400">
+              {popDisplayValue}
+            </p>
           </button>
         </div>
       )}
 
-      <div className="border-t border-border/40" />
+      <div className="border-border/40 border-t" />
 
       {/* Messages */}
       <div className="space-y-1.5">
-        <Link
-          href={"/messages"}
-          className="flex items-center justify-between group"
-        >
-          <span className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
+        <Link href={"/messages"} className="group flex items-center justify-between">
+          <span className="text-foreground flex items-center gap-1.5 text-[10px] font-semibold">
             <Mail className="h-3.5 w-3.5" />
             Messages
           </span>
           {hasMessages && (
-            <ChevronRight className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+            <ChevronRight className="text-muted-foreground h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
           )}
         </Link>
         {hasMessages ? (
@@ -159,9 +168,9 @@ export function DashboardPlayerWidget() {
                 return (
                   <div
                     key={key}
-                    className="flex items-center justify-between rounded-md bg-muted/40 px-2 py-1"
+                    className="bg-muted/40 flex items-center justify-between rounded-md px-2 py-1"
                   >
-                    <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span className="text-muted-foreground flex items-center gap-1.5 text-[10px]">
                       <Icon className="h-3 w-3" />
                       {config.label}
                     </span>
@@ -170,23 +179,20 @@ export function DashboardPlayerWidget() {
                     </span>
                   </div>
                 );
-              },
+              }
             )}
           </div>
         ) : (
-          <p className="px-1 text-[9px] text-muted-foreground">No unread messages</p>
+          <p className="text-muted-foreground px-1 text-[9px]">No unread messages</p>
         )}
       </div>
 
-      <div className="border-t border-border/40" />
+      <div className="border-border/40 border-t" />
 
       {/* Pending Issues */}
       {pendingIssues && pendingIssues.total > 0 && (
-        <Link
-          href={"/mycountry/executive"}
-          className="flex items-center justify-between group"
-        >
-          <span className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground">
+        <Link href={"/mycountry/executive"} className="group flex items-center justify-between">
+          <span className="text-foreground flex items-center gap-1.5 text-[10px] font-semibold">
             <ClipboardList className="h-3.5 w-3.5" />
             Issues
           </span>
@@ -196,7 +202,7 @@ export function DashboardPlayerWidget() {
                 {pendingIssues.urgent} urgent
               </span>
             )}
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[9px] font-semibold text-muted-foreground">
+            <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[9px] font-semibold">
               {pendingIssues.total}
             </span>
           </span>
@@ -206,17 +212,17 @@ export function DashboardPlayerWidget() {
       {/* Active Crises */}
       {crisesCount > 0 && (
         <>
-          <div className="border-t border-border/40" />
+          <div className="border-border/40 border-t" />
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground">
+              <span className="text-muted-foreground flex items-center gap-1 text-[9px] font-medium">
                 <AlertTriangle className="h-3 w-3 text-red-400" />
                 Crises
               </span>
               <span className="text-[10px] font-semibold text-red-500">{crisesCount}</span>
             </div>
             {activeCrisesList.length > 0 && (
-              <p className="truncate text-[10px] text-muted-foreground">
+              <p className="text-muted-foreground truncate text-[10px]">
                 • {activeCrisesList[0]?.title ?? activeCrisesList[0]?.type ?? "Ongoing"}
               </p>
             )}

@@ -77,9 +77,7 @@ export function CreateSection() {
 
       {/* Seed Input */}
       <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-        <label className="mb-2 block text-sm font-medium text-white/80">
-          World Seed
-        </label>
+        <label className="mb-2 block text-sm font-medium text-white/80">World Seed</label>
         <div className="flex gap-3">
           <input
             type="number"
@@ -100,9 +98,7 @@ export function CreateSection() {
       <div className="rounded-xl border-2 border-dashed border-white/15 bg-white/5 p-8 text-center backdrop-blur-sm transition-colors hover:border-white/25">
         <div className="text-3xl">📤</div>
         <p className="mt-2 text-sm font-medium text-white/70">Upload Map Image</p>
-        <p className="mt-1 text-xs text-white/40">
-          Drag and drop a PNG or SVG, or click to browse
-        </p>
+        <p className="mt-1 text-xs text-white/40">Drag and drop a PNG or SVG, or click to browse</p>
         <input
           type="file"
           accept="image/png,image/svg+xml"
@@ -115,9 +111,7 @@ export function CreateSection() {
             }
           }}
         />
-        {state.uploadedImage && (
-          <p className="mt-3 text-xs text-emerald-400">Image uploaded</p>
-        )}
+        {state.uploadedImage && <p className="mt-3 text-xs text-emerald-400">Image uploaded</p>}
       </div>
 
       {/* Next Button */}

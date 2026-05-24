@@ -92,7 +92,7 @@ export const CardContainer3D = React.memo<CardContainer3DProps>(
         onMouseLeave={handleMouseLeave}
       >
         <motion.div
-          className="transform-3d relative"
+          className="relative transform-3d"
           style={{
             transformStyle: "preserve-3d",
           }}

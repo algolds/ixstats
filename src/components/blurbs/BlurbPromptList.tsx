@@ -22,13 +22,13 @@ export function BlurbPromptList() {
   return (
     <div className="space-y-4">
       {isLoading && (
-        <div className="text-center py-12 text-[var(--wikios-text-dim)] text-sm">
+        <div className="py-12 text-center text-sm text-[var(--wikios-text-dim)]">
           Loading prompts...
         </div>
       )}
 
       {!isLoading && prompts.length === 0 && (
-        <div className="text-center py-12 text-[var(--wikios-text-dim)] text-sm">
+        <div className="py-12 text-center text-sm text-[var(--wikios-text-dim)]">
           No active prompts yet. Check back soon!
         </div>
       )}
@@ -38,24 +38,23 @@ export function BlurbPromptList() {
           <Link
             key={prompt.id}
             href={withBasePath(`/blurbs/${prompt.slug}`)}
-            className="glass-hierarchy-child block rounded-xl border border-white/10 p-4 sm:p-5 transition-colors hover:border-white/20"
+            className="glass-hierarchy-child block rounded-xl border border-white/10 p-4 transition-colors hover:border-white/20 sm:p-5"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-[var(--wikios-text)] text-sm sm:text-base truncate">
+                <h3 className="truncate text-sm font-semibold text-[var(--wikios-text)] sm:text-base">
                   {prompt.title}
                 </h3>
-                <p className="text-[var(--wikios-text-muted)] text-sm mt-1 line-clamp-2">
+                <p className="mt-1 line-clamp-2 text-sm text-[var(--wikios-text-muted)]">
                   {prompt.question}
                 </p>
               </div>
               <Badge variant="secondary" className="shrink-0 text-xs">
-                {prompt._count.responses}{" "}
-                {prompt._count.responses === 1 ? "response" : "responses"}
+                {prompt._count.responses} {prompt._count.responses === 1 ? "response" : "responses"}
               </Badge>
             </div>
             {prompt.publishedAt && (
-              <p className="text-[var(--wikios-text-dim)] text-xs mt-2">
+              <p className="mt-2 text-xs text-[var(--wikios-text-dim)]">
                 {new Date(prompt.publishedAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -68,7 +67,7 @@ export function BlurbPromptList() {
       </div>
 
       {hasNextPage && (
-        <div className="text-center pt-2">
+        <div className="pt-2 text-center">
           <Button
             variant="ghost"
             size="sm"

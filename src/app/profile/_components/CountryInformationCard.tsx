@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { Crown, Image as ImageIcon, Type as TypeIcon, Save, X, Activity, ArrowLeftRight, TrendingUp, Users, DollarSign } from "lucide-react";
+import {
+  Crown,
+  Image as ImageIcon,
+  Type as TypeIcon,
+  Save,
+  X,
+  Activity,
+  ArrowLeftRight,
+  TrendingUp,
+  Users,
+  DollarSign,
+} from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { getCountryPath } from "~/lib/slug-utils";
@@ -67,20 +78,22 @@ export function CountryInformationCard({
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">National Identity</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                National Identity
+              </h2>
             </div>
           </div>
           <Link
             href={countryPath}
             className="glass-interactive flex items-center gap-2 rounded-xl bg-white/50 px-4 py-2 text-sm font-semibold text-indigo-600 transition-all hover:bg-white dark:bg-slate-800/50 dark:text-indigo-400 dark:hover:bg-slate-800"
           >
-             View MyCountry
+            View MyCountry
           </Link>
         </div>
 
         <div className="space-y-6">
           <div className="rounded-2xl bg-slate-50/50 p-5 dark:bg-slate-800/30">
-            <label className="mb-3 block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <label className="mb-3 block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
               Primary Country
             </label>
             {isEditingCountry ? (
@@ -126,8 +139,12 @@ export function CountryInformationCard({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-slate-900 dark:text-white">{country.name}</p>
-                    <p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-tighter">Active Player Country</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {country.name}
+                    </p>
+                    <p className="text-[10px] font-bold tracking-tighter text-indigo-500 uppercase dark:text-indigo-400">
+                      Active Player Country
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -166,12 +183,14 @@ export function CountryInformationCard({
           <div className="mt-4 border-t border-slate-100 pt-6 dark:border-slate-800">
             <div className="mb-4 flex items-center gap-2">
               <Activity className="h-4 w-4 text-emerald-500" />
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-900 dark:text-white">MyCountry at a glance</h3>
+              <h3 className="text-sm font-bold tracking-widest text-slate-900 uppercase dark:text-white">
+                MyCountry at a glance
+              </h3>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
                     Economic Vitality
                   </label>
                   <TrendingUp className="h-3 w-3 text-emerald-500" />
@@ -179,14 +198,17 @@ export function CountryInformationCard({
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-medium text-slate-500">GDP Growth</span>
-                    <span className={`text-[10px] font-bold ${(country.adjustedGdpGrowth ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {(country.adjustedGdpGrowth ?? 0) >= 0 ? '+' : ''}{((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}%
+                    <span
+                      className={`text-[10px] font-bold ${(country.adjustedGdpGrowth ?? 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+                    >
+                      {(country.adjustedGdpGrowth ?? 0) >= 0 ? "+" : ""}
+                      {((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}%
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-medium text-slate-500">Stability</span>
                     <span className="text-[10px] font-bold text-indigo-600">
-                      {(country.economicTier)}
+                      {country.economicTier}
                     </span>
                   </div>
                 </div>
@@ -194,12 +216,14 @@ export function CountryInformationCard({
 
               <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
                     Population {populationView === "growth" ? "Expansion" : "Metrics"}
                   </label>
-                  <button 
-                    onClick={() => setPopulationView(populationView === "total" ? "growth" : "total")}
-                    className="rounded-lg p-1 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  <button
+                    onClick={() =>
+                      setPopulationView(populationView === "total" ? "growth" : "total")
+                    }
+                    className="rounded-lg p-1 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
                   >
                     <ArrowLeftRight className="h-3 w-3 text-slate-400" />
                   </button>
@@ -207,23 +231,26 @@ export function CountryInformationCard({
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-blue-500" />
                   <p className="text-sm font-bold text-slate-900 dark:text-white">
-                    {populationView === "total" 
+                    {populationView === "total"
                       ? Math.round(country.currentPopulation ?? 0).toLocaleString()
-                      : `${((country.populationGrowthRate ?? 0) * 100).toFixed(2)}%`
-                    }
-                    {populationView === "growth" && <span className="ml-1 text-[10px] font-medium text-slate-500">Growth</span>}
+                      : `${((country.populationGrowthRate ?? 0) * 100).toFixed(2)}%`}
+                    {populationView === "growth" && (
+                      <span className="ml-1 text-[10px] font-medium text-slate-500">Growth</span>
+                    )}
                   </p>
                 </div>
               </div>
 
               <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/30">
                 <div className="mb-2 flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  <label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">
                     Financials {economyView === "per-capita" ? "(P/C)" : "(Total)"}
                   </label>
-                  <button 
-                    onClick={() => setEconomyView(economyView === "per-capita" ? "total" : "per-capita")}
-                    className="rounded-lg p-1 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  <button
+                    onClick={() =>
+                      setEconomyView(economyView === "per-capita" ? "total" : "per-capita")
+                    }
+                    className="rounded-lg p-1 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
                   >
                     <ArrowLeftRight className="h-3 w-3 text-slate-400" />
                   </button>
@@ -233,8 +260,7 @@ export function CountryInformationCard({
                   <p className="text-sm font-bold text-slate-900 dark:text-white">
                     {economyView === "per-capita"
                       ? `$${(country.currentGdpPerCapita ?? 0).toLocaleString()}`
-                      : `$${(Math.round(country.currentTotalGdp ?? (country.currentGdpPerCapita ?? 0) * (country.currentPopulation ?? 0))).toLocaleString()}`
-                    }
+                      : `$${Math.round(country.currentTotalGdp ?? (country.currentGdpPerCapita ?? 0) * (country.currentPopulation ?? 0)).toLocaleString()}`}
                   </p>
                 </div>
               </div>

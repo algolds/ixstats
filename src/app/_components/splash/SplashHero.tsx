@@ -3,13 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
-import {
-  Globe,
-  TrendingUp,
-  Crown,
-  ArrowRight,
-  Hammer,
-} from "lucide-react";
+import { Globe, TrendingUp, Crown, ArrowRight, Hammer } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import { splashGold } from "~/lib/splash/mycountry-gold";
@@ -58,19 +52,23 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
             {stats ? `${stats.totalCountries.toLocaleString()} nations` : "— nations"}
           </span>
         </div>
-        <span className="hidden text-muted-foreground sm:inline" aria-hidden>
+        <span className="text-muted-foreground hidden sm:inline" aria-hidden>
           ·
         </span>
         <button
           type="button"
           onClick={() => setEarthClock((e) => !e)}
-          className="text-foreground hover:text-amber-700 dark:hover:text-amber-300 flex max-w-[min(92vw,36rem)] flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-center transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-amber-500/40 sm:items-start sm:text-left"
-          aria-label={earthClock ? "Showing Earth time. Switch to IxTime." : "Showing IxTime. Switch to Earth time."}
+          className="text-foreground flex max-w-[min(92vw,36rem)] flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-center transition-colors hover:text-amber-700 focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:outline sm:items-start sm:text-left dark:hover:text-amber-300"
+          aria-label={
+            earthClock
+              ? "Showing Earth time. Switch to IxTime."
+              : "Showing IxTime. Switch to Earth time."
+          }
         >
-          <span className="text-sm font-semibold tabular-nums tracking-tight sm:text-base">
+          <span className="text-sm font-semibold tracking-tight tabular-nums sm:text-base">
             {earthClock ? earthTime : realmCalendarLine}
           </span>
-          <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide sm:text-[11px]">
+          <span className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase sm:text-[11px]">
             {earthClock ? "Earth" : "IxTime"}
           </span>
         </button>
@@ -114,8 +112,8 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
       </p>
 
       <p className="text-muted-foreground mx-auto mb-3 max-w-2xl text-base leading-relaxed md:text-lg">
-        Lore and live stats in one place. Your wiki, your economy, your feed—updated continuously so the board reflects
-        what nations actually do.
+        Lore and live stats in one place. Your wiki, your economy, your feed—updated continuously so
+        the board reflects what nations actually do.
       </p>
       <p className="text-muted-foreground mx-auto mb-8 max-w-xl text-sm leading-relaxed">
         Cards from elsewhere? Bring them home through{" "}

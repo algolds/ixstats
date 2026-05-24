@@ -2,7 +2,15 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Search, Loader2, CheckCircle2, ChevronRight, FileText, Database, Settings2 } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  CheckCircle2,
+  ChevronRight,
+  FileText,
+  Database,
+  Settings2,
+} from "lucide-react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -21,13 +29,16 @@ export function WikiDeepScanPanel({
   onDataExtracted,
   onSkip,
 }: WikiDeepScanPanelProps) {
-  const { data, isLoading, error } = api.wikiCache.builderDeepScan.useQuery({
-    countryName,
-    wikiSource,
-  }, {
-    refetchOnWindowFocus: false,
-    retry: 1,
-  });
+  const { data, isLoading, error } = api.wikiCache.builderDeepScan.useQuery(
+    {
+      countryName,
+      wikiSource,
+    },
+    {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    }
+  );
 
   if (isLoading) {
     return (
@@ -40,9 +51,12 @@ export function WikiDeepScanPanel({
           >
             <Search className="h-full w-full" />
           </motion.div>
-          <h3 className="mb-2 text-xl font-bold">LoreScanner is analyzing your nation's lore  ...</h3>
-          <p className="text-muted-foreground mb-4 max-w-md mx-auto text-sm">
-            LoreScanner is searching for related pages (Economy, Politics, Demographics) to extract richer data for your nation.
+          <h3 className="mb-2 text-xl font-bold">
+            LoreScanner is analyzing your nation's lore ...
+          </h3>
+          <p className="text-muted-foreground mx-auto mb-4 max-w-md text-sm">
+            LoreScanner is searching for related pages (Economy, Politics, Demographics) to extract
+            richer data for your nation.
           </p>
         </CardContent>
       </Card>
@@ -57,8 +71,9 @@ export function WikiDeepScanPanel({
             <Settings2 className="h-6 w-6" />
           </div>
           <h3 className="mb-2 text-xl font-bold">LoreScanner Unavailable</h3>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
-            LoreScanner encountered an error! You can still proceed with the basic infobox data for now and we'll try again later.
+          <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+            LoreScanner encountered an error! You can still proceed with the basic infobox data for
+            now and we'll try again later.
           </p>
           <Button onClick={onSkip} className="bg-amber-500 hover:bg-amber-600">
             Proceed
@@ -69,12 +84,12 @@ export function WikiDeepScanPanel({
   }
 
   const { extractedData, foundVariants } = data;
-  
+
   // Calculate total confidence / data points
   const hasGov = !!extractedData.government;
   const hasEcon = !!extractedData.economy;
   const hasDemo = !!extractedData.demographics;
-  
+
   if (!hasGov && !hasEcon && !hasDemo) {
     return (
       <Card className="border-2 border-emerald-500/20 bg-emerald-500/5">
@@ -83,8 +98,9 @@ export function WikiDeepScanPanel({
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <h3 className="mb-2 text-xl font-bold">Scan Complete</h3>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
-            Scanned {foundVariants.length} pages, but didn't find any additional structured data. We'll proceed with the infobox data.
+          <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+            Scanned {foundVariants.length} pages, but didn't find any additional structured data.
+            We'll proceed with the infobox data.
           </p>
           <Button onClick={onSkip} className="bg-emerald-500 hover:bg-emerald-600">
             Continue to Builder <ChevronRight className="ml-2 h-4 w-4" />
@@ -111,7 +127,7 @@ export function WikiDeepScanPanel({
 
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {hasGov && (
-            <div className="rounded-lg border border-border/50 bg-muted/20 p-4">
+            <div className="border-border/50 bg-muted/20 rounded-lg border p-4">
               <h4 className="mb-3 flex items-center gap-2 font-medium text-blue-500">
                 <FileText className="h-4 w-4" /> Government
               </h4>
@@ -119,7 +135,9 @@ export function WikiDeepScanPanel({
                 {extractedData.government?.governmentType && (
                   <li className="flex justify-between">
                     <span className="text-muted-foreground">Type</span>
-                    <span className="font-medium capitalize">{extractedData.government.governmentType}</span>
+                    <span className="font-medium capitalize">
+                      {extractedData.government.governmentType}
+                    </span>
                   </li>
                 )}
                 {extractedData.government?.legislature && (
@@ -133,7 +151,7 @@ export function WikiDeepScanPanel({
           )}
 
           {hasEcon && (
-            <div className="rounded-lg border border-border/50 bg-muted/20 p-4">
+            <div className="border-border/50 bg-muted/20 rounded-lg border p-4">
               <h4 className="mb-3 flex items-center gap-2 font-medium text-green-500">
                 <FileText className="h-4 w-4" /> Economy
               </h4>
@@ -159,7 +177,7 @@ export function WikiDeepScanPanel({
           )}
 
           {hasDemo && (
-            <div className="rounded-lg border border-border/50 bg-muted/20 p-4">
+            <div className="border-border/50 bg-muted/20 rounded-lg border p-4">
               <h4 className="mb-3 flex items-center gap-2 font-medium text-amber-500">
                 <FileText className="h-4 w-4" /> Demographics
               </h4>
@@ -175,7 +193,9 @@ export function WikiDeepScanPanel({
                 {extractedData.demographics?.lifeExpectancy && (
                   <li className="flex justify-between">
                     <span className="text-muted-foreground">Life Exp.</span>
-                    <span className="font-medium">{extractedData.demographics.lifeExpectancy} yrs</span>
+                    <span className="font-medium">
+                      {extractedData.demographics.lifeExpectancy} yrs
+                    </span>
                   </li>
                 )}
               </ul>
@@ -187,8 +207,8 @@ export function WikiDeepScanPanel({
           <Button variant="outline" onClick={onSkip}>
             Skip Deep Data
           </Button>
-          <Button 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
+          <Button
+            className="bg-emerald-500 text-white hover:bg-emerald-600"
             onClick={() => onDataExtracted(extractedData)}
           >
             Import Enhanced Data <ChevronRight className="ml-2 h-4 w-4" />

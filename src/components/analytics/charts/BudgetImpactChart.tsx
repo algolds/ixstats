@@ -55,7 +55,13 @@ export const BudgetImpactChart = React.memo<BudgetImpactChartProps>(
           <ResponsiveContainer width="100%" height={250} className="sm:h-[280px] lg:h-[300px]">
             <BarChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-              <XAxis dataKey="name" tick={{ fill: "#6b7280", fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: "#6b7280", fontSize: 10 }}
+                angle={-20}
+                textAnchor="end"
+                height={60}
+              />
               <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} />
               <Tooltip content={<GlassTooltip />} />
               <Legend wrapperStyle={{ fontSize: "11px" }} />

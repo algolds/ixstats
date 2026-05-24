@@ -22,12 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  FileText,
-  Settings2,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
+import { FileText, Settings2, ChevronDown, ChevronRight } from "lucide-react";
 import { useNotify } from "~/hooks/useNotify";
 
 interface PolicyCreatorSheetProps {
@@ -46,8 +41,16 @@ const POLICY_TYPES = [
 ];
 
 const POLICY_CATEGORIES = [
-  "fiscal", "trade", "labor", "education", "healthcare",
-  "environment", "defense", "housing", "technology", "agriculture",
+  "fiscal",
+  "trade",
+  "labor",
+  "education",
+  "healthcare",
+  "environment",
+  "defense",
+  "housing",
+  "technology",
+  "agriculture",
 ];
 
 const PRIORITY_OPTIONS = [
@@ -112,7 +115,9 @@ export function PolicyCreatorSheet({
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formCategory, setFormCategory] = useState("fiscal");
-  const [formPriority, setFormPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
+  const [formPriority, setFormPriority] = useState<"low" | "medium" | "high" | "critical">(
+    "medium"
+  );
   const [formType, setFormType] = useState("economic");
   const [formObjectives, setFormObjectives] = useState("");
   const [formImplCost, setFormImplCost] = useState("");
@@ -164,10 +169,13 @@ export function PolicyCreatorSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) resetForm();
-      onOpenChange(isOpen);
-    }}>
+    <Sheet
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) resetForm();
+        onOpenChange(isOpen);
+      }}
+    >
       <SheetContent className="flex flex-col p-0 sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-0">
           <SheetTitle className="flex items-center gap-2">
@@ -184,7 +192,9 @@ export function PolicyCreatorSheet({
             {/* Basic Info — always visible */}
             <div className="space-y-3">
               <div>
-                <Label htmlFor="policy-title" className="text-xs">Title *</Label>
+                <Label htmlFor="policy-title" className="text-xs">
+                  Title *
+                </Label>
                 <Input
                   id="policy-title"
                   value={formTitle}
@@ -195,7 +205,9 @@ export function PolicyCreatorSheet({
               </div>
 
               <div>
-                <Label htmlFor="policy-desc" className="text-xs">Description *</Label>
+                <Label htmlFor="policy-desc" className="text-xs">
+                  Description *
+                </Label>
                 <Textarea
                   id="policy-desc"
                   value={formDescription}
@@ -214,7 +226,9 @@ export function PolicyCreatorSheet({
                     </SelectTrigger>
                     <SelectContent>
                       {POLICY_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -228,7 +242,9 @@ export function PolicyCreatorSheet({
                     </SelectTrigger>
                     <SelectContent>
                       {POLICY_CATEGORIES.map((c) => (
-                        <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
+                        <SelectItem key={c} value={c}>
+                          {c.charAt(0).toUpperCase() + c.slice(1)}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -236,13 +252,18 @@ export function PolicyCreatorSheet({
 
                 <div>
                   <Label className="text-xs">Priority</Label>
-                  <Select value={formPriority} onValueChange={(v) => setFormPriority(v as typeof formPriority)}>
+                  <Select
+                    value={formPriority}
+                    onValueChange={(v) => setFormPriority(v as typeof formPriority)}
+                  >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {PRIORITY_OPTIONS.map((p) => (
-                        <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -251,11 +272,7 @@ export function PolicyCreatorSheet({
             </div>
 
             {/* Advanced Options — collapsible */}
-            <CollapsibleSection
-              title="Advanced Options"
-              icon={Settings2}
-              defaultOpen={false}
-            >
+            <CollapsibleSection title="Advanced Options" icon={Settings2} defaultOpen={false}>
               <div className="space-y-3">
                 <div>
                   <Label className="text-xs">Objectives</Label>
@@ -309,11 +326,7 @@ export function PolicyCreatorSheet({
             <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" size="sm" disabled={isSubmitting}>
               {isSubmitting ? "Creating..." : "Create as Draft"}
             </Button>
           </SheetFooter>

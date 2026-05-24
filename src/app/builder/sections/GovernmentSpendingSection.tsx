@@ -74,7 +74,7 @@ export function GovernmentSpendingSection({
     applyPolicyPreset,
     handleAtomicComponentUpdate,
   } = useGovernmentSpending({
-    inputs: inputs ?? {} as EconomicInputs,
+    inputs: inputs ?? ({} as EconomicInputs),
     onInputsChange,
     selectedAtomicComponents,
     governmentBuilderData,

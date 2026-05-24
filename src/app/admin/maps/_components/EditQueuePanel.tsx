@@ -64,7 +64,7 @@ export function EditQueuePanel() {
     <div className="space-y-4">
       {/* Status filter tabs */}
       <div className="flex items-center gap-3">
-        <div className="flex rounded-lg border border-border">
+        <div className="border-border flex rounded-lg border">
           {(["pending", "approved", "rejected"] as const).map((s) => (
             <button
               key={s}
@@ -83,34 +83,29 @@ export function EditQueuePanel() {
             </button>
           ))}
         </div>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-muted-foreground text-sm">
           {data?.total ?? 0} {statusFilter} edits
         </span>
       </div>
 
       {/* Edit list */}
       {!data?.edits.length ? (
-        <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+        <div className="border-border text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
           No {statusFilter} edit requests
         </div>
       ) : (
         <div className="space-y-3">
           {data.edits.map((edit) => (
-            <div
-              key={edit.id}
-              className="rounded-xl border border-border bg-card"
-            >
+            <div key={edit.id} className="border-border bg-card rounded-xl border">
               {/* Header */}
               <button
-                onClick={() =>
-                  setExpandedId(expandedId === edit.id ? null : edit.id)
-                }
+                onClick={() => setExpandedId(expandedId === edit.id ? null : edit.id)}
                 className="flex w-full items-center justify-between px-4 py-3 text-left"
               >
                 <div className="flex items-center gap-3">
                   <EditTypeBadge type={edit.editType} />
                   <div>
-                    <div className="text-sm font-medium text-foreground">
+                    <div className="text-foreground text-sm font-medium">
                       {edit.operation === "create"
                         ? "Create"
                         : edit.operation === "update"
@@ -118,9 +113,8 @@ export function EditQueuePanel() {
                           : "Delete"}{" "}
                       {edit.editType}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {edit.countryName} &middot;{" "}
-                      {new Date(edit.createdAt).toLocaleDateString()}
+                    <div className="text-muted-foreground text-xs">
+                      {edit.countryName} &middot; {new Date(edit.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -129,13 +123,13 @@ export function EditQueuePanel() {
 
               {/* Expanded details */}
               {expandedId === edit.id && (
-                <div className="border-t border-border/50 px-4 py-3">
+                <div className="border-border/50 border-t px-4 py-3">
                   {/* Proposed data */}
                   <div className="mb-3">
-                    <span className="text-xs font-medium uppercase text-muted-foreground">
+                    <span className="text-muted-foreground text-xs font-medium uppercase">
                       Proposed Changes
                     </span>
-                    <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-muted p-3 text-xs text-foreground">
+                    <pre className="bg-muted text-foreground mt-1 max-h-40 overflow-auto rounded-lg p-3 text-xs">
                       {JSON.stringify(edit.proposedData, null, 2)}
                     </pre>
                   </div>
@@ -143,10 +137,10 @@ export function EditQueuePanel() {
                   {/* Current data (if update/delete) */}
                   {edit.currentData && (
                     <div className="mb-3">
-                      <span className="text-xs font-medium uppercase text-muted-foreground">
+                      <span className="text-muted-foreground text-xs font-medium uppercase">
                         Current Data
                       </span>
-                      <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-muted p-3 text-xs text-foreground">
+                      <pre className="bg-muted text-foreground mt-1 max-h-40 overflow-auto rounded-lg p-3 text-xs">
                         {JSON.stringify(edit.currentData, null, 2)}
                       </pre>
                     </div>
@@ -166,7 +160,7 @@ export function EditQueuePanel() {
                         placeholder="Review note (optional)..."
                         value={reviewNote}
                         onChange={(e) => setReviewNote(e.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-blue-500 focus:outline-none"
+                        className="border-border bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                         rows={2}
                       />
                       <div className="flex gap-2">
@@ -175,9 +169,7 @@ export function EditQueuePanel() {
                           disabled={approveMutation.isPending}
                           className="rounded-lg bg-emerald-500 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
                         >
-                          {approveMutation.isPending
-                            ? "Applying..."
-                            : "Approve & Apply"}
+                          {approveMutation.isPending ? "Applying..." : "Approve & Apply"}
                         </button>
                         <button
                           onClick={() => handleReject(edit.id)}

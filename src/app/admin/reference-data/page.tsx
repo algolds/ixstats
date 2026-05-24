@@ -135,7 +135,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   {
     key: "card-packs",
     label: "Card Packs",
-    href: "/admin/card-packs",
+    href: "/admin/cards?tab=packs",
     icon: CreditCard,
     description: "Pack configurations and rarity distributions",
     category: "content",
@@ -144,7 +144,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   {
     key: "lore-cards",
     label: "Lore Cards",
-    href: "/admin/lore-cards/batch-generator",
+    href: "/admin/cards?tab=lore",
     icon: BookOpen,
     description: "Wiki-based lore card generation and management",
     category: "content",
@@ -155,7 +155,7 @@ const DATA_TYPES: DataTypeConfig[] = [
   {
     key: "ns-sync",
     label: "NS Sync",
-    href: "/admin/ns-sync",
+    href: "/admin/cards?tab=sync",
     icon: RefreshCw,
     description: "NationStates data synchronization and imports",
     category: "system",
@@ -238,10 +238,7 @@ export default function ReferenceDataPage() {
     "economic-archetypes": archetypes.data?.pagination?.total,
   };
 
-  const totalRecords = Object.values(counts).reduce(
-    (sum, c) => (c != null ? sum + c : sum),
-    0
-  );
+  const totalRecords = Object.values(counts).reduce((sum, c) => (c != null ? sum + c : sum), 0);
 
   return (
     <div className="space-y-6">
@@ -252,7 +249,8 @@ export default function ReferenceDataPage() {
       >
         {totalRecords > 0 && (
           <Badge variant="outline" className="text-sm">
-            {totalRecords.toLocaleString()}+ records across {Object.values(counts).filter((c) => c != null).length} tracked types
+            {totalRecords.toLocaleString()}+ records across{" "}
+            {Object.values(counts).filter((c) => c != null).length} tracked types
           </Badge>
         )}
       </AdminHeader>
@@ -268,10 +266,10 @@ export default function ReferenceDataPage() {
             <div key={category.key}>
               <div className="mb-3 flex items-center gap-2">
                 <CategoryIcon className={`h-4 w-4 text-${category.color}-500`} />
-                <h2 className="text-foreground text-sm font-semibold uppercase tracking-wider">
+                <h2 className="text-foreground text-sm font-semibold tracking-wider uppercase">
                   {category.label}
                 </h2>
-                <div className="h-px flex-1 bg-border/50" />
+                <div className="bg-border/50 h-px flex-1" />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -283,11 +281,13 @@ export default function ReferenceDataPage() {
                     <Link
                       key={type.key}
                       href={type.href}
-                      className="glass-card-child group rounded-xl border border-border/50 p-4 transition-all duration-200 hover:scale-[1.01] hover:border-primary/30 hover:shadow-md"
+                      className="glass-card-child group border-border/50 hover:border-primary/30 rounded-xl border p-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-md"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className={`rounded-lg border border-${type.color}-500/20 bg-${type.color}-500/10 p-2`}>
+                          <div
+                            className={`rounded-lg border border-${type.color}-500/20 bg-${type.color}-500/10 p-2`}
+                          >
                             <Icon className={`h-5 w-5 text-${type.color}-500`} />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -304,17 +304,16 @@ export default function ReferenceDataPage() {
 
                       {/* Count badge */}
                       {count != null ? (
-                        <div className="mt-3 flex items-center justify-between border-t border-border/30 pt-2">
+                        <div className="border-border/30 mt-3 flex items-center justify-between border-t pt-2">
                           <span className="text-muted-foreground text-xs">Records</span>
                           <span className="text-foreground font-mono text-sm font-medium">
                             {count.toLocaleString()}
                           </span>
                         </div>
-                      ) : count === undefined && (
-                        govComponents.isLoading || econComponents.isLoading
-                      ) ? (
-                        <div className="mt-3 border-t border-border/30 pt-2">
-                          <Skeleton className="h-4 w-16 ml-auto" />
+                      ) : count === undefined &&
+                        (govComponents.isLoading || econComponents.isLoading) ? (
+                        <div className="border-border/30 mt-3 border-t pt-2">
+                          <Skeleton className="ml-auto h-4 w-16" />
                         </div>
                       ) : null}
                     </Link>

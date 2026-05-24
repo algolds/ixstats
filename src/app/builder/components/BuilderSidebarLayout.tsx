@@ -19,18 +19,12 @@ interface BuilderSidebarLayoutProps {
   accessibleSteps?: Set<BuilderSection>;
 }
 
-export function BuilderSidebarLayout({
-  children,
-  heroSection,
-  alerts,
-}: BuilderSidebarLayoutProps) {
+export function BuilderSidebarLayout({ children, heroSection, alerts }: BuilderSidebarLayoutProps) {
   return (
     <div className="space-y-0" data-builder-content>
       {/* Hero Section */}
       {heroSection && (
-        <div className="container mx-auto px-3 pt-3 sm:px-4 sm:pt-4">
-          {heroSection}
-        </div>
+        <div className="container mx-auto px-3 pt-3 sm:px-4 sm:pt-4">{heroSection}</div>
       )}
 
       <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-4">
@@ -41,9 +35,7 @@ export function BuilderSidebarLayout({
         <div className="flex gap-3 sm:gap-4">
           {/* Main Content */}
           <div className="min-w-0 flex-1">
-            <div className="space-y-3 sm:space-y-4">
-              {children}
-            </div>
+            <div className="space-y-3 sm:space-y-4">{children}</div>
           </div>
         </div>
       </div>

@@ -17,9 +17,20 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
-  Globe, Loader2, Wand2, Train, RefreshCw,
-  AlertTriangle, ChevronDown, Sparkles, Zap,
-  Search, FileImage, Download, ExternalLink, X,
+  Globe,
+  Loader2,
+  Wand2,
+  Train,
+  RefreshCw,
+  AlertTriangle,
+  ChevronDown,
+  Sparkles,
+  Zap,
+  Search,
+  FileImage,
+  Download,
+  ExternalLink,
+  X,
   Trash2,
 } from "lucide-react";
 import { api } from "~/trpc/react";
@@ -40,8 +51,8 @@ import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 const EditorMap = dynamic(() => import("~/components/maps/editor/EditorMap"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center bg-muted">
-      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    <div className="bg-muted flex h-full items-center justify-center">
+      <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
     </div>
   ),
 });
@@ -59,7 +70,7 @@ export function ForgeTab() {
     {
       staleTime: 5 * 60_000,
       select: (data: any) => {
-        const list = Array.isArray(data) ? data : data?.countries ?? data ?? [];
+        const list = Array.isArray(data) ? data : (data?.countries ?? data ?? []);
         return list
           .map((c: any) => ({ id: c.id, name: c.name }))
           .sort((a: any, b: any) => a.name.localeCompare(b.name));
@@ -92,46 +103,49 @@ export function ForgeTab() {
   // Auto-scan wiki for province maps when country is selected
   const { data: wikiProvinceScan, isLoading: scanLoading } = api.wiki.findProvinceMaps.useQuery(
     { countryName: selectedCountryName },
-    { enabled: !!selectedCountryName && showWikiPanel, staleTime: 10 * 60_000 },
+    { enabled: !!selectedCountryName && showWikiPanel, staleTime: 10 * 60_000 }
   );
 
   // Manual wiki file search
   const { data: wikiFileResults, isLoading: fileSearchLoading } = api.wiki.searchFiles.useQuery(
     { query: wikiSearchQuery, limit: 20, fileTypes: ["svg", "png"] },
-    { enabled: wikiSearchQuery.length >= 2 && showWikiPanel, staleTime: 5 * 60_000 },
+    { enabled: wikiSearchQuery.length >= 2 && showWikiPanel, staleTime: 5 * 60_000 }
   );
 
   // Download a wiki file via server-side proxy (avoids CORS) and feed to importer
   const utils = api.useUtils();
   const [importingFile, setImportingFile] = useState<string | null>(null);
-  const handleImportFromWiki = useCallback(async (filename: string) => {
-    setImportingFile(filename);
-    try {
-      // Fetch file content via server-side proxy (reads from local filesystem, no CORS)
-      const result = await utils.wiki.downloadFile.fetch({ filename });
-      if (!result?.content) throw new Error("Empty file response");
+  const handleImportFromWiki = useCallback(
+    async (filename: string) => {
+      setImportingFile(filename);
+      try {
+        // Fetch file content via server-side proxy (reads from local filesystem, no CORS)
+        const result = await utils.wiki.downloadFile.fetch({ filename });
+        if (!result?.content) throw new Error("Empty file response");
 
-      // Convert base64 back to binary
-      const binary = atob(result.content);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
+        // Convert base64 back to binary
+        const binary = atob(result.content);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: result.mime });
+        const file = new File([blob], filename, { type: result.mime });
+
+        // Switch to import mode and feed the file
+        editor.setMode("import-provinces");
+        setTimeout(() => {
+          importer.handleUpload(file);
+        }, 100);
+        setShowWikiPanel(false);
+      } catch (e) {
+        alert(`Failed to import: ${e instanceof Error ? e.message : "Unknown error"}`);
+      } finally {
+        setImportingFile(null);
       }
-      const blob = new Blob([bytes], { type: result.mime });
-      const file = new File([blob], filename, { type: result.mime });
-
-      // Switch to import mode and feed the file
-      editor.setMode("import-provinces");
-      setTimeout(() => {
-        importer.handleUpload(file);
-      }, 100);
-      setShowWikiPanel(false);
-    } catch (e) {
-      alert(`Failed to import: ${e instanceof Error ? e.message : "Unknown error"}`);
-    } finally {
-      setImportingFile(null);
-    }
-  }, [editor, importer, utils]);
+    },
+    [editor, importer, utils]
+  );
 
   // Track cursor for status bar
   const [mapInstance, setMapInstance] = useState<import("maplibre-gl").Map | null>(null);
@@ -139,7 +153,10 @@ export function ForgeTab() {
     if (!mapRef.current) return;
     const interval = setInterval(() => {
       const m = mapRef.current?.getMap() ?? null;
-      if (m) { setMapInstance(m); clearInterval(interval); }
+      if (m) {
+        setMapInstance(m);
+        clearInterval(interval);
+      }
     }, 200);
     return () => clearInterval(interval);
   }, [selectedCountryId]);
@@ -150,7 +167,9 @@ export function ForgeTab() {
     mapInstance.on("mousemove", handler);
     mapInstance.on("zoomend", () => setCursorZoom(mapInstance.getZoom()));
     setCursorZoom(mapInstance.getZoom());
-    return () => { mapInstance.off("mousemove", handler); };
+    return () => {
+      mapInstance.off("mousemove", handler);
+    };
   }, [mapInstance]);
 
   // Fly to country when selected or when geometry loads
@@ -162,10 +181,16 @@ export function ForgeTab() {
       let bounds: [[number, number], [number, number]] | null = null;
 
       if (geo.bbox && Array.isArray(geo.bbox) && geo.bbox.length >= 4) {
-        bounds = [[geo.bbox[0], geo.bbox[1]], [geo.bbox[2], geo.bbox[3]]];
+        bounds = [
+          [geo.bbox[0], geo.bbox[1]],
+          [geo.bbox[2], geo.bbox[3]],
+        ];
       } else if (geo.type === "FeatureCollection" && geo.features?.length > 0) {
         // Compute bounds from all coordinates
-        let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+        let minLng = Infinity,
+          minLat = Infinity,
+          maxLng = -Infinity,
+          maxLat = -Infinity;
         const processCoords = (coords: any) => {
           if (typeof coords[0] === "number") {
             minLng = Math.min(minLng, coords[0]);
@@ -179,9 +204,16 @@ export function ForgeTab() {
         for (const f of geo.features) {
           if (f.geometry?.coordinates) processCoords(f.geometry.coordinates);
         }
-        if (minLng < Infinity) bounds = [[minLng, minLat], [maxLng, maxLat]];
+        if (minLng < Infinity)
+          bounds = [
+            [minLng, minLat],
+            [maxLng, maxLat],
+          ];
       } else if (geo.coordinates) {
-        let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+        let minLng = Infinity,
+          minLat = Infinity,
+          maxLng = -Infinity,
+          maxLat = -Infinity;
         const processCoords = (coords: any) => {
           if (typeof coords[0] === "number") {
             minLng = Math.min(minLng, coords[0]);
@@ -193,7 +225,11 @@ export function ForgeTab() {
           }
         };
         processCoords(geo.coordinates);
-        if (minLng < Infinity) bounds = [[minLng, minLat], [maxLng, maxLat]];
+        if (minLng < Infinity)
+          bounds = [
+            [minLng, minLat],
+            [maxLng, maxLat],
+          ];
       }
 
       if (bounds) {
@@ -227,16 +263,36 @@ export function ForgeTab() {
 
   const handleSubmit = useCallback(() => {
     switch (editor.mode) {
-      case "add-city": editor.submitCity(); break;
-      case "add-subdivision": editor.submitSubdivision(); break;
-      case "add-poi": editor.submitPOI(); break;
-      case "add-story-pin": editor.submitStoryPin(); break;
-      case "add-label": editor.submitMapLabel(); break;
-      case "edit-city": editor.submitEditCity(); break;
-      case "edit-subdivision": editor.submitEditSubdivision(); break;
-      case "edit-poi": editor.submitEditPOI(); break;
-      case "edit-story-pin": editor.submitEditStoryPin(); break;
-      case "edit-label": editor.submitEditMapLabel(); break;
+      case "add-city":
+        editor.submitCity();
+        break;
+      case "add-subdivision":
+        editor.submitSubdivision();
+        break;
+      case "add-poi":
+        editor.submitPOI();
+        break;
+      case "add-story-pin":
+        editor.submitStoryPin();
+        break;
+      case "add-label":
+        editor.submitMapLabel();
+        break;
+      case "edit-city":
+        editor.submitEditCity();
+        break;
+      case "edit-subdivision":
+        editor.submitEditSubdivision();
+        break;
+      case "edit-poi":
+        editor.submitEditPOI();
+        break;
+      case "edit-story-pin":
+        editor.submitEditStoryPin();
+        break;
+      case "edit-label":
+        editor.submitEditMapLabel();
+        break;
     }
   }, [editor]);
 
@@ -249,7 +305,9 @@ export function ForgeTab() {
         routeTypes: ["rail", "highway"],
         clearExisting: true,
       });
-      alert(`Generated ${result.routesCreated} routes (${result.totalLengthKm} km), ${result.hubsCreated} hubs`);
+      alert(
+        `Generated ${result.routesCreated} routes (${result.totalLengthKm} km), ${result.hubsCreated} hubs`
+      );
     } catch (e) {
       alert(`Error: ${e instanceof Error ? e.message : "Unknown"}`);
     }
@@ -268,7 +326,8 @@ export function ForgeTab() {
   const handleDeleteAllRegions = useCallback(async () => {
     if (!selectedCountryId) return;
     const countryName = countries?.find((c) => c.id === selectedCountryId)?.name ?? "this country";
-    if (!confirm(`Delete ALL regions/subdivisions for ${countryName}? This cannot be undone.`)) return;
+    if (!confirm(`Delete ALL regions/subdivisions for ${countryName}? This cannot be undone.`))
+      return;
     try {
       const result = await deleteAllRegions.mutateAsync({ countryId: selectedCountryId });
       alert(`Deleted ${result.deleted} regions`);
@@ -282,20 +341,22 @@ export function ForgeTab() {
   return (
     <div className="relative -mx-6 -mb-6 flex flex-col" style={{ height: "calc(100vh - 220px)" }}>
       {/* Forge toolbar */}
-      <div className="flex h-10 items-center gap-2 border-b border-border bg-card px-3">
+      <div className="border-border bg-card flex h-10 items-center gap-2 border-b px-3">
         <Globe className="h-4 w-4 text-amber-500" />
-        <span className="text-xs font-semibold text-foreground">Forge Mode</span>
+        <span className="text-foreground text-xs font-semibold">Forge Mode</span>
 
         {/* Country selector */}
-        <div className="ml-3 relative">
+        <div className="relative ml-3">
           <select
             value={selectedCountryId ?? ""}
             onChange={(e) => setSelectedCountryId(e.target.value || null)}
-            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-foreground outline-none focus:ring-1 focus:ring-amber-400"
+            className="border-border bg-background text-foreground rounded-md border px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-amber-400"
           >
             <option value="">Select a country...</option>
             {countries?.map((c: any) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
@@ -348,38 +409,45 @@ export function ForgeTab() {
 
       {/* Wiki Province Finder Panel */}
       {showWikiPanel && selectedCountryId && (
-        <div className="border-b border-border bg-card">
+        <div className="border-border bg-card border-b">
           <div className="flex items-center justify-between px-3 py-2">
             <div className="flex items-center gap-2">
               <FileImage className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-xs font-semibold">Wiki Province Finder — {selectedCountryName}</span>
+              <span className="text-xs font-semibold">
+                Wiki Province Finder — {selectedCountryName}
+              </span>
             </div>
-            <button onClick={() => setShowWikiPanel(false)} className="text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setShowWikiPanel(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
 
           <div className="flex gap-4 px-3 pb-3">
             {/* Auto-scan results */}
-            <div className="flex-1 min-w-0">
-              <p className="mb-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            <div className="min-w-0 flex-1">
+              <p className="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wider uppercase">
                 Auto-detected from wiki article
               </p>
               {scanLoading ? (
-                <div className="flex items-center gap-1.5 py-2 text-xs text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-1.5 py-2 text-xs">
                   <Loader2 className="h-3 w-3 animate-spin" /> Scanning wiki...
                 </div>
               ) : wikiProvinceScan ? (
                 <div className="space-y-1.5">
                   {wikiProvinceScan.sections.length > 0 && (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-muted-foreground text-[11px]">
                       Sections found: {wikiProvinceScan.sections.join(", ")}
                     </p>
                   )}
                   {wikiProvinceScan.infoboxData && (
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-muted-foreground text-[11px]">
                       {Object.entries(wikiProvinceScan.infoboxData).map(([k, v]) => (
-                        <span key={k} className="mr-2">{k}: <span className="text-foreground">{v}</span></span>
+                        <span key={k} className="mr-2">
+                          {k}: <span className="text-foreground">{v}</span>
+                        </span>
                       ))}
                     </div>
                   )}
@@ -397,20 +465,24 @@ export function ForgeTab() {
                           }`}
                           title={`Import ${file} as province map${idx === 0 ? " (recommended)" : ""}`}
                         >
-                          {importingFile === file ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Download className="h-2.5 w-2.5" />}
+                          {importingFile === file ? (
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                          ) : (
+                            <Download className="h-2.5 w-2.5" />
+                          )}
                           {idx === 0 && <Sparkles className="h-2.5 w-2.5" />}
                           {file.length > 40 ? file.slice(0, 37) + "..." : file}
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[11px] text-muted-foreground italic">
+                    <p className="text-muted-foreground text-[11px] italic">
                       No province map files found in article. Try manual search →
                     </p>
                   )}
                   {wikiProvinceScan.allImageFiles && wikiProvinceScan.allImageFiles.length > 0 && (
                     <details className="mt-1">
-                      <summary className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
+                      <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-[10px]">
                         All images in article ({wikiProvinceScan.allImageFiles.length})
                       </summary>
                       <div className="mt-1 flex flex-wrap gap-1">
@@ -418,7 +490,7 @@ export function ForgeTab() {
                           <button
                             key={file}
                             onClick={() => handleImportFromWiki(file)}
-                            className="flex items-center gap-1 rounded border border-border/50 px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                            className="border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] transition-colors"
                           >
                             <Download className="h-2 w-2" />
                             {file.length > 35 ? file.slice(0, 32) + "..." : file}
@@ -429,13 +501,15 @@ export function ForgeTab() {
                   )}
                 </div>
               ) : (
-                <p className="text-[11px] text-muted-foreground italic">No wiki article found for "{selectedCountryName}"</p>
+                <p className="text-muted-foreground text-[11px] italic">
+                  No wiki article found for "{selectedCountryName}"
+                </p>
               )}
             </div>
 
             {/* Manual file search */}
-            <div className="w-72 shrink-0 border-l border-border pl-4">
-              <p className="mb-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            <div className="border-border w-72 shrink-0 border-l pl-4">
+              <p className="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wider uppercase">
                 Search wiki files
               </p>
               <input
@@ -443,32 +517,35 @@ export function ForgeTab() {
                 value={wikiSearchQuery}
                 onChange={(e) => setWikiSearchQuery(e.target.value)}
                 placeholder="Search by filename..."
-                className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-amber-400"
+                className="border-border bg-background w-full rounded-md border px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-amber-400"
               />
               {fileSearchLoading && (
-                <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                <div className="text-muted-foreground mt-1.5 flex items-center gap-1 text-[11px]">
                   <Loader2 className="h-2.5 w-2.5 animate-spin" /> Searching...
                 </div>
               )}
               {wikiFileResults && wikiFileResults.length > 0 && (
                 <div className="mt-1.5 max-h-32 space-y-0.5 overflow-y-auto">
                   {wikiFileResults.map((file: any) => (
-                    <div key={file.name} className="flex items-center gap-1.5 rounded px-1 py-0.5 hover:bg-muted/50">
+                    <div
+                      key={file.name}
+                      className="hover:bg-muted/50 flex items-center gap-1.5 rounded px-1 py-0.5"
+                    >
                       <button
                         onClick={() => handleImportFromWiki(file.name)}
-                        className="flex-1 min-w-0 text-left text-[11px] truncate text-foreground hover:text-amber-500"
+                        className="text-foreground min-w-0 flex-1 truncate text-left text-[11px] hover:text-amber-500"
                         title={file.name}
                       >
                         {file.name}
                       </button>
-                      <span className="shrink-0 text-[9px] text-muted-foreground">
+                      <span className="text-muted-foreground shrink-0 text-[9px]">
                         {file.width}×{file.height}
                       </span>
                       <a
                         href={file.pageUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground shrink-0"
                         title="View on wiki"
                       >
                         <ExternalLink className="h-2.5 w-2.5" />
@@ -478,7 +555,7 @@ export function ForgeTab() {
                 </div>
               )}
               {wikiFileResults && wikiFileResults.length === 0 && wikiSearchQuery.length >= 2 && (
-                <p className="mt-1.5 text-[11px] text-muted-foreground italic">No files found</p>
+                <p className="text-muted-foreground mt-1.5 text-[11px] italic">No files found</p>
               )}
             </div>
           </div>
@@ -487,26 +564,23 @@ export function ForgeTab() {
 
       {/* Main editor area */}
       {!selectedCountryId ? (
-        <div className="flex flex-1 items-center justify-center text-muted-foreground">
+        <div className="text-muted-foreground flex flex-1 items-center justify-center">
           <div className="text-center">
             <Sparkles className="mx-auto mb-3 h-10 w-10 text-amber-500/50" />
             <p className="text-sm font-medium">Select a country to begin editing</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
-              Forge mode gives you full control over any country&apos;s geography, features, and infrastructure
+            <p className="text-muted-foreground/70 mt-1 text-xs">
+              Forge mode gives you full control over any country&apos;s geography, features, and
+              infrastructure
             </p>
           </div>
         </div>
       ) : selectedCountryId ? (
-        <div className="flex flex-1 min-h-0">
+        <div className="flex min-h-0 flex-1">
           {/* Tool rail */}
-          <MapEditorToolbar
-            mode={editor.mode}
-            onModeChange={editor.setMode}
-            disabled={false}
-          />
+          <MapEditorToolbar mode={editor.mode} onModeChange={editor.setMode} disabled={false} />
 
           {/* Map */}
-          <div className="relative flex-1 min-w-0">
+          <div className="relative min-w-0 flex-1">
             <EditorMap
               ref={mapRef}
               countryGeometry={(editor.countryGeo as any)?.geometry ?? null}
@@ -571,7 +645,11 @@ export function ForgeTab() {
                 onEditFeature={(f) => editor.startEditing(f)}
                 onDeleteFeature={handleDeleteFeature}
                 isLoading={editor.featuresLoading}
-                collapseAll={editor.mode.startsWith("add-") || editor.mode.startsWith("edit-") || editor.mode === "paint"}
+                collapseAll={
+                  editor.mode.startsWith("add-") ||
+                  editor.mode.startsWith("edit-") ||
+                  editor.mode === "paint"
+                }
               />
             }
             importWizardContent={
@@ -593,7 +671,7 @@ export function ForgeTab() {
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
         </div>
       )}
 
@@ -602,10 +680,14 @@ export function ForgeTab() {
         <EditorStatusBar
           cursorCoords={cursorCoords}
           mode={editor.mode}
-          terrainInfo={editor.pointInfo ? {
-            elevation: editor.pointInfo.elevation?.zoneName ?? null,
-            climate: editor.pointInfo.climate?.climateName ?? null,
-          } : null}
+          terrainInfo={
+            editor.pointInfo
+              ? {
+                  elevation: editor.pointInfo.elevation?.zoneName ?? null,
+                  climate: editor.pointInfo.climate?.climateName ?? null,
+                }
+              : null
+          }
           zoom={cursorZoom}
           featureCount={editor.allFeatures.length}
         />

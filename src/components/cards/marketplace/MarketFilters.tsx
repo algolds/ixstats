@@ -139,7 +139,7 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
             {hasActiveFilters && (
               <button
                 onClick={clearAll}
-                className="text-sm text-gray-400 hover:text-white transition-colors"
+                className="text-sm text-gray-400 transition-colors hover:text-white"
               >
                 Clear All
               </button>
@@ -148,13 +148,10 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
             {collapsible && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-400 transition-colors hover:text-white"
               >
                 <svg
-                  className={cn(
-                    "h-5 w-5 transition-transform",
-                    isExpanded && "rotate-180"
-                  )}
+                  className={cn("h-5 w-5 transition-transform", isExpanded && "rotate-180")}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -176,24 +173,17 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
           <div className="space-y-4 p-4">
             {/* Rarity filters */}
             <div>
-              <h4 className="mb-2 text-sm font-medium text-gray-300">
-                Rarity
-              </h4>
+              <h4 className="mb-2 text-sm font-medium text-gray-300">Rarity</h4>
               <div className="space-y-2">
                 {RARITY_OPTIONS.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
+                  <label key={option.value} className="flex cursor-pointer items-center gap-2">
                     <input
                       type="checkbox"
                       checked={filters.rarities.includes(option.value)}
                       onChange={() => toggleRarity(option.value)}
                       className="h-4 w-4 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className={cn("text-sm", option.color)}>
-                      {option.label}
-                    </span>
+                    <span className={cn("text-sm", option.color)}>{option.label}</span>
                   </label>
                 ))}
               </div>
@@ -201,24 +191,17 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
 
             {/* Card type filters */}
             <div>
-              <h4 className="mb-2 text-sm font-medium text-gray-300">
-                Card Type
-              </h4>
+              <h4 className="mb-2 text-sm font-medium text-gray-300">Card Type</h4>
               <div className="space-y-2">
                 {TYPE_OPTIONS.map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
+                  <label key={option.value} className="flex cursor-pointer items-center gap-2">
                     <input
                       type="checkbox"
                       checked={filters.cardTypes.includes(option.value)}
                       onChange={() => toggleType(option.value)}
                       className="h-4 w-4 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-2 focus:ring-blue-500"
                     />
-                    <span className="text-sm text-gray-300">
-                      {option.label}
-                    </span>
+                    <span className="text-sm text-gray-300">{option.label}</span>
                   </label>
                 ))}
               </div>
@@ -226,9 +209,7 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
 
             {/* Price range */}
             <div>
-              <h4 className="mb-2 text-sm font-medium text-gray-300">
-                Price Range (IxC)
-              </h4>
+              <h4 className="mb-2 text-sm font-medium text-gray-300">Price Range (IxC)</h4>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <input
@@ -237,10 +218,7 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
                     max={filters.priceMax}
                     value={filters.priceMin}
                     onChange={(e) =>
-                      updatePriceRange(
-                        parseInt(e.target.value) || 0,
-                        filters.priceMax
-                      )
+                      updatePriceRange(parseInt(e.target.value) || 0, filters.priceMax)
                     }
                     className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                     placeholder="Min"
@@ -252,10 +230,7 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
                     max={10000}
                     value={filters.priceMax}
                     onChange={(e) =>
-                      updatePriceRange(
-                        filters.priceMin,
-                        parseInt(e.target.value) || 10000
-                      )
+                      updatePriceRange(filters.priceMin, parseInt(e.target.value) || 10000)
                     }
                     className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
                     placeholder="Max"
@@ -269,12 +244,7 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
                   max={10000}
                   step={10}
                   value={filters.priceMax}
-                  onChange={(e) =>
-                    updatePriceRange(
-                      filters.priceMin,
-                      parseInt(e.target.value)
-                    )
-                  }
+                  onChange={(e) => updatePriceRange(filters.priceMin, parseInt(e.target.value))}
                   className="w-full"
                 />
               </div>
@@ -282,31 +252,23 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
 
             {/* Special filters */}
             <div>
-              <h4 className="mb-2 text-sm font-medium text-gray-300">
-                Special
-              </h4>
+              <h4 className="mb-2 text-sm font-medium text-gray-300">Special</h4>
               <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
                     checked={filters.showExpressOnly || false}
-                    onChange={(e) =>
-                      onChange({ showExpressOnly: e.target.checked })
-                    }
+                    onChange={(e) => onChange({ showExpressOnly: e.target.checked })}
                     className="h-4 w-4 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-300">
-                    Express Only (30min)
-                  </span>
+                  <span className="text-sm text-gray-300">Express Only (30min)</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
                     checked={filters.showFeaturedOnly || false}
-                    onChange={(e) =>
-                      onChange({ showFeaturedOnly: e.target.checked })
-                    }
+                    onChange={(e) => onChange({ showFeaturedOnly: e.target.checked })}
                     className="h-4 w-4 rounded border-white/20 bg-black/40 text-blue-500 focus:ring-2 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-300">Featured Only</span>
@@ -318,14 +280,11 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
             <div>
               <button
                 onClick={() => setShowStatRanges(!showStatRanges)}
-                className="flex w-full items-center justify-between text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                className="flex w-full items-center justify-between text-sm font-medium text-gray-300 transition-colors hover:text-white"
               >
                 <span>Stat Ranges</span>
                 <svg
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    showStatRanges && "rotate-180"
-                  )}
+                  className={cn("h-4 w-4 transition-transform", showStatRanges && "rotate-180")}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -341,9 +300,7 @@ export const MarketFiltersPanel = memo<MarketFiltersProps>(
 
               {showStatRanges && (
                 <div className="mt-2 space-y-2 rounded-lg border border-white/10 bg-black/20 p-3">
-                  <p className="text-xs text-gray-400">
-                    Filter cards by stat values (Coming Soon)
-                  </p>
+                  <p className="text-xs text-gray-400">Filter cards by stat values (Coming Soon)</p>
                 </div>
               )}
             </div>

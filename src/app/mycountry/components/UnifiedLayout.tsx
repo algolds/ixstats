@@ -15,11 +15,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { SectionIcons } from "./IconSystem";
-import {
-  CONTENT_HIERARCHY,
-  CONTENT_PRIORITIES,
-  type ContentSection,
-} from "./ContentHierarchy";
+import { CONTENT_HIERARCHY, CONTENT_PRIORITIES, type ContentSection } from "./ContentHierarchy";
 import { TabThemeProvider, applyTabTheme } from "./TabColorSystem";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -256,7 +252,7 @@ function CollapsibleSection({
     >
       {/* Section Header - Mobile Enhanced */}
       <motion.div
-        className={`glass-hierarchy-child p-3 md:p-4 touch-manipulation ${!disableHeaderClick ? "cursor-pointer" : ""}`}
+        className={`glass-hierarchy-child touch-manipulation p-3 md:p-4 ${!disableHeaderClick ? "cursor-pointer" : ""}`}
         onClick={!disableHeaderClick ? toggleExpanded : undefined}
         whileHover={
           !disableHeaderClick ? { backgroundColor: "rgba(255, 255, 255, 0.05)" } : undefined

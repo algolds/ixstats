@@ -77,7 +77,9 @@ export function LinkExistingStep({
           Back to options
         </Button>
 
-        <h1 className="text-foreground mb-4 text-2xl font-bold md:text-3xl">Link to Existing Country</h1>
+        <h1 className="text-foreground mb-4 text-2xl font-bold md:text-3xl">
+          Link to Existing Country
+        </h1>
 
         <p className="text-muted-foreground max-w-3xl text-base md:text-lg">
           Search and select an existing country to link to your account.

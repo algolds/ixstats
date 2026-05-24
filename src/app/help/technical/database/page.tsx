@@ -14,8 +14,8 @@ export default function DatabaseArticle() {
         <Section title="Schema Basics">
           <ul className="list-disc space-y-2 pl-6">
             <li>
-              Prisma 6.19 schema with 209 models spanning economy, diplomacy,
-              social, defense, cards, elections, and notifications.
+              Prisma 6.19 schema with 209 models spanning economy, diplomacy, social, defense,
+              cards, elections, and notifications.
             </li>
             <li>
               PostgreSQL in all environments with the PostGIS extension for geographic data.
@@ -28,7 +28,9 @@ export default function DatabaseArticle() {
         <Section title="Working with Migrations">
           <InfoBox title="Migration Workflow">
             <ul className="list-disc space-y-1 pl-6">
-              <li>Use Prisma migration commands to apply schema changes in development and production.</li>
+              <li>
+                Use Prisma migration commands to apply schema changes in development and production.
+              </li>
               <li>Schema push is available for rapid iteration in development (use with care).</li>
               <li>Prisma Studio provides a visual interface to browse and edit data.</li>
               <li>PostgreSQL backups: Use standard PostgreSQL tools for snapshots and restores.</li>
@@ -52,9 +54,7 @@ export default function DatabaseArticle() {
               <strong>209 models</strong> organized into domain families: economy, diplomacy,
               defense, social, cards, elections, intelligence, and system administration.
             </li>
-            <li>
-              Prisma migration history tracks all schema evolution since the initial release.
-            </li>
+            <li>Prisma migration history tracks all schema evolution since the initial release.</li>
           </ul>
         </InfoBox>
       </ContentCard>

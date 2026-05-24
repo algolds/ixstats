@@ -90,9 +90,7 @@ export function ParliamentHemicycle({
   return (
     <div className="space-y-4">
       {legislatureName && (
-        <h3 className="text-center text-sm font-medium text-muted-foreground">
-          {legislatureName}
-        </h3>
+        <h3 className="text-muted-foreground text-center text-sm font-medium">{legislatureName}</h3>
       )}
 
       {/* SVG Hemicycle */}
@@ -118,13 +116,8 @@ export function ParliamentHemicycle({
       <div className="flex flex-wrap justify-center gap-3">
         {partySummary.map((ps) => (
           <div key={ps.party.id} className="flex items-center gap-1.5 text-xs">
-            <div
-              className="h-3 w-3 rounded-full"
-              style={{ backgroundColor: ps.party.color }}
-            />
-            <span className="font-medium">
-              {ps.party.shortName ?? ps.party.name}
-            </span>
+            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ps.party.color }} />
+            <span className="font-medium">{ps.party.shortName ?? ps.party.name}</span>
             <span className="text-muted-foreground">
               {ps.seats} ({((ps.seats / totalSeats) * 100).toFixed(1)}%)
             </span>

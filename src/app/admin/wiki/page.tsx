@@ -12,6 +12,7 @@ import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import {
   Search,
@@ -123,7 +124,7 @@ function WikiLinkStatusSection() {
       <CardContent className="space-y-4">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Search countries..."
             value={searchQuery}
@@ -140,26 +141,36 @@ function WikiLinkStatusSection() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground py-8 text-center text-sm">
             No countries match your filters.
           </div>
         ) : (
-          <div className="max-h-[28rem] overflow-y-auto rounded-lg border border-border/30">
+          <div className="border-border/30 max-h-[28rem] overflow-y-auto rounded-lg border">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
-                <tr className="border-b border-border/30">
-                  <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Country</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Wiki Page</th>
-                  <th className="hidden px-4 py-2.5 text-left font-medium text-muted-foreground sm:table-cell">Source</th>
-                  <th className="hidden px-4 py-2.5 text-left font-medium text-muted-foreground md:table-cell">Last Synced</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Status</th>
+              <thead className="bg-muted/80 sticky top-0 backdrop-blur-sm">
+                <tr className="border-border/30 border-b">
+                  <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
+                    Country
+                  </th>
+                  <th className="text-muted-foreground px-4 py-2.5 text-left font-medium">
+                    Wiki Page
+                  </th>
+                  <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium sm:table-cell">
+                    Source
+                  </th>
+                  <th className="text-muted-foreground hidden px-4 py-2.5 text-left font-medium md:table-cell">
+                    Last Synced
+                  </th>
+                  <th className="text-muted-foreground px-4 py-2.5 text-right font-medium">
+                    Status
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/20">
+              <tbody className="divide-border/20 divide-y">
                 {filtered.map((country) => (
-                  <tr key={country.id} className="transition-colors hover:bg-muted/30">
-                    <td className="px-4 py-2.5 font-medium text-foreground">{country.name}</td>
-                    <td className="max-w-[12rem] truncate px-4 py-2.5 text-muted-foreground">
+                  <tr key={country.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="text-foreground px-4 py-2.5 font-medium">{country.name}</td>
+                    <td className="text-muted-foreground max-w-[12rem] truncate px-4 py-2.5">
                       {country.wikiPageTitle ?? (
                         <span className="italic opacity-50">Not linked</span>
                       )}
@@ -173,7 +184,7 @@ function WikiLinkStatusSection() {
                         <span className="text-muted-foreground opacity-50">—</span>
                       )}
                     </td>
-                    <td className="hidden px-4 py-2.5 text-xs text-muted-foreground md:table-cell">
+                    <td className="text-muted-foreground hidden px-4 py-2.5 text-xs md:table-cell">
                       {country.wikiLastSynced
                         ? new Date(country.wikiLastSynced).toLocaleDateString()
                         : "—"}
@@ -192,7 +203,7 @@ function WikiLinkStatusSection() {
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           {linkedCount} of {countries.length} countries linked to wiki pages
         </p>
       </CardContent>
@@ -234,6 +245,15 @@ function ManualLinkEditorSection() {
     { title: wikiPageTitle, source: wikiSource },
     { enabled: false }
   );
+  const notify = useNotify();
+  const utils = api.useUtils();
+  const setWikiLinkMutation = api.admin.setWikiLink.useMutation({
+    onSuccess: () => {
+      notify.success("Saved", "Wiki link saved");
+      utils.countries.getAll.invalidate();
+    },
+    onError: () => notify.error("Error", "Failed to save wiki link"),
+  });
 
   const handleTestLink = useCallback(async () => {
     if (!wikiPageTitle.trim()) return;
@@ -242,7 +262,13 @@ function ManualLinkEditorSection() {
     try {
       const result = await wikiIntroQuery.refetch();
       if (result.data) {
-        setTestResult({ success: true, intro: typeof result.data === "string" ? result.data : (result.data as any)?.intro ?? "Article found" });
+        setTestResult({
+          success: true,
+          intro:
+            typeof result.data === "string"
+              ? result.data
+              : ((result.data as any)?.intro ?? "Article found"),
+        });
       } else {
         setTestResult({ success: false });
       }
@@ -255,10 +281,8 @@ function ManualLinkEditorSection() {
 
   const handleSave = useCallback(() => {
     if (!selectedCountryId || !wikiPageTitle.trim()) return;
-    // TODO: Wire to api.admin.setWikiLink when endpoint is created
-    // mutation.mutate({ countryId: selectedCountryId, wikiPageTitle, wikiSource });
-    console.log("Save wiki link:", { countryId: selectedCountryId, wikiPageTitle, wikiSource });
-  }, [selectedCountryId, wikiPageTitle, wikiSource]);
+    setWikiLinkMutation.mutate({ countryId: selectedCountryId, wikiPageTitle, wikiSource });
+  }, [selectedCountryId, wikiPageTitle, wikiSource, setWikiLinkMutation]);
 
   return (
     <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
@@ -271,7 +295,7 @@ function ManualLinkEditorSection() {
       <CardContent className="space-y-4">
         {/* Country Selector */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Country</label>
+          <label className="text-foreground text-sm font-medium">Country</label>
           <div className="relative">
             <Input
               placeholder="Search for a country..."
@@ -285,12 +309,12 @@ function ManualLinkEditorSection() {
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
             />
             {showDropdown && filteredCountries.length > 0 && !selectedCountryId && (
-              <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-border/50 bg-popover shadow-lg">
+              <div className="border-border/50 bg-popover absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border shadow-lg">
                 {filteredCountries.map((c) => (
                   <button
                     key={c.id}
                     type="button"
-                    className="w-full px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted/50"
+                    className="text-foreground hover:bg-muted/50 w-full px-3 py-2 text-left text-sm transition-colors"
                     onMouseDown={(e) => {
                       e.preventDefault();
                       setSelectedCountryId(c.id);
@@ -308,7 +332,7 @@ function ManualLinkEditorSection() {
 
         {/* Wiki Page Title */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Wiki Page Title</label>
+          <label className="text-foreground text-sm font-medium">Wiki Page Title</label>
           <Input
             placeholder="e.g., Urcea, Burgundie, Caphiria..."
             value={wikiPageTitle}
@@ -321,7 +345,7 @@ function ManualLinkEditorSection() {
 
         {/* Wiki Source */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Wiki Source</label>
+          <label className="text-foreground text-sm font-medium">Wiki Source</label>
           <div className="flex gap-2">
             {(["ixwiki", "iiwiki"] as const).map((source) => (
               <button
@@ -334,7 +358,7 @@ function ManualLinkEditorSection() {
                 className={cn(
                   "rounded-md border px-4 py-2 text-sm font-medium transition-all",
                   wikiSource === source
-                    ? "border-blue-500/50 bg-blue-500/10 text-foreground"
+                    ? "text-foreground border-blue-500/50 bg-blue-500/10"
                     : "border-border/50 text-muted-foreground hover:bg-muted/30"
                 )}
               >
@@ -375,7 +399,7 @@ function ManualLinkEditorSection() {
             className={cn(
               "rounded-lg border p-3 text-sm",
               testResult.success
-                ? "border-emerald-500/30 bg-emerald-500/5 text-foreground"
+                ? "text-foreground border-emerald-500/30 bg-emerald-500/5"
                 : "border-red-500/30 bg-red-500/5 text-red-400"
             )}
           >
@@ -386,9 +410,7 @@ function ManualLinkEditorSection() {
                   Article found
                 </div>
                 {testResult.intro && (
-                  <p className="line-clamp-4 text-xs text-muted-foreground">
-                    {testResult.intro}
-                  </p>
+                  <p className="text-muted-foreground line-clamp-4 text-xs">{testResult.intro}</p>
                 )}
               </div>
             ) : (
@@ -427,12 +449,20 @@ function BulkScannerSection() {
     }>;
   }, [countriesData]);
 
-  const unlinkedCountries = useMemo(
-    () => countries.filter((c) => !c.wikiPageTitle),
-    [countries]
-  );
+  const unlinkedCountries = useMemo(() => countries.filter((c) => !c.wikiPageTitle), [countries]);
 
   const utils = api.useUtils();
+  const notify = useNotify();
+  const bulkSetWikiLinksMutation = api.admin.bulkSetWikiLinks.useMutation({
+    onSuccess: () => {
+      notify.success("Linked", "Bulk links applied");
+      utils.countries.getAll.invalidate();
+      setScanResults([]);
+      setScanComplete(false);
+    },
+    onError: () => notify.error("Error", "Failed to apply bulk links"),
+  });
+  const [isLinking, setIsLinking] = useState(false);
 
   const handleScan = useCallback(async () => {
     if (unlinkedCountries.length === 0) return;
@@ -483,19 +513,37 @@ function BulkScannerSection() {
     );
   }, []);
 
-  const handleLinkSelected = useCallback(() => {
+  const handleLinkSelected = useCallback(async () => {
     const selected = scanResults.filter((r) => r.selected);
-    // TODO: Wire to api.admin.bulkSetWikiLinks when endpoint is created
-    // mutation.mutate({ links: selected.map(r => ({ countryId: r.countryId, wikiPageTitle: r.matchedTitle, wikiSource: r.source })) });
-    console.log(
-      "Bulk link:",
-      selected.map((r) => ({
-        countryId: r.countryId,
-        title: r.matchedTitle,
-        source: r.source,
-      }))
-    );
-  }, [scanResults]);
+    if (selected.length === 0) return;
+
+    // Zod input limits to 100 items; chunk requests to be safe
+    const chunks: (typeof selected)[] = [];
+    for (let i = 0; i < selected.length; i += 100) {
+      chunks.push(selected.slice(i, i + 100));
+    }
+
+    setIsLinking(true);
+    try {
+      for (const chunk of chunks) {
+        await bulkSetWikiLinksMutation.mutateAsync({
+          links: chunk.map((r) => ({
+            countryId: r.countryId,
+            wikiPageTitle: r.matchedTitle,
+            wikiSource: r.source,
+          })),
+        });
+      }
+      notify.success("Linked", "Bulk links applied");
+      utils.countries.getAll.invalidate();
+      setScanResults([]);
+      setScanComplete(false);
+    } catch (err) {
+      notify.error("Error", "Failed to apply bulk links");
+    } finally {
+      setIsLinking(false);
+    }
+  }, [scanResults, bulkSetWikiLinksMutation, utils, notify]);
 
   const selectedCount = scanResults.filter((r) => r.selected).length;
 
@@ -513,7 +561,7 @@ function BulkScannerSection() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Automatically search wiki sources for unlinked countries and suggest matches.
         </p>
 
@@ -536,11 +584,15 @@ function BulkScannerSection() {
             <Button
               variant="outline"
               onClick={handleLinkSelected}
-              disabled={selectedCount === 0}
+              disabled={selectedCount === 0 || isLinking}
               className="gap-2"
             >
-              <Link2 className="h-4 w-4" />
-              Link Selected ({selectedCount})
+              {isLinking ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              {isLinking ? "Linking..." : `Link Selected (${selectedCount})`}
             </Button>
           )}
         </div>
@@ -548,7 +600,7 @@ function BulkScannerSection() {
         {/* Progress */}
         {isScanning && (
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center justify-between text-xs">
               <span>
                 Scanning {scanProgress.current} of {scanProgress.total}...
               </span>
@@ -556,7 +608,7 @@ function BulkScannerSection() {
                 {Math.round((scanProgress.current / Math.max(scanProgress.total, 1)) * 100)}%
               </span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
               <div
                 className="h-full rounded-full bg-amber-500 transition-all duration-300"
                 style={{
@@ -576,18 +628,26 @@ function BulkScannerSection() {
         )}
 
         {scanResults.length > 0 && (
-          <div className="max-h-[24rem] overflow-y-auto rounded-lg border border-border/30">
+          <div className="border-border/30 max-h-[24rem] overflow-y-auto rounded-lg border">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
-                <tr className="border-b border-border/30">
+              <thead className="bg-muted/80 sticky top-0 backdrop-blur-sm">
+                <tr className="border-border/30 border-b">
                   <th className="w-10 px-3 py-2.5" />
-                  <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Country</th>
-                  <th className="px-3 py-2.5 text-left font-medium text-muted-foreground">Matched Page</th>
-                  <th className="hidden px-3 py-2.5 text-left font-medium text-muted-foreground sm:table-cell">Source</th>
-                  <th className="px-3 py-2.5 text-right font-medium text-muted-foreground">Confidence</th>
+                  <th className="text-muted-foreground px-3 py-2.5 text-left font-medium">
+                    Country
+                  </th>
+                  <th className="text-muted-foreground px-3 py-2.5 text-left font-medium">
+                    Matched Page
+                  </th>
+                  <th className="text-muted-foreground hidden px-3 py-2.5 text-left font-medium sm:table-cell">
+                    Source
+                  </th>
+                  <th className="text-muted-foreground px-3 py-2.5 text-right font-medium">
+                    Confidence
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/20">
+              <tbody className="divide-border/20 divide-y">
                 {scanResults.map((result) => (
                   <tr
                     key={result.countryId}
@@ -601,11 +661,13 @@ function BulkScannerSection() {
                         type="checkbox"
                         checked={result.selected}
                         onChange={() => toggleResult(result.countryId)}
-                        className="h-4 w-4 rounded border-border accent-primary"
+                        className="border-border accent-primary h-4 w-4 rounded"
                       />
                     </td>
-                    <td className="px-3 py-2.5 font-medium text-foreground">{result.countryName}</td>
-                    <td className="max-w-[10rem] truncate px-3 py-2.5 text-muted-foreground">
+                    <td className="text-foreground px-3 py-2.5 font-medium">
+                      {result.countryName}
+                    </td>
+                    <td className="text-muted-foreground max-w-[10rem] truncate px-3 py-2.5">
                       {result.matchedTitle}
                     </td>
                     <td className="hidden px-3 py-2.5 sm:table-cell">
