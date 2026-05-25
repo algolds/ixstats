@@ -23,6 +23,7 @@
 import { db } from "~/server/db";
 import { emitNotificationEvent } from "~/server/api/routers/notifications";
 import { withBasePath } from "./base-path";
+import { isNotificationEventEnabled } from "./notification-event-guard";
 
 function resolveHref(href?: string | null): string | null {
   if (!href) return null;
@@ -134,6 +135,11 @@ class NotificationAPIService {
    */
   async create(input: CreateNotificationInput): Promise<string> {
     try {
+      const guardKey = input.source ? `${input.source}Notification` : null;
+      if (guardKey && !(await isNotificationEventEnabled(guardKey))) {
+        console.debug(`[NotificationAPI] Suppressed by guard: ${guardKey}`);
+        throw new Error(`Notification suppressed: ${guardKey} is disabled`);
+      }
       const notification = await db.notification.create({
         data: {
           title: input.title,

@@ -596,6 +596,21 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
         <TabsContent value="economy" className="space-y-4" id="economy">
           <ThemedTabContent theme="economy" className="space-y-4">
             <TabHeroBanner context="overview_economy" title="Economic Overview" subtitle="GDP, trade, and sector analysis" icon={TrendingUp} accentColor="emerald" />
+            {/* Editor Navigation Card */}
+            <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 p-3 dark:border-emerald-700/40 dark:from-emerald-950/20 dark:to-teal-950/20">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <p className="text-muted-foreground text-sm">
+                  Manage policies, tax rates, and economic infrastructure in the <strong>MyCountry Editor</strong>
+                </p>
+              </div>
+              <Link href={createUrl("/mycountry/editor")}>
+                <Button size="sm" className="gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600">
+                  <TrendingUp className="h-3 w-3" />
+                  Open Editor
+                </Button>
+              </Link>
+            </div>
             <motion.div
               variants={staggerContainer}
               initial="hidden"
@@ -1191,6 +1206,21 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
         <TabsContent value="labor" id="labor">
           <ThemedTabContent theme="labor" className="space-y-4">
             <TabHeroBanner context="overview_labor" title="Labor & Workforce" subtitle="Employment, wages, and human capital" icon={Briefcase} accentColor="red" />
+            {/* Editor Navigation Card */}
+            <div className="flex items-center justify-between rounded-lg border border-red-200 bg-gradient-to-r from-red-50/50 to-orange-50/50 p-3 dark:border-red-700/40 dark:from-red-950/20 dark:to-orange-950/20">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <p className="text-muted-foreground text-sm">
+                  Adjust labor laws, minimum wages, and education policies in the <strong>MyCountry Editor</strong>
+                </p>
+              </div>
+              <Link href={createUrl("/mycountry/editor")}>
+                <Button size="sm" className="gap-1.5 bg-gradient-to-r from-red-500 to-orange-500 text-white hover:from-red-600 hover:to-orange-600">
+                  <Briefcase className="h-3 w-3" />
+                  Open Editor
+                </Button>
+              </Link>
+            </div>
             <Tabs defaultValue="workforce" className="space-y-4">
               <div className="flex justify-center mb-2">
                 <TabsList className="subtab-pills subtab-pills-labor">
@@ -1536,7 +1566,7 @@ function MyCountryTabSystemComponent({ variant = "unified" }: MyCountryTabSystem
                     Edit your tax system, government structure, and budgets in the <strong>MyCountry Editor</strong>
                   </p>
                 </div>
-                <Link href={"/mycountry/editor"}>
+                <Link href={createUrl("/mycountry/editor")}>
                   <Button size="sm" className="gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:from-amber-600 hover:to-yellow-600">
                     <DollarSign className="h-3 w-3" />
                     Open Editor

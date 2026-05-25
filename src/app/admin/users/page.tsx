@@ -7,7 +7,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { AdminHeader } from "../_components/AdminHeader";
 import { UserManagement } from "../_components/UserManagement";
 import { CountryAdminPanel } from "../_components/CountryAdminPanel";
-import { NotificationsAdmin } from "../_components/NotificationsAdmin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Users } from "lucide-react";
 
@@ -26,7 +25,6 @@ export default function UsersPage() {
         <TabsList className="mb-4 w-full justify-start">
           <TabsTrigger value="users">Users & Countries</TabsTrigger>
           <TabsTrigger value="country-admin">Country Admin</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -35,10 +33,6 @@ export default function UsersPage() {
 
         <TabsContent value="country-admin">
           <CountryAdminPanel />
-        </TabsContent>
-
-        <TabsContent value="notifications">
-          <NotificationsAdmin />
         </TabsContent>
       </Tabs>
     </div>

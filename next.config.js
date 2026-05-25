@@ -163,6 +163,14 @@ const config = {
         protocol: "https",
         hostname: "iiwiki.com",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.discordapp.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media.discordapp.net",
+      },
       // Note: NationStates images are now proxied through /api/proxy-ns-image
       // to bypass hotlinking restrictions, so no NS domains needed here
     ],

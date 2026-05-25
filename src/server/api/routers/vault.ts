@@ -50,7 +50,7 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const balance = await vaultService.getBalance(input.userId, ctx.db);
+        const balance = await vaultService.getBalance(input.userId, ctx.db as any);
         return balance;
       } catch (error) {
         console.error("[Vault Router] Error getting balance:", error);
@@ -77,7 +77,7 @@ export const vaultRouter = createTRPCRouter({
 
         const transactions = await vaultService.getTransactionHistory(
           ctx.auth.userId,
-          ctx.db,
+          ctx.db as any,
           input.limit,
           input.offset,
           input.type as VaultTransactionType | undefined
@@ -103,7 +103,7 @@ export const vaultRouter = createTRPCRouter({
         throw new Error("User ID not found in authentication context");
       }
 
-      const result = await vaultService.claimDailyBonus(ctx.auth.userId, ctx.db);
+      const result = await vaultService.claimDailyBonus(ctx.auth.userId, ctx.db as any);
 
       if (!result.success) {
         throw new Error(result.message || "Failed to claim daily bonus");
@@ -119,7 +119,7 @@ export const vaultRouter = createTRPCRouter({
           category: "achievement",
           priority: "low",
           metadata: { bonus: result.bonus, streak: result.streak },
-        }, ctx.db);
+        });
       } catch {}
 
       return {
@@ -146,7 +146,7 @@ export const vaultRouter = createTRPCRouter({
         throw new Error("User ID not found in authentication context");
       }
 
-      const newStreak = await vaultService.updateLoginStreak(ctx.auth.userId, ctx.db);
+      const newStreak = await vaultService.updateLoginStreak(ctx.auth.userId, ctx.db as any);
 
       return {
         success: true,
@@ -187,7 +187,7 @@ export const vaultRouter = createTRPCRouter({
           input.amount,
           input.type as VaultTransactionType,
           input.source,
-          ctx.db,
+          ctx.db as any,
           input.metadata
         );
 
@@ -221,7 +221,7 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const balance = await vaultService.getBalance(input.userId, ctx.db);
+        const balance = await vaultService.getBalance(input.userId, ctx.db as any);
 
         return {
           vaultLevel: balance.vaultLevel,
@@ -244,7 +244,7 @@ export const vaultRouter = createTRPCRouter({
         throw new Error("User ID not found in authentication context");
       }
 
-      const summary = await vaultService.getEarningsSummary(ctx.auth.userId, ctx.db);
+      const summary = await vaultService.getEarningsSummary(ctx.auth.userId, ctx.db as any);
 
       return summary;
     } catch (error) {
@@ -262,7 +262,7 @@ export const vaultRouter = createTRPCRouter({
         throw new Error("User ID not found in authentication context");
       }
 
-      const summary = await vaultService.getEarningsSummary(ctx.auth.userId, ctx.db);
+      const summary = await vaultService.getEarningsSummary(ctx.auth.userId, ctx.db as any);
 
       // Format source labels for display
       const formatSourceLabel = (source: string): string => {
@@ -304,7 +304,7 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const dailyDividend = await vaultService.calculatePassiveIncome(input.countryId, ctx.db);
+        const dailyDividend = await vaultService.calculatePassiveIncome(input.countryId, ctx.db as any);
 
         return {
           countryId: input.countryId,
@@ -336,7 +336,7 @@ export const vaultRouter = createTRPCRouter({
         const capCheck = await vaultService.checkDailyCap(
           ctx.auth.userId,
           input.earnType,
-          ctx.db
+          ctx.db as any
         );
 
         return capCheck;
@@ -375,7 +375,7 @@ export const vaultRouter = createTRPCRouter({
           input.amount,
           input.type as VaultTransactionType,
           input.source,
-          ctx.db,
+          ctx.db as any,
           input.metadata
         );
 
@@ -445,7 +445,7 @@ export const vaultRouter = createTRPCRouter({
       try {
         const transactions = await vaultService.getTransactionHistory(
           input.userId,
-          ctx.db,
+          ctx.db as any,
           input.limit,
           input.offset,
           input.type as VaultTransactionType | undefined
@@ -491,7 +491,7 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const multiplier = await budgetVaultCalculator.calculateBudgetMultiplier(input.countryId, ctx.db);
+        const multiplier = await budgetVaultCalculator.calculateBudgetMultiplier(input.countryId, ctx.db as any);
         const description = budgetVaultCalculator.getMultiplierDescription(multiplier);
 
         return {
@@ -518,8 +518,8 @@ export const vaultRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const breakdown = await budgetVaultCalculator.getBudgetBreakdown(input.countryId, ctx.db);
-        const totalMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(input.countryId, ctx.db);
+        const breakdown = await budgetVaultCalculator.getBudgetBreakdown(input.countryId, ctx.db as any);
+        const totalMultiplier = await budgetVaultCalculator.calculateBudgetMultiplier(input.countryId, ctx.db as any);
 
         return {
           countryId: input.countryId,
@@ -860,7 +860,7 @@ export const vaultRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         const metadata = {
-          adminUserId: ctx.auth.userId,
+          adminUserId: ctx.auth?.userId,
           reason: input.reason,
           timestamp: new Date().toISOString(),
         };
@@ -872,7 +872,7 @@ export const vaultRouter = createTRPCRouter({
             input.amount,
             input.type as VaultTransactionType,
             input.source,
-            ctx.db,
+            ctx.db as any,
             metadata
           );
         } else {
@@ -881,7 +881,7 @@ export const vaultRouter = createTRPCRouter({
             Math.abs(input.amount),
             input.type as VaultTransactionType,
             input.source,
-            ctx.db,
+            ctx.db as any,
             metadata
           );
         }
@@ -902,7 +902,7 @@ export const vaultRouter = createTRPCRouter({
               category: "achievement",
               priority: "high",
               metadata: { amount: input.amount, reason: input.reason },
-            }, ctx.db);
+            });
           } catch (e) {
             console.error("[Vault Router] Failed to send credit adjustment notification:", e);
           }

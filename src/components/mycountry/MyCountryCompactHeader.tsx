@@ -7,6 +7,7 @@ import { MyCountryNavCards } from "./MyCountryNavCards";
 import { Crown, Edit } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { DevCountryViewSelect } from "~/components/dev";
+import { createUrl } from "~/lib/url-utils";
 
 interface MyCountryCompactHeaderProps {
   country: {
@@ -54,7 +55,7 @@ export function MyCountryCompactHeader({ country, flagUrl, currentPage = "overvi
             </div>
 
             {/* Editor Button */}
-            <Link href="/mycountry/editor" className="ml-2">
+            <Link href={createUrl("/mycountry/editor")} className="ml-2">
               <Button
                 variant="outline"
                 size="sm"

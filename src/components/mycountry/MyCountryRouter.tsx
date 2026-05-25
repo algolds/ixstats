@@ -16,6 +16,7 @@ import { PremiumGate } from "~/components/ui/premium-gate";
 import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
+import { createUrl } from "~/lib/url-utils";
 
 // Loading skeleton for dynamically loaded sections
 function SectionSkeleton() {
@@ -121,7 +122,7 @@ function MyCountryRouterInner() {
       window.localStorage.removeItem(complianceStorageKey);
     }
     setShowComplianceModal(false);
-    router.push("/mycountry/editor");
+    router.push(createUrl("/mycountry/editor"));
   };
 
   // Navigate to a section (instant client-side switch)

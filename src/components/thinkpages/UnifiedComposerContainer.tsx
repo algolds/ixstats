@@ -54,7 +54,7 @@ export function UnifiedComposerContainer({
             isOwner={isOwner}
             onPost={onPost}
             placeholder={
-              repostData ? "Add a comment to your repost..." : "What's happening in your nation?"
+              repostData ? "Add a comment to your repost..." : "What's happening?"
             }
             countryId={countryId}
             repostData={repostData}

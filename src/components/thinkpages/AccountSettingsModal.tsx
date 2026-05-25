@@ -26,6 +26,7 @@ export function AccountSettingsModal({
   const [postingFrequency, setPostingFrequency] = useState(account.postingFrequency);
   const [politicalLean, setPoliticalLean] = useState(account.politicalLean);
   const [personality, setPersonality] = useState(account.personality);
+  const [accountType, setAccountType] = useState(account.accountType);
 
   const updateAccountMutation = api.thinkpages.updateAccount.useMutation();
 
@@ -35,6 +36,7 @@ export function AccountSettingsModal({
       setPostingFrequency(account.postingFrequency);
       setPoliticalLean(account.politicalLean);
       setPersonality(account.personality);
+      setAccountType(account.accountType);
     }
   }, [account]);
 
@@ -46,6 +48,7 @@ export function AccountSettingsModal({
         postingFrequency,
         politicalLean,
         personality,
+        accountType,
       });
       notify.success("Account updated successfully!");
       onAccountUpdate(updatedAccount);
@@ -133,6 +136,20 @@ export function AccountSettingsModal({
                     <option value="serious">Serious</option>
                     <option value="casual">Casual</option>
                     <option value="satirical">Satirical</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs sm:text-sm font-medium text-neutral-300">
+                    Account Type (Category)
+                  </label>
+                  <select
+                    value={accountType}
+                    onChange={(e) => setAccountType(e.target.value as any)}
+                    className="block w-full rounded-lg border-neutral-700 bg-neutral-800/50 px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="government">Government</option>
+                    <option value="media">Media</option>
+                    <option value="citizen">Citizen</option>
                   </select>
                 </div>
               </div>

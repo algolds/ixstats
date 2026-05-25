@@ -267,7 +267,7 @@ export function ThinkpagesSocialPlatform({
               notify.success("Posted successfully!");
               refetchDisplayFeed();
             }}
-            placeholder="What's happening across the nations?"
+            placeholder="What's happening?"
             countryId={countryId}
             accounts={[]}
             isOwner={false}

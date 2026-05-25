@@ -527,7 +527,7 @@ const DynamicIslandContent = ({
         }}
         style={{
           willChange: willChange || "transform",
-          minWidth: dimensions.width === "fit-content" ? `${currentSize.width}px` : undefined,
+          minWidth: dimensions.width === "fit-content" ? "100px" : undefined,
           maxWidth: dimensions.width === "fit-content" ? "500px" : undefined,
           background:
             "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",

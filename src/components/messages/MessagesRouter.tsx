@@ -36,6 +36,7 @@ function MessagesRouterInner() {
   const { user } = useUser();
   const pathname = usePathname();
   const notify = useNotify();
+  const utils = api.useUtils();
 
   const currentUserId = user?.id ?? "";
 

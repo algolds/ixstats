@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -23,6 +23,8 @@ import {
 import { Vote, Plus, Play, UserPlus, ChevronDown, ChevronUp, Trophy } from "lucide-react";
 import { api } from "~/trpc/react";
 import { ParliamentHemicycle } from "./ParliamentHemicycle";
+import { IxTime } from "~/lib/ixtime";
+import { IxTimePicker } from "~/components/ui/ixtime-picker";
 
 interface ElectionSimulatorProps {
   countryId: string;
@@ -43,6 +45,13 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
     charisma: 50,
     politicalCapital: 50,
   });
+  const [scheduledIxTime, setScheduledIxTime] = useState<number>(0);
+
+  useEffect(() => {
+    if (scheduleOpen) {
+      setScheduledIxTime(IxTime.getCurrentIxTime());
+    }
+  }, [scheduleOpen]);
 
   const { data: elections = [], refetch: refetchElections } = api.elections.getElections.useQuery(
     { countryId },
@@ -156,12 +165,21 @@ export function ElectionSimulator({ countryId }: ElectionSimulatorProps) {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label className="mb-1 block">Scheduled Date (IxTime)</Label>
+                    <IxTimePicker
+                      value={scheduledIxTime}
+                      onChange={setScheduledIxTime}
+                      showRealWorldTime={true}
+                    />
+                  </div>
                   <Button
                     onClick={() =>
                       scheduleElection.mutate({
                         countryId,
                         name: newElectionName,
                         electionType: newElectionType,
+                        scheduledIxTime: scheduledIxTime,
                       })
                     }
                     disabled={!newElectionName || scheduleElection.isPending}

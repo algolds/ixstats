@@ -158,7 +158,10 @@ function DashboardHero() {
                     <div className="grid grid-cols-4 gap-2 py-1">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex cursor-help flex-col items-center gap-1 text-center">
+                          <Link
+                            href={createUrl("/mycountry/intelligence")}
+                            className="flex cursor-pointer flex-col items-center gap-1 text-center hover:opacity-80 transition-opacity"
+                          >
                             <HealthRing
                               value={activityRingsData.economicVitality || 0}
                               size={56}
@@ -168,7 +171,7 @@ function DashboardHero() {
                             <span className="text-[10px] font-medium text-green-700 dark:text-green-300">
                               {activityRingsData.economicVitality}%
                             </span>
-                          </div>
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent
                           side="bottom"
@@ -184,7 +187,10 @@ function DashboardHero() {
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex cursor-help flex-col items-center gap-1 text-center">
+                          <Link
+                            href={createUrl("/mycountry")}
+                            className="flex cursor-pointer flex-col items-center gap-1 text-center hover:opacity-80 transition-opacity"
+                          >
                             <HealthRing
                               value={activityRingsData.populationWellbeing || 0}
                               size={56}
@@ -194,7 +200,7 @@ function DashboardHero() {
                             <span className="text-[10px] font-medium text-blue-700 dark:text-blue-300">
                               {activityRingsData.populationWellbeing}%
                             </span>
-                          </div>
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent
                           side="bottom"
@@ -210,7 +216,10 @@ function DashboardHero() {
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex cursor-help flex-col items-center gap-1 text-center">
+                          <Link
+                            href={createUrl("/mycountry/diplomacy")}
+                            className="flex cursor-pointer flex-col items-center gap-1 text-center hover:opacity-80 transition-opacity"
+                          >
                             <HealthRing
                               value={activityRingsData.diplomaticStanding || 0}
                               size={56}
@@ -220,7 +229,7 @@ function DashboardHero() {
                             <span className="text-[10px] font-medium text-purple-700 dark:text-purple-300">
                               {activityRingsData.diplomaticStanding}%
                             </span>
-                          </div>
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent
                           side="bottom"
@@ -238,7 +247,10 @@ function DashboardHero() {
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex cursor-help flex-col items-center gap-1 text-center">
+                          <Link
+                            href={createUrl("/mycountry/politics")}
+                            className="flex cursor-pointer flex-col items-center gap-1 text-center hover:opacity-80 transition-opacity"
+                          >
                             <HealthRing
                               value={activityRingsData.governmentalEfficiency || 0}
                               size={56}
@@ -248,7 +260,7 @@ function DashboardHero() {
                             <span className="text-[10px] font-medium text-orange-700 dark:text-orange-300">
                               {activityRingsData.governmentalEfficiency}%
                             </span>
-                          </div>
+                          </Link>
                         </TooltipTrigger>
                         <TooltipContent
                           side="bottom"

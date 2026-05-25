@@ -4,6 +4,7 @@
  */
 
 import { notificationAPI } from "./notification-api";
+import { isNotificationEventEnabled } from "./notification-event-guard";
 
 /**
  * Economic Data Change Hook
@@ -16,6 +17,7 @@ export async function onEconomicDataChange(params: {
   previousValue: number;
   threshold?: number;
 }) {
+  if (!(await guardNotificationEvent("onEconomicDataChange"))) return;
   const { countryId, metric, currentValue, previousValue, threshold = 10 } = params;
 
   const change = ((currentValue - previousValue) / previousValue) * 100;
@@ -44,6 +46,7 @@ export async function onThinkPageActivity(params: {
   authorName?: string;
   targetUserId?: string;
 }) {
+  if (!(await guardNotificationEvent("onThinkPageActivity"))) return;
   await notificationAPI.notifyThinkPageActivity({
     thinkpageId: params.thinkpageId,
     title: params.title,
@@ -65,6 +68,7 @@ export async function onMeetingEvent(params: {
   action: "scheduled" | "starting" | "ended" | "cancelled";
   minutesUntilStart?: number;
 }) {
+  if (!(await guardNotificationEvent("onMeetingEvent"))) return;
   await notificationAPI.notifyMeetingEvent({
     meetingId: params.meetingId,
     title: params.title,
@@ -93,6 +97,7 @@ export async function onDiplomaticEvent(params: {
   description?: string;
   affectedUserIds?: string[];
 }) {
+  if (!(await guardNotificationEvent("onDiplomaticEvent"))) return;
   await notificationAPI.trigger({
     diplomatic: {
       eventType: params.eventType,
@@ -129,6 +134,7 @@ export async function onAchievementUnlock(params: {
   category: string;
   rarity?: "common" | "rare" | "epic" | "legendary";
 }) {
+  if (!(await guardNotificationEvent("onAchievementUnlock"))) return;
   const rarityEmojis = {
     common: "🥉",
     rare: "🥈",
@@ -160,6 +166,7 @@ export async function onCrisisDetected(params: {
   affectedMetrics?: string[];
   recommendedActions?: string[];
 }) {
+  if (!(await guardNotificationEvent("onCrisisDetected"))) return;
   await notificationAPI.trigger({
     crisis: {
       type: params.crisisType,
@@ -187,6 +194,7 @@ export async function onPolicyChange(params: {
   impact: "major" | "moderate" | "minor";
   description: string;
 }) {
+  if (!(await guardNotificationEvent("onPolicyChange"))) return;
   const priority =
     params.impact === "major" ? "high" : params.impact === "moderate" ? "medium" : "low";
 
@@ -210,6 +218,7 @@ export async function onBudgetAlert(params: {
   category?: string;
   userId?: string;
 }) {
+  if (!(await guardNotificationEvent("onBudgetAlert"))) return;
   const alertTitles = {
     deficit: "Budget Deficit Alert",
     surplus: "Budget Surplus Detected",
@@ -243,6 +252,7 @@ export async function onDefenseEvent(params: {
   description: string;
   severity?: "low" | "medium" | "high";
 }) {
+  if (!(await guardNotificationEvent("onDefenseEvent"))) return;
   const priority =
     params.severity === "high" ? "high" : params.severity === "medium" ? "medium" : "low";
 
@@ -267,6 +277,7 @@ export async function onSocialActivity(params: {
   contentTitle?: string;
   contentId?: string;
 }) {
+  if (!(await guardNotificationEvent("onSocialActivity"))) return;
   const activityMessages = {
     follow: `${params.fromUserName || "Someone"} started following you`,
     mention: `${params.fromUserName || "Someone"} mentioned you`,
@@ -303,6 +314,7 @@ export async function onIntelligenceAlert(params: {
   source: string;
   confidence: number;
 }) {
+  if (!(await guardNotificationEvent("onIntelligenceAlert"))) return;
   const priority =
     params.severity === "critical" ? "critical" : params.severity === "high" ? "high" : "medium";
 
@@ -342,6 +354,7 @@ export async function onTradeEvent(params: {
   impact: "positive" | "negative" | "neutral";
   value?: number;
 }) {
+  if (!(await guardNotificationEvent("onTradeEvent"))) return;
   const priority = params.eventType === "embargo" ? "high" : "medium";
   const type =
     params.impact === "positive" ? "success" : params.impact === "negative" ? "warning" : "info";
@@ -369,6 +382,7 @@ export async function onQuickActionComplete(params: {
   errorDetails?: string;
   href?: string;
 }) {
+  if (!(await guardNotificationEvent("onQuickActionComplete"))) return;
   const statusTitles = {
     completed: "Action Completed Successfully",
     failed: "Action Failed",
@@ -423,6 +437,7 @@ export async function onTaxSystemChange(params: {
   changePercent?: number;
   details?: string;
 }) {
+  if (!(await guardNotificationEvent("onTaxSystemChange"))) return;
   const changeTitles = {
     created: "Tax System Created",
     updated: "Tax System Updated",
@@ -488,6 +503,7 @@ export async function onGovernmentStructureChange(params: {
   synergyBonus?: number;
   details?: string;
 }) {
+  if (!(await guardNotificationEvent("onGovernmentStructureChange"))) return;
   const changeTitles = {
     component_added: "Government Component Added",
     component_removed: "Government Component Removed",
@@ -572,6 +588,7 @@ export async function onThinktankActivity(params: {
   contentId?: string;
   metadata?: Record<string, any>;
 }) {
+  if (!(await guardNotificationEvent("onThinktankActivity"))) return;
   const {
     activityType,
     groupId,
@@ -696,6 +713,7 @@ export async function onUserAccountChange(params: {
   metadata?: Record<string, any>;
   priority?: "critical" | "high" | "medium" | "low";
 }) {
+  if (!(await guardNotificationEvent("onUserAccountChange"))) return;
   const priorityMap = {
     country_assigned: "high" as const,
     country_updated: "medium" as const,
@@ -749,6 +767,7 @@ export async function onAdminAction(params: {
   severity: "urgent" | "important" | "informational";
   metadata?: Record<string, any>;
 }) {
+  if (!(await guardNotificationEvent("onAdminAction"))) return;
   const priorityMap = {
     urgent: "critical" as const,
     important: "high" as const,
@@ -861,6 +880,7 @@ export async function onEconomicCalculation(params: {
     to: string;
   };
 }) {
+  if (!(await guardNotificationEvent("onEconomicCalculation"))) return;
   const {
     countryId,
     userId,
@@ -967,6 +987,7 @@ export async function onVitalityScoreChange(params: {
   previousScore: number;
   threshold?: number;
 }) {
+  if (!(await guardNotificationEvent("onVitalityScoreChange"))) return;
   const { countryId, userId, dimension, currentScore, previousScore, threshold = 10 } = params;
 
   const change = currentScore - previousScore;
@@ -1022,6 +1043,7 @@ export async function onTierTransition(params: {
   metric: string;
   currentValue: number;
 }) {
+  if (!(await guardNotificationEvent("onTierTransition"))) return;
   const { countryId, userId, tierType, fromTier, toTier, metric, currentValue } = params;
 
   const tierRanks = {
@@ -1073,6 +1095,7 @@ export async function onActivityRingGoal(params: {
   target: number;
   completed: boolean;
 }) {
+  if (!(await guardNotificationEvent("onActivityRingGoal"))) return;
   const { userId, countryId, ringType, goalName, progress, target, completed } = params;
 
   if (completed) {
@@ -1131,9 +1154,10 @@ export async function onSecurityEvent(params: {
   description: string;
   casualties?: number;
   economicImpact?: number;
-  triggeredBy?: string[]; // Trigger names that caused this event
+  triggeredBy?: string[];
   actorArchetype?: string;
 }) {
+  if (!(await guardNotificationEvent("onSecurityEvent"))) return;
   const {
     countryId,
     userId,

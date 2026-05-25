@@ -46,6 +46,18 @@ import {
 } from "~/lib/text-formatter";
 import { WikiHtmlContent } from "~/components/wiki/WikiLinkPreview";
 
+const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
+
+function proxyDiscordUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (DISCORD_CDN_HOSTNAMES.includes(parsed.hostname)) {
+      return `/api/proxy-discord-image?url=${encodeURIComponent(url)}`;
+    }
+  } catch {}
+  return url;
+}
+
 interface ThinkpagesPostProps {
   post: any;
   currentUserAccountId: string;
@@ -604,7 +616,7 @@ const ThinkpagesPostComponent = ({
                           )}
                         >
                           <img
-                            src={media.url}
+                            src={proxyDiscordUrl(media.url)}
                             alt={media.filename || `Image ${index + 1}`}
                             className="h-full w-full cursor-pointer object-cover transition-all duration-300 hover:scale-[1.01] hover:opacity-90"
                             onClick={(e) => {
@@ -650,7 +662,7 @@ const ThinkpagesPostComponent = ({
                     )}
                   >
                     <img
-                      src={media.url}
+                      src={proxyDiscordUrl(media.url)}
                       alt={media.filename || `Image ${index + 1}`}
                       className="h-full w-full cursor-pointer object-cover transition-all duration-300 hover:scale-[1.01] hover:opacity-90"
                       onClick={() => {

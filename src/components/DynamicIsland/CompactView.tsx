@@ -76,6 +76,7 @@ function CompactViewComponent({
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
   const { articleTitle, activeSectionId, tocEntries } = useWikiContext();
+  const router = useRouter();
   const diPathname = usePathname();
   const isOnMapsPage = diPathname?.startsWith("/maps") || false;
 

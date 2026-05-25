@@ -97,7 +97,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
           filename: uploadFilename,
           fileBase64: base64,
           description: uploadDescription,
-          comment: "Uploaded via WikiOS editor",
+          comment: "Uploaded via WikiOS",
         });
 
         if (result.success) {

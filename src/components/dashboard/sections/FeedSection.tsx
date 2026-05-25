@@ -2,6 +2,18 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
+
+const DISCORD_CDN_HOSTNAMES = ["cdn.discordapp.com", "media.discordapp.net"];
+
+function proxyDiscordUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (DISCORD_CDN_HOSTNAMES.includes(parsed.hostname)) {
+      return `/api/proxy-discord-image?url=${encodeURIComponent(url)}`;
+    }
+  } catch {}
+  return url;
+}
 import {
   MessageSquare,
   BookOpen,
@@ -542,7 +554,7 @@ function UnifiedFeedItem({ activity }: { activity: any }) {
                   )}
                 >
                   <img
-                    src={media.url}
+                    src={proxyDiscordUrl(media.url)}
                     alt={media.filename || `Image ${index + 1}`}
                     className="h-full w-full cursor-pointer object-cover transition-opacity hover:opacity-90"
                     onClick={() => {

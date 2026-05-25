@@ -1075,7 +1075,7 @@ export const wikiosRouter = createTRPCRouter({
         section: "new",
         sectiontitle: input.sectionTitle,
         text: signedContent,
-        summary: `/* ${input.sectionTitle} */ new section (via WikiOS by ${ctx.user?.wikiUsername ?? ctx.auth?.userId ?? "anonymous"})`,
+        summary: `/* ${input.sectionTitle} */ new section (via WikiOS)`,
         token: csrfToken,
         format: "json",
       });

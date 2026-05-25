@@ -319,6 +319,26 @@ model CalculationLog {
   @@index([ixTimeTimestamp])
 }
 
+model NotificationEventConfig {
+  id             String    @id @default(cuid())
+  eventKey       String    @unique
+  name           String
+  description    String?
+  category       String
+  source         String?
+  triggerType    String?
+  enabled        Boolean   @default(true)
+  config         Json?
+  lastTriggered  DateTime?
+  triggerCount   Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([category])
+  @@index([enabled])
+  @@index([source])
+}
+
 model Notification {
   id             String   @id @default(cuid())
   userId         String?

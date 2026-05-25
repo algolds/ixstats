@@ -10,12 +10,52 @@
  */
 
 import { PrismaClient } from "@prisma/client";
+import { writeFileSync, mkdirSync, existsSync } from "fs";
+import * as path from "path";
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_API_BASE = "https://discord.com/api/v10";
+const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 const DEFAULT_COUNTRY_ID = process.env.DISCORD_POST_COUNTRY_ID || "";
+
+const DISCORD_IMAGE_DIR = path.join(process.cwd(), "public", "images", "discord");
+
+async function downloadDiscordImage(
+  url: string,
+  messageId: string,
+  index: number
+): Promise<string> {
+  try {
+    if (!existsSync(DISCORD_IMAGE_DIR)) {
+      mkdirSync(DISCORD_IMAGE_DIR, { recursive: true });
+    }
+
+    const extMatch = url.match(/\.(png|jpg|jpeg|gif|webp)(\?|$)/i);
+    const ext = extMatch ? extMatch[1]!.toLowerCase() : "jpg";
+    const filename = `discord_${messageId}_${index}.${ext}`;
+    const filePath = path.join(DISCORD_IMAGE_DIR, filename);
+
+    if (existsSync(filePath)) return `${BASE_PATH}/images/discord/${filename}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "IxStats/1.0 (https://ixwiki.com; contact: admin@ixwiki.com)",
+      },
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!response.ok) return url;
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    writeFileSync(filePath, buffer);
+
+    return `${BASE_PATH}/images/discord/${filename}`;
+  } catch {
+    return url;
+  }
+}
 
 // Discord username → country name mapping (confirmed countries only)
 const DISCORD_COUNTRY_MAP: Record<string, string> = {
@@ -455,10 +495,21 @@ async function createPostFromMessage(
     return true;
   }
 
-  const mediaUrls = message.attachments
+  const imageAttachments = message.attachments
     .filter((a) => a.content_type?.startsWith("image/"))
-    .map((a) => a.url)
     .slice(0, 4);
+
+  const mediaEntries = await Promise.all(
+    imageAttachments.map(async (a, index) => {
+      const localUrl = await downloadDiscordImage(a.url, message.id, index);
+      return {
+        type: "image" as const,
+        url: localUrl,
+        filename: `discord_${message.id}_${index}`,
+        mimeType: a.content_type ?? "image/jpeg",
+      };
+    })
+  );
 
   await db.thinkpagesPost.create({
     data: {
@@ -473,17 +524,8 @@ async function createPostFromMessage(
       likeCount,
       reactionCounts,
       mediaAttachments:
-        mediaUrls.length > 0
-          ? {
-              createMany: {
-                data: mediaUrls.map((url, index) => ({
-                  type: "image",
-                  url,
-                  filename: `discord_${message.id}_${index}`,
-                  mimeType: "image/jpeg",
-                })),
-              },
-            }
+        mediaEntries.length > 0
+          ? { createMany: { data: mediaEntries } }
           : undefined,
     },
   });

@@ -126,18 +126,26 @@ export function DashboardPlayerWidget() {
         <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={cycleGdp}
-            className="cursor-pointer rounded-lg bg-emerald-500/8 px-2 py-1.5 text-left transition-colors hover:bg-emerald-500/15 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
+            title="Click to cycle GDP view"
+            className="group cursor-pointer rounded-lg bg-emerald-500/8 px-2 py-1.5 text-left transition-colors hover:bg-emerald-500/15 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
           >
-            <p className="text-muted-foreground text-[8px] leading-tight">{gdpDisplayLabel}</p>
+            <p className="text-muted-foreground text-[8px] leading-tight flex items-center justify-between">
+              <span>{gdpDisplayLabel}</span>
+              <span className="opacity-0 group-hover:opacity-60 transition-opacity">↻</span>
+            </p>
             <p className="text-[10px] leading-tight font-semibold text-emerald-600 dark:text-emerald-400">
               {gdpDisplayValue}
             </p>
           </button>
           <button
             onClick={cyclePop}
-            className="cursor-pointer rounded-lg bg-blue-500/8 px-2 py-1.5 text-left transition-colors hover:bg-blue-500/15 dark:bg-blue-500/10 dark:hover:bg-blue-500/20"
+            title="Click to cycle Population view"
+            className="group cursor-pointer rounded-lg bg-blue-500/8 px-2 py-1.5 text-left transition-colors hover:bg-blue-500/15 dark:bg-blue-500/10 dark:hover:bg-blue-500/20"
           >
-            <p className="text-muted-foreground text-[8px] leading-tight">{popDisplayLabel}</p>
+            <p className="text-muted-foreground text-[8px] leading-tight flex items-center justify-between">
+              <span>{popDisplayLabel}</span>
+              <span className="opacity-0 group-hover:opacity-60 transition-opacity">↻</span>
+            </p>
             <p className="text-[10px] leading-tight font-semibold text-blue-600 dark:text-blue-400">
               {popDisplayValue}
             </p>
@@ -190,7 +198,7 @@ export function DashboardPlayerWidget() {
       <div className="border-border/40 border-t" />
 
       {/* Pending Issues */}
-      {pendingIssues && pendingIssues.total > 0 && (
+      {pendingIssues && (
         <Link href={"/mycountry/executive"} className="group flex items-center justify-between">
           <span className="text-foreground flex items-center gap-1.5 text-[10px] font-semibold">
             <ClipboardList className="h-3.5 w-3.5" />

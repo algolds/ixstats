@@ -66,7 +66,7 @@ export function GlassCanvasComposer({
   onCreateAccount,
   isOwner,
   onPost,
-  placeholder = "What's happening in your nation?",
+  placeholder = "What's happening?",
   countryId,
   repostData,
 }: GlassCanvasComposerProps) {

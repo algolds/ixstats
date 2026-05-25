@@ -647,19 +647,6 @@
    z-13050 → dialog content, dropdowns
 */
 
-/* Ensure ALL dropdown and popover components ALWAYS appear on top */
-[data-radix-select-content],
-[data-radix-dropdown-menu-content],
-[data-radix-popover-content] {
-  z-index: var(--z-popover) !important;
-  position: fixed !important;
-}
-
-[data-radix-tooltip-content] {
-  z-index: var(--z-tooltip) !important;
-  position: fixed !important;
-}
-
 [data-radix-dialog-content],
 [data-radix-alert-dialog-content] {
   z-index: var(--z-modal) !important;
@@ -669,28 +656,6 @@
 /* Radix Portal elements (where most dropdowns render) */
 [data-radix-portal] {
   z-index: unset !important;
-}
-
-/* Specific Tailwind/Radix components by attribute selectors */
-[data-state="open"][role="menu"],
-[data-state="open"][role="listbox"],
-[data-state="open"][role="combobox"],
-[data-side="top"],
-[data-side="bottom"],
-[data-side="left"],
-[data-side="right"] {
-  z-index: var(--z-popover) !important;
-}
-
-/* Additional comprehensive dropdown selectors */
-.dropdown-content,
-.popover-content,
-.select-content,
-[role="menu"],
-[role="listbox"],
-[role="combobox"],
-[data-radix-popper-content-wrapper] {
-  z-index: var(--z-popover) !important;
 }
 
 /* Ensure dialog overlays are properly layered */

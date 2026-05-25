@@ -509,33 +509,26 @@ export function UnifiedDashboardSection({
                     </CardContent>
                   </Card>
                 ) : accounts.length === 0 ? (
-                  <Card className="glass-hierarchy-child border-purple-500/20 bg-purple-500/5">
-                    <CardContent className="flex items-center justify-between gap-4 p-4">
-                      <div className="flex items-start gap-2.5">
-                        <Newspaper className="mt-0.5 h-5 w-5 shrink-0 text-purple-400" />
-                        <div>
-                          <h4 className="text-foreground text-xs font-semibold">
-                            Create a ThinkPages Account
-                          </h4>
-                          <p className="text-muted-foreground text-[11px]">
-                            Create an official government, media, or citizen account to publish
-                            posts to the public feed.
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => setShowAccountCreation(true)}
-                        className="h-8 shrink-0 text-xs"
-                      >
-                        Create Account
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-purple-500/20 bg-purple-500/5 px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <Newspaper className="h-4 w-4 shrink-0 text-purple-400" />
+                      <p className="text-foreground text-xs font-medium">
+                        Create a ThinkPages Account to publish posts.
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => setShowAccountCreation(true)}
+                      className="h-7 shrink-0 text-xs"
+                    >
+                      Create Account
+                    </Button>
+                  </div>
                 ) : selectedAccount ? (
                   <div className="space-y-2">
                     <GlassCanvasComposer
                       account={selectedAccount}
+                      onAccountSelect={setSelectedAccount}
                       onPost={() => {
                         notify.success("Posted successfully!");
                         utils.activities.getGlobalFeed.refetch();
@@ -543,7 +536,7 @@ export function UnifiedDashboardSection({
                           utils.activities.getFollowingFeed.refetch();
                         }
                       }}
-                      placeholder="What's happening across the nations?"
+                      placeholder="What's happening?"
                       countryId={userProfile?.countryId ?? ""}
                       accounts={accounts}
                       isOwner={true}
@@ -1255,7 +1248,7 @@ function BlurbOfTheDayCard() {
       <CardContent className="pt-0">
         <div className="border-border/30 bg-muted/20 rounded-lg border p-2.5">
           <p className="text-foreground text-[11px] leading-relaxed italic">
-            &ldquo;{prompt.prompt}?&rdquo;
+            &ldquo;{prompt.question}?&rdquo;
           </p>
         </div>
         <div className="mt-1.5 flex items-center justify-between">

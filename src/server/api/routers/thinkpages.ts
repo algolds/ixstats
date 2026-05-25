@@ -450,6 +450,7 @@ export const thinkpagesRouter = createTRPCRouter({
         politicalLean: z.enum(["left", "center", "right"]).optional(),
         personality: z.enum(["serious", "casual", "satirical"]).optional(),
         isActive: z.boolean().optional(),
+        accountType: z.enum(["government", "media", "citizen"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -484,6 +485,7 @@ export const thinkpagesRouter = createTRPCRouter({
           personality: input.personality,
           profileImageUrl: input.profileImageUrl,
           isActive: input.isActive,
+          accountType: input.accountType,
         },
       });
 

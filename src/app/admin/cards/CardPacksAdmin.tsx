@@ -49,7 +49,7 @@ const PACK_TYPES = [
 ];
 
 const RARITY_OPTIONS = [
-  { value: "", label: "None" },
+  { value: "none", label: "None" },
   { value: "COMMON", label: "Common" },
   { value: "UNCOMMON", label: "Uncommon" },
   { value: "RARE", label: "Rare" },
@@ -175,7 +175,7 @@ export function CardPacksAdmin() {
       packType: formData.packType,
       priceCredits: formData.priceCredits,
       cardCount: formData.cardCount,
-      guaranteedRarity: formData.guaranteedRarity || undefined,
+      guaranteedRarity: formData.guaranteedRarity === "none" ? undefined : formData.guaranteedRarity,
       isActive: formData.isActive,
     });
   };
@@ -191,7 +191,7 @@ export function CardPacksAdmin() {
         packType: formData.packType,
         priceCredits: formData.priceCredits,
         cardCount: formData.cardCount,
-        guaranteedRarity: formData.guaranteedRarity || undefined,
+      guaranteedRarity: formData.guaranteedRarity === "none" ? undefined : formData.guaranteedRarity,
         isActive: formData.isActive,
       },
     });
@@ -523,7 +523,7 @@ export function CardPacksAdmin() {
                   </SelectTrigger>
                   <SelectContent>
                     {RARITY_OPTIONS.map((r) => (
-                      <SelectItem key={r.value || "none"} value={r.value || "none"}>
+                      <SelectItem key={r.value} value={r.value}>
                         {r.label}
                       </SelectItem>
                     ))}

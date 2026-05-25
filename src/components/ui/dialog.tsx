@@ -59,6 +59,17 @@ function DialogContent({
           className
         )}
         {...props}
+        onPointerDownOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (
+            target.closest("[data-radix-select-content]") ||
+            target.closest("[data-radix-dropdown-menu-content]") ||
+            target.closest("[data-radix-popover-content]") ||
+            target.closest("[role=\"listbox\"]")
+          ) {
+            e.preventDefault();
+          }
+        }}
       >
         {children}
         {showCloseButton && (

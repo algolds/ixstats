@@ -20,6 +20,7 @@ import {
   Menu,
   Wallet,
   Package,
+  Bell,
 } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { Button } from "~/components/ui/button";
@@ -75,6 +76,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/users",
     icon: Users,
     description: "Management & Permissions",
+  },
+  {
+    label: "Notifications",
+    href: "/admin/notifications",
+    icon: Bell,
+    description: "Events, Logs & Alert Rules",
   },
   {
     label: "Card Management",

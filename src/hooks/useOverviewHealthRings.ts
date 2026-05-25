@@ -141,7 +141,7 @@ export function useOverviewHealthRings({
     return [
       {
         key: "executive-health",
-        label: "Executive",
+        label: "Executive Efficiency",
         subtitle: execSubtitle,
         color: "#f59e0b",
         icon: Crown,
@@ -152,7 +152,7 @@ export function useOverviewHealthRings({
       },
       {
         key: "diplomatic-health",
-        label: "Diplomacy",
+        label: "Diplomatic Standing",
         subtitle: diploSubtitle,
         color: "#06b6d4",
         icon: Globe,
@@ -163,7 +163,7 @@ export function useOverviewHealthRings({
       },
       {
         key: "intelligence-health",
-        label: "Intelligence",
+        label: "Intelligence Security",
         subtitle: intelSubtitle,
         color: "#3b82f6",
         icon: Brain,
@@ -174,7 +174,7 @@ export function useOverviewHealthRings({
       },
       {
         key: "defense-health",
-        label: "Defense",
+        label: "Defense Readiness",
         subtitle: defSubtitle,
         color: "#ef4444",
         icon: Shield,
