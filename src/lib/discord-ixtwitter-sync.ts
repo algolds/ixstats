@@ -147,6 +147,7 @@ async function fetchDiscordMessages(after?: string, before?: string): Promise<Di
     `${DISCORD_API_BASE}/channels/${IXTWITTER_CHANNEL_ID}/messages?${params}`,
     {
       headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
+      signal: AbortSignal.timeout(15000), // 15s timeout for Discord API
     }
   );
 

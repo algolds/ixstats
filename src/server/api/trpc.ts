@@ -81,17 +81,26 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
       const authHeader = opts.headers.get("authorization");
       if (authHeader?.startsWith("Bearer ")) {
         const token = authHeader.substring(7);
-        try {
-          const verifiedToken = await verifyToken(token, {
-            secretKey: process.env.CLERK_SECRET_KEY!,
-          });
-          if (verifiedToken?.sub) {
-            auth = { userId: verifiedToken.sub };
+        const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+        if (!clerkSecretKey) {
+          // Skip token verification if Clerk is not configured (demo mode)
+          if (VERBOSE)
+            console.warn(
+              "[TRPC Context] CLERK_SECRET_KEY not set — skipping Bearer token verification"
+            );
+        } else {
+          try {
+            const verifiedToken = await verifyToken(token, {
+              secretKey: clerkSecretKey,
+            });
+            if (verifiedToken?.sub) {
+              auth = { userId: verifiedToken.sub };
+            }
+          } catch (tokenError) {
+            console.error("[TRPC Context] Token verification failed:", tokenError);
+            // Reject invalid tokens explicitly instead of silent continuation
+            throw new UnauthorizedError("Invalid or expired authentication token");
           }
-        } catch (tokenError) {
-          console.error("[TRPC Context] Token verification failed:", tokenError);
-          // Reject invalid tokens explicitly instead of silent continuation
-          throw new UnauthorizedError("Invalid or expired authentication token");
         }
       }
     }

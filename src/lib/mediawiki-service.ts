@@ -571,6 +571,7 @@ export class IxnayWikiService {
           },
           body: JSON.stringify(requestData),
           cache: "no-store",
+          signal: AbortSignal.timeout(MEDIAWIKI_CONFIG.timeout),
         });
       } else {
         // Use GET for short content
@@ -592,6 +593,7 @@ export class IxnayWikiService {
             "User-Agent": this.USER_AGENT,
           },
           cache: "no-store",
+          signal: AbortSignal.timeout(MEDIAWIKI_CONFIG.timeout),
         });
       }
 
@@ -1686,6 +1688,7 @@ export class IxnayWikiService {
             "User-Agent": this.USER_AGENT,
           },
           cache: "no-store",
+          signal: AbortSignal.timeout(MEDIAWIKI_CONFIG.timeout),
         });
         if (!response.ok) {
           const errMsg = `[MediaWiki] HTTP Error getting template ${templateName}: ${response.status} ${response.statusText}`;
@@ -1748,7 +1751,13 @@ export class IxnayWikiService {
           iilimit: "1",
         });
 
-        const response = await fetch(`${this.API_BASE_URL}?${params.toString()}`);
+        const response = await fetch(`${this.API_BASE_URL}?${params.toString()}`, {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": this.USER_AGENT,
+          },
+          signal: AbortSignal.timeout(MEDIAWIKI_CONFIG.timeout),
+        });
 
         if (!response.ok) {
           this.setCacheValue(this.FILE_CACHE, cleanFileName, null, ERROR_TTL);
@@ -1895,6 +1904,7 @@ export class IxnayWikiService {
           return await fetch(url.toString(), {
             headers: { "User-Agent": this.USER_AGENT },
             cache: "no-store",
+            signal: AbortSignal.timeout(MEDIAWIKI_CONFIG.timeout),
           });
         });
 
@@ -1942,6 +1952,7 @@ export class IxnayWikiService {
               return await fetch(backlinksUrl.toString(), {
                 headers: { "User-Agent": this.USER_AGENT },
                 cache: "no-store",
+                signal: AbortSignal.timeout(MEDIAWIKI_CONFIG.timeout),
               });
             });
 

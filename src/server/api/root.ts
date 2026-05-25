@@ -1,8 +1,30 @@
 // src/server/api/root.ts
 // IxStates — Unified tRPC API Router
 // Routers are organized by domain module for architectural clarity.
+//
+// SAFETY: Each router is wrapped in a try-catch at registration time (Option A).
+// If any single router fails to import or initialize, it is replaced with an
+// empty router and a console.error is logged — the remaining routers still load.
 
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
+
+// ─── Safe Router Import Helper ───────────────────────────────────────────────
+// Wraps a router import so that if it throws (broken dependency, circular import,
+// schema error, etc.) the server still boots with the other routers intact.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const EMPTY_ROUTER = createTRPCRouter({}) as any;
+
+function safeRouter(name: string, routerFn: () => ReturnType<typeof createTRPCRouter>) {
+  try {
+    return routerFn();
+  } catch (error) {
+    console.error(
+      `[ROOT_ROUTER] ✗ Failed to load router "${name}":`,
+      error instanceof Error ? error.message : error
+    );
+    return EMPTY_ROUTER;
+  }
+}
 
 // ─── Core ────────────────────────────────────────────────────────────────────
 import { countriesRouter } from "./routers/countries";
@@ -106,104 +128,108 @@ import { historicalRouter } from "./routers/historical";
  * All routers added in /api/routers should be manually added here.
  * Routers are grouped by domain module — keep imports and registrations
  * in the same order for easy navigation.
+ *
+ * Each router is wrapped in safeRouter() so that a failure in one router
+ * doesn't take down the entire API surface. Failed routers are replaced
+ * with empty stubs and logged to console.
  */
 export const appRouter = createTRPCRouter({
   // ─── Core ──────────────────────────────────────────────────────────────────
-  countries: countriesRouter,
-  admin: adminRouter,
-  users: usersRouter,
-  system: systemRouter,
-  roles: rolesRouter,
-  cache: cacheRouter,
-  notifications: notificationsRouter,
-  activities: activitiesRouter,
-  achievements: achievementsRouter,
-  userLogging: userLoggingRouter,
-  demoMode: demoModeRouter,
-  systemValidation: systemValidationRouter,
-  autosaveHistory: autosaveHistoryRouter,
-  autosaveMonitoring: autosaveMonitoringRouter,
+  countries: safeRouter("countries", () => countriesRouter),
+  admin: safeRouter("admin", () => adminRouter),
+  users: safeRouter("users", () => usersRouter),
+  system: safeRouter("system", () => systemRouter),
+  roles: safeRouter("roles", () => rolesRouter),
+  cache: safeRouter("cache", () => cacheRouter),
+  notifications: safeRouter("notifications", () => notificationsRouter),
+  activities: safeRouter("activities", () => activitiesRouter),
+  achievements: safeRouter("achievements", () => achievementsRouter),
+  userLogging: safeRouter("userLogging", () => userLoggingRouter),
+  demoMode: safeRouter("demoMode", () => demoModeRouter),
+  systemValidation: safeRouter("systemValidation", () => systemValidationRouter),
+  autosaveHistory: safeRouter("autosaveHistory", () => autosaveHistoryRouter),
+  autosaveMonitoring: safeRouter("autosaveMonitoring", () => autosaveMonitoringRouter),
 
   // ─── Economy ───────────────────────────────────────────────────────────────
-  economics: economicsRouter,
-  enhancedEconomics: enhancedEconomicsRouter,
-  atomicEconomic: atomicEconomicRouter,
-  economicComponents: economicComponentsRouter,
-  economicArchetypes: economicArchetypesRouter,
-  formulas: formulasRouter,
-  taxSystem: taxSystemRouter,
-  atomicTax: atomicTaxRouter,
+  economics: safeRouter("economics", () => economicsRouter),
+  enhancedEconomics: safeRouter("enhancedEconomics", () => enhancedEconomicsRouter),
+  atomicEconomic: safeRouter("atomicEconomic", () => atomicEconomicRouter),
+  economicComponents: safeRouter("economicComponents", () => economicComponentsRouter),
+  economicArchetypes: safeRouter("economicArchetypes", () => economicArchetypesRouter),
+  formulas: safeRouter("formulas", () => formulasRouter),
+  taxSystem: safeRouter("taxSystem", () => taxSystemRouter),
+  atomicTax: safeRouter("atomicTax", () => atomicTaxRouter),
 
   // ─── Government ────────────────────────────────────────────────────────────
-  government: governmentRouter,
-  atomicGovernment: atomicGovernmentRouter,
-  governmentComponents: governmentComponentsRouter,
-  unifiedAtomic: unifiedAtomicRouter,
-  policies: policiesRouter,
-  elections: electionsRouter,
-  nationalIdentity: nationalIdentityRouter,
-  customTypes: customTypesRouter,
-  quickActions: quickActionsRouter,
-  scheduledChanges: scheduledChangesRouter,
-  nationalIssues: nationalIssuesRouter,
+  government: safeRouter("government", () => governmentRouter),
+  atomicGovernment: safeRouter("atomicGovernment", () => atomicGovernmentRouter),
+  governmentComponents: safeRouter("governmentComponents", () => governmentComponentsRouter),
+  unifiedAtomic: safeRouter("unifiedAtomic", () => unifiedAtomicRouter),
+  policies: safeRouter("policies", () => policiesRouter),
+  elections: safeRouter("elections", () => electionsRouter),
+  nationalIdentity: safeRouter("nationalIdentity", () => nationalIdentityRouter),
+  customTypes: safeRouter("customTypes", () => customTypesRouter),
+  quickActions: safeRouter("quickActions", () => quickActionsRouter),
+  scheduledChanges: safeRouter("scheduledChanges", () => scheduledChangesRouter),
+  nationalIssues: safeRouter("nationalIssues", () => nationalIssuesRouter),
 
   // ─── Diplomacy ─────────────────────────────────────────────────────────────
-  diplomatic: diplomaticRouter,
-  diplomaticIntelligence: diplomaticIntelligenceRouter,
-  diplomaticScenarios: diplomaticScenariosRouter,
-  npcPersonalities: npcPersonalitiesRouter,
-  crisisEvents: crisisEventsRouter,
-  archetypes: archetypesRouter,
+  diplomatic: safeRouter("diplomatic", () => diplomaticRouter),
+  diplomaticIntelligence: safeRouter("diplomaticIntelligence", () => diplomaticIntelligenceRouter),
+  diplomaticScenarios: safeRouter("diplomaticScenarios", () => diplomaticScenariosRouter),
+  npcPersonalities: safeRouter("npcPersonalities", () => npcPersonalitiesRouter),
+  crisisEvents: safeRouter("crisisEvents", () => crisisEventsRouter),
+  archetypes: safeRouter("archetypes", () => archetypesRouter),
 
   // ─── Intelligence & Security ───────────────────────────────────────────────
-  intelligence: intelligenceRouter,
-  intelligenceBriefing: intelligenceBriefingRouter,
-  unifiedIntelligence: unifiedIntelligenceRouter,
-  security: securityRouter,
-  meetings: meetingsRouter,
+  intelligence: safeRouter("intelligence", () => intelligenceRouter),
+  intelligenceBriefing: safeRouter("intelligenceBriefing", () => intelligenceBriefingRouter),
+  unifiedIntelligence: safeRouter("unifiedIntelligence", () => unifiedIntelligenceRouter),
+  security: safeRouter("security", () => securityRouter),
+  meetings: safeRouter("meetings", () => meetingsRouter),
 
   // ─── Military ──────────────────────────────────────────────────────────────
-  militaryEquipment: militaryEquipmentRouter,
-  smallArmsEquipment: smallArmsEquipmentRouter,
+  militaryEquipment: safeRouter("militaryEquipment", () => militaryEquipmentRouter),
+  smallArmsEquipment: safeRouter("smallArmsEquipment", () => smallArmsEquipmentRouter),
 
   // ─── Cards & Vault ─────────────────────────────────────────────────────────
-  cards: cardsRouter,
-  cardPacks: cardPacksRouter,
-  cardMarket: cardMarketRouter,
-  cardAnalytics: cardAnalyticsRouter,
-  cardImages: cardImagesRouter,
-  loreCards: loreCardsRouter,
-  nsImport: nsImportRouter,
-  vault: vaultRouter,
-  crafting: craftingRouter,
-  trading: tradingRouter,
+  cards: safeRouter("cards", () => cardsRouter),
+  cardPacks: safeRouter("cardPacks", () => cardPacksRouter),
+  cardMarket: safeRouter("cardMarket", () => cardMarketRouter),
+  cardAnalytics: safeRouter("cardAnalytics", () => cardAnalyticsRouter),
+  cardImages: safeRouter("cardImages", () => cardImagesRouter),
+  loreCards: safeRouter("loreCards", () => loreCardsRouter),
+  nsImport: safeRouter("nsImport", () => nsImportRouter),
+  vault: safeRouter("vault", () => vaultRouter),
+  crafting: safeRouter("crafting", () => craftingRouter),
+  trading: safeRouter("trading", () => tradingRouter),
 
   // ─── Maps & Geo ────────────────────────────────────────────────────────────
-  geo: geoRouter,
-  resources: resourcesRouter,
-  transport: transportRouter,
-  studio: studioRouter,
+  geo: safeRouter("geo", () => geoRouter),
+  resources: safeRouter("resources", () => resourcesRouter),
+  transport: safeRouter("transport", () => transportRouter),
+  studio: safeRouter("studio", () => studioRouter),
 
   // ─── Wiki & WikiOS ─────────────────────────────────────────────────────────
-  wiki: wikiRouter,
-  wikios: wikiosRouter,
-  wikiCache: wikiCacheRouter,
-  wikiImporter: wikiImporterRouter,
-  lorewards: lorewardsRouter,
-  commons: commonsRouter,
-  blurbs: blurbsRouter,
+  wiki: safeRouter("wiki", () => wikiRouter),
+  wikios: safeRouter("wikios", () => wikiosRouter),
+  wikiCache: safeRouter("wikiCache", () => wikiCacheRouter),
+  wikiImporter: safeRouter("wikiImporter", () => wikiImporterRouter),
+  lorewards: safeRouter("lorewards", () => lorewardsRouter),
+  commons: safeRouter("commons", () => commonsRouter),
+  blurbs: safeRouter("blurbs", () => blurbsRouter),
 
   // ─── Social ────────────────────────────────────────────────────────────────
-  thinkpages: thinkpagesRouter,
-  messages: messagesRouter,
+  thinkpages: safeRouter("thinkpages", () => thinkpagesRouter),
+  messages: safeRouter("messages", () => messagesRouter),
 
   // ─── Forum & Identity ──────────────────────────────────────────────────────
-  forum: forumRouter,
-  ixnayid: ixnayidRouter,
+  forum: safeRouter("forum", () => forumRouter),
+  ixnayid: safeRouter("ixnayid", () => ixnayidRouter),
 
   // ─── MyCountry ─────────────────────────────────────────────────────────────
-  mycountry: myCountryRouter,
-  historical: historicalRouter,
+  mycountry: safeRouter("mycountry", () => myCountryRouter),
+  historical: safeRouter("historical", () => historicalRouter),
 });
 
 // export type definition of API

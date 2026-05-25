@@ -49,7 +49,7 @@ async function fetchOOLPageWikitext(yearOrKey: number | "main"): Promise<string 
     if (!rows || rows.length === 0) return null;
     return String(rows[0]!.old_text);
   } catch (err) {
-    console.error(`[Lorewards] MySQL error fetching OOL/${year}:`, err);
+    console.error(`[Lorewards] MySQL error fetching OOL/${yearOrKey}:`, err);
     return null;
   }
 }

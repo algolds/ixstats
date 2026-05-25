@@ -65,6 +65,7 @@ class DiscordWebhookService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000), // 10s timeout — webhook is fire-and-forget
       });
 
       if (!response.ok) {

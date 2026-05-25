@@ -248,6 +248,7 @@ class UnsplashService {
         headers: {
           Authorization: `Client-ID ${this.accessKey}`,
         },
+        signal: AbortSignal.timeout(5000), // 5s timeout — tracking is non-critical
       });
     } catch (error) {
       console.error("Failed to track Unsplash download:", error);
