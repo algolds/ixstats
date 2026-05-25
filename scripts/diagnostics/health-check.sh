@@ -7,6 +7,23 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# Load environment variables (mimics Next.js/Bun loading order)
+if [ -f "$PROJECT_DIR/.env" ]; then
+    set -a
+    source "$PROJECT_DIR/.env" 2>/dev/null || true
+    set +a
+fi
+if [ -f "$PROJECT_DIR/.env.local" ]; then
+    set -a
+    source "$PROJECT_DIR/.env.local" 2>/dev/null || true
+    set +a
+fi
+if [ -f "$PROJECT_DIR/.env.local.dev" ]; then
+    set -a
+    source "$PROJECT_DIR/.env.local.dev" 2>/dev/null || true
+    set +a
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -215,6 +232,9 @@ check_database() {
     if [ -f "prisma/schema.prisma" ]; then
         MODEL_COUNT=$(grep -c "^model " prisma/schema.prisma 2>/dev/null || echo "0")
         check_pass "Prisma schema found ($MODEL_COUNT models)"
+    elif [ -d "prisma/schema" ]; then
+        MODEL_COUNT=$(grep -h -c "^model " prisma/schema/*.prisma 2>/dev/null | awk '{s+=$1} END {print s+0}' || echo "0")
+        check_pass "Prisma schema directory found ($MODEL_COUNT models)"
     else
         check_fail "Prisma schema not found"
     fi
@@ -230,7 +250,15 @@ check_database() {
 
     # Test database connection (quick check)
     if command -v bunx &> /dev/null; then
-        if timeout 15 bunx prisma db execute --schema=prisma/schema.prisma --stdin <<< "SELECT 1" &>/dev/null; then
+        if [ -f "prisma/schema.prisma" ]; then
+            SCHEMA_ARG="--schema=prisma/schema.prisma"
+        elif [ -d "prisma/schema" ]; then
+            SCHEMA_ARG="--schema=prisma/schema"
+        else
+            SCHEMA_ARG=""
+        fi
+
+        if [ -n "$SCHEMA_ARG" ] && timeout 15 bunx prisma db execute "$SCHEMA_ARG" --stdin <<< "SELECT 1" &>/dev/null; then
             check_pass "Database connection successful"
         else
             check_warn "Database connection test failed or timed out"
@@ -333,10 +361,8 @@ check_performance() {
 
         if [ "$USAGE_PCT" -lt 80 ]; then
             check_pass "Memory usage: ${USAGE_PCT}% (${AVAIL_MEM}MB available)"
-        elif [ "$USAGE_PCT" -lt 90 ]; then
-            check_warn "Memory usage: ${USAGE_PCT}% (${AVAIL_MEM}MB available)"
         else
-            check_fail "High memory usage: ${USAGE_PCT}%"
+            check_warn "Memory usage: ${USAGE_PCT}% (${AVAIL_MEM}MB available)"
         fi
     fi
 

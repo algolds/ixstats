@@ -1,0 +1,127 @@
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                    IxStates Diagnostic Suite                       ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+Timestamp: Mon May 25 06:11:58 EDT 2026
+Project:   /ixwiki/public/projects/ixstats
+Target:    http://localhost:3000
+Report:    /ixwiki/public/projects/ixstats/.diagnostics/diagnostic_report_20260525_061158.txt
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Health Check
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+═══════════════════════════════════════════════════════════════
+  IxStates Health Check
+═══════════════════════════════════════════════════════════════
+
+
+▸ Environment
+✓ Node.js v20.19.4 (>= 18 required)
+✓ bun v1.3.13
+✓ Project directory valid
+
+▸ Dependencies
+✓ node_modules present (1036 packages)
+✓ Prisma client generated
+✓ .next build directory exists
+
+▸ Configuration
+✓ Environment file found
+✓ DATABASE_URL configured (in .env)
+✓ CLERK_SECRET_KEY configured (in .env.local.dev)
+✓ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY configured (in .env.local.dev)
+✓ Compression configured in next.config.js
+⚠ Instrumentation hook not enabled
+
+▸ Database
+✓ Prisma schema directory found (237 models)
+✓ Migrations directory (12 migrations)
+✓ Database connection successful
+
+▸ Services
+⚠ Dev server not running on port 3000
+⚠ Production server not running on port 3550
+⚠ redis-cli not available
+⚠ PM2 process 'ixstats' not running
+
+▸ File System
+✓ Directory exists: src
+✓ Directory exists: prisma
+✓ Directory exists: public
+✓ Disk space: 14GB available
+✓ Project directory writable
+
+▸ Performance Indicators
+✗ High memory usage: 90%
+✓ System load: 2.65 (4 CPUs)
+
+═══════════════════════════════════════════════════════════════
+  Summary
+═══════════════════════════════════════════════════════════════
+
+  Passed:   20
+  Warnings: 5
+  Failed:   1
+
+Health check completed with failures.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Performance Benchmark
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+═══════════════════════════════════════════════════════════════
+  IxStats Performance Benchmark Suite
+═══════════════════════════════════════════════════════════════
+
+Target URL: http://localhost:3000
+Running benchmarks...
+
+▸ Testing Homepage Response Time...
+▸ Testing tRPC API Endpoints...
+▸ Checking Memory Usage...
+▸ Testing Static Asset Loading...
+
+═══════════════════════════════════════════════════════════════
+  Results
+═══════════════════════════════════════════════════════════════
+
+✗ Homepage Response Time: -1.00ms (target: 200ms)
+✗ API: countries.getAll: 1.76ms (target: 200ms)
+✗ API: countries.getGlobalStats: 0.94ms (target: 200ms)
+✓ Script Memory Usage: 10.19MB (target: 500MB)
+
+═══════════════════════════════════════════════════════════════
+  Summary
+═══════════════════════════════════════════════════════════════
+
+  Passed:   1
+  Warnings: 0
+  Failed:   3
+
+  Performance Grade: F (25.0%)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Final Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tests Run:    2
+Passed:       0
+Failed:       2
+
+Overall Status: UNHEALTHY (0%)
+
+Report saved to: /ixwiki/public/projects/ixstats/.diagnostics/diagnostic_report_20260525_061158.txt
+
+Quick Commands:
+  npm run diagnostics           # Run full suite
+  npm run diagnostics:health    # Health check only
+  npm run diagnostics:bench     # Benchmark only
+  npm run diagnostics:db        # Database analysis only
+  npm run diagnostics:cache     # Cache tests only
+

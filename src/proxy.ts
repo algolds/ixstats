@@ -52,13 +52,7 @@ const IXWORLD_ALLOWED_PREFIXES = [
   "/w",
 ];
 
-// Check if Clerk is configured with valid keys
-const isClerkConfigured = Boolean(
-  process.env.CLERK_SECRET_KEY &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  process.env.CLERK_SECRET_KEY.startsWith("sk_") &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_")
-);
+// Note: Clerk configuration check is now performed dynamically in getClerkMiddleware()
 
 /**
  * Content Security Policy — pre-computed at module load time.
@@ -224,88 +218,127 @@ function simpleMiddleware(req: NextRequest) {
 // responses are incompatible with Clerk's cookie/session header rewriting.
 const SSE_ENDPOINTS = ["/api/sse/map-updates", "/api/sse"];
 
-export default isClerkConfigured
-  ? clerkMiddleware(async (auth, req) => {
-      // Block spoofed internal headers (defense in depth for CVE-2025-29927)
-      const internalHeader = req.headers.get("x-middleware-subrequest");
-      if (internalHeader) {
-        console.warn(
-          `[Security] Blocked spoofed x-middleware-subrequest header from ${req.headers.get("x-forwarded-for") || "unknown"}`
-        );
-        return new NextResponse("Forbidden", { status: 403 });
-      }
+let clerkMiddlewareInstance: any = null;
+let isClerkChecked = false;
 
-      // SSE endpoints must bypass Clerk — streaming responses are incompatible
-      // with Clerk's session token/cookie rewriting. Return early with headers only.
-      if (SSE_ENDPOINTS.some((p) => req.nextUrl.pathname.startsWith(p))) {
-        const response = NextResponse.next();
-        return enhanceResponse(response, req, null);
-      }
+function getClerkMiddleware() {
+  if (isClerkChecked) return clerkMiddlewareInstance;
+  isClerkChecked = true;
 
-      // IxWorld standalone route guard
-      const standaloneRedirect = handleStandaloneRouting(req);
-      if (standaloneRedirect) return standaloneRedirect;
+  const isConfigured = Boolean(
+    process.env.CLERK_SECRET_KEY &&
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+    process.env.CLERK_SECRET_KEY.startsWith("sk_") &&
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_")
+  );
 
-      const { userId, sessionClaims } = await auth();
-
-      // Allow public routes to pass through without auth
-      if (isPublicRoute(req)) {
-        const response = NextResponse.next();
-        return enhanceResponse(response, req, userId);
-      }
-
-      // For protected routes, check authentication
-      if (isProtectedRoute(req)) {
-        if (!userId) {
-          // Build the redirect URL with the return path
-          const currentPath = req.nextUrl.pathname + req.nextUrl.search;
-          const prefixedPath =
-            BASE_PATH && currentPath.startsWith(BASE_PATH)
-              ? currentPath
-              : `${BASE_PATH}${currentPath.startsWith("/") ? currentPath : `/${currentPath}`}`;
-          const returnUrl = encodeURIComponent(prefixedPath);
-
-          // Build absolute sign-in URL based on environment
-          const baseUrl = req.nextUrl.origin;
-          let signInUrl: string;
-
-          const signInPath = `${BASE_PATH}/sign-in`;
-          signInUrl = `${baseUrl}${signInPath}?redirect_url=${returnUrl}`;
-
-          console.log(`[Middleware] Redirecting to: ${signInUrl}`);
-          return NextResponse.redirect(new URL(signInUrl));
+  if (isConfigured) {
+    try {
+      console.log("[Middleware] Clerk keys detected, initializing Clerk middleware...");
+      clerkMiddlewareInstance = clerkMiddleware(async (auth, req) => {
+        // SSE endpoints must bypass Clerk — streaming responses are incompatible
+        // with Clerk's session token/cookie rewriting. Return early with headers only.
+        if (SSE_ENDPOINTS.some((p) => req.nextUrl.pathname.startsWith(p))) {
+          const response = NextResponse.next();
+          return enhanceResponse(response, req, null);
         }
 
-        // Check for admin role on /admin routes
-        if (req.nextUrl.pathname.startsWith("/admin")) {
-          // Use centralized system owner constants
-          const { isSystemOwner } = await import("~/lib/system-owner-constants");
-          const isSystemOwnerUser = isSystemOwner(userId);
+        // IxWorld standalone route guard
+        const standaloneRedirect = handleStandaloneRouting(req);
+        if (standaloneRedirect) return standaloneRedirect;
 
-          if (!isSystemOwnerUser) {
-            const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
-            const userRole = publicMetadata?.role;
+        const { userId, sessionClaims } = await auth();
 
-            if (userRole !== "admin") {
-              console.log(
-                `[Middleware] Access denied to /admin for user ${userId} with role ${userRole || "none"}`
-              );
-              // Redirect to home page with access denied message
-              const homeUrl = new URL(`${BASE_PATH}/`, req.nextUrl.origin);
-              homeUrl.searchParams.set("error", "access_denied");
-              return NextResponse.redirect(homeUrl);
+        // Allow public routes to pass through without auth
+        if (isPublicRoute(req)) {
+          const response = NextResponse.next();
+          return enhanceResponse(response, req, userId);
+        }
+
+        // For protected routes, check authentication
+        if (isProtectedRoute(req)) {
+          if (!userId) {
+            // Build the redirect URL with the return path
+            const currentPath = req.nextUrl.pathname + req.nextUrl.search;
+            const prefixedPath =
+              BASE_PATH && currentPath.startsWith(BASE_PATH)
+                ? currentPath
+                : `${BASE_PATH}${currentPath.startsWith("/") ? currentPath : `/${currentPath}`}`;
+            const returnUrl = encodeURIComponent(prefixedPath);
+
+            // Build absolute sign-in URL based on environment
+            const baseUrl = req.nextUrl.origin;
+            let signInUrl: string;
+
+            const signInPath = `${BASE_PATH}/sign-in`;
+            signInUrl = `${baseUrl}${signInPath}?redirect_url=${returnUrl}`;
+
+            console.log(`[Middleware] Redirecting to: ${signInUrl}`);
+            return NextResponse.redirect(new URL(signInUrl));
+          }
+
+          // Check for admin role on /admin routes
+          if (req.nextUrl.pathname.startsWith("/admin")) {
+            // Use centralized system owner constants
+            const { isSystemOwner } = await import("~/lib/system-owner-constants");
+            const isSystemOwnerUser = isSystemOwner(userId);
+
+            if (!isSystemOwnerUser) {
+              const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
+              const userRole = publicMetadata?.role;
+
+              if (userRole !== "admin") {
+                console.log(
+                  `[Middleware] Access denied to /admin for user ${userId} with role ${userRole || "none"}`
+                );
+                // Redirect to home page with access denied message
+                const homeUrl = new URL(`${BASE_PATH}/`, req.nextUrl.origin);
+                homeUrl.searchParams.set("error", "access_denied");
+                return NextResponse.redirect(homeUrl);
+              }
+            } else {
+              console.log(`[Middleware] System owner ${userId} granted admin access`);
             }
-          } else {
-            console.log(`[Middleware] System owner ${userId} granted admin access`);
           }
         }
-      }
 
-      // For all other routes, continue without auth requirement
-      const response = NextResponse.next();
-      return enhanceResponse(response, req, userId);
-    })
-  : simpleMiddleware;
+        // For all other routes, continue without auth requirement
+        const response = NextResponse.next();
+        return enhanceResponse(response, req, userId);
+      });
+      console.log("[Middleware] Clerk middleware initialized successfully.");
+    } catch (error) {
+      console.error("[Middleware] Failed to initialize Clerk middleware:", error);
+      clerkMiddlewareInstance = null;
+    }
+  } else {
+    console.log("[Middleware] Clerk keys not configured or invalid, running in Demo/Simple mode.");
+  }
+  return clerkMiddlewareInstance;
+}
+
+export default async function middleware(req: NextRequest, event: any) {
+  // Block spoofed internal headers (defense in depth for CVE-2025-29927)
+  const internalHeader = req.headers.get("x-middleware-subrequest");
+  if (internalHeader) {
+    console.warn(
+      `[Security] Blocked spoofed x-middleware-subrequest header from ${req.headers.get("x-forwarded-for") || "unknown"}`
+    );
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
+  const clerk = getClerkMiddleware();
+  if (clerk) {
+    try {
+      return await clerk(req, event);
+    } catch (error) {
+      console.error("[Middleware] Clerk middleware execution failed, falling back to simple middleware:", error);
+      return simpleMiddleware(req);
+    }
+  }
+
+  return simpleMiddleware(req);
+}
 
 export const config = {
   matcher: [

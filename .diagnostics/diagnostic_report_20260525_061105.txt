@@ -1,0 +1,70 @@
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                    IxStates Diagnostic Suite                       ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+Timestamp: Mon May 25 06:11:05 EDT 2026
+Project:   /ixwiki/public/projects/ixstats
+Target:    http://localhost:3000
+Report:    /ixwiki/public/projects/ixstats/.diagnostics/diagnostic_report_20260525_061105.txt
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Health Check
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+═══════════════════════════════════════════════════════════════
+  IxStates Health Check
+═══════════════════════════════════════════════════════════════
+
+
+▸ Environment
+✓ Node.js v20.19.4 (>= 18 required)
+✓ bun v1.3.13
+✓ Project directory valid
+
+▸ Dependencies
+✓ node_modules present (1036 packages)
+✓ Prisma client generated
+✓ .next build directory exists
+
+▸ Configuration
+✓ Environment file found
+✓ DATABASE_URL configured (in .env)
+✓ CLERK_SECRET_KEY configured (in .env.local.dev)
+✓ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY configured (in .env.local.dev)
+✓ Compression configured in next.config.js
+⚠ Instrumentation hook not enabled
+
+▸ Database
+✓ Prisma schema directory found (237 models)
+✓ Migrations directory (12 migrations)
+✓ Database connection successful
+
+▸ Services
+⚠ Dev server not running on port 3000
+⚠ Production server not running on port 3550
+⚠ redis-cli not available
+⚠ PM2 process 'ixstats' not running
+
+▸ File System
+✓ Directory exists: src
+✓ Directory exists: prisma
+✓ Directory exists: public
+✓ Disk space: 14GB available
+✓ Project directory writable
+
+▸ Performance Indicators
+✓ Memory usage: 47% (3953MB available)
+✓ System load: 3.07 (4 CPUs)
+
+═══════════════════════════════════════════════════════════════
+  Summary
+═══════════════════════════════════════════════════════════════
+
+  Passed:   21
+  Warnings: 5
+  Failed:   0
+
+Health check completed with warnings.

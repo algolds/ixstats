@@ -190,11 +190,11 @@ FAILED_TESTS=0
 
 record_result() {
     local exit_code=$1
-    ((TOTAL_TESTS++))
+    TOTAL_TESTS=$((TOTAL_TESTS + 1))
     if [ $exit_code -eq 0 ]; then
-        ((PASSED_TESTS++))
+        PASSED_TESTS=$((PASSED_TESTS + 1))
     else
-        ((FAILED_TESTS++))
+        FAILED_TESTS=$((FAILED_TESTS + 1))
     fi
 }
 
